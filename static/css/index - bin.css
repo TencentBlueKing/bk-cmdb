@@ -1,0 +1,115 @@
+/**
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
+body,.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {font-family:'微软雅黑',Arial,sans-serif}
+/* 导航栏、侧边栏 */
+.navbar-form {
+    padding: 0 15px;
+}
+
+.navbar-nav {
+    float: left;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .navbar-nav {
+        float: left;
+        margin: 0;
+    }
+}
+
+.nav>li {
+    float: left;
+}
+
+@media (max-width: 767px) {
+    .navbar-nav .open .dropdown-menu {
+        position: absolute;
+        float: left;
+        width: auto;
+        margin-top: 0;
+        background-color: white;
+        border: 0;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+}
+
+.navbar-nav>li>.dropdown-menu {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.skin-blue .main-header .logo,.skin-blue .main-header .logo:hover{
+	text-align:left;
+}
+.main-sidebar, .left-side{padding-top:0;margin-top:50px;}
+.skin-blue .main-header .logo img{
+	    -webkit-transition: all ease .3s;
+       -moz-transition: all ease .3s;
+        -ms-transition: all ease .3s;
+            transition: all ease .3s;
+}
+.sidebar-collapse.skin-blue .main-header .logo img{margin-left:-5px;}
+.navbar.navbar-static-top{height:50px;}
+/* 导航栏、侧边栏 end */
+.server-table{background:white;margin-top:20px;}
+.opt-history{background:white;}
+.weixin-dropdown{width:246px!important;}
+.content-header h1{font-family:'微软雅黑',Arial,sans-serif}
+.fa-circle-o{margin-left:22px;}
+/***今日总况****/
+.small-box{ height: 130px;}
+.small-box .div-img{height:100%;width:30%;font-size: 45px;text-align: center;line-height: 130px;  background: rgba(0,0,0,0.2);}
+.small-box .div-text{width:65%;height: 100%; text-align: center;}
+.small-box .div-text p{font-size: 24px;margin-top:18px;}
+.small-box .div-text h4.findall{font-size: 16px;text-align:right;color: #fff; margin-top: -10px;}
+.small-box .div-text h3 span{font-size: 16px; margin-left: 5px;}
+/***table***/
+.table-host{ border-radius: 2px;}
+.table-host .server-table{margin-top: 0px;}
+.table{margin-bottom: 0px;}
+.table-host .table-titles{height: 40px;line-height:40px;background-color: #d2d6de;border-bottom: 1px solid #f4f4f4;padding-left: 10PX;}
+.table-host .findmore{height: 50px;line-height:50px;background-color: #fff;border-top: #f4f4f4 solid 1px;}
+.table-host .findmore a{margin-right:20px;float: right;margin-top: 10px;}
+.cznr{max-width: 300px;width: auto; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:auto;}
+@media (max-width: 1330px) {.cznr{max-width: 200px;}}
+@media (min-width: 990px) and (max-width: 1330px) {.cznr{max-width: 100px;}}
+/* 主机分布统计 */
+.c-host-number{height:388px;height:auto;min-height:388px;margin-bottom:20px;}
+.c-host-date{height:auto;min-height:388px;background:#ff00ff;margin-bottom:20px;}
+.c-host-area{height:auto;min-height:388px;background:#ccc;margin-bottom:20px;}
+.c-host-opt{height:auto;background:white;margin-bottom:20px;padding:10px 20px 10px 20px;}
+.c-host-opt .opt-img{height:30px;}
+.c-host-opt .page-header h5{color:#337ab7;font-size:15px;}
+.c-host-opt .page-header h5 small{margin-left:15px;}
+/* 操作记录 */
+.opt-item{padding-right:15px;padding-bottom:20px;}
+.opt-item .opt-info img {
+    border: 1px solid #f5f5f5;
+    border-radius: 150px !important;
+    height: 50px;
+    width: 50px;
+    margin-right: 15px;
+}
+.opt-item .opt-info {
+    overflow: hidden;
+    margin-bottom:10px;
+}
+.opt-item .opt-info span {
+    display: block;
+}
+.opt-item span.opt-name,.opt-item span.opt-stat {
+    color: #337ab7;
+    font-size: 14px;
+    font-weight: 300;
+    margin: 13px 0 7px;
+}
+.opt-item span.opt-name small{color:#666;}
+.opt-item .opt-stat{padding-right:5px}
+.opt-item .well{margin-bottom:0;}

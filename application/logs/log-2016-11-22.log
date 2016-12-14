@@ -1,0 +1,1449 @@
+INFO - 2016-11-22 09:59:43 --> Config Class Initialized
+INFO - 2016-11-22 09:59:43 --> Hooks Class Initialized
+DEBUG - 2016-11-22 09:59:43 --> UTF-8 Support Enabled
+INFO - 2016-11-22 09:59:43 --> Utf8 Class Initialized
+INFO - 2016-11-22 09:59:43 --> URI Class Initialized
+DEBUG - 2016-11-22 09:59:43 --> No URI present. Default controller set.
+INFO - 2016-11-22 09:59:43 --> Router Class Initialized
+INFO - 2016-11-22 09:59:43 --> Output Class Initialized
+INFO - 2016-11-22 09:59:43 --> Security Class Initialized
+DEBUG - 2016-11-22 09:59:43 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 09:59:43 --> Input Class Initialized
+INFO - 2016-11-22 09:59:43 --> Language Class Initialized
+INFO - 2016-11-22 09:59:43 --> Loader Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 09:59:44 --> Config Class Initialized
+INFO - 2016-11-22 09:59:44 --> Hooks Class Initialized
+INFO - 2016-11-22 09:59:44 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 09:59:44 --> UTF-8 Support Enabled
+INFO - 2016-11-22 09:59:44 --> Utf8 Class Initialized
+INFO - 2016-11-22 09:59:44 --> URI Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> No URI present. Default controller set.
+INFO - 2016-11-22 09:59:44 --> Router Class Initialized
+INFO - 2016-11-22 09:59:44 --> Output Class Initialized
+INFO - 2016-11-22 09:59:44 --> Security Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Global POST, GET and COOKIE data sanitized
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Input Class Initialized
+INFO - 2016-11-22 09:59:44 --> Language Class Initialized
+INFO - 2016-11-22 09:59:44 --> Loader Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Controller Class Initialized
+INFO - 2016-11-22 09:59:44 --> Parser Class Initialized
+INFO - 2016-11-22 09:59:44 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 09:59:44 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Controller Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 09:59:44 --> Parser Class Initialized
+INFO - 2016-11-22 09:59:44 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 09:59:44 --> Encryption Class Initialized
+INFO - 2016-11-22 09:59:44 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 09:59:44 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 09:59:44 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 09:59:44 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 09:59:44 --> Encryption Class Initialized
+INFO - 2016-11-22 09:59:44 --> Helper loaded: url_helper
+INFO - 2016-11-22 09:59:44 --> Helper loaded: url_helper
+INFO - 2016-11-22 09:59:44 --> Config Class Initialized
+INFO - 2016-11-22 09:59:44 --> Hooks Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> UTF-8 Support Enabled
+INFO - 2016-11-22 09:59:44 --> Utf8 Class Initialized
+INFO - 2016-11-22 09:59:44 --> URI Class Initialized
+INFO - 2016-11-22 09:59:44 --> Router Class Initialized
+INFO - 2016-11-22 09:59:44 --> Output Class Initialized
+INFO - 2016-11-22 09:59:44 --> Security Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 09:59:44 --> Input Class Initialized
+INFO - 2016-11-22 09:59:44 --> Language Class Initialized
+INFO - 2016-11-22 09:59:44 --> Loader Class Initialized
+DEBUG - 2016-11-22 09:59:44 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 09:59:44 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 09:59:44 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Controller Class Initialized
+INFO - 2016-11-22 09:59:44 --> Parser Class Initialized
+INFO - 2016-11-22 09:59:44 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 09:59:44 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:44 --> Database Driver Class Initialized
+INFO - 2016-11-22 09:59:44 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\account/login.php
+INFO - 2016-11-22 09:59:44 --> Final output sent to browser
+DEBUG - 2016-11-22 09:59:44 --> Total execution time: 0.1460
+INFO - 2016-11-22 09:59:56 --> Config Class Initialized
+INFO - 2016-11-22 09:59:56 --> Hooks Class Initialized
+DEBUG - 2016-11-22 09:59:56 --> UTF-8 Support Enabled
+INFO - 2016-11-22 09:59:56 --> Utf8 Class Initialized
+INFO - 2016-11-22 09:59:56 --> URI Class Initialized
+INFO - 2016-11-22 09:59:56 --> Router Class Initialized
+INFO - 2016-11-22 09:59:56 --> Output Class Initialized
+INFO - 2016-11-22 09:59:56 --> Security Class Initialized
+DEBUG - 2016-11-22 09:59:56 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 09:59:56 --> Input Class Initialized
+INFO - 2016-11-22 09:59:56 --> Language Class Initialized
+INFO - 2016-11-22 09:59:56 --> Loader Class Initialized
+DEBUG - 2016-11-22 09:59:56 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 09:59:56 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 09:59:56 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 09:59:56 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:56 --> Controller Class Initialized
+INFO - 2016-11-22 09:59:56 --> Parser Class Initialized
+INFO - 2016-11-22 09:59:56 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 09:59:56 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 09:59:56 --> Database Driver Class Initialized
+DEBUG - 2016-11-22 09:59:57 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 09:59:57 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 09:59:57 --> Encryption Class Initialized
+INFO - 2016-11-22 09:59:57 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\account/login.php
+INFO - 2016-11-22 09:59:57 --> Final output sent to browser
+DEBUG - 2016-11-22 09:59:57 --> Total execution time: 0.2220
+INFO - 2016-11-22 10:01:12 --> Config Class Initialized
+INFO - 2016-11-22 10:01:12 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:01:12 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:01:12 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:01:12 --> URI Class Initialized
+INFO - 2016-11-22 10:01:12 --> Router Class Initialized
+INFO - 2016-11-22 10:01:12 --> Output Class Initialized
+INFO - 2016-11-22 10:01:12 --> Security Class Initialized
+DEBUG - 2016-11-22 10:01:12 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:01:12 --> Input Class Initialized
+INFO - 2016-11-22 10:01:12 --> Language Class Initialized
+INFO - 2016-11-22 10:01:12 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:01:12 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:01:12 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:01:12 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:12 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:01:12 --> Controller Class Initialized
+INFO - 2016-11-22 10:01:12 --> Parser Class Initialized
+INFO - 2016-11-22 10:01:12 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:01:12 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:01:12 --> Database Driver Class Initialized
+DEBUG - 2016-11-22 10:01:12 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:01:12 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:01:12 --> Encryption Class Initialized
+INFO - 2016-11-22 10:01:13 --> Helper loaded: url_helper
+INFO - 2016-11-22 10:01:13 --> Config Class Initialized
+INFO - 2016-11-22 10:01:13 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:01:13 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:01:13 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:01:13 --> URI Class Initialized
+DEBUG - 2016-11-22 10:01:13 --> No URI present. Default controller set.
+INFO - 2016-11-22 10:01:13 --> Router Class Initialized
+INFO - 2016-11-22 10:01:13 --> Output Class Initialized
+INFO - 2016-11-22 10:01:13 --> Security Class Initialized
+DEBUG - 2016-11-22 10:01:13 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:01:13 --> Input Class Initialized
+INFO - 2016-11-22 10:01:13 --> Language Class Initialized
+INFO - 2016-11-22 10:01:13 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:01:13 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:01:13 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:01:13 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:13 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:01:13 --> Controller Class Initialized
+INFO - 2016-11-22 10:01:13 --> Parser Class Initialized
+INFO - 2016-11-22 10:01:13 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:01:13 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:13 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:01:13 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:01:13 --> Encryption Class Initialized
+INFO - 2016-11-22 10:01:13 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:01:13 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\welcome.php
+INFO - 2016-11-22 10:01:13 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:01:13 --> Final output sent to browser
+DEBUG - 2016-11-22 10:01:13 --> Total execution time: 0.5031
+INFO - 2016-11-22 10:01:16 --> Config Class Initialized
+INFO - 2016-11-22 10:01:16 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:01:16 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:01:16 --> URI Class Initialized
+INFO - 2016-11-22 10:01:16 --> Router Class Initialized
+INFO - 2016-11-22 10:01:16 --> Output Class Initialized
+INFO - 2016-11-22 10:01:16 --> Security Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:01:16 --> Input Class Initialized
+INFO - 2016-11-22 10:01:16 --> Language Class Initialized
+INFO - 2016-11-22 10:01:16 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:01:16 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:01:16 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:16 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:01:16 --> Controller Class Initialized
+INFO - 2016-11-22 10:01:16 --> Parser Class Initialized
+INFO - 2016-11-22 10:01:16 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:01:16 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:16 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:01:16 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:01:16 --> Encryption Class Initialized
+INFO - 2016-11-22 10:01:16 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:01:16 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/quickImport.php
+INFO - 2016-11-22 10:01:16 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:01:16 --> Final output sent to browser
+DEBUG - 2016-11-22 10:01:16 --> Total execution time: 0.2540
+INFO - 2016-11-22 10:01:16 --> Config Class Initialized
+INFO - 2016-11-22 10:01:16 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:01:16 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:01:16 --> URI Class Initialized
+INFO - 2016-11-22 10:01:16 --> Router Class Initialized
+INFO - 2016-11-22 10:01:16 --> Output Class Initialized
+INFO - 2016-11-22 10:01:16 --> Security Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:01:16 --> Input Class Initialized
+INFO - 2016-11-22 10:01:16 --> Language Class Initialized
+INFO - 2016-11-22 10:01:16 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:01:16 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:01:16 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:01:16 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:16 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:01:16 --> Controller Class Initialized
+INFO - 2016-11-22 10:01:16 --> Parser Class Initialized
+INFO - 2016-11-22 10:01:16 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:01:16 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:01:16 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:01:16 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:01:16 --> Encryption Class Initialized
+INFO - 2016-11-22 10:01:16 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:01:16 --> Final output sent to browser
+DEBUG - 2016-11-22 10:01:16 --> Total execution time: 0.1970
+INFO - 2016-11-22 10:02:31 --> Config Class Initialized
+INFO - 2016-11-22 10:02:31 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:31 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:31 --> URI Class Initialized
+INFO - 2016-11-22 10:02:31 --> Router Class Initialized
+INFO - 2016-11-22 10:02:31 --> Output Class Initialized
+INFO - 2016-11-22 10:02:31 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:31 --> Input Class Initialized
+INFO - 2016-11-22 10:02:31 --> Language Class Initialized
+INFO - 2016-11-22 10:02:31 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:31 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:31 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:31 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:31 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:31 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:31 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:31 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:31 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:31 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:31 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:31 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:31 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/quickImport.php
+INFO - 2016-11-22 10:02:31 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:31 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:31 --> Total execution time: 0.2230
+INFO - 2016-11-22 10:02:31 --> Config Class Initialized
+INFO - 2016-11-22 10:02:31 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:31 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:31 --> URI Class Initialized
+INFO - 2016-11-22 10:02:31 --> Router Class Initialized
+INFO - 2016-11-22 10:02:31 --> Output Class Initialized
+INFO - 2016-11-22 10:02:31 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:31 --> Input Class Initialized
+INFO - 2016-11-22 10:02:31 --> Language Class Initialized
+INFO - 2016-11-22 10:02:31 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:31 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:31 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:31 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:31 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:31 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:31 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:31 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:31 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:31 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:31 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:31 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:31 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:32 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:32 --> Total execution time: 0.2010
+INFO - 2016-11-22 10:02:33 --> Config Class Initialized
+INFO - 2016-11-22 10:02:33 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:34 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:34 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:34 --> URI Class Initialized
+INFO - 2016-11-22 10:02:34 --> Router Class Initialized
+INFO - 2016-11-22 10:02:34 --> Output Class Initialized
+INFO - 2016-11-22 10:02:34 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:34 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:34 --> Input Class Initialized
+INFO - 2016-11-22 10:02:34 --> Language Class Initialized
+INFO - 2016-11-22 10:02:34 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:34 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:34 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:34 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:34 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:34 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:34 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:34 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:34 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:34 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:34 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:34 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:34 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:34 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/hostQuery.php
+INFO - 2016-11-22 10:02:34 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:34 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:34 --> Total execution time: 0.5191
+INFO - 2016-11-22 10:02:35 --> Config Class Initialized
+INFO - 2016-11-22 10:02:35 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:35 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:35 --> URI Class Initialized
+INFO - 2016-11-22 10:02:35 --> Router Class Initialized
+INFO - 2016-11-22 10:02:35 --> Output Class Initialized
+INFO - 2016-11-22 10:02:35 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:35 --> Input Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language Class Initialized
+INFO - 2016-11-22 10:02:35 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:35 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:35 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:35 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:35 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:35 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:35 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:35 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:35 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:35 --> Total execution time: 0.1970
+INFO - 2016-11-22 10:02:35 --> Config Class Initialized
+INFO - 2016-11-22 10:02:35 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:35 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:35 --> URI Class Initialized
+INFO - 2016-11-22 10:02:35 --> Router Class Initialized
+INFO - 2016-11-22 10:02:35 --> Output Class Initialized
+INFO - 2016-11-22 10:02:35 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:35 --> Input Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language Class Initialized
+INFO - 2016-11-22 10:02:35 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:35 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:35 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:35 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:35 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:35 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:35 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:35 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:35 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:35 --> Total execution time: 0.2110
+INFO - 2016-11-22 10:02:35 --> Config Class Initialized
+INFO - 2016-11-22 10:02:35 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:35 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:35 --> URI Class Initialized
+INFO - 2016-11-22 10:02:35 --> Router Class Initialized
+INFO - 2016-11-22 10:02:35 --> Output Class Initialized
+INFO - 2016-11-22 10:02:35 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:35 --> Input Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language Class Initialized
+INFO - 2016-11-22 10:02:35 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:35 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:35 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:35 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:35 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:35 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:35 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:35 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:35 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:35 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:35 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:35 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:35 --> Total execution time: 0.1990
+INFO - 2016-11-22 10:02:37 --> Config Class Initialized
+INFO - 2016-11-22 10:02:37 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:37 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:37 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:37 --> URI Class Initialized
+INFO - 2016-11-22 10:02:37 --> Router Class Initialized
+INFO - 2016-11-22 10:02:37 --> Output Class Initialized
+INFO - 2016-11-22 10:02:37 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:37 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:37 --> Input Class Initialized
+INFO - 2016-11-22 10:02:37 --> Language Class Initialized
+INFO - 2016-11-22 10:02:37 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:37 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:37 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:37 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:37 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:37 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:37 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:37 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:37 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:37 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:37 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:37 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:37 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:37 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/index.php
+INFO - 2016-11-22 10:02:37 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:37 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:37 --> Total execution time: 0.3190
+INFO - 2016-11-22 10:02:40 --> Config Class Initialized
+INFO - 2016-11-22 10:02:40 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:40 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:40 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:40 --> URI Class Initialized
+INFO - 2016-11-22 10:02:40 --> Router Class Initialized
+INFO - 2016-11-22 10:02:40 --> Output Class Initialized
+INFO - 2016-11-22 10:02:40 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:40 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:40 --> Input Class Initialized
+INFO - 2016-11-22 10:02:40 --> Language Class Initialized
+INFO - 2016-11-22 10:02:40 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:40 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:40 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:40 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:40 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:40 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:40 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:40 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:40 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:40 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:40 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:40 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:40 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:40 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:40 --> Total execution time: 0.2010
+INFO - 2016-11-22 10:02:41 --> Config Class Initialized
+INFO - 2016-11-22 10:02:41 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:41 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:41 --> URI Class Initialized
+INFO - 2016-11-22 10:02:41 --> Router Class Initialized
+INFO - 2016-11-22 10:02:41 --> Output Class Initialized
+INFO - 2016-11-22 10:02:41 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:41 --> Input Class Initialized
+INFO - 2016-11-22 10:02:41 --> Language Class Initialized
+INFO - 2016-11-22 10:02:41 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:41 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:41 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:41 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:41 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:41 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:41 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:41 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:41 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:41 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:41 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:41 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:41 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:41 --> Total execution time: 0.1830
+INFO - 2016-11-22 10:02:41 --> Config Class Initialized
+INFO - 2016-11-22 10:02:41 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:41 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:41 --> URI Class Initialized
+INFO - 2016-11-22 10:02:41 --> Router Class Initialized
+INFO - 2016-11-22 10:02:41 --> Output Class Initialized
+INFO - 2016-11-22 10:02:41 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:41 --> Input Class Initialized
+INFO - 2016-11-22 10:02:41 --> Language Class Initialized
+INFO - 2016-11-22 10:02:41 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:41 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:41 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:41 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:41 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:41 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:41 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:41 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:41 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:41 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:41 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:41 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:41 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:42 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:42 --> Total execution time: 0.1820
+INFO - 2016-11-22 10:02:42 --> Config Class Initialized
+INFO - 2016-11-22 10:02:42 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:42 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:42 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:42 --> URI Class Initialized
+INFO - 2016-11-22 10:02:42 --> Router Class Initialized
+INFO - 2016-11-22 10:02:42 --> Output Class Initialized
+INFO - 2016-11-22 10:02:42 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:42 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:42 --> Input Class Initialized
+INFO - 2016-11-22 10:02:42 --> Language Class Initialized
+INFO - 2016-11-22 10:02:42 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:42 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:42 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:42 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:42 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:42 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:42 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:42 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:42 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:42 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:42 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:42 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:42 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:42 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:42 --> Total execution time: 0.2140
+INFO - 2016-11-22 10:02:44 --> Config Class Initialized
+INFO - 2016-11-22 10:02:44 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:44 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:44 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:44 --> URI Class Initialized
+INFO - 2016-11-22 10:02:44 --> Router Class Initialized
+INFO - 2016-11-22 10:02:44 --> Output Class Initialized
+INFO - 2016-11-22 10:02:44 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:44 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:44 --> Input Class Initialized
+INFO - 2016-11-22 10:02:44 --> Language Class Initialized
+INFO - 2016-11-22 10:02:44 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:44 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:44 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:44 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:44 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:44 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:44 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:44 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:44 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:44 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:44 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:44 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:44 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:44 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/list.php
+INFO - 2016-11-22 10:02:44 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:44 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:44 --> Total execution time: 0.1920
+INFO - 2016-11-22 10:02:45 --> Config Class Initialized
+INFO - 2016-11-22 10:02:45 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:45 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:45 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:45 --> URI Class Initialized
+INFO - 2016-11-22 10:02:45 --> Config Class Initialized
+INFO - 2016-11-22 10:02:45 --> Hooks Class Initialized
+INFO - 2016-11-22 10:02:45 --> Router Class Initialized
+INFO - 2016-11-22 10:02:45 --> Output Class Initialized
+DEBUG - 2016-11-22 10:02:45 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:45 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:45 --> Security Class Initialized
+INFO - 2016-11-22 10:02:45 --> URI Class Initialized
+INFO - 2016-11-22 10:02:45 --> Router Class Initialized
+DEBUG - 2016-11-22 10:02:45 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:45 --> Input Class Initialized
+INFO - 2016-11-22 10:02:45 --> Language Class Initialized
+INFO - 2016-11-22 10:02:45 --> Output Class Initialized
+INFO - 2016-11-22 10:02:45 --> Security Class Initialized
+INFO - 2016-11-22 10:02:45 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:45 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+DEBUG - 2016-11-22 10:02:45 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:45 --> Input Class Initialized
+INFO - 2016-11-22 10:02:45 --> Language Class Initialized
+INFO - 2016-11-22 10:02:45 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:45 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:45 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:45 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:45 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:45 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:45 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:45 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:45 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:45 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:45 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:45 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:45 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:45 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:45 --> Total execution time: 0.2010
+INFO - 2016-11-22 10:02:45 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:45 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:45 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:45 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:45 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:45 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:45 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:45 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:45 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:45 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:45 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:45 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:45 --> Total execution time: 0.3300
+INFO - 2016-11-22 10:02:46 --> Config Class Initialized
+INFO - 2016-11-22 10:02:46 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:46 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:46 --> URI Class Initialized
+INFO - 2016-11-22 10:02:46 --> Router Class Initialized
+INFO - 2016-11-22 10:02:46 --> Output Class Initialized
+INFO - 2016-11-22 10:02:46 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:46 --> Input Class Initialized
+INFO - 2016-11-22 10:02:46 --> Language Class Initialized
+INFO - 2016-11-22 10:02:46 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:46 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:46 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:46 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:46 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:46 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:46 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:46 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:46 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:46 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:46 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:46 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:46 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/hostQuery.php
+INFO - 2016-11-22 10:02:46 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:46 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:46 --> Total execution time: 0.2730
+INFO - 2016-11-22 10:02:46 --> Config Class Initialized
+INFO - 2016-11-22 10:02:46 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:46 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:46 --> URI Class Initialized
+INFO - 2016-11-22 10:02:46 --> Router Class Initialized
+INFO - 2016-11-22 10:02:46 --> Output Class Initialized
+INFO - 2016-11-22 10:02:46 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:46 --> Input Class Initialized
+INFO - 2016-11-22 10:02:46 --> Language Class Initialized
+INFO - 2016-11-22 10:02:46 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:46 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:47 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:47 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:47 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:47 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:47 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:47 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:47 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:47 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:47 --> Total execution time: 0.1970
+INFO - 2016-11-22 10:02:47 --> Config Class Initialized
+INFO - 2016-11-22 10:02:47 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:47 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:47 --> URI Class Initialized
+INFO - 2016-11-22 10:02:47 --> Router Class Initialized
+INFO - 2016-11-22 10:02:47 --> Output Class Initialized
+INFO - 2016-11-22 10:02:47 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:47 --> Input Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language Class Initialized
+INFO - 2016-11-22 10:02:47 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:47 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:47 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:47 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:47 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:47 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:47 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:47 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:47 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:47 --> Total execution time: 0.2100
+INFO - 2016-11-22 10:02:47 --> Config Class Initialized
+INFO - 2016-11-22 10:02:47 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:47 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:47 --> URI Class Initialized
+INFO - 2016-11-22 10:02:47 --> Router Class Initialized
+INFO - 2016-11-22 10:02:47 --> Output Class Initialized
+INFO - 2016-11-22 10:02:47 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:47 --> Input Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language Class Initialized
+INFO - 2016-11-22 10:02:47 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:47 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:47 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:47 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:47 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:47 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:47 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:47 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:47 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:47 --> Total execution time: 0.2100
+INFO - 2016-11-22 10:02:47 --> Config Class Initialized
+INFO - 2016-11-22 10:02:47 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:47 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:47 --> URI Class Initialized
+INFO - 2016-11-22 10:02:47 --> Router Class Initialized
+INFO - 2016-11-22 10:02:47 --> Output Class Initialized
+INFO - 2016-11-22 10:02:47 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:47 --> Input Class Initialized
+INFO - 2016-11-22 10:02:47 --> Language Class Initialized
+INFO - 2016-11-22 10:02:47 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:47 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:47 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:47 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:47 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:47 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:48 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:48 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:48 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:48 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:48 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:48 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:48 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\app/index.php
+INFO - 2016-11-22 10:02:48 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:48 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:48 --> Total execution time: 0.1950
+INFO - 2016-11-22 10:02:49 --> Config Class Initialized
+INFO - 2016-11-22 10:02:49 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:49 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:49 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:49 --> URI Class Initialized
+INFO - 2016-11-22 10:02:49 --> Router Class Initialized
+INFO - 2016-11-22 10:02:49 --> Output Class Initialized
+INFO - 2016-11-22 10:02:49 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:49 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:49 --> Input Class Initialized
+INFO - 2016-11-22 10:02:49 --> Language Class Initialized
+INFO - 2016-11-22 10:02:49 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:49 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:50 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:50 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:50 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:50 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:50 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:50 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:50 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:50 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:50 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\app/index.php
+INFO - 2016-11-22 10:02:50 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:50 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:50 --> Total execution time: 0.1900
+INFO - 2016-11-22 10:02:50 --> Config Class Initialized
+INFO - 2016-11-22 10:02:50 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:50 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:50 --> URI Class Initialized
+INFO - 2016-11-22 10:02:50 --> Router Class Initialized
+INFO - 2016-11-22 10:02:50 --> Output Class Initialized
+INFO - 2016-11-22 10:02:50 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:50 --> Input Class Initialized
+INFO - 2016-11-22 10:02:50 --> Language Class Initialized
+INFO - 2016-11-22 10:02:50 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:50 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:50 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:50 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:50 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:50 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:50 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:50 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:50 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:50 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/quickImport.php
+INFO - 2016-11-22 10:02:50 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:50 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:50 --> Total execution time: 0.2750
+INFO - 2016-11-22 10:02:50 --> Config Class Initialized
+INFO - 2016-11-22 10:02:50 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:50 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:50 --> URI Class Initialized
+INFO - 2016-11-22 10:02:50 --> Router Class Initialized
+INFO - 2016-11-22 10:02:50 --> Output Class Initialized
+INFO - 2016-11-22 10:02:50 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:50 --> Input Class Initialized
+INFO - 2016-11-22 10:02:50 --> Language Class Initialized
+INFO - 2016-11-22 10:02:50 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:50 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:50 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:50 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:50 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:50 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:50 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:50 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:50 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:50 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:50 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:51 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:51 --> Total execution time: 0.2040
+INFO - 2016-11-22 10:02:51 --> Config Class Initialized
+INFO - 2016-11-22 10:02:51 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:51 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:51 --> URI Class Initialized
+INFO - 2016-11-22 10:02:51 --> Router Class Initialized
+INFO - 2016-11-22 10:02:51 --> Output Class Initialized
+INFO - 2016-11-22 10:02:51 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:51 --> Input Class Initialized
+INFO - 2016-11-22 10:02:51 --> Language Class Initialized
+INFO - 2016-11-22 10:02:51 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:51 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:51 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:51 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:51 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:51 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:51 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:51 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:51 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:51 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:51 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:51 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:51 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\operationlog/index.php
+INFO - 2016-11-22 10:02:51 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:51 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:51 --> Total execution time: 0.2030
+INFO - 2016-11-22 10:02:51 --> Config Class Initialized
+INFO - 2016-11-22 10:02:51 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:51 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:51 --> URI Class Initialized
+INFO - 2016-11-22 10:02:51 --> Router Class Initialized
+INFO - 2016-11-22 10:02:51 --> Output Class Initialized
+INFO - 2016-11-22 10:02:51 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:51 --> Input Class Initialized
+INFO - 2016-11-22 10:02:51 --> Language Class Initialized
+INFO - 2016-11-22 10:02:51 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:51 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:51 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:51 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:51 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:51 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:51 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:51 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:51 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:51 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:51 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:51 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:51 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:51 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:51 --> Total execution time: 0.1750
+INFO - 2016-11-22 10:02:52 --> Config Class Initialized
+INFO - 2016-11-22 10:02:52 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:52 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:52 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:52 --> URI Class Initialized
+INFO - 2016-11-22 10:02:52 --> Router Class Initialized
+INFO - 2016-11-22 10:02:52 --> Output Class Initialized
+INFO - 2016-11-22 10:02:52 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:52 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:52 --> Input Class Initialized
+INFO - 2016-11-22 10:02:52 --> Language Class Initialized
+INFO - 2016-11-22 10:02:52 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:52 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:52 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:52 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:52 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:52 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:52 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:52 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:52 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:52 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:52 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:52 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:52 --> Database Driver Class Initialized
+DEBUG - 2016-11-22 10:02:52 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:52 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:52 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\account/index.php
+INFO - 2016-11-22 10:02:52 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:52 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:52 --> Total execution time: 0.2030
+INFO - 2016-11-22 10:02:53 --> Config Class Initialized
+INFO - 2016-11-22 10:02:53 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:53 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:53 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:53 --> URI Class Initialized
+INFO - 2016-11-22 10:02:53 --> Router Class Initialized
+INFO - 2016-11-22 10:02:53 --> Output Class Initialized
+INFO - 2016-11-22 10:02:53 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:53 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:53 --> Input Class Initialized
+INFO - 2016-11-22 10:02:53 --> Language Class Initialized
+INFO - 2016-11-22 10:02:53 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:53 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:53 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:53 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:53 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:53 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:53 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:53 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:53 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:53 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:53 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:53 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:53 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:54 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\welcome.php
+INFO - 2016-11-22 10:02:54 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:54 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:54 --> Total execution time: 0.2280
+INFO - 2016-11-22 10:02:55 --> Config Class Initialized
+INFO - 2016-11-22 10:02:55 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:55 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:55 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:55 --> URI Class Initialized
+INFO - 2016-11-22 10:02:55 --> Router Class Initialized
+INFO - 2016-11-22 10:02:55 --> Output Class Initialized
+INFO - 2016-11-22 10:02:55 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:55 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:55 --> Input Class Initialized
+INFO - 2016-11-22 10:02:55 --> Language Class Initialized
+INFO - 2016-11-22 10:02:55 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:55 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:55 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:55 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:55 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:55 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:55 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:55 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:55 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:55 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:55 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:55 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:56 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:56 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/hostQuery.php
+INFO - 2016-11-22 10:02:56 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:02:56 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:56 --> Total execution time: 0.2770
+INFO - 2016-11-22 10:02:56 --> Config Class Initialized
+INFO - 2016-11-22 10:02:56 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:56 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:56 --> URI Class Initialized
+INFO - 2016-11-22 10:02:56 --> Router Class Initialized
+INFO - 2016-11-22 10:02:56 --> Output Class Initialized
+INFO - 2016-11-22 10:02:56 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:56 --> Input Class Initialized
+INFO - 2016-11-22 10:02:56 --> Language Class Initialized
+INFO - 2016-11-22 10:02:56 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:56 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:56 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:56 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:56 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:56 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:56 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:56 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:56 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:56 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:56 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:56 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:56 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:56 --> Total execution time: 0.2010
+INFO - 2016-11-22 10:02:56 --> Config Class Initialized
+INFO - 2016-11-22 10:02:56 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:56 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:56 --> URI Class Initialized
+INFO - 2016-11-22 10:02:56 --> Router Class Initialized
+INFO - 2016-11-22 10:02:56 --> Output Class Initialized
+INFO - 2016-11-22 10:02:56 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:56 --> Input Class Initialized
+INFO - 2016-11-22 10:02:56 --> Language Class Initialized
+INFO - 2016-11-22 10:02:56 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:56 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:56 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:56 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:56 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:56 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:56 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:56 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:56 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:56 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:56 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:56 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:56 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:56 --> Total execution time: 0.2180
+INFO - 2016-11-22 10:02:56 --> Config Class Initialized
+INFO - 2016-11-22 10:02:56 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:02:56 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:02:56 --> URI Class Initialized
+INFO - 2016-11-22 10:02:56 --> Router Class Initialized
+INFO - 2016-11-22 10:02:56 --> Output Class Initialized
+INFO - 2016-11-22 10:02:56 --> Security Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:02:56 --> Input Class Initialized
+INFO - 2016-11-22 10:02:56 --> Language Class Initialized
+INFO - 2016-11-22 10:02:56 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:02:56 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:02:57 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:02:57 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:57 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:02:57 --> Controller Class Initialized
+INFO - 2016-11-22 10:02:57 --> Parser Class Initialized
+INFO - 2016-11-22 10:02:57 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:02:57 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:02:57 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:02:57 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:02:57 --> Encryption Class Initialized
+INFO - 2016-11-22 10:02:57 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:02:57 --> Final output sent to browser
+DEBUG - 2016-11-22 10:02:57 --> Total execution time: 0.2360
+INFO - 2016-11-22 10:03:11 --> Config Class Initialized
+INFO - 2016-11-22 10:03:11 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:11 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:11 --> URI Class Initialized
+INFO - 2016-11-22 10:03:11 --> Router Class Initialized
+INFO - 2016-11-22 10:03:11 --> Output Class Initialized
+INFO - 2016-11-22 10:03:11 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:11 --> Input Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language Class Initialized
+INFO - 2016-11-22 10:03:11 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:11 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:11 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:11 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:11 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:11 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:11 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:11 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:11 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\host/hostQuery.php
+INFO - 2016-11-22 10:03:11 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:11 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:11 --> Total execution time: 0.2550
+INFO - 2016-11-22 10:03:11 --> Config Class Initialized
+INFO - 2016-11-22 10:03:11 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:11 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:11 --> URI Class Initialized
+INFO - 2016-11-22 10:03:11 --> Router Class Initialized
+INFO - 2016-11-22 10:03:11 --> Output Class Initialized
+INFO - 2016-11-22 10:03:11 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:11 --> Input Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language Class Initialized
+INFO - 2016-11-22 10:03:11 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:11 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:11 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:11 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:11 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:11 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:11 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:11 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:11 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:11 --> Total execution time: 0.1980
+INFO - 2016-11-22 10:03:11 --> Config Class Initialized
+INFO - 2016-11-22 10:03:11 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:11 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:11 --> URI Class Initialized
+INFO - 2016-11-22 10:03:11 --> Router Class Initialized
+INFO - 2016-11-22 10:03:11 --> Output Class Initialized
+INFO - 2016-11-22 10:03:11 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:11 --> Input Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language Class Initialized
+INFO - 2016-11-22 10:03:11 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:11 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:11 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:11 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:11 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:11 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:11 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:11 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:11 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:11 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:11 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:12 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:12 --> Total execution time: 0.2070
+INFO - 2016-11-22 10:03:12 --> Config Class Initialized
+INFO - 2016-11-22 10:03:12 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:12 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:12 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:12 --> URI Class Initialized
+INFO - 2016-11-22 10:03:12 --> Router Class Initialized
+INFO - 2016-11-22 10:03:12 --> Output Class Initialized
+INFO - 2016-11-22 10:03:12 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:12 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:12 --> Input Class Initialized
+INFO - 2016-11-22 10:03:12 --> Language Class Initialized
+INFO - 2016-11-22 10:03:12 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:12 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:12 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:12 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:12 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:12 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:12 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:12 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:12 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:12 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:12 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:12 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:12 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:12 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:12 --> Total execution time: 0.2440
+INFO - 2016-11-22 10:03:13 --> Config Class Initialized
+INFO - 2016-11-22 10:03:13 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:13 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:13 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:13 --> URI Class Initialized
+INFO - 2016-11-22 10:03:13 --> Router Class Initialized
+INFO - 2016-11-22 10:03:13 --> Output Class Initialized
+INFO - 2016-11-22 10:03:13 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:13 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:13 --> Input Class Initialized
+INFO - 2016-11-22 10:03:13 --> Language Class Initialized
+INFO - 2016-11-22 10:03:13 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:13 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:13 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:13 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:13 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:13 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:13 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:13 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:13 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:13 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:13 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:13 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:13 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:13 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/index.php
+INFO - 2016-11-22 10:03:13 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:13 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:13 --> Total execution time: 0.2140
+INFO - 2016-11-22 10:03:14 --> Config Class Initialized
+INFO - 2016-11-22 10:03:14 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:14 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:14 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:14 --> URI Class Initialized
+INFO - 2016-11-22 10:03:14 --> Router Class Initialized
+INFO - 2016-11-22 10:03:14 --> Output Class Initialized
+INFO - 2016-11-22 10:03:14 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:14 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:14 --> Input Class Initialized
+INFO - 2016-11-22 10:03:14 --> Language Class Initialized
+INFO - 2016-11-22 10:03:14 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:14 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:14 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:14 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:14 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:14 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:14 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:14 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:14 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:14 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:14 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:14 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:14 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:15 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/list.php
+INFO - 2016-11-22 10:03:15 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:15 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:15 --> Total execution time: 0.2740
+INFO - 2016-11-22 10:03:15 --> Config Class Initialized
+INFO - 2016-11-22 10:03:15 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:15 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:15 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:15 --> URI Class Initialized
+INFO - 2016-11-22 10:03:15 --> Router Class Initialized
+INFO - 2016-11-22 10:03:15 --> Output Class Initialized
+INFO - 2016-11-22 10:03:15 --> Config Class Initialized
+INFO - 2016-11-22 10:03:15 --> Hooks Class Initialized
+INFO - 2016-11-22 10:03:15 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:15 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:15 --> Utf8 Class Initialized
+DEBUG - 2016-11-22 10:03:15 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:15 --> Input Class Initialized
+INFO - 2016-11-22 10:03:15 --> URI Class Initialized
+INFO - 2016-11-22 10:03:15 --> Language Class Initialized
+INFO - 2016-11-22 10:03:15 --> Router Class Initialized
+INFO - 2016-11-22 10:03:15 --> Loader Class Initialized
+INFO - 2016-11-22 10:03:15 --> Output Class Initialized
+DEBUG - 2016-11-22 10:03:15 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:15 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:15 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:15 --> Input Class Initialized
+INFO - 2016-11-22 10:03:15 --> Language Class Initialized
+INFO - 2016-11-22 10:03:15 --> Loader Class Initialized
+INFO - 2016-11-22 10:03:15 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:15 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+DEBUG - 2016-11-22 10:03:15 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:15 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:15 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:15 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:15 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:15 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:15 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:15 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:15 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:15 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:15 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:15 --> Total execution time: 0.1820
+INFO - 2016-11-22 10:03:15 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:15 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:15 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:15 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:15 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:15 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:15 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:15 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:15 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:15 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:15 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:15 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:15 --> Total execution time: 0.3090
+INFO - 2016-11-22 10:03:16 --> Config Class Initialized
+INFO - 2016-11-22 10:03:16 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:16 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:16 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:16 --> URI Class Initialized
+INFO - 2016-11-22 10:03:16 --> Router Class Initialized
+INFO - 2016-11-22 10:03:16 --> Output Class Initialized
+INFO - 2016-11-22 10:03:16 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:16 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:16 --> Input Class Initialized
+INFO - 2016-11-22 10:03:16 --> Language Class Initialized
+INFO - 2016-11-22 10:03:16 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:16 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:16 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:16 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:16 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:16 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:16 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:16 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:16 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:16 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:16 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:16 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:16 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:16 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/index.php
+INFO - 2016-11-22 10:03:16 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:16 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:16 --> Total execution time: 0.2120
+INFO - 2016-11-22 10:03:16 --> Config Class Initialized
+INFO - 2016-11-22 10:03:16 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:16 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:16 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:16 --> URI Class Initialized
+INFO - 2016-11-22 10:03:16 --> Router Class Initialized
+INFO - 2016-11-22 10:03:16 --> Output Class Initialized
+INFO - 2016-11-22 10:03:16 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:16 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:16 --> Input Class Initialized
+INFO - 2016-11-22 10:03:16 --> Language Class Initialized
+INFO - 2016-11-22 10:03:16 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:17 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:17 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:17 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:17 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:17 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:17 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:17 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:17 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\topo/list.php
+INFO - 2016-11-22 10:03:17 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:17 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:17 --> Total execution time: 0.2390
+INFO - 2016-11-22 10:03:17 --> Config Class Initialized
+INFO - 2016-11-22 10:03:17 --> Config Class Initialized
+INFO - 2016-11-22 10:03:17 --> Hooks Class Initialized
+INFO - 2016-11-22 10:03:17 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> UTF-8 Support Enabled
+DEBUG - 2016-11-22 10:03:17 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:17 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:17 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:17 --> URI Class Initialized
+INFO - 2016-11-22 10:03:17 --> URI Class Initialized
+INFO - 2016-11-22 10:03:17 --> Router Class Initialized
+INFO - 2016-11-22 10:03:17 --> Router Class Initialized
+INFO - 2016-11-22 10:03:17 --> Output Class Initialized
+INFO - 2016-11-22 10:03:17 --> Output Class Initialized
+INFO - 2016-11-22 10:03:17 --> Security Class Initialized
+INFO - 2016-11-22 10:03:17 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> Global POST, GET and COOKIE data sanitized
+DEBUG - 2016-11-22 10:03:17 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:17 --> Input Class Initialized
+INFO - 2016-11-22 10:03:17 --> Input Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language Class Initialized
+INFO - 2016-11-22 10:03:17 --> Loader Class Initialized
+INFO - 2016-11-22 10:03:17 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+DEBUG - 2016-11-22 10:03:17 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:17 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:17 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:17 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:17 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:17 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:17 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:17 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:17 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:17 --> Total execution time: 0.1750
+INFO - 2016-11-22 10:03:17 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:17 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:17 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:17 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:17 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:17 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:17 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:17 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:17 --> Total execution time: 0.3190
+INFO - 2016-11-22 10:03:17 --> Config Class Initialized
+INFO - 2016-11-22 10:03:17 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:17 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:17 --> URI Class Initialized
+INFO - 2016-11-22 10:03:17 --> Router Class Initialized
+INFO - 2016-11-22 10:03:17 --> Output Class Initialized
+INFO - 2016-11-22 10:03:17 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:17 --> Input Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language Class Initialized
+INFO - 2016-11-22 10:03:17 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:17 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:17 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:17 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:17 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:17 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:17 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:17 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:17 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:17 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:17 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:17 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\app/index.php
+INFO - 2016-11-22 10:03:17 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:17 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:17 --> Total execution time: 0.1770
+INFO - 2016-11-22 10:03:19 --> Config Class Initialized
+INFO - 2016-11-22 10:03:19 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:19 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:19 --> URI Class Initialized
+INFO - 2016-11-22 10:03:19 --> Router Class Initialized
+INFO - 2016-11-22 10:03:19 --> Output Class Initialized
+INFO - 2016-11-22 10:03:19 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:19 --> Input Class Initialized
+INFO - 2016-11-22 10:03:19 --> Language Class Initialized
+INFO - 2016-11-22 10:03:19 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:19 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:19 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:19 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:19 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:19 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:19 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:19 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:19 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:19 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:19 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:19 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:19 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\operationlog/index.php
+INFO - 2016-11-22 10:03:19 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:19 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:19 --> Total execution time: 0.1810
+INFO - 2016-11-22 10:03:19 --> Config Class Initialized
+INFO - 2016-11-22 10:03:19 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:19 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:19 --> URI Class Initialized
+INFO - 2016-11-22 10:03:19 --> Router Class Initialized
+INFO - 2016-11-22 10:03:19 --> Output Class Initialized
+INFO - 2016-11-22 10:03:19 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:19 --> Input Class Initialized
+INFO - 2016-11-22 10:03:19 --> Language Class Initialized
+INFO - 2016-11-22 10:03:19 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:19 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:19 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:19 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:19 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:19 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:19 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:19 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:19 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:19 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:19 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:19 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:19 --> Database Driver Class Initialized
+INFO - 2016-11-22 10:03:19 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:19 --> Total execution time: 0.1620
+INFO - 2016-11-22 10:03:20 --> Config Class Initialized
+INFO - 2016-11-22 10:03:20 --> Hooks Class Initialized
+DEBUG - 2016-11-22 10:03:20 --> UTF-8 Support Enabled
+INFO - 2016-11-22 10:03:20 --> Utf8 Class Initialized
+INFO - 2016-11-22 10:03:20 --> URI Class Initialized
+INFO - 2016-11-22 10:03:20 --> Router Class Initialized
+INFO - 2016-11-22 10:03:20 --> Output Class Initialized
+INFO - 2016-11-22 10:03:20 --> Security Class Initialized
+DEBUG - 2016-11-22 10:03:20 --> Global POST, GET and COOKIE data sanitized
+INFO - 2016-11-22 10:03:20 --> Input Class Initialized
+INFO - 2016-11-22 10:03:20 --> Language Class Initialized
+INFO - 2016-11-22 10:03:20 --> Loader Class Initialized
+DEBUG - 2016-11-22 10:03:20 --> Config file loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\config/errorcode.php
+INFO - 2016-11-22 10:03:20 --> Session: Class initialized using 'files' driver.
+DEBUG - 2016-11-22 10:03:20 --> Session class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:20 --> Session class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:20 --> Controller Class Initialized
+INFO - 2016-11-22 10:03:20 --> Parser Class Initialized
+INFO - 2016-11-22 10:03:20 --> Language file loaded: language/english/zh_cn_lang.php
+DEBUG - 2016-11-22 10:03:20 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:20 --> Encryption: Auto-configured driver 'openssl'.
+INFO - 2016-11-22 10:03:20 --> Encryption: OpenSSL initialized with method AES-128-CBC.
+INFO - 2016-11-22 10:03:20 --> Encryption Class Initialized
+INFO - 2016-11-22 10:03:20 --> Database Driver Class Initialized
+DEBUG - 2016-11-22 10:03:20 --> Login class already loaded. Second attempt ignored.
+DEBUG - 2016-11-22 10:03:20 --> Login class already loaded. Second attempt ignored.
+INFO - 2016-11-22 10:03:20 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\account/index.php
+INFO - 2016-11-22 10:03:20 --> File loaded: D:\workspace\cc\cc_openSource\cc_openSource\application\views\layout.php
+INFO - 2016-11-22 10:03:20 --> Final output sent to browser
+DEBUG - 2016-11-22 10:03:20 --> Total execution time: 0.1890

@@ -1,0 +1,166 @@
+/**
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
+body{
+	background: #eee url(/static/img/adminbg.jpg) no-repeat center 0;
+	background-size: 100% auto;
+	/*background: #fafafa;*/
+}
+.admin_module{
+	position: relative;
+	background: #fff;
+	/*border: 1px solid #ddd;*/
+}
+#navbar{
+	background: #fff;
+	/*background: rgba(255,255,255,.7); */
+	border-radius: 0;
+	border: none;
+	border-bottom: 1px solid #ddd;
+}
+#navbar .nav a{
+	color: #333;
+}
+#navbar .container{
+	position: relative;
+}
+#navbar .navbar-brand{
+	margin-left: 100px;
+	font-size: 18px;
+	font-weight: bold;
+	color: #333;
+}
+#navbar .sys_ad{
+	width: 250px;
+	position: absolute;
+	top: 120px;
+	left: 120px;
+
+}
+#navbar .logo {
+	background: url(/static/img/adminlogo.png) no-repeat;
+    display: inline-block;
+    height: 93px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 112px;
+    z-index: 151;
+}
+.link_list{
+	padding: 90px 0 50px 0;
+	text-align: center;
+	width: 105%;
+}
+.link_list a{
+	text-decoration: none;
+	display: inline-block;
+	width: 200px;
+	height: 70px;  border: 1px solid #ddd;
+	text-align: center;
+	line-height: 70px;
+	margin: 0 30px 15px 0;
+	font-weight: bold;
+	color: #fff;
+}
+.link_list a:last-child{
+	margin-right: 0;
+}
+.module_header {
+	position: relative;
+	height: 50px;
+	/*border-bottom: 1px solid #ddd;*/
+	position: absolute;
+	top: -50px;
+	left: 0;
+	width: 100%;
+
+}
+.module_header strong{
+	display: inline-block;
+	width: 100px;
+	height: 100px;
+	position: absolute;
+	left: 0;
+	right: 0;
+	margin: auto;
+	border-radius: 50%;
+	background: #ddd;
+	text-align: center;
+	line-height: 80px;
+	bottom: -40px;
+	border: 10px solid #fff;
+	font-size: 16px;
+
+	/*兼容ie8不支持圆角，用背景图片代替*/
+	width: 100px\9;
+	height: 100px\9;
+	border: none\9;
+	line-height: 100px\9;
+}
+
+#inter_module{
+	margin-top: 250px;
+	padding-bottom: 80px;
+}
+#inter_module .link_list a{
+	background: #3BAFDA;
+	color: #fff;
+	font-size: 14px;
+	border-color: #3BAFDA;
+}
+#inter_module .link_list a:hover{
+	background: #27A2CF;
+}
+#inter_module .link_list .special{
+	background: #4A89DC;
+	border-color: #4A89DC;
+}
+
+#inter_module .link_list .special:hover{
+	background: #3078D7;
+	border-color: #3078D7;
+}
+#inter_module .module_header strong{
+	background: #3BAFDA;
+	color: #fff;
+
+	/*兼容ie8不支持圆角，用背景图片代替*/
+	background: url(/static/img/blue_bg.jpg) no-repeat center center;
+}
+
+
+#qcloud_module{
+	/*margin-top: 100px;*/
+}
+#qcloud_module{
+	background:#eee;
+}
+#qcloud_module .link_list a{
+	background: #48C9A9;
+	border-color: #48C9A9;
+}
+#qcloud_module .link_list a:hover{
+	background: #30A487;
+	border-color: #30A487;
+}
+#qcloud_module .link_list .special{
+	background: #70CA63;
+	border-color: #70CA63;
+}
+#qcloud_module .link_list .special:hover{
+	background: #5BC24C;
+	border-color: #5BC24C;
+}
+#qcloud_module .module_header strong{
+	background: #48C9A9;
+	color: #fff;
+	border-color: #eee;
+
+    /*兼容ie8不支持圆角，用背景图片代替*/
+	background: url(/static/img/green_bg.jpg) no-repeat center center;
+}

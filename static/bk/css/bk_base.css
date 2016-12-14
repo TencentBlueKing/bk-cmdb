@@ -1,0 +1,191 @@
+/**
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
+.f12{font-size:12px !important;}
+.f13{font-size:13px !important;}
+.f14{font-size:14px !important;}
+.f16{font-size:16px !important;}
+.f20{font-size:20px !important;}
+.fb{font-weight:bold !important;}
+
+.fn{font-weight:normal !important;}
+.lh150{line-height:150% !important;}
+.lh180{line-height:180% !important;}
+.lh200{line-height:200% !important;}
+
+.unl{text-decoration:underline !important;}
+.no_unl{text-decoration:none !important;}
+
+.tl{text-align:left !important;}
+.tc{text-align:center !important;}
+.tr{text-align:right !important;}
+
+.bc{margin-left:auto !important;margin-right:auto !important;}
+.fl{float:left !important;}
+.fr{float:right !important;}
+.cb{clear:both !important;}
+.cl{clear:left !important;}
+.cr{clear:right !important;}
+.clearfix:after{content:'.';display:block;height:0;clear:both;visibility:hidden}
+.clearfix{display:inline-block;}
+*html .clearfix{height:1%}
+.clearfix{display:block;}
+.vm{vertical-align: middle; !important;}
+.pr{position:relative !important;}
+.pa{position:absolute !important;}
+.abs-right{position:absolute !important;}
+.zoom{zoom:1 }
+.hidden{visibility:hidden !important;}
+.none{display:none !important;}
+
+.w10{width:10px !important;}
+.w20{width:20px !important;}
+.w30{width:30px !important;}
+.w40{width:40px !important;}
+.w50{width:50px !important;}
+.w60{width:60px !important;}
+.w70{width:70px !important;}
+.w80{width:80px !important;}
+.w90{width:90px !important;}
+.w100{width:100px !important;}
+.w200{width:200px !important;}
+.w300{width:300px !important;}
+.w400{width:400px !important;}
+.w500{width:500px !important;}
+.w600{width:600px !important;}
+.w700{width:700px !important;}
+.w800{width:800px !important;}
+.w{width:100% !important;}
+
+.h50{height:50px !important;}
+.h80{height:80px !important;}
+.h100{height:100px !important;}
+.h200{height:200px !important;}
+.h{height:100% !important;}
+
+.m0{margin:0px !important;}
+.m10{margin:10px !important;}
+.m15{margin:15px !important;}
+.m20{margin:20px !important;}
+.m30{margin:30px !important;}
+.m35{margin:35px !important;}
+
+.mt0{margin-top:0px !important;}
+.mt5{margin-top:5px !important;}
+.mt10{margin-top:10px !important;}
+.mt15{margin-top:15px !important;}
+.mt20{margin-top:20px !important;}
+.mt30{margin-top:30px !important;}
+.mt50{margin-top:50px !important;}
+.mt100{margin-top:100px !important;}
+
+.mb0{margin-bottom:0px !important;}
+.mb5{margin-bottom:5px !important;}
+.mb10{margin-bottom:10px !important;}
+.mb15{margin-bottom:15px !important;}
+.mb20{margin-bottom:20px !important;}
+.mb30{margin-bottom:30px !important;}
+.mb50{margin-bottom:50px !important;}
+.mb100{margin-bottom:100px !important;}
+
+.ml0{margin-left:0px !important;}
+.ml5{margin-left:5px !important;}
+.ml10{margin-left:10px !important;}
+.ml15{margin-left:15px !important;}
+.ml20{margin-left:20px !important;}
+.ml30{margin-left:30px !important;}
+.ml50{margin-left:50px !important;}
+.ml100{margin-left:100px !important;}
+
+.mr0{margin-right:0px !important;}
+.mr5{margin-right:5px !important;}
+.mr10{margin-right:10px !important;}
+.mr15{margin-right:15px !important;}
+.mr20{margin-right:20px !important;}
+.mr30{margin-right:30px !important;}
+.mr50{margin-right:50px !important;}
+.mr100{margin-right:100px !important;}
+
+.p10{padding:10px !important;}
+.p15{padding:15px !important;}
+.p20{padding:20px !important;}
+.p25{padding:25px !important;}
+.p30{padding:30px !important;}
+
+.pt5{padding-top:5px !important;}
+.pt10{padding-top:10px !important;}
+.pt15{padding-top:15px !important;}
+.pt20{padding-top:20px !important;}
+.pt30{padding-top:30px !important;}
+.pt50{padding-top:50px !important;}
+.pt100{padding-top:100px !important;}
+
+.pb5{padding-bottom:5px !important;}
+.pb10{padding-bottom:10px !important;}
+.pb15{padding-bottom:15px !important;}
+.pb20{padding-bottom:20px !important;}
+.pb30{padding-bottom:30px !important;}
+.pb50{padding-bottom:50px !important;}
+.pb100{padding-bottom:100px !important;}
+
+.pl5{padding-left:5px !important;}
+.pl10{padding-left:10px !important;}
+.pl15{padding-left:15px !important;}
+.pl20{padding-left:20px !important;}
+.pl30{padding-left:30px !important;}
+.pl50{padding-left:50px !important;}
+.pl100{padding-left:100px !important;}
+
+.pr5{padding-right:5px !important;}
+.pr10{padding-right:10px !important;}
+.pr15{padding-right:15px !important;}
+.pr20{padding-right:20px !important;}
+.pr30{padding-right:30px !important;}
+.pr50{padding-right:50px !important;}
+.pr100{padding-right:100px !important;}
+
+.text-muted {
+    color: #999 !important;
+}
+.text-muted:hover {
+    color: #999 !important;
+}
+.text-info {
+    color: #69c !important;
+}
+.text-info:hover {
+    color: #69c !important;
+}
+.text-primary {
+    color: #09c !important;
+}
+.text-primary:hover {
+    color: #09c !important;
+}
+.text-success {
+    color: #090 !important;
+}
+.text-success:hover {
+    color: #090 !important;
+}
+.text-warning {
+    color: #f90 !important;
+}
+.text-warning:hover {
+    color: #f90 !important;
+}
+.text-danger {
+    color: #f00 !important;
+}
+.text-danger:hover {
+    color: #f00 !important;
+}
+.text-explode {
+    color: #ccc !important;
+    font-weight: normal !important;
+    margin: 0 4px !important;
+}

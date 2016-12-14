@@ -1,0 +1,101 @@
+.bk-dialog-box{
+	position: absolute;
+    z-index: 10240;
+    background: #fff;
+    border: 1px solid #ddd;
+    outline: 0;
+    background-clip: padding-box;
+    font-size: 14px;
+    color: #333;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.bk-dialog-mask{
+	opacity: 0; 
+	background: rgb(0, 0, 0); 
+	position: fixed; 
+	left: 0px; 
+	top: 0px; 
+	width: 100%; 
+	height: 100%; 
+	overflow: hidden; 
+	user-select: none; 
+	z-index: 1024;
+	display: none;
+}
+.bk-dialog-header{
+    border: 0 none;
+    text-align: left;
+    background: #f8f8f8;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 18px;
+    border-bottom: 1px solid #E5E5E5;
+}
+.bk-dialog-close{
+	position: relative;
+    float: right;
+    top: 7px;
+    right: 0;
+    padding: 0 4px;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    opacity: .7;
+    filter: alpha(opacity=70);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+.bk-dialog-title{
+	margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: bold;
+    cursor: default;
+    font-size: 12px;
+}
+.bk-dialog-content{
+	text-align: left;
+    padding: 20px;
+    min-width: 200px;
+}
+.bk-dialog-btn{
+	font-size: 12px;
+	width: auto;
+    overflow: visible;
+    display: inline-block;
+    margin-bottom: 0;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 18px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    min-width: 50px;
+}
+.bk-dialog-ok{
+	color: #ffffff;
+    background-color: #4A9BFF;
+    border-color: #2180F5;
+}
+.bk-dialog-cancel{
+	color: #333333;
+    background-color: #ffffff;
+    border-color: #cccccc;
+}
+.bk-dialog-footer{
+	padding: 0 20px 20px 20px;
+	text-align: right;
+}
