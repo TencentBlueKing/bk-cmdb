@@ -305,7 +305,7 @@ $config['cache_query_string'] = FALSE;
 | http://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = '200acbae10b1317394f2a1f99c77c0cb';
+$config['encryption_key'] = 'bkcmdb';
 
 /*
 |--------------------------------------------------------------------------
