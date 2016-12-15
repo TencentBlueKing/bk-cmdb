@@ -217,7 +217,11 @@ Copyright (c) 2008-2013 SpryMedia Limited  http://datatables.net
 12. jstree  3.1.1
 Copyright (c) 2014 Ivan Bozhanov
 
+13. Font Awesome 4.3.0
+Copyright davegandy - http://fontawesome.io 
 
+14. AdminLTE 2.2.0
+Copyright (c) 2014-2015 almasaeed2010
 
 Terms of the MIT License:
 --------------------------------------------------------------------
