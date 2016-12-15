@@ -87,7 +87,7 @@ server {
     define('COMPANY_NAME', '公司名称');        //当前公司名
     define('COOKIE_DOMAIN', '.bk.com');         //cookie访问域
   ```
-  * 执行数据初始化，切换目录到cc_openSource的根目录下执行/usr/local/php/bin/php index.php /cli/Init/initUserData
+  * 创建数据库，导入sql文件执行数据初始化，切换到工程根目录下执行php index.php /cli/Init/initUserData
   * 启动nginx与php-fpm
   * 配置hosts，使用 admin/blueking账号即可登录访问
 ### 现有功能简介
