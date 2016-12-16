@@ -90,7 +90,10 @@ server {
   * 创建数据库，导入sql文件执行数据初始化，切换到工程根目录下执行php index.php /cli/Init/initUserData
   * 启动nginx与php-fpm
   * 配置hosts，使用 admin/blueking账号即可登录访问
+  
+  
 ### 现有功能简介
+
 * 用户管理
 * 业务管理
 * 拓扑（集群、模块）管理
