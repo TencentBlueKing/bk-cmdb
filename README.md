@@ -9,8 +9,8 @@
 
   - 推荐采用nginx+php-fpm 的运行模式
   - php版本不低于5.6.9,nginx版本不低于1.8.0
-  - nginx编译参数（只需要编译pcre即可）  --with-pcre=
-  - php编译参数扩展 ./configure --prefix= -enable-fpm --with-mysql with-mysqli -with-curl -enable-pcnt -enable-mbregex --with-mhash -enable-zip --enable-mbstring --with-openssl
+  - nginx编译参数，需编译进pcre
+  - php编译参数扩展 ./configure --prefix= -enable-fpm，另还需要（mysql、curl、pcntl、mbregex、mhash、zip、mbstring、openssl）等扩展
 
 ### 包文件
 
