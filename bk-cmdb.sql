@@ -348,10 +348,10 @@ DROP TABLE IF EXISTS `cc_UserCustom`;
 CREATE TABLE `cc_UserCustom` (
   `UserName` varchar(16) NOT NULL default '',
   `DefaultApplication` int(11) NOT NULL default '0',
-  `DefaultColumn` text NOT NULL,
+  `DefaultColumn` text NOT NULL default '',
   `DefaultPageSize` int(2) NOT NULL default '20',
   `DefaultField` varchar(512) NOT NULL default '' COMMENT '主机查询字段',
-  `DefaultCon` text NOT NULL COMMENT '主机查询条件',
+  `DefaultCon` text NOT NULL default '' COMMENT '主机查询条件',
   `Description` varchar(256) NOT NULL default '',
   `SetGseCol` int(1) NOT NULL DEFAULT '0',
   PRIMARY KEY  (`UserName`)
