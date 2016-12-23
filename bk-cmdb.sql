@@ -19,7 +19,7 @@ CREATE TABLE `cc_ApplicationBase` (
   `Type` int(1) NOT NULL default '0',
   `Source` varchar(16) NOT NULL default '',
   `CompanyID` int(11) NOT NULL default '0',
-  `BusinessDeptName` varchar(64) NOT NULL,
+  `BusinessDeptName` varchar(64) NOT NULL default '',
   PRIMARY KEY  (`ApplicationID`),
   KEY `i_ApplicationName` (`ApplicationName`),
   KEY `i_Creator` (`Creator`),
