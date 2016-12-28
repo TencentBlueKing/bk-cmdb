@@ -43,8 +43,15 @@
             });
 
             dialogNode.find('.bk-dialog-ok').on('click', function(){
-                dialogOptions.ok && dialogOptions.ok();
-                _remove();
+                if (dialogOptions.ok){
+                    if (dialogOptions.ok() === false){
+                    }else{
+                        _remove();
+                    }
+                }else{
+                    _remove();
+                }
+
             });
 
             dialogNode.find('.bk-dialog-cancel').on('click', function(){
