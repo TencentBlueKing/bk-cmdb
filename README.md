@@ -81,6 +81,7 @@ server {
   - 根目录中index.php中配置环境类型为 (development/testing/production)之一。
   - db.php中配置数据访问
   - config.php中配置session访问目录，$config['sess_save_path'] = '/data/session',保证配置的session目录可读写
+  - 请保证此路径可读写 application/resource/upload/importPrivateHostByExcel，确保文件上传功能的正确性
   - 根据配置的环境类型找到对应的常量文件,例如前面环境类型配置的为 development 则在/config/development/constants.php中定义
  ```sh
     define('BASE_URL', 'http://cmdb.bk.com');   //访问主域名,务必带上http://
