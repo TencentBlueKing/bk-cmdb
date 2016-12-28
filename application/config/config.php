@@ -30,7 +30,7 @@ $config['upload_path'] = APPPATH.'/resource/upload/';
 |
 */
 $config['index_page'] = 'index.php';
-$config['time_zone']=date_default_timezone_set('Asia/shanghai');
+$config['time_zone']=date_default_timezone_set('Asia/Shanghai');
 /*
 |--------------------------------------------------------------------------
 | URI PROTOCOL
