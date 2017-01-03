@@ -23,8 +23,8 @@ if(!$app && $active !== '/app/index'){
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <link href="<?php echo STATIC_URL;?>/static/assets/jquery-ui-1.11.0.custom/jquery-ui.css?version=<?php echo $version;?>" rel="stylesheet">
     <link href="<?php echo STATIC_URL;?>/static/assets/bootstrap-3.3.4/css/bootstrap.min.css?version=<?php echo $version;?>" rel="stylesheet" type="text/css" />
-    <link href="//cdn.bootcss.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/2.2.0/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
+    <link href="<?php echo STATIC_URL;?>/static/assets/font-awesome/css/font-awesome.min.css?version=<?php echo $version;?>" rel="stylesheet" type="text/css" />
+    <link href="<?php echo STATIC_URL;?>/static/css/AdminLTE.min.css?>" rel="stylesheet" type="text/css" />
     <link href="<?php echo STATIC_URL;?>/static/css/skin-blue.min.css?version=<?php echo $version;?>" rel="stylesheet" type="text/css" />
     <link href="<?php echo STATIC_URL;?>/static/assets/mCustomScrollbar-3.0.9/jquery.mCustomScrollbar.css?version=<?php echo $version;?>" rel="stylesheet">
     <link href="<?php echo STATIC_URL;?>/static/bk/css/bk_base.css?version=<?php echo $version;?>" rel="stylesheet" type="text/css">
