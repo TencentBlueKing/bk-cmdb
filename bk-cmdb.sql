@@ -1,3 +1,6 @@
+DROP DATABASE cmdb IF  exists cmdb;
+CREATE DATABASE cmdb;
+USE cmdb;
 
 DROP TABLE IF EXISTS `cc_ApplicationBase`;
 CREATE TABLE `cc_ApplicationBase` (
