@@ -1,6 +1,6 @@
 # 蓝鲸智云配置平台的代码结构
 
-![bk-cmdb.png](docs/resource/img/code2.jpg) 
+![bk-cmdb.png](../resource/img/code2.jpg) 
 
 
 ## 1. web-server & ui
