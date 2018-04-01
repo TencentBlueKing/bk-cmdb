@@ -90,7 +90,7 @@ data 字段说明
 	- 中文： 删除模型属性（字段）
 	- English：delete the  object attribute 
 
-- input body
+- input body
 
     无
 
