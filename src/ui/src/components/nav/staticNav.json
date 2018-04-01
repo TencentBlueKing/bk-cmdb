@@ -1,0 +1,90 @@
+{
+    "globalbusi": {
+    "id": "globalbusi",
+    "name": "主机管理",
+    "icon": "icon-cc-business",
+    "international": "message.navBiz",
+    "authorized": true,
+    "isOpen": false,
+    "children": [{
+        "id": "index",
+        "name": "主机",
+        "international": "message.navBizHost",
+        "path": "/",
+        "authorized": true,
+        "authority": ["search", "create", "update", "delete"]
+    }, {
+        "id": "topology",
+        "name": "业务拓扑",
+        "international": "message.navBizTopo",
+        "path": "/topology",
+        "authorized": true,
+        "authority": ["search", "create", "update", "delete"]
+    }, {
+        "id": "process",
+        "name": "进程管理",
+        "international": "message.navProcess",
+        "path": "/process",
+        "authorized": true,
+        "authority": ["search", "create", "update", "delete"]
+    }, {
+        "id": "customQuery",
+        "name": "自定义查询",
+        "international": "message.navCustomQuery",
+        "path": "/customQuery",
+        "authorized": true,
+        "authority": ["search", "create", "update", "delete"]
+    }, {
+        "id": "resource",
+        "name": "主机资源池",
+        "international": "message.navGlobalHosts",
+        "path": "/resource",
+        "authorized": false,
+        "authority": ["search", "create", "update", "delete"]
+    }]
+},
+"backConfig": {
+    "id": "backConfig",
+    "name": "后台配置",
+    "icon": "icon-cc-setting",
+    "international": "message.navSystem",
+    "authorized": false,
+    "isOpen": false,
+    "children": [
+        {
+            "id": "model",
+            "name": "模型管理",
+            "international": "message.navSystemModel",
+            "path": "/model",
+            "authorized": false,
+            "authority": [
+                "search",
+                "create",
+                "update",
+                "delete"
+            ]
+        }, {
+            "id": "permission",
+            "name": "权限管理",
+            "international": "message.navPermissions",
+            "path": "/permission",
+            "authorized": false,
+            "authority": ["search", "create", "update", "delete"]
+        }, {
+            "id": "event",
+            "name": "事件推送",
+            "international": "message.navEventPush",
+            "path": "/eventpush",
+            "authorized": false,
+            "authority": ["search", "create", "update", "delete"]
+        }, {
+            "id": "audit",
+            "name": "操作审计",
+            "international": "message.navAuditing",
+            "path": "/auditing",
+            "authorized": false,
+            "authority": ["search", "create", "update", "delete"]
+        }
+    ]
+}
+}
