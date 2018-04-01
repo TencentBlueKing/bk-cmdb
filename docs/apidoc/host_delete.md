@@ -1,6 +1,4 @@
 
-[[toc]]
-
 ###  删除主机
 
 * API: DELETE /api/{version}/hosts/batch
