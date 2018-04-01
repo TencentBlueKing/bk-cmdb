@@ -1,5 +1,3 @@
-[toc]
-
 
 ### 新加收藏
 * API: POST /api/{version}/hosts/favorites
