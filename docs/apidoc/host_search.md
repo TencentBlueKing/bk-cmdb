@@ -1,4 +1,4 @@
-[[toc]]
+
 
 ###  根据条件查询主机
 *  API: POST /api/{version}/hosts/search
@@ -7,6 +7,7 @@
 	* 中文：根据条件查询主机
 	* English ：search host by condition
 * input body：
+
 ```
 {
     "ip":{
@@ -47,6 +48,7 @@
     "pattern":""
 }
 ```
+
 * input参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
@@ -55,6 +57,7 @@
 | condition|object | 否| 无|组合条件|comb condition|
 | page| object| 否| 无|查询条件|page condition for  search|
 | pattern| string| 否| 无|按表达式搜索|search by pattern condition|
+
 
 ip参数说明：
 
