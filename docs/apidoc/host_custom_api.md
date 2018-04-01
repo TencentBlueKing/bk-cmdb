@@ -72,6 +72,7 @@ info 参数说明：
 	* English ：update customize query
 
 *  input body:
+
 ```
 {
     "info":"{\"condition\":[{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[{\"field\":\"bk_host_innerip\",\"operator\":\"$eq\",\"value\":\"127.0.0.1\"}],\"fields\":[\"bk_host_innerip\",\"bk_host_outerip\",\"bk_agent_status\"]}]}",
@@ -92,7 +93,7 @@ info 参数说明：
 info 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | bk_obj_id| string| 否| 无|对象名,可以为biz,set,module,host,object|object name, it can be biz,set,module,host,object|
 | fields| string数组| 否| 无|查询输出字段|fields output|
 | condition| object array| 否| 无|查询条件|search condition|
@@ -100,7 +101,7 @@ info 参数说明：
 condition 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
 | value| string| 否| 无|字段对应的值|the value of field|
@@ -255,7 +256,7 @@ info 字段说明：
 info 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | bk_obj_id| string| 否| 无|对象名,可以为biz,set,module,host,object|object name, it can be biz,set,module,host,object|
 | fields| string数组| 否| 无|查询输出字段|fields output|
 | condition| object array| 否| 无|查询条件|search condition|
@@ -263,7 +264,7 @@ info 参数说明：
 condition 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
 | value| string| 否| 无|字段对应的值|the value of field|
