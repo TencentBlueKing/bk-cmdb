@@ -52,7 +52,7 @@
 * input参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---| 
 | ip| object| 否| 无|主机ip列表|ip condition|
 | condition|object | 否| 无|组合条件|comb condition|
 | page| object| 否| 无|查询条件|page condition for  search|
@@ -62,7 +62,7 @@
 ip参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | data | ip 数组| 否| 无|ip list for search| the list for search |
 | exact| int| 否| 无|是否根据ip精确搜索| is the exact query |
 | flag| string| 否| 空|bk_host_innerip只匹配内网ip,bk_host_outerip只匹配外网ip, bk_host_innerip,bk_host_outerip同时匹配|bk_host_innerip match lan ip,bk_host_outerip match wan ip|
@@ -70,7 +70,7 @@ ip参数说明：
 condition 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | bk_obj_id| string| 否| 无|对象名,可以为biz,set,module,host,object|object name, it can be biz,set,module,host,object|
 | fields| string数组| 否| 无|查询输出字段|fields output|
 | condition| object array| 否| 无|查询条件|search condition|
@@ -78,7 +78,7 @@ condition 参数说明：
 二级condition 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---|---|
+| ---  | ---  | --- |---  | --- | ---|
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
 | value| string| 否| 无|字段对应的值|the value of field|
@@ -88,7 +88,7 @@ condition 参数说明：
 page 参数说明：
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
-| ---  | ---  | --- |---  | --- | ---| ---|
+| ---  | ---  | --- |---  | --- | ---| 
 | start|int|是|无|记录开始位置 |start record|
 | limit|int|是|无|每页限制条数,最大200 |page limit, max is 200|
 | sort| string| 否| 无|排序字段|the field for sort|
