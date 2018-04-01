@@ -253,7 +253,7 @@ data 字段说明：
 - input 输入参数
 
 | 字段|类型|必填|默认值|Description|
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 |bk_biz_id|int|是|无|业务id|the business id|
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
 |bk_obj_id|string|是|无|对象模型的ID|the object identifier|
@@ -331,7 +331,7 @@ data 字段说明：
 - input 字段说明
 
 | 字段|类型|必填|默认值|说明Description|
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
 |bk_biz_id|int|是|无|业务ID|the business id|
 
