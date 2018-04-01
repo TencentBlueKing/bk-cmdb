@@ -114,7 +114,7 @@
 -  input字段说明
 
 |字段|类型|必填|默认值|说明|Description|
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
 
 
