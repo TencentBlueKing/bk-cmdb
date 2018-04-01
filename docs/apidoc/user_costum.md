@@ -1,6 +1,3 @@
-[toc]
-
-
 
 ### 保存用户字段配置
 * API:  POST /api/{version}/usercustom
