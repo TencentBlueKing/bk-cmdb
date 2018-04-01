@@ -82,6 +82,7 @@ condition 参数说明：
 | field| string| 否| 无|对象的字段|field of object|
 | operator| string| 否| 无|操作符, $eq为相等，$neq为不等，$in为属于，$nin为不属于|$eq is equal,$in is belongs, $nin is not belong,$neq is not equal|
 | value| string| 否| 无|字段对应的值|the value of field|
+
 可以指定特定的提交查询，例如设置biz 中default =1 查资源池下主机， BK_SUPPLIER_ID_FIELD= 查询开发商下主机
 
 
