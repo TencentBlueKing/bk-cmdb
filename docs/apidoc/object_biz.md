@@ -23,13 +23,14 @@
 
 - input 字段说明
 
-| 字段|类型|必填|默认值|说明|Description|
+|字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
 |bk_biz_name|string|是|无|业务名|the business name|
 |bk_biz_maintainer|string|否|无|运维人员|operation staff|
 |bk_biz_developer|string|否|无|开发人员|the developer|
 |bk_biz_tester|string|否|无|测试人员|the tester|
+
 **注：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段。**
 
 ### 删除业务
