@@ -44,7 +44,7 @@
 ## Support
 1. 参考bk-cmdb安装文档 [安装文档](docs/overview/installation.md)
 2. 阅读 [源码](https://github.com/Tencent/bk-cmdb/tree/master)
-3. 阅读 [wiki](https://github.com/Tencent/bk-cmdb/wiki) 或者寻求帮助
+3. 阅读 [wiki](https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) 或者寻求帮助
 4. 了解蓝鲸社区相关信息：[蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
 5. 联系我们，技术交流QQ群：
 
