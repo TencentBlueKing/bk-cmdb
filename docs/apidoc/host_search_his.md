@@ -20,6 +20,7 @@
 | 名称  | 类型 |必填| 默认值 | 说明 |Description|
 | ---  | ---  | --- |---  | --- | --- |
 | content| object| 是|无|主机查询条件 | host search condition content|
+
 content为对象
 
 * output
