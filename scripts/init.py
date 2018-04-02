@@ -323,7 +323,7 @@ def main(argv):
     mongo_port=27017
     mongo_user=''
     mongo_pass=''
-    cc_url='http://127.0.0.1:8083'
+    cc_url=''
     paas_url='http://127.0.0.1'
 
     server_ports={"cmdb_adminserver":60004,"cmdb_apiserver":8080,\
