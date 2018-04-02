@@ -441,7 +441,7 @@ def main(argv):
         print  'please input the mongo password'
         sys.exit()
     if 0 == len(cc_url):
-        print 'please input the cc url'
+        print 'please input the blueking cmdb url'
         sys.exit()
     if 0 == len(paas_url):
         print 'please input the blueking paas url'
