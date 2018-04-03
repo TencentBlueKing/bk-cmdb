@@ -152,10 +152,11 @@ const dictionary = {
             // ipAddress: () => '请输入正确的IP地址',
             // commonName: () => '请输入正确的名称',
             required: (field) => '请输入' + field,
-            numeric: (field) => '请输入数字'
+            numeric: (field) => '请输入数字',
+            regex: (field) => field + '不合法'
         },
         attributes: {
-            name: '中文名',
+            // name: '中文名',
             id: '英文名'
             // lifeCycle: '生命周期',
             // maintainers: '运维人员',

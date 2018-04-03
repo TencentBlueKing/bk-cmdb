@@ -71,10 +71,10 @@
                             data-vv-name="该字段"
                             v-validate="'required'"
                         >
-                        <input type="number" class="bk-form-input number" placeholder="成功标志"
+                        <input type="text" class="bk-form-input number" placeholder="成功标志"
                             v-else
                             v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
-                            v-validate="'required|numeric'"
+                            v-validate="{required: true, regex: /^[0-9]+$/}"
                             data-vv-name="该字段"
                         >
                         <span v-show="errors.has('该字段')" class="color-danger">{{ errors.first('该字段') }}</span>
@@ -85,10 +85,11 @@
                         超时时间<span class="color-danger">*</span>
                     </label>
                     <div class="item-content length-short">
-                        <input type="number" class="bk-form-input" placeholder="单位：秒"
+                        <input type="text" class="bk-form-input" placeholder="单位：秒"
                             v-model.trim="tempEventData['time_out']"
-                            v-validate="'required'"
+                            v-validate="{required: true, regex: /^[0-9]+$/}"
                             data-vv-name="超时时间"
+                            maxlength="10"
                         ><span class="unit">S</span>
                         <div v-show="errors.has('超时时间')" class="color-danger">{{ errors.first('超时时间') }}</div>
                     </div>
@@ -393,12 +394,12 @@
                                 this.$alertMsg('保存成功', 'success')
                                 this.eventData = {...this.tempEventData}
                                 if (this.type === 'add') {
-                                    this.$emit('saveSuccess', res.data['id'])
+                                    this.$emit('saveSuccess', res.data['subscription_id'])
                                 } else {
                                     this.$emit('saveSuccess')
                                 }
                             } else {
-                                this.$alertMsg('保存失败')
+                                this.$alertMsg(res['bk_error_msg'])
                             }
                         })
                     }

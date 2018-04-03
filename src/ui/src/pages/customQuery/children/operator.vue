@@ -32,7 +32,8 @@
                 typeMap: {
                     'default': '$eq,$ne',
                     'singlechar': '$regex,$eq,$ne',
-                    'longchar': '$regex,$eq,$ne'
+                    'longchar': '$regex,$eq,$ne',
+                    'objuser': '$regex,$eq,$ne'
                 },
                 operatorMap: {
                     '$nin': '不包含',

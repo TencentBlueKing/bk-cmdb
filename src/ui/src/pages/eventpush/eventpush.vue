@@ -14,16 +14,22 @@
             <bk-button type="primary" @click="addPush">新增推送</bk-button>
         </div>
         <v-table
-            @resetTablePage="getTableListAfterPageSetting"
-            :paging="paging"
-            :hasCheckbox="false"
-            :tableHeader="tableHeader"
-            :tableList="tableList"
-            @editEvent="editEvent"
-            @delEvent="delConfirm"
-            @pageTuring="getTableList"
-            @handleTableSortClick="handleTableSortClick"
-        >
+            :tableHeader="table.header"
+            :tableList="table.list"
+            :defaultSort="table.defaultSort"
+            :pagination="table.pagination"
+            :isLoading="table.isLoading"
+            @handlePageTurning="setCurrentPage"
+            @handlePageSizeChange="setCurrentSize"
+            @handleTableSortClick="setCurrentSort">
+                <td slot="statistics" slot-scope="{ item }">
+                    <i class="circle" :class="[{'danger':item.statistics.failure},{'success':!item.statistics.failure}]"></i>
+                    失败 {{item.statistics.failure}} / 总量 {{item.statistics.total}}
+                </td>
+                <td slot="setting" slot-scope="{ item }">
+                    <i class="icon-cc-edit mr20" @click="editEvent(item)"></i>
+                    <i class="icon-cc-del" @click="delConfirm(item)"></i>
+                </td>
         </v-table>
         <v-sideslider
             :title="sliderTitle"
@@ -44,7 +50,7 @@
 </template>
 
 <script>
-    import vTable from '@/components/table/table2'
+    import vTable from '@/components/table/table'
     import vSideslider from '@/components/slider/sideslider'
     import vPushDetail from './children/pushDetail.vue'
     import {mapGetters} from 'vuex'
@@ -58,37 +64,37 @@
                     text: '新增推送',
                     icon: 'icon-cc-edit'
                 },
-                paging: {
-                    sort: '-ID'
-                },
-                tableHeader: [
-                    {
+                table: {
+                    header: [{
                         id: 'subscription_name',
-                        name: '名称'
-                    },
-                    {
+                        name: '推送名称'
+                    }, {
                         id: 'system_name',
-                        name: '系统'
-                    },
-                    {
+                        name: '系统名称'
+                    }, {
                         id: 'operator',
-                        name: '更新人'
-                    },
-                    {
+                        name: '操作人'
+                    }, {
                         id: 'last_time',
                         name: '更新时间'
+                    }, {
+                        id: 'statistics',
+                        name: '推送情况（近一周）',
+                        sortable: false
+                    }, {
+                        id: 'setting',
+                        name: '配置',
+                        sortable: false
+                    }],
+                    list: [],
+                    pagination: {
+                        current: 1,
+                        count: 0,
+                        size: 10
                     },
-                    {
-                        id: '__slot__eventpush__statistics',
-                        name: '推送情况（近一周）'
-                    },
-                    {
-                        id: '__slot__eventpush__setting',
-                        name: '配置'
-                    }
-                ],
-                tableList: [],
-                pageLimit: 10
+                    defaultSort: '-last_time',
+                    sort: '-last_time'
+                }
             }
         },
         computed: {
@@ -100,16 +106,15 @@
             /*
                 获取推送列表
             */
-            getTableList (index) {
-                if (!index) {
-                    index = 1
-                }
+            getTableList () {
                 let appid = 0
+                let pagination = this.table.pagination
+                this.table.isLoading = true
                 this.$axios.post(`event/subscribe/search/${this.bkSupplierAccount}/${appid}`, {
                     page: {
-                        start: (index - 1) * this.pageLimit,
-                        limit: this.pageLimit,
-                        sort: this.paging.sort
+                        start: (pagination.current - 1) * pagination.size,
+                        limit: pagination.size,
+                        sort: this.table.sort
                     }
                 }).then(res => {
                     if (res.result) {
@@ -118,24 +123,20 @@
                             val['last_time'] = this.$formatTime(val['last_time'])
                         })
                         
-                        this.tableList = res.data.info
-                        this.paging = {
-                            current: index,
-                            showItem: this.pageLimit,
-                            totalPage: Math.ceil(res.data.count / this.pageLimit),
-                            count: res.data.count,
-                            sort: this.paging.sort
-                        }
+                        this.table.list = res.data.info
+                        pagination.count = res.data.count
                     } else {
                         this.$alertMsg('获取推送列表失败')
                     }
+                    this.table.isLoading = false
+                }).catch(() => {
+                    this.table.isLoading = false
                 })
             },
             /*
                 编辑某一项事件推送
             */
             editEvent (item) {
-                // 记录当前操作项
                 this.curEvent = {...item}
                 this.isSliderShow = true
                 this.operationType = 'edit'
@@ -148,9 +149,9 @@
                 if (this.operationType === 'add') {
                     this.operationType = 'edit'
                     this.curEvent['subscription_id'] = id
-                    this.getTableList()
+                    this.setCurrentPage(1)
                 } else {
-                    this.getTableList(this.paging.current)
+                    this.getTableList()
                 }
             },
             /*
@@ -175,7 +176,7 @@
                 this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${appid}/${item['subscription_id']}`).then(res => {
                     if (res.result) {
                         this.$alertMsg('删除推送成功', 'success')
-                        this.getTableList(this.paging.current)
+                        this.getTableList()
                     } else {
                         this.$alertMsg('删除推送失败')
                     }
@@ -195,19 +196,19 @@
             closeSlider () {
                 this.isSliderShow = false
             },
-            handleTableSortClick (sort) {
-                if (sort.indexOf('__slot__') === -1) {
-                    this.paging.sort = sort
-                    this.getTableList()
-                }
-            },
-            /*
-                设置分页后重新获取表格数据
-            */
-            getTableListAfterPageSetting (page) {
-                this.pageLimit = page
+            setCurrentPage (current) {
+                this.table.pagination.current = current
                 this.getTableList()
+            },
+            setCurrentSize (size) {
+                this.table.pagination.size = size
+                this.setCurrentPage(1)
+            },
+            setCurrentSort (sort) {
+                this.table.sort = sort
+                this.setCurrentPage(1)
             }
+            
         },
         mounted () {
             this.getTableList()
@@ -231,6 +232,20 @@
                 width: 124px;
                 height: 36px;
             }
+        }
+    }
+    .circle{
+        display: inline-block;
+        vertical-align: baseline;
+        width: 8px;
+        height: 8px;
+        margin-right: 5px;
+        border-radius: 50%;
+        &.success{
+            background: #30d878;
+        }
+        &.danger{
+            background: #ef4c4c;
         }
     }
 </style>

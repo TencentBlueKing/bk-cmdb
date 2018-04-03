@@ -30,7 +30,6 @@
 |bk_biz_maintainer|string|否|无|运维人员|operation staff|
 |bk_biz_developer|string|否|无|开发人员|the developer|
 |bk_biz_tester|string|否|无|测试人员|the tester|
-
 **注：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段。**
 
 ### 删除业务

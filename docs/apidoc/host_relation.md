@@ -1,5 +1,4 @@
 
-
 ###  新增主机
 * API: POST /api/{version}/hosts/add
 * API名称： add_host_to_resource

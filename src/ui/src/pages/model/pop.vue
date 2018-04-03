@@ -22,9 +22,9 @@
                             <input type="text" class="bk-form-input" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
-                            name="name"
+                            data-vv-name="中文名"
                             v-validate="'required|name'">
-                            <span v-show="errors.has('name')" class="help is-danger">{{ errors.first('name') }}</span>
+                            <span v-show="errors.has('中文名')" class="help is-danger">{{ errors.first('中文名') }}</span>
                         </li> 
                         <li class="content-item">
                             <label for="">英文名<span class="color-danger">*</span></label>
