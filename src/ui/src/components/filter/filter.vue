@@ -42,7 +42,10 @@
                     <div class="title tl">收藏此查询</div>
                     <form id="validate-form">
                         <div class="input-box tl">
-                            <input type="text" placeholder="请填写名称" v-model.trim="tab.screening.collectName">
+                            <input type="text" placeholder="请填写名称" v-model.trim="tab.screening.collectName"
+                            data-vv-name="名称"
+                            v-validate="'required|name'">
+                            <span v-show="errors.has('名称')" class="help is-danger">{{ errors.first('名称') }}</span>
                         </div>
                     </form>
                     <div class="collect-list">
@@ -181,13 +184,17 @@
                 this.tab.screening.collectName = ''
             },
             makeSureCollect () {
-                this.$axios.post('hosts/favorites', this.getCollectParams()).then(res => {
-                    if (res.result) {
-                        this.$alertMsg('收藏成功', 'success')
-                        this.tab.screening.isCollecting = false
-                        this.updateFavoriteCount(res.data.id)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                this.$validator.validateAll().then(res => {
+                    if (res) {
+                        this.$axios.post('hosts/favorites', this.getCollectParams()).then(res => {
+                            if (res.result) {
+                                this.$alertMsg('收藏成功', 'success')
+                                this.hideCollectBox()
+                                this.updateFavoriteCount(res.data.id)
+                            } else {
+                                this.$alertMsg(res['bk_error_msg'])
+                            }
+                        })
                     }
                 })
             },

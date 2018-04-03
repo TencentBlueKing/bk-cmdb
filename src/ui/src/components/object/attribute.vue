@@ -518,6 +518,9 @@
                         rules['regex'] = option
                     }
                 }
+                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    rules['name'] = true
+                }
                 return rules
             },
             submit () {

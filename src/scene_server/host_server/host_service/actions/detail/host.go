@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package detail
 
 import (
@@ -152,8 +152,9 @@ func (cli *hostAction) HostSnapInfo(req *restful.Request, resp *restful.Response
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSnap)
 
 		} else {
-			snap, _ := output["data"].(string)
-			if "" != snap {
+			snap, err := js.Get("data").Get("data").String()
+
+			if nil == err && "" != snap {
 				ret, err := logics.ParseHostSnap(snap)
 				if nil != err {
 					blog.Error("query host snapshot   error, error:%s", string(reply))
@@ -162,6 +163,8 @@ func (cli *hostAction) HostSnapInfo(req *restful.Request, resp *restful.Response
 				} else {
 					return http.StatusOK, ret, nil
 				}
+
+				return http.StatusOK, "", nil
 
 			} else {
 				return http.StatusOK, "", nil
