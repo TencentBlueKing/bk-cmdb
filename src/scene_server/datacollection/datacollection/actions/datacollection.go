@@ -50,11 +50,14 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	if nil != err {
 		return err
 	}
-	chanName, err := getChanName()
-	if nil != err {
-		blog.Errorf("get channame faile,: %v, please init databae first ", err)
-		go d.AutoExectueAction(config)
-		return nil
+	chanName := ""
+	for {
+		chanName, err = getChanName()
+		if nil == err {
+			break
+		}
+		blog.Errorf("get channame faile: %v, please init databae firs, we will try 10 second later", err)
+		time.Sleep(time.Second * 10)
 	}
 
 	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli)
