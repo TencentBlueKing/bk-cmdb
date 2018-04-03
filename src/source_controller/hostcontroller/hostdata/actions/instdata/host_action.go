@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
@@ -159,13 +159,14 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
 		data := common.KvMap{"key": dcCommon.REDIS_SNAP_KEY_PREFIX + hostID}
-		var result interface{}
+		var result interface{} = ""
 		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
+
 		if err != nil {
 			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
 		}
-		return http.StatusOK, result, nil
+		return http.StatusOK, common.KvMap{"data": result}, nil
 	}, resp)
 }
 

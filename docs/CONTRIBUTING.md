@@ -12,7 +12,7 @@
 
 
 
-### [分支管理](https://github.com/Tencent/bk-cmdb/blob/master/docs/VERSION.md)
+### [分支管理](./VERSION.md)
 
 
 
