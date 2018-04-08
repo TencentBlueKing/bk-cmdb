@@ -69,14 +69,14 @@ func init() {
 
 func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
 
-	nonExistsFiled := make([]string, 0)
+	nonExistsFiled := make([]api.ObjAttDes, 0)
+	ignorItems := make([]string, 0)
 	for _, item := range attDes {
 		if _, ok := targetInput[item.PropertyID]; !ok {
-			nonExistsFiled = append(nonExistsFiled, item.PropertyID)
+			nonExistsFiled = append(nonExistsFiled, item)
+			ignorItems = append(ignorItems, item.PropertyID)
 		}
 	}
-
-	ignorItems := nonExistsFiled
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
@@ -103,32 +103,19 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 		input = targetInput
 
 		// set the nonexist
-		for _, j := range attDes {
+		for _, j := range nonExistsFiled {
 			propertyID := j.PropertyID
 			fieldType := j.PropertyType
-			if j.IsReadOnly {
-				continue
-			}
 			switch fieldType {
 			case common.FiledTypeSingleChar:
-				input[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
+				input[propertyID] = ""
 			case common.FiledTypeLongChar:
-				input[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-			case common.FiledTypeInt:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-			case common.FiledTypeEnum:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-			case common.FiledTypeDate:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-			case common.FiledTypeTime:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-			case common.FiledTypeUser:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
+				input[propertyID] = ""
 			default:
-				input[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-				continue
+				input[propertyID] = nil
 			}
 		}
+
 	case errors.CCErrorCoder:
 		if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
 
