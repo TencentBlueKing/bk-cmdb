@@ -336,9 +336,6 @@ func GetObjectFields(ownerID, objID, ObjAddr string) map[string]map[string]inter
 	for _, j := range result {
 		propertyID := j.PropertyID
 		fieldType := j.PropertyType
-		if j.IsReadOnly {
-			continue
-		}
 		switch fieldType {
 		case common.FiledTypeSingleChar:
 			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
