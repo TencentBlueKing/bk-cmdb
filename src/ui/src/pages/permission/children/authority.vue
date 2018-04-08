@@ -10,116 +10,189 @@
 
 <template>
     <div class="authority-wrapper">
-        <div class="authority-group clearfix">
-            <h2 class="authority-group-title fl">角色选择</h2>
-            <bk-select class="role-selector fl" :selected.sync="localRoles.selected" @on-selected="checkIsAdmin">
-                <bk-select-option v-for="(role, index) in localRoles.list"
-                    :key="index"
-                    :value="role['group_id']"
-                    :label="role['group_name']"
-                ></bk-select-option>
-            </bk-select>
-        </div>
-        <div class="authority-group clearfix">
-            <h2 class="authority-group-title fl">系统相关</h2>
-            <div class="authority-group-content">
-                <div class="authority-type system clearfix" 
-                    v-for="(config, configId) in sysConfig" 
-                    v-if="config.authorities.length">
-                    <h3 class="system-title fl">{{config.name}}</h3>
-                    <ul class="system-list clearfix">
-                        <li class="system-item fl"  v-for="authority in config.authorities">
-                            <label class="bk-form-checkbox bk-checkbox-small"
-                                :class="{'disabled': isAdmin}"
-                                :for="'systemAuth-' + authority.id" 
-                                :title="authority.name"
-                                @click="updateGroupAuthorities">
-                                <input type="checkbox"
-                                    :disabled="isAdmin"
-                                    :id="'systemAuth-' + authority.id" 
-                                    :value="authority.id"
-                                    v-model="config.selectedAuthorities">{{authority.name}}
-                            </label>
-                        </li>
-                    </ul>
-                </div>
+        <template v-if="roles.length">
+            <div class="authority-group clearfix">
+                <h2 class="authority-group-title fl">角色选择</h2>
+                <bk-select class="role-selector fl" :selected.sync="localRoles.selected">
+                    <bk-select-option v-for="(role, index) in localRoles.list"
+                        :key="index"
+                        :value="role['group_id']"
+                        :label="role['group_name']"
+                    ></bk-select-option>
+                </bk-select>
             </div>
-        </div>
-        <div class="authority-group model clearfix" style="margin-top:14px;">
-            <h2 class="authority-group-title"><span>模型相关</span></h2>
-            <div class="authority-group-content">
-                <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" v-if="classify.models.length"> 
-                    <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
-                        <span class="fl">{{classify.name}}</span>
-                        <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
-                    </h3>
-                    <transition name="slide">
-                        <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
-                            <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models">
-                                <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
-                                <span class="model-authority-checkbox fl">
-                                    <label class="bk-form-checkbox bk-checkbox-small"
-                                        :class="{'disabled': isAdmin}"
-                                        :for="'model-all-'+model['bk_obj_id']" 
-                                        @click="updateGroupAuthorities">
-                                        <input type="checkbox"
-                                            :disabled="isAdmin" 
-                                            :id="'model-all-'+model['bk_obj_id']" 
-                                            :checked="model.selectedAuthorities.length === 4"
-                                            @change="checkAllModelAuthorities(classifyIndex,modelIndex)">全选
-                                    </label>
-                                </span>
-                                <span class="model-authority-checkbox fl">
-                                    <label class="bk-form-checkbox bk-checkbox-small"
-                                        :class="{'disabled': isAdmin}"
-                                        :for="'model-search-'+model['bk_obj_id']"
-                                        @click="updateGroupAuthorities">
-                                        <input type="checkbox" value='search' 
-                                            :disabled="isAdmin"
-                                            :id="'model-search-'+model['bk_obj_id']" 
-                                            v-model="model.selectedAuthorities"
-                                            @change="checkOtherAuthorities(classifyIndex,modelIndex)">查询
-                                    </label>
-                                </span>
-                                <span class="model-authority-checkbox fl">
-                                    <label class="bk-form-checkbox bk-checkbox-small"
-                                        :for="'model-create-'+model['bk_obj_id']" 
-                                        :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1 || isAdmin}"
-                                        @click="updateGroupAuthorities">
-                                        <input type="checkbox" value='create' 
-                                            :id="'model-create-'+model['bk_obj_id']"
-                                            :disabled="model.selectedAuthorities.indexOf('search') === -1 || isAdmin"
-                                            v-model="model.selectedAuthorities">新增
-                                    </label>
-                                </span>
-                                <span class="model-authority-checkbox fl">
-                                    <label class="bk-form-checkbox bk-checkbox-small" 
-                                        :for="'model-update-'+model['bk_obj_id']" 
-                                        :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1 || isAdmin}"
-                                        @click="updateGroupAuthorities">
-                                        <input type="checkbox" value='update' 
-                                            :id="'model-update-'+model['bk_obj_id']"
-                                            :disabled="model.selectedAuthorities.indexOf('search') === -1 || isAdmin"  
-                                            v-model="model.selectedAuthorities">编辑
-                                    </label>
-                                </span>
-                                <span class="model-authority-checkbox fl">
-                                    <label class="bk-form-checkbox bk-checkbox-small" 
-                                        :for="'model-delete-'+model['bk_obj_id']" 
-                                        :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1 || isAdmin}"
-                                        @click="updateGroupAuthorities">
-                                        <input type="checkbox" value='delete' 
-                                            :id="'model-delete-'+model['bk_obj_id']"
-                                            :disabled="model.selectedAuthorities.indexOf('search') === -1 || isAdmin" 
-                                            v-model="model.selectedAuthorities">删除
-                                    </label>
-                                </span>
+            <div class="authority-group clearfix">
+                <h2 class="authority-group-title fl">系统相关</h2>
+                <div class="authority-group-content">
+                    <div class="authority-type system clearfix" 
+                        v-for="(config, configId) in sysConfig" 
+                        v-if="config.authorities.length">
+                        <h3 class="system-title fl">{{config.name}}</h3>
+                        <ul class="system-list clearfix">
+                            <li class="system-item fl"  v-for="authority in config.authorities">
+                                <label class="bk-form-checkbox bk-checkbox-small"
+                                    :for="'systemAuth-' + authority.id" 
+                                    :title="authority.name"
+                                    @click="updateGroupAuthorities">
+                                    <input type="checkbox"
+                                        :id="'systemAuth-' + authority.id" 
+                                        :value="authority.id"
+                                        v-model="config.selectedAuthorities">{{authority.name}}
+                                </label>
                             </li>
                         </ul>
-                    </transition>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="authority-group model clearfix" style="margin-top:14px;">
+                <h2 class="authority-group-title"><span>模型相关</span></h2>
+                <div class="authority-group-content">
+                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" v-if="classify.models.length"> 
+                        <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
+                            <span class="fl">{{classify.name}}</span>
+                            <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
+                        </h3>
+                        <transition name="slide">
+                            <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
+                                <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models">
+                                    <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="bk-form-checkbox bk-checkbox-small"
+                                            :for="'model-all-'+model['bk_obj_id']" 
+                                            @click="updateGroupAuthorities">
+                                            <input type="checkbox"
+                                                :id="'model-all-'+model['bk_obj_id']" 
+                                                :checked="model.selectedAuthorities.length === 4"
+                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">全选
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="bk-form-checkbox bk-checkbox-small"
+                                            :for="'model-search-'+model['bk_obj_id']"
+                                            @click="updateGroupAuthorities">
+                                            <input type="checkbox" value='search' 
+                                                :id="'model-search-'+model['bk_obj_id']" 
+                                                v-model="model.selectedAuthorities"
+                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">查询
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="bk-form-checkbox bk-checkbox-small"
+                                            :for="'model-create-'+model['bk_obj_id']" 
+                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                            @click="updateGroupAuthorities">
+                                            <input type="checkbox" value='create' 
+                                                :id="'model-create-'+model['bk_obj_id']"
+                                                :disabled="model.selectedAuthorities.indexOf('search') === -1"
+                                                v-model="model.selectedAuthorities">新增
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="bk-form-checkbox bk-checkbox-small" 
+                                            :for="'model-update-'+model['bk_obj_id']" 
+                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                            @click="updateGroupAuthorities">
+                                            <input type="checkbox" value='update' 
+                                                :id="'model-update-'+model['bk_obj_id']"
+                                                :disabled="model.selectedAuthorities.indexOf('search') === -1"  
+                                                v-model="model.selectedAuthorities">编辑
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="bk-form-checkbox bk-checkbox-small" 
+                                            :for="'model-delete-'+model['bk_obj_id']" 
+                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                            @click="updateGroupAuthorities">
+                                            <input type="checkbox" value='delete' 
+                                                :id="'model-delete-'+model['bk_obj_id']"
+                                                :disabled="model.selectedAuthorities.indexOf('search') === -1" 
+                                                v-model="model.selectedAuthorities">删除
+                                        </label>
+                                    </span>
+                                </li>
+                            </ul>
+                        </transition>
+                    </div>
+                </div>
+                <div class="authority-group model clearfix" style="margin-top:14px;">
+                    <h2 class="authority-group-title"><span>模型相关</span></h2>
+                    <div class="authority-group-content">
+                        <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" v-if="classify.models.length"> 
+                            <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
+                                <span class="fl">{{classify.name}}</span>
+                                <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
+                            </h3>
+                            <transition name="slide">
+                                <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
+                                    <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models">
+                                        <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="bk-form-checkbox bk-checkbox-small"
+                                                :for="'model-all-'+model['bk_obj_id']" 
+                                                @click="updateGroupAuthorities">
+                                                <input type="checkbox"
+                                                    :id="'model-all-'+model['bk_obj_id']" 
+                                                    :checked="model.selectedAuthorities.length === 4"
+                                                    @change="checkAllModelAuthorities(classifyIndex,modelIndex)">全选
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="bk-form-checkbox bk-checkbox-small"
+                                                :for="'model-search-'+model['bk_obj_id']"
+                                                @click="updateGroupAuthorities">
+                                                <input type="checkbox" value='search' 
+                                                    :id="'model-search-'+model['bk_obj_id']" 
+                                                    v-model="model.selectedAuthorities"
+                                                    @change="checkOtherAuthorities(classifyIndex,modelIndex)">查询
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="bk-form-checkbox bk-checkbox-small"
+                                                :for="'model-create-'+model['bk_obj_id']" 
+                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                                @click="updateGroupAuthorities">
+                                                <input type="checkbox" value='create' 
+                                                    :id="'model-create-'+model['bk_obj_id']"
+                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1"
+                                                    v-model="model.selectedAuthorities">新增
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="bk-form-checkbox bk-checkbox-small" 
+                                                :for="'model-update-'+model['bk_obj_id']" 
+                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                                @click="updateGroupAuthorities">
+                                                <input type="checkbox" value='update' 
+                                                    :id="'model-update-'+model['bk_obj_id']"
+                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1"  
+                                                    v-model="model.selectedAuthorities">编辑
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="bk-form-checkbox bk-checkbox-small" 
+                                                :for="'model-delete-'+model['bk_obj_id']" 
+                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
+                                                @click="updateGroupAuthorities">
+                                                <input type="checkbox" value='delete' 
+                                                    :id="'model-delete-'+model['bk_obj_id']"
+                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1" 
+                                                    v-model="model.selectedAuthorities">删除
+                                            </label>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </transition>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template v-else>
+            <div class="user-none">
+                <img src="../../../common/images/user-none.png" alt="没有创建角色">
+                <p>没有创建角色</p>
+            </div>
+        </template>
     </div>
 </template>
 
@@ -142,7 +215,6 @@
                     list: [],
                     selected: ''
                 },
-                isAdmin: false, // 当前是否选择了管理员
                 sysConfig: {
                     global_busi: {
                         id: 'global_busi',
@@ -203,7 +275,6 @@
             activeGroup (group) {
                 if (JSON.stringify(group) !== '{}') {
                     this.localRoles.selected = group['group_id']
-                    this.isAdmin = group['group_name'] === 'admin'
                 }
             },
             roles (roles) {
@@ -215,20 +286,16 @@
                         this.localRoles.list.map((role) => {
                             if (this.localRoles.selected === role['group_id']) {
                                 isRoleDeleted = false
-                                this.isAdmin = role['group_name'] === 'admin'
                             }
                         })
                         if (isRoleDeleted) {
                             this.localRoles.selected = this.localRoles.list[0]['group_id']
-                            this.isAdmin = this.localRoles.list[0]['group_name'] === 'admin'
                         }
                     } else {
                         this.localRoles.selected = this.localRoles.list[0]['group_id']
-                        this.isAdmin = this.localRoles.list[0]['group_name'] === 'admin'
                     }
                 } else {
                     this.localRoles.selected = ''
-                    this.isAdmin = false
                 }
             },
             allClassify () {
@@ -245,9 +312,6 @@
             }
         },
         methods: {
-            checkIsAdmin (role, index) {
-                this.isAdmin = role.label === 'admin'
-            },
             getGroupAuthorities (groupID) {
                 this.$axios.get(`topo/privilege/group/detail/${this.bkSupplierAccount}/${groupID}`).then((res) => {
                     if (res.result) {
@@ -261,23 +325,18 @@
             },
             // 勾选后直接发起请求，并做函数节流
             updateGroupAuthorities: Throttle(function () {
-                if (!this.isAdmin) {
-                    this.$nextTick(() => {
-                        this.$axios.post(`topo/privilege/group/detail/${this.bkSupplierAccount}/${this.localRoles.selected}`, this.updateParams)
-                        .then((res) => {
-                            if (!res.result) {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
-                        })
+                this.$nextTick(() => {
+                    this.$axios.post(`topo/privilege/group/detail/${this.bkSupplierAccount}/${this.localRoles.selected}`, this.updateParams)
+                    .then((res) => {
+                        if (!res.result) {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
                     })
-                }
+                })
             }, 500, {leading: false, trailing: true}),
             // 获取到分组权限后设置系统权限
             initSystemAuthorities () {
-                if (this.isAdmin) {
-                    this.sysConfig.global_busi.selectedAuthorities = ['resource']
-                    this.sysConfig.back_config.selectedAuthorities = ['event', 'model', 'audit']
-                } else if (this.groupAuthorities.hasOwnProperty('sys_config')) {
+                if (this.groupAuthorities.hasOwnProperty('sys_config')) {
                     for (let configId in this.sysConfig) {
                         if (this.groupAuthorities['sys_config'].hasOwnProperty(configId)) {
                             this.sysConfig[configId].selectedAuthorities = this.groupAuthorities['sys_config'][configId] || []
@@ -303,9 +362,7 @@
                         if (this.hideClassify.indexOf(classifyId) === -1) {
                             classify['bk_objects'].forEach((model) => {
                                 let selectedAuthorities = []
-                                if (this.isAdmin) {
-                                    selectedAuthorities = ['search', 'create', 'update', 'delete']
-                                } else if (authorities.hasOwnProperty('model_config') &&
+                                if (authorities.hasOwnProperty('model_config') &&
                                     authorities['model_config'].hasOwnProperty(classifyId) &&
                                     authorities['model_config'][classifyId].hasOwnProperty(model['bk_obj_id'])
                                 ) {
@@ -325,7 +382,7 @@
                 this.classifications = classifications
             },
             // 模型全选
-            checkAllModelAuthorities (classifyIndex, modelIndex) {
+            checkAllModelAuthorities (classifyIndex, modelIndex, event) {
                 let model = this.classifications[classifyIndex]['models'][modelIndex]
                 if (event.target.checked) {
                     model.selectedAuthorities = ['search', 'create', 'update', 'delete']
@@ -334,7 +391,7 @@
                 }
             },
             /* 模型权限没有选择'查询'，则无'新增'、编辑'、删除'权限 */
-            checkOtherAuthorities (classifyIndex, modelIndex) {
+            checkOtherAuthorities (classifyIndex, modelIndex, event) {
                 let model = this.classifications[classifyIndex]['models'][modelIndex]
                 if (!event.target.checked) {
                     model.selectedAuthorities = []
@@ -352,7 +409,9 @@
 <style lang="scss" scoped>
     $primaryColor: #737987;
     .authority-wrapper{
+        position: relative;
         padding: 20px 0;
+        height: 100%;
     }
     .authority-group{
         font-size: 14px;
@@ -495,5 +554,18 @@
     }
     .slide-enter, .slide-leave-to{
         height: 0 !important;
+    }
+    .user-none{
+        position: absolute;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: $primaryColor;
+        width: 180px;
+        margin: 0 auto;
+        text-align: center;
+        img{
+            width: 180px;
+        }
     }
 </style>

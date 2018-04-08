@@ -120,7 +120,7 @@ func (h *HostSnap) Run() {
 	if h.saveRunning() {
 		go h.subChan()
 	} else {
-		blog.Infof("there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
+		blog.Infof("run: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 	}
 	for {
 		select {
@@ -130,7 +130,7 @@ func (h *HostSnap) Run() {
 					go h.subChan()
 				}
 			} else {
-				blog.Infof("there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
+				blog.Infof("loop: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 			}
 		case msg = <-h.msgChan:
 			// read all from msgChan and lock to prevent clear operation
@@ -346,6 +346,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 
 // concede concede when buffer fulled
 func (h *HostSnap) concede() {
+	blog.Info("concede")
 	h.isMaster = false
 	h.subscribing = false
 	val := h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Val()
@@ -356,15 +357,29 @@ func (h *HostSnap) concede() {
 
 // saveRunning lock master process
 func (h *HostSnap) saveRunning() (ok bool) {
+	var err error
 	if h.isMaster {
-		val := h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Val()
-		if len(val) > 5 && h.id == val[0:5] {
+		var val string
+		val, err = h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Result()
+		if err != nil {
+			blog.Errorf("master: saveRunning err %v", err)
+		}
+		if len(val) > 5 && h.id == val[0:len(h.id)] {
+			blog.Infof("master check : i am still master")
 			h.redisCli.Set(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
 			ok = true
+		} else {
+			blog.Infof("exit master,val = %v, id = %v", val, h.id)
+			h.isMaster = false
 		}
 	} else {
-		ok = h.redisCli.SetNX(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Val()
+		ok, err = h.redisCli.SetNX(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
+		if err != nil {
+			blog.Errorf("slave: saveRunning err %v", err)
+		}
 		if ok {
+			blog.Infof("slave check: ok")
+			blog.Infof("i am master from now")
 			h.isMaster = true
 		}
 	}
@@ -382,8 +397,11 @@ func (h *HostSnap) subChan() {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
 	}
-	defer subChan.Close()
-	defer blog.Infof("subChan Close")
+	defer func() {
+		subChan.Unsubscribe(h.chanName)
+		h.subscribing = false
+		blog.Infof("subChan Close")
+	}()
 
 	var ts = time.Now()
 	var cnt int64
@@ -391,7 +409,7 @@ func (h *HostSnap) subChan() {
 	for {
 		if false == h.isMaster {
 			// not master again, close subscribe to prevent unnecessary subscript
-			blog.Info("This is not master process")
+			blog.Info("This is not master process, subChan Close")
 			return
 		}
 		received, err := subChan.Receive()

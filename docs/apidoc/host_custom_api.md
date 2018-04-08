@@ -72,7 +72,6 @@ info 参数说明：
 	* English ：update customize query
 
 *  input body:
-
 ```
 {
     "info":"{\"condition\":[{\"bk_obj_id\":\"biz\",\"condition\":[{\"field\":\"default\",\"operator\":\"$ne\",\"value\":1}],\"fields\":[]},{\"bk_obj_id\":\"set\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"module\",\"condition\":[],\"fields\":[]},{\"bk_obj_id\":\"host\",\"condition\":[{\"field\":\"bk_host_innerip\",\"operator\":\"$eq\",\"value\":\"127.0.0.1\"}],\"fields\":[\"bk_host_innerip\",\"bk_host_outerip\",\"bk_agent_status\"]}]}",
@@ -278,11 +277,9 @@ condition 参数说明：
 	* 中文： 获取自定义api详情
 	* English ：get customize query detail
 *  input body
-
 无
 
 * input参数说明
-
 
 | 名称  | 类型 |必填| 默认值 | 说明 | Description|
 | ---  | --- |---| --- | --- | ---|

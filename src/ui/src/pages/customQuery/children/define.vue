@@ -416,7 +416,7 @@
             resetDefine () {
                 this.isPropertiesShow = false
                 this.isPreviewShow = false
-                this.bkName = ''
+                this.name = ''
                 this.userProperties = []
                 this.attribute.selected = this.attribute.default.map(({bk_property_id: bkPropertyId}) => bkPropertyId).join(',')
                 Object.keys(this.object).map(bkObjId => {

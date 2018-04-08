@@ -21,7 +21,6 @@ const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pag
 const pageProcess = () => import(/* webpackChunkName: "page-process" */ '@/pages/process/process')
 const pagePermission = () => import(/* webpackChunkName: "page-permission" */ '@/pages/permission/permission')
 const pageEventpush = () => import(/* webpackChunkName: "page-eventpush" */ '@/pages/eventpush/eventpush')
-const pageDiscover = () => import(/* webpackChunkName: "page-discover" */ '@/pages/discover/discover')
 const pageAuditing = () => import(/* webpackChunkName: "page-auditing" */ '@/pages/auditing/auditing')
 const pageOrganization = () => import(/* webpackChunkName: "page-organization" */ '@/pages/organization/object')
 const pageTopology = () => import(/* webpackChunkName: "page-topology" */ '@/pages/topology/topology')
@@ -66,9 +65,6 @@ var router = new Router({
     }, {
         path: '/eventpush',
         component: pageEventpush
-    }, {
-        path: '/discover',
-        component: pageDiscover
     }, {
         path: '/auditing',
         component: pageAuditing
