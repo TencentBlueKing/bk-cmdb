@@ -1902,9 +1902,15 @@
             */
             deleteEnum (type, index, idx) {
                 if (type === 'new') {
+                    if (index === this.newFieldInfo.option.defaultIndex) {
+                        this.newFieldInfo.option.defaultIndex = 0
+                    }
                     this.newFieldInfo.option.list.splice(index, 1)
                 } else {
-                    this.fieldList[idx].option.splice(index, 1)
+                    if (index === this.fieldList[idx].option.defaultIndex) {
+                        this.fieldList[idx].option.defaultIndex = 0
+                    }
+                    this.fieldList[idx].option.list.splice(index, 1)
                 }
                 this.$forceUpdate()
                 this.forceValidate(type)

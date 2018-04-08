@@ -27,10 +27,10 @@ func Test_sortNode(t *testing.T) {
 	t.Logf("%+v\n", sortNs1)
 
 	t.Log("----- test node2 -----")
-	nodes2 := []string{"_c_cd91a29e1a89e5346014994493ff427c-10.49.110.1620000000087",
-		"_c_bc551189ace5a4a2af2779028a2b14d3-10.223.38.880000000086",
-		"_c_fb6af66c33df0fbec44fdaf4c820e531-10.49.110.1610000000085",
-		"_c_4cf8f02920c631803ba7da24200c9b89-10.223.55.880000000084"}
+	nodes2 := []string{"_c_cd91a29e1a89e5346014994493ff427c-127.0.0.1620000000087",
+		"_c_bc551189ace5a4a2af2779028a2b14d3-127.0.0.1880000000086",
+		"_c_fb6af66c33df0fbec44fdaf4c820e531-127.0.0.1610000000085",
+		"_c_4cf8f02920c631803ba7da24200c9b89-127.0.0.1880000000084"}
 
 	t.Log(nodes2)
 	sortNs2 := zkRegDcv.sortNode(nodes2)

@@ -97,7 +97,7 @@
                             </template>
                         </bk-tabpanel>
                         <bk-tabpanel name="history" title="变更记录" :show="attr.type==='update'">
-                            <v-history :active="tab.activeName === 'history'" :type="objId" :instId="attr.formValues['bk_inst_id']"></v-history>
+                            <v-history :active="tab.activeName === 'history'" :type="objId" :instId="objId === 'biz' ? attr.formValues['bk_biz_id'] : attr.formValues['bk_inst_id']"></v-history>
                         </bk-tabpanel>
                     </bk-tab>
                 </div>
