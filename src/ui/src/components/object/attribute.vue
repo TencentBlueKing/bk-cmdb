@@ -109,7 +109,7 @@
                                                     type="text" class="bk-form-input"
                                                     :disabled="checkIsFieldDisabled(property)" 
                                                     v-model.trim="localValues[property['bk_property_id']]">
-                                                <template v-if="checkIsNeedValidate(property) && getValidateRules(property)">
+                                                <template v-if="getValidateRules(property)">
                                                     <v-validate class="attribute-validate-result"
                                                         v-validate="getValidateRules(property)"
                                                         :name="property['bk_property_name']" 
@@ -278,6 +278,9 @@
                     }
                     if (this.isMultipleUpdate && !this.multipleEditableFields[bkPropertyId]) {
                         delete formData[bkPropertyId]
+                    }
+                    if (Array.isArray(formData[bkPropertyId])) {
+                        formData[bkPropertyId] = formData[bkPropertyId].filter(({id}) => !!id).map(({bk_inst_id: bkInstId}) => bkInstId).join(',')
                     }
                 })
                 // 增量更新，删除未变更的字段
@@ -488,13 +491,6 @@
                 this.localValues = {}
                 this.$forceUpdate()
             },
-            checkIsNeedValidate (property) {
-                if ((this.type === 'create' && property['isrequired']) || (this.type === 'update' && property['editable'])) {
-                    return true
-                } else {
-                    return false
-                }
-            },
             getValidateRules (property) {
                 let rules = {}
                 let {
@@ -519,7 +515,7 @@
                     }
                 }
                 if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['name'] = true
+                    rules['char'] = true
                 }
                 return rules
             },
