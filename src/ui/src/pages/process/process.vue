@@ -40,7 +40,7 @@
                 <bk-tabpanel name="bind" title="模块绑定" :show="slider.tab.type === 'update'">
                     <v-module :bkProcessId="slider.tab.module.bkProcessId" :bkBizId="filter.bkBizId"></v-module>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" title="变更记录" :show="false && slider.tab.type === 'update'">
+                <bk-tabpanel name="history" title="变更记录" :show="slider.tab.type === 'update'">
                     <v-history :active="slider.tab.active === 'history'" :type="'process'" :instId="slider.tab.history.bkProcessId"></v-history>
                 </bk-tabpanel>
             </bk-tab>
