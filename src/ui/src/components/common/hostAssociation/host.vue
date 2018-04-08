@@ -73,7 +73,7 @@
             selected: {
                 required: true,
                 validator: (selected) => {
-                    return Array.isArray(selected) || typeof selected === 'string' || typeof selected === 'undefined'
+                    return Array.isArray(selected) || typeof selected === 'string' || typeof selected === 'undefined' || selected === null
                 }
             },
             multiple: Boolean
@@ -177,7 +177,7 @@
                 if (Array.isArray(this.selected)) {
                     this.table.chooseId = this.selected.map(({bk_inst_id: bkInstId}) => bkInstId)
                     this.localSelected = this.selected.map(({bk_inst_name: bkInstName}) => bkInstName)
-                } else if (typeof this.selected === 'undefined' || this.selected === '') {
+                } else if (typeof this.selected === 'undefined' || this.selected === '' || this.selected === null) {
                     this.table.chooseId = []
                 } else {
                     this.table.chooseId = this.selected.split(',').map(bkHostId => parseInt(bkHostId))
