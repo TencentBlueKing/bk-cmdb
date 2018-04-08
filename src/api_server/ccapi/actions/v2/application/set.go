@@ -261,13 +261,18 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 	}
 	rspV3Map := make(map[string]interface{})
 	err = json.Unmarshal([]byte(rsp_v3), &rspV3Map)
+	if err != nil {
+		blog.Error("addSet not json url:%s, reply:%s", url, string(rsp_v3))
+		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		return
+	}
 	if !rspV3Map["result"].(bool) {
 		msg = fmt.Sprintf("%s", rspV3Map[common.HTTPBKAPIErrorMessage])
 		blog.Error("CreatePlats error:%s", msg)
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
-	rspDataV3Map := rspV3Map["data"].(map[string]interface{})
+	rspDataV3Map, _ := rspV3Map["data"].(map[string]interface{})
 	blog.Debug("rsp_v3:%v", rsp_v3)
 	converter.RespSuccessV2(rspDataV3Map, resp)
 }
