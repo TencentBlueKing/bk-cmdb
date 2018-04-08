@@ -1,5 +1,7 @@
 <template>
-    <bk-select :selected.sync="localSelected" :disabled="disabled || localDisabled" :multiple="multiple" @on-selected="handleSelected">
+    <bk-select :selected.sync="localSelected" :disabled="disabled || localDisabled" :multiple="multiple" 
+    :filterable="true" 
+    @on-selected="handleSelected">
         <bk-select-option v-for="(option, index) in associateInst"
             :key="index"
             :label="asstObjId === 'biz'? option['bk_biz_name']: option['bk_inst_name']"
