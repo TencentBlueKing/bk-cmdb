@@ -24,7 +24,7 @@
             </div>
             <div class="filter-group user fl">
                 <label>操作账号</label>
-                <v-member-selector class="filter-field" :selected.sync="filter.user"></v-member-selector>
+                <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
                 <bk-button type="primary" title="查询" @click="setCurrentPage(1)">查询</bk-button>

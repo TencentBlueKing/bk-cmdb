@@ -233,10 +233,10 @@
                 }
                 if (bkObjId === 'set') {
                     url = `set/search/${this.bkSupplierAccount}/${this.tree.bkBizId}`
-                    params['condition']['bk_set_name'] = bkInstName
+                    params['condition']['bk_set_id'] = bkInstId
                 } else if (bkObjId === 'module') {
                     url = `module/search/${this.bkSupplierAccount}/${this.tree.bkBizId}/${this.tree.activeParentNode['bk_inst_id']}`
-                    params['condition']['bk_module_name'] = bkInstName
+                    params['condition']['bk_module_id'] = bkInstId
                     params['condition']['bk_supplier_account'] = this.bkSupplierAccount
                 } else {
                     url = `inst/search/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`

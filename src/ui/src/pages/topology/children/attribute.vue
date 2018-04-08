@@ -51,7 +51,8 @@
                                 :disabled="!property['editable']"
                                 type="text" class="bk-form-input"
                                 v-model.trim="localValues[property['bk_property_id']]">
-                            <v-validate class="attribute-validate-result" v-if="checkIsNeedValidate(property)"
+                            <!-- <v-validate class="attribute-validate-result" v-if="checkIsNeedValidate(property)" -->
+                            <v-validate class="attribute-validate-result"
                                 v-validate="getValidateRules(property)"
                                 :name="property['bk_property_name']" 
                                 :value="localValues[property['bk_property_id']]">
@@ -270,6 +271,9 @@
                     } else if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
                         rules['regex'] = option
                     }
+                }
+                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    rules['char'] = true
                 }
                 return rules
             },
