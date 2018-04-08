@@ -70,7 +70,7 @@ type HostSnap struct {
 }
 
 type hostcache struct {
-	cache map[bool][]map[string]interface{}
+	cache map[bool]map[string]map[string]interface{}
 	flag  bool
 }
 
@@ -94,7 +94,7 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 		maxconcurrent: maxconcurrent,
 		wg:            sync.WaitGroup{},
 		cache: &hostcache{
-			cache: map[bool][]map[string]interface{}{},
+			cache: map[bool]map[string]map[string]interface{}{},
 			flag:  false,
 		},
 	}
@@ -334,13 +334,9 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 	}*/
 	ips := getIPS(val)
 	if len(ips) > 0 {
-		for _, host := range h.getCache() {
-			if fmt.Sprint(host[bkcommon.BKCloudIDField]) == cloudid {
-				for _, ip := range ips {
-					if ip == host[bkcommon.BKHostInnerIPField] {
-						return host
-					}
-				}
+		for _, ip := range ips {
+			if host := h.getCache()[cloudid+"::"+ip]; host != nil {
+				return host
 			}
 		}
 	}
@@ -474,7 +470,7 @@ func (h *HostSnap) clearMsgChan() {
 	blog.Warnf("cleared %d", cnt)
 }
 
-func (h *HostSnap) getCache() []map[string]interface{} {
+func (h *HostSnap) getCache() map[string]map[string]interface{} {
 	return h.cache.cache[h.cache.flag]
 }
 
@@ -489,12 +485,18 @@ func (h *HostSnap) fetchDB() {
 	}()
 }
 
-func fetch() []map[string]interface{} {
+func fetch() map[string]map[string]interface{} {
 	result := []map[string]interface{}{}
 	err := instdata.GetHostByCondition(nil, nil, &result, "", 0, 0)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
+	hostcache := map[string]map[string]interface{}{}
+	for _, host := range result {
+		cloudid, _ := host[bkcommon.BKCloudIDField].(string)
+		innerip, _ := host[bkcommon.BKHostInnerIPField].(string)
+		hostcache[cloudid+"::"+innerip] = host
+	}
 	blog.Infof("success fetch %d collections to cache", len(result))
-	return result
+	return hostcache
 }
