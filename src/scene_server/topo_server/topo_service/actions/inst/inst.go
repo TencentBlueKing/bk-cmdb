@@ -98,23 +98,23 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 					delete(targetInput, item.ObjectAttID)
 				}
 			}
+
+			// set the nonexist
+			for _, j := range nonExistsFiled {
+				propertyID := j.PropertyID
+				fieldType := j.PropertyType
+				switch fieldType {
+				case common.FiledTypeSingleChar:
+					targetInput[propertyID] = ""
+				case common.FiledTypeLongChar:
+					targetInput[propertyID] = ""
+				default:
+					targetInput[propertyID] = nil
+				}
+			}
 		}
 
 		input = targetInput
-
-		// set the nonexist
-		for _, j := range nonExistsFiled {
-			propertyID := j.PropertyID
-			fieldType := j.PropertyType
-			switch fieldType {
-			case common.FiledTypeSingleChar:
-				input[propertyID] = ""
-			case common.FiledTypeLongChar:
-				input[propertyID] = ""
-			default:
-				input[propertyID] = nil
-			}
-		}
 
 	case errors.CCErrorCoder:
 		if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
