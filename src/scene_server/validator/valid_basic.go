@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package validator
 
 import (
@@ -83,15 +83,22 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	var err error
 	blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
 
+	for key := range valid.KeyFileds {
+		// set the key filed
+		keyDataArr = append(keyDataArr, key)
+	}
+
 	//set default value
 	valid.setEnumDefault(valData, valRule)
 	for key, val := range valData {
 
-		keyDataArr = append(keyDataArr, key)
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
-			// 如果是关键字则不做多余的判断
+			// ignore the key filed
 			continue
 		}
+
+		keyDataArr = append(keyDataArr, key)
+
 		rule, ok := valRule.FieldRule[key]
 		if !ok {
 			blog.Error("params is not valid, the key is %s", key)
