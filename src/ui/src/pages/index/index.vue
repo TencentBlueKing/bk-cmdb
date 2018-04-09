@@ -715,6 +715,9 @@
                 attribute.form.formValues = {}
                 attribute.form.isMultipleUpdate = false
                 attribute.form.type = 'update'
+                this.getHostDetails(bkHostId)
+            },
+            getHostDetails (bkHostId) {
                 this.$axios.get(`hosts/${this.bkSupplierAccount}/${bkHostId}`).then((res) => {
                     if (res.result) {
                         let values = {
@@ -726,18 +729,15 @@
                                 this.sideslider.attribute.isWindowsOSType = bkPropertyValue !== 'Linux'
                             }
                         })
-                        attribute.form.formValues = values
+                        this.sideslider.attribute.form.formValues = values
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
-
                 this.$axios.get(`hosts/snapshot/${bkHostId}`).then(res => {
                     if (res.result) {
-                        attribute.status.isLoaded = true
+                        this.sideslider.attribute.status.isLoaded = true
                         this.$store.commit('setHostSnapshot', res.data)
-                    } else {
-                        this.$alertMsg('获取主机快照信息失败')
                     }
                 })
             },
@@ -748,8 +748,8 @@
                         this.$alertMsg('保存成功', 'success')
                         this.setTableCurrentPage(1)
                         if (!this.sideslider.attribute.form.isMultipleUpdate) {
-                            this.sideslider.attribute.form.formValues = Object.assign({}, formValues, formData)
                             this.$refs.hostAttribute.displayType = 'list'
+                            this.getHostDetails(bkHostID)
                         }
                     } else {
                         this.$alertMsg(res['bk_error_msg'])

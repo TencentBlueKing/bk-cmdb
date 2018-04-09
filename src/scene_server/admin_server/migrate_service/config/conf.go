@@ -139,6 +139,8 @@ func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
 		a.Error.Load(errorcode)
 	}
 
+	blog.InfoJSON("loaded language package: %s", errorcode)
+
 	return nil
 }
 
