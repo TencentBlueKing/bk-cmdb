@@ -81,6 +81,7 @@
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'objuser'">
                                 <v-member-selector class="screening-group-item-value"
+                                    :exclude="true"
                                     :selected.sync="localQueryColumnData[column['bk_property_id']]['value']"
                                     :multiple="true">
                                 </v-member-selector>
