@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -90,7 +90,26 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 			blog.Errorf("get inst detail error: %v", retStrErr)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
 		}
+		appData, ok := preData.(map[string]interface{})
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppDeleteFailed)
+		}
+		appNameI, ok := appData[common.BKAppNameField]
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppDeleteFailed)
+		}
+		bkAppName, ok := appNameI.(string)
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppDeleteFailed)
+		}
+		if common.BKAppName == bkAppName {
+			blog.Error("failed to delete bk default app")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoBkAppNotAllowedDelete)
 
+		}
 		//delete app
 		input := make(map[string]interface{})
 		input[common.BKAppIDField] = appID
@@ -178,6 +197,28 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
 		}
 
+		appData, ok := preData.(map[string]interface{})
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppUpdateFailed)
+		}
+		appNameI, ok := appData[common.BKAppNameField]
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppUpdateFailed)
+		}
+		bkAppName, ok := appNameI.(string)
+		if false == ok {
+			blog.Error("failed to get app detail")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppUpdateFailed)
+		}
+		if common.BKAppName == bkAppName {
+			_, ok := data[common.BKAppNameField]
+			if ok {
+				delete(data, common.BKAppNameField)
+			}
+		}
+
 		input["condition"] = condition
 		input["data"] = data
 		uAppURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDApp
@@ -200,6 +241,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 				blog.Errorf("get inst detail error: %v", retStrErr)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditSaveLogFaile)
 			}
+
 			auditContent := metadata.Content{
 				PreData: preData,
 				CurData: curData,

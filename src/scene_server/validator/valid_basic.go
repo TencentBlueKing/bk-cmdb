@@ -587,9 +587,14 @@ func (valid *ValidMap) validDate(val interface{}, key string) (bool, error) {
 		blog.Error("params in need")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
-	valStr := val.(string)
+	valStr, ok := val.(string)
+	if false == ok {
+		blog.Error("date can shoule be string")
+		return false, valid.ccError.Errorf(common.CCErrCommParamsShouldBeString, key)
+
+	}
 	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
+		blog.Error("date params  can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
 	result := util.IsDate(valStr)
@@ -617,7 +622,12 @@ func (valid *ValidMap) validTime(val interface{}, key string) (bool, error) {
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
 
-	valStr := val.(string)
+	valStr, ok := val.(string)
+	if false == ok {
+		blog.Error("date can shoule be string")
+		return false, valid.ccError.Errorf(common.CCErrCommParamsShouldBeString, key)
+
+	}
 	if isIn && 0 == len(valStr) {
 		blog.Error("params  can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
