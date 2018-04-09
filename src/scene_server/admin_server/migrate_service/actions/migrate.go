@@ -85,6 +85,13 @@ func (cli *migrateAction) migrate(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	err = logics.Upgrade(migrate.CC.InstCli)
+	if nil != err {
+		blog.Errorf("db upgrade error: %v", err)
+		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
+		return
+	}
+
 	cli.ResponseSuccess("migrate success", resp)
 	return
 
