@@ -1,7 +1,7 @@
 <template>
     <div  v-click-outside="memberInputReset"
         :data-placeholder="placeholder"
-        :class="['member-selector', {'placeholder': !focus && !localSelected.length, 'disabled': disabled}]">
+        :class="['member-selector', {'active': focus, 'placeholder': !focus && !localSelected.length, 'disabled': disabled}]">
         <div class="member-wrapper">
             <div ref="memberContainer" :class="['member-container', {'active': focus , 'ellipsis': showEllipsis}]" @click="handleSelectorClick(localSelected.length)">
                 <span ref="memberSelected" class="member-selected" 
@@ -380,6 +380,9 @@
         cursor: text;
         position: relative;
         z-index: 1;
+        &.active{
+            z-index: 999;
+        }
         &.disabled{
             cursor: not-allowed;
             background-color: #fafafa;
