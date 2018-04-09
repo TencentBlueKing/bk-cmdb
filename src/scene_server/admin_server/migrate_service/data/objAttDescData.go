@@ -54,7 +54,7 @@ func AppRow() []*metadata.ObjectAttDes {
 		//&metadata.ObjectAttDes{ObjKeyId: "app", PropertyID: "ParentID", PropertyName: "", IsRequired: common.BKFalse, IsOnly: common.BKFalse, PropertyType: common.FiledTypeInt, Option: ""},
 	}
 
-	if Distribution == "enterprise" {
+	if Distribution == common.RevisionEnterprise {
 		dataRows = append(dataRows,
 			&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "time_zone", PropertyName: "时区", IsRequired: true, IsOnly: false, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeTimeZone, Option: "", IsReadOnly: true},
 			&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "language", PropertyName: "语言", IsRequired: true, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: languageOption, IsReadOnly: true},
