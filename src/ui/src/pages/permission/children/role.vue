@@ -34,8 +34,8 @@
             :tableList="table.list">
             <td slot="operation" slot-scope="{ item }" align="center" style="font-size: 0">
                 <i class="icon-cc-skip" @click="skipToUser(item)"></i>
-                <i :class="['icon-cc-edit', {'single': item['group_name'] === 'admin'}]" @click.stop="editRole(item)"></i>
-                <i v-if="item['group_name'] !== 'admin'" class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
+                <i class="icon-cc-edit" @click.stop="editRole(item)"></i>
+                <i class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
             </td>        
         </v-role-table>
         <v-role-form 
