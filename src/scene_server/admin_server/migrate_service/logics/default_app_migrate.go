@@ -20,6 +20,7 @@ import (
 	"configcenter/src/scene_server/admin_server/migrate_service/data"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	httpcli "configcenter/src/common/http/httpclient"
 
@@ -50,11 +51,11 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 	params[common.BKProductPMField] = "admin"
 
 	if data.Distribution == common.RevisionEnterprise {
-		appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
-		appModelData[common.BKLanguageField] = "中文"
+		params[common.BKTimeZoneField] = "Asia/Shanghai"
+		params[common.BKLanguageField] = "中文"
 	} else {
-		delete(appModelData, common.BKTimeZoneField)
-		delete(appModelData, common.BKLanguageField)
+		delete(params, common.BKTimeZoneField)
+		delete(params, common.BKLanguageField)
 	}
 
 	byteParams, _ := json.Marshal(params)
@@ -74,7 +75,7 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 		return errors.New(reply)
 	}
 	if 0 != code {
-		return errors.New(output[common.HTTPBKAPIErrorMessage].(string))
+		return errors.New(fmt.Sprint(output[common.HTTPBKAPIErrorMessage]))
 	}
 
 	return nil
