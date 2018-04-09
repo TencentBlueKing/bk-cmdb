@@ -240,7 +240,9 @@ const (
 	CCErrTopoUserGroupPrivilegeSelectFailed = 1001046
 	CCErrTopoUserPrivilegeSelectFailed      = 1001047
 	CCErrTopoRolePrivilegeCreateFailed      = 1001048
-	CCErrTopoMulueIDNotfoundFailed          = 1101080
+
+	CCErrTopoMulueIDNotfoundFailed = 1101080
+	CCErrTopoBkAppNotAllowedDelete = 1101081
 
 	// objectcontroller 1102XXX
 
