@@ -170,43 +170,43 @@
             /*
                 获取树形图信息
             */
-            getRelationInfo (ObjId, ObjectID) {
-                this.isLoading = true
-                let params = {
-                    fields: [],
-                    page: {
-                        limit: 10
-                    },
-                    condition: {
+            async getRelationInfo (ObjId, ObjectID) {
+                try {
+                    this.isLoading = true
+                    let params = {
+                        fields: [],
+                        page: {
+                            limit: 10
+                        },
+                        condition: {
+                        }
                     }
-                }
-                this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params).then(res => {
-                    if (res.result) {
-                        // 模型插入分页信息
-                        res.data.map(model => {
-                            model.level = 1
-                            model.page = 1
-                            model.pageSize = 10
-                            model.loadNode = 2
-                            model.id = this.treeItemId++
-                            if (!model.count) {
-                                model.children = []
-                            }
-                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                                model.children.map(inst => {
-                                    // 插入层级
-                                    inst.level = 2
-                                    // 根据添加唯一性id
-                                    inst.id = this.treeItemId++
-                                })
-                            }
-                        })
-                        this.ztreeDataSourceList = res.data
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+                    let res = await this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params)
+                    res.data.map(model => {
+                        model.level = 1
+                        model.page = 1
+                        model.pageSize = 10
+                        model.loadNode = 2
+                        model.id = this.treeItemId++
+                        if (!model.count) {
+                            model.children = []
+                        }
+                        if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
+                            model.children.map(inst => {
+                                // 插入层级
+                                inst.level = 2
+                                // 根据添加唯一性id
+                                inst.id = this.treeItemId++
+                            })
+                        }
+                    })
+                    this.ztreeDataSourceList = res.data
+                } catch (e) {
+                    console.error(e)
+                    this.$alertMsg(e.data['bk_error_msg'])
+                } finally {
                     this.isLoading = false
-                })
+                }
             }
         },
         components: {
