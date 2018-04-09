@@ -83,15 +83,22 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	var err error
 	blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
 
+	for key := range valid.KeyFileds {
+		// set the key filed
+		keyDataArr = append(keyDataArr, key)
+	}
+
 	//set default value
 	valid.setEnumDefault(valData, valRule)
 	for key, val := range valData {
 
-		keyDataArr = append(keyDataArr, key)
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
-			// 如果是关键字则不做多余的判断
+			// ignore the key filed
 			continue
 		}
+
+		keyDataArr = append(keyDataArr, key)
+
 		rule, ok := valRule.FieldRule[key]
 		if !ok {
 			blog.Error("params is not valid, the key is %s", key)
