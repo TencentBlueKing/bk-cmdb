@@ -57,6 +57,10 @@
             multiple: { // 保留配置，单选多选配置, 尚未实现单选
                 type: Boolean,
                 default: true
+            },
+            visible: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -125,6 +129,10 @@
             },
             members (members) {
                 this.setFilterMember()
+            },
+            active (active) {
+                this.calcEllipsis()
+                this.calcEmmiter()
             }
         },
         created () {
@@ -141,7 +149,7 @@
                 let selected = this.selected
                 let localSelected = this.localSelected
                 if (typeof selected === 'string' && localSelected.join(',') !== selected) {
-                    this.localSelected = selected.split(',')
+                    this.localSelected = !selected ? [] : selected.split(',')
                 } else if (Array.isArray(selected) && selected.join(',') !== localSelected.join(',')) {
                     this.localSelected = [...selected]
                 } else if (selected === undefined && localSelected.length) {
@@ -166,13 +174,15 @@
                     let selectedMargin = 8
                     let containerPadding = 8
                     let memberSelectedWidth = 0
-                    if ($memberSelected) {
+                    if ($memberSelected && $memberSelected.length) {
                         $memberSelected.forEach($selected => {
                             memberSelectedWidth = memberSelectedWidth + $selected.offsetWidth
                         })
+                        memberSelectedWidth = memberSelectedWidth + $memberSelected.length * selectedMargin
+                        this.showEllipsis = memberSelectedWidth > (this.$refs.memberContainer.offsetWidth - containerPadding)
+                    } else {
+                        this.showEllipsis = false
                     }
-                    memberSelectedWidth = memberSelectedWidth + $memberSelected.length * selectedMargin
-                    this.showEllipsis = memberSelectedWidth > (this.$refs.memberContainer.offsetWidth - containerPadding)
                 })
             },
             /* 计算每个已选人员后面的输入定位元素的宽度 */
