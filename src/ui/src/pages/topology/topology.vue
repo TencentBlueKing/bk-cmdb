@@ -410,61 +410,34 @@
             setSearchParams () {
                 let params = {
                     'bk_biz_id': this.tree.bkBizId,
-                    condition: [{
-                        'bk_obj_id': 'host',
+                    condition: []
+                }
+                let activeNodeObjId = this.tree.activeNode['bk_obj_id']
+                if (activeNodeObjId === 'module' || activeNodeObjId === 'set') {
+                    params.condition.push({
+                        'bk_obj_id': activeNodeObjId,
                         fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'module',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'set',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'biz',
-                        fields: [],
-                        condition: []
-                    }, {
+                        condition: [{
+                            field: 'default',
+                            operator: '$eq',
+                            value: this.tree.activeNode['default']
+                        }, {
+                            field: activeNodeObjId === 'modeule' ? 'bk_module_id' : 'bk_set_id',
+                            operator: '$eq',
+                            value: this.tree.activeNode['bk_inst_id']
+                        }]
+                    })
+                } else if (activeNodeObjId !== 'biz') {
+                    params.condition.push({
                         'bk_obj_id': 'object',
                         fields: [],
-                        condition: []
-                    }]
+                        condition: [{
+                            field: 'bk_inst_id',
+                            operator: '$eq',
+                            value: this.tree.activeNode['bk_inst_id']
+                        }]
+                    })
                 }
-                params.condition.map(({bk_obj_id: bkObjId, fields, condition}) => {
-                    if (bkObjId === this.tree.activeNode['bk_obj_id']) {
-                        if (bkObjId === 'module') {
-                            condition.push({
-                                field: 'default',
-                                operator: '$eq',
-                                value: this.tree.activeNode['default']
-                            })
-                            condition.push({
-                                field: 'bk_module_id',
-                                operator: '$eq',
-                                value: this.tree.activeNode['bk_inst_id']
-                            })
-                        } else if (bkObjId === 'set') {
-                            condition.push({
-                                field: 'default',
-                                operator: '$eq',
-                                value: this.tree.activeNode['default']
-                            })
-                            condition.push({
-                                field: 'bk_set_id',
-                                operator: '$eq',
-                                value: this.tree.activeNode['bk_inst_id']
-                            })
-                        } else if (bkObjId === 'object') {
-                            condition.push({
-                                field: 'bk_object_id',
-                                operator: '$eq',
-                                value: this.tree.activeNode['bk_inst_id']
-                            })
-                        }
-                    }
-                })
                 this.searchParams = params
             },
             tabChanged (active) {
