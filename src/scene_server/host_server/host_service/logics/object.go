@@ -45,14 +45,14 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 		if false == ok || field != common.BKInstIDField {
 			continue
 		}
-		value, ok := condi["value"].(float64)
-		if false == ok {
+		value, err := util.GetIntByInterface(condi["value"])
+		if nil != err {
 			continue
 		}
 		conc["field"] = common.BKInstParentStr
 		conc["operator"] = condi["operator"]
 		conc["value"] = condi["value"]
-		objectIDArr = append(objectIDArr, int(value))
+		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, conc)
 	for {
