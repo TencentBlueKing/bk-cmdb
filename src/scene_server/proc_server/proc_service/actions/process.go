@@ -32,6 +32,7 @@ import (
 	"strconv"
 	"strings"
 
+	api "configcenter/src/source_controller/api/object"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -40,6 +41,7 @@ var process *procAction = &procAction{}
 
 type procAction struct {
 	base.BaseAction
+	objcli *api.Client
 }
 
 func init() {
@@ -48,6 +50,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/search/{bk_supplier_account}/{bk_biz_id}", Params: nil, Handler: process.SearchProcess})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}", Params: nil, Handler: process.UpdateProcess})
 	process.CreateAction()
+	process.objcli = api.NewClient("")
 }
 
 //UpdateProcess update process
