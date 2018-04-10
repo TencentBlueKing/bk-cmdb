@@ -8,25 +8,27 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 <template>
-    <ul class="relevance-wrapper">
-        <template v-if="ztreeDataSourceList.length">
-            <v-tree :list="ztreeDataSourceList"
-                :treeType="'list'"
-                :callback='nodeClick'
-                :expand="expandClick"
-                :is-open="false"
-                :pageTurning="pageTurning"
-                :pageSize="pageSize"
-                ref="tree"
-            ></v-tree>
-        </template>
-        <template v-else>
-            <div class="relevance-none">
-                <img src="../../common/images/no-relevance.png" alt="">
-                <div>当前还未有关联项</div>
-            </div>
-        </template>
-    </ul>
+    <div class="relevance-wrapper" v-bkloading="{isLoading: isLoading}">
+        <ul class="relevance-box" v-show="!isLoading">
+            <template v-if="ztreeDataSourceList.length">
+                <v-tree :list="ztreeDataSourceList"
+                    :treeType="'list'"
+                    :callback='nodeClick'
+                    :expand="expandClick"
+                    :is-open="false"
+                    :pageTurning="pageTurning"
+                    :pageSize="pageSize"
+                    ref="tree"
+                ></v-tree>
+            </template>
+            <template v-else>
+                <div class="relevance-none">
+                    <img src="../../common/images/no-relevance.png" alt="">
+                    <div>当前还未有关联项</div>
+                </div>
+            </template>
+        </ul>
+    </div>
 </template>
 
 <script>
@@ -49,6 +51,7 @@
         },
         data () {
             return {
+                isLoading: true,
                 curNode: {},
                 treeItemId: 1,                  // 树形图具体某一项的id 用于区分点击的哪一项 前端递增
                 ztreeDataSourceList: []
@@ -83,7 +86,7 @@
                 this.curNode = node
                 this.$set(node, 'isFolder', true)
                 this.$set(node, 'isExpand', true)
-                if (!node.hasOwnProperty('bk_obj_icon')) {
+                if (node.hasOwnProperty('bk_obj_icon') && node['bk_obj_icon'] === '') {
                     this.getInstChild(node)
                 }
             },
@@ -167,41 +170,42 @@
             /*
                 获取树形图信息
             */
-            getRelationInfo (ObjId, ObjectID) {
-                let params = {
-                    fields: [],
-                    page: {
-                        limit: 10
-                    },
-                    condition: {
+            async getRelationInfo (ObjId, ObjectID) {
+                try {
+                    this.isLoading = true
+                    let params = {
+                        fields: [],
+                        page: {
+                            limit: 10
+                        },
+                        condition: {
+                        }
                     }
+                    let res = await this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params)
+                    res.data.map(model => {
+                        model.level = 1
+                        model.page = 1
+                        model.pageSize = 10
+                        model.loadNode = 2
+                        model.id = this.treeItemId++
+                        if (!model.count) {
+                            model.children = []
+                        }
+                        if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
+                            model.children.map(inst => {
+                                // 插入层级
+                                inst.level = 2
+                                // 根据添加唯一性id
+                                inst.id = this.treeItemId++
+                            })
+                        }
+                    })
+                    this.ztreeDataSourceList = res.data
+                } catch (e) {
+                    this.$alertMsg(e.data['bk_error_msg'])
+                } finally {
+                    this.isLoading = false
                 }
-                this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params).then(res => {
-                    if (res.result) {
-                        // 模型插入分页信息
-                        res.data.map(model => {
-                            model.level = 1
-                            model.page = 1
-                            model.pageSize = 10
-                            model.loadNode = 2
-                            model.id = this.treeItemId++
-                            if (!model.count) {
-                                model.children = []
-                            }
-                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                                model.children.map(inst => {
-                                    // 插入层级
-                                    inst.level = 2
-                                    // 根据添加唯一性id
-                                    inst.id = this.treeItemId++
-                                })
-                            }
-                        })
-                        this.ztreeDataSourceList = res.data
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
             }
         },
         components: {
@@ -213,6 +217,10 @@
 <style lang="scss" scoped>
     .relevance-wrapper{
         padding: 30px 20px;
+        min-height: 300px;
+        .relevance-box{
+            height: 100%;
+        }
         .relevance-none{
             margin-top: 50px;
             text-align: center;
