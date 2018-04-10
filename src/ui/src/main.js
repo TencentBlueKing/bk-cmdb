@@ -16,22 +16,24 @@ import router from './router'
 import store from './store'
 import VueI18n from 'vue-i18n'
 
-import VeeValidate, {Validator} from 'vee-validate'
-import zh from 'vee-validate/dist/locale/zh_CN'
+import VeeValidate from 'vee-validate'
 import dictionary from './common/js/Validator'
 import bkMagic from './magicbox/bk-magic'
 
 import i18nConfig from './common/js/i18n'
 import VTooltip from 'v-tooltip'
 import vClickOutside from 'v-click-outside'
+import Cookies from 'js-cookie'
 import moment from 'moment'
 import '@/api/axios'
+
+const language = Cookies.get('blueking_language') || 'zh_cn'
 
 Vue.use(VTooltip)
 Vue.use(vClickOutside)
 Vue.use(VueI18n)
 Vue.use(bkMagic)
-Vue.use(VeeValidate, {locale: 'zh_CN'})
+Vue.use(VeeValidate, {locale: language.split('_').map((char, index) => index === 0 ? char : char.toUpperCase()).join('_')})
 
 Vue.directive('focus', {
     update (el, binding) {
@@ -40,7 +42,6 @@ Vue.directive('focus', {
         }
     }
 })
-Validator.localize(zh)
 
 Vue.config.productionTip = false
 
@@ -68,15 +69,20 @@ Vue.prototype.$deepClone = (data) => {
     return JSON.parse(JSON.stringify(data))
 }
 
+const i18n = new VueI18n({
+    locale: 'zh_cn',
+    messages: i18nConfig,
+    fallbackLocal: 'zh_cn'
+})
+if (language && language !== i18n.locale) {
+    i18n.locale = language
+}
 /* eslint-disable no-new */
 let vm = new Vue({
     el: '#app',
     router,
     template: '<App/>',
-    i18n: new VueI18n({
-        locale: 'zh',
-        messages: i18nConfig
-    }),
+    i18n,
     store,
     components: { App }
 })

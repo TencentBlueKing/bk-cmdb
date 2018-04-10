@@ -11,7 +11,7 @@
 <template lang="html">
     <div class=" nav-wrapper bk-sidebar nav-contain" id="bk-sidebar" :class="{'slide-close':isClose,'slide-open':!isClose}">
         <div class="slide-switch" @click="backToIndex">
-            <i class="nav-title-img" :class="$t('message.logo')"></i><i class="icon-cc-triangle-slider" ></i>
+            <i class="nav-title-img" :class="$t('Common.logo')"></i><i class="icon-cc-triangle-slider" ></i>
         </div>
         <div class="nav-list">
             <ul>
@@ -24,8 +24,8 @@
                                 <i :class="navigation[navType]['icon']"></i>
                             </span>
                             <span class="nav-name text-hd"
-                                :title="navigation[navType]['international'] ? $t(navigation[navType]['international']) : navigation[navType]['name']">
-                                   {{navigation[navType]['international'] ? $t(navigation[navType]['international']) : navigation[navType]['name']}} 
+                                :title="navigation[navType]['i18n'] ? $t(navigation[navType]['i18n']) : navigation[navType]['name']">
+                                   {{navigation[navType]['i18n'] ? $t(navigation[navType]['i18n']) : navigation[navType]['name']}} 
                             </span>
                             <span class="angle-box">
                                 <i class="bk-icon icon-angle-down angle"></i>
@@ -40,8 +40,8 @@
                                 v-if="subNav.authorized && !subNav.isPaused"
                                 :key="subNavIndex"
                                 :to="subNav.path"
-                                :title="subNav.international ? $t(subNav.international) : subNav.name">
-                                {{subNav.international ? $t(subNav.international) : subNav.name}} 
+                                :title="subNav.i18n ? $t(subNav.i18n) : subNav.name">
+                                {{subNav.i18n ? $t(subNav.i18n) : subNav.name}} 
                             </router-link>
                         </div>
                     </li>

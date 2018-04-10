@@ -1,5 +1,6 @@
 {
     "Common": {
+        "logo": "en",
         "您没有当前业务的权限": "You do not have permission to the current business",
         "第1页/总8页": "Page 1 / Total 8 pages",
         "每页显示XXX行": "XXX rows per page",
@@ -99,6 +100,7 @@
         "展开": "Expand"
     },
     "Permission": {
+        "权限管理": "Permission Management",
         "角色名搜索": "Role Name Search",
         "成员搜索": "Member Search",
         "角色名称": "Role name",
@@ -311,6 +313,7 @@
         "节点属性": "Node properties"
     },
     "Hosts": {
+        "主机管理": "Hosts Management",
         "主机": "Hosts",
         "选择业务": "Select Business",
         "收藏": "Collection",
