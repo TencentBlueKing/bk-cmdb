@@ -3,7 +3,7 @@
     "1199001": "Serialized JSON failed",
     "1199002": "HTTP request failed",
     "1199003": "invalid input parameter",
-    "1199004": "数据数据读取失败",
+    "1199004": "Data read failed",
     "1199005": "The input is empty",
     "1199006": "'%s' data parameter verification does not pass",
     "1199007": "'%s' must be a string type",
