@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ccapi
 
 import (
@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"sync"
 	"time"
 	// migrateCommon "configcenter/src/scene_server/admin_server/common"
 	confCenter "configcenter/src/scene_server/admin_server/migrate_service/config"
@@ -80,20 +81,14 @@ func (ccAPI *CCAPIServer) Start() error {
 	errres := config["errors.res"]
 
 	// configure center
-	go func() {
-		err := ccAPI.cfCenter.Start(confDir, errres)
+	err := ccAPI.cfCenter.Start(confDir, errres)
+	if err != nil {
 		blog.Errorf("configure center module start failed!. err:%s", err.Error())
-		chErr <- err
-	}()
+		return err
+	}
 
 	//http server
 	ccAPI.initHttpServ()
-
-	go func() {
-		err := ccAPI.httpServ.ListenAndServe()
-		blog.Error("http listen and serve failed! err:%s", err.Error())
-		chErr <- err
-	}()
 
 	// load the errors resource
 	if errorres, ok := config["errors.res"]; ok {
@@ -121,13 +116,11 @@ func (ccAPI *CCAPIServer) Start() error {
 	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
 	a.ProcAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_PROC, a.AddrSrv)
 
-	go func() {
-		err := a.GetDataCli(config, "mongodb")
-		if err != nil {
-			blog.Error("connect mongodb error exit! err:%s", err.Error())
-			chErr <- err
-		}
-	}()
+	err = a.GetDataCli(config, "mongodb")
+	if err != nil {
+		blog.Error("connect mongodb error exit! err:%s", err.Error())
+		return err
+	}
 
 	go func() {
 		err := ccAPI.rd.Start()
@@ -135,6 +128,32 @@ func (ccAPI *CCAPIServer) Start() error {
 		chErr <- err
 	}()
 
+	waitfunc := func(f func() string, wg *sync.WaitGroup) {
+		for {
+			if f() != "" {
+				wg.Done()
+				return
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
+	all := []string{
+		types.CC_MODULE_PROC,
+		types.CC_MODULE_TOPO,
+	}
+
+	wg := &sync.WaitGroup{}
+	for _, module := range all {
+		wg.Add(1)
+		go waitfunc(rdapi.GetRdAddrSrvHandle(module, a.AddrSrv), wg)
+	}
+
+	go func() {
+		wg.Wait()
+		err := ccAPI.httpServ.ListenAndServe()
+		blog.Error("http listen and serve failed! err:%s", err.Error())
+		chErr <- err
+	}()
 	select {
 	case err := <-chErr:
 		blog.Error("exit! err:%s", err.Error())
