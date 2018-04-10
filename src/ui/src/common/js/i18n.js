@@ -11,5 +11,5 @@ import en from '../json/en.json'
 import zhCn from '../json/zh-cn.json'
 export default {
     en: en,
-    zh: zhCn
+    'zh_cn': zhCn
 }
