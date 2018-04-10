@@ -173,7 +173,22 @@
     import bus from '@/eventbus/bus'
     export default {
         props: {
-            outerParams: Object,
+            outerParams: {
+                type: Object,
+                default () {
+                    return {
+                        condition: [{
+                            'bk_obj_id': 'biz',
+                            fields: [],
+                            condition: [{
+                                field: 'default',
+                                operator: '$ne',
+                                value: 1
+                            }]
+                        }]
+                    }
+                }
+            },
             isShowBiz: {
                 type: Boolean,
                 default: true
@@ -277,23 +292,7 @@
                         exact: 0,
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
-                    condition: [{
-                        'bk_obj_id': 'host',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'module',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'set',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'biz',
-                        fields: [],
-                        condition: []
-                    }]
+                    condition: []
                 }
             }
         },
