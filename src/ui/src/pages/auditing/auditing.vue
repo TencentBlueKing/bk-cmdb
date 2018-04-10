@@ -15,7 +15,7 @@
                 <div class="title-content clearfix">
                     <div class="group-content group-content-business">
                         <div class="selector-content selector-content-business">
-                            <bk-select :selected.sync="filter.bkBizId" :filterable="true">
+                            <bk-select :selected.sync="filter.bkBizId" :filterable="true" :placeholder="'请选择业务'">
                                 <bk-select-option v-for="(option, index) in bkBizList"
                                     :key="option['bk_biz_id']"
                                     :value="option['bk_biz_id']"
