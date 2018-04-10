@@ -1,7 +1,7 @@
 {
 	"1106000": "Failed to query host instance",
 	"1106002": "Failed to add new host instance",
-	 "1106003":"Query Host Snapshot Failed",
+	"1106003":"Query Host Snapshot Failed",
 	"1106004": "Failed to transfer host module",
 	"1106005":"Failed to delete the host default cluster module",
 	"1106006": "Failed to get host module relationship",
