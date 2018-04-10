@@ -202,7 +202,6 @@
                     })
                     this.ztreeDataSourceList = res.data
                 } catch (e) {
-                    console.error(e)
                     this.$alertMsg(e.data['bk_error_msg'])
                 } finally {
                     this.isLoading = false
