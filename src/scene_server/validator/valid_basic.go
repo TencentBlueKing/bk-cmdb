@@ -29,14 +29,15 @@ import (
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
 
 type IntOption struct {
-	Min string `json:"min"`
-	Max string `json:"max"`
+	Min string `bson:"min" json:"min"`
+	Max string `bson:"max" json:"max"`
 }
 
 type EnumVal struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	IsDefault bool   `json:"is_default"`
+	ID        string `bson:"id"           json:"id"`
+	Name      string `bson:"name"         json:"name"`
+	Type      string `bson:"type"         json:"type"`
+	IsDefault bool   `bson:"is_default"   json:"is_default"`
 }
 
 type ValidMap struct {
@@ -547,7 +548,8 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 	return nil
 }
 
-func parseEnumOption(val interface{}) []EnumVal {
+// ParseEnumOption convert val to []EnumVal
+func ParseEnumOption(val interface{}) []EnumVal {
 	enumOptions := []EnumVal{}
 	switch options := val.(type) {
 	case string:
@@ -556,6 +558,7 @@ func parseEnumOption(val interface{}) []EnumVal {
 		for _, optionVal := range options {
 			if option, ok := optionVal.(map[string]interface{}); ok {
 				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
@@ -573,7 +576,7 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 		return true, nil
 	}
 	var defaultOption *EnumVal
-	enumOption := parseEnumOption(option)
+	enumOption := ParseEnumOption(option)
 	match := false
 
 	for _, k := range enumOption {
