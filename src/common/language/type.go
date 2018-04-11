@@ -10,37 +10,22 @@
  * limitations under the License.
  */
 
-package models
+package language
 
-//common group
-const (
-	BaseInfo     = "default"
-	BaseInfoName = "基础信息"
+// UnknownTheCodeStrf const define unknow code
+const UnknownTheKeyStrf = "the key is '%v', unknown meaning"
 
-	GroupNone = "none"
-)
+// UnknownTheLanguageStrf define unknow language
+const UnknownTheLanguageStrf = "the language code is '%s', unknown meaning"
 
-//app group info
-const (
-	AppRole     = "role"
-	AppRoleName = "角色"
-)
+// defaultLanguage default language package name
+const defaultLanguage = "default"
 
-//host group info
+// LanguageMap  mapping
+type LanguageMap map[string]string
 
-const (
-	HostAutoFields     = "auto"
-	HostAutoFieldsName = "自动发现信息（需要安装agent）"
-)
-
-//process group info
-const (
-	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
-
-	ProcGsekitBaseInfo     = "gsekit_baseinfo"
-	ProcGsekitBaseInfoName = "GSEkit 基本信息"
-
-	ProcGsekitManageInfo     = "gsekit_manage"
-	ProcGsekitManageInfoName = "GSEkit 进程管理信息"
-)
+// ccError  CC custom error  defind
+type ccLanguage struct {
+	key      string
+	callback func() string
+}

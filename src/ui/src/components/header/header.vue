@@ -38,7 +38,7 @@
                 </transition>
                 <div class="fl quick-search-icon" :class="{'show': !isShowQuickSearch}" @click.stop.prevent="quickSearch" @mouseover="showQuickSearch"><i class="bk-icon icon-search"></i></div>
             </div>
-            <!-- <div class="language fl">   
+            <div class="language fl">   
                 <i class="icon icon-cc-lang"></i>
                 <span class="language-text">{{languageLable}}</span>
                 <i class="bk-icon icon-angle-down"></i>
@@ -46,7 +46,7 @@
                     <li :class="{'active': language==='zh'}" @click="changeLanguage('zh')">简体中文</li>
                     <li :class="{'active': language==='en'}" @click="changeLanguage('en')">English</li>
                 </ul>
-            </div> -->
+            </div>
             <div class="user-detail-contain fr pr">
                 <div class="dropdown-content-user fl">
                     <div class="select-trigger">
@@ -136,11 +136,13 @@
                 this.language = language
                 if (language === 'zh') {
                     this.languageLable = '中文'
-                    this.$i18n.locale = 'zh'
+                    this.$i18n.locale = 'zh_CN'
+                    this.$store.commit('setLang', 'zh_CN')
                     this.setLang('zh')
                 } else if (language === 'en') {
                     this.languageLable = 'EN'
                     this.$i18n.locale = 'en'
+                    this.$store.commit('setLang', 'en')
                     this.setLang('en')
                 }
             }

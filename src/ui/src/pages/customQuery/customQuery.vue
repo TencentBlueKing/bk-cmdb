@@ -24,7 +24,7 @@
             </div>
             <div class="options-search fr">
                 <input class="bk-form-input" type="text" placeholder="快速查询"
-                v-model.trim="filter.Name"
+                v-model.trim="filter.name"
                     @keyup.enter="setCurrentPage(1)"
                 >
                 <i class="bk-icon icon-search options-search-icon" @click="setCurrentPage(1)"></i>
@@ -134,7 +134,7 @@
                     sort: this.table.sort
                 }
                 this.filter.bkBizId ? params['bk_biz_id'] = this.filter.bkBizId : void (0)
-                this.filter.name ? params['Condition'] = {'name': this.filter.name} : void (0)
+                this.filter.name ? params['condition'] = {'name': this.filter.name} : void (0)
                 return params
             }
         },

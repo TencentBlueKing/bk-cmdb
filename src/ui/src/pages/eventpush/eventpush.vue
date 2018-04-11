@@ -11,7 +11,7 @@
 <template>
     <div class="content-box">
         <div class="button-wrapper">
-            <bk-button type="primary" @click="addPush">新增推送</bk-button>
+            <bk-button type="primary" @click="addPush">{{$t('EventPush["新增推送"]')}}</bk-button>
         </div>
         <v-table
             :tableHeader="table.header"
@@ -24,7 +24,7 @@
             @handleTableSortClick="setCurrentSort">
                 <td slot="statistics" slot-scope="{ item }">
                     <i class="circle" :class="[{'danger':item.statistics.failure},{'success':!item.statistics.failure}]"></i>
-                    失败 {{item.statistics.failure}} / 总量 {{item.statistics.total}}
+                    {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
                 </td>
                 <td slot="setting" slot-scope="{ item }">
                     <i class="icon-cc-edit mr20" @click="editEvent(item)"></i>
@@ -61,29 +61,29 @@
                 operationType: '',              // 当前事件推送操作类型  add/edit
                 isSliderShow: false,            // 弹窗状态
                 sliderTitle: {
-                    text: '新增推送',
+                    text: '',
                     icon: 'icon-cc-edit'
                 },
                 table: {
                     header: [{
                         id: 'subscription_name',
-                        name: '推送名称'
+                        name: 'EventPush["推送名称"]'
                     }, {
                         id: 'system_name',
-                        name: '系统名称'
+                        name: 'EventPush["系统名称"]'
                     }, {
                         id: 'operator',
-                        name: '操作人'
+                        name: 'EventPush["操作人"]'
                     }, {
                         id: 'last_time',
-                        name: '更新时间'
+                        name: 'EventPush["更新时间"]'
                     }, {
                         id: 'statistics',
-                        name: '推送情况（近一周）',
+                        name: 'EventPush["推送情况（近一周）"]',
                         sortable: false
                     }, {
                         id: 'setting',
-                        name: '配置',
+                        name: 'EventPush["配置"]',
                         sortable: false
                     }],
                     list: [],
@@ -126,7 +126,7 @@
                         this.table.list = res.data.info
                         pagination.count = res.data.count
                     } else {
-                        this.$alertMsg('获取推送列表失败')
+                        this.$alertMsg('EventPush["获取推送列表失败"]')
                     }
                     this.table.isLoading = false
                 }).catch(() => {
@@ -140,7 +140,7 @@
                 this.curEvent = {...item}
                 this.isSliderShow = true
                 this.operationType = 'edit'
-                this.sliderTitle.text = '编辑推送'
+                this.sliderTitle.text = 'EventPush["编辑推送"]'
             },
             /*
                 保存推送成功回调
@@ -162,7 +162,7 @@
                 this.curEvent = item
                 let self = this
                 this.$bkInfo({
-                    title: `确定删除名称为 ${item['subscription_name']} 的推送？`,
+                    title: this.$tc('EventPush["删除推送确认"]', item['subscription_name'], {name: item['subscription_name']}),
                     confirmFn () {
                         self.delEvent(item)
                     }
@@ -175,10 +175,10 @@
                 let appid = 0
                 this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${appid}/${item['subscription_id']}`).then(res => {
                     if (res.result) {
-                        this.$alertMsg('删除推送成功', 'success')
+                        this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
                         this.getTableList()
                     } else {
-                        this.$alertMsg('删除推送失败')
+                        this.$alertMsg('EventPush["删除推送失败"]')
                     }
                 })
             },
@@ -188,7 +188,7 @@
             addPush () {
                 this.operationType = 'add'
                 this.isSliderShow = true
-                this.sliderTitle.text = '新增推送'
+                this.sliderTitle.text = 'EventPush["新增推送"]'
             },
             /*
                 关闭推送弹窗
