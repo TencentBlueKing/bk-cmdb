@@ -730,7 +730,7 @@ func (cli *objAttLogic) subSearchWithParams(val []byte) ([]api.ObjAttDes, error)
 
 retry:
 	for idx, tmp := range objs {
-		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
+		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.IsSystem {
 			// 清理当前的值
 			objs = delArrayFunc(objs, idx)
 			goto retry
