@@ -115,6 +115,8 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objAtt.OwnerID = obj.OwnerID
 	objAtt.PropertyID = common.BKInstParentStr
 	objAtt.IsSystem = true
+	objAtt.IsOnly = true
+	objAtt.IsRequired = true
 
 	val, jsErr := json.Marshal(objAtt)
 	if nil != jsErr {
