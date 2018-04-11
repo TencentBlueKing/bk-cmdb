@@ -10,37 +10,14 @@
  * limitations under the License.
  */
 
-package models
+package language
 
-//common group
-const (
-	BaseInfo     = "default"
-	BaseInfoName = "基础信息"
+// Error implementation of content interface
+func (cli *ccLanguage) Content() string {
+	return cli.callback()
+}
 
-	GroupNone = "none"
-)
-
-//app group info
-const (
-	AppRole     = "role"
-	AppRoleName = "角色"
-)
-
-//host group info
-
-const (
-	HostAutoFields     = "auto"
-	HostAutoFieldsName = "自动发现信息（需要安装agent）"
-)
-
-//process group info
-const (
-	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
-
-	ProcGsekitBaseInfo     = "gsekit_baseinfo"
-	ProcGsekitBaseInfoName = "GSEkit 基本信息"
-
-	ProcGsekitManageInfo     = "gsekit_manage"
-	ProcGsekitManageInfoName = "GSEkit 进程管理信息"
-)
+// GetCode returns key
+func (cli *ccLanguage) GetKey() string {
+	return cli.key
+}
