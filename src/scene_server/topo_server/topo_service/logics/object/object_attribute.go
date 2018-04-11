@@ -100,6 +100,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objasst["bk_asst_obj_id"] = obj.AssociationID
 	obj.Editable = true
 	obj.PropertyID = common.BKChildStr
+	obj.PropertyType = common.FiledTypeSingleChar
 	objasst["bk_object_att_id"] = obj.PropertyID
 
 	// to create object association	, failed return
@@ -114,6 +115,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objAtt.ObjectID = obj.ObjectID
 	objAtt.OwnerID = obj.OwnerID
 	objAtt.PropertyID = common.BKInstParentStr
+	objAtt.PropertyType = common.FiledTypeInt
 	objAtt.IsSystem = true
 	objAtt.IsOnly = true
 	objAtt.IsRequired = true
