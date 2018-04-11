@@ -166,7 +166,7 @@ func (cli *topoAction) updateOldInstParentID(ownerID string, parentInstID int, c
 			targetOBJ = common.BKInnerObjIDSet
 			condition[common.BKSetIDField] = inst.InstID
 		default:
-			targetOBJ = common.BKObjIDField
+			targetOBJ = common.BKINnerObjIDObject
 			condition[common.BKInstIDField] = inst.InstID
 			condition[common.BKObjIDField] = inst.ObjID
 		}
