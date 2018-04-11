@@ -29,8 +29,8 @@ import (
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
 
 type IntOption struct {
-	Min string `json:min`
-	Max string `json:max`
+	Min string `json:"min"`
+	Max string `json:"max"`
 }
 
 type EnumVal struct {
@@ -106,7 +106,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		}
 
 		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField].(string)
+		option := rule[common.BKOptionField]
 		switch fieldType {
 		case common.FiledTypeSingleChar:
 			if nil == val {
@@ -114,9 +114,9 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			result, err = valid.validChar(val, key)
-			if 0 != len(option) && result && "" != val {
+			if option != nil && result && "" != val {
 				//fmt.Println(option)
-				strReg := regexp.MustCompile(option)
+				strReg := regexp.MustCompile(option.(string))
 				strVal := val.(string)
 				//fmt.Println(strVal)
 				result = strReg.MatchString(strVal)
@@ -132,9 +132,9 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			result, err = valid.validLongChar(val, key)
-			if 0 != len(option) && result && "" != val {
+			if option != nil && result && "" != val {
 				//fmt.Println(option)
-				strReg := regexp.MustCompile(option)
+				strReg := regexp.MustCompile(option.(string))
 				strVal := val.(string)
 
 				result = strReg.MatchString(strVal)
@@ -395,8 +395,20 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 	return true, nil
 }
 
-//valid int
-func (valid *ValidMap) validInt(val interface{}, key string, option string) (bool, error) {
+func parseIntOption(val interface{}) IntOption {
+	intOption := IntOption{}
+	switch option := val.(type) {
+	case string:
+		json.Unmarshal([]byte(option), &intOption)
+	case map[string]interface{}:
+		intOption.Min = getString(option["min"])
+		intOption.Max = getString(option["max"])
+	}
+	return intOption
+}
+
+// validInt valid int
+func (valid *ValidMap) validInt(val interface{}, key string, option interface{}) (bool, error) {
 	var value int
 	if nil == val {
 		isIn := util.InArray(key, valid.IsRequireArr)
@@ -416,7 +428,6 @@ func (valid *ValidMap) validInt(val interface{}, key string, option string) (boo
 			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
 		}
 	}
-	var intObjOption IntOption
 	if reflect.TypeOf(val).Kind() == reflect.Int {
 		value2 := reflect.ValueOf(val).Int()
 		value = int(value2)
@@ -425,13 +436,11 @@ func (valid *ValidMap) validInt(val interface{}, key string, option string) (boo
 	if 0 == value {
 		value, _ = util.GetIntByInterface(val)
 	}
-	if 0 == len(option) {
+
+	if option != nil {
 		return true, nil
 	}
-	err := json.Unmarshal([]byte(option), &intObjOption)
-	if nil != err {
-		return true, nil
-	}
+	intObjOption := parseIntOption(option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return true, nil
 	}
@@ -538,19 +547,33 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 	return nil
 }
 
-//valid enum
-func (valid *ValidMap) validEnum(val interface{}, key string, option string) (bool, error) {
+func parseEnumOption(val interface{}) []EnumVal {
+	enumOptions := []EnumVal{}
+	switch options := val.(type) {
+	case string:
+		json.Unmarshal([]byte(options), &enumOptions)
+	case []interface{}:
+		for _, optionVal := range options {
+			if option, ok := optionVal.(map[string]interface{}); ok {
+				enumOption := EnumVal{}
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				enumOptions = append(enumOptions, enumOption)
+			}
+		}
+	}
+	return enumOptions
+}
+
+// validEnum valid enum
+func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}) (bool, error) {
 	valStr, ok := val.(string)
 	if false == ok {
 		return true, nil
 	}
-	var enumOption []EnumVal
-	var defaultOption *EnumVal = nil
-	re := json.Unmarshal([]byte(option), &enumOption)
-	if nil != re {
-		blog.Error("params  not valid")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
-	}
+	var defaultOption *EnumVal
+	enumOption := parseEnumOption(option)
 	match := false
 
 	for _, k := range enumOption {
@@ -644,4 +667,23 @@ func (valid *ValidMap) validTime(val interface{}, key string) (bool, error) {
 	}
 	return true, nil
 
+}
+
+func getString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if ret, ok := val.(string); ok {
+		return ret
+	}
+	return ""
+}
+func getBool(val interface{}) bool {
+	if val == nil {
+		return false
+	}
+	if ret, ok := val.(bool); ok {
+		return ret
+	}
+	return false
 }
