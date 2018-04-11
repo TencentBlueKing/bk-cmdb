@@ -721,22 +721,22 @@ func (cli *objAttLogic) subSearchWithParams(val []byte) ([]api.ObjAttDes, error)
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	objs, err := cli.objcli.SearchMetaObjectAttExceptInnerFiled(val)
-	/**
-	   TODO need to delete
 
-	  	delArrayFunc := func(s []api.ObjAttDes, i int) []api.ObjAttDes {
-	  		return append(s[:i], s[i+1:]...)
-	  	}
+	// TODO need to delete
 
-	  retry:
-	  	for idx, tmp := range objs {
-	  		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
-	  			// 清理当前的值
-	  			objs = delArrayFunc(objs, idx)
-	  			goto retry
-	  		}
-	  	}
-	*/
+	delArrayFunc := func(s []api.ObjAttDes, i int) []api.ObjAttDes {
+		return append(s[:i], s[i+1:]...)
+	}
+
+retry:
+	for idx, tmp := range objs {
+		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
+			// 清理当前的值
+			objs = delArrayFunc(objs, idx)
+			goto retry
+		}
+	}
+
 	return objs, err
 }
 
