@@ -721,21 +721,22 @@ func (cli *objAttLogic) subSearchWithParams(val []byte) ([]api.ObjAttDes, error)
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	objs, err := cli.objcli.SearchMetaObjectAttExceptInnerFiled(val)
+	/**
+	   TODO need to delete
 
-	//   TODO: need to delete
-	delArrayFunc := func(s []api.ObjAttDes, i int) []api.ObjAttDes {
-		return append(s[:i], s[i+1:]...)
-	}
+	  	delArrayFunc := func(s []api.ObjAttDes, i int) []api.ObjAttDes {
+	  		return append(s[:i], s[i+1:]...)
+	  	}
 
-retry:
-	for idx, tmp := range objs {
-		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
-			// 清理当前的值
-			objs = delArrayFunc(objs, idx)
-			goto retry
-		}
-	}
-
+	  retry:
+	  	for idx, tmp := range objs {
+	  		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
+	  			// 清理当前的值
+	  			objs = delArrayFunc(objs, idx)
+	  			goto retry
+	  		}
+	  	}
+	*/
 	return objs, err
 }
 
@@ -769,8 +770,6 @@ func (cli *objAttLogic) searchWithParams(val []byte, errProxy errors.DefaultCCEr
 			blog.Error("failed to search the property group, error info is %s", groupErr.Error())
 		} else if 0 != len(groups) {
 			objAtts[idx].PropertyGroupName = groups[0].GroupName
-		} else {
-			blog.Error("not found the groups, by the condition(%+v)", condition)
 		}
 
 		if nil != asstErr {
