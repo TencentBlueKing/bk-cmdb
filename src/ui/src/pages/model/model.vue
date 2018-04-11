@@ -20,7 +20,7 @@
                 </ul>
                 <div class="bottom-btn-contain" @click="addClassify('add')">
                     <a class="bottom-btn" >
-                        <span>新增</span>
+                        <span>{{$t('Common["新增"]')}}</span>
                     </a>
                 </div>
             </div>
@@ -86,7 +86,7 @@
                         <transition name="topo-disable-list">
                             <div class="topo-disable tl" v-show="isShowDisableList">
                                 <label class="disable-title">
-                                    <span>已禁用模型</span>
+                                    <span>{{$t('ModelManagement["已禁用模型"]')}}</span>
                                     <i class="bk-icon icon-arrows-right" @click="isShowDisableList = false"></i>
                                 </label>
                                 <ul class="disable-list" ref="disableList">
@@ -97,9 +97,9 @@
                             </div>
                         </transition>
                         <img src="../../common/images/no_model_prompting.png" alt="">
-                        <p v-if="isCreateShow">此分类下无已启动模型</p>
-                        <p v-else>此分类下无模型</p>
-                        <bk-button type="primary" class="create-btn" @click="showAddModel">立即创建</bk-button>
+                        <p v-if="isCreateShow">{{$t('ModelManagement["此分类下无已启动模型"]')}}</p>
+                        <p v-else>{{$t('ModelManagement["此分类下无模型"]')}}</p>
+                        <bk-button type="primary" class="create-btn" @click="showAddModel">{{$t('Common["立即创建"]')}}</bk-button>
                     </div>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                         @cancel="cancel">
                         </v-base-info>
                     </bk-tabpanel> -->
-                    <bk-tabpanel name="host" title="模型配置">
+                    <bk-tabpanel name="host" :title="$t('ModelManagement[\'模型配置\']')">
                         <v-field ref="field"
                         :bk_classification_id="curClassify['bk_classification_id']"
                         :type="curModel.type"
@@ -147,7 +147,7 @@
                         @newField="isNewField=!isNewField"
                         ></v-field>
                     </bk-tabpanel>
-                    <bk-tabpanel name="layout" title="字段分组" :show="curModel.type==='change'">
+                    <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="curModel.type==='change'">
                         <v-layout ref="layout"
                         :isShow="curTabName==='layout'"
                         :id="curModel['id']"
@@ -162,7 +162,7 @@
                     <bk-tabpanel name="sort" title="排序" :show="curModel.type==='change'">
                         <v-sort></v-sort>
                     </bk-tabpanel> -->
-                    <bk-tabpanel name="other" title="其他操作" :show="curModel.type==='change'">
+                    <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
                         <v-other
                             :parentClassificationId = "curClassify['bk_classification_id']"
                             :item="curModel"
@@ -336,7 +336,7 @@
                 this.showAddModel()
             },
             showAddModel () {
-                this.sliderTitle.text = '新增模型'
+                this.sliderTitle.text = this.$t('ModelManagement["新增模型"]')
                 this.sliderTitle.icon = 'icon-cc-model'
                 this.curTabName = 'host'
                 this.curModel = {}
@@ -670,7 +670,7 @@
             deleteClassify () {
                 var self = this
                 this.$bkInfo({
-                    title: '确认要删除此分类？',
+                    title: this.$t('ModelManagement["确认要删除此分类？"]'),
                     confirmFn () {
                         self.deletes()
                     }
@@ -695,7 +695,7 @@
                     // }
                     this.getAllClassify()
                     this.curModel['id'] = obj['id']
-                    this.sliderTitle.text = `${obj['bk_obj_name']}(模型管理)`
+                    this.sliderTitle.text = `${obj['bk_obj_name']})`
                     this.curModel['bk_obj_id'] = obj['bk_obj_id']
                     this.curModel.type = 'change'
                     this.curTabName = 'host'

@@ -129,15 +129,15 @@
                 }, {
                     id: 1,
                     type: 'add',
-                    label: 'OperationAudit["新增"]'
+                    label: 'Common["新增"]'
                 }, {
                     id: 2,
                     type: 'modify',
-                    label: 'OperationAudit["修改"]'
+                    label: 'Common["修改"]'
                 }, {
                     id: 3,
                     type: 'delete',
-                    label: 'OperationAudit["删除"]'
+                    label: 'Common["删除"]'
                 }],
                 ranges: {
                     昨天: [moment().subtract(1, 'days'), moment()],
@@ -172,7 +172,7 @@
                     sortKey: 'bk_biz_id'
                 }, {
                     id: 'ext_key',
-                    name: 'IP'
+                    name: 'OperationAudit["IP"]'
                 }, {
                     id: 'op_type_name',
                     name: 'OperationAudit["操作类型"]',

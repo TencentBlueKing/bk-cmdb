@@ -12,7 +12,7 @@
     <div class="authority-wrapper">
         <template v-if="roles.length">
             <div class="authority-group clearfix">
-                <h2 class="authority-group-title fl">角色选择</h2>
+                <h2 class="authority-group-title fl">{{$t('Permission["角色选择"]')}}</h2>
                 <bk-select class="role-selector fl" :selected.sync="localRoles.selected">
                     <bk-select-option v-for="(role, index) in localRoles.list"
                         :key="index"
@@ -22,22 +22,22 @@
                 </bk-select>
             </div>
             <div class="authority-group clearfix">
-                <h2 class="authority-group-title fl">系统相关</h2>
+                <h2 class="authority-group-title fl">{{$t('Permission["系统相关"]')}}</h2>
                 <div class="authority-group-content">
                     <div class="authority-type system clearfix" 
                         v-for="(config, configId) in sysConfig" 
                         v-if="config.authorities.length">
-                        <h3 class="system-title fl">{{config.name}}</h3>
+                        <h3 class="system-title fl">{{$t(config.name)}}</h3>
                         <ul class="system-list clearfix">
                             <li class="system-item fl"  v-for="authority in config.authorities">
                                 <label class="bk-form-checkbox bk-checkbox-small"
                                     :for="'systemAuth-' + authority.id" 
-                                    :title="authority.name"
+                                    :title="$t(authority.name)"
                                     @click="updateGroupAuthorities">
                                     <input type="checkbox"
                                         :id="'systemAuth-' + authority.id" 
                                         :value="authority.id"
-                                        v-model="config.selectedAuthorities">{{authority.name}}
+                                        v-model="config.selectedAuthorities">{{$t(authority.name)}}
                                 </label>
                             </li>
                         </ul>
@@ -45,7 +45,7 @@
                 </div>
             </div>
             <div class="authority-group model clearfix" style="margin-top:14px;">
-                <h2 class="authority-group-title"><span>模型相关</span></h2>
+                <h2 class="authority-group-title"><span>{{$t('Permission["模型相关"]')}}</span></h2>
                 <div class="authority-group-content">
                     <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" v-if="classify.models.length"> 
                         <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
@@ -63,7 +63,7 @@
                                             <input type="checkbox"
                                                 :id="'model-all-'+model['bk_obj_id']" 
                                                 :checked="model.selectedAuthorities.length === 4"
-                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">全选
+                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -73,7 +73,7 @@
                                             <input type="checkbox" value='search' 
                                                 :id="'model-search-'+model['bk_obj_id']" 
                                                 v-model="model.selectedAuthorities"
-                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">查询
+                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -84,7 +84,7 @@
                                             <input type="checkbox" value='create' 
                                                 :id="'model-create-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"
-                                                v-model="model.selectedAuthorities">新增
+                                                v-model="model.selectedAuthorities">{{$t('Common["新增"]')}}
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -95,7 +95,7 @@
                                             <input type="checkbox" value='update' 
                                                 :id="'model-update-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"  
-                                                v-model="model.selectedAuthorities">编辑
+                                                v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -106,7 +106,7 @@
                                             <input type="checkbox" value='delete' 
                                                 :id="'model-delete-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1" 
-                                                v-model="model.selectedAuthorities">删除
+                                                v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
                                         </label>
                                     </span>
                                 </li>
@@ -118,8 +118,8 @@
         </template>
         <template v-else>
             <div class="user-none">
-                <img src="../../../common/images/user-none.png" alt="没有创建角色">
-                <p>没有创建角色</p>
+                <img src="../../../common/images/user-none.png" :alt="$t('Permission[\'没有创建角色\']')">
+                <p>{{$t('Permission["没有创建角色"]')}}</p>
             </div>
         </template>
     </div>
@@ -147,25 +147,25 @@
                 sysConfig: {
                     global_busi: {
                         id: 'global_busi',
-                        name: '全局业务',
+                        name: 'Permission["全局业务"]',
                         authorities: [{
                             id: 'resource',
-                            name: '资源池管理'
+                            name: 'Permission["资源池管理"]'
                         }],
                         selectedAuthorities: []
                     },
                     back_config: {
                         id: 'back_config',
-                        name: '后台配置',
+                        name: 'Permission["后台配置"]',
                         authorities: [{
                             id: 'event',
-                            name: '事件推送配置'
+                            name: 'Permission["事件推送配置"]'
                         }, {
                             id: 'model',
-                            name: '模型配置'
+                            name: 'Permission["模型配置"]'
                         }, {
                             id: 'audit',
-                            name: '操作审计'
+                            name: 'OperationAudit["操作审计"]'
                         }],
                         selectedAuthorities: []
                     }

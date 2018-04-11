@@ -14,7 +14,7 @@
             <div class="sideslider" :style="{width: `${width}px`}">
                 <slot name="title">
                     <h3 class="title">
-                        <span class="vm">{{$t(title.text)}}</span>
+                        <span class="vm">{{title.text}}</span>
                     </h3>
                 </slot>
                 <!-- <span class="close" @click="closeSlider">关闭</span> -->
