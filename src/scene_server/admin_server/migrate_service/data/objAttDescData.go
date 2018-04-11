@@ -15,6 +15,7 @@ package data
 import (
 	"configcenter/src/common"
 	mCommon "configcenter/src/scene_server/admin_server/common"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/metadata"
 )
 
@@ -36,8 +37,8 @@ func AppRow() []*metadata.ObjectAttDes {
 
 	groupAppRole := mCommon.AppRole
 
-	lifeCycleOption := []common.KvMap{{"name": "测试中", "type": "text"}, {"name": "已上线", "type": "text", "is_default": true}, {"name": "停运", "type": "text"}}
-	languageOption := []common.KvMap{{"name": "中文", "type": "text"}, {"name": "English", "type": "text"}}
+	lifeCycleOption := []validator.EnumVal{{ID: "", Name: "测试中", Type: "text"}, {ID: "", Name: "已上线", Type: "text", IsDefault: true}, {ID: "", Name: "停运", Type: "text"}}
+	languageOption := []validator.EnumVal{{ID: "", Name: "中文", Type: "text"}, {ID: "", Name: "English", Type: "text"}}
 	dataRows := []*metadata.ObjectAttDes{
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_biz_id", PropertyName: "业务ID", IsSystem: true, IsRequired: bkFalse, IsOnly: false, PropertyType: common.FiledTypeInt, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_biz_name", PropertyName: "业务名", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: nil},
@@ -71,14 +72,14 @@ func AppRow() []*metadata.ObjectAttDes {
 // SetRow set structure
 func SetRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDSet
-	serviceStatusOption := []common.KvMap{common.KvMap{"name": "开放", "type": "text", "is_default": true}, common.KvMap{"name": "关闭", "type": "text"}}
+	serviceStatusOption := []validator.EnumVal{{ID: "", Name: "开放", Type: "text", IsDefault: true}, {ID: "", Name: "关闭", Type: "text"}}
 
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: common.KvMap{}},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.SETID_FIELD, PropertyName: "集群ID", IsSystem: true, IsRequired: bkFalse, IsOnly: bkTrue, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_set_name", PropertyName: "集群名字", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_set_desc", PropertyName: "集群描述", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: nil},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_set_env", PropertyName: "环境类型", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "测试", "type": "text"}, {"name": "体验", "type": "text"}, {"name": "正式", "en_name": "", "type": "text", "is_default": true}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_set_env", PropertyName: "环境类型", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "测试", Type: "text"}, {ID: "", Name: "体验", Type: "text"}, {ID: "", Name: "正式", Type: "text", IsDefault: true}}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_service_status", PropertyName: "服务状态", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: serviceStatusOption},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "description", PropertyName: "备注", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeLongChar, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_capacity", PropertyName: "设计容量", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: common.KvMap{"min": "1", "max": "999999999"}},
@@ -92,7 +93,7 @@ func SetRow() []*metadata.ObjectAttDes {
 // ModuleRow module structure
 func ModuleRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDModule
-	moduleTypeOption := []common.KvMap{{"name": "普通", "en_name": "", "type": "text", "is_default": true}, {"name": "数据库", "en_name": "", "type": "text"}}
+	moduleTypeOption := []validator.EnumVal{{ID: "", Name: "普通", Type: "text", IsDefault: true}, {ID: "", Name: "数据库", Type: "text"}}
 
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: common.KvMap{}},
@@ -144,8 +145,8 @@ func HostRow() []*metadata.ObjectAttDes {
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_level", PropertyName: "重要级别", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{"name":"重要", "type":"text"},{"name":"非常重要", "type":"text"},{"name":"一般", "type":"text"},{"name":"不重要", "type":"text"}]"},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_status", PropertyName: "运行状态", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{"name":"离线", "type":"text"},{"name":"在线", "type":"text"}]"},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_current_status", PropertyName: "当前状态", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{"name":"运营中", "type":"text"},{"name":"故障", "type":"text"},{"name":"备用", "type":"text"},{"name":"重装中", "type":"text"}]"},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "L1", "en_name": "", "type": "text"}, {"name": "L2", "en_name": "", "type": "text"}, {"name": "L3", "en_name": "", "type": "text"}}},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKOSTypeField, PropertyName: "操作系统类型", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "Linux", "en_name": "", "type": "text"}, {"name": "Windows", "en_name": "", "type": "text"}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "L1", Type: "text"}, {ID: "", Name: "L2", Type: "text"}, {ID: "", Name: "L3", Type: "text"}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKOSTypeField, PropertyName: "操作系统类型", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "Linux", Type: "text"}, {ID: "", Name: "Windows", Type: "text"}}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKOSNameField, PropertyName: "操作系统名称", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_os_version", PropertyName: "操作系统版本", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: nil},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_os_bit", PropertyName: "操作系统位数", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: nil},
@@ -158,7 +159,7 @@ func HostRow() []*metadata.ObjectAttDes {
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_outer_mac", PropertyName: "外网MAC", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: nil},
 		//agent 没有分组
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.CreateTimeField, PropertyName: "录入时间", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FiledTypeTime, Option: nil},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "import_from", PropertyName: "录入方式", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "excel", "en_name": "", "type": "text"}, {"name": "agent", "en_name": "", "type": "text"}, {"name": "api", "en_name": "", "type": "text"}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "import_from", PropertyName: "录入方式", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "excel", Type: "text"}, {ID: "", Name: "agent", Type: "text"}, {ID: "", Name: "api", Type: "text"}}},
 		// &metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_agent_version", PropertyName: "Agent版本", IsRequired: false, IsOnly: false, PropertyGroup: mCommon.Group_None, PropertyType: common.FiledTypeSingleChar, Option: nil},
 	}
 
@@ -177,9 +178,9 @@ func ProcRow() []*metadata.ObjectAttDes {
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKProcessNameField, PropertyName: "进程名称", IsRequired: true, IsOnly: true, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: nil},
 
 		//监听端口分组
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bind_ip", PropertyName: "绑定IP", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupPort, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "127.0.0.1", "en_name": "", "type": "text"}, {"name": "0.0.0.0", "en_name": "", "type": "text"}, {"name": "第一内网IP", "en_name": "", "type": "text"}, common.KvMap{"name": "第一外网IP", "en_name": "", "type": "text"}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bind_ip", PropertyName: "绑定IP", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupPort, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "127.0.0.1", Type: "text"}, {ID: "", Name: "0.0.0.0", Type: "text"}, {ID: "", Name: "第一内网IP", Type: "text"}, {ID: "", Name: "第一外网IP", Type: "text"}}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "port", PropertyName: "端口", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupPort, PropertyType: common.FiledTypeSingleChar, Option: `^((\d+-\d+)|(\d+))(,((\d+)|(\d+-\d+)))*$`, Placeholder: `单个端口：8080 </br>多个连续端口：8080-8089 </br>多个不连续端口：8080-8089,8199`},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "protocol", PropertyName: "协议", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupPort, PropertyType: common.FiledTypeEnum, Option: []common.KvMap{{"name": "TCP", "en_name": "", "type": "text"}, {"name": "UDP", "en_name": "", "type": "text"}}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "protocol", PropertyName: "协议", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupPort, PropertyType: common.FiledTypeEnum, Option: []validator.EnumVal{{ID: "", Name: "TCP", Type: "text"}, {ID: "", Name: "UDP", Type: "text"}}},
 
 		//gsekit 基础信息
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_func_id", PropertyName: "功能ID", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FiledTypeSingleChar, Option: nil},
