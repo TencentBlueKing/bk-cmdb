@@ -15,7 +15,7 @@
                 <div class="title-content clearfix">
                     <div class="group-content group-content-business">
                         <div class="selector-content selector-content-business">
-                            <bk-select :selected.sync="filter.bkBizId" :filterable="true" :placeholder="'请选择业务'">
+                            <bk-select :selected.sync="filter.bkBizId" :filterable="true" :placeholder="$t('OperationAudit[\'请选择业务\']')">
                                 <bk-select-option v-for="(option, index) in bkBizList"
                                     :key="option['bk_biz_id']"
                                     :value="option['bk_biz_id']"
@@ -30,11 +30,11 @@
                     <div class="group-content group-content-ip">
                         <span class="title-name">IP</span>
                         <div class="selector-content selector-content-ip">
-                            <input type="text" placeholder="使用逗号分隔" v-model.trim="filter.bkIP">
+                            <input type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
                         </div>
                     </div>
                     <div class="group-content group-content-classify">
-                        <span class="title-name">模型</span>
+                        <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
                         <div class="selector-content selector-content-classify">
                             <bk-select
                                 :selected.sync="filter.classify"
@@ -58,7 +58,7 @@
                         </div>
                     </div>
                     <div class="group-content group-content-type">
-                        <span class="title-name">类型</span>
+                        <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
                         <div class="selector-content selector-content-type">
                             <bk-select
                                 :selected.sync="filter.bkOpType"
@@ -67,13 +67,13 @@
                                 <bk-select-option v-for="(operateType, operateTypeIndex) in operateTypeList"
                                     :key="operateTypeIndex"
                                     :value="operateType.type"
-                                    :label="operateType.label"
+                                    :label="$t(operateType.label)"
                                 ></bk-select-option>
                             </bk-select>
                         </div>
                     </div>
                     <div class="group-content group-content-time">
-                        <span class="title-name">时间</span>
+                        <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
                         <div class="selector-content selector-content-time">
                             <bk-daterangepicker
                                 :range-separator="'-'"
@@ -86,7 +86,7 @@
                         </div>
                     </div>
                     <div class="group-content group-content-btn fr">
-                        <bk-button type="primary" class="" @click="setCurrentPage(1)">查询</bk-button>
+                        <bk-button type="primary" class="" @click="setCurrentPage(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
                     </div>
                 </div>
                 <div class="table-content">
@@ -125,19 +125,19 @@
                 operateTypeList: [{
                     id: '',
                     type: '',
-                    label: '全部'
+                    label: 'OperationAudit["全部"]'
                 }, {
                     id: 1,
                     type: 'add',
-                    label: '新增'
+                    label: 'OperationAudit["新增"]'
                 }, {
                     id: 2,
                     type: 'modify',
-                    label: '修改'
+                    label: 'OperationAudit["修改"]'
                 }, {
                     id: 3,
                     type: 'delete',
-                    label: '删除'
+                    label: 'OperationAudit["删除"]'
                 }],
                 ranges: {
                     昨天: [moment().subtract(1, 'days'), moment()],
@@ -159,27 +159,27 @@
                 },
                 tableHeader: [{
                     id: 'operator',
-                    name: '操作帐号'
+                    name: 'OperationAudit["操作账号"]'
                 }, {
                     id: 'op_target',
-                    name: '操作对象'
+                    name: 'OperationAudit["操作对象"]'
                 }, {
                     id: 'op_desc',
-                    name: '描述'
+                    name: 'OperationAudit["描述"]'
                 }, {
                     id: 'bk_biz_name',
-                    name: '所属业务',
+                    name: 'OperationAudit["所属业务"]',
                     sortKey: 'bk_biz_id'
                 }, {
                     id: 'ext_key',
                     name: 'IP'
                 }, {
                     id: 'op_type_name',
-                    name: '操作类型',
+                    name: 'OperationAudit["操作类型"]',
                     sortKey: 'op_type'
                 }, {
                     id: 'op_time',
-                    name: '操作时间'
+                    name: 'OperationAudit["操作时间"]'
                 }],
                 tableList: [],
                 defaultSort: '-op_time',
@@ -190,7 +190,8 @@
             /* 从store中回去操作对象列表 */
             ...mapGetters([
                 'allClassify',
-                'bkBizList'
+                'bkBizList',
+                'language'
             ]),
             /* 开始时间 */
             startDate () {
@@ -239,7 +240,7 @@
             operateTypeMap () {
                 let operateTypeMap = {}
                 this.operateTypeList.forEach((operateType, index) => {
-                    operateTypeMap[operateType['id']] = operateType['label']
+                    operateTypeMap[operateType['id']] = this.$t(operateType['label'])
                 })
                 return operateTypeMap
             }
@@ -250,6 +251,9 @@
             },
             'filter.classify' (classify) {
                 this.isShowClearIcon.classify = Boolean(classify)
+            },
+            'operateTypeMap' (val) {
+                this.initTableList()
             }
         },
         created () {
@@ -277,12 +281,18 @@
             },
             /* 根据返回的结果设置一些表格显示内容 */
             initTableList (list) {
-                list.forEach((item, index) => {
-                    item['bk_biz_name'] = this.applicationMap[item['bk_biz_id']]
-                    item['op_type_name'] = this.operateTypeMap[item['op_type']]
-                    item['op_time'] = this.$formatTime(moment(item['op_time']))
-                })
-                this.tableList = list
+                if (list) {
+                    list.forEach((item, index) => {
+                        item['bk_biz_name'] = this.applicationMap[item['bk_biz_id']]
+                        item['op_type_name'] = this.operateTypeMap[item['op_type']]
+                        item['op_time'] = this.$formatTime(moment(item['op_time']))
+                    })
+                    this.tableList = list
+                } else {
+                    this.tableList.forEach((item, index) => {
+                        item['op_type_name'] = this.operateTypeMap[item['op_type']]
+                    })
+                }
             },
             /* 日期选择时设置筛选参数 */
             setFilterTime (oldValue, newValue) {
