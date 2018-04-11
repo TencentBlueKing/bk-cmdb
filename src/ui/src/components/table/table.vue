@@ -46,7 +46,7 @@
                         <template v-else>
                             <slot name="tableEmptyRow">
                                 <tr>
-                                    <td class="table-empty-col" :colspan="tableHeader.length">暂时没有数据</td>
+                                    <td class="table-empty-col" :colspan="tableHeader.length">{{$t('Common[\'暂时没有数据\']')}}</td>
                                 </tr>
                             </slot>
                         </template>
