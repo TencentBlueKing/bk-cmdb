@@ -208,10 +208,12 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
+				// TODO add log
 				continue
 			}
 			hostid := fmt.Sprint(host[bkcommon.BKHostIDField])
 			if hostid == "" {
+				// TODO add log
 				continue
 			}
 
@@ -227,6 +229,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				blog.Infof("update by %v, to %v", condition, setter)
 				if err := instdata.UpdateHostByCondition(setter, condition); err != nil {
 					blog.Error("update host error:", err.Error())
+					continue
 				}
 				copyVal(setter, host)
 			}
@@ -295,6 +298,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
+	// TODO add log when fields empty
 	return map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
@@ -334,6 +338,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 	}*/
 	ips := getIPS(val)
 	if len(ips) > 0 {
+		// TODO add log
 		for _, ip := range ips {
 			if host := h.getCache()[cloudid+"::"+ip]; host != nil {
 				return host
@@ -349,7 +354,7 @@ func (h *HostSnap) concede() {
 	h.isMaster = false
 	h.subscribing = false
 	val := h.redisCli.Get(common.MasterProcLockKey).Val()
-	if len(val) > 5 && h.id == val[0:5] {
+	if len(val) > len(h.id) && h.id == val[0:len(h.id)] {
 		h.redisCli.Del(common.MasterProcLockKey)
 	}
 }
@@ -363,7 +368,7 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
 		}
-		if len(val) > 5 && h.id == val[0:len(h.id)] {
+		if len(val) > len(h.id) && h.id == val[0:len(h.id)] {
 			blog.Infof("master check : i am still master")
 			h.redisCli.Set(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
 			ok = true
@@ -428,6 +433,7 @@ func (h *HostSnap) subChan() {
 		if "" == msg.Payload {
 			continue
 		}
+		// TODO l char var name
 		l = len(h.msgChan)
 		if h.maxSize*2 <= l {
 			//  if msgChan fulled, clear old msgs
@@ -460,6 +466,7 @@ func (h *HostSnap) clearMsgChan() {
 		if ts != h.ts {
 			msgCnt = len(h.msgChan) - h.maxSize
 		} else {
+			// TODO may be dead lock
 			<-h.msgChan
 		}
 		h.Unlock()
