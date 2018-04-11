@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
@@ -529,7 +529,7 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 				return itemsErr
 			} else if 0 == len(items) {
 				blog.Error("nothing to be delete, condition:%s", string(checkObjAttCondVal))
-				// objatt对象已经不存在��
+				// objatt not found
 				return fmt.Errorf("nothing to be deleted, please the condition")
 			}
 		}
@@ -541,6 +541,10 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 		if nil != rstErr {
 			blog.Error("call subsearch failed for object attribute, objatt id %v", attrID)
 			return fmt.Errorf("nothing to be deleted, please check the condition")
+		}
+
+		if objAtt.IsPre {
+			return fmt.Errorf("could not delete preset attribute")
 		}
 
 		objAsst[common.BKObjIDField] = objAtt.ObjectID

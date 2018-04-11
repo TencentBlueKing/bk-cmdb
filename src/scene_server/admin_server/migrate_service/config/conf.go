@@ -75,15 +75,17 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 		return err
 	}
 
-	for {
-		select {
-		case confEvn := <-languageEvent:
-			cc.dealLanguageEvent(confEvn.Data)
-		case <-cc.rootCtx.Done():
-			blog.Warn("configure discover service done")
-			return nil
+	go func() {
+		for {
+			select {
+			case confEvn := <-languageEvent:
+				cc.dealLanguageEvent(confEvn.Data)
+			case <-cc.rootCtx.Done():
+				blog.Warn("configure discover service done")
+			}
 		}
-	}
+	}()
+	return nil
 }
 
 // Stop the configure center
