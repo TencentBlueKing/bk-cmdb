@@ -53,7 +53,7 @@
                                                         @change="clearFieldValue(property)">
                                                     <span>{{property['bk_property_name']}}</span>
                                                 </label>
-                                                <i class="icon-tooltips" v-if="property['placeholder']" v-tooltip="property['placeholder']"></i>
+                                                <i class="icon-tooltips" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
                                             </div>
                                             <div class="attribute-item-field">
                                                 <input v-if="property['bk_property_type'] === 'int'" 
@@ -532,6 +532,13 @@
             },
             deleteObject () {
                 this.$emit('delete', Object.assign({}, this.formValues))
+            },
+            htmlEncode (str) {
+                let c = document.createElement('div')
+                c.innerHTML = str
+                let output = c.innerText
+                c = null
+                return output
             }
         },
         components: {

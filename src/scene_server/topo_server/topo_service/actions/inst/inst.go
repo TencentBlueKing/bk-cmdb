@@ -1127,21 +1127,9 @@ func (cli *instAction) getInstDeteilByCondition(req *restful.Request, objID stri
 	blog.Debug("the return data:%+v", ret)
 	if data, ok := ret["data"].(map[string]interface{}); ok {
 		if info, infoOk := data["info"].([]interface{}); infoOk {
-			for _, infoItem := range info {
-				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
-					for k, v := range dataItem {
-						if assts, ok := v.([]instNameAsst); ok {
-							refs := []metadata.Ref{}
-							for _, ref := range assts {
-								refs = append(refs, metadata.Ref{
-									RefID:   ref.InstID,
-									RefName: ref.InstName,
-								})
-							}
-							dataItem[k] = refs
-						}
-					}
-					return dataItem, common.CCSuccess
+			if len(info) > 0 && info[0] != nil {
+				if ret, ok := info[0].(map[string]interface{}); ok {
+					return ret, common.CCSuccess
 				}
 			}
 		}

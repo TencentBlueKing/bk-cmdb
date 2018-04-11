@@ -54,7 +54,7 @@ func AppRow() []*metadata.ObjectAttDes {
 		//&metadata.ObjectAttDes{ObjKeyId: "app", PropertyID: "ParentID", PropertyName: "", IsRequired: common.BKFalse, IsOnly: common.BKFalse, PropertyType: common.FiledTypeInt, Option: ""},
 	}
 
-	if Distribution == "enterprise" {
+	if Distribution == common.RevisionEnterprise {
 		dataRows = append(dataRows,
 			&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "time_zone", PropertyName: "时区", IsRequired: true, IsOnly: false, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeTimeZone, Option: "", IsReadOnly: true},
 			&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "language", PropertyName: "语言", IsRequired: true, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: languageOption, IsReadOnly: true},
@@ -127,17 +127,16 @@ func HostRow() []*metadata.ObjectAttDes {
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "设备SN", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_comment", PropertyName: "备注", IsRequired: false, IsOnly: false, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeLongChar, Option: ""},
-		//拓扑分组 todo
 
 		//自动发现分组
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKCloudIDField, PropertyName: "云区域", IsRequired: false, IsOnly: true, Editable: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleAsst, Option: `{"value":"plat","label":"云区域"}`}, //common.FiledTypeInt, Option: "{}"},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKCloudIDField, PropertyName: "云区域", IsRequired: false, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleAsst, Option: `{"value":"plat","label":"云区域"}`}, //common.FiledTypeInt, Option: "{}"},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_host_name", PropertyName: "主机名称", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: ""},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_host_type", PropertyName: "主机类型", IsRequired: false, IsOnly: false, Editable: false, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"虚拟机\",\"type\":\"text\"},{\"name\":\"实体机\",\"type\":\"text\"},{\"name\":\"容器虚拟机\",\"type\":\"text\"}]"},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_service_term", PropertyName: "质保年限", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeInt, Option: "{\"min\":\"1\",\"max\":\"10\"}"},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_service_term", PropertyName: "质保年限", IsRequired: false, IsOnly: false, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: "{\"min\":\"1\",\"max\":\"10\"}"},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_level", PropertyName: "重要级别", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"重要\", \"type\":\"text\"},{\"name\":\"非常重要\", \"type\":\"text\"},{\"name\":\"一般\", \"type\":\"text\"},{\"name\":\"不重要\", \"type\":\"text\"}]"},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_status", PropertyName: "运行状态", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"离线\", \"type\":\"text\"},{\"name\":\"在线\", \"type\":\"text\"}]"},
 		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_current_status", PropertyName: "当前状态", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"运营中\", \"type\":\"text\"},{\"name\":\"故障\", \"type\":\"text\"},{\"name\":\"备用\", \"type\":\"text\"},{\"name\":\"重装中\", \"type\":\"text\"}]"},
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"L1\", \"type\":\"text\"},{\"name\":\"L2\", \"type\":\"text\"},{\"name\":\"L3\", \"type\":\"text\"}]"},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"L1\", \"type\":\"text\"},{\"name\":\"L2\", \"type\":\"text\"},{\"name\":\"L3\", \"type\":\"text\"}]"},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKOSTypeField, PropertyName: "操作系统类型", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeEnum, Option: "[{\"name\":\"Linux\", \"type\":\"text\"},{\"name\":\"Windows\", \"type\":\"text\"}]"},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKOSNameField, PropertyName: "操作系统名称", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_os_version", PropertyName: "操作系统版本", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FiledTypeSingleChar, Option: ""},

@@ -106,8 +106,12 @@ func addBKApp(req *restful.Request) error {
 	appModelData[common.BKAppNameField] = common.BKAppName
 	appModelData[common.BKMaintainersField] = "admin"
 
-	if data.Distribution == "enterprise" {
+	if data.Distribution == common.RevisionEnterprise {
 		appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
+		appModelData[common.BKLanguageField] = "中文"
+	} else {
+		delete(appModelData, common.BKTimeZoneField)
+		delete(appModelData, common.BKLanguageField)
 	}
 
 	byteParams, _ := json.Marshal(appModelData)
