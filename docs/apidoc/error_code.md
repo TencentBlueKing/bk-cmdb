@@ -1,4 +1,4 @@
-#### code range
+#### code description
 ---
 
 1. 错误码由7位数字组成
