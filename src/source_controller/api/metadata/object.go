@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
@@ -35,29 +35,29 @@ func (ObjectAsst) TableName() string {
 
 // ObjectAttDes define the object attribute struct
 type ObjectAttDes struct {
-	ID            int        `bson:"id"                     json:"id"`
-	OwnerID       string     `bson:"bk_supplier_account"       json:"bk_supplier_account"`
-	ObjectID      string     `bson:"bk_obj_id"                 json:"bk_obj_id"`
-	PropertyID    string     `bson:"bk_property_id"            json:"bk_property_id"`
-	PropertyName  string     `bson:"bk_property_name"          json:"bk_property_name"`
-	PropertyGroup string     `bson:"bk_property_group"         json:"bk_property_group"`
-	PropertyIndex int        `bson:"bk_property_index"         json:"bk_property_index"`
-	Unit          string     `bson:"unit"                   json:"unit"`
-	Placeholder   string     `bson:"placeholder"            json:"placeholder"`
-	Editable      bool       `bson:"editable"               json:"editable"`
-	IsPre         bool       `bson:"ispre"                  json:"ispre"`
-	IsRequired    bool       `bson:"isrequired"             json:"isrequired"`
-	IsReadOnly    bool       `bson:"isreadonly"             json:"isreadonly"`
-	IsOnly        bool       `bson:"isonly"                 json:"isonly"`
-	IsSystem      bool       `bson:"bk_issystem"               json:"bk_issystem"`
-	IsAPI         bool       `bson:"bk_isapi"                  json:"bk_isapi"`
-	PropertyType  string     `bson:"bk_property_type"          json:"bk_property_type"`
-	Option        string     `bson:"option"                 json:"option"`
-	Description   string     `bson:"description"            json:"description"`
-	Creator       string     `bson:"creator"                json:"creator"`
-	CreateTime    *time.Time `bson:"create_time"              json:"create_time"`
-	LastTime      *time.Time `bson:"last_time"                json:"last_time"`
-	Page          *BasePage  `bson:"-" json:"page,omitempty"`
+	ID            int         `bson:"id"                     json:"id"`
+	OwnerID       string      `bson:"bk_supplier_account"    json:"bk_supplier_account"`
+	ObjectID      string      `bson:"bk_obj_id"              json:"bk_obj_id"`
+	PropertyID    string      `bson:"bk_property_id"         json:"bk_property_id"`
+	PropertyName  string      `bson:"bk_property_name"       json:"bk_property_name"`
+	PropertyGroup string      `bson:"bk_property_group"      json:"bk_property_group"`
+	PropertyIndex int         `bson:"bk_property_index"      json:"bk_property_index"`
+	Unit          string      `bson:"unit"                   json:"unit"`
+	Placeholder   string      `bson:"placeholder"            json:"placeholder"`
+	Editable      bool        `bson:"editable"               json:"editable"`
+	IsPre         bool        `bson:"ispre"                  json:"ispre"`
+	IsRequired    bool        `bson:"isrequired"             json:"isrequired"`
+	IsReadOnly    bool        `bson:"isreadonly"             json:"isreadonly"`
+	IsOnly        bool        `bson:"isonly"                 json:"isonly"`
+	IsSystem      bool        `bson:"bk_issystem"            json:"bk_issystem"`
+	IsAPI         bool        `bson:"bk_isapi"               json:"bk_isapi"`
+	PropertyType  string      `bson:"bk_property_type"       json:"bk_property_type"`
+	Option        interface{} `bson:"option"                 json:"option"`
+	Description   string      `bson:"description"            json:"description"`
+	Creator       string      `bson:"creator"                json:"creator"`
+	CreateTime    *time.Time  `bson:"create_time"            json:"create_time"`
+	LastTime      *time.Time  `bson:"last_time"              json:"last_time"`
+	Page          *BasePage   `bson:"-"                      json:"page,omitempty"`
 }
 
 // TableName return the table name
