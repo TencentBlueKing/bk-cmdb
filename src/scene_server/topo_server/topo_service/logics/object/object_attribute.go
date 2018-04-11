@@ -109,21 +109,43 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 		return 0, operr
 	}
 
-	// to create an object attribute, if it fails, you need to delete the association
-	val, jserr := json.Marshal(obj)
-	if nil != jserr {
-		blog.Error("marshal failed, error:%v", jserr)
-		return 0, jserr
+	// to create the inner  attribute
+	objAtt := api.ObjAttDes{}
+	objAtt.ObjectID = obj.ObjectID
+	objAtt.OwnerID = obj.OwnerID
+	objAtt.PropertyID = common.BKInstParentStr
+	objAtt.IsSystem = true
+
+	val, jsErr := json.Marshal(objAtt)
+	if nil != jsErr {
+		blog.Error("marshal failed, error:%v", jsErr)
+		return 0, jsErr
 	}
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	rst, rsterr := cli.objcli.CreateMetaObjectAtt(val)
-	if nil != rsterr {
+	innerAttID, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	if nil != rstErr {
+		blog.Error("failed to create the inner filed for the owner(%s) object(%s)", obj.OwnerID, obj.ObjectID)
 		cli.mgr.DeleteObjectAsstByID(id, errProxy)
-		return rst, rsterr
+		return innerAttID, rstErr
 	}
 
-	return rst, rsterr
+	// to create the main line attribute, if it fails, you need to delete the association
+	val, jsErr = json.Marshal(obj)
+	if nil != jsErr {
+		blog.Error("marshal failed, error:%v", jsErr)
+		return 0, jsErr
+	}
+
+	cli.objcli.SetAddress(cli.cfg.Get(cli))
+	rst, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	if nil != rstErr {
+		cli.mgr.DeleteObjectAsstByID(id, errProxy)
+		cli.objcli.DeleteMetaObjectAtt(innerAttID, []byte("{}"))
+		return rst, rstErr
+	}
+
+	return rst, rstErr
 }
 
 func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
