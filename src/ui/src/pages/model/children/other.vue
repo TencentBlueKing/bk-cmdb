@@ -11,38 +11,38 @@
 <template lang="html">
     <div class="tab-content other-content">
         <div class="other-list">
-            <h3>模型停用</h3>
-            <p><span v-if="!item['bk_ispaused']">保留模型和相应实例，隐藏关联关系</span></p>
+            <h3>{{$t('ModelManagement["模型停用"]')}}</h3>
+            <p><span v-if="!item['bk_ispaused']">{{$t('ModelManagement["保留模型和相应实例，隐藏关联关系"]')}}</span></p>
             <div class="bottom-contain">
-                <bk-button type="primary" v-if="isReadOnly" class="bk-button main-btn mr10 button-on" @click="restartModelConfirm">
-                    启用模型
+                <bk-button type="primary":title="$t('ModelManagement[\'启用模型\']')" v-if="isReadOnly" class="bk-button main-btn mr10 button-on" @click="restartModelConfirm">
+                    {{$t('ModelManagement["启用模型"]')}}
                 </bk-button>
-                <bk-button type="primary" v-else class="mr10" title="停用模型" @click="showConfirmDialog('stop')" :class="['bk-button bk-default', {'is-disabled': item['ispre'] || parentClassificationId === 'bk_biz_topo'}]" :disabled="item['ispre'] || parentClassificationId === 'bk_biz_topo'">
-                    停用模型
+                <bk-button type="primary" v-else class="mr10" :title="$t('ModelManagement[\'停用模型\']')" @click="showConfirmDialog('stop')" :class="['bk-button bk-default', {'is-disabled': item['ispre'] || parentClassificationId === 'bk_biz_topo'}]" :disabled="item['ispre'] || parentClassificationId === 'bk_biz_topo'">
+                    {{$t('ModelManagement["停用模型"]')}}
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
                     <i class="icon-cc-attribute"></i>
                     <span class="btn-tip">
                         <i class="right-triangle"></i>
                         <i class="left-triangle"></i>
-                        系统内建模型不可停用
+                        {{$t('ModelManagement["系统内建模型不可停用"]')}}
                     </span>
                 </span>
             </div>
         </div>
         <div class="other-list mt50">
-            <h3>模型删除</h3>
-            <p>删除模型和其下所有实例，此动作不可逆，请慎重操作。</p>
+            <h3>{{$t('ModelManagement["模型删除"]')}}</h3>
+            <p>{{$t('ModelManagement["删除模型和其下所有实例，此动作不可逆，请谨慎操作"]')}}</p>
             <div class="bottom-contain">
-                <bk-button type="primary" class="mr10" title="确认删除模型" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre']">
-                    <span>删除模型</span>
+                <bk-button type="primary" class="mr10" :title="$t('ModelManagement[\'删除模型\']')" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre']">
+                    <span>{{$t('ModelManagement["删除模型"]')}}</span>
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
                     <i class="icon-cc-attribute"></i>
                     <span class="btn-tip">
                         <i class="right-triangle"></i>
                         <i class="left-triangle"></i>
-                        系统内建模型不可删除
+                        {{$t('ModelManagement["系统内建模型不可删除"]')}}
                     </span>
                 </span>
             </div>
@@ -89,7 +89,7 @@
             restartModelConfirm () {
                 let self = this
                 this.$bkInfo({
-                    title: '确认要启用该模型？',
+                    title: this.$t('ModelManagement["确认要启用该模型？"]'),
                     confirmFn () {
                         self.restartModel()
                     }
@@ -134,7 +134,7 @@
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
                         } else {
-                            this.$alertMsg('删除模型失败')
+                            this.$alertMsg(this.$t('ModelManagement["删除模型失败"]'))
                         }
                     })
                 } else {
@@ -153,10 +153,10 @@
             dialogConfirm () {
                 this.confirmInfo.isConfirmShow = false
                 if (this.confirmInfo.confirmType === 'stop') {
-                    this.confirmInfo.text = '确定停用模型?'
+                    this.confirmInfo.text = this.$t('ModelManagement["确认要停用该模型？"]')
                     this.stopModel()
                 } else if (this.confirmInfo.confirmType === 'delete') {
-                    this.confirmInfo.text = '确定删除模型?'
+                    this.confirmInfo.text = this.$t('ModelManagement["确认要删除该模型？"]')
                     this.deleteModel()
                 }
             },
@@ -169,7 +169,7 @@
                 switch (type) {
                     case 'stop':
                         this.$bkInfo({
-                            title: '确定停用模型？',
+                            title: this.$t('ModelManagement["确认要停用该模型？"]'),
                             confirmFn () {
                                 self.stopModel()
                             }
@@ -177,7 +177,7 @@
                         break
                     case 'delete':
                         this.$bkInfo({
-                            title: '确定删除模型？',
+                            title: this.$t('ModelManagement["确认要删除该模型？"]'),
                             confirmFn () {
                                 self.deleteModel()
                             }

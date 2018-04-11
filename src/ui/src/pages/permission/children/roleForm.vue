@@ -23,23 +23,23 @@
             <h2 class="role-form-title">{{title}}</h2>
             <div class="role-form-content">
                 <div class="content-group clearfix">
-                    <label for="groupName" class="fl">角色名</label>
+                    <label for="groupName" class="fl">{{$t('Permission["角色名"]')}}</label>
                     <input type="text" class="bk-form-input fl" id="groupName" v-model.trim="data['group_name']" :disabled="isAdmin">
                 </div>
                 <div class="content-group clearfix" v-if="isAdmin">
-                    <label for="paasUserList" class="fl">与PaaS同步成员</label>
+                    <label for="paasUserList" class="fl">{{$t('Permission["与PaaS同步成员"]')}}</label>
                     <input type="text" class="fl" id="paasUserList" v-model="data.PaasUserList" disabled>
-                    <a class="content-jump-link fl" href="javascript:void(0)"><i class="icon-cc-derivation"></i>跳转配置</a>
+                    <a class="content-jump-link fl" href="javascript:void(0)"><i class="icon-cc-derivation"></i>{{$t('Permission["跳转配置"]')}}</a>
                 </div>
                 <div class="content-group clearfix">
-                    <label for="userList" class="fl">角色成员</label>
+                    <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>
                     <v-member-selector class="fl member-selector" :selected.sync="data['user_list']" :multiple="true" :exclude="true"></v-member-selector>
                 </div>
             </div>
             <div class="role-form-btn">
                 <div class="fr">
-                    <bk-button type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">确定</bk-button>
-                    <bk-button type="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">取消</bk-button>
+                    <bk-button type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
+                    <bk-button type="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
         </form>

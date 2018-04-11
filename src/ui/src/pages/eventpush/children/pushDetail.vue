@@ -63,7 +63,7 @@
                         <label for="reg" class="bk-form-radio bk-radio-small">
                             <input type="radio" name="confimType" id="reg" value="regular"
                                 v-model="tempEventData['confirm_mode']"
-                            >{{$t('EventPush["正则验证"]')}}
+                            >{{$t('Common["正则验证"]')}}
                         </label>
                         <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                             v-if="tempEventData['confirm_mode'] === 'regular'"
@@ -95,8 +95,9 @@
                     </div>
                 </div>
             </form>
-            <div class="info" v-if="language === 'zh_CN'"><span :class="{'text-danger': subscriptionFormError}">至少选择1个事件</span>，已选择 <span class="num">{{selectNum}}</span> 个</div>
-            <div class="info" v-else><span :class="{'text-danger': subscriptionFormError}">Select at least 1 events</span>, <span class="num">{{selectNum}}</span> selected</div>
+            <div class="info">
+                <span :class="{'text-danger': subscriptionFormError}">{{$t('EventPush["至少选择1个事件"]')}}</span>，<i18n path="EventPush['已选择']"><span class="num" place="number">{{selectNum}}</span></i18n>
+            </div>
             <ul class="event-wrapper">
                 <li class="event-box clearfix"
                     :key="index"
@@ -393,7 +394,7 @@
                             data: params
                         }).then(res => {
                             if (res.result) {
-                                this.$alertMsg('保存成功', 'success')
+                                this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')
                                 this.eventData = {...this.tempEventData}
                                 if (this.type === 'add') {
                                     this.$emit('saveSuccess', res.data['subscription_id'])
