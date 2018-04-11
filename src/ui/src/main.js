@@ -69,20 +69,16 @@ Vue.prototype.$deepClone = (data) => {
     return JSON.parse(JSON.stringify(data))
 }
 
-const i18n = new VueI18n({
-    locale: 'zh_cn',
-    messages: i18nConfig,
-    fallbackLocal: 'zh_cn'
-})
-if (language && language !== i18n.locale) {
-    i18n.locale = language
-}
 /* eslint-disable no-new */
 let vm = new Vue({
     el: '#app',
     router,
     template: '<App/>',
-    i18n,
+    i18n: new VueI18n({
+        locale: language,
+        messages: i18nConfig,
+        fallbackLocal: 'zh_cn'
+    }),
     store,
     components: { App }
 })
