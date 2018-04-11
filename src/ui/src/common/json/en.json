@@ -44,11 +44,13 @@
         "XXX不合法": "XXX is illegal",
         "保存成功": "Save Success",
         "权限不足": "Insufficient permissions",
+        "快速查询": "Quick Search",
         "全选": "Select All",
         "编辑": "Modify",
         "新增": "Add",
         "修改": "Modify",
-        "删除": "Delete"
+        "删除": "Delete",
+        "删除成功": "Delete Success"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -244,7 +246,7 @@
         "内网": "Intranet IP",
         "外网": "Extranet IP",
         "精确": "Accurate",
-        "刷新查询": "Fresh",
+        "刷新查询": "Refresh",
         "清空": "Empty",
         "设置筛选项": "Set up filter items",
         "主机筛选项设置": "Host filter item settings",
