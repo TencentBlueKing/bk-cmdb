@@ -13,31 +13,31 @@
         <div class="tab-content" v-if="isLoaded && hostSnapshot">
             <div class="attribute-list clearfix">
                 <div class="title clearfix">
-                    <h3 class="fl">基本值</h3>
+                    <h3 class="fl">{{$t('HostResourcePool[\'基本值\']')}}</h3>
                     <div class="content fr clearfix">
-                        <div class="info-title">最近更新时间：</div>
+                        <div class="info-title">{{$t('HostResourcePool[\'最近更新时间\']')}}：</div>
                         <div class="info-detail">{{hostSnapshot.upTime}}</div>
                     </div>
                 </div>
                 <ul class="info-list">
                     <li class="attr-item clearfix">
-                        <div class="item-title">总流入量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'总流入量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.rcvRate}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">启动时间：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'启动时间\']')}}：</div>
                         <div class="item-detail">{{bootTime}}</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">总流出量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'总流出量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.sendRate}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">磁盘总量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'磁盘总量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.Disk}}GB</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">内存总量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'内存总量\']')}}：</div>
                         <div class="item-detail">{{(hostSnapshot.Mem / 1024).toFixed(2)}}GB</div>
                     </li>
                     <li class="attr-item clearfix" v-if="!isWindowsOSType">
@@ -69,7 +69,7 @@
                     </div>
                 </div>
             </div>
-            <p class="box-text">当前主机没有安装 Agent 或者 Agent 已经离线</p>
+            <p class="box-text">{{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}</p>
         </div>
     </div>
 </template>

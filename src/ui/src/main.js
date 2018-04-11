@@ -27,13 +27,18 @@ import Cookies from 'js-cookie'
 import moment from 'moment'
 import '@/api/axios'
 
-const language = Cookies.get('blueking_language') || 'zh_cn'
+const languageTranslate = {
+    'zh_cn': 'zh_CN',
+    'zh-cn': 'zh_CN'
+}
+let language = Cookies.get('blueking_language') || 'zh_CN'
+language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
 
 Vue.use(VTooltip)
 Vue.use(vClickOutside)
 Vue.use(VueI18n)
 Vue.use(bkMagic)
-Vue.use(VeeValidate, {locale: language.split('_').map((char, index) => index === 0 ? char : char.toUpperCase()).join('_')})
+Vue.use(VeeValidate, {locale: language})
 
 Vue.directive('focus', {
     update (el, binding) {
@@ -77,7 +82,7 @@ let vm = new Vue({
     i18n: new VueI18n({
         locale: language,
         messages: i18nConfig,
-        fallbackLocal: 'zh_cn'
+        fallbackLocal: 'zh_CN'
     }),
     store,
     components: { App }

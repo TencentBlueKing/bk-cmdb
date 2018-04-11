@@ -41,7 +41,9 @@
         "请输入正确的内容": "Please enter the correct content",
         "请输入以http://开头的URL": "Please enter a URL beginning with http://",
         "请输入数字": "Please enter the number",
-        "XXX不合法": "XXX is illegal"
+        "XXX不合法": "XXX is illegal",
+        "保存成功": "Save Success",
+        "权限不足": "Insufficient permissions"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -315,9 +317,15 @@
     "Hosts": {
         "主机管理": "Hosts Management",
         "主机": "Hosts",
+        "模块": "Module",
+        "模块名": "Module Name",
+        "集群": "Set",
+        "集群名": "Set Name",
         "选择业务": "Select Business",
         "收藏": "Collection",
         "名称": "Name",
+        "默认": "Default",
+        "确认": "Confirm",
         "频率": "Frequency",
         "确认删除": "Confirm Deletion",
         "历史": "History",
