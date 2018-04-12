@@ -95,8 +95,8 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 	return cc.ctx
 }
 
-// GetLanguageCxt fetch the language packages
-func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
+// GetErrorCxt fetch the language packages
+func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
 
