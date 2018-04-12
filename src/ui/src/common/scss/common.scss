@@ -567,6 +567,9 @@ body{
         }
     }
 }
+body[lang="en"]{
+    font-family: 'Calibri'
+}
 .tooltip {
   display: block !important;
   z-index: 10000;
