@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package service
 
 import (
@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/http/httpserver/webserver"
+	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/web_server/application/config"
@@ -59,6 +60,9 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	a.AddrSrv = s.rd
+
+	//	a.Lang = language.New()
+
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
 
@@ -85,7 +89,7 @@ func (ccWeb *CCWebServer) Start() error {
 	var confData []byte
 	_ = confData
 	for {
-		confData = ccWeb.cfCenter.GetConfigureCxt()
+		confData = ccWeb.cfCenter.GetConfigureCtx()
 
 		if confData == nil {
 			blog.Warnf("fail to get configure, will get again")
@@ -99,6 +103,30 @@ func (ccWeb *CCWebServer) Start() error {
 
 	a := api.NewAPIResource()
 	config, _ := a.ParseConf(confData)
+
+	// load the language resource
+	if dirPath, ok := config["language.res"]; ok {
+		if res, err := language.New(dirPath); nil != err {
+			blog.Error("failed to create language object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Lang = res
+		}
+	} else {
+		for {
+			langCtx := ccWeb.cfCenter.GetLanguageResCxt()
+			if langCtx == nil {
+				blog.Warnf("fail to get language package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				languageif := language.NewFromCtx(langCtx)
+				a.Lang = languageif
+				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
 
 	site := config["site.domain_url"] + "/"
 	version := config["api.version"]
