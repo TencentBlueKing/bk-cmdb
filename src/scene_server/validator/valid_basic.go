@@ -595,14 +595,15 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 	if "" == valStr && nil != defaultOption {
 		val = defaultOption.ID
 		valStr = defaultOption.ID
-	} else if !match {
-		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(valStr) {
 		blog.Error("params %s can not be empty", key)
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+	}
+	if 0 < len(valStr) && !match {
+		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
+		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return true, nil
 }
