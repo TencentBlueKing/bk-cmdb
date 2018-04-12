@@ -108,7 +108,7 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	} else {
 		for {
-			errcode := ccAPI.cfCenter.GetLanguageCxt()
+			errcode := ccAPI.cfCenter.GetErrorCxt()
 			if errcode == nil {
 				blog.Warnf("fail to get language package, will get again")
 				time.Sleep(time.Second * 2)

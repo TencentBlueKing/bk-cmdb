@@ -105,7 +105,7 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 	return cc.ctx
 }
 
-func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
+func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
 

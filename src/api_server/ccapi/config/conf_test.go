@@ -55,8 +55,8 @@ func TestdealErrorResEvent(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestGetLanguageCxt(t *testing.T) {
-	errC := conf.GetLanguageCxt()
+func TestGetErrorCxt(t *testing.T) {
+	errC := conf.GetErrorCxt()
 	byC, _ := json.Marshal(errC)
 	byE, _ := json.Marshal(errCode)
 	assert.Equal(t, byE, byC)

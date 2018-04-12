@@ -42,14 +42,14 @@ func TestConfCenter_GetConfigureCxt(t *testing.T) {
 	}
 }
 
-func TestConfCenter_GetLanguageCxt(t *testing.T) {
+func TestConfCenter_GetErrorCxt(t *testing.T) {
 	s := NewConfCenter("127.0.0.1")
 	langFake := []byte("{\"fake\":{\"foo\":\"bar\"}}")
 	errorCodeFake := map[string]errors.ErrorCode{
 		"fake": {"foo": "bar"},
 	}
 	s.dealErrorResEvent(langFake)
-	if lang := s.GetLanguageCxt(); !reflect.DeepEqual(lang, errorCodeFake) {
+	if lang := s.GetErrorCxt(); !reflect.DeepEqual(lang, errorCodeFake) {
 		t.Errorf("language not as expected: %v", lang)
 	}
 }
