@@ -81,10 +81,6 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeAdd
 				case "update":
 					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeModify
-				case "modify":
-					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeModify
-				case "del":
-					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeDel
 				case "delete":
 					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeDel
 				}
