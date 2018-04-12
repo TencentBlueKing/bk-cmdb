@@ -17,6 +17,7 @@ Vue.use(Router)
 
 const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index')
 const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
+const pageModel2 = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model.v2')
 const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
 const pageProcess = () => import(/* webpackChunkName: "page-process" */ '@/pages/process/process')
 const pagePermission = () => import(/* webpackChunkName: "page-permission" */ '@/pages/permission/permission')
@@ -50,6 +51,9 @@ var router = new Router({
     }, {
         path: '/model',
         component: pageModel
+    }, {
+        path: '/model2',
+        component: pageModel2
     }, {
         path: '/resource',
         component: pageResource
