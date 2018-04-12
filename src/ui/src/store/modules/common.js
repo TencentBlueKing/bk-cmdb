@@ -30,7 +30,7 @@ const state = {
     usercustom: {},          // 用户字段配置
     globalLoading: false,
     memberLoading: false,
-    language: 'zh_CN'
+    language: Cookies.get('blueking_language') || 'zh_CN'
 }
 
 const getters = {
