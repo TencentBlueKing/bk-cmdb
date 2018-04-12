@@ -133,7 +133,7 @@ const dictionary = {
         },
         attributes: {
             // name: '中文名',
-            id: '英文名'
+            // name: '英文名'
             // lifeCycle: '生命周期',
             // maintainers: '运维人员',
             // strictCharacter: '严格字符',
@@ -142,6 +142,35 @@ const dictionary = {
             // ipAddress: 'ip地址',
             // commonName: '名称'
 
+        }
+    },
+    en: {
+        messages: {
+            name: () => 'Please enter the correct content',
+            char: () => 'Please enter the correct content',
+            id: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase English',
+            http: () => 'Please enter a URL beginning with http://',
+            // lifeCycle: () => '请输入格式为 yyyy-MM-dd 的生命周期',
+            // maintainers: () => '请选择运维人员',
+            // strictCharacter: () => '请输入正确的验证字符',
+            // looseCharacter: () => '请输入正确的宽松字符',
+            // number: () => '请输入正确的数字',
+            // ipAddress: () => '请输入正确的IP地址',
+            // commonName: () => '请输入正确的名称',
+            required: (field) => 'Please enter ' + field,
+            numeric: (field) => 'Please enter the number',
+            regex: (field) => field + ' is illegal'
+        },
+        attributes: {
+            Description: 'Description',
+            Name: 'Name'
+            // lifeCycle: '生命周期',
+            // maintainers: '运维人员',
+            // strictCharacter: '严格字符',
+            // looseCharacter: '宽松字符',
+            // number: '数字',
+            // ipAddress: 'ip地址',
+            // commonName: '名称'
         }
     }
 }
