@@ -1,5 +1,0 @@
-package framework
-
-func main() {
-
-}

@@ -1,5 +1,14 @@
 package types
 
-// Framework contains the basic framework data and the publisher client used to publis events.
-type Framework struct {
+import (
+	"time"
+)
+
+// MapStr the common event data definition
+type MapStr map[string]interface{}
+
+// Event the event data definition
+type Event struct {
+	Timestamp time.Time `json:"timestamp"`
+	Fields    MapStr    `json:",inline"`
 }
