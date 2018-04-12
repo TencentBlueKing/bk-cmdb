@@ -108,7 +108,7 @@ func addBKApp(req *restful.Request) error {
 
 	if data.Distribution == common.RevisionEnterprise {
 		appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
-		appModelData[common.BKLanguageField] = "中文"
+		appModelData[common.BKLanguageField] = "1" //"中文"
 	} else {
 		delete(appModelData, common.BKTimeZoneField)
 		delete(appModelData, common.BKLanguageField)

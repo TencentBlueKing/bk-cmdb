@@ -44,17 +44,24 @@ func upgradeGlobalization(db dbStorage.DI) error {
 		blog.Errorf("upgradeGlobalization get attdes error: %v", err)
 		return err
 	}
+	blog.Infof("attdes:= %#v", attdes)
 	for _, curRow := range attdes {
 		curOptions := validator.ParseEnumOption(curRow.Option)
+		blog.Infof("curOptions:= %#v", curOptions)
 		if len(curOptions) <= 0 {
 			continue
 		}
 
+		expectOptions := []validator.EnumVal{}
 		expectRow := presetRowsMap[curRow.ObjectID+"::"+curRow.PropertyID]
-		expectOptions, ok := expectRow.Option.([]validator.EnumVal)
-		if !ok {
-			expectOptions = []validator.EnumVal{}
+		if expectRow != nil {
+			var ok bool
+			expectOptions, ok = expectRow.Option.([]validator.EnumVal)
+			if !ok {
+				expectOptions = []validator.EnumVal{}
+			}
 		}
+		blog.Infof("expectOptions:= %#v", curOptions)
 
 		sort.SliceStable(curOptions, func(i, j int) bool {
 			return strings.Compare(curOptions[i].Name, curOptions[j].Name) < 0
@@ -90,26 +97,29 @@ func upgradeGlobalization(db dbStorage.DI) error {
 			}
 		}
 
+		blog.Infof("newOptions:= %#v", newOptions)
 		if len(newOptions) <= 0 {
 			continue
 		}
 
 		// update inst
-		tablename := commondata.GetInstTableName(expectRow.ObjectID)
+		tablename := commondata.GetInstTableName(curRow.ObjectID)
+		blog.Infof("updating option for table %s, property %s, option: %v", tablename, curRow.PropertyID, newOptions)
 		for _, option := range newOptions {
 			updateinstdata := map[string]interface{}{
-				expectRow.PropertyID: option.ID,
+				curRow.PropertyID: option.ID,
 			}
 			updateinstcondition := map[string]interface{}{
-				expectRow.PropertyID: option.Name,
+				curRow.PropertyID: option.Name,
 			}
 			if tablename == common.BKTableNameBaseInst {
-				updateinstcondition[common.BKObjIDField] = expectRow.ObjectID
+				updateinstcondition[common.BKObjIDField] = curRow.ObjectID
 			}
 
-			db.UpdateByCondition(tablename, updateinstdata, updateinstcondition)
+			blog.Infof("update inst table %s, condition %#v, data %#v", tablename, updateinstcondition, updateinstdata)
+			err = db.UpdateByCondition(tablename, updateinstdata, updateinstcondition)
 			if err != nil {
-				blog.Errorf("upgradeGlobalization update preset inst error: %v", err)
+				blog.Errorf("upgradeGlobalization update inst error: %v", err)
 				return err
 			}
 		}
@@ -122,9 +132,10 @@ func upgradeGlobalization(db dbStorage.DI) error {
 		updatedata := map[string]interface{}{
 			common.BKOptionField: newOptions,
 		}
+		blog.Infof("update attdes table %s, condition %#v, data %#v", common.BKTableNameObjAttDes, selector, updatedata)
 		err = db.UpdateByCondition(common.BKTableNameObjAttDes, updatedata, selector)
 		if err != nil {
-			blog.Errorf("upgradeGlobalization update preset option field error: %v", err)
+			blog.Errorf("upgradeGlobalization update option field error: %v", err)
 			return err
 		}
 	}
