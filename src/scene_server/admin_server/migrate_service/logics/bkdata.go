@@ -95,7 +95,11 @@ func BKAppInit(req *restful.Request, cc *api.APIResource, ownerID string) error 
 			return err
 		}
 
-		addBKProcess(req)
+		err = addBKProcess(req)
+		if nil != err {
+			blog.Error("add bk process err :%v ", err)
+			return err
+		}
 	}
 	return nil
 

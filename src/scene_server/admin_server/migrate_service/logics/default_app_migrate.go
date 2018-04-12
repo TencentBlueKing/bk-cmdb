@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/migrate_service/data"
+	"configcenter/src/scene_server/validator"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -156,11 +157,19 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 		case common.FiledTypeInt:
 			ret[fieldName] = nil
 		case common.FiledTypeEnum:
-			var enumOption []EnumOptionType
-			json.Unmarshal([]byte(option), &enumOption)
+			enumOptions := validator.ParseEnumOption(option)
 			v := ""
-			if len(enumOption) > 0 {
-				v = enumOption[0].Name
+			if len(enumOptions) > 0 {
+				var defaultOption *validator.EnumVal
+				for _, k := range enumOptions {
+					if k.IsDefault {
+						defaultOption = &k
+						break
+					}
+				}
+				if nil != defaultOption {
+					v = defaultOption.ID
+				}
 			}
 			ret[fieldName] = v
 		case common.FiledTypeDate:
