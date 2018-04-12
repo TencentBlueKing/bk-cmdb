@@ -24,11 +24,11 @@
         "注销": "Log Out",
         "主机转移": "Host Transfer",
         "业务": "Business",
-        "已选XXX项": "XXX items selected",
+        "已选N项": "{N} items selected",
         "确认转移": "Confirmation of transfer",
         "覆盖": "Cover",
         "更新": "Update",
-        "转移到XXX，会清除当前的模块绑定，是否确认？": "Transfer to XXX will clear the current module binding, confirm?",
+        "转移确认": "Transfer to {target} will clear the current module binding, confirm?",
         "转移成功": "Successful Transfer",
         "您没有主机转移的权限": "You do not have permission to transfer from the host",
         "主机资源池": "Host Resource Pool",
@@ -50,7 +50,11 @@
         "新增": "Add",
         "修改": "Modify",
         "删除": "Delete",
-        "删除成功": "Delete Success"
+        "删除成功": "Delete Success",
+        "新建成功": "Create Success",
+        "修改成功": "Update Success",
+        "确定删除": "Are you sure to delete",
+        "至少选择N个字段": "Please select at least {N} field(s)"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -238,6 +242,7 @@
         "更新位置信息失败": "Failed to update location information"
     },
     "HostResourcePool": {
+        "资源池": "Resource Pool",
         "主机资源池": "Host Resource Pool",
         "分配到业务空闲机池": "Assigned to business idle pool",
         "导出选中": "Export Selected",
@@ -266,9 +271,10 @@
         "操作账号": "Operation Account",
         "变更内容": "Change Content",
         "操作时间": "Operation Time",
-        "说明：当主机安装了蓝鲸Agent后，会自动录入到“主机资源池”中": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
+        "agent安装说明": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
         "点此进入Agent安装APP": "Click here to enter the Agent installation APP",
         "批量导入": "Batch Import",
+        "自动导入": "Auto Import",
         "说明：内网IP为必填列": "Note: Intranet IP is required",
         "请确认是否转移": "Please confirm whether to transfer",
         "选中的XXX个主机转移到XXX下的空闲机模块": "Selected XXX Hosts Transfer to Idle machine under XXX",
