@@ -38,12 +38,12 @@
                 </transition>
                 <div class="fl quick-search-icon" :class="{'show': !isShowQuickSearch}" @click.stop.prevent="quickSearch" @mouseover="showQuickSearch"><i class="bk-icon icon-search"></i></div>
             </div>
-            <div class="language fl">   
+            <div class="language fl" hidden>   
                 <i class="icon icon-cc-lang"></i>
                 <span class="language-text">{{languageLable}}</span>
                 <i class="bk-icon icon-angle-down"></i>
                 <ul class="language-box">
-                    <li :class="{'active': language==='zh'}" @click="changeLanguage('zh')">简体中文</li>
+                    <li :class="{'active': language==='zh_CN'}" @click="changeLanguage('zh_CN')">简体中文</li>
                     <li :class="{'active': language==='en'}" @click="changeLanguage('en')">English</li>
                 </ul>
             </div>
@@ -72,12 +72,12 @@
 
 <script type="text/javascript">
     import bus from '@/eventbus/bus'
+    import Cookies from 'js-cookie'
     export default {
         data () {
             return {
                 userName: '',
                 isAdmin: 0,
-                language: 'zh',
                 languageLable: '中文',
                 searchText: '',
                 searchTargetListVisible: false,
@@ -134,17 +134,14 @@
             },
             changeLanguage (language) {
                 this.language = language
-                if (language === 'zh') {
+                this.$i18n.locale = language
+                this.$store.commit('setLang', language)
+                this.$validator.localize(language)
+                if (language === 'zh_CN') {
                     this.languageLable = '中文'
-                    this.$i18n.locale = 'zh_CN'
-                    this.$store.commit('setLang', 'zh_CN')
-                    this.$validator.localize('zh_CN')
                     this.setLang('zh')
                 } else if (language === 'en') {
                     this.languageLable = 'EN'
-                    this.$i18n.locale = 'en'
-                    this.$store.commit('setLang', 'en')
-                    this.$validator.localize('en')
                     this.setLang('en')
                 }
             }
@@ -161,6 +158,15 @@
                     this.searchText = text
                 }
             })
+            const languageTranslate = {
+                'zh_cn': 'zh_CN',
+                'zh-cn': 'zh_CN',
+                'zh': 'zh_CN'
+            }
+            let language = Cookies.get('blueking_language') || 'zh_CN'
+            language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
+            this.language = language
+            this.languageLable = language === 'zh_CN' ? '中文' : 'EN'
         }
     }
 </script>

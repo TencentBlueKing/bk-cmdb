@@ -29,7 +29,8 @@ import '@/api/axios'
 
 const languageTranslate = {
     'zh_cn': 'zh_CN',
-    'zh-cn': 'zh_CN'
+    'zh-cn': 'zh_CN',
+    'zh': 'zh_CN'
 }
 let language = Cookies.get('blueking_language') || 'zh_CN'
 language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
