@@ -51,7 +51,8 @@
         "确定": "Confirm",
         "查询": "Query",
         "正则验证": "Regex",
-        "立即创建": "Add Now"
+        "立即创建": "Add Now",
+        "该字段": "This field"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

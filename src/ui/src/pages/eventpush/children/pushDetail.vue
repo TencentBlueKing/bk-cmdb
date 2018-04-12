@@ -20,10 +20,10 @@
                         <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
-                            data-vv-name="推送名称"
+                            :data-vv-name="$t('EventPush[\'推送名称\']')"
                             v-validate="'required'"
                         >
-                        <span v-show="errors.has('推送名称')" class="color-danger">{{ errors.first('推送名称') }}</span>
+                        <span v-show="errors.has($t('EventPush[\'推送名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'推送名称\']')) }}</span>
                     </div>
                 </div>
                 <div class="form-item">
@@ -68,16 +68,16 @@
                         <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                             v-if="tempEventData['confirm_mode'] === 'regular'"
                             v-model.trim="tempEventData['confirm_pattern']['regular']"
-                            data-vv-name="该字段"
+                            :data-vv-name="$t('ModelManagement[\'该字段\']')"
                             v-validate="'required'"
                         >
                         <input type="text" class="bk-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
                             v-else
                             v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
-                            data-vv-name="该字段"
+                            :data-vv-name="$t('Common[\'该字段\']')"
                         >
-                        <span v-show="errors.has('该字段')" class="color-danger">{{ errors.first('该字段') }}</span>
+                        <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
                     </div>
                 </div>
                 <div class="form-item">
@@ -88,10 +88,10 @@
                         <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
                             v-model.trim="tempEventData['time_out']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
-                            data-vv-name="超时时间"
+                            :data-vv-name="$t('EventPush[\'超时时间\']')"
                             maxlength="10"
                         ><span class="unit">S</span>
-                        <div v-show="errors.has('超时时间')" class="color-danger">{{ errors.first('超时时间') }}</div>
+                        <div v-show="errors.has($t('EventPush[\'超时时间\']'))" class="color-danger">{{ errors.first($t('EventPush[\'超时时间\']')) }}</div>
                     </div>
                 </div>
             </form>
