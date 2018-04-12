@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package hosts
 
 import (
@@ -102,7 +102,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultResModuleName)
 		}
 
-		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, moduleID, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, moduleID, m.CC)
 
 		retData := make(map[string]interface{})
 		retData["success"] = succ
@@ -525,7 +525,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
 
-		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, moduleID, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, moduleID, m.CC)
 
 		if nil == err {
 			return http.StatusOK, nil, nil
