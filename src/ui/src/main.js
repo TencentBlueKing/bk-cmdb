@@ -34,7 +34,7 @@ const languageTranslate = {
 }
 let language = Cookies.get('blueking_language') || 'zh_CN'
 language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
-
+document.body.setAttribute('lang', language)
 Vue.use(VTooltip)
 Vue.use(vClickOutside)
 Vue.use(VueI18n)
