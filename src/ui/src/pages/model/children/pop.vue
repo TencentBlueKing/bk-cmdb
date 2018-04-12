@@ -20,17 +20,17 @@
                             <input type="text" class="bk-form-input" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
-                            data-vv-name="中文名"
+                            :data-vv-name="$t('ModelManagement[\'中文名\']')"
                             v-validate="'required|name'">
-                            <span v-show="errors.has('中文名')" class="help is-danger">{{ errors.first('中文名') }}</span>
+                            <span v-show="errors.has($t('ModelManagement[\'中文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'中文名\']')) }}</span>
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
                             <input type="text" class="bk-form-input" v-model="localValue['bk_classification_id']"
-                            name="id"
+                            :data-vv-name="$t('ModelManagement[\'英文名\']')"
                             :disabled="type==='edit'"
                             v-validate="'required|id'">
-                            <span v-show="errors.has('id')" class="help is-danger">{{ errors.first('id') }}</span>
+                            <span v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</span>
                         </li> 
                     </ul>
                     <div class="content-right" @click="isIconListShow = true">
