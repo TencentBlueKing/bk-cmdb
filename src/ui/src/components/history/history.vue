@@ -12,7 +12,7 @@
     <div class="history-wrapper">
         <div class="history-filter clearfix">
             <div class="filter-group date fl">
-                <label>时间范围</label>
+                <label>{{$t("HostResourcePool['时间范围']")}}</label>
                 <bk-daterangepicker class="filter-field"
                     @change="setFilterDate"
                     :range-separator="'-'"
@@ -23,11 +23,11 @@
                 </bk-daterangepicker>
             </div>
             <div class="filter-group user fl">
-                <label>操作账号</label>
+                <label>{{$t("HostResourcePool['操作账号']")}}</label>
                 <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
-                <bk-button type="primary" title="查询" @click="setCurrentPage(1)">查询</bk-button>
+                <bk-button type="primary" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
             </div>
         </div>
         <div class="history-table">
@@ -70,13 +70,13 @@
                 table: {
                     header: [{
                         id: 'op_desc',
-                        name: '变更内容'
+                        name: this.$t("HostResourcePool['变更内容']")
                     }, {
                         id: 'operator',
-                        name: '操作账号'
+                        name: this.$t("HostResourcePool['操作账号']")
                     }, {
                         id: 'op_time',
-                        name: '操作时间'
+                        name: this.$t("HostResourcePool['操作时间']")
                     }],
                     list: [],
                     pagination: {

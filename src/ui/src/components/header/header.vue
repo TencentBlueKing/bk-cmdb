@@ -32,7 +32,7 @@
                             </div>
                         </div>
                         <div class="search-content fl" @click.stop.prevent>
-                            <input ref="quickSearchText" type="text" name="" value="" placeholder="快速查询..." class="search-input" v-model.trim="searchText" @keyup.enter="quickSearch">
+                            <input ref="quickSearchText" type="text" name="" value="" :placeholder="`${$t('Common[\'快速查询\']')}...`" class="search-input" v-model.trim="searchText" @keyup.enter="quickSearch">
                         </div>
                     </div>
                 </transition>
@@ -54,13 +54,13 @@
                         <i class="bk-icon icon-angle-down"></i>
                         <ul class="select-content">
                             <li v-if="isAdmin == 1">
-                                <i class="icon-cc-user"></i>管理员
+                                <i class="icon-cc-user"></i>{{$t("Common['管理员']")}}
                             </li>
                             <li v-else>
-                                <i class="icon-cc-user"></i>普通用户
+                                <i class="icon-cc-user"></i>{{$t("Common['普通用户']")}}
                             </li>
                             <li @click="logOut">
-                                <i class="icon-cc-logout"></i>注销
+                                <i class="icon-cc-logout"></i>{{$t("Common['注销']")}}
                             </li>
                         </ul>
                     </div>

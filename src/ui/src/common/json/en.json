@@ -64,7 +64,10 @@
         "查询": "Query",
         "正则验证": "Regex",
         "立即创建": "Add Now",
-        "该字段": "This field"
+        "该字段": "This field",
+        "刷新查询": "Refresh",
+        "请选择": "Please Select",
+        "更多属性": "More Properties"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -377,7 +380,11 @@
         "权限不足": "Insufficient permissions",
         "总CPU使用率": "Total CPU usage",
         "总内存使用率": "Total memory usage",
-        "磁盘使用情况": "Disk Usage"
+        "磁盘使用情况": "Disk Usage",
+        "变更关联": "Change Association",
+        "清空": "Refresh",
+        "主机名称": "Hosts Name",
+        "操作系统类型": "Operating System Type"
     },
     "Inst": {
         "立即创建": "Add Now",
