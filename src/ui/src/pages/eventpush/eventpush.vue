@@ -126,7 +126,7 @@
                         this.table.list = res.data.info
                         pagination.count = res.data.count
                     } else {
-                        this.$alertMsg('EventPush["获取推送列表失败"]')
+                        this.$alertMsg(this.$t('EventPush["获取推送列表失败"]'))
                     }
                     this.table.isLoading = false
                 }).catch(() => {
@@ -140,7 +140,7 @@
                 this.curEvent = {...item}
                 this.isSliderShow = true
                 this.operationType = 'edit'
-                this.sliderTitle.text = 'EventPush["编辑推送"]'
+                this.sliderTitle.text = this.$t('EventPush["编辑推送"]')
             },
             /*
                 保存推送成功回调
@@ -178,7 +178,7 @@
                         this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
                         this.getTableList()
                     } else {
-                        this.$alertMsg('EventPush["删除推送失败"]')
+                        this.$alertMsg(this.$t('EventPush["删除推送失败"]'))
                     }
                 })
             },
@@ -188,7 +188,7 @@
             addPush () {
                 this.operationType = 'add'
                 this.isSliderShow = true
-                this.sliderTitle.text = 'EventPush["新增推送"]'
+                this.sliderTitle.text = this.$t('EventPush["新增推送"]')
             },
             /*
                 关闭推送弹窗

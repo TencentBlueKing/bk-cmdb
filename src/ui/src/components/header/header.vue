@@ -138,11 +138,13 @@
                     this.languageLable = '中文'
                     this.$i18n.locale = 'zh_CN'
                     this.$store.commit('setLang', 'zh_CN')
+                    this.$validator.localize('zh_CN')
                     this.setLang('zh')
                 } else if (language === 'en') {
                     this.languageLable = 'EN'
                     this.$i18n.locale = 'en'
                     this.$store.commit('setLang', 'en')
+                    this.$validator.localize('en')
                     this.setLang('en')
                 }
             }

@@ -15,8 +15,8 @@
                 <span class="mr20" v-if="hasCheckbox">已选{{chooseId.length}}行</span>
                 <span>{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
                 <span class="ml20 mr20">
-                    <template v-if="language === 'zh_CN'">
-                        每页显示<span class="select_page_setting mr5">
+                    <i18n path="Common['每页显示']" tag="span">
+                        <span class="select_page_setting mr5" place="page">
                             <bk-select class="select-box" ref="sizeSelector"
                                 :selected.sync="defaultSize" 
                                 :list="pagelist">
@@ -27,22 +27,7 @@
                                 </bk-select-option>
                             </bk-select>
                         </span>
-                        行
-                    </template>
-                    <template v-else>
-                        <span class="select_page_setting mr5">
-                            <bk-select class="select-box" ref="sizeSelector"
-                                :selected.sync="defaultSize" 
-                                :list="pagelist">
-                                <bk-select-option v-for="(option, index) in pagelist" 
-                                    :key="index" 
-                                    :value="option.value" 
-                                    :label="option.label">
-                                </bk-select-option>
-                            </bk-select>
-                        </span>
-                        rows per page
-                    </template>
+                    </i18n>
                 </span>
             </div>
             <div class="bk-page bk-page-compact fr">
