@@ -76,11 +76,11 @@
             </template>
         </ul>
         <div class="attribute-btn">
-            <bk-button type="primary" class="bk-button main-btn" @click="doSubmit" :disabled="errors.any()" v-if="displayType === 'form'">保存</bk-button>
-            <bk-button type="primary" class="bk-button main-btn" @click="toggleDisplayType('form')" v-if="displayType === 'list'">编辑</bk-button>
-            <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="toggleDisplayType('list')" v-if="type === 'update' && displayType === 'form'">取消</bk-button>
-            <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="cancelCreate" v-if="type === 'create'">取消</bk-button>
-            <button class="del-btn" @click="doDelete" v-if="type === 'update' && displayType === 'form'">删除</button>
+            <bk-button type="primary" class="bk-button main-btn" @click="doSubmit" :disabled="errors.any()" v-if="displayType === 'form'">{{$t('Common[\'保存\']')}}</bk-button>
+            <bk-button type="primary" class="bk-button main-btn" @click="toggleDisplayType('form')" v-if="displayType === 'list'">{{$t('Common[\'编辑\']')}}</bk-button>
+            <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="toggleDisplayType('list')" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'取消\']')}}</bk-button>
+            <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="cancelCreate" v-if="type === 'create'">{{$t('Common[\'取消\']')}}</bk-button>
+            <button class="del-btn" @click="doDelete" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'删除\']')}}</button>
         </div>
     </div>
 </template>

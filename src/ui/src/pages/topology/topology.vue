@@ -20,12 +20,12 @@
         </div>
         <div class="topo-view-ctn">
             <bk-tab :active-name="view.tab.active" @tab-changed="tabChanged" class="topo-view-tab">
-                <bk-tabpanel name="host" title="主机调配">
+                <bk-tabpanel name="host" :title="$t('BusinessTopology[\'主机调配\']')">
                     <v-index ref="index" :outerParams="searchParams" :isShowRefresh="true" :outerLoading="tree.loading">
                         <div slot="filter"></div>
                     </v-index>
                 </bk-tabpanel>
-                <bk-tabpanel name="attribute" title="节点属性" :show="isShowAttribute">
+                <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')" :show="isShowAttribute">
                     <v-attribute ref="topoAttribute"
                         :bkObjId="attributeBkObjId" 
                         :bkBizId="tree.bkBizId" 
@@ -168,7 +168,7 @@
                     return res
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
                     }
                 })
             },
@@ -178,7 +178,7 @@
                     return res
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
                     }
                 })
             },
@@ -201,7 +201,7 @@
                             return {
                                 'default': module['bk_module_name'] === '空闲机' ? 1 : 2,
                                 'bk_obj_id': 'module',
-                                'bk_obj_name': '模块',
+                                'bk_obj_name': this.$t('Hosts[\'模块\']'),
                                 'bk_inst_id': module['bk_module_id'],
                                 'bk_inst_name': module['bk_module_name'],
                                 'isFolder': false
@@ -301,7 +301,7 @@
                 }).then(res => {
                     if (res.result) {
                         this.updateTopoTree(this.view.attribute.type, res.data, formData)
-                        this.$alertMsg(`${submitType === 'create' ? '新建' : '修改'}成功`, 'success')
+                        this.$alertMsg(submitType === 'create' ? this.$t('Common[\'新建成功\']') : this.$t('Common[\'修改成功\']'), 'success')
                         if (this.view.attribute.type === 'create') {
                             this.view.tab.active = 'host'
                         } else {
@@ -346,7 +346,7 @@
             /* 删除拓扑节点 */
             deleteNode () {
                 this.$bkInfo({
-                    title: `确定删除${this.tree.activeNode['bk_inst_name']}?`,
+                    title: `${this.$t('Common[\'确定删除\']')}${this.tree.activeNode['bk_inst_name']}?`,
                     confirmFn: () => {
                         let url
                         let {
@@ -371,7 +371,7 @@
                                     active: true,
                                     bk_inst_id: this.tree.treeData['bk_inst_id']
                                 }
-                                this.$alertMsg('删除成功', 'success')
+                                this.$alertMsg(this.$t('Common[\'删除成功\']'), 'success')
                             } else {
                                 this.$alertMsg(res['bk_error_msg'])
                             }

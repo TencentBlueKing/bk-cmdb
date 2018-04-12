@@ -10,12 +10,14 @@
         "下一页": "Next",
         "保存": "Save",
         "取消": "Cancel",
+        "确认": "Confirm",
         "暂时没有数据": "No Data",
         "sorry，您的权限不足": "Sorry, your lack of permissions",
         "内网IP": "Intranet IP",
         "等于": "Equal",
         "不等于": "Not Equal To",
         "包含": "Contain",
+        "不包含": "Not Contain",
         "列表": "Lists",
         "该查询条件对应的业务不存在": "No Eligible Business",
         "收藏成功": "Collection Success",
@@ -45,6 +47,7 @@
         "保存成功": "Save Success",
         "权限不足": "Insufficient permissions",
         "快速查询": "Quick Search",
+        "属性": "Properties",
         "全选": "Select All",
         "编辑": "Modify",
         "新增": "Add",
@@ -54,7 +57,8 @@
         "新建成功": "Create Success",
         "修改成功": "Update Success",
         "确定删除": "Are you sure to delete",
-        "至少选择N个字段": "Please select at least {N} field(s)"
+        "至少选择N个字段": "Please select at least {N} field(s)",
+        "确认要删除": "Confirm to delete {name} ?"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -285,6 +289,7 @@
     },
     "CustomQuery": {
         "自定义查询": "Custom Query",
+        "新增查询": "Add Query",
         "名称": "Name",
         "查询内容": "Query Content",
         "新增条件": "Add Filters",
@@ -298,11 +303,12 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Query Definition",
-        "确认要删除XXX？": "Confirm to delete XXX?"
+        "确认要删除": "Confirm to delete {name}?"
     },
     "ProcessManagement": {
         "进程管理": "Process Management",
         "新增进程": "New Process",
+        "编辑进程": "Modify Process",
         "进程名称搜索": "Process Name Search",
         "更多属性": "More Properties",
         "模块绑定": "Module Binding",
@@ -316,9 +322,10 @@
         "解绑进程模块成功": "Untie the process module successfully",
         "解绑进程模块失败": "Failed to untie the process module",
         "属性": "Property",
+        "新增进程成功": "Add process succeeded",
         "修改进程成功": "Modification process succeeded",
         "删除进程失败": "Failed to delete process",
-        "确认要删除进程XXX？": "Are you sure you want to delete process XXX?",
+        "确认要删除进程": "Are you sure you want to delete process {processName}?",
         "删除进程成功": "The delete process succeeded"
     },
     "BusinessTopology": {
@@ -338,6 +345,7 @@
         "模块名": "Module Name",
         "集群": "Set",
         "集群名": "Set Name",
+        "云区域ID": "Cloud Area ID",
         "选择业务": "Select Business",
         "收藏": "Collection",
         "名称": "Name",
@@ -358,8 +366,8 @@
     "Inst": {
         "立即创建": "Add Now",
         "快速查询": "Quick Search",
-        "将文件拖到此处，或点击上传": "Drag a file here or click Upload",
-        "只能上传 xlsx 文件，且不超过500kb": "Can only upload xlsx files up to 500kb",
+        "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}kb",
+        "点击上传": "click upload",
         "下载模版": "Download Template",
         "隐藏属性": "Hidden Properties",
         "已显示属性": "Displayed Properties",
@@ -368,12 +376,13 @@
         "您没有当前模型的权限": "You do not have permissions for the current model",
         "创建成功": "Created Successfully",
         "请至少选择一项": "Please select at least one",
-        "成功上传XXX条数据": "Successfully uploaded XXX data",
+        "成功上传N条数据": "Successfully uploaded {N} data!",
         "上传失败列表": "Upload failed list",
         "更新失败列表": "Update failure list",
-        "文件大小不能超过XXXkb": "File size cannot exceed XXXkb",
-        "文件格式非法，只能上传xlsx文件": "The file format is illegal and only xlsx files can be uploaded",
+        "文件大小溢出": "File size cannot exceed {maxSize}kb",
+        "文件格式非法": "The file format is illegal and only {allowType} files can be uploaded!",
         "部分成功": "Partially successful",
-        "失败": "failure"
+        "失败": "failure",
+        "成功": "Successful"
     }
 }

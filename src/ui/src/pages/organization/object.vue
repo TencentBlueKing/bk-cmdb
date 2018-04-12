@@ -17,15 +17,15 @@
                         <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
                         <button class="bk-button" :disabled="!table.chooseId.length">
                             <i class="icon-cc-derivation"></i>
-                            <span>导出</span>
+                            <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
                     <button class="bk-button" @click="importSlider.isShow = true">
                         <i class="icon-cc-import"></i>
-                        <span>导入</span>
+                        <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
                 </template>
-                <button class="bk-button bk-primary bk-button-componey create-btn" title="立即创建" @click="openObjectSlider('create')" :disabled="unauthorized.create">立即创建</button>
+                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.create">{{$t("Inst['立即创建']")}}</button>
             </div>
             <button class="bk-button setting fr" @click="settingSlider.isShow = true">
                 <i class="icon-cc-setting"></i>
@@ -41,8 +41,10 @@
                         </bk-select-option>
                     </bk-select>
                 </div>
-                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" placeholder="快速查询" v-model.number="filter.value" @keyup.enter="setTablePage(1)">
-                <input v-else type="text" class="bk-form-input search-text" placeholder="快速查询" v-model.trim="filter.value" @keyup.enter="setTablePage(1)">
+                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" 
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="setTablePage(1)">
+                <input v-else type="text" class="bk-form-input search-text" 
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="setTablePage(1)">
                 <i class="bk-icon icon-search" @click="setTablePage(1)"></i>
             </div>
         </div>
@@ -70,7 +72,7 @@
                 @closeSlider="closeObjectSlider">
                 <div class="slide-content" slot="content">
                     <bk-tab :active-name="tab.activeName" style="border: none;" @tab-changed="tabChanged">
-                        <bk-tabpanel name="attr" title="属性">
+                        <bk-tabpanel name="attr" :title="$t('Common[\'属性\']')">
                             <v-object-attr 
                                 :formFields="attr.formFields" 
                                 :formValues="attr.formValues" 
@@ -82,7 +84,7 @@
                                 @delete="confirmDelete">
                             </v-object-attr>
                         </bk-tabpanel>
-                        <bk-tabpanel name="relevance" title="关联" :show="attr.type==='update'">
+                        <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attr.type==='update'">
                             <template v-if="objId!=='biz'">
                                 <v-relevance :isShow="tab.activeName==='relevance'" style="padding: 30px 0;"
                                     :objId="objId"
@@ -96,14 +98,14 @@
                                 ></v-relevance>
                             </template>
                         </bk-tabpanel>
-                        <bk-tabpanel name="history" title="变更记录" :show="attr.type==='update'">
+                        <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
                             <v-history :active="tab.activeName === 'history'" :type="objId" :instId="objId === 'biz' ? attr.formValues['bk_biz_id'] : attr.formValues['bk_inst_id']"></v-history>
                         </bk-tabpanel>
                     </bk-tab>
                 </div>
             </v-sideslider>
         </div>
-        <v-sideslider :isShow.sync="importSlider.isShow" :hasQuickClose="true" :title="{icon: 'icon-cc-derivation',text: `导入${objName}`}" @closeSlider="closeImportSlider">
+        <v-sideslider :isShow.sync="importSlider.isShow" :hasQuickClose="true" :title="{icon: 'icon-cc-derivation',text: `${$t('ModelManagement[\'导入\']')} ${objName}`}" @closeSlider="closeImportSlider">
             <v-import v-if="importSlider.isShow" slot="content" 
                 :templateUrl="templateUrl" 
                 :importUrl="importUrl" 
@@ -173,7 +175,7 @@
                 settingSlider: {
                     isShow: false,
                     title: {
-                        text: '编辑'
+                        text: this.$t("Common['编辑']")
                     }
                 },
                 // 属性展示界面状态
@@ -462,7 +464,7 @@
                     return data
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前模型的权限')
+                        this.$alertMsg(this.$t("Common['您没有当前模型的权限']"))
                     }
                 })
             },
@@ -510,7 +512,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg('修改成功', 'success')
+                            this.$alertMsg(this.$t("Common['修改成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -521,7 +523,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg('创建成功', 'success')
+                            this.$alertMsg(this.$t("Common['创建成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -535,7 +537,7 @@
                     bk_biz_name: bizName
                 } = data
                 this.$bkInfo({
-                    title: `确认要删除${this.objId === 'biz' ? bizName : instName}吗`,
+                    title: this.$t("Common['确认要删除']", {name: this.objId === 'biz' ? bizName : instName}),
                     confirmFn: () => {
                         this.deleteObject(data)
                     }
@@ -565,10 +567,10 @@
                 this.attr.type = type
                 if (type === 'create') {
                     this.slider.title.icon = 'icon-cc-create-business'
-                    this.slider.title.text = `创建${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['创建']")}${this.objName}`
                 } else {
                     this.slider.title.icon = 'icon-cc-edit'
-                    this.slider.title.text = `编辑${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['编辑']")}${this.objName}`
                 }
                 this.slider.isShow = true
             },

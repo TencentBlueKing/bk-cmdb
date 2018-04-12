@@ -19,7 +19,7 @@
             @choose="setSelectedHost" 
             @attrLoaded="search">
             <div class="button-contain clearfix" slot="btnGroup">
-                <bk-select class="biz-selector fl mr10" placeholder='分配到业务空闲机池'
+                <bk-select class="biz-selector fl mr10" :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
                     :disabled="!hasSelectedHost"
                     :selected.sync="index.bkBizId" 
                     :filterable="true"
@@ -37,34 +37,34 @@
                         :disabled="!hasSelectedHost"
                         @click.prevent="exportChoose">
                         <i class="icon-cc-derivation"></i>
-                        <span>导出选中</span>
+                        <span>{{$t('HostResourcePool[\'导出选中\']')}}</span>
                     </button>
                 </form>
                 <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
-                <bk-button type="primary" class="fl" @click="importHostShow">导入主机</bk-button>
+                <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
             </div>
         </v-index>
         <v-sideslider 
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" style="border: none;padding: 0 20px;">
-                <bk-tabpanel name="import" title="批量导入">
+                <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
                     <v-import 
                         :templateUrl="slider.import.templateUrl"
                         :importUrl="slider.import.importUrl"
                         @success="search()"
                         @partialSuccess="search()">
-                        <span slot="download-desc" style="display: inline-block;vertical-align: top;">说明：内网IP为必填列；</span>
+                        <span slot="download-desc" style="display: inline-block;vertical-align: top;">{{$t('HostResourcePool[\'说明：内网IP为必填列\']')}}</span>
                     </v-import>
                 </bk-tabpanel>
-                <bk-tabpanel name="agent" title="自动导入">
+                <bk-tabpanel name="agent" :title="$t('HostResourcePool[\'自动导入\']')">
                     <div class="automatic-import">
-                        <p>说明： 当主机安装了蓝鲸Agent后，会自动录入到“主机资源池”中</p>
+                        <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
                         <div class="back-contain">
                             <img src="../../common/images/icon/icon-back.png">
-                            <a href="javascript:void(0)" @click="openAgentApp">点此进入Agent安装APP</a>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入Agent安装APP']")}}</a>
                         </div>
                     </div>
                 </bk-tabpanel>
@@ -99,7 +99,7 @@
                 },
                 slider: {
                     title: {
-                        text: '导入主机',
+                        text: this.$t("HostResourcePool['导入主机']"),
                         icon: 'icon-cc-import'
                     },
                     isShow: false,
@@ -138,7 +138,7 @@
             confirmTransfer (selected, index) {
                 let h = this.$createElement
                 this.$bkInfo({
-                    title: '请确认是否转移',
+                    title: this.$t("HostResourcePool['请确认是否转移']"),
                     content: h('p', [
                         h('span', '选中的 '),
                         h('span', {
@@ -165,7 +165,7 @@
                     'bk_host_id': this.index.selectedHost
                 }).then(res => {
                     if (res.result) {
-                        this.$alertMsg('分配成功', 'success')
+                        this.$alertMsg(this.$t("HostResourcePool['分配成功']"), 'success')
                         this.index.selectedHost = []
                         this.$refs.index.transferSuccess()
                         this.index.bkBizId = ''
@@ -177,7 +177,7 @@
             },
             confirmDel () {
                 this.$bkInfo({
-                    title: '确定删除选中的主机？',
+                    title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
                     confirmFn: () => {
                         this.$axios.delete('hosts/batch', {
                             data: JSON.stringify({
@@ -188,7 +188,7 @@
                             if (res.result) {
                                 this.$bkInfo({
                                     statusOpts: {
-                                        title: '成功删除选中的主机',
+                                        title: this.$t("HostResourcePool['成功删除选中的主机']"),
                                         subtitle: false
                                     },
                                     type: 'success'
@@ -224,7 +224,7 @@
                         window.open(agentAppUrl)
                     }
                 } else {
-                    this.$alertMsg('未配置Agent安装APP地址')
+                    this.$alertMsg(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
                 }
             }
         },
@@ -264,7 +264,6 @@
             // color:#6b7baa;
         }
         .back-contain{
-            margin-left:45px;
             cursor:pointer;
             img{
                 margin-right: 5px;
