@@ -98,12 +98,18 @@ func GetSingleModuleID(req *restful.Request, conds interface{}, hostAddr string)
 }
 
 //AddHost, return error info
-func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) (error, []string, []string, []string) {
+func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
 
 	user := sencecommon.GetUserFromHeader(req)
 
+	hostAddr := cc.HostCtrl()
+	ObjAddr := cc.ObjCtrl()
+	auditAddr := cc.AuditCtrl()
 	addHostURL := hostAddr + "/host/v1/insts/"
 	uHostURL := ObjAddr + "/object/v1/insts/host"
+
+	language := util.GetActionLanguage(req)
+	errHandle := cc.Error.CreateDefaultCCErrorIf(language)
 
 	addParams := make(map[string]interface{})
 	addParams[common.BKAppIDField] = appID
