@@ -174,6 +174,13 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
+**示例(示例中的参数需要用真实的值替换)：**
+
+``` shell
+python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083
+```
+
+
 ### 8. init.py 生成的配置如下
 
 配置文件的存储路径：{安装目录}/cmdb_adminserver/configures/
