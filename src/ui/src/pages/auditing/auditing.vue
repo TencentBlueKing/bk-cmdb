@@ -132,7 +132,7 @@
                     label: 'Common["新增"]'
                 }, {
                     id: 2,
-                    type: 'modify',
+                    type: 'update',
                     label: 'Common["修改"]'
                 }, {
                     id: 3,
