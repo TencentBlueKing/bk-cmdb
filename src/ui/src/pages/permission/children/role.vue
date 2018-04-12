@@ -88,13 +88,13 @@
                 table: {
                     header: [{
                         id: 'group_name',
-                        name: 'Permission["角色名称"]'
+                        name: this.$t('Permission["角色名称"]')
                     }, {
                         id: 'user_list',
-                        name: 'Permission["成员"]'
+                        name: this.$t('Permission["成员"]')
                     }, {
                         id: 'operation',
-                        name: 'Permission["操作"]',
+                        name: this.$t('Permission["操作"]'),
                         attr: {
                             align: 'center'
                         }
@@ -105,10 +105,28 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount'
+                'bkSupplierAccount',
+                'language'
             ]),
             hasFilter () {
                 return this.filter.group_name !== '' || this.filter.user_list !== ''
+            }
+        },
+        watch: {
+            'language' () {
+                this.table.header = [{
+                    id: 'group_name',
+                    name: this.$t('Permission["角色名称"]')
+                }, {
+                    id: 'user_list',
+                    name: this.$t('Permission["成员"]')
+                }, {
+                    id: 'operation',
+                    name: this.$t('Permission["操作"]'),
+                    attr: {
+                        align: 'center'
+                    }
+                }]
             }
         },
         methods: {

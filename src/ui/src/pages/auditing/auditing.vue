@@ -159,27 +159,27 @@
                 },
                 tableHeader: [{
                     id: 'operator',
-                    name: 'OperationAudit["操作账号"]'
+                    name: this.$t('OperationAudit["操作账号"]')
                 }, {
                     id: 'op_target',
-                    name: 'OperationAudit["操作对象"]'
+                    name: this.$t('OperationAudit["操作对象"]')
                 }, {
                     id: 'op_desc',
-                    name: 'OperationAudit["描述"]'
+                    name: this.$t('OperationAudit["描述"]')
                 }, {
                     id: 'bk_biz_name',
-                    name: 'OperationAudit["所属业务"]',
+                    name: this.$t('OperationAudit["所属业务"]'),
                     sortKey: 'bk_biz_id'
                 }, {
                     id: 'ext_key',
-                    name: 'OperationAudit["IP"]'
+                    name: 'IP'
                 }, {
                     id: 'op_type_name',
-                    name: 'OperationAudit["操作类型"]',
+                    name: this.$t('OperationAudit["操作类型"]'),
                     sortKey: 'op_type'
                 }, {
                     id: 'op_time',
-                    name: 'OperationAudit["操作时间"]'
+                    name: this.$t('OperationAudit["操作时间"]')
                 }],
                 tableList: [],
                 defaultSort: '-op_time',
@@ -254,6 +254,32 @@
             },
             'operateTypeMap' (val) {
                 this.initTableList()
+            },
+            'language' (lang) {
+                this.tableHeader = [{
+                    id: 'operator',
+                    name: this.$t('OperationAudit["操作账号"]')
+                }, {
+                    id: 'op_target',
+                    name: this.$t('OperationAudit["操作对象"]')
+                }, {
+                    id: 'op_desc',
+                    name: this.$t('OperationAudit["描述"]')
+                }, {
+                    id: 'bk_biz_name',
+                    name: this.$t('OperationAudit["所属业务"]'),
+                    sortKey: 'bk_biz_id'
+                }, {
+                    id: 'ext_key',
+                    name: 'IP'
+                }, {
+                    id: 'op_type_name',
+                    name: this.$t('OperationAudit["操作类型"]'),
+                    sortKey: 'op_type'
+                }, {
+                    id: 'op_time',
+                    name: this.$t('OperationAudit["操作时间"]')
+                }]
             }
         },
         created () {
