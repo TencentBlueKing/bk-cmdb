@@ -69,7 +69,7 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 		blog.Infof("writed languate packages to center %v", types.CC_SERVERROR_BASEPATH)
 	}
 
-	languageEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
 		return err
@@ -78,7 +78,7 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 	go func() {
 		for {
 			select {
-			case confEvn := <-languageEvent:
+			case confEvn := <-errorResEvent:
 				cc.dealErrorResEvent(confEvn.Data)
 			case <-cc.rootCtx.Done():
 				blog.Warn("configure discover service done")

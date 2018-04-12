@@ -60,7 +60,7 @@ func (cc *ConfCenter) Start() error {
 		return err
 	}
 
-	languageEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
 		return err
@@ -70,7 +70,7 @@ func (cc *ConfCenter) Start() error {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-languageEvent:
+		case confEvn := <-errorResEvent:
 			cc.dealErrorResEvent(confEvn.Data)
 		case <-cc.rootCtx.Done():
 			blog.Warn("configure discover service done")
