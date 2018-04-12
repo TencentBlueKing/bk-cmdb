@@ -80,7 +80,7 @@
                 'bkSupplierAccount'
             ]),
             title () {
-                return this.type === 'create' ? '新增角色' : '编辑角色'
+                return this.type === 'create' ? this.$t('Permission["新增角色"]') : this.$t('Permission["编辑角色"]')
             },
             params () {
                 let params = {
@@ -155,7 +155,6 @@
             height: 60px;
             line-height: 60px;
             button.form-btn{
-                width: 72px;
                 margin-left: 10px;
             }
         }
@@ -164,7 +163,7 @@
         line-height: 36px;
         margin: 20px 0 0 0;
         label{
-            width: 95px;
+            width: 105px;
             // color: #6b7baa;
             padding: 0 20px 0 5px;
             text-align: right;
@@ -174,8 +173,8 @@
             }
         }
         input{
-                width: 350px;
-                height: 36px;
+            width: 350px;
+            height: 36px;
         }
         .content-jump-link{
             color: #498fe0;
@@ -184,9 +183,10 @@
                 vertical-align: -1px;
             }
         }
-    }
-    .member-selector{
-        width: 350px;
+        .member-selector{
+            width: 350px;
+            line-height: initial;
+        }
     }
 </style>
 <style lang="scss">
