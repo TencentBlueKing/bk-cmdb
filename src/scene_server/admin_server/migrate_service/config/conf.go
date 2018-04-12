@@ -79,7 +79,7 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 		for {
 			select {
 			case confEvn := <-languageEvent:
-				cc.dealLanguageEvent(confEvn.Data)
+				cc.dealErrorResEvent(confEvn.Data)
 			case <-cc.rootCtx.Done():
 				blog.Warn("configure discover service done")
 			}
@@ -123,7 +123,7 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	blog.Info("language has changed")
 
 	cc.ctxLock.Lock()
