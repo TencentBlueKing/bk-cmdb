@@ -13,125 +13,22 @@
 package config
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/confregdiscover"
-	"configcenter/src/common/core/cc/api"
+	confHandler "configcenter/src/common/confcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/types"
-	"context"
-	"encoding/json"
-	"sync"
 )
 
 // ConfCenter discover configure changed. get, update configures
-type ConfCenter struct {
-	confRegDiscv *confregdiscover.ConfRegDiscover
-	rootCtx      context.Context
-	cancel       context.CancelFunc
-	ctx          []byte
-	errorcode    map[string]errors.ErrorCode
-	ctxLock      sync.RWMutex
+type ConfCenter interface {
+	Start() error
+	Stop() error
+	GetConfigureCxt() []byte
+	GetErrorCxt() map[string]errors.ErrorCode
+	GetLanguageResCxt() map[string]language.LanguageMap
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(serv string) *ConfCenter {
-	return &ConfCenter{
-		ctx:          nil,
-		confRegDiscv: confregdiscover.NewConfRegDiscover(serv),
-	}
-}
-
-// Start the configure center module service
-func (cc *ConfCenter) Start() error {
-	// create root context
-	cc.rootCtx, cc.cancel = context.WithCancel(context.Background())
-
-	// start configure register and discover service
-	if err := cc.confRegDiscv.Start(); err != nil {
-		blog.Errorf("fail to start config register and discover service. err:%s", err.Error())
-		return err
-	}
-
-	// here: discover itselft configure
-	confPath := types.CC_SERVCONF_BASEPATH + "/" + types.CC_MODULE_HOST
-	confEvent, err := cc.confRegDiscv.DiscoverConfig(confPath)
-	if err != nil {
-		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
-		return err
-	}
-
-	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
-	if err != nil {
-		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
-		return err
-	}
-
-	for {
-		select {
-		case confEvn := <-confEvent:
-			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-errorResEvent:
-			cc.dealErrorResEvent(confEvn.Data)
-		case <-cc.rootCtx.Done():
-			blog.Warn("configure discover service done")
-			return nil
-		}
-	}
-}
-
-// Stop the configure center
-func (cc *ConfCenter) Stop() error {
-	cc.cancel()
-
-	cc.confRegDiscv.Stop()
-
-	return nil
-}
-
-// GetConfigureCtx fetch the configure
-func (cc *ConfCenter) GetConfigureCxt() []byte {
-	cc.ctxLock.RLock()
-	defer cc.ctxLock.RUnlock()
-
-	return cc.ctx
-}
-
-func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
-	blog.Info("%s configure has changed", types.CC_MODULE_HOST)
-
-	cc.ctxLock.Lock()
-	defer cc.ctxLock.Unlock()
-
-	cc.ctx = data
-
-	return nil
-}
-
-// GetErrorCxt fetch the language packages
-func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
-	cc.ctxLock.RLock()
-	defer cc.ctxLock.RUnlock()
-
-	return cc.errorcode
-}
-
-func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
-	blog.Info("language has changed")
-
-	cc.ctxLock.Lock()
-	defer cc.ctxLock.Unlock()
-
-	errorcode := map[string]errors.ErrorCode{}
-	err := json.Unmarshal(data, &errorcode)
-	if err != nil {
-		return err
-	}
-
-	cc.errorcode = errorcode
-	a := api.GetAPIResource()
-	if a.Error != nil {
-		a.Error.Load(errorcode)
-	}
-
-	return nil
+func NewConfCenter(serv string) ConfCenter {
+	return confHandler.NewConfCenter(serv, types.CC_MODULE_HOST)
 }
