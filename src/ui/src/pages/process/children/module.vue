@@ -18,7 +18,7 @@
         <td slot="is_bind" slot-scope="{ item }">
             <button @click="changeBinding(item)" 
                 :class="item['is_bind'] ? 'main-btn' : 'vice-btn'">
-                {{item['is_bind'] ? '已绑定' : '未绑定'}}
+                {{item['is_bind'] ? $t("ProcessManagement['已绑定']") : $t("ProcessManagement['未绑定']")}}
             </button>
         </td>    
     </v-table>
@@ -41,13 +41,13 @@
                 table: {
                     header: [{
                         id: 'bk_module_name',
-                        name: '模块名'
+                        name: this.$t("ProcessManagement['模块名']")
                     }, {
                         id: 'set_num',
-                        name: '所属集群数'
+                        name: this.$t("ProcessManagement['所属集群数']")
                     }, {
                         id: 'is_bind',
-                        name: '状态'
+                        name: this.$t("ProcessManagement['状态']")
                     }],
                     list: [],
                     isLoading: false,
@@ -69,19 +69,19 @@
                 if (item['is_bind'] === 0) {
                     this.$axios.put(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`).then((res) => {
                         if (res.result) {
-                            this.$alertMsg('绑定进程到该模块成功', 'success')
+                            this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块成功']"), 'success')
                             this.getModuleList()
                         } else {
-                            this.$alertMsg('绑定进程到该模块失败')
+                            this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块失败']"))
                         }
                     })
                 } else {
                     this.$axios.delete(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`).then(res => {
                         if (res.result) {
-                            this.$alertMsg('解绑进程模块成功', 'success')
+                            this.$alertMsg(this.$t("ProcessManagement['解绑进程模块成功']"), 'success')
                             this.getModuleList()
                         } else {
-                            this.$alertMsg('解绑进程模块失败')
+                            this.$alertMsg(this.$t("ProcessManagement['解绑进程模块失败']"))
                         }
                     })
                 }
