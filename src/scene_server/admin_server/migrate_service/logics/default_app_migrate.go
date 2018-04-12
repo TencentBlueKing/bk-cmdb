@@ -52,7 +52,7 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 
 	if data.Distribution == common.RevisionEnterprise {
 		params[common.BKTimeZoneField] = "Asia/Shanghai"
-		params[common.BKLanguageField] = "中文"
+		params[common.BKLanguageField] = "1" //中文
 	} else {
 		delete(params, common.BKTimeZoneField)
 		delete(params, common.BKLanguageField)

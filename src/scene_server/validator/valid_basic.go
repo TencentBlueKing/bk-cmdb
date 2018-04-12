@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/util"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -510,7 +511,7 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 			continue
 		}
 		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField].(string)
+		option := rule[common.BKOptionField]
 		switch fieldType {
 		case common.FiledTypeEnum:
 			if nil != val {
@@ -523,13 +524,8 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 				}
 			}
 
-			var enumOption []EnumVal
-			var defaultOption *EnumVal = nil
-			re := json.Unmarshal([]byte(option), &enumOption)
-			if nil != re {
-				blog.Error("params  not valid")
-				return valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
-			}
+			enumOption := ParseEnumOption(option)
+			var defaultOption *EnumVal
 
 			for _, k := range enumOption {
 				if k.IsDefault {
@@ -538,7 +534,7 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 				}
 			}
 			if nil != defaultOption {
-				valData[key] = defaultOption.Name
+				valData[key] = defaultOption.ID
 			}
 
 		}
@@ -563,6 +559,13 @@ func ParseEnumOption(val interface{}) []EnumVal {
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
+			} else if option, ok := optionVal.(bson.M); ok {
+				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				enumOptions = append(enumOptions, enumOption)
 			}
 		}
 	}
@@ -580,24 +583,25 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 	match := false
 
 	for _, k := range enumOption {
-		if k.Name == valStr {
+		if k.ID == valStr {
 			match = true
 			break
 		}
 		if k.IsDefault {
-			defaultOption = &k
+			dk := k
+			defaultOption = &dk
 		}
 	}
 	if "" == valStr && nil != defaultOption {
-		val = defaultOption.Name
-		valStr = defaultOption.Name
+		val = defaultOption.ID
+		valStr = defaultOption.ID
 	} else if !match {
-		blog.Error("params  not valid")
+		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
 		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
+		blog.Error("params %s can not be empty", key)
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
 	return true, nil
