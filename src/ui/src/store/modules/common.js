@@ -125,7 +125,8 @@ const actions = {
                             'bk_classification_name': classify[0]['bk_classification_name'],
                             'bk_classification_type': classify[0]['bk_classification_type'],
                             'id': classify[0]['id'],
-                            'bk_objects': classify[0]['bk_objects']
+                            'bk_objects': classify[0]['bk_objects'],
+                            'bk_asst_objects': classify[0]['bk_asst_objects']
                         })
                     })
                     commit('setAllClassify', allClassify)
@@ -154,10 +155,6 @@ const mutations = {
         })
         state.allClassify.splice(index, 1)
     },
-    // 删除模型
-    deleteModel (state, model) {
-        
-    },
     // 更新分类位置信息
     updateClassifyPosition (state, classify) {
         let allClassify = state.allClassify
@@ -173,10 +170,40 @@ const mutations = {
             }
         }
     },
+    // 新增模型
+    createModel (state, model) {
+        let activeClassify = state.allClassify.find(({ bk_classification_id: bkClassificationId }) => {
+            return bkClassificationId === model['bk_classification_id']
+        })
+        activeClassify.push(model)
+    },
+    // 更新模型
+    updateModel (state, model) {
+        let activeClassify = state.allClassify.find(({ bk_classification_id: bkClassificationId }) => {
+            return bkClassificationId === model['bk_classification_id']
+        })
+        let activeModel = activeClassify['bk_objects'].find(({ bk_obj_id: bkObjId }) => {
+            return bkObjId === model['bk_obj_id']
+        })
+        activeModel = model
+    },
+    // 删除模型
+    deleteModel (state, model) {
+        let allClassify = state.allClassify
+        for (let i = 0; i < allClassify.length; i++) {
+            if (allClassify[i]['bk_classification_id'] === model['bk_classification_id']) {
+                let index = allClassify[i]['bk_objects'].findIndex(({ bk_obj_id: bkObjId }) => {
+                    return bkObjId === model['bk_obj_id']
+                })
+                allClassify[i]['bk_objects'].splice(index, 1)
+            }
+        }
+        state.allClassify = Vue.prototype.$deepClone(allClassify)
+    },
     // 修改分类名称后需同步
     updateClassify (state, payload) {
         let allClassify = state.allClassify
-        for (var i = 0; i < allClassify.length; i++) {
+        for (let i = 0; i < allClassify.length; i++) {
             if (allClassify[i]['bk_classification_id'] === payload['bk_classification_id']) {
                 // 修改分类名
                 if (payload.hasOwnProperty('bk_classification_name')) {
@@ -210,7 +237,7 @@ const mutations = {
     },
     deleteApplication (state, appId) {
         let applicationList = state.application.list
-        for (var i = 0; i < applicationList.length; i++) {
+        for (let i = 0; i < applicationList.length; i++) {
             if (applicationList[i]['ApplicationID'] === appId) {
                 applicationList.splice(i, 1)
                 if (state.application.selected === appId) {

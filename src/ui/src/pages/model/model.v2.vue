@@ -37,17 +37,23 @@
             :title="sliderTitle"
         >
             <template slot="content">
-                <!-- <v-model-info></v-model-info> -->
                 <div class="slide-content">
-                    <bk-tab>
+                    <bk-tab :active-name="activeTabName" @tab-changed="tabChanged">
                         <bk-tabpanel name="info" title="模型配置">
                             <v-field></v-field>
                         </bk-tabpanel>
                         <bk-tabpanel name="layout" title="字段分组">
-                            <v-layout></v-layout>
+                            <v-layout
+                                :isShow="activeTabName === 'layout'"
+                                :activeModel="activeModel"
+                            ></v-layout>
                         </bk-tabpanel>
                         <bk-tabpanel name="other" title="其他操作">
-                            <v-other></v-other>
+                            <v-other
+                                :activeClassify="activeClassify"
+                                :activeModel="activeModel"
+                                @closeSlider="closeSlider"
+                            ></v-other>
                         </bk-tabpanel>
                     </bk-tab>
                 </div>
@@ -70,16 +76,21 @@
         data () {
             return {
                 isSlideShow: false,
+                activeTabName: '',
                 sliderTitle: {
                     text: ''
                 },
                 activeClassify: {
                     bk_classification_id: '',
                     bk_objects: []
-                }
+                },
+                activeModel: {}
             }
         },
         methods: {
+            closeSlider () {
+                this.isSlideShow = false
+            },
             editModelClass () {
                 bus.$emit('editModelClass', true)
             },
@@ -87,15 +98,19 @@
                 bus.$emit('deleteModelClass')
             },
             createModel () {
-                this.sliderTitle = '新增模型'
+                this.sliderTitle.text = '新增模型'
                 this.isSlideShow = true
             },
             editModel (model) {
                 this.sliderTitle.text = model['bk_obj_name']
+                this.activeModel = model
                 this.isSlideShow = true
             },
             getActiveClassify (activeClassify) {
                 this.activeClassify = activeClassify
+            },
+            tabChanged (name) {
+                this.activeTabName = name
             }
         },
         components: {

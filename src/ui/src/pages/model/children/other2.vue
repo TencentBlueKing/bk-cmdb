@@ -4,7 +4,7 @@
             <h3>模型停用</h3>
             <p><span v-if="!activeClassify['bk_ispaused']">保留模型和相应实例，隐藏关联关系</span></p>
             <div class="bottom-contain">
-                <bk-button type="primary" v-if="isReadOnly" class="bk-button main-btn mr10 button-on" @click="restartModelConfirm">
+                <bk-button type="primary" v-if="activeModel['bk_ispaused']" class="bk-button main-btn mr10 button-on" @click="showConfirmDialog('restart')">
                     启用模型
                 </bk-button>
                 <bk-button type="primary" v-else class="mr10" title="停用模型" @click="showConfirmDialog('stop')" :class="['bk-button bk-default', {'is-disabled': activeClassify['ispre'] || activeClassify['bk_classification_id'] === 'bk_biz_topo'}]" :disabled="activeClassify['ispre'] || activeClassify['bk_classification_id'] === 'bk_biz_topo'">
@@ -46,6 +46,98 @@
         props: {
             activeClassify: {
                 type: Object
+            },
+            activeModel: {
+                type: Object
+            }
+        },
+        computed: {
+            ...mapGetters([
+                'bkSupplierAccount'
+            ]),
+            isMainLine () {
+                return this.activeClassify['bk_classification_id'] === 'bk_biz_topo'
+            }
+        },
+        methods: {
+            showConfirmDialog (type) {
+                switch (type) {
+                    case 'restart':
+                        this.$bkInfo({
+                            title: '确认要启用该模型？',
+                            confirmFn: () => {
+                                this.restartModel()
+                            }
+                        })
+                        break
+                    case 'stop':
+                        this.$bkInfo({
+                            title: '确认停用该模型？',
+                            confirmFn: () => {
+                                this.stopModel()
+                            }
+                        })
+                        break
+                    case 'delete':
+                        this.$bkInfo({
+                            title: '确认删除该模型？',
+                            confirmFn: () => {
+                                this.deleteModel()
+                            }
+                        })
+                        break
+                }
+            },
+            async restartModel () {
+                let params = {
+                    bk_ispaused: false
+                }
+                try {
+                    const res = await this.$axios.put(`object/${this.activeModel['id']}`, params)
+                    let activeModel = this.$deepClone(this.activeModel)
+                    activeModel['bk_ispaused'] = false
+                    this.$store.commit('updateModel', activeModel)
+                    this.$emit('closeSlider')
+                } catch (e) {
+                    console.error(e)
+                    this.$alertMsg(e.data['bk_error_msg'])
+                }
+            },
+            async stopModel () {
+                let params = {
+                    bk_ispaused: true
+                }
+                try {
+                    await this.$axios.put(`object/${this.activeModel['id']}`, params)
+                    let activeModel = this.$deepClone(this.activeModel)
+                    activeModel['bk_ispaused'] = true
+                    this.$store.commit('updateModel', activeModel)
+                    this.$emit('closeSlider')
+                } catch (e) {
+                    console.error(e)
+                    this.$alertMsg(e.data['bk_error_msg'])
+                }
+            },
+            async deleteModel () {
+                if (this.isMainLine) {
+                    try {
+                        await this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}`)
+                        this.$store.commit('deleteModel', this.activeModel)
+                        this.$emit('closeSlider')
+                    } catch (e) {
+                        console.error(e)
+                        this.$alertMsg(e.data['bk_error_msg'])
+                    }
+                } else {
+                    try {
+                        await this.$axios.delete(`object/${this.activeModel['id']}`)
+                        this.$store.commit('deleteModel', this.activeModel)
+                        this.$emit('closeSlider')
+                    } catch (e) {
+                        console.error(e)
+                        this.$alertMsg(e.data['bk_error_msg'])
+                    }
+                }
             }
         }
     }
