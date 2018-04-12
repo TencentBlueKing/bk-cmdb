@@ -67,23 +67,23 @@
                 table: {
                     header: [{
                         id: 'subscription_name',
-                        name: 'EventPush["推送名称"]'
+                        name: this.$t('EventPush["推送名称"]')
                     }, {
                         id: 'system_name',
-                        name: 'EventPush["系统名称"]'
+                        name: this.$t('EventPush["系统名称"]')
                     }, {
                         id: 'operator',
-                        name: 'EventPush["操作人"]'
+                        name: this.$t('EventPush["操作人"]')
                     }, {
                         id: 'last_time',
-                        name: 'EventPush["更新时间"]'
+                        name: this.$t('EventPush["更新时间"]')
                     }, {
                         id: 'statistics',
-                        name: 'EventPush["推送情况（近一周）"]',
+                        name: this.$t('EventPush["推送情况（近一周）"]'),
                         sortable: false
                     }, {
                         id: 'setting',
-                        name: 'EventPush["配置"]',
+                        name: this.$t('EventPush["配置"]'),
                         sortable: false
                     }],
                     list: [],
@@ -99,8 +99,34 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount'
+                'bkSupplierAccount',
+                'language'
             ])
+        },
+        watch: {
+            'language' () {
+                this.table.header = [{
+                    id: 'subscription_name',
+                    name: this.$t('EventPush["推送名称"]')
+                }, {
+                    id: 'system_name',
+                    name: this.$t('EventPush["系统名称"]')
+                }, {
+                    id: 'operator',
+                    name: this.$t('EventPush["操作人"]')
+                }, {
+                    id: 'last_time',
+                    name: this.$t('EventPush["更新时间"]')
+                }, {
+                    id: 'statistics',
+                    name: this.$t('EventPush["推送情况（近一周）"]'),
+                    sortable: false
+                }, {
+                    id: 'setting',
+                    name: this.$t('EventPush["配置"]'),
+                    sortable: false
+                }]
+            }
         },
         methods: {
             /*

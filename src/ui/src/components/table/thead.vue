@@ -24,7 +24,7 @@
                         @mousemove="handleMouseMove($event, item)"
                         @mouseout="handleMouseOut($event, item)">
                         <span class="sort-box">
-                            <span>{{$t(item.name)}}</span>
+                            <span>{{item.name}}</span>
                             <span v-if="sortable && (item.sortable !== false) && item.type !== 'checkbox'">
                                 <i class="sort-angle ascing" :class="{'cur-sort' : currentSort === item.id && currentOrder === ASC}" @click="handleTableSortClick($event,item,ASC)"></i>
                                 <i class="sort-angle descing" :class="{'cur-sort' : currentSort === item.id && currentOrder === DESC}" @click="handleTableSortClick($event,item,DESC)"></i>
