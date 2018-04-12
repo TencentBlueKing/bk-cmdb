@@ -404,7 +404,7 @@ const (
 	ValidUpdate = "update"
 )
 
-// DefaultResSetFlat the default resource set flat
+// DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
 // DefaultAppFlag the default app flag
@@ -539,6 +539,14 @@ const (
 
 	// BKTableNameObjClassifiction the table name of the object classification
 	BKTableNameObjClassifiction = "cc_ObjClassification"
+
+	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseHost    = "cc_HostBase"
+	BKTableNameBaseModule  = "cc_ModuleBase"
+	BKTableNameBaseInst    = "cc_ObjectBase"
+	BKTableNameBasePlat    = "cc_PlatBase"
+	BKTableNameBaseSet     = "cc_SetBase"
+	BKTableNameBaseProcess = "cc_Process"
 )
 
 const (
