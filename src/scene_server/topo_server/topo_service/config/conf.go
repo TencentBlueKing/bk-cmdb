@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package config
 
 import (
@@ -70,7 +70,7 @@ func (cc *ConfCenter) Start() error {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
 		case confEvn := <-languageEvent:
-			cc.dealLanguageEvent(confEvn.Data)
+			cc.dealErrorResEvent(confEvn.Data)
 		case <-cc.rootCtx.Done():
 			blog.Warn("configure discover service done")
 			return nil
@@ -111,7 +111,7 @@ func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
 	return cc.errorcode
 }
 
-func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	blog.Info("language has changed")
 
 	cc.ctxLock.Lock()
