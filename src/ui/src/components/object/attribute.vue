@@ -56,11 +56,7 @@
                                                 <i class="icon-tooltips" v-if="property['placeholder']" v-tooltip="property['placeholder']"></i>
                                             </div>
                                             <div class="attribute-item-field">
-                                                <input v-if="property['bk_property_type'] === 'int'" 
-                                                    type="number" class="bk-form-input"
-                                                    :disabled="checkIsFieldDisabled(property)" 
-                                                    v-model.number="localValues[property['bk_property_id']]">
-                                                <v-member-selector v-else-if="property['bk_property_type'] === 'objuser'"
+                                                <v-member-selector v-if="property['bk_property_type'] === 'objuser'"
                                                     :disabled="checkIsFieldDisabled(property)"
                                                     :selected.sync="localValues[property['bk_property_id']]" 
                                                     :multiple="true">
@@ -516,6 +512,9 @@
                 }
                 if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
                     rules['char'] = true
+                }
+                if (bkPropertyType === 'int') {
+                    rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
                 }
                 return rules
             },
