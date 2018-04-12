@@ -5,8 +5,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/migrate_service/data"
 	"configcenter/src/scene_server/validator"
+	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
 	dbStorage "configcenter/src/storage"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 // Upgrade upgrade
@@ -23,39 +27,50 @@ func Upgrade(instData dbStorage.DI) error {
 }
 
 func upgradeGlobalization(db dbStorage.DI) error {
-	dataRows := data.AppRow()
-	dataRows = append(dataRows, data.SetRow()...)
-	dataRows = append(dataRows, data.ModuleRow()...)
-	dataRows = append(dataRows, data.HostRow()...)
-	dataRows = append(dataRows, data.ProcRow()...)
-	dataRows = append(dataRows, data.PlatRow()...)
+	presetRows := data.AppRow()
+	presetRows = append(presetRows, data.HostRow()...)
+	presetRows = append(presetRows, data.ModuleRow()...)
+	presetRows = append(presetRows, data.PlatRow()...)
+	presetRows = append(presetRows, data.ProcRow()...)
+	presetRows = append(presetRows, data.SetRow()...)
+	presetRowsMap := map[string]*metadata.ObjectAttDes{}
+	for _, row := range presetRows {
+		presetRowsMap[row.ObjectID+"::"+row.PropertyID] = row
+	}
 
-	for _, expectRow := range dataRows {
-		expectOptions, ok := expectRow.Option.([]validator.EnumVal)
-		if !ok {
+	attdes := []metadata.ObjectAttDes{}
+	err := db.GetMutilByCondition(common.BKTableNameObjAttDes, nil, map[string]interface{}{common.BKPropertyTypeField: common.FiledTypeEnum}, &attdes, "", 0, 0)
+	if err != nil {
+		blog.Errorf("upgradeGlobalization get attdes error: %v", err)
+		return err
+	}
+	for _, curRow := range attdes {
+		curOptions := validator.ParseEnumOption(curRow.Option)
+		if len(curOptions) <= 0 {
 			continue
 		}
-		selector := map[string]interface{}{
-			common.BKObjIDField:      expectRow.ObjectID,
-			common.BKPropertyIDField: expectRow.PropertyID,
-			common.BKOwnerIDField:    expectRow.OwnerID,
-		}
-		curRow := map[string]interface{}{}
-		err := db.GetOneByCondition(common.BKTableNameObjAttDes, nil, selector, &curRow)
-		if err != nil {
-			blog.Errorf("upgradeGlobalization get row error: %v", err)
-			return err
+
+		expectRow := presetRowsMap[curRow.ObjectID+"::"+curRow.PropertyID]
+		expectOptions, ok := expectRow.Option.([]validator.EnumVal)
+		if !ok {
+			expectOptions = []validator.EnumVal{}
 		}
 
-		curOptions := validator.ParseEnumOption(curRow["option"])
-		newOptions := []validator.EnumVal{}
+		sort.SliceStable(curOptions, func(i, j int) bool {
+			return strings.Compare(curOptions[i].Name, curOptions[j].Name) < 0
+		})
+		// get max id
 		newID := len(expectOptions)
+		for _, option := range curOptions {
+			id, _ := strconv.Atoi(option.ID) // ignore err cause we just want the max id
+			if id > newID {
+				newID = id
+			}
+		}
+
+		newOptions := []validator.EnumVal{}
 		// get custom options
 		for _, curOption := range curOptions {
-			if curOption.ID != "" {
-				// if ID!="" then we believe this property has upgraded so we just ignore it
-				continue
-			}
 			exists := false
 			for _, expectOption := range expectOptions {
 				if expectOption.Name == curOption.Name {
@@ -65,6 +80,10 @@ func upgradeGlobalization(db dbStorage.DI) error {
 				}
 			}
 			if !exists {
+				if curOption.ID != "" {
+					newOptions = append(newOptions, curOption)
+					continue
+				}
 				newID++
 				curOption.ID = strconv.Itoa(newID)
 				newOptions = append(newOptions, curOption)
@@ -75,33 +94,37 @@ func upgradeGlobalization(db dbStorage.DI) error {
 			continue
 		}
 
+		// update inst
+		tablename := commondata.GetInstTableName(expectRow.ObjectID)
+		for _, option := range newOptions {
+			updateinstdata := map[string]interface{}{
+				expectRow.PropertyID: option.ID,
+			}
+			updateinstcondition := map[string]interface{}{
+				expectRow.PropertyID: option.Name,
+			}
+			if tablename == common.BKTableNameBaseInst {
+				updateinstcondition[common.BKObjIDField] = expectRow.ObjectID
+			}
+
+			db.UpdateByCondition(tablename, updateinstdata, updateinstcondition)
+			if err != nil {
+				blog.Errorf("upgradeGlobalization update preset inst error: %v", err)
+				return err
+			}
+		}
+
 		// update property's option fields
+		selector := map[string]interface{}{
+			common.BKObjIDField:      curRow.ObjectID,
+			common.BKPropertyIDField: curRow.PropertyID,
+		}
 		updatedata := map[string]interface{}{
 			common.BKOptionField: newOptions,
 		}
 		err = db.UpdateByCondition(common.BKTableNameObjAttDes, updatedata, selector)
 		if err != nil {
-			blog.Errorf("upgradeGlobalization update option field error: %v", err)
-			return err
-		}
-
-		isExist, err := db.GetCntByCondition(common.BKTableNameObjAttDes, selector)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", common.BKTableNameObjAttDes, err)
-			return err
-		}
-		if isExist > 0 {
-			continue
-		}
-		id, err := db.GetIncID(common.BKTableNameObjAttDes)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", common.BKTableNameObjAttDes, err)
-			return err
-		}
-		expectRow.ID = int(id)
-		_, err = db.Insert(common.BKTableNameObjAttDes, expectRow)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", common.BKTableNameObjAttDes, err)
+			blog.Errorf("upgradeGlobalization update preset option field error: %v", err)
 			return err
 		}
 	}
