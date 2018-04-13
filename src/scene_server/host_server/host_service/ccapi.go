@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 
@@ -133,6 +134,30 @@ func (ccAPI *CCAPIServer) Start() error {
 			} else {
 				errif := errors.NewFromCtx(errcode)
 				a.Error = errif
+				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
+
+	// load the errors resource
+	if langres, ok := config["language.res"]; ok {
+		if langif, err := language.New(langres); nil != err {
+			blog.Error("failed to create errors object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Lang = langif
+		}
+	} else {
+		for {
+			errcode := ccAPI.cfCenter.GetLanguageResCxt()
+			if errcode == nil {
+				blog.Warnf("fail to get language package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				langif := language.NewFromCtx(errcode)
+				a.Lang = langif
 				blog.Info("lanugage package loaded")
 				break
 			}
