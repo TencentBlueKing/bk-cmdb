@@ -14,7 +14,9 @@ package commondata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/api/metadata"
 	"time"
 
 	"github.com/coccyx/timeparser"
@@ -158,4 +160,20 @@ func (O *ObjQueryInput) convInterfaceToTime(val interface{}) (interface{}, error
 		return t, nil
 	}
 
+}
+
+func TranslateObjectName(defLang language.DefaultCCLanguageIf, att metadata.ObjectDes) string {
+	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ObjectID), att.ObjectName, att.ObjectID)
+}
+
+func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
+}
+
+func TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att metadata.PropertyGroup) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_group_"+att.GroupID), att.GroupName, att.GroupID)
+}
+
+func TranslateClassificationName(defLang language.DefaultCCLanguageIf, att metadata.ObjClassification) string {
+	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ClassificationID), att.ClassificationName, att.ClassificationID)
 }

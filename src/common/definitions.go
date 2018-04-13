@@ -206,6 +206,8 @@ const (
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
 
+	BKPropertyGroupField = "bk_property_group"
+
 	// BKPropertyValueField the property value field
 	BKPropertyValueField = "bk_property_value"
 
