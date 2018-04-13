@@ -327,9 +327,11 @@
                background: #424c6b;
             }
             .icon-box {
-                line-height: 45px;
-                .bk-icon{
+                line-height: 48px;
+                .bk-icon,[class*="icon-cc"]{
                     font-size:16px;
+                    display: inline-block;
+                    vertical-align: baseline;
                 }
             }
             .bk-icon{
@@ -384,7 +386,7 @@
             overflow: hidden;
             li{
                 >a .icon-box{
-                    vertical-align: text-bottom;
+                    vertical-align: middle;
                     padding:0 4px 0 38px;
                 }
                 >a .angle-box{
@@ -514,11 +516,17 @@
             border-left:none;
         }
         .nav-list .nav-name{
+            display: inline-block;
+            vertical-align: middle;
             height: 48px;
+            line-height: 48px;
             border-bottom: none;
             font-size:14px;
             font-weight:bold;
             transition: unset !important;
+            width: 120px;
+            padding-left: 10px;
+            position: initial;
         }
     }
     .text-hd{
@@ -528,5 +536,14 @@
         white-space: nowrap;
         -o-text-overflow: ellipsis;
         overflow: hidden;
+    }
+</style>
+<style lang="scss" scoped>
+    body[lang="en"]{
+        .nav-list{
+            .bk-icon,[class*="icon-cc"]{
+                vertical-align: 1px;
+            }
+        }
     }
 </style>

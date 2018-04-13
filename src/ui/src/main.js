@@ -32,6 +32,10 @@ const languageTranslate = {
     'zh-cn': 'zh_CN',
     'zh': 'zh_CN'
 }
+const bkMagicLang = {
+    'zh_CN': 'zh',
+    'en': 'en'
+}
 let language = Cookies.get('blueking_language') || 'zh_CN'
 language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
 document.body.setAttribute('lang', language)
@@ -86,5 +90,8 @@ let vm = new Vue({
         fallbackLocal: 'zh_CN'
     }),
     store,
-    components: { App }
+    components: { App },
+    created () {
+        this.setLang(bkMagicLang[language])
+    }
 })
