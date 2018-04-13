@@ -107,6 +107,18 @@
                                 operator: '$eq',
                                 value: 1
                             }]
+                        }, {
+                            'bk_obj_id': 'host',
+                            fields: [],
+                            condition: []
+                        }, {
+                            'bk_obj_id': 'module',
+                            fields: [],
+                            condition: []
+                        }, {
+                            'bk_obj_id': 'set',
+                            fields: [],
+                            condition: []
                         }]
                     },
                     table: {
