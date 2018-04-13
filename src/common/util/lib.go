@@ -14,6 +14,7 @@ package util
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"net/http"
 	"reflect"
 	"strings"
@@ -92,6 +93,7 @@ func GetActionLanguage(req *restful.Request) string {
 	if "" == language {
 		return "zh-cn"
 	}
+	blog.Infof("request language: %s", language)
 	return language
 }
 

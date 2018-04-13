@@ -79,9 +79,10 @@ func (ccAPI *CCAPIServer) Start() error {
 	config, _ := a.ParseConfig()
 	confDir := config["confs.dir"]
 	errres := config["errors.res"]
+	languageres := config["language.res"]
 
 	// configure center
-	err := ccAPI.cfCenter.Start(confDir, errres)
+	err := ccAPI.cfCenter.Start(confDir, errres, languageres)
 	if err != nil {
 		blog.Errorf("configure center module start failed!. err:%s", err.Error())
 		return err
