@@ -418,10 +418,6 @@
                         'bk_obj_id': activeNodeObjId,
                         fields: [],
                         condition: [{
-                            field: 'default',
-                            operator: '$eq',
-                            value: this.tree.activeNode['default']
-                        }, {
                             field: activeNodeObjId === 'module' ? 'bk_module_id' : 'bk_set_id',
                             operator: '$eq',
                             value: this.tree.activeNode['bk_inst_id']
@@ -438,6 +434,16 @@
                         }]
                     })
                 }
+                let defaultObj = ['host', 'module', 'set', 'biz']
+                defaultObj.forEach(id => {
+                    if (!params.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                        params.condition.push({
+                            'bk_obj_id': id,
+                            fields: [],
+                            condition: []
+                        })
+                    }
+                })
                 this.searchParams = params
             },
             tabChanged (active) {
