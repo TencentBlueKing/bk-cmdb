@@ -1,25 +1,26 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
 	"github.com/emicklei/go-restful"
 	"io/ioutil"
@@ -183,6 +184,7 @@ func (cli *objectClassificationAction) SelectClassifications(req *restful.Reques
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -205,6 +207,10 @@ func (cli *objectClassificationAction) SelectClassifications(req *restful.Reques
 			blog.Error("select data failed, error: %s", selerr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
+		// translate language
+		for index := range results {
+			results[index].ClassificationName = commondata.TranslateClassificationName(defLang, results[index])
+		}
 		return http.StatusOK, results, nil
 	}, resp)
 }
@@ -219,6 +225,7 @@ func (cli *objectClassificationAction) SelectClassificationWithObject(req *restf
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -244,8 +251,8 @@ func (cli *objectClassificationAction) SelectClassificationWithObject(req *restf
 		blog.InfoJSON("select clsresults: %s", clsResults)
 		for tmpidx, tmpobj := range clsResults {
 			selector := map[string]interface{}{
-				"bk_classification_id":   tmpobj.ClassificationID,
-				common.BKOwnerIDField: ownerID,
+				"bk_classification_id": tmpobj.ClassificationID,
+				common.BKOwnerIDField:  ownerID,
 			}
 			if selerr := cli.CC.InstCli.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &clsResults[tmpidx].Objects, "", 0, common.BKNoLimit); nil != selerr {
 				blog.Error("select data failed, error:%s", selerr.Error())
@@ -255,6 +262,11 @@ func (cli *objectClassificationAction) SelectClassificationWithObject(req *restf
 			if len(clsResults[tmpidx].Objects) <= 0 {
 				clsResults[tmpidx].Objects = []metadata.ObjectDes{}
 			}
+		}
+
+		// translate language
+		for index := range clsResults {
+			clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, clsResults[index].ObjClassification)
 		}
 
 		return http.StatusOK, clsResults, nil
