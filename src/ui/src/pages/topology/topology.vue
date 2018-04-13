@@ -422,7 +422,7 @@
                             operator: '$eq',
                             value: this.tree.activeNode['default']
                         }, {
-                            field: activeNodeObjId === 'modeule' ? 'bk_module_id' : 'bk_set_id',
+                            field: activeNodeObjId === 'module' ? 'bk_module_id' : 'bk_set_id',
                             operator: '$eq',
                             value: this.tree.activeNode['bk_inst_id']
                         }]
