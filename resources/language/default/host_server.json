@@ -14,6 +14,6 @@
     "host_belong_resource_pool":"当前主机已经属于资源池，不需要转移",
     "host_resource_module_get_fail":"获取资源池模块信息失败,错误信息:%s",
     "host_move_to_resource":"转移主机到资源池失败，错误信息:%s",
-
+    "host_search_module_fail_with_errmsg":"获取主机关系失败,错误信息:%s", 
     "": ""
 }
