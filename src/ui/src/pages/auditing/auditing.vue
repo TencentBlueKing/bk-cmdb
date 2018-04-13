@@ -132,7 +132,7 @@
                     label: '新增'
                 }, {
                     id: 2,
-                    type: 'modify',
+                    type: 'update',
                     label: '修改'
                 }, {
                     id: 3,
