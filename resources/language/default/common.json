@@ -9,6 +9,7 @@
     "property_is_only":"是否唯一",
     "property_is_required":"是否必填",
     "property_is_readonly": "是否只读",
+    "app_not_exist":"业务不存在",
 
 
 

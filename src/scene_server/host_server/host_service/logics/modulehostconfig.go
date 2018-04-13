@@ -17,13 +17,13 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"configcenter/src/common/auditoplog"
-	errorHandle "configcenter/src/common/errors"
 	sencecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/validator"
 	sourceAuditAPI "configcenter/src/source_controller/api/auditlog"
@@ -110,15 +110,16 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 	language := util.GetActionLanguage(req)
 	errHandle := cc.Error.CreateDefaultCCErrorIf(language)
+	langHandle := cc.Lang.CreateDefaultCCLanguageIf(language)
 
 	addParams := make(map[string]interface{})
 	addParams[common.BKAppIDField] = appID
 	addParams[common.BKModuleIDField] = []int{moduleID}
 	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
 
-	allHostList, err := getHostInfoByConds(req, hostAddr, nil)
+	allHostList, err := getHostInfoByConds(req, hostAddr, nil, langHandle)
 	if nil != err {
-		return errors.New("查询主机信息失败"), nil, nil, nil
+		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
 	}
 
 	hostMap := convertHostInfo(allHostList)
@@ -139,7 +140,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if ok == false || "" == innerIP {
-			errMsg = append(errMsg, fmt.Sprintf("%d行内网ip为空", index))
+			errMsg = append(errMsg, langHandle.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 		notExistFields := []string{} //没有赋值的key，不需要校验
@@ -151,7 +152,8 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			}
 			require, _ := util.GetIntByInterface(value["require"])
 			if require == common.BKTrue {
-				errMsg = append(errMsg, fmt.Sprintf("%d行内网%s必填", index, key))
+
+				errMsg = append(errMsg, langHandle.Languagef("host_import_property_need_set", index, key))
 				continue
 			}
 			notExistFields = append(notExistFields, key)
@@ -185,8 +187,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			isSuccess, message, _ := GetHttpResult(req, uHostURL, common.HTTPUpdate, input)
 			innerIP := host[common.BKHostInnerIPField].(string)
 			if !isSuccess {
-				ret := fmt.Sprintf("%s更新失败%v;", innerIP, message)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%v", index, ret))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("host_import_update_fail", index, innerIP, message))
 				continue
 			}
 			logContent, _ := logObj.GetHostLog(strHostID, false)
@@ -214,8 +215,8 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 			isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 			if !isSuccess {
-				ret := fmt.Sprintf("%s新加失败%s;", host["InnerIP"].(string), message)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, ret))
+				ip, _ := host["InnerIP"].(string)
+				errMsg = append(errMsg, langHandle.Languagef("host_import_add_fail", index, ip, message))
 				continue
 			}
 
@@ -227,7 +228,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			isSuccess, message, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, addParams)
 			if !isSuccess {
 				blog.Error("add hosthostconfig error, params:%v, error:%s", addParams, message)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, innerIP))
+				errMsg = append(errMsg, langHandle.Languagef("host_import_add_host_module", index, innerIP))
 				continue
 			}
 			strHostID := fmt.Sprintf("%d", hostID)
@@ -250,16 +251,24 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return errors.New("导入主机出现错误"), succMsg, updateErrMsg, errMsg
+		return errors.New(langHandle.Language("host_import_err")), succMsg, updateErrMsg, errMsg
 	}
 
 	return nil, succMsg, updateErrMsg, errMsg
 }
 
 //EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
-func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) error {
+func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName string, cc *api.APIResource) error {
 
 	user := sencecommon.GetUserFromHeader(req)
+
+	hostAddr := cc.HostCtrl()
+	ObjAddr := cc.ObjCtrl()
+	auditAddr := cc.AuditCtrl()
+
+	language := util.GetActionLanguage(req)
+	//errHandle := cc.Error.CreateDefaultCCErrorIf(language)
+	langHandle := cc.Lang.CreateDefaultCCLanguageIf(language)
 
 	addHostURL := hostAddr + "/host/v1/insts/"
 
@@ -272,9 +281,9 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 		common.BKHostInnerIPField: IP,
 		common.BKCloudIDField:     common.BKDefaultDirSubArea,
 	}
-	hostList, err := getHostInfoByConds(req, hostAddr, conds)
+	hostList, err := getHostInfoByConds(req, hostAddr, conds, langHandle)
 	if nil != err {
-		return errors.New("查询主机信息失败")
+		return errors.New(langHandle.Language("host_search_fail")) // "查询主机信息失败")
 	}
 	if len(hostList) > 0 {
 		return nil
@@ -298,7 +307,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 
 	isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 	if !isSuccess {
-		return errors.New(fmt.Sprintf("add host to cmdb error,error:%s", message))
+		return errors.New(langHandle.Languagef("host_agent_add_host_fail", message))
 	}
 
 	retHost := retData.(map[string]interface{})
@@ -308,7 +317,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	isSuccess, message, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, addParams)
 	if !isSuccess {
 		blog.Error("enterip add hosthostconfig error, params:%v, error:%s", addParams, message)
-		return errors.New(fmt.Sprintf("add hosthostconfig error,error:%s", message))
+		return errors.New(langHandle.Languagef("host_agent_add_host_module_fail", message))
 	}
 
 	//prepare the log
@@ -378,7 +387,7 @@ func convertHostInfo(hosts []interface{}) map[string]interface{} {
 	return hostMap
 }
 
-func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}) ([]interface{}, error) {
+func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}, defLang language.DefaultCCLanguageIf) ([]interface{}, error) {
 	hostURL = hostURL + "/host/v1/hosts/search"
 	getParams := make(map[string]interface{})
 	getParams["fields"] = nil
@@ -389,7 +398,9 @@ func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]i
 
 	isSucess, message, iRetData := GetHttpResult(req, hostURL, common.HTTPSelectPost, getParams)
 	if !isSucess {
-		return nil, errors.New("获取主机信息失败;" + message)
+		msg := defLang.Languagef("host_search_fail_with_errmsg", message)
+		blog.Error(msg)
+		return nil, errors.New(msg)
 	}
 	if nil == iRetData {
 		return nil, nil
@@ -438,28 +449,32 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 //MoveHostToResourcePool move host to resource pool
 func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int, hostID []int) (interface{}, error) {
 	user := sencecommon.GetUserFromHeader(req)
+	language := util.GetActionLanguage(req)
+	//errHandle := CC.Error.CreateDefaultCCErrorIf(language)
+	langHandle := CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	conds := make(map[string]interface{})
 	conds[common.BKAppIDField] = appID
-	appinfo, err := GetAppInfo(req, common.BKOwnerIDField, conds, CC.ObjCtrl())
+	appinfo, err := GetAppInfo(req, common.BKOwnerIDField, conds, CC.ObjCtrl(), langHandle)
 	if err != nil {
 		return nil, err
 	}
 	ownerID := appinfo[common.BKOwnerIDField].(string)
 	if "" == ownerID {
-		return nil, errors.New("未找到资源池")
+		return nil, errors.New(langHandle.Language("host_resource_pool_not_exist")) // "未找到资源池")
 	}
 	//get default biz
-	ownerAppID, err := GetDefaultAppID(req, ownerID, common.BKAppIDField, CC.ObjCtrl())
+	ownerAppID, err := GetDefaultAppID(req, ownerID, common.BKAppIDField, CC.ObjCtrl(), langHandle)
 	if err != nil {
-		return nil, errors.New("获取资源池信息失败，" + err.Error())
+		return nil, errors.New(langHandle.Languagef("host_resource_pool_get_fail", err.Error()))
 
 	}
 	if 0 == appID {
-		return nil, errors.New("资源池不存在")
+		return nil, errors.New(langHandle.Language("host_resource_pool_not_exist")) // "未找到资源池")
+		//return nil, errors.New("资源池不存在")
 	}
 	if ownerAppID == appID {
-		return nil, errors.New("当前主机已经属于资源池，不需要转移")
+		return nil, errors.New(langHandle.Language("host_belong_resource_pool")) // "当前主机已经属于资源池，不需要转移")
 	}
 
 	//get resource set
@@ -469,7 +484,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	mconds[common.BKAppIDField] = ownerAppID
 	moduleID, err := GetSingleModuleID(req, mconds, CC.ObjCtrl())
 	if nil != err {
-		return nil, errors.New("获取资源池模块信息失败" + err.Error())
+		return nil, errors.New(langHandle.Languagef("host_resource_module_get_fail", err.Error())) //("获取资源池模块信息失败" + err.Error())
 	}
 
 	logClient, err := NewHostModuleConfigLog(req, nil, CC.HostCtrl(), CC.ObjCtrl(), CC.AuditCtrl())
@@ -480,7 +495,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	url := CC.HostCtrl() + "/host/v1/meta/hosts/resource"
 	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPUpdate, conds)
 	if !isSucess {
-		return data, errors.New("更新主机关系失败;" + errmsg)
+		return data, errors.New(langHandle.Languagef("host_move_to_resource", errmsg)) //"更新主机关系失败;" + errmsg)
 	}
 	logClient.SetDescSuffix("; 转移主机到资源池")
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
@@ -489,7 +504,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 }
 
 //GetAppInfo get app info
-func GetAppInfo(req *restful.Request, fields string, conditon map[string]interface{}, hostAddr string) (map[string]interface{}, error) {
+func GetAppInfo(req *restful.Request, fields string, conditon map[string]interface{}, hostAddr string, defLang language.DefaultCCLanguageIf) (map[string]interface{}, error) {
 	//moduleURL := "http://" + cc.ObjCtrl + "/object/v1/insts/module/search"
 	URL := hostAddr + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
 	params := make(map[string]interface{})
@@ -510,24 +525,24 @@ func GetAppInfo(req *restful.Request, fields string, conditon map[string]interfa
 	info := dataInterface["info"].([]interface{})
 	if 1 != len(info) {
 		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
-		return nil, errors.New("业务不存在")
+		return nil, errors.New(defLang.Languagef("app_not_exist")) //"业务不存在")
 	}
 	row := info[0].(map[string]interface{})
 
 	if 0 == len(row) {
 		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
-		return nil, errors.New("业务存在")
+		return nil, errors.New(defLang.Languagef("app_not_exist")) //"业务不存在")
 	}
 
 	return row, nil
 }
 
 //GetDefaultAppID get default biz id
-func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string) (int, error) {
+func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string, defLang language.DefaultCCLanguageIf) (int, error) {
 	conds := make(map[string]interface{})
 	conds[common.BKOwnerIDField] = ownerID
 	conds[common.BKDefaultField] = common.DefaultAppFlag
-	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	appinfo, err := GetAppInfo(req, fields, conds, hostAddr, defLang)
 	if nil != err {
 		blog.Errorf("get default app info error:%v", err.Error())
 		return 0, err
@@ -536,11 +551,11 @@ func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string) (in
 }
 
 //GetDefaultAppID get supplier ID
-func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, hostAddr string) (int, error) {
+func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, hostAddr string, defLang language.DefaultCCLanguageIf) (int, error) {
 	conds := make(map[string]interface{})
 	conds[common.BKSupplierIDField] = supplierID
 	conds[common.BKDefaultField] = common.DefaultAppFlag
-	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	appinfo, err := GetAppInfo(req, fields, conds, hostAddr, defLang)
 	if nil != err {
 		blog.Errorf("get default app info error:%v", err.Error())
 		return 0, err
