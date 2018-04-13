@@ -34,8 +34,10 @@ type ConfCenter struct {
 	rootCtx      context.Context
 	cancel       context.CancelFunc
 	ctx          []byte
-	errorcode    map[string]errors.ErrorCode
 	ctxLock      sync.RWMutex
+	errorcode    map[string]errors.ErrorCode
+	langCtx      map[string]language.LanguageMap
+	langLock     sync.RWMutex
 }
 
 // NewConfCenter create a ConfCenter object
@@ -47,7 +49,7 @@ func NewConfCenter(serv string) *ConfCenter {
 }
 
 // Start the configure center module service
-func (cc *ConfCenter) Start(confDir, errres string) error {
+func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	// create root context
 	cc.rootCtx, cc.cancel = context.WithCancel(context.Background())
 
@@ -65,9 +67,9 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 	// confEvent, err := cc.confRegDiscv.DiscoverConfig(confPath)
 
 	if err := cc.WriteErrorRes2Center(errres); err != nil {
-		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 	} else {
-		blog.Infof("writed languate packages to center %v", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("writed error resource to center %v", types.CC_SERVERROR_BASEPATH)
 	}
 
 	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
@@ -76,11 +78,25 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 		return err
 	}
 
+	if err := cc.WriteLanguageRes2Center(languageres); err != nil {
+		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+	} else {
+		blog.Infof("writed languate packages to center %v", types.CC_SERVLANG_BASEPATH)
+	}
+
+	langEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVLANG_BASEPATH)
+	if err != nil {
+		blog.Errorf("fail to discover language resource for objectcontroller service. err:%s", err.Error())
+		return err
+	}
+
 	go func() {
 		for {
 			select {
 			case confEvn := <-errorResEvent:
 				cc.dealErrorResEvent(confEvn.Data)
+			case langEvn := <-langEvent:
+				cc.dealLanguageResEvent(langEvn.Data)
 			case <-cc.rootCtx.Done():
 				blog.Warn("configure discover service done")
 			}
@@ -124,8 +140,37 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
+// GetLanguageResCxt fetch the language packages
+func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {
+	cc.langLock.RLock()
+	defer cc.langLock.RUnlock()
+
+	return cc.langCtx
+}
+
+func (cc *ConfCenter) dealLanguageResEvent(data []byte) error {
 	blog.Info("language has changed")
+
+	cc.langLock.Lock()
+	defer cc.langLock.Unlock()
+
+	langMap := map[string]language.LanguageMap{}
+	err := json.Unmarshal(data, &langMap)
+	if err != nil {
+		return err
+	}
+
+	cc.langCtx = langMap
+	a := api.GetAPIResource()
+	if a.Lang != nil {
+		a.Lang.Load(langMap)
+	}
+
+	return nil
+}
+
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
+	blog.Info("error resource has changed")
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()
@@ -141,8 +186,6 @@ func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	if a.Error != nil {
 		a.Error.Load(errorcode)
 	}
-
-	blog.InfoJSON("loaded language package: %s", errorcode)
 
 	return nil
 }
@@ -183,7 +226,7 @@ func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
 
 	languagepack, err := language.LoadLanguageResourceFromDir(languageres)
 	if err != nil {
-		return fmt.Errorf("load error resource error: %s", err)
+		return fmt.Errorf("load language resource error: %s", err)
 	}
 
 	data, err := json.Marshal(languagepack)

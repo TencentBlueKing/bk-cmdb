@@ -13,6 +13,7 @@
 package language
 
 import (
+	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -49,6 +50,7 @@ func (cli *ccLanguageHelper) Languagef(language string, key string, args ...inte
 
 // load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
+	blog.InfoJSON("loaded language resource: %s", lang)
 	cli.lang = lang
 }
 
@@ -115,6 +117,7 @@ func (cli *ccLanguageHelper) GetLang() map[string]LanguageMap {
 // getLanguageKey get error code manager
 func (cli *ccLanguageHelper) getLanguageKey(language string) LanguageMap {
 	codemgr, ok := cli.lang[language]
+	blog.Infof("codemgr %v, ok %v", codemgr, ok)
 	if !ok && language != defaultLanguage {
 		// when the specified language not found, find it from default language package
 		codemgr, ok = cli.lang[defaultLanguage]
