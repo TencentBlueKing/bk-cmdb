@@ -434,6 +434,16 @@
                         }]
                     })
                 }
+                let defaultObj = ['host', 'module', 'set', 'biz']
+                defaultObj.forEach(id => {
+                    if (!params.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                        params.condition.push({
+                            'bk_obj_id': id,
+                            fields: [],
+                            condition: []
+                        })
+                    }
+                })
                 this.searchParams = params
             },
             tabChanged (active) {

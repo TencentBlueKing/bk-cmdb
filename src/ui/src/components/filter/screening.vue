@@ -208,7 +208,7 @@
                 Object.keys(this.localQueryColumnData).map(columnPropertyId => {
                     let column = this.localQueryColumnData[columnPropertyId]
                     let value = column.value
-                    if (value !== '' || (Array.isArray(value) && value.length)) {
+                    if ((!Array.isArray(value) && value !== '') || (Array.isArray(value) && value.length)) {
                         let property = this.getColumnProperty(columnPropertyId, column['bk_obj_id'])
                         let condition = filter.condition.find(({bk_obj_id: bkObjId}) => bkObjId === column['bk_obj_id'])
                         if (!condition) {
@@ -237,6 +237,16 @@
                                 value: column.value[1]
                             })
                         }
+                    }
+                })
+                let defaultObj = ['host', 'module', 'set', 'biz']
+                defaultObj.forEach(id => {
+                    if (!filter.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                        filter.condition.push({
+                            'bk_obj_id': id,
+                            fields: [],
+                            condition: []
+                        })
                     }
                 })
                 return filter
