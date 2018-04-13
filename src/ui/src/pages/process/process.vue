@@ -269,6 +269,9 @@
             },
             closeSlider () {
                 this.slider.isShow = false
+            },
+            showFiling () {
+                this.filing.isShow = true
             }
         },
         created () {

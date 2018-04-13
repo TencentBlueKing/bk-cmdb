@@ -40,7 +40,7 @@
                         <span>导出选中</span>
                     </button>
                 </form>
-                <button class="bk-button del-button fl mr10" @click="showFiling">
+                <button class="bk-button del-button fl mr10" @click="showFiling" title="存档查看">
                     <i class="icon-cc-history"></i>
                 </button>
                 <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
@@ -77,7 +77,6 @@
             :isShow.sync="filing.isShow"
             :objId="'host'"
             :objTableHeader="index.table.header"
-            :allAttr="index.table.allAttr"
         ></v-filing>
    </div>
 </template>

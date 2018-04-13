@@ -9,7 +9,7 @@
  */
 
 <template lang="html">
-   <div class="host-resource-wrapper">
+   <div class="host-resource-wrapper clearfix">
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -27,9 +27,14 @@
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn" title="立即创建" @click="openObjectSlider('create')" :disabled="unauthorized.create">立即创建</button>
             </div>
-            <button class="bk-button setting fr" @click="settingSlider.isShow = true">
-                <i class="icon-cc-setting"></i>
-            </button>
+            <div class="fr btn-group">
+                <button class="bk-button setting" @click="filing.isShow = true" title="存档查看">
+                    <i class="icon-cc-history"></i>
+                </button>
+                <button class="bk-button setting" @click="settingSlider.isShow = true">
+                    <i class="icon-cc-setting"></i>
+                </button>
+            </div>
             <div class="quick-search fr">
                 <div class="fl left-select">
                     <bk-select :selected.sync="filter.selected" ref="filterSelector" @on-selected="setFilterType">
@@ -120,6 +125,11 @@
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
+        <v-filing
+            :isShow.sync="filing.isShow"
+            :objId="objId"
+            :objTableHeader="table.header"
+        ></v-filing>
    </div>
 </template>
 
@@ -133,6 +143,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
+    import vFiling from '@/components/filing/filing'
     export default {
         mixins: [Authority],
         data () {
@@ -158,6 +169,9 @@
                     },
                     defaultSort: '-bk_biz_id',
                     sort: ''
+                },
+                filing: {
+                    isShow: false
                 },
                 // 侧滑状态
                 slider: {
@@ -611,7 +625,8 @@
             vHistory,
             vImport,
             vSideslider,
-            vConfigField
+            vConfigField,
+            vFiling
         }
     }
 </script>
@@ -858,10 +873,8 @@
 </style>
 
 <style media="screen" lang="scss">
-    .bk-date .date-dropdown-panel{
-        z-index: 999;
-    }
     .host-resource-wrapper{
+        position: relative;
         .errorInfo-wrapper{
             input[name="date-select"]{
                 border: 1px solid #ff3737;
