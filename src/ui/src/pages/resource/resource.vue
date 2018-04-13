@@ -40,6 +40,9 @@
                         <span>导出选中</span>
                     </button>
                 </form>
+                <button class="bk-button del-button fl mr10" @click="showFiling">
+                    <i class="icon-cc-history"></i>
+                </button>
                 <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
@@ -70,6 +73,12 @@
                 </bk-tabpanel>
             </bk-tab>
         </v-sideslider>
+        <v-filing
+            :isShow.sync="filing.isShow"
+            :objId="'host'"
+            :objTableHeader="index.table.header"
+            :allAttr="index.table.allAttr"
+        ></v-filing>
    </div>
 </template>
 
@@ -77,10 +86,14 @@
     import vIndex from '@/pages/index/index'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
+    import vFiling from '@/components/filing/filing'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
             return {
+                filing: {
+                    isShow: false
+                },
                 index: {
                     bkBizId: '',
                     selectedHost: [],
@@ -95,6 +108,10 @@
                                 value: 1
                             }]
                         }]
+                    },
+                    table: {
+                        header: [],
+                        allAttr: []
                     }
                 },
                 slider: {
@@ -226,6 +243,11 @@
                 } else {
                     this.$alertMsg('未配置Agent安装APP地址')
                 }
+            },
+            showFiling () {
+                this.index.table.header = this.$refs.index.table.tableHeader
+                this.index.table.allAttr = this.$refs.index.attribute
+                this.filing.isShow = true
             }
         },
         created () {
@@ -236,12 +258,14 @@
         components: {
             vImport,
             vIndex,
-            vSideslider
+            vSideslider,
+            vFiling
         }
     }
 </script>
 <style lang="scss" scoped>
     .host-resource-wrapper{
+        position: relative;
         height: 100%;
     }
     .biz-selector {
