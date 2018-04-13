@@ -10,15 +10,15 @@ type publisher struct {
 }
 
 // RegisterCustom register the custom sender , return the sender key.
-func (cli *publisher) RegisterCustom(sender Sender) (string, error) {
+func (cli *publisher) RegisterCustom(sender Sender) (SenderKey, error) {
 
 	log.Infof("register a custom sender(%s)", sender.Description())
 	key := common.UUID()
 	cli.senders[SenderKey(key)] = sender
-	return key, nil
+	return SenderKey(key), nil
 }
 
 // GetCustomSender get the custom sender by the sender key, return the custom sender.
-func (cli *publisher) GetCustomSender(senderKey string) (Sender, error) {
+func (cli *publisher) GetCustomSender(senderKey SenderKey) (Sender, error) {
 	return nil, nil
 }

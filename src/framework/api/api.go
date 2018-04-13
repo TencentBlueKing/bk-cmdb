@@ -2,11 +2,12 @@ package api
 
 import (
 	"configcenter/src/framework/core/publisher"
+	"configcenter/src/framework/core/timer"
 	"context"
 )
 
-// CMDBFrameworkInit create a new framework
-func CMDBFrameworkInit() (*Framework, error) {
+// CreateFramework create a new framework
+func CreateFramework() (*Framework, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -17,14 +18,18 @@ func CMDBFrameworkInit() (*Framework, error) {
 		cancel:  cancel,
 	}
 
+	/** initialize the default configuration */
+
+	// set the timer
+	fr.Timer = timer.New(ctx)
+
 	// set publisher manager
-	publisherMgr := publisher.New()
-	fr.Publisher = publisherMgr
+	fr.Publisher = publisher.New()
 
 	return fr, nil
 }
 
-// CMDBFrameworkUnInit destory the framework
-func CMDBFrameworkUnInit(fr *Framework) error {
+// DestoryFramework destory the framework
+func DestoryFramework(fr *Framework) error {
 	return fr.stop()
 }

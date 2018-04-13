@@ -11,7 +11,7 @@ import (
 func main() {
 
 	// create a new framework instance
-	fr, err := api.CMDBFrameworkInit()
+	fr, err := api.CreateFramework()
 
 	if nil != err {
 		fmt.Println("failed to create a framework:", err.Error())
@@ -34,5 +34,5 @@ func main() {
 	fr.Run()
 
 	// destory the framework instance
-	api.CMDBFrameworkUnInit(fr)
+	api.DestoryFramework(fr)
 }
