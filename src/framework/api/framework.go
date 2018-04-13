@@ -3,6 +3,7 @@ package api
 import (
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/publisher"
+	"configcenter/src/framework/core/timer"
 	"context"
 	"sync"
 	"time"
@@ -14,6 +15,7 @@ type Framework struct {
 	workers    MapWorker
 	context    context.Context
 	cancel     context.CancelFunc
+	Timer      timer.Timer
 	Publisher  publisher.Publisher
 }
 

@@ -21,8 +21,8 @@ type Sender interface {
 type Publisher interface {
 
 	// RegisterCustom register the custom sender , return the sender key.
-	RegisterCustom(sender Sender) (string, error)
+	RegisterCustom(sender Sender) (SenderKey, error)
 
 	// GetCustomSender get the custom sender by the sender key, return the custom sender.
-	GetCustomSender(senderKey string) (Sender, error)
+	GetCustomSender(senderKey SenderKey) (Sender, error)
 }
