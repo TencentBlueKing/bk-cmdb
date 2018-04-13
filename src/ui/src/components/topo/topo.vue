@@ -411,13 +411,13 @@
 
                 // 设置按钮title
                 let visBtnSetting = [{
-                    'title': '放大',
+                    'title': this.$t('ModelManagement["放大"]'),
                     'icon': 'icon-plus'
                 }, {
-                    'title': '缩小',
+                    'title': this.$t('ModelManagement["缩小"]'),
                     'icon': 'icon-minus'
                 }, {
-                    'title': '还原',
+                    'title': this.$t('ModelManagement["还原"]'),
                     'icon': 'icon-full-screen'
                 }]
                 document.querySelectorAll('.vis-zoomIn,.vis-zoomOut,.vis-zoomExtends').forEach((visBtn, index) => {

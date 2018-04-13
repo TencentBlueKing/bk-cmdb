@@ -145,6 +145,18 @@
                     最近一个月: [moment().subtract(1, 'month'), moment()],
                     最近三个月: [moment().subtract(3, 'month'), moment()]
                 },
+                rangesForZh: {
+                    昨天: [moment().subtract(1, 'days'), moment()],
+                    最近一周: [moment().subtract(7, 'days'), moment()],
+                    最近一个月: [moment().subtract(1, 'month'), moment()],
+                    最近三个月: [moment().subtract(3, 'month'), moment()]
+                },
+                rangesForEn: {
+                    'Yesterday': [moment().subtract(1, 'days'), moment()],
+                    'Last Week': [moment().subtract(7, 'days'), moment()],
+                    'Last Month': [moment().subtract(1, 'month'), moment()],
+                    'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                },
                 filter: {               // 查询筛选参数
                     bkBizId: '',
                     bkIP: '',
@@ -286,6 +298,11 @@
             this.getTableList()
             if (!this.bkBizList.length) {
                 this.getBkBizList()
+            }
+            if (this.language === 'en') {
+                this.ranges = this.rangesForEn
+            } else {
+                this.ranges = this.rangesForZh
             }
         },
         methods: {

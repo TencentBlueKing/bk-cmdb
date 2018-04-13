@@ -536,7 +536,7 @@
     }
     .userapi-new{
         width: 460px;
-        margin: 20px 0 0 110px;
+        margin: 20px 0 0 120px;
         font-size: 14px;
         // color: #6b7baa;
         position: relative;
@@ -568,7 +568,7 @@
         margin-top: 26px;
         position: relative;
         .userapi-input-name{
-            width: 105px;
+            width: 115px;
             line-height: 32px;
             text-align: right;
             padding-right: 15px;
@@ -583,20 +583,20 @@
         }
     }
     .userapi-btn-group{
-        margin: 40px 0 0 110px;
+        margin: 40px 0 0 120px;
         font-size: 0;
         .userapi-btn{
             width: 110px;
             height: 34px;
             margin: 0 10px 0 0;
             font-size: 14px;
-            letter-spacing: 4px;
+            // letter-spacing: 4px;
         }
     }
     .validate-message{
         position: absolute;
         top: 100%;
-        left: 110px;
+        left: 120px;
     }
 </style>
 <style lang="scss">
