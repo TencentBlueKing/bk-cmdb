@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ccapi
 
 import (
@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/language"
 	confCenter "configcenter/src/source_controller/objectcontroller/objectdata/config"
 	"configcenter/src/source_controller/objectcontroller/objectdata/rdiscover"
 	"configcenter/src/storage"
@@ -124,6 +125,30 @@ func (ccAPI *CCAPIServer) Start() error {
 			} else {
 				errif := errors.NewFromCtx(errcode)
 				a.Error = errif
+				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
+
+	// load the language resource
+	if dirPath, ok := config["language.res"]; ok {
+		if res, err := language.New(dirPath); nil != err {
+			blog.Error("failed to create language object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Lang = res
+		}
+	} else {
+		for {
+			langCtx := ccAPI.cfCenter.GetLanguageResCxt()
+			if langCtx == nil {
+				blog.Warnf("fail to get language package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				languageif := language.NewFromCtx(langCtx)
+				a.Lang = languageif
 				blog.Info("lanugage package loaded")
 				break
 			}
