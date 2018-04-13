@@ -154,6 +154,10 @@ def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_use
 
     [confs]
     dir = $configures_dir
+    [errors]
+    res=conf/errors
+    [language]
+    res=conf/language
     '''
 
     template = FileTemplate(migrate_file_template_str)

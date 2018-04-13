@@ -14,6 +14,7 @@ package config
 
 import (
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/language"
 	"encoding/json"
 
 	"configcenter/src/common/blog"
@@ -63,7 +64,7 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 	// confPath := types.CC_SERVCONF_BASEPATH + "/" + types.CC_MODULE_MIGRATE
 	// confEvent, err := cc.confRegDiscv.DiscoverConfig(confPath)
 
-	if err := cc.WriteLanguagePackage2Center(errres); err != nil {
+	if err := cc.WriteErrorRes2Center(errres); err != nil {
 		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
 	} else {
 		blog.Infof("writed languate packages to center %v", types.CC_SERVERROR_BASEPATH)
@@ -146,7 +147,7 @@ func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) WriteLanguagePackage2Center(errorres string) error {
+func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	info, err := os.Stat(errorres)
 	if os.ErrNotExist == err {
 		return fmt.Errorf("directory %s not exists", errorres)
@@ -165,6 +166,28 @@ func (cc *ConfCenter) WriteLanguagePackage2Center(errorres string) error {
 
 	data, err := json.Marshal(errcode)
 	key := types.CC_SERVERROR_BASEPATH
+	return cc.confRegDiscv.Write(key, data)
+}
+
+func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
+	info, err := os.Stat(languageres)
+	if os.ErrNotExist == err {
+		return fmt.Errorf("directory %s not exists", languageres)
+	}
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%s is not directory", languageres)
+	}
+
+	languagepack, err := language.LoadLanguageResourceFromDir(languageres)
+	if err != nil {
+		return fmt.Errorf("load error resource error: %s", err)
+	}
+
+	data, err := json.Marshal(languagepack)
+	key := types.CC_SERVLANG_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
 
