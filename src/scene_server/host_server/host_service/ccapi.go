@@ -140,7 +140,7 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	}
 
-	// load the errors resource
+	// load the language resource
 	if langres, ok := config["language.res"]; ok {
 		if langif, err := language.New(langres); nil != err {
 			blog.Error("failed to create errors object, error info is  %s ", err.Error())
