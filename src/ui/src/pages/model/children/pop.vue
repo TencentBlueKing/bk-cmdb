@@ -17,7 +17,7 @@
                     <ul class="content-left">
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["中文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="bk-form-input" 
+                            <input type="text" class="bk-form-input fr" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
                             :data-vv-name="$t('ModelManagement[\'中文名\']')"
@@ -26,7 +26,7 @@
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="bk-form-input" v-model="localValue['bk_classification_id']"
+                            <input type="text" class="bk-form-input fr" v-model="localValue['bk_classification_id']"
                             :data-vv-name="$t('ModelManagement[\'英文名\']')"
                             :disabled="type==='edit'"
                             v-validate="'required|id'">
