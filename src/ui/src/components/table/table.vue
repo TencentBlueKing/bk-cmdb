@@ -170,7 +170,7 @@
                         let scrollbarRect = scrollbar.getBoundingClientRect()
                         let bodyRect = document.body.getBoundingClientRect()
                         let pagingRect = this.$refs.pagination ? this.$refs.pagination.$el.getBoundingClientRect() : {height: 0}
-                        let paddingCompensate = 20
+                        let paddingCompensate = 40
                         scrollbar.style.maxHeight = `${bodyRect.height - scrollbarRect.top - pagingRect.height - paddingCompensate}px`
                     }
                 })
