@@ -564,14 +564,14 @@ func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, h
 }
 
 //IsExistHostIDInApp  is host exsit in app
-func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int) (bool, error) {
+func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int, defLang language.DefaultCCLanguageIf) (bool, error) {
 	conds := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID}
 	url := CC.HostCtrl() + "/host/v1/meta/hosts/modules/search"
 	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPSelectPost, conds)
 	blog.Info("IsExistHostIDInApp request url:%s, params:{appid:%d, hostid:%d}", url, appID, hostID)
 	blog.Info("IsExistHostIDInApp res:%v,%s, %v", isSucess, errmsg, data)
 	if !isSucess {
-		return false, errors.New("获取主机关系失败;" + errmsg)
+		return false, errors.New(defLang.Languagef("host_search_module_fail_with_errmsg", errmsg)) //"获取主机关系失败;" + errmsg)
 	}
 	//数据为空
 	if nil == data {
@@ -579,7 +579,7 @@ func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, ho
 	}
 	ids, ok := data.([]interface{})
 	if !ok {
-		return false, errors.New(fmt.Sprintf("获取主机关系返回值格式错误;%v", data))
+		return false, errors.New(defLang.Languagef("host_search_module_fail_with_errmsg", errmsg)) //"获取主机关系失败;" + errmsg)
 	}
 
 	if len(ids) > 0 {

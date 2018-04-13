@@ -346,6 +346,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data defaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
@@ -381,7 +382,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		}
 
 		for _, hostID := range data.HostID {
-			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID)
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
