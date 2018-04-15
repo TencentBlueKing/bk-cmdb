@@ -189,6 +189,7 @@ func (ccWeb *CCWebServer) Start() error {
 			role := session.Get("role")
 			userName, _ := session.Get("userName").(string)
 			language, _ := session.Get("language").(string)
+			c.Header(common.BKHTTPLanguage, language)
 			apiSite, err := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 			if nil != err {
 				blog.Errorf("api server not start %s", err.Error())

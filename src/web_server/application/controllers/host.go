@@ -55,6 +55,7 @@ func ImportHost(c *gin.Context) {
 	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	c.Header(common.BKHTTPLanguage, language)
 
 	file, err := c.FormFile("file")
 	if nil != err {
@@ -128,6 +129,7 @@ func ExportHost(c *gin.Context) {
 	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
 	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	c.Header(common.BKHTTPLanguage, language)
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	hostInfo, err := logics.GetHostData(appIDStr, hostIDStr, apiSite, c.Request.Header, kvMap)
@@ -222,6 +224,8 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	c.Header(common.BKHTTPLanguage, language)
+
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 	err = logics.BuildExcelTemplate(url, objID, file, c.Request.Header, defLang)

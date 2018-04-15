@@ -62,6 +62,7 @@ func ImportObject(c *gin.Context) {
 	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	c.Header(common.BKHTTPLanguage, language)
 
 	file, err := c.FormFile("file")
 	if nil != err {
@@ -201,6 +202,8 @@ func ExportObject(c *gin.Context) {
 	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	c.Header(common.BKHTTPLanguage, language)
+
 	// get the all attribute of the object
 	arrItems, err := logics.GetObjectData(ownerID, objID, apiSite, c.Request.Header)
 	if nil != err {
