@@ -68,10 +68,10 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 			//http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get("userName").(string)
-			// language, _ := session.Get("language").(string)
+			language, _ := session.Get("language").(string)
 			ownerID, _ := session.Get("owner_uin").(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
-			c.Request.Header.Add(common.BKHTTPLanguage, "en")
+			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
 
 			if path1 == "api" {

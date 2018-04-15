@@ -22,10 +22,11 @@ import (
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/bitly/go-simplejson"
 
 	"github.com/emicklei/go-restful"
 )
