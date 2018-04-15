@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/web_server/application/config"
@@ -123,6 +124,30 @@ func (ccWeb *CCWebServer) Start() error {
 				languageif := language.NewFromCtx(langCtx)
 				a.Lang = languageif
 				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
+
+	// load the errors resource
+	if dirPath, ok := config["erros.res"]; ok {
+		if res, err := errors.New(dirPath); nil != err {
+			blog.Error("failed to create errors object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Error = res
+		}
+	} else {
+		for {
+			errCtx := ccWeb.cfCenter.GetErrorResCxt()
+			if errCtx == nil {
+				blog.Warnf("fail to get errors package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				errIf := errors.NewFromCtx(errCtx)
+				a.Error = errIf
+				blog.Info("lanugage erros loaded")
 				break
 			}
 		}
