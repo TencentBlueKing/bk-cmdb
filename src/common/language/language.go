@@ -143,7 +143,7 @@ RESET:
 				goto RESET
 			}
 		}
-		return fmt.Sprintf(UnknownTheKeyStrf, key)
+		return ""
 	}
 
 	return errstr

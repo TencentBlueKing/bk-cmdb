@@ -53,6 +53,7 @@
     "host_property_import_from": "录入方式",
 
     "process_property_bk_process_name": "进程名称",
+    "process_property_bk_process_description": "进程描述",
     "process_property_bind_ip": "绑定IP",
     "process_property_port": "端口",
     "process_property_protocol": "协议",

@@ -53,6 +53,7 @@
     "host_property_import_from": "import source",
 
     "process_property_bk_process_name": "process name",
+    "process_property_bk_process_description": "process description",
     "process_property_bind_ip": "bind ip",
     "process_property_port": "port",
     "process_property_protocol": "protocol",
