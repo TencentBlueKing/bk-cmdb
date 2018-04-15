@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/types"
 	"context"
 	"encoding/json"
+	"configcenter/src/common/errors"
 	"sync"
 )
 
@@ -31,7 +32,7 @@ type ConfCenter struct {
 	ctx          []byte
 	ctxLock      sync.RWMutex
 	langCtx      map[string]language.LanguageMap
-	langLock     sync.RWMutex
+	errorcode    map[string]errors.ErrorCode
 }
 
 // NewConfCenter create a ConfCenter object
@@ -67,10 +68,18 @@ func (cc *ConfCenter) Start() error {
 		return err
 	}
 
+	errEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	if err != nil {
+		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
+		return err
+	}
+
 	for {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
+		case errEvn := <-errEvent:
+			cc.dealErrorResEvent(errEvn.Data)
 		case langEvn := <-langEvent:
 			cc.dealLanguageResEvent(langEvn.Data)
 		case <-cc.rootCtx.Done():
@@ -108,10 +117,39 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
+// GetErrorResCxt fetch the language packages
+func (cc *ConfCenter) GetErrorResCxt() map[string]errors.ErrorCode {
+	cc.ctxLock.RLock()
+	defer cc.ctxLock.RUnlock()
+
+	return cc.errorcode
+}
+
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
+	blog.Info("language has changed")
+
+	cc.ctxLock.Lock()
+	defer cc.ctxLock.Unlock()
+
+	errorcode := map[string]errors.ErrorCode{}
+	err := json.Unmarshal(data, &errorcode)
+	if err != nil {
+		return err
+	}
+	cc.errorcode = errorcode
+	a := api.GetAPIResource()
+	if a.Error != nil {
+		a.Error.Load(errorcode)
+	}
+
+	return nil
+}
+
+
 // GetLanguageResCxt fetch the language packages
 func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {
-	cc.langLock.RLock()
-	defer cc.langLock.RUnlock()
+	cc.ctxLock.RLock()
+	defer cc.ctxLock.RUnlock()
 
 	return cc.langCtx
 }
@@ -119,8 +157,8 @@ func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {
 func (cc *ConfCenter) dealLanguageResEvent(data []byte) error {
 	blog.Info("language has changed")
 
-	cc.langLock.Lock()
-	defer cc.langLock.Unlock()
+	cc.ctxLock.Lock()
+	defer cc.ctxLock.Unlock()
 
 	langMap := map[string]language.LanguageMap{}
 	err := json.Unmarshal(data, &langMap)
