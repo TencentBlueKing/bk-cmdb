@@ -9,7 +9,7 @@
  */
 
 <template>
-    <div class="">
+    <div>
         <div class="tab-content" v-if="isLoaded && hostSnapshot">
             <div class="attribute-list clearfix">
                 <div class="title clearfix">
@@ -144,7 +144,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -173,7 +173,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -202,7 +202,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
