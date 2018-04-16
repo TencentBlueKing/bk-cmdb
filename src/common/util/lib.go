@@ -91,9 +91,9 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)
 	if "" == language {
-		return "zh-cn"
+		language = "zh-cn"
 	}
-	blog.Infof("request language: %s", language)
+	blog.Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 
