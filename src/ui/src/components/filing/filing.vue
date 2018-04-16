@@ -102,7 +102,6 @@
             isShow (isShow) {
                 if (isShow) {
                     this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
-                    this.getTableList()
                 }
             },
             '$route.path' () {
@@ -162,7 +161,11 @@
                         } else if (hIndex === (this.tableHeader.length - 1)) {
                             item['op_time'] = this.$formatTime(moment(item['op_time']))
                         } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
-                            item[list.id] = item.content['pre_data'][list.id][0]['bk_inst_name']
+                            let name = []
+                            item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
+                                name.push(bkInstName)
+                            })
+                            item[list.id] = name.join(',')
                         } else {
                             item[list.id] = item.content['pre_data'][list.id]
                         }
