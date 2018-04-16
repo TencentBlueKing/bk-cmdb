@@ -28,7 +28,7 @@
                 <button class="bk-button bk-primary bk-button-componey create-btn" title="立即创建" @click="openObjectSlider('create')" :disabled="unauthorized.create">立即创建</button>
             </div>
             <div class="fr btn-group">
-                <button class="bk-button setting" @click="filing.isShow = true" title="存档查看">
+                <button class="bk-button setting" @click="filing.isShow = true" title="查看删除历史">
                     <i class="icon-cc-history"></i>
                 </button>
                 <button class="bk-button setting" @click="settingSlider.isShow = true">
