@@ -34,7 +34,7 @@
     "host_property_bk_asset_id": "固资编号",
     "host_property_bk_sn": "设备SN",
     "host_property_bk_comment": "备注",
-    "host_property_BKCloudIDField": "云区域",
+    "host_property_bk_cloud_id": "云区域",
     "host_property_bk_host_name": "主机名称",
     "host_property_bk_service_term": "质保年限",
     "host_property_bk_sla": "SLA级别",

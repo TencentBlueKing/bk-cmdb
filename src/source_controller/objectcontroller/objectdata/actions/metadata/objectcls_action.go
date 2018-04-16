@@ -267,6 +267,9 @@ func (cli *objectClassificationAction) SelectClassificationWithObject(req *restf
 		// translate language
 		for index := range clsResults {
 			clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, clsResults[index].ObjClassification)
+			for attindex := range clsResults[index].Objects {
+				clsResults[index].Objects[attindex].ObjectName = commondata.TranslateObjectName(defLang, clsResults[index].Objects[attindex])
+			}
 		}
 
 		return http.StatusOK, clsResults, nil

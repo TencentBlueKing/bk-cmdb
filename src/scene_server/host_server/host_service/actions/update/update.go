@@ -23,6 +23,7 @@ import (
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
 	"strconv"
@@ -71,7 +72,8 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		delete(data, common.BKHostIDField)
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), defErr)
+		forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), forward, defErr)
 
 		hostIDArr := strings.Split(hostIDStr, ",")
 		var iHostIDArr []int
