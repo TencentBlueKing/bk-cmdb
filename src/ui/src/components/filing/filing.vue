@@ -60,6 +60,10 @@
         computed: {
             tableHeader () {
                 let header = this.$deepClone(this.objTableHeader)
+                // 为业务时删除第一列的ID
+                if (this.objId === 'biz') {
+                    header = header.slice(1)
+                }
                 if (header.length && header[0].hasOwnProperty('type') && header[0].type === 'checkbox') {
                     header.shift()
                 }
@@ -155,6 +159,8 @@
                         if (hIndex === 0) {
                             if (this.objId === 'host') {
                                 item['id'] = item.content['pre_data']['bk_host_id']
+                            } else if (this.objId === 'biz') {
+                                item['id'] = item.content['pre_data']['bk_biz_id']
                             } else {
                                 item['id'] = item.content['pre_data']['bk_inst_id']
                             }
