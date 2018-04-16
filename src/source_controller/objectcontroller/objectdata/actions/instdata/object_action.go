@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
@@ -56,7 +56,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		pathParams := req.PathParameters()
@@ -68,7 +68,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
-		getErr := instdata.GetObjectByCondition(objType, nil, input, &originDatas, "", 0, 0)
+		getErr := instdata.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
 		if getErr != nil {
 			blog.Error("retrieve original data error:%v", getErr)
 		}
@@ -101,6 +101,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		pathParams := req.PathParameters()
@@ -115,7 +116,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
-		getErr := instdata.GetObjectByCondition(objType, nil, condition, &originDatas, "", 0, 0)
+		getErr := instdata.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
 		if getErr != nil {
 			blog.Error("retrieve original datas error:%v", getErr)
 		}
@@ -130,7 +131,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 		// record event
 		if len(originDatas) > 0 {
 			newdatas := []map[string]interface{}{}
-			if err := instdata.GetObjectByCondition(objType, nil, condition, &newdatas, "", 0, 0); err != nil {
+			if err := instdata.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
 				blog.Error("create event error:%v", err)
 			} else {
 				ec := eventdata.NewEventContextByReq(req)
@@ -163,6 +164,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		pathParams := req.PathParameters()
 		objType := pathParams["obj_type"]
@@ -190,7 +192,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectInstFailed)
 
 		}
-		err = instdata.GetObjectByCondition(objType, fieldArr, condition, &result, sort, skip, limit)
+		err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
 		if err != nil {
 			blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectInstFailed)

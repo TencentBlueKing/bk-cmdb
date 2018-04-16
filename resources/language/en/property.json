@@ -34,7 +34,7 @@
     "host_property_bk_asset_id": "asset id",
     "host_property_bk_sn": "device sn",
     "host_property_bk_comment": "comment",
-    "host_property_BKCloudIDField": "cloud area",
+    "host_property_bk_cloud_id": "cloud area",
     "host_property_bk_host_name": "host name",
     "host_property_bk_service_term": "service term",
     "host_property_bk_sla": "sla level",

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
@@ -59,7 +60,7 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		pathParams := req.PathParameters()
@@ -81,7 +82,7 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 		if nil != err {
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), defErr)
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(procData, common.ValidUpdate, procID)
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
@@ -277,7 +278,7 @@ func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Respons
 func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Response) {
 	user := util.GetActionUser(req)
 	language := util.GetActionLanguage(req)
-
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		pathParams := req.PathParameters()
@@ -290,7 +291,7 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		input, err := js.Map()
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), defErr)
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommFieldNotValid)

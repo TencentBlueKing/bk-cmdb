@@ -163,7 +163,10 @@ func (O *ObjQueryInput) convInterfaceToTime(val interface{}) (interface{}, error
 }
 
 func TranslateObjectName(defLang language.DefaultCCLanguageIf, att metadata.ObjectDes) string {
-	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ObjectID), att.ObjectName, att.ObjectID)
+	return util.FirstNotEmptyString(defLang.Language("object_"+att.ObjectID), att.ObjectName, att.ObjectID)
+}
+func TranslateInstName(defLang language.DefaultCCLanguageIf, att metadata.ObjectDes) string {
+	return util.FirstNotEmptyString(defLang.Language("inst_"+att.ObjectID), att.ObjectName, att.ObjectID)
 }
 
 func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes) string {

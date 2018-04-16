@@ -4,5 +4,6 @@
     "object_set": "集群",
     "object_module": "模块",
     "object_process": "进程",
+    "object_plat": "子网区域",
     "": ""
 }

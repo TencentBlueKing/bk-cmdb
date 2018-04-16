@@ -1,21 +1,24 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/language"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
 	"errors"
+	"fmt"
 )
 
 //GetCntByCondition get count by condition
@@ -49,9 +52,37 @@ func UpdateObjByCondition(objType string, data interface{}, condition interface{
 }
 
 //GetObjectByCondition get object by condition
-func GetObjectByCondition(objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := commondata.ObjTableMap[objType]
-	return DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit)
+	if err := DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+		return err
+	}
+
+	if nil != defLang && (objType == common.BKTableNameBaseApp || objType == common.BKTableNameBaseModule) {
+		switch results := result.(type) {
+		case []map[string]interface{}:
+			for index := range results {
+				if objType == common.BKTableNameBaseModule {
+					switch results[index]["default"] {
+					case "1":
+						results[index][common.BKModuleNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_module_idle"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
+					case "2":
+						results[index][common.BKModuleNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_module_fault"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
+					}
+				} else if objType == common.BKTableNameBaseApp {
+					switch results[index]["default"] {
+					case "1":
+						results[index][common.BKAppNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_biz_default"), fmt.Sprint(results[index][common.BKAppNameField]), fmt.Sprint(results[index][common.BKAppIDField]))
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 //CreateObject add new object

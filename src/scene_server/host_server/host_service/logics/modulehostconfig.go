@@ -97,9 +97,9 @@ func GetSingleModuleID(req *restful.Request, conds interface{}, hostAddr string)
 	return moduleID, nil
 }
 
-//AddHost, return error info
+// AddHost return error info
 func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
-
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	user := sencecommon.GetUserFromHeader(req)
 
 	hostAddr := cc.HostCtrl()
@@ -128,7 +128,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	var errMsg, succMsg, updateErrMsg []string   //新加错误， 成功，  更新失败
 	iSubArea := common.BKDefaultDirSubArea
 
-	defaultFields := getHostFields(ownerID, ObjAddr)
+	defaultFields := getHostFields(forward, ownerID, ObjAddr)
 	ts := time.Now().UTC()
 	//operator log
 	var logConents []auditoplog.AuditLogExt
@@ -160,7 +160,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		}
 		blog.Infof("no validate fields %v", notExistFields)
 
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, errHandle)
+		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
 
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, ok := hostMap[key]
@@ -295,7 +295,8 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 
 	host["import_from"] = common.HostAddMethodAgent
 	host[common.BKCloudIDField] = common.BKDefaultDirSubArea
-	defaultFields := getHostFields(ownerID, ObjAddr)
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	defaultFields := getHostFields(forward, ownerID, ObjAddr)
 	//补充未填写字段的默认值
 	for key, val := range defaultFields {
 		_, ok := host[key]
@@ -335,18 +336,18 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 }
 
 //getHostFields 获取主所有字段和默认值
-func getHostFields(ownerID, ObjAddr string) map[string]map[string]interface{} {
-	return GetObjectFields(ownerID, common.BKInnerObjIDHost, ObjAddr)
+func getHostFields(forward *sourceAPI.ForwardParam, ownerID, ObjAddr string) map[string]map[string]interface{} {
+	return GetObjectFields(forward, ownerID, common.BKInnerObjIDHost, ObjAddr)
 }
 
 //GetObjectFields get object fields
-func GetObjectFields(ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
+func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
 	data := make(map[string]interface{})
 	data[common.BKOwnerIDField] = ownerID
 	data[common.BKObjIDField] = objID
 	info, _ := json.Marshal(data)
 	client := sourceAPI.NewClient(ObjAddr)
-	result, _ := client.SearchMetaObjectAtt([]byte(info))
+	result, _ := client.SearchMetaObjectAtt(forward, []byte(info))
 	fields := make(map[string]map[string]interface{})
 	for _, j := range result {
 		propertyID := j.PropertyID
