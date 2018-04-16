@@ -255,7 +255,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 
 }
 
-//AssignHostToAppModule 将某一个ip分配到具体业务下的模块， enterip使用
+// AssignHostToAppModule 将某一个ip分配到具体业务下的模块， enterip使用
 func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, resp *restful.Response) {
 
 	type inputStruct struct {
