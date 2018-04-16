@@ -117,7 +117,6 @@ func (cli *ccLanguageHelper) GetLang() map[string]LanguageMap {
 // getLanguageKey get error code manager
 func (cli *ccLanguageHelper) getLanguageKey(language string) LanguageMap {
 	codemgr, ok := cli.lang[language]
-	blog.Infof("codemgr %v, ok %v", codemgr, ok)
 	if !ok && language != defaultLanguage {
 		// when the specified language not found, find it from default language package
 		codemgr, ok = cli.lang[defaultLanguage]

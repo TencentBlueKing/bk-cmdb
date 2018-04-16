@@ -185,7 +185,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 		limit := dat.Limit
 		sort := dat.Sort
 		fieldArr := strings.Split(fields, ",")
-		result := make([]interface{}, 0)
+		result := make([]map[string]interface{}, 0)
 		count, err := instdata.GetCntByCondition(objType, condition)
 		if err != nil {
 			blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)

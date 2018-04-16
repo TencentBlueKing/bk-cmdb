@@ -14,11 +14,13 @@ package instdata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
 	"errors"
 	"fmt"
+	"reflect"
 )
 
 //GetCntByCondition get count by condition
@@ -58,12 +60,13 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 		return err
 	}
 
-	if nil != defLang && (objType == common.BKTableNameBaseApp || objType == common.BKTableNameBaseModule) {
-		switch results := result.(type) {
-		case []map[string]interface{}:
+	if nil != defLang && (objType == common.BKInnerObjIDApp || objType == common.BKInnerObjIDModule) {
+		switch result.(type) {
+		case *[]map[string]interface{}:
+			results := *result.(*[]map[string]interface{})
 			for index := range results {
-				if objType == common.BKTableNameBaseModule {
-					switch results[index]["default"] {
+				if objType == common.BKInnerObjIDModule {
+					switch fmt.Sprint(results[index]["default"]) {
 					case "1":
 						results[index][common.BKModuleNameField] =
 							util.FirstNotEmptyString(defLang.Language("inst_module_idle"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
@@ -71,7 +74,7 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 						results[index][common.BKModuleNameField] =
 							util.FirstNotEmptyString(defLang.Language("inst_module_fault"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
 					}
-				} else if objType == common.BKTableNameBaseApp {
+				} else if objType == common.BKInnerObjIDApp {
 					switch results[index]["default"] {
 					case "1":
 						results[index][common.BKAppNameField] =
@@ -79,6 +82,8 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 					}
 				}
 			}
+		default:
+			blog.Infof("GetObjectByCondition %v", reflect.TypeOf(result))
 		}
 	}
 
