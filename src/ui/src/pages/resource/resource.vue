@@ -40,13 +40,15 @@
                         <span>导出选中</span>
                     </button>
                 </form>
-                <button class="bk-button del-button fl mr10" @click="showFiling" title="存档查看">
-                    <i class="icon-cc-history"></i>
-                </button>
                 <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
-                <bk-button type="primary" class="fl" @click="importHostShow">导入主机</bk-button>
+                <div class="fr">
+                    <bk-button type="primary" class="fl" @click="importHostShow">导入主机</bk-button>
+                    <button class="bk-button del-button fl ml10" @click="showFiling" title="查看删除历史">
+                        <i class="icon-cc-history"></i>
+                    </button>
+                </div>
             </div>
         </v-index>
         <v-sideslider 
