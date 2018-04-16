@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package manager
 
 import (
@@ -60,49 +60,49 @@ type TopoInstRst struct {
 
 // ObjectAsstLogic define the logic interface
 type ObjectAsstLogic interface {
-	CreateObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) (int, error)
-	SelectObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.ObjAsstDes, error)
-	UpdateObjectAsst(selector, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectAsstByID(id int, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error
+	CreateObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) (int, error)
+	SelectObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.ObjAsstDes, error)
+	UpdateObjectAsst(forward *api.ForwardParam, selector, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectAsstByID(forward *api.ForwardParam, id int, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error
 }
 
 // ObjectClassLogic define the logic interface
 type ObjectClassLogic interface {
-	CreateObjectClass(params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
-	SelectObjectClass(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error)
-	SelectObjectClassWithObjects(ownerID string, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error)
-	UpdateObjectClass(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectClass(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	CreateObjectClass(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
+	SelectObjectClass(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error)
+	SelectObjectClassWithObjects(forward *api.ForwardParam, ownerID string, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error)
+	UpdateObjectClass(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectClass(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
 }
 
 // ObjectLogic define the logic interface
 type ObjectLogic interface {
-	CreateObject(params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
-	SelectObject(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error)
-	UpdateObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
-	DeleteObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	CreateObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
+	SelectObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error)
+	UpdateObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	DeleteObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
 }
 
 // ObjectAttLogic define the logic interface
 type ObjectAttLogic interface {
-	CreateTopoModel(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error)
-	SelectTopoModel(rstitems []TopoModelRsp, ownerid, objid, clsid, preid, prename string, errProxy errors.DefaultCCErrorIf) ([]TopoModelRsp, error)
-	DeleteTopoModel(ownerid, objid string, assotype int, errProxy errors.DefaultCCErrorIf) error
-	CreateObjectAtt(params api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error)
-	SelectObjectAtt(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error)
-	UpdateObjectAtt(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectAtt(id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	CreateTopoModel(forward *api.ForwardParam, obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error)
+	SelectTopoModel(forward *api.ForwardParam, rstitems []TopoModelRsp, ownerid, objid, clsid, preid, prename string, errProxy errors.DefaultCCErrorIf) ([]TopoModelRsp, error)
+	DeleteTopoModel(forward *api.ForwardParam, ownerid, objid string, assotype int, errProxy errors.DefaultCCErrorIf) error
+	CreateObjectAtt(forward *api.ForwardParam, params api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error)
+	SelectObjectAtt(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error)
+	UpdateObjectAtt(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectAtt(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
 }
 
 // ObjectAttGroupLogic define the logic interface
 type ObjectAttGroupLogic interface {
-	CreateObjectGroup(params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
-	UpdateObjectGroup(params []byte, errProxy errors.DefaultCCErrorIf) error
-	UpdateObjectGroupProperty(params []byte, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectGroup(id int, errProxy errors.DefaultCCErrorIf) error
-	DeleteObjectGroupProperty(ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error
-	SelectPropertyGroupByObjectID(ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error)
+	CreateObjectGroup(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error)
+	UpdateObjectGroup(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) error
+	UpdateObjectGroupProperty(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectGroup(forward *api.ForwardParam, id int, errProxy errors.DefaultCCErrorIf) error
+	DeleteObjectGroupProperty(forward *api.ForwardParam, ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error
+	SelectPropertyGroupByObjectID(forward *api.ForwardParam, ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error)
 }
 
 // Manager define manager interface

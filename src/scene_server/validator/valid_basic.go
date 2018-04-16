@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
@@ -50,6 +51,7 @@ type ValidMap struct {
 	KeyFileds    map[string]interface{}
 	PropertyKv   map[string]string
 	ccError      errors.DefaultCCErrorIf
+	forward      *api.ForwardParam
 }
 
 type InstRst struct {
@@ -59,12 +61,12 @@ type InstRst struct {
 	Data    interface{} `json:data`
 }
 
-func NewValidMap(ownerID, objID, objCtrl string, err errors.DefaultCCErrorIf) *ValidMap {
-	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err}
+func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
+	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 }
 
-func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string, err errors.DefaultCCErrorIf) *ValidMap {
-	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err}
+func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
+	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 
 	for _, item := range keyFileds {
 		tmp.KeyFileds[item] = item
@@ -76,7 +78,7 @@ func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string
 func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int) (bool, error) {
 	valRule := NewValRule(valid.ownerID, valid.objCtrl)
 
-	valRule.GetObjAttrByID(valid.objID)
+	valRule.GetObjAttrByID(valid.forward, valid.objID)
 	valid.IsRequireArr = valRule.IsRequireArr
 	valid.IsOnlyArr = valRule.IsOnlyArr
 	valid.PropertyKv = valRule.PropertyKv
