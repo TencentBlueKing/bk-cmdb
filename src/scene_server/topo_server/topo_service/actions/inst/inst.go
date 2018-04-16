@@ -93,6 +93,9 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 			case string:
 				asstIDS := strings.Split(t, ",")
 				for _, id := range asstIDS {
+					if 0 == len(id) {
+						continue
+					}
 					iID, iIDErr := util.GetInt64ByInterface(id)
 					if nil != iIDErr {
 						blog.Error("can not convert the data (%s) into int64, error info is %s", id, iIDErr.Error())
@@ -526,6 +529,11 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			input[common.BKObjIDField] = delItem.objID
 			input[common.BKInstIDField] = delItem.instID
 
+			// delete the association
+			if err := cli.deleteInstAssociation(delItem.instID, delItem.ownerID, delItem.objID); nil != err {
+				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
+			}
+
 			// take snapshot before operation
 			preData, retStrErr := cli.getInstDetail(req, delItem.instID, delItem.objID, delItem.ownerID)
 			if common.CCSuccess != retStrErr {
@@ -651,6 +659,12 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 		}
 
+		// set the inst association table
+		if err := cli.updateInstAssociation(instID, ownerID, objID, input); nil != err {
+			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
+		}
+
+		// update the inst value
 		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 		inputJSON, jsErr := json.Marshal(input)
