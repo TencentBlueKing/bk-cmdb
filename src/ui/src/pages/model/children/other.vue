@@ -22,7 +22,7 @@
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
                     <i class="icon-cc-attribute"></i>
-                    <span class="btn-tip">
+                    <span class="btn-tip" :class="{'en': language === 'en'}">
                         <i class="right-triangle"></i>
                         <i class="left-triangle"></i>
                         {{$t('ModelManagement["系统内建模型不可停用"]')}}
@@ -39,7 +39,7 @@
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
                     <i class="icon-cc-attribute"></i>
-                    <span class="btn-tip">
+                    <span class="btn-tip" :class="{'en': language === 'en'}">
                         <i class="right-triangle"></i>
                         <i class="left-triangle"></i>
                         {{$t('ModelManagement["系统内建模型不可删除"]')}}
@@ -79,7 +79,8 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount'
+                'bkSupplierAccount',
+                'language'
             ])
         },
         methods: {
@@ -225,7 +226,7 @@
                 }
                 .btn-tip{
                     display:inline-block;
-                    width:170px;
+                    min-width:170px;
                     height:33px;
                     line-height:33px;
                     text-align:center;
@@ -236,6 +237,9 @@
                     color: #fff;
                     border-radius: 2px;
                     font-size: 12px;
+                    &.en{
+                        min-width: 300px;
+                    }
                     .left-triangle{
                         width: 0;
                         height: 0;
