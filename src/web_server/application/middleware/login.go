@@ -47,6 +47,8 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 	skipLogin := params[5]
 	multipleOwner := params[6]
 	isMultiOwner := true
+	defaultlanguage := params[7]
+
 	if "0" == multipleOwner {
 		isMultiOwner = false
 	}
@@ -56,7 +58,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 		//		blog.Info("login page:%v", loginPage)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
-		if isAuthed(c, isMultiOwner, skipLogin) {
+		if isAuthed(c, isMultiOwner, skipLogin, defaultlanguage) {
 			//valid resource acess privilege
 			ok := ValidResAccess(pathArr, c)
 			if false == ok {
@@ -99,12 +101,12 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 }
 
 //isAuthed check user is authed
-func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin string) bool {
+func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
 		session := sessions.Default(c)
 		session.Set("userName", "admin")
 		session.Set("role", "1")
-		session.Set("language", "zh-cn")
+		session.Set("language", defaultlanguage)
 		session.Set("owner_uin", "0")
 		session.Set("skiplogin", "1")
 		session.Save()
@@ -195,16 +197,20 @@ func loginUser(c *gin.Context, isMultiOwner bool) bool {
 		}
 	}
 
+	cookielanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
 	session.Set("userName", userName)
 	session.Set("chName", chName)
 	session.Set("phone", phone)
 	session.Set("email", email)
 	session.Set("role", role)
-	session.Set("language", language)
 	session.Set("bk_token", bk_token)
 	session.Set("owner_uin", ownerID)
-
+	if "" != cookielanguage {
+		session.Set("language", cookielanguage)
+	} else {
+		session.Set("language", language)
+	}
 	session.Save()
 	return true
 }
