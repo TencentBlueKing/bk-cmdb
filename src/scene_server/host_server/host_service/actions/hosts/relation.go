@@ -413,7 +413,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			}
 		}
 		user := util.GetActionUser(req)
-		logClient.SetDesc("host to " + moduleName + " module")
+		logClient.SetDesc("host to " + moduleNameLogKey + " module")
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
 		return http.StatusOK, nil, nil
