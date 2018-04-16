@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package middleware
 
 import (
@@ -73,8 +73,6 @@ const BK_CC_PRIVI_PATTERN string = "topo/privilege/user/detail"
 
 const BK_OBJECT_ATT_GROUP = "objectatt/group/property/owner"
 
-const BK_SEARCH string = "search"
-
 const BK_CC_USER_CUSTOM string = "usercustom"
 
 const BK_CC_HOST_FAVORITES string = "favorites"
@@ -90,7 +88,7 @@ const BK_HOST_TRANS = "hosts/modules"
 
 //system config privilege pattern
 const (
-	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)|(hosts/modules/idle)`
+	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
 	objectPattern = `object/classification/[a-z0-9A-Z]+/objects$`
 )
 
@@ -196,6 +194,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 		if "" == est {
 			modelPrivi := session.Get("modelPrivi").(string)
 			if 0 == len(modelPrivi) {
+				blog.Error("get model privilege json error")
 				return false
 			}
 			return validModelConfigPrivi(modelPrivi, method, pathArr)
@@ -224,21 +223,23 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	}
 
-	//valid biz op privilege
-	appID := c.Request.Header.Get(common.BKAppIDField)
-	if "" != appID {
-		userPriviAppStr, ok := session.Get("userPriviApp").(string)
-		if false == ok || 0 == len(userPriviAppStr) {
-			return false
-		}
-
-		rolePrivilege, ok := session.Get("rolePrivilege").(string)
-		if false == ok {
-			return false
-		}
-		return validAppConfigPrivi(method, appID, userPriviAppStr, rolePrivilege, pathStr)
+	//biz  search privilege, return true
+	if strings.Contains(pathStr, BK_APP_SEARCH) || strings.Contains(pathStr, BK_SET_SEARCH) || strings.Contains(pathStr, BK_MODULE_SEARCH) || strings.Contains(pathStr, BK_INST_SEARCH) || strings.Contains(pathStr, BK_HOSTS_SEARCH) {
+		return true
 	}
-	return true
+	if strings.Contains(pathStr, BK_HOSTS_SNAP) || strings.Contains(pathStr, BK_HOSTS_HIS) {
+		return true
+	}
+	if strings.Contains(pathStr, BK_TOPO_MODEL) {
+		return true
+	}
+	if searchPatternRegexp.MatchString(pathStr) {
+		return true
+	}
+
+	//valid biz operaiton privilege
+	return validAppConfigPrivi(c, method, pathStr)
+
 }
 
 //validSysConfigPrivi valid system access privilege
@@ -246,17 +247,20 @@ func validSysConfigPrivi(sysPrivi interface{}, config string) bool {
 	if nil != sysPrivi {
 		ssysPrivi := sysPrivi.(string)
 		if 0 == len(ssysPrivi) {
+			blog.Error("no system config privilege")
 			return false
 		}
 		var sysPriObj []string
 		err := json.Unmarshal([]byte(ssysPrivi), &sysPriObj)
 		if nil != err {
+			blog.Error("no system config privilege not json")
 			return false
 		}
 		if util.InArray(config, sysPriObj) {
 			return true
 		}
 	}
+	blog.Error("system privilege not pass")
 	return false
 }
 
@@ -266,11 +270,13 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 	var mPrivi map[string][]string
 	err := json.Unmarshal([]byte(modelPrivi), &mPrivi)
 	if nil != err {
+		blog.Error("get model privilege json error")
 		return false
 	}
 	objName := pathArr[len(pathArr)-1]
 	priviArr, ok := mPrivi[objName]
 	if false == ok {
+		blog.Error("get object privilege  error")
 		return false
 	}
 	//valid update privilege
@@ -292,19 +298,70 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 	if method == common.HTTPSelectPost && util.InArray(BK_CC_SEARCH, priviArr) && util.InArray(BK_CC_SEARCH, pathArr) {
 		return true
 	}
-
+	blog.Error("modle privilege valid not pass")
 	return false
 }
 
 //validAppConfigPrivi valid app privilege
-func validAppConfigPrivi(method, appID string, userPriviAppStr, rolePrivilege, pathStr string) bool {
+func validAppConfigPrivi(c *gin.Context, method, pathStr string) bool {
+
+	//validate host update privilege
+	if strings.Contains(pathStr, BK_HOST_UPDATE) && method == common.HTTPUpdate {
+		return validAppAccessPrivi(c, BK_CC_HOSTUPDATE)
+	}
+
+	//validate host trans privilege
+	if strings.Contains(pathStr, BK_HOST_TRANS) {
+		return validAppAccessPrivi(c, BK_CC_HOSTTRANS)
+	}
+
+	//validate topo update privilege
+	if strings.Contains(pathStr, BK_SET) || strings.Contains(pathStr, BK_MODULE) || strings.Contains(pathStr, BK_INSTS) || strings.Contains(pathStr, BK_TOPO) {
+		return validAppAccessPrivi(c, BK_CC_TOPOUPDATE)
+	}
+
+	//validate user customer api privilege
+	if strings.Contains(pathStr, BK_USER_API_S) {
+		return validAppAccessPrivi(c, BK_CC_CUSTOMAPI)
+	}
+	//validate process config privilege
+	if strings.Contains(pathStr, BK_PROC_S) {
+		return validAppAccessPrivi(c, BK_CC_PROCCONFIG)
+	}
+
+	return true
+}
+
+//validate app access privilege
+func validAppAccessPrivi(c *gin.Context, appResource string) bool {
+	session := sessions.Default(c)
+	appID := c.Request.Header.Get(common.BKAppIDField)
+	if "" == appID {
+		blog.Error("no app id in header")
+		return false
+	}
+	userPriviAppStr, ok := session.Get("userPriviApp").(string)
+	if false == ok {
+		blog.Error("get user privilege from session error")
+		return false
+	}
+
+	rolePrivilege, ok := session.Get("rolePrivilege").(string)
+	if false == ok {
+		blog.Error("get role privilege from session error")
+		return false
+	}
+
+	//valid opearion under biz
 	var userPriviApp, rolePrivi map[string][]string
 	err := json.Unmarshal([]byte(userPriviAppStr), &userPriviApp)
 	if nil != err {
+		blog.Error("user privi app json error")
 		return false
 	}
 	appRole, ok := userPriviApp[appID]
 	if false == ok {
+		blog.Error("no user privi app ")
 		return false
 	}
 	//maintainer role pass the valid
@@ -314,6 +371,7 @@ func validAppConfigPrivi(method, appID string, userPriviAppStr, rolePrivilege, p
 
 	err = json.Unmarshal([]byte(rolePrivilege), &rolePrivi)
 	if nil != err {
+		blog.Error("role privi json error ")
 		return false
 	}
 	priviArr := make([]string, 0)
@@ -323,46 +381,9 @@ func validAppConfigPrivi(method, appID string, userPriviAppStr, rolePrivilege, p
 			priviArr = append(priviArr, p)
 		}
 	}
-
-	//app privilege search return true
-
-	if strings.Contains(pathStr, BK_APP_SEARCH) || strings.Contains(pathStr, BK_SET_SEARCH) || strings.Contains(pathStr, BK_MODULE_SEARCH) || strings.Contains(pathStr, BK_INST_SEARCH) || strings.Contains(pathStr, BK_HOSTS_SEARCH) {
+	if util.Contains(priviArr, appResource) {
 		return true
 	}
-	if strings.Contains(pathStr, BK_HOSTS_SNAP) || strings.Contains(pathStr, BK_HOSTS_HIS) {
-		return true
-	}
-	if strings.Contains(pathStr, BK_TOPO_MODEL) {
-		return true
-	}
-	if searchPatternRegexp.MatchString(pathStr) {
-		return true
-	}
-
-	//privilege match path
-	for _, userPrivi := range priviArr {
-		switch userPrivi {
-		case BK_CC_HOSTUPDATE:
-			if strings.Contains(pathStr, BK_HOST_UPDATE) && method == common.HTTPUpdate {
-				return true
-			}
-		case BK_CC_HOSTTRANS:
-			if strings.Contains(pathStr, BK_HOST_TRANS) {
-				return true
-			}
-		case BK_CC_TOPOUPDATE:
-			if strings.Contains(pathStr, BK_SET) || strings.Contains(pathStr, BK_MODULE) || strings.Contains(pathStr, BK_INSTS) || strings.Contains(pathStr, BK_TOPO) {
-				return true
-			}
-		case BK_CC_CUSTOMAPI:
-			if strings.Contains(pathStr, BK_USER_API_S) {
-				return true
-			}
-		case BK_CC_PROCCONFIG:
-			if strings.Contains(pathStr, BK_PROC_S) {
-				return true
-			}
-		}
-	}
+	blog.Error("valid user app privilege false")
 	return false
 }
