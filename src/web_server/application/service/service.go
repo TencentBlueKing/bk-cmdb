@@ -17,9 +17,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/web_server/application/config"
@@ -160,6 +160,10 @@ func (ccWeb *CCWebServer) Start() error {
 	check_url := config["site.check_url"]
 	sessionName := config["session.name"]
 	skipLogin := config["session.skip"]
+	defaultlanguage := config["session.defaultlanguage"]
+	if "" == defaultlanguage {
+		defaultlanguage = "zh-cn"
+	}
 	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
@@ -180,7 +184,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 		ccWeb.RegisterActions(a.Wactions)
 		middleware.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
-		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner))
+		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner, defaultlanguage))
 		ccWeb.httpServ.Static("/static", static)
 		blog.Info(static)
 		ccWeb.httpServ.LoadHTMLFiles(static + "/index.html") //("static/index.html")
