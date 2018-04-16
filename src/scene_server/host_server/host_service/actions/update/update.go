@@ -134,7 +134,7 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		opClient := auditlog.NewClient(cli.CC.AuditCtrl())
-		opClient.AuditHostsLog(logLastConents, "修改主机", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
+		opClient.AuditHostsLog(logLastConents, "update host", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
 
 		return http.StatusOK, common.CCSuccessStr, nil
 	}, resp)
