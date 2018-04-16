@@ -429,6 +429,9 @@ def main(argv):
     if 0 == len(paas_url):
         print 'please input the blueking paas url'
         sys.exit()
+    if not cc_url.startswith("http://"):
+        print 'blueking cmdb url not start with http://'
+        sys.exit()
 
     generate_config_file(rd_server,db_name,redis_ip,redis_port,redis_user,redis_pass,mongo_ip,mongo_port,mongo_user,mongo_pass,cc_url,paas_url)
     update_start_script(rd_server, server_ports)
