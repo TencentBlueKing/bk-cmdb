@@ -1,4 +1,9 @@
 ### log desc key description
+---
+
+OpDesc多语言版本用作翻译key。
+语言包中没有相应的值。 显示当前内容。
+
 
 |key|val|
 |-|-|

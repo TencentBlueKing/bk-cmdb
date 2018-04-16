@@ -26,7 +26,7 @@ type Client struct {
 }
 
 // NewClient 创建审计日志操作接口
-// log Content.OpDesc The multi-language version is used as the translation key.
+// log OpDesc The multi-language version is used as the translation key.
 // There is no corresponding value in the language pack. The current content is displayed.
 func NewClient(address string) *Client {
 
