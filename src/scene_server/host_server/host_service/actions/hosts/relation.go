@@ -248,7 +248,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostEditRelationPoolFail)
 		}
 		logClient, err := logics.NewHostModuleConfigLog(req, nil, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
-		logClient.SetDesc(fmt.Sprintf("分配主机到业务[%s]", appinfo[common.BKAppNameField].(string)))
+		logClient.SetDesc("distribution host to app")
 		logClient.SetHostID(data.HostID)
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
@@ -358,12 +358,15 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 
 		//fmt.Println(moduleURL)
 		conds := make(map[string]interface{})
+		moduleNameLogKey := "idle"
 		if common.DefaultResModuleName == moduleName {
 			//空闲机
+			moduleNameLogKey = "idle"
 			conds[common.BKDefaultField] = common.DefaultResModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultResModuleName
 		} else {
 			//故障机器
+			moduleNameLogKey = "falult"
 			conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultFaultModuleName
 		}
@@ -410,7 +413,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			}
 		}
 		user := util.GetActionUser(req)
-		logClient.SetDesc("转移主机到" + moduleName)
+		logClient.SetDesc("host to " + moduleName + " module")
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
 		return http.StatusOK, nil, nil

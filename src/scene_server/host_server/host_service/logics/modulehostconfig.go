@@ -77,21 +77,21 @@ func GetSingleModuleID(req *restful.Request, conds interface{}, hostAddr string)
 	params["fields"] = common.BKModuleIDField
 	isSuccess, errMsg, data := GetHttpResult(req, url, common.HTTPSelectPost, params)
 	if !isSuccess {
-		blog.Error("get idle module error, params:%v, error:%s", params, errMsg)
+		blog.Error("get  module error, params:%v, error:%s", params, errMsg)
 		return 0, errors.New(errMsg)
 	}
 	dataInterface := data.(map[string]interface{})
 	info := dataInterface["info"].([]interface{})
 	if 1 != len(info) {
 		blog.Error("not find module error, params:%v, error:%s", params, errMsg)
-		return 0, errors.New("获取集群，返回数据格式错误")
+		return 0, errors.New("get module error, module count != 1")
 	}
 	row := info[0].(map[string]interface{})
 	moduleID, _ := util.GetIntByInterface(row[common.BKModuleIDField])
 
 	if 0 == moduleID {
 		blog.Error("not find module error, params:%v, error:%s", params, errMsg)
-		return 0, errors.New("获取集群信息失败")
+		return 0, errors.New("get module error ")
 	}
 
 	return moduleID, nil
@@ -243,7 +243,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 	if 0 < len(logConents) {
 		logAPIClient := sourceAuditAPI.NewClient(auditAddr)
-		_, err := logAPIClient.AuditHostsLog(logConents, "导入主机", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
+		_, err := logAPIClient.AuditHostsLog(logConents, "import host", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
 		//addAuditLogs(req, logAdd, "新加主机", ownerID, appID, user, auditAddr)
 		if nil != err {
 			blog.Errorf("add audit log error %s", err.Error())
@@ -329,7 +329,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	logAPIClient.AuditHostLog(hostID, content, "enter IP HOST", IP, ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
 	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
 	logClient.SetHostID([]int{hostID})
-	logClient.SetDescPrefix("enter IP ")
+	logClient.SetDesc("host module change")
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 	return nil
 
@@ -498,7 +498,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	if !isSucess {
 		return data, errors.New(langHandle.Languagef("host_move_to_resource", errmsg)) //"更新主机关系失败;" + errmsg)
 	}
-	logClient.SetDescSuffix("; 转移主机到资源池")
+	logClient.SetDesc("move host to resource pool")
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 
 	return data, err
