@@ -295,7 +295,9 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 			asstFieldVal[idxItem] = t
 		}
 	}
-	cli.createInstAssociation(asstFieldVal)
+	if err := cli.createInstAssociation(asstFieldVal); nil != err {
+		blog.Errorf("failed to create the inst association, error info is %s ", err.Error())
+	}
 
 	return http.StatusOK, rsp.Data, isUpdate, nil
 }

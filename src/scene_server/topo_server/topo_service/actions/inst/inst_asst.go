@@ -22,6 +22,5 @@ import (
 
 func (cli *instAction) createInstAssociation(instAsst []interface{}) error {
 
-	cli.CC.InstCli.InsertMuti(metadata.InstAsst{}.TableName(), instAsst...)
-	return nil
+	return cli.CC.InstCli.InsertMuti(metadata.InstAsst{}.TableName(), instAsst...)
 }
