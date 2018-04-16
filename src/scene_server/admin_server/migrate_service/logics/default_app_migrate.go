@@ -1,24 +1,26 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/migrate_service/data"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	httpcli "configcenter/src/common/http/httpclient"
 
@@ -48,6 +50,14 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 	params[common.BKMaintainersField] = "admin"
 	params[common.BKProductPMField] = "admin"
 
+	if data.Distribution == common.RevisionEnterprise {
+		params[common.BKTimeZoneField] = "Asia/Shanghai"
+		params[common.BKLanguageField] = "中文"
+	} else {
+		delete(params, common.BKTimeZoneField)
+		delete(params, common.BKLanguageField)
+	}
+
 	byteParams, _ := json.Marshal(params)
 	url := cc.TopoAPI() + "/topo/v1/app/default/" + ownerID
 	blog.Info("migrate add default app url :%s", url)
@@ -60,12 +70,12 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 	js, _ := simplejson.NewJson([]byte(reply))
 	output, _ := js.Map()
 
-	code, err := util.GetIntByInterface(output["bk_error_code"])
+	code, err := util.GetIntByInterface(output[common.HTTPBKAPIErrorCode])
 	if err != nil {
 		return errors.New(reply)
 	}
 	if 0 != code {
-		return errors.New(output["message"].(string))
+		return errors.New(fmt.Sprint(output[common.HTTPBKAPIErrorMessage]))
 	}
 
 	return nil

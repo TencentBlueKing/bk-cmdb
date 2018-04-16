@@ -10,37 +10,21 @@
  * limitations under the License.
  */
 
-package models
+package language
 
-//common group
-const (
-	BaseInfo     = "default"
-	BaseInfoName = "基础信息"
+// ccDefaultLanguageHelper regular language code helper
+type ccDefaultLanguageHelper struct {
+	languageType string
+	languageStr  func(language, key string) string
+	languageStrf func(language, key string, args ...interface{}) string
+}
 
-	GroupNone = "none"
-)
+// Language returns an content for specific language
+func (cli *ccDefaultLanguageHelper) Language(key string) string {
+	return cli.languageStr(cli.languageType, key)
+}
 
-//app group info
-const (
-	AppRole     = "role"
-	AppRoleName = "角色"
-)
-
-//host group info
-
-const (
-	HostAutoFields     = "auto"
-	HostAutoFieldsName = "自动发现信息（需要安装agent）"
-)
-
-//process group info
-const (
-	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
-
-	ProcGsekitBaseInfo     = "gsekit_baseinfo"
-	ProcGsekitBaseInfoName = "GSEkit 基本信息"
-
-	ProcGsekitManageInfo     = "gsekit_manage"
-	ProcGsekitManageInfoName = "GSEkit 进程管理信息"
-)
+// Languagef returns an content with args for specific language
+func (cli *ccDefaultLanguageHelper) Languagef(key string, args ...interface{}) string {
+	return cli.languageStrf(cli.languageType, key, args...)
+}

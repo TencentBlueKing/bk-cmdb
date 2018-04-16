@@ -203,54 +203,49 @@
                         exact: this.ip.exact,
                         data: this.ipData
                     },
-                    condition: [{
-                        'bk_obj_id': 'host',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'biz',
-                        fields: [],
-                        condition: [{
-                            field: 'default',
-                            operator: '$ne',
-                            value: 1
-                        }]
-                    }, {
-                        'bk_obj_id': 'module',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'set',
-                        fields: [],
-                        condition: []
-                    }]
+                    condition: []
                 }
                 Object.keys(this.localQueryColumnData).map(columnPropertyId => {
                     let column = this.localQueryColumnData[columnPropertyId]
                     let value = column.value
-                    if (value !== '' || (Array.isArray(value) && value.length)) {
+                    if ((!Array.isArray(value) && value !== '') || (Array.isArray(value) && value.length)) {
                         let property = this.getColumnProperty(columnPropertyId, column['bk_obj_id'])
-                        filter.condition.forEach(({bk_obj_id: bkObjId, condition}) => {
-                            if (bkObjId === column['bk_obj_id']) {
-                                if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
-                                    condition.push({
-                                        field: column.field,
-                                        operator: column.operator,
-                                        value: column.value
-                                    })
-                                } else {
-                                    condition.push({
-                                        field: column.field,
-                                        operator: '$gte',
-                                        value: column.value[0]
-                                    })
-                                    condition.push({
-                                        field: column.field,
-                                        operator: '$lte',
-                                        value: column.value[1]
-                                    })
-                                }
+                        let condition = filter.condition.find(({bk_obj_id: bkObjId}) => bkObjId === column['bk_obj_id'])
+                        if (!condition) {
+                            condition = {
+                                'bk_obj_id': column['bk_obj_id'],
+                                fields: [],
+                                condition: []
                             }
+                            filter.condition.push(condition)
+                        }
+                        if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
+                            condition.condition.push({
+                                field: column.field,
+                                operator: column.operator,
+                                value: column.value
+                            })
+                        } else {
+                            condition.condition.push({
+                                field: column.field,
+                                operator: '$gte',
+                                value: column.value[0]
+                            })
+                            condition.condition.push({
+                                field: column.field,
+                                operator: '$lte',
+                                value: column.value[1]
+                            })
+                        }
+                    }
+                })
+                let defaultObj = ['host', 'module', 'set', 'biz']
+                defaultObj.forEach(id => {
+                    if (!filter.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                        filter.condition.push({
+                            'bk_obj_id': id,
+                            fields: [],
+                            condition: []
                         })
                     }
                 })
