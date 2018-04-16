@@ -5,7 +5,7 @@ OpDesc多语言版本用作翻译key。
 语言包中没有相应的值。 显示OpDesc当前内容。
 
 
-|key|val|
+|key|中文含义|
 |-|-|
 |create host|  新加主机到资源池|
 |move host to resource pool| 转移主机到资源池|
