@@ -85,6 +85,33 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
 
+	// extract the data for the associated field
+	asstFieldVal := make([]interface{}, 0)
+	for idxItem, item := range asstDes {
+		if inputVal, ok := targetInput[item.ObjectAttID]; ok {
+			switch t := inputVal.(type) {
+			case string:
+				asstIDS := strings.Split(t, ",")
+				for _, id := range asstIDS {
+					iID, iIDErr := util.GetInt64ByInterface(id)
+					if nil != iIDErr {
+						blog.Error("can not convert the data (%s) into int64, error info is %s", id, iIDErr.Error())
+						continue
+					}
+
+					asstInst := metadata.InstAsst{}
+					asstInst.AsstInstID = iID
+					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
+					asstInst.ObjectID = objID
+					asstFieldVal = append(asstFieldVal, asstInst)
+				}
+
+			default:
+				blog.Warnf("the target data (%v) type is not a string ", t)
+			}
+		}
+	}
+
 	// check
 	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
 	targetMethod := common.HTTPSelectPost
@@ -223,6 +250,7 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	if !ok {
 		return http.StatusInternalServerError, nil, isUpdate, fmt.Errorf("%+v", rsp.Message)
 	}
+
 	{
 		// save change log
 		if targetMethod == common.HTTPSelectPost {
@@ -258,6 +286,16 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 		}
 
 	}
+
+	// set the inst association table
+	for idxItem, item := range asstFieldVal {
+		switch t := item.(type) {
+		case metadata.InstAsst:
+			t.InstID = int64(instID)
+			asstFieldVal[idxItem] = t
+		}
+	}
+	cli.createInstAssociation(asstFieldVal)
 
 	return http.StatusOK, rsp.Data, isUpdate, nil
 }
@@ -316,10 +354,13 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			}
 			blog.Debug("the batch info %+v", *innerBatchInfo.BatchInfo)
 		}
+
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
+
 		// define create inst function
 		createFunc := cli.subCreateInst
 
+		// get object attributes fields
 		att := map[string]interface{}{}
 		att[common.BKObjIDField] = objID
 		att[common.BKOwnerIDField] = ownerID
@@ -333,6 +374,19 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to read the object att, error is %s ", restErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstSelectFailed)
 		}
+
+		// get association fields
+		asst := map[string]interface{}{}
+		asst[common.BKOwnerIDField] = ownerID
+		asst[common.BKObjIDField] = objID
+		searchData, _ = json.Marshal(asst)
+		cli.objcli.SetAddress(cli.CC.ObjCtrl())
+		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+		if nil != asstErr {
+			blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
+		}
+
 		// create batch
 		if nil != innerBatchInfo.BatchInfo {
 
@@ -340,18 +394,6 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				Errors       []string `json:"error"`
 				Success      []string `json:"success"`
 				UpdateErrors []string `json:"update_error"`
-			}
-
-			// get association fields
-			asst := map[string]interface{}{}
-			asst[common.BKOwnerIDField] = ownerID
-			asst[common.BKObjIDField] = objID
-			searchData, _ := json.Marshal(asst)
-			cli.objcli.SetAddress(cli.CC.ObjCtrl())
-			asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
-			if nil != asstErr {
-				blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
 			}
 
 			rsts := &batchResult{}
@@ -377,7 +419,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// create single inst
-		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, nil, attdes)
+		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, asstDes, attdes)
 		return status, rst, err
 
 	}, resp)
