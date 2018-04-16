@@ -75,7 +75,7 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 							util.FirstNotEmptyString(defLang.Language("inst_module_fault"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
 					}
 				} else if objType == common.BKInnerObjIDApp {
-					switch results[index]["default"] {
+					switch fmt.Sprint(results[index]["default"]) {
 					case "1":
 						results[index][common.BKAppNameField] =
 							util.FirstNotEmptyString(defLang.Language("inst_biz_default"), fmt.Sprint(results[index][common.BKAppNameField]), fmt.Sprint(results[index][common.BKAppIDField]))
