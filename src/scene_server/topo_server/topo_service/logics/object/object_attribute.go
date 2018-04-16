@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
@@ -100,6 +100,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objasst["bk_asst_obj_id"] = obj.AssociationID
 	obj.Editable = true
 	obj.PropertyID = common.BKChildStr
+	obj.PropertyType = common.FiledTypeSingleChar
 	objasst["bk_object_att_id"] = obj.PropertyID
 
 	// to create object association	, failed return
@@ -109,21 +110,46 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 		return 0, operr
 	}
 
-	// to create an object attribute, if it fails, you need to delete the association
-	val, jserr := json.Marshal(obj)
-	if nil != jserr {
-		blog.Error("marshal failed, error:%v", jserr)
-		return 0, jserr
+	// to create the inner  attribute
+	objAtt := api.ObjAttDes{}
+	objAtt.ObjectID = obj.ObjectID
+	objAtt.OwnerID = obj.OwnerID
+	objAtt.PropertyID = common.BKInstParentStr
+	objAtt.PropertyType = common.FiledTypeInt
+	objAtt.IsSystem = true
+	objAtt.IsOnly = true
+	objAtt.IsRequired = true
+
+	val, jsErr := json.Marshal(objAtt)
+	if nil != jsErr {
+		blog.Error("marshal failed, error:%v", jsErr)
+		return 0, jsErr
 	}
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	rst, rsterr := cli.objcli.CreateMetaObjectAtt(val)
-	if nil != rsterr {
+	innerAttID, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	if nil != rstErr {
+		blog.Error("failed to create the inner filed for the owner(%s) object(%s)", obj.OwnerID, obj.ObjectID)
 		cli.mgr.DeleteObjectAsstByID(id, errProxy)
-		return rst, rsterr
+		return innerAttID, rstErr
 	}
 
-	return rst, rsterr
+	// to create the main line attribute, if it fails, you need to delete the association
+	val, jsErr = json.Marshal(obj)
+	if nil != jsErr {
+		blog.Error("marshal failed, error:%v", jsErr)
+		return 0, jsErr
+	}
+
+	cli.objcli.SetAddress(cli.cfg.Get(cli))
+	rst, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	if nil != rstErr {
+		cli.mgr.DeleteObjectAsstByID(id, errProxy)
+		cli.objcli.DeleteMetaObjectAtt(innerAttID, []byte("{}"))
+		return rst, rstErr
+	}
+
+	return rst, rstErr
 }
 
 func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
@@ -529,7 +555,7 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 				return itemsErr
 			} else if 0 == len(items) {
 				blog.Error("nothing to be delete, condition:%s", string(checkObjAttCondVal))
-				// objatt对象已经不存在��
+				// objatt not found
 				return fmt.Errorf("nothing to be deleted, please the condition")
 			}
 		}
@@ -541,6 +567,10 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 		if nil != rstErr {
 			blog.Error("call subsearch failed for object attribute, objatt id %v", attrID)
 			return fmt.Errorf("nothing to be deleted, please check the condition")
+		}
+
+		if objAtt.IsPre {
+			return fmt.Errorf("could not delete preset attribute")
 		}
 
 		objAsst[common.BKObjIDField] = objAtt.ObjectID
@@ -694,14 +724,15 @@ func (cli *objAttLogic) subSearchWithParams(val []byte) ([]api.ObjAttDes, error)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	objs, err := cli.objcli.SearchMetaObjectAttExceptInnerFiled(val)
 
-	//   TODO: need to delete
+	// TODO need to delete
+
 	delArrayFunc := func(s []api.ObjAttDes, i int) []api.ObjAttDes {
 		return append(s[:i], s[i+1:]...)
 	}
 
 retry:
 	for idx, tmp := range objs {
-		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.PropertyID == common.BKInstParentStr {
+		if tmp.PropertyID == common.BKChildStr || tmp.PropertyID == common.BKParentStr || tmp.IsSystem {
 			// 清理当前的值
 			objs = delArrayFunc(objs, idx)
 			goto retry
@@ -741,8 +772,6 @@ func (cli *objAttLogic) searchWithParams(val []byte, errProxy errors.DefaultCCEr
 			blog.Error("failed to search the property group, error info is %s", groupErr.Error())
 		} else if 0 != len(groups) {
 			objAtts[idx].PropertyGroupName = groups[0].GroupName
-		} else {
-			blog.Error("not found the groups, by the condition(%+v)", condition)
 		}
 
 		if nil != asstErr {

@@ -10,37 +10,26 @@
  * limitations under the License.
  */
 
-package models
+package language
 
-//common group
-const (
-	BaseInfo     = "default"
-	BaseInfoName = "基础信息"
+// New create new Language instance,
+// dir is directory of language description resource
+func New(dir string) (CCLanguageIf, error) {
 
-	GroupNone = "none"
-)
+	tmp := &ccLanguageHelper{lang: make(map[string]LanguageMap)}
 
-//app group info
-const (
-	AppRole     = "role"
-	AppRoleName = "角色"
-)
+	langType, err := LoadLanguageResourceFromDir(dir)
+	if nil != err {
+		//blog.Error("failed to load the error resource, error info is %s", err.Error())
+		return nil, err
+	}
+	tmp.Load(langType)
 
-//host group info
+	return tmp, nil
+}
 
-const (
-	HostAutoFields     = "auto"
-	HostAutoFieldsName = "自动发现信息（需要安装agent）"
-)
-
-//process group info
-const (
-	ProcPort     = "proc_port"
-	ProcPortName = "监听端口"
-
-	ProcGsekitBaseInfo     = "gsekit_baseinfo"
-	ProcGsekitBaseInfoName = "GSEkit 基本信息"
-
-	ProcGsekitManageInfo     = "gsekit_manage"
-	ProcGsekitManageInfoName = "GSEkit 进程管理信息"
-)
+// NewFromCtx  get lange helper
+func NewFromCtx(lang map[string]LanguageMap) CCLanguageIf {
+	tmp := &ccLanguageHelper{lang: lang}
+	return tmp
+}

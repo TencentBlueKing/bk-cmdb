@@ -120,30 +120,9 @@ func (h *HostLog) getHostDetail(instID string) (interface{}, int) {
 		return nil, common.CC_Err_Comm_Host_Get_FAIL
 	}
 
-	//
 	hostData := gHostData["data"].(map[string]interface{})
 
-	ret := make(map[string]interface{})
-	for key, val := range hostData {
-		if nil != val {
-			valArr, ok := val.([]interface{})
-			if common.BKHostInnerIPField == key {
-				h.innerIP = val
-			}
-			if ok {
-				var refs []interface{}
-				for _, item := range valArr {
-					itemMap := item.(map[string]interface{})
-					refs = append(refs, common.KvMap{"ref_id": itemMap["bk_inst_id"], "ref_name": itemMap["name"]})
-				}
-				ret[key] = refs
-			} else {
-				ret[key] = val
-			}
-		}
-	}
-
-	return ret, common.CCSuccess
+	return hostData, common.CCSuccess
 }
 
 func (h *HostLog) GetPreHostData() *metadata.Content {
