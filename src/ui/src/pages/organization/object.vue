@@ -125,11 +125,11 @@
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
-        <v-filing
+        <v-delete-history
             :isShow.sync="filing.isShow"
             :objId="objId"
             :objTableHeader="table.header"
-        ></v-filing>
+        ></v-delete-history>
    </div>
 </template>
 
@@ -143,7 +143,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
-    import vFiling from '@/components/filing/filing'
+    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
     export default {
         mixins: [Authority],
         data () {
@@ -626,7 +626,7 @@
             vImport,
             vSideslider,
             vConfigField,
-            vFiling
+            vDeleteHistory
         }
     }
 </script>

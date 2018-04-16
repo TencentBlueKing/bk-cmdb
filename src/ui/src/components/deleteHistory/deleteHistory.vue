@@ -4,6 +4,7 @@
             <span class="title">已删除历史</span>
             <div class="fr operation-group">
                 <bk-daterangepicker
+                    ref="dateRangePicker"
                     class="datepicker"
                     :range-separator="'-'"
                     :quick-select="true"
@@ -20,6 +21,7 @@
                 :tableList="tableList"
                 :pagination="pagination"
                 :isLoading="isLoading"
+                :sortable="false"
                 @handlePageTurning="setCurrentPage"
                 @handlePageSizeChange="setCurrentSize"
                 @handleTableSortClick="setCurrentSort"
@@ -79,7 +81,7 @@
             },
             /* 开始时间 */
             startDate () {
-                return this.$formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD')
+                return this.$formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
             },
             /* 结束时间 */
             endDate () {
@@ -106,6 +108,7 @@
             isShow (isShow) {
                 if (isShow) {
                     this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
+                    this.resetDateRangePicker()
                 }
             },
             '$route.path' () {
@@ -113,6 +116,10 @@
             }
         },
         methods: {
+            resetDateRangePicker () {
+                this.$refs.dateRangePicker.selectedDateRange = [this.startDate, this.endDate]
+                this.$refs.dateRangePicker.selectedDateRangeTmp = [this.startDate, this.endDate]
+            },
             setFilterTime (oldVal, newVal) {
                 this.opTime = newVal.split(' - ').map((time, index) => {
                     if (index === 0) {

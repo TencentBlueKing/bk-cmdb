@@ -75,11 +75,11 @@
                 </bk-tabpanel>
             </bk-tab>
         </v-sideslider>
-        <v-filing
+        <v-delete-history>
             :isShow.sync="filing.isShow"
             :objId="'host'"
             :objTableHeader="index.table.header"
-        ></v-filing>
+        ></v-delete-history>
    </div>
 </template>
 
@@ -87,7 +87,7 @@
     import vIndex from '@/pages/index/index'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
-    import vFiling from '@/components/filing/filing'
+    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
@@ -272,7 +272,7 @@
             vImport,
             vIndex,
             vSideslider,
-            vFiling
+            vDeleteHistory
         }
     }
 </script>
