@@ -66,7 +66,7 @@
                     <div class="automatic-import">
                         <p>说明： 当主机安装了蓝鲸Agent后，会自动录入到“主机资源池”中</p>
                         <div class="back-contain">
-                            <img src="../../common/images/icon/icon-back.png">
+                            <i class="icon-cc-skip"></i>
                             <a href="javascript:void(0)" @click="openAgentApp">点此进入Agent安装APP</a>
                         </div>
                     </div>
@@ -171,13 +171,13 @@
                         h('span', '选中的 '),
                         h('span', {
                             style: {
-                                color: '#498fe0'
+                                color: '#3c96ff'
                             }
                         }, this.index.selectedHost.length),
                         h('span', ' 个主机转移到 '),
                         h('span', {
                             style: {
-                                color: '#498fe0'
+                                color: '#3c96ff'
                             }
                         }, selected.label),
                         h('span', ' 下的空闲机模块')
@@ -301,11 +301,12 @@
         .back-contain{
             margin-left:45px;
             cursor:pointer;
+            color: #3c96ff;
             img{
                 margin-right: 5px;
             }
             a{
-                color:#498fe0;
+                color:#3c96ff;
             }
         }
     }
