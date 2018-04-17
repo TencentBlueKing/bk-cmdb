@@ -163,18 +163,18 @@ func (O *ObjQueryInput) convInterfaceToTime(val interface{}) (interface{}, error
 
 }
 
-func TranslateObjectName(defLang language.DefaultCCLanguageIf, att metadata.ObjectDes) string {
+func TranslateObjectName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectDes) string {
 	return util.FirstNotEmptyString(defLang.Language("object_"+att.ObjectID), att.ObjectName, att.ObjectID)
 }
-func TranslateInstName(defLang language.DefaultCCLanguageIf, att metadata.ObjectDes) string {
+func TranslateInstName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectDes) string {
 	return util.FirstNotEmptyString(defLang.Language("inst_"+att.ObjectID), att.ObjectName, att.ObjectID)
 }
 
-func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes) string {
+func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectAttDes) string {
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
 }
 
-func TranslateEnumName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes, val interface{}) interface{} {
+func TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectAttDes, val interface{}) interface{} {
 	options := validator.ParseEnumOption(val)
 	for index := range options {
 		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
@@ -182,10 +182,10 @@ func TranslateEnumName(defLang language.DefaultCCLanguageIf, att metadata.Object
 	return options
 }
 
-func TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att metadata.PropertyGroup) string {
+func TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att *metadata.PropertyGroup) string {
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_group_"+att.GroupID), att.GroupName, att.GroupID)
 }
 
-func TranslateClassificationName(defLang language.DefaultCCLanguageIf, att metadata.ObjClassification) string {
+func TranslateClassificationName(defLang language.DefaultCCLanguageIf, att *metadata.ObjClassification) string {
 	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ClassificationID), att.ClassificationName, att.ClassificationID)
 }

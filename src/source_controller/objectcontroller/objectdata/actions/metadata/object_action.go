@@ -240,7 +240,7 @@ func (cli *objectAction) SelectObjects(req *restful.Request, resp *restful.Respo
 
 		// translate language
 		for index := range results {
-			results[index].ObjectName = commondata.TranslateObjectName(defLang, results[index])
+			results[index].ObjectName = commondata.TranslateObjectName(defLang, &results[index])
 		}
 
 		// success

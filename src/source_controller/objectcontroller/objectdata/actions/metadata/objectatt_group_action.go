@@ -175,7 +175,7 @@ func (cli *objectAttGroupAction) SelectGroup(req *restful.Request, resp *restful
 		}
 		// translate language
 		for index := range results {
-			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, results[index])
+			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
 		}
 		return http.StatusOK, results, nil
 
@@ -361,7 +361,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 
 		// translate language
 		for index := range results {
-			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, results[index])
+			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
 		}
 
 		return http.StatusOK, results, nil
