@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/metadata"
 	"time"
 
@@ -171,6 +172,14 @@ func TranslateInstName(defLang language.DefaultCCLanguageIf, att metadata.Object
 
 func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes) string {
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
+}
+
+func TranslateEnumName(defLang language.DefaultCCLanguageIf, att metadata.ObjectAttDes, val interface{}) interface{} {
+	options := validator.ParseEnumOption(val)
+	for index := range options {
+		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
+	}
+	return options
 }
 
 func TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att metadata.PropertyGroup) string {
