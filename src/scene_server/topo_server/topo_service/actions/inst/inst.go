@@ -58,6 +58,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.DeleteInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo})
 
@@ -1396,75 +1397,6 @@ func (cli *instAction) SelectInst(req *restful.Request, resp *restful.Response) 
 
 }
 
-/**
-* pause develop
-func (cli *instAction) convertCondition(req *restful.Request, condition map[string]interface{}, ownerID, objID string) (map[string]interface{}, int) {
-
-	blog.Debug("ownerid(%s) objid(%s) the input condition is: %+v", ownerID, objID, condition)
-	rstMap, rstErr := cli.getObjectAsst(objID, ownerID)
-	if common.CCSuccess != rstErr {
-		blog.Error("can not get the association object, error code is %d", rstErr)
-		return nil, rstErr
-	}
-
-	for propertyID, asstObjID := range rstMap {
-		if subCondition, ok := condition[propertyID]; ok {
-			targetCondition, targetOK := subCondition.(map[string]interface{})
-			if targetOK {
-				innerCondition := map[string]interface{}{}
-				targetpre := cli.CC.ObjCtrl() + "/object/v1/insts/"
-				objType := ""
-				switch asstObjID {
-				case common.BKInnerObjIDHost:
-					objType = ""
-					targetpre = cli.CC.HostCtrl() + "/host/v1/hosts"
-					innerCondition[common.BKHostNameField] = targetCondition
-				case common.BKInnerObjIDModule:
-					objType = common.BKInnerObjIDModule
-					//condition[common.BKModuleIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-					innerCondition[common.BKModuleNameField] = targetCondition
-				case common.BKInnerObjIDApp:
-					objType = common.BKInnerObjIDApp
-					innerCondition[common.BKAppNameField] = targetCondition
-					//condition[common.BKAppIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-				case common.BKInnerObjIDSet:
-					objType = common.BKInnerObjIDSet
-					innerCondition[common.BKSetNameField] = targetCondition
-					//condition[common.BKSetIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-				default:
-					objType = common.BKINnerObjIDObject
-					innerCondition[common.BKInstNameField] = targetCondition
-					// condition[common.BKObjIDField] = objID
-					// condition[common.BKInstIDField] = instID
-					// condition[common.BKOwnerIDField] = ownerID
-				}
-				searchParam, jsErr := json.Marshal(map[string]interface{}{
-					"condition": innerCondition,
-				})
-				if jsErr != nil {
-					return nil, common.CCErrCommJSONMarshalFailed
-				}
-				sURL := targetpre + objType + "/search"
-				objRes, err := httpcli.ReqHttp(req, sURL, "POST", searchParam)
-				if nil != err {
-					blog.Error("failed to select the insts, error info is %s", err.Error())
-					return nil, common.CCErrTopoInstSelectFailed
-				}
-				blog.Debug("the obj innercondition(%+v) res: %s", innerCondition, objRes)
-
-			} else {
-				blog.Error("the target is not a valid map object, the data is %+v", targetCondition)
-			}
-		}
-	}
-
-	blog.Debug("ownerid(%s) objid(%s) the input condition is: %+v", ownerID, objID, condition)
-	return condition, common.CCSuccess
-}
-**/
 // SelectInsts search insts by condition
 func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response) {
 	blog.Info("select insts")
@@ -1499,14 +1431,6 @@ func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response)
 			}
 
 			condition := params.ParseAppSearchParams(js.Condition)
-
-			// convert the association field
-			/*
-				* pause develop
-				_, conErr := cli.convertCondition(req, condition, ownerID, objID)
-				if common.CCSuccess != conErr {
-				}
-			*/
 
 			condition[common.BKOwnerIDField] = ownerID
 			condition[common.BKObjIDField] = objID
