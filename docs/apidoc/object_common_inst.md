@@ -147,9 +147,7 @@ fields 参数说明：
 			"test_asst": [{
 				"bk_inst_id": 2,
 				"bk_inst_name": "test2",
-				"bk_obj_icon": "",
 				"bk_obj_id": "test_obj",
-				"bk_obj_name": "",
 				"id": "2"
 			}]
 		}]
@@ -172,11 +170,10 @@ data 字段说明
 
 | 名称  | 类型  | 说明 |Description|
 |---|---|---|---|
+|id|string|已存储的关联实例的id|The id of the associated instance that has been stored.|
 |bk_inst_id|int|新增数据记录的ID|the id of the new inst |
 |bk_supplier_account|string|开发商账号|supplier account code|
 |bk_obj_id|string|模型ID|the object id|
-|bk_obj_icon|string|模型的图标|the object icon|
-|bk_obj_name|string|模型的名字，用于展示|the object name, used to read or shown|
 |create_time|string|数据创建的时间|the creation date time|
 |last_time|string|最后修改时间|the last modify date time|
 |test_asst|string|test 的关联字段，用户自定义的名字，实际应用中不会与此相同|Test's associated field, user-defined name, will not be the same in practice.|

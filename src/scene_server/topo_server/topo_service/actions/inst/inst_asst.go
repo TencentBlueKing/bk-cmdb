@@ -302,8 +302,10 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		}
 
 		// search all the inst by the condition
-		instCondition[common.BKInstIDField] = map[string]interface{}{
-			common.BKDBIN: targetInstIDS,
+		if 0 != len(targetInstIDS) {
+			instCondition[common.BKInstIDField] = map[string]interface{}{
+				common.BKDBIN: targetInstIDS,
+			}
 		}
 
 		searchParams["condition"] = instCondition
