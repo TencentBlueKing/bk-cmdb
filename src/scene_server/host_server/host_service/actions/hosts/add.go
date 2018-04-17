@@ -51,11 +51,11 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		if nil == data.HostInfo {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
+			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
 		}
 		//get default biz
 		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl())

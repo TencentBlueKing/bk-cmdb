@@ -36,8 +36,6 @@ func main() {
 	blog.InitLogs()
 	defer blog.CloseLogs()
 
-	fmt.Println("测试一下")
-
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 

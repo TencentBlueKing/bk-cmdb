@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
@@ -19,9 +19,11 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -49,241 +51,232 @@ func init() {
 // SearchModuleByApp: 获取业务下的所有模块
 func (cli *moduleAction) SearchModuleByApp(req *restful.Request, resp *restful.Response) {
 	blog.Debug("SearchModuleByApp")
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	m.CallResponseEx(func() (int, interface{}, error) {
+		appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
+		if nil != err {
+			blog.Error("convert appid to int error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
-	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Error("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
 
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
+		blog.Debug("SearchModuleByApp http body data: %s", value)
 
-	blog.Debug("SearchModuleByApp http body data: %s", value)
+		input := make(map[string]interface{})
+		err = json.Unmarshal(value, &input)
+		if nil != err {
+			blog.Error("unmarshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		condition := input["condition"].(map[string]interface{})
+		condition[common.BKAppIDField] = appID
 
-	condition := input["condition"].(map[string]interface{})
-	condition[common.BKAppIDField] = appID
+		page := input["page"].(map[string]interface{})
+		fields := input["fields"].([]interface{})
+		strFields := make([]string, 0)
+		for _, i := range fields {
+			strI := i.(string)
+			strFields = append(strFields, strI)
+		}
 
-	page := input["page"].(map[string]interface{})
-	fields := input["fields"].([]interface{})
-	strFields := make([]string, 0)
-	for _, i := range fields {
-		strI := i.(string)
-		strFields = append(strFields, strI)
-	}
+		searchParams := make(map[string]interface{})
+		searchParams["condition"] = condition
+		searchParams["fields"] = strings.Join(strFields, ",")
+		searchParams["start"] = page["start"]
+		searchParams["limit"] = page["limit"]
+		searchParams["sort"] = page["sort"]
 
-	searchParams := make(map[string]interface{})
-	searchParams["condition"] = condition
-	searchParams["fields"] = strings.Join(strFields, ",")
-	searchParams["start"] = page["start"]
-	searchParams["limit"] = page["limit"]
-	searchParams["sort"] = page["sort"]
+		//search
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/module/search"
+		inputJson, _ := json.Marshal(searchParams)
+		moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
+		blog.Debug("search module params: %s", string(inputJson))
+		if nil != err {
+			blog.Error("search module error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleSelectFailed)
+		}
 
-	//search
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/module/search"
-	inputJson, _ := json.Marshal(searchParams)
-	moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
-	blog.Debug("search module params: %s", string(inputJson))
-	if nil != err {
-		blog.Error("search module error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_QUERY_FAIL, common.CC_Err_Comm_Module_QUERY_FAIL_STR, resp)
-		return
-	}
-
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error information is %v", jserr)
-	}
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
+			// cli.Response(&rst, resp)
+			return http.StatusOK, rst.Data, nil
+		} else {
+			blog.Error("unmarshal the json failed, error information is %v", jserr)
+		}
+		return http.StatusOK, rst.Data, nil
+	}, resp)
 }
 
 // SearchModuleByProperty: 根据属性获取模块列表
 func (cli *moduleAction) SearchModuleByProperty(req *restful.Request, resp *restful.Response) {
 	blog.Debug("SearchModuleByProperty start!")
-
-	appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
-	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
-
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
-
-	blog.Debug("SearchModuleByProperty http body data: %s", value)
-
-	properties := make(map[string]interface{})
-	err = json.Unmarshal(value, &properties)
-	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
-
-	setCondition := make(map[string]interface{})
-	for proName, proValue := range properties {
-		setCondition[proName] = map[string]interface{}{
-			"$in": proValue,
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	m.CallResponseEx(func() (int, interface{}, error) {
+		appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
+		if nil != err {
+			blog.Error("convert appid to int error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 		}
-	}
 
-	blog.Debug("getSetIDByCond condition: %v", setCondition)
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Error("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
 
-	setIDArr, err := getSetIDByCond(req, cli.CC.ObjCtrl(), setCondition)
-	if nil != err {
-		blog.Error("SearchModuleByProperty error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_QUERY_FAIL, common.CC_Err_Comm_Module_QUERY_FAIL_STR, resp)
-		return
-	}
+		blog.Debug("SearchModuleByProperty http body data: %s", value)
 
-	blog.Debug("getSetIDByCond res: %v", setIDArr)
+		properties := make(map[string]interface{})
+		err = json.Unmarshal(value, &properties)
+		if nil != err {
+			blog.Error("unmarshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appID
-	condition[common.BKSetIDField] = map[string]interface{}{
-		"$in": setIDArr,
-	}
+		setCondition := make(map[string]interface{})
+		for proName, proValue := range properties {
+			setCondition[proName] = map[string]interface{}{
+				"$in": proValue,
+			}
+		}
 
-	searchParams := make(map[string]interface{})
-	searchParams["condition"] = condition
-	searchParams["fields"] = ""
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/module/search"
-	inputJson, _ := json.Marshal(searchParams)
-	moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
+		blog.Debug("getSetIDByCond condition: %v", setCondition)
 
-	if nil != err {
-		blog.Error("SearchModuleByProperty error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_QUERY_FAIL, common.CC_Err_Comm_Module_QUERY_FAIL_STR, resp)
-		return
-	}
+		setIDArr, err := getSetIDByCond(req, cli.CC.ObjCtrl(), setCondition)
+		if nil != err {
+			blog.Error("SearchModuleByProperty error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleSelectFailed)
+		}
 
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error information is %v", jserr)
-	}
-	return
+		blog.Debug("getSetIDByCond res: %v", setIDArr)
+
+		condition := make(map[string]interface{})
+		condition[common.BKAppIDField] = appID
+		condition[common.BKSetIDField] = map[string]interface{}{
+			"$in": setIDArr,
+		}
+
+		searchParams := make(map[string]interface{})
+		searchParams["condition"] = condition
+		searchParams["fields"] = ""
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/module/search"
+		inputJson, _ := json.Marshal(searchParams)
+		moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
+
+		if nil != err {
+			blog.Error("SearchModuleByProperty error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleSelectFailed)
+		}
+
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
+			cli.Response(&rst, resp)
+			return http.StatusOK, rst.Data, nil
+		} else {
+			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+	}, resp)
 }
 
 // UpdateMultiModule 更新一个或多个Module，更新多个更新一个或多个Module时候名称无效
 func (cli *moduleAction) UpdateMultiModule(req *restful.Request, resp *restful.Response) {
 	blog.Debug("UpdateMultiModule start!")
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
-	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+	m.CallResponseEx(func() (int, interface{}, error) {
+		appID, err := strconv.Atoi(req.PathParameter(common.BKAppIDField))
+		if nil != err {
+			blog.Error("convert appid to int error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Error("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
 
-	blog.Debug("UpdateMultiModule http body data: %s", value)
+		blog.Debug("UpdateMultiModule http body data: %s", value)
 
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		input := make(map[string]interface{})
+		err = json.Unmarshal(value, &input)
+		if nil != err {
+			blog.Error("unmarshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	moduleIDArr := input[common.BKModuleIDField]
+		moduleIDArr := input[common.BKModuleIDField]
 
-	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appID
-	condition[common.BKModuleIDField] = map[string]interface{}{
-		"$in": moduleIDArr,
-	}
+		condition := make(map[string]interface{})
+		condition[common.BKAppIDField] = appID
+		condition[common.BKModuleIDField] = map[string]interface{}{
+			"$in": moduleIDArr,
+		}
 
-	param := make(map[string]interface{})
-	param["condition"] = condition
-	param["data"] = input["data"]
+		param := make(map[string]interface{})
+		param["condition"] = condition
+		param["data"] = input["data"]
 
-	moduleName := input["data"].(map[string]interface{})[common.BKModuleNameField]
-	moduleCon := map[string]interface{}{
-		common.BKModuleNameField: moduleName,
-		common.BKModuleIDField: map[string]interface{}{
-			"$nin": moduleIDArr,
-		},
-	}
-	blog.Error("edit module moduleCon:%v", moduleCon)
+		moduleName := input["data"].(map[string]interface{})[common.BKModuleNameField]
+		moduleCon := map[string]interface{}{
+			common.BKModuleNameField: moduleName,
+			common.BKModuleIDField: map[string]interface{}{
+				"$nin": moduleIDArr,
+			},
+		}
+		blog.Error("edit module moduleCon:%v", moduleCon)
 
-	moduleData, err := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), moduleCon)
-	blog.Error("edit module moduleData:%v", moduleData)
-	if err != nil {
-		blog.Error("Marshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
-	if len(moduleData) > 0 {
-		msg := "模块名已存在"
-		blog.Debug("addModule error: %s", msg)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, fmt.Sprintf("%s%s", common.CC_Err_Comm_http_Input_Params_STR, msg), resp)
-		return
-	}
-	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/module"
+		moduleData, err := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), moduleCon)
+		blog.Error("edit module moduleData:%v", moduleData)
+		if err != nil {
+			blog.Error("Marshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
+		if len(moduleData) > 0 {
+			msg := "模块名已存在"
+			blog.Debug("addModule error: %s", msg)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
+		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/module"
 
-	paramJson, err := json.Marshal(param)
-	if nil != err {
-		blog.Error("Marshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		paramJson, err := json.Marshal(param)
+		if nil != err {
+			blog.Error("Marshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	res, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(paramJson))
+		res, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(paramJson))
 
-	if nil != err {
-		blog.Error("request ctrl error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_Update_FAIL, common.CC_Err_Comm_Module_Update_FAIL_STR, resp)
-		return
-	}
-	blog.Debug("res:%v", res)
-	if "" == res {
-		msg := "没有找到模块"
-		blog.Error("request ctrl error:%v", msg)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_Update_FAIL, fmt.Sprintf("%s:%s", common.CC_Err_Comm_Module_Update_FAIL_STR, msg), resp)
-		return
-	}
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error: %v", jserr)
-		cli.ResponseFailed(common.CC_Err_Comm_Module_Update_FAIL, fmt.Sprintf("%s:%v", common.CC_Err_Comm_Module_Update_FAIL_STR, jserr), resp)
-		return
-	}
+		if nil != err {
+			blog.Error("request ctrl error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleUpdateFailed)
+		}
+		blog.Debug("res:%v", res)
+		if "" == res {
+			msg := "没有找到模块"
+			blog.Error("request ctrl error:%v", msg)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleUpdateFailed)
+		}
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
+			// cli.Response(&rst, resp)
+			return http.StatusOK, rst.Data, nil
+		} else {
+			blog.Error("unmarshal the json failed, error: %v", jserr)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleUpdateFailed)
+
+		}
+	}, resp)
 }
 
 // AddMultiModule 添加模块

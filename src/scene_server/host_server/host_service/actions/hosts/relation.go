@@ -186,7 +186,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		fields := fmt.Sprintf("%s,%s", common.BKOwnerIDField, common.BKAppNameField)
 		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl())
 		if err != nil {
-			m.ResponseFailed(common.CC_Err_Comm_APP_QUERY_FAIL, err.Error(), resp)
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrTopoAppSearchFailed)
 		}
 		ownerID := appinfo[common.BKOwnerIDField].(string)
 		if "" == ownerID {

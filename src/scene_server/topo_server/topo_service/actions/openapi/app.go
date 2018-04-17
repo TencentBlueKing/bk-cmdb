@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
@@ -18,8 +18,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
@@ -44,39 +46,40 @@ func init() {
 
 //SearchAllApp: search all application
 func (cli *appAction) SearchAllApp(req *restful.Request, resp *restful.Response) {
-	blog.Debug("SearchAllApp start")
-	value, _ := ioutil.ReadAll(req.Request.Body)
-	js, err := simplejson.NewJson([]byte(value))
-	if err != nil {
-		blog.Error("get all app failed, err msg : %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	rq_para, err := js.Map()
-	if err != nil {
-		blog.Error("get all app failed, err msg : %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+	m.CallResponseEx(func() (int, interface{}, error) {
+		blog.Debug("SearchAllApp start")
+		value, _ := ioutil.ReadAll(req.Request.Body)
+		js, err := simplejson.NewJson([]byte(value))
+		if err != nil {
+			blog.Error("get all app failed, err msg : %v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 
-	searchParams := make(map[string]interface{})
-	searchParams["condition"] = rq_para["condition"]
-	searchParams["fields"] = rq_para["fields"].(string)
-	inputJson, _ := json.Marshal(searchParams)
+		}
 
-	sAppURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
-	appInfo, err := httpcli.ReqHttp(req, sAppURL, common.HTTPSelectPost, []byte(inputJson))
-	if nil != err {
-		blog.Error("search all app failed, err msg : %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_APP_QUERY_FAIL, common.CC_Err_Comm_APP_QUERY_FAIL_STR, resp)
-		return
-	}
+		rqPara, err := js.Map()
+		if err != nil {
+			blog.Error("get all app failed, err msg : %v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	json, err := simplejson.NewJson([]byte(appInfo))
-	appResData, _ := json.Map()
-	cli.ResponseSuccess(appResData["data"], resp)
+		searchParams := make(map[string]interface{})
+		searchParams["condition"] = rqPara["condition"]
+		searchParams["fields"] = rqPara["fields"].(string)
+		inputJSON, _ := json.Marshal(searchParams)
 
+		sAppURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
+		appInfo, err := httpcli.ReqHttp(req, sAppURL, common.HTTPSelectPost, []byte(inputJSON))
+		if nil != err {
+			blog.Error("search all app failed, err msg : %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
+		}
+		info := make(map[string]interface{})
+		json, err := simplejson.NewJson([]byte(appInfo))
+		info, _ = json.Map()
+		return http.StatusOK, info, nil
+	}, resp)
 }
 
 /*

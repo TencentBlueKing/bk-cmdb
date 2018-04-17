@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -48,100 +49,103 @@ type gseAction struct {
 
 // GetAgentStatus: 获取指定业务下agent正常和异常的主机列表
 func (cli *gseAction) GetAgentStatus(req *restful.Request, resp *restful.Response) {
-	// 获取AppID
-	pathParams := req.PathParameters()
-	appID, err := strconv.Atoi(pathParams["appid"])
-	if nil != err {
-		blog.Error("GetAgentStatus error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	hosts, err := getHostsByAppID(req, appID)
-	blog.Infof("get agent status hosts:%v", hosts)
-	if nil != err {
-		blog.Error("GetAgentStatus error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err, resp)
-		return
-	}
-
-	hostDataArr := make([]interface{}, 0)
-	for _, host := range hosts {
-		hostMap := host.(map[string]interface{})
-		companyID := 0
-
-		subArea, _ := util.GetInt64ByInterface(hostMap[common.BKCloudIDField])
-		platID := int(subArea)
-
-		/*if platID == 1 {
-			platID = common.BKDefaultDirSubArea
-		}*/
-
-		ip, ok := hostMap[common.BKHostInnerIPField].(string)
-		if !ok {
-			blog.Error("InnerIP is not ok")
-			return
-		}
-
-		intIp := ip2long(ip)
-		comID := platID<<22 + companyID
-		agentFlag := fmt.Sprintf("agentalive_cloudid_%d", comID)
-		cellData := map[string]interface{}{"agentFlag": agentFlag, "offset": intIp}
-
-		hostDataArr = append(hostDataArr, cellData)
-	}
-	blog.Infof("get gse hostDataArr:%v", hostDataArr)
-	agentStatus, err := getGseAgentStatus(hostDataArr)
-	if nil != err {
-		blog.Error("getGseAgentStatus error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
-	agentNorCnt := 0
-	agentAbnorCnt := 0
-
-	agentNorList := make([]map[string]interface{}, 0)
-	agentAbnorList := make([]map[string]interface{}, 0)
-	i := 0
-
-	blog.Debug("agentStatus:%v", agentStatus)
-	agentStatuLen := len(agentStatus)
-	for _, host := range hosts {
-		hostMap := host.(map[string]interface{})
-		platIdInt, err := util.GetIntByInterface(hostMap[common.BKCloudIDField])
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		// 获取AppID
+		pathParams := req.PathParameters()
+		appID, err := strconv.Atoi(pathParams["appid"])
 		if nil != err {
-			blog.Error("SubArea is not ok")
-			return
-		}
-		platIdStr := strconv.Itoa(platIdInt)
-		hostMapTemp := map[string]interface{}{
-			"Ip":        hostMap[common.BKHostInnerIPField],
-			"CompanyID": 0,
-			"PlatID":    platIdStr,
-		}
-		status := int64(0)
-		if i < agentStatuLen {
-			status = agentStatus[i]
-		}
-		if status == 1 {
-			agentNorCnt++
-			agentNorList = append(agentNorList, hostMapTemp)
-		} else {
-			agentAbnorCnt++
-			agentAbnorList = append(agentAbnorList, hostMapTemp)
+			blog.Error("GetAgentStatus error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetFail)
 		}
 
-		i++
-	}
+		hosts, err := getHostsByAppID(req, appID)
+		blog.Infof("get agent status hosts:%v", hosts)
+		if nil != err {
+			blog.Error("GetAgentStatus error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetFail)
+		}
 
-	resData := map[string]interface{}{
-		"agentNorCnt":    agentNorCnt,
-		"agentAbnorCnt":  agentAbnorCnt,
-		"agentNorList":   agentNorList,
-		"agentAbnorList": agentAbnorList,
-	}
+		hostDataArr := make([]interface{}, 0)
+		for _, host := range hosts {
+			hostMap := host.(map[string]interface{})
+			companyID := 0
 
-	cli.ResponseSuccess(resData, resp)
+			subArea, _ := util.GetInt64ByInterface(hostMap[common.BKCloudIDField])
+			platID := int(subArea)
+
+			/*if platID == 1 {
+				platID = common.BKDefaultDirSubArea
+			}*/
+
+			ip, ok := hostMap[common.BKHostInnerIPField].(string)
+			if !ok {
+				blog.Error("InnerIP is not ok")
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetFail)
+			}
+
+			intIp := ip2long(ip)
+			comID := platID<<22 + companyID
+			agentFlag := fmt.Sprintf("agentalive_cloudid_%d", comID)
+			cellData := map[string]interface{}{"agentFlag": agentFlag, "offset": intIp}
+
+			hostDataArr = append(hostDataArr, cellData)
+		}
+		blog.Infof("get gse hostDataArr:%v", hostDataArr)
+		agentStatus, err := getGseAgentStatus(hostDataArr)
+		if nil != err {
+			blog.Error("getGseAgentStatus error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetFail)
+		}
+		agentNorCnt := 0
+		agentAbnorCnt := 0
+
+		agentNorList := make([]map[string]interface{}, 0)
+		agentAbnorList := make([]map[string]interface{}, 0)
+		i := 0
+
+		blog.Debug("agentStatus:%v", agentStatus)
+		agentStatuLen := len(agentStatus)
+		for _, host := range hosts {
+			hostMap := host.(map[string]interface{})
+			platIdInt, err := util.GetIntByInterface(hostMap[common.BKCloudIDField])
+			if nil != err {
+				blog.Error("SubArea is not ok")
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetFail)
+
+			}
+			platIdStr := strconv.Itoa(platIdInt)
+			hostMapTemp := map[string]interface{}{
+				"Ip":        hostMap[common.BKHostInnerIPField],
+				"CompanyID": 0,
+				"PlatID":    platIdStr,
+			}
+			status := int64(0)
+			if i < agentStatuLen {
+				status = agentStatus[i]
+			}
+			if status == 1 {
+				agentNorCnt++
+				agentNorList = append(agentNorList, hostMapTemp)
+			} else {
+				agentAbnorCnt++
+				agentAbnorList = append(agentAbnorList, hostMapTemp)
+			}
+
+			i++
+		}
+
+		resData := map[string]interface{}{
+			"agentNorCnt":    agentNorCnt,
+			"agentAbnorCnt":  agentAbnorCnt,
+			"agentNorList":   agentNorList,
+			"agentAbnorList": agentAbnorList,
+		}
+
+		// cli.ResponseSuccess(resData, resp)
+		return http.StatusOK, resData, nil
+	}, resp)
 }
 
 //ip2long
