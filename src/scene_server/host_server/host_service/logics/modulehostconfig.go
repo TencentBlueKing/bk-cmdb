@@ -117,7 +117,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	addParams[common.BKModuleIDField] = []int{moduleID}
 	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
 
-	allHostList, err := getHostInfoByConds(req, hostAddr, nil, langHandle)
+	allHostList, err := GetHostInfoByConds(req, hostAddr, nil, langHandle)
 	if nil != err {
 		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
 	}
@@ -281,7 +281,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 		common.BKHostInnerIPField: IP,
 		common.BKCloudIDField:     common.BKDefaultDirSubArea,
 	}
-	hostList, err := getHostInfoByConds(req, hostAddr, conds, langHandle)
+	hostList, err := GetHostInfoByConds(req, hostAddr, conds, langHandle)
 	if nil != err {
 		return errors.New(langHandle.Language("host_search_fail")) // "查询主机信息失败")
 	}
@@ -388,7 +388,7 @@ func convertHostInfo(hosts []interface{}) map[string]interface{} {
 	return hostMap
 }
 
-func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}, defLang language.DefaultCCLanguageIf) ([]interface{}, error) {
+func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}, defLang language.DefaultCCLanguageIf) ([]interface{}, error) {
 	hostURL = hostURL + "/host/v1/hosts/search"
 	getParams := make(map[string]interface{})
 	getParams["fields"] = nil
@@ -396,8 +396,10 @@ func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]i
 	getParams["start"] = 0
 	getParams["limit"] = common.BKNoLimit
 	getParams["sort"] = common.BKHostIDField
-
+	blog.Info("get host info by conds url:%s", hostURL)
+	blog.Info("get host info by conds params:%v", getParams)
 	isSucess, message, iRetData := GetHttpResult(req, hostURL, common.HTTPSelectPost, getParams)
+	blog.Info("get host info by conds return:%v", iRetData)
 	if !isSucess {
 		msg := defLang.Languagef("host_search_fail_with_errmsg", message)
 		blog.Error(msg)

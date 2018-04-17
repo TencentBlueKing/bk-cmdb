@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 )
@@ -218,7 +219,7 @@ func (h *HostModuleConfigLog) getHostModuleConfig() []interface{} {
 	gHostURL := h.hostCtrl + "/host/v1/meta/hosts/module/config/search"
 
 	gHostRe, err := httpcli.ReqHttp(h.req, gHostURL, common.HTTPSelectPost, inputJson)
-	blog.Infof("GetHostModuleConfig, input:%s, replay:%", string(inputJson), gHostRe)
+	blog.Infof("GetHostModuleConfig, input:%s, return:%s", string(inputJson), gHostRe)
 	if nil != err {
 		blog.Error("getHostModuleConfig info error :%v, url:%s", err, gHostURL)
 		return nil
