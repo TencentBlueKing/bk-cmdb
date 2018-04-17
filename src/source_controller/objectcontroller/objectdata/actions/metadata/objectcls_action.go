@@ -209,7 +209,7 @@ func (cli *objectClassificationAction) SelectClassifications(req *restful.Reques
 		}
 		// translate language
 		for index := range results {
-			results[index].ClassificationName = commondata.TranslateClassificationName(defLang, results[index])
+			results[index].ClassificationName = commondata.TranslateClassificationName(defLang, &results[index])
 		}
 		return http.StatusOK, results, nil
 	}, resp)
@@ -266,9 +266,9 @@ func (cli *objectClassificationAction) SelectClassificationWithObject(req *restf
 
 		// translate language
 		for index := range clsResults {
-			clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, clsResults[index].ObjClassification)
+			clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, &clsResults[index].ObjClassification)
 			for attindex := range clsResults[index].Objects {
-				clsResults[index].Objects[attindex].ObjectName = commondata.TranslateObjectName(defLang, clsResults[index].Objects[attindex])
+				clsResults[index].Objects[attindex].ObjectName = commondata.TranslateObjectName(defLang, &clsResults[index].Objects[attindex])
 			}
 		}
 
