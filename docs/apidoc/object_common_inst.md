@@ -100,7 +100,7 @@ data 字段说明
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
 | page| object| 是|无|分页参数 |page parameter|
 |condition| object | 否|无|查询条件|the search condition|
-|fields|object|否|查询的字段|the search fields|
+|fields|object|否|无|查询的字段|the search fields|
 
 
 page 参数说明：
