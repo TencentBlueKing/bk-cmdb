@@ -48,6 +48,7 @@ func init() {
 // HostModuleRelation add host module relation
 func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Request, resp *restful.Response) {
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 	m.CallResponseEx(func() (int, interface{}, error) {
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
@@ -82,7 +83,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 				common.BKHostInnerIPField: hostInfo.IP,
 				common.BKCloudIDField:     hostInfo.CloudID,
 			}
-			hostList, err := logics.GetHostInfoByConds(req, m.CC.HostCtrl(), hostCond)
+			hostList, err := logics.GetHostInfoByConds(req, m.CC.HostCtrl(), hostCond, defLang)
 			if nil != err || 0 == len(hostList) {
 				blog.Error("get host info error, params:%v, error:%v", hostCond, err.Error())
 				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
