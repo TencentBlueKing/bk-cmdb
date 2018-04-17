@@ -26,13 +26,15 @@ import (
 	"configcenter/src/source_controller/api/metadata"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	api "configcenter/src/source_controller/api/object"
+
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -81,6 +83,8 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 		if nil != err {
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+
+		procData[common.BKAppIDField] = appID
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), defErr)
 		_, err = valid.ValidMap(procData, common.ValidUpdate, procID)
 		if nil != err {
@@ -273,7 +277,7 @@ func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Respons
 	}, resp)
 }
 
-//CreateProcess create application
+// CreateProcess create process
 func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Response) {
 	user := util.GetActionUser(req)
 	language := util.GetActionLanguage(req)
@@ -290,6 +294,8 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		input, err := js.Map()
+		input[common.BKAppIDField] = appID
+
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
@@ -297,7 +303,6 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 		}
 		//create process
 		input[common.BKOwnerIDField] = ownerID
-		input[common.BKAppIDField] = appID
 		procInfoJson, _ := json.Marshal(input)
 		cProcURL := cli.CC.ObjCtrl() + "/object/v1/insts/process"
 		blog.Info("create process url:%v", cProcURL)
