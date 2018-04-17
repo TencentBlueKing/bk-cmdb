@@ -27,5 +27,7 @@
 	"1110026": "The relationship between the newly added host '%s' and the module failed, error:%s",
 	"1110027": "Failed to transfer host '%s' to resource pool, error:%s",
 	"1110028": "Failed to modify host relationship",
+	"1110029": "Failed to add host to module",
+
 	"": ""
 }
