@@ -660,7 +660,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// set the inst association table
-		if err := cli.updateInstAssociation(instID, ownerID, objID, input); nil != err {
+		if err := cli.updateInstAssociation(instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
 

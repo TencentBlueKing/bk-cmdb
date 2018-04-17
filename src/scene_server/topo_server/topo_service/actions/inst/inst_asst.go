@@ -88,9 +88,8 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 
 func (cli *instAction) deleteInstAssociation(instID int, ownerID, objID string) error {
 
-	cli.CC.InstCli.DelByCondition(metadata.InstAsst{}.TableName(), map[string]interface{}{
+	return cli.CC.InstCli.DelByCondition(metadata.InstAsst{}.TableName(), map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
 	})
-	return nil
 }
