@@ -89,6 +89,21 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 					asstFieldVal = append(asstFieldVal, asstInst)
 				}
 
+			case int64, int:
+				asstInst := metadata.InstAsst{}
+				asstInst.InstID = int64(instID)
+				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)
+				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
+				asstInst.ObjectID = objID
+				asstFieldVal = append(asstFieldVal, asstInst)
+			case json.Number:
+				asstInst := metadata.InstAsst{}
+				asstInst.InstID = int64(instID)
+				asstInst.AsstInstID, _ = t.Int64()
+				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
+				asstInst.ObjectID = objID
+				asstFieldVal = append(asstFieldVal, asstInst)
+
 			default:
 				blog.Warnf("the target data (%v) type is not a string ", t)
 			}
@@ -208,12 +223,17 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 			// Extract the ID of the instance according to the associated object.
 			condition := map[string]interface{}{}
-			condition[common.BKObjIDField] = objID
+			condition[common.BKObjIDField] = keyObjID
+			condition[common.BKOwnerIDField] = ownerID
 
 			for _, objCondition := range objs {
 
-				condition[objCondition.Field] = map[string]interface{}{
-					objCondition.Operator: objCondition.Value,
+				if objCondition.Operator != common.BKDBEQ {
+					condition[objCondition.Field] = map[string]interface{}{
+						objCondition.Operator: objCondition.Value,
+					}
+				} else {
+					condition[objCondition.Field] = objCondition.Value
 				}
 
 			}
@@ -240,12 +260,8 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 				"bk_asst_inst_id": map[string]interface{}{
 					common.BKDBIN: asstInstIDS,
 				},
-				"bk_asst_obj_id": map[string]interface{}{
-					common.BKDBEQ: keyObjID,
-				},
-				"bk_obj_id": map[string]interface{}{
-					common.BKDBEQ: objID,
-				},
+				"bk_asst_obj_id": keyObjID,
+				"bk_obj_id":      objID,
 			}, instAsstItems, "", 0, common.BKNoLimit)
 			if nil != err {
 				blog.Errorf("can not get the inst association data from db, error info is %s", err.Error())
@@ -282,7 +298,7 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		// search insts
 		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/object/search"
 		inputJSON, jsErr := json.Marshal(searchParams)
-		
+
 		if nil != jsErr {
 			blog.Error("failed to marshal the data[%+v], error info is %s", searchParams, jsErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
