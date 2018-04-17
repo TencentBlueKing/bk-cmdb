@@ -353,6 +353,7 @@ const (
 	CCErrHostAddRelationFail      = 1110026
 	CCErrHostMoveResourcePoolFail = 1110027
 	CCErrHostEditRelationPoolFail = 1110028
+	CCErrAddHostToModule          = 1110029
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001
