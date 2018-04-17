@@ -217,6 +217,11 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		// used to search insts
+		instCondition := map[string]interface{}{
+			common.BKObjIDField:   objID,
+			common.BKOwnerIDField: ownerID,
+		}
 		// targetInstIDS used to search the instance of the objID
 		targetInstIDS := make([]int64, 0)
 		for keyObjID, objs := range js.Condition {
@@ -229,13 +234,33 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			for _, objCondition := range objs {
 
 				if objCondition.Operator != common.BKDBEQ {
-					condition[objCondition.Field] = map[string]interface{}{
-						objCondition.Operator: objCondition.Value,
+
+					if objID == keyObjID {
+						// deal self condition
+						instCondition[objCondition.Field] = map[string]interface{}{
+							objCondition.Operator: objCondition.Value,
+						}
+					} else {
+						// deal association condition
+						condition[objCondition.Field] = map[string]interface{}{
+							objCondition.Operator: objCondition.Value,
+						}
 					}
 				} else {
-					condition[objCondition.Field] = objCondition.Value
+					if objID == keyObjID {
+						// deal self condition
+						instCondition[objCondition.Field] = objCondition.Value
+					} else {
+						// deal association condition
+						condition[objCondition.Field] = objCondition.Value
+					}
 				}
 
+			}
+
+			if objID == keyObjID {
+				// no need to search the association objects
+				continue
 			}
 
 			searchParams["fields"] = ""
@@ -277,15 +302,11 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		}
 
 		// search all the inst by the condition
-		condition := map[string]interface{}{
-			common.BKObjIDField:   objID,
-			common.BKOwnerIDField: ownerID,
-			common.BKInstIDField: map[string]interface{}{
-				common.BKDBIN: targetInstIDS,
-			},
+		instCondition[common.BKInstIDField] = map[string]interface{}{
+			common.BKDBIN: targetInstIDS,
 		}
 
-		searchParams["condition"] = condition
+		searchParams["condition"] = instCondition
 		searchParams["fields"] = ""
 		if fields, ok := js.Fields[objID]; ok {
 			searchParams["fields"] = strings.Join(fields, ",")
