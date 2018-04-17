@@ -12,9 +12,9 @@
 	"1106011": "The host belongs to a module other than the idle machine",
 	"1106012": "Failed to transfer host to resource pool",
 	"1106013": "Newly added user-defined configuration",
-	"1106014": "Query Host Collection Failed",
-	"1106015": "Failed to create a host collection",
-	"1106016": "Failed to modify host collection",
-	"1106017": "Failed to modify host collections",
-	"": ""
+	"1106014": "Query Host favorites Failed",
+	"1106015": "Failed to create a host favorites",
+	"1106016": "Failed to modify host favorites",
+	"1106017":"Failed to delete host favorites",
+	"": "" 
 }
