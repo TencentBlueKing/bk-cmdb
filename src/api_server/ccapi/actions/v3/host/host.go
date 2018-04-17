@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package host
 
 import (
@@ -119,6 +119,12 @@ func (cli *hostAction) addHostFromAgent(req *restful.Request, resp *restful.Resp
 	io.WriteString(resp, rsp)
 }
 
+func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.Response) {
+	url := cli.cc.HostAPI() + "/hosts/modules/biz/mutiple"
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
+	io.WriteString(resp, rsp)
+}
+
 func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search", Params: nil, Handler: host.GetHosts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/hosts/batch", Params: nil, Handler: host.DeleteHosts, FilterHandler: nil, Version: v3.APIVersion})
@@ -132,5 +138,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/modules/resource/idle", Params: nil, Handler: host.AssginHostToApp, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/hosts/snapshot/{bk_host_id}", Params: nil, Handler: host.Snapshot, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: host.addHostFromAgent, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/biz/mutiple", Params: nil, Handler: host.addHostModuleMutiple, FilterHandler: nil, Version: v3.APIVersion})
 	host.cc = api.NewAPIResource()
 }
