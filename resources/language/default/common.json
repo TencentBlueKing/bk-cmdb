@@ -1,21 +1,14 @@
 {
-    "val_type_text":"文本",
-    "val_type_bool":"布尔",
-    "unit":"单位",
-    "placeholder":"提示",
-    "desc":"描述",
-    "is_editable":"是否可编辑",
-    "property_option":"数据配置",
-    "property_is_only":"是否唯一",
-    "property_is_required":"是否必填",
-    "property_is_readonly": "是否只读",
-    "app_not_exist":"业务不存在",
-
-
-
-
-
-
-
-    "":""
+    "val_type_text": "Text",
+    "val_type_bool": "Boolean",
+    "unit": "Unit",
+    "placeholder": "Prompt",
+    "desc": "Description",
+    "is_editable": "Can edit",
+    "property_option": "Data Configuration",
+    "property_is_only": "is it unique?",
+    "property_is_required": "Required",
+    "property_is_readonly": "Read-only",
+    "app_not_exist": "Business does not exist",
+    "": ""
 }
