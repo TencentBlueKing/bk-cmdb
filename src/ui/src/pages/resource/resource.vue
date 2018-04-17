@@ -75,7 +75,7 @@
                 </bk-tabpanel>
             </bk-tab>
         </v-sideslider>
-        <v-delete-history>
+        <v-delete-history
             :isShow.sync="filing.isShow"
             :objId="'host'"
             :objTableHeader="index.table.header"
@@ -286,11 +286,14 @@
         vertical-align: middle;
         width: 200px;
     }
+    .icon-cc-history{
+        font-size: 16px;
+    }
     .del-button{
         width: 36px;
         padding: 0;
         &:hover{
-                .icon-cc-del{
+            .icon-cc-del{
                 color: #ef4c4c;
             }
         }
