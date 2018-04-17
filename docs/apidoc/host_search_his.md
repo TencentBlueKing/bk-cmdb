@@ -1,5 +1,4 @@
 
-
 ### 新加主机查询历史
 * API: POST /api/v1/hosts/history
 * API名称： create_host_search_history
@@ -20,7 +19,6 @@
 | 名称  | 类型 |必填| 默认值 | 说明 |Description|
 | ---  | ---  | --- |---  | --- | --- |
 | content| object| 是|无|主机查询条件 | host search condition content|
-
 content为对象
 
 * output

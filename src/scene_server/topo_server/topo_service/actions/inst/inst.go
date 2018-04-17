@@ -1,23 +1,23 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/errors"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
@@ -30,14 +30,13 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/tidwall/gjson"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -66,6 +65,201 @@ func init() {
 	inst.CreateAction()
 	inst.metaHelperFunc = object.CreateHelperFunction()
 	inst.objcli = api.NewClient("")
+}
+
+func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
+
+	nonExistsFiled := make([]api.ObjAttDes, 0)
+	ignorItems := make([]string, 0)
+	for _, item := range attDes {
+		if _, ok := targetInput[item.PropertyID]; !ok {
+			nonExistsFiled = append(nonExistsFiled, item)
+			ignorItems = append(ignorItems, item.PropertyID)
+		}
+	}
+	ignorItems = append(ignorItems, common.BKInstParentStr)
+	ignorItems = append(ignorItems, common.BKAppIDField)
+	blog.Debug("the ignore items:%+v", ignorItems)
+	valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, defErr)
+	user := util.GetActionUser(req)
+	isUpdate := false
+	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
+
+	// check
+	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
+	targetMethod := common.HTTPSelectPost
+	input := make(map[string]interface{})
+	switch e := err.(type) {
+	case nil:
+		// clear the association field
+		if isBatch {
+			for _, item := range asstDes {
+				if _, ok := targetInput[item.ObjectAttID]; ok {
+					delete(targetInput, item.ObjectAttID)
+				}
+			}
+
+			// set the nonexist
+			for _, j := range nonExistsFiled {
+				propertyID := j.PropertyID
+				fieldType := j.PropertyType
+				switch fieldType {
+				case common.FiledTypeSingleChar:
+					targetInput[propertyID] = ""
+				case common.FiledTypeLongChar:
+					targetInput[propertyID] = ""
+				default:
+					targetInput[propertyID] = nil
+				}
+			}
+		}
+
+		input = targetInput
+
+	case errors.CCErrorCoder:
+		if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
+
+			isUpdate = true
+			condition := make(map[string]interface{})
+			condition[common.BKOwnerIDField] = ownerID
+			condition[common.BKObjIDField] = objID
+			condition[common.BKInstNameField] = targetInput[common.BKInstNameField]
+
+			if _, ok := targetInput[common.BKInstNameField]; !ok {
+				blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
+				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, common.BKInstNameField)
+			}
+
+			if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
+				switch e := err.(type) {
+				case nil:
+					break
+				case errors.CCErrorCoder:
+					if e.GetCode() == common.CCErrCommDuplicateItem {
+						break
+					}
+					blog.Error("failed valid the input data, error info is %s", err.Error())
+					return http.StatusBadRequest, nil, isUpdate, err
+				default:
+					blog.Error("failed valid the input data, error info is %s", err.Error())
+					return http.StatusBadRequest, nil, isUpdate, err
+				}
+			}
+
+			targetMethod = common.HTTPUpdate
+			// clear the association field
+			if isBatch {
+				for _, item := range asstDes {
+					if _, ok := targetInput[item.ObjectAttID]; ok {
+						delete(targetInput, item.ObjectAttID)
+					}
+				}
+			}
+
+			input["data"] = targetInput
+			input["condition"] = condition
+
+		} else {
+			blog.Error("failed valid the input data, error info is %s", err.Error())
+			return http.StatusBadRequest, nil, isUpdate, err
+		}
+	default:
+		blog.Error("failed valid the input data, error info is %s", err.Error())
+		return http.StatusBadRequest, nil, isUpdate, err
+	}
+
+	// take snapshot before operation if is update
+	preData := map[string]interface{}{}
+	var instID int
+	var retStrErr int
+	if targetMethod == common.HTTPUpdate {
+		preData, retStrErr = cli.getInstDeteilByCondition(req, objID, ownerID, input["condition"].(map[string]interface{}))
+		if common.CCSuccess != retStrErr {
+			blog.Errorf("get inst detail error: %v", retStrErr)
+			return http.StatusInternalServerError, nil, isUpdate, defErr.Error(retStrErr)
+		}
+
+		instID, _ = strconv.Atoi(fmt.Sprint(preData[common.BKInstIDField]))
+	}
+
+	// set default InstaName value if not set
+	if _, ok := targetInput[common.BKInstNameField]; !ok {
+		searchObjIDCond := make(map[string]interface{})
+		searchObjIDCond[common.BKObjIDField] = objID
+		searchObjIDCond[common.BKOwnerIDField] = ownerID
+		searchObjIDCondVal, _ := json.Marshal(searchObjIDCond)
+		cli.objcli.SetAddress(cli.CC.ObjCtrl())
+		objName := objID
+		rstItems, rstErr := cli.objcli.SearchMetaObject(searchObjIDCondVal)
+		if nil != rstErr {
+			blog.Error("failed to fetch the object, error info is %s", rstErr.Error())
+		} else if len(rstItems) > 0 {
+			objName = rstItems[0].ObjectName
+		}
+		input[common.BKInstNameField] = fmt.Sprintf("默认 %s)", objName)
+	}
+
+	input[common.BKOwnerIDField] = ownerID
+	input[common.BKObjIDField] = objID
+	input[common.BKDefaultField] = 0
+	input[common.CreateTimeField] = util.GetCurrentTimeStr()
+
+	inputJSON, jsErr := json.Marshal(input)
+	if nil != jsErr {
+		blog.Error("the input json is invalid, error info is %s", jsErr.Error())
+		return http.StatusBadRequest, nil, isUpdate, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	cURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+	blog.Debug("inst:%v", string(inputJSON))
+
+	instRes, err := httpcli.ReqHttp(req, cURL, targetMethod, inputJSON)
+	if nil != err {
+		blog.Error("create inst failed, errors:%s", err.Error())
+		return http.StatusInternalServerError, nil, isUpdate, defErr.Error(common.CCErrTopoInstCreateFailed)
+	}
+
+	rsp, ok := cli.IsSuccess([]byte(instRes))
+	if !ok {
+		return http.StatusInternalServerError, nil, isUpdate, fmt.Errorf("%+v", rsp.Message)
+	}
+	{
+		// save change log
+		if targetMethod == common.HTTPSelectPost {
+			instID = int(gjson.Get(instRes, "data."+common.BKInstIDField).Int())
+		}
+		headers := []metadata.Header{}
+		for _, item := range attDes {
+			headers = append(headers, metadata.Header{
+				PropertyID:   item.PropertyID,
+				PropertyName: item.PropertyName,
+			})
+		}
+
+		blog.Infof("new instID = %v", instID)
+		if instID == 0 {
+			blog.Infof("response data: %s", instRes)
+		}
+
+		curData, retStrErr := cli.getInstDetail(req, int(instID), objID, ownerID)
+		if common.CCSuccess != retStrErr {
+			blog.Errorf("get inst detail error: %v, instid(%v) objid(%s) ownerid(%s)", retStrErr, instID, objID, ownerID)
+			return http.StatusInternalServerError, nil, isUpdate, defErr.Error(retStrErr)
+		}
+		auditContent := metadata.Content{
+			PreData: preData,
+			CurData: curData,
+			Headers: headers,
+		}
+		if targetMethod == common.HTTPSelectPost {
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "create inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
+		} else {
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+		}
+
+	}
+
+	return http.StatusOK, rsp.Data, isUpdate, nil
 }
 
 // CreateInst create a inst
@@ -106,9 +300,6 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 
 		ownerID := req.PathParameter("owner_id")
 		objID := req.PathParameter("obj_id")
-		user := util.GetActionUser(req)
-
-		valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKAppIDField}, defErr)
 
 		// the batch data structure define map[int]map[string]interface{}
 		innerBatchInfo := &struct {
@@ -127,171 +318,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
 		// define create inst function
-		createFunc := func(targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
-
-			isUpdate := false
-
-			// check
-			_, err = valid.ValidMap(targetInput, common.ValidCreate, 0)
-			targetMethod := common.HTTPSelectPost
-			input := make(map[string]interface{})
-			switch e := err.(type) {
-			case nil:
-				// clear the association field
-				if isBatch {
-					for _, item := range asstDes {
-						if _, ok := targetInput[item.ObjectAttID]; ok {
-							delete(targetInput, item.ObjectAttID)
-						}
-					}
-				}
-
-				input = targetInput
-			case errors.CCErrorCoder:
-				if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
-
-					isUpdate = true
-					condition := make(map[string]interface{})
-					condition[common.BKOwnerIDField] = ownerID
-					condition[common.BKObjIDField] = objID
-					condition[common.BKInstNameField] = targetInput[common.BKInstNameField]
-
-					if _, ok := targetInput[common.BKInstNameField]; !ok {
-						blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
-						return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, common.BKInstNameField)
-					}
-
-					if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
-						switch e := err.(type) {
-						case nil:
-							break
-						case errors.CCErrorCoder:
-							if e.GetCode() == common.CCErrCommDuplicateItem {
-								break
-							}
-							blog.Error("failed valid the input data, error info is %s", err.Error())
-							return http.StatusBadRequest, nil, isUpdate, err
-						default:
-							blog.Error("failed valid the input data, error info is %s", err.Error())
-							return http.StatusBadRequest, nil, isUpdate, err
-						}
-					}
-
-					targetMethod = common.HTTPUpdate
-					// clear the association field
-					if isBatch {
-						for _, item := range asstDes {
-							if _, ok := targetInput[item.ObjectAttID]; ok {
-								delete(targetInput, item.ObjectAttID)
-							}
-						}
-					}
-
-					input["data"] = targetInput
-					input["condition"] = condition
-
-				} else {
-					blog.Error("failed valid the input data, error info is %s", err.Error())
-					return http.StatusBadRequest, nil, isUpdate, err
-				}
-			default:
-				blog.Error("failed valid the input data, error info is %s", err.Error())
-				return http.StatusBadRequest, nil, isUpdate, err
-			}
-
-			// take snapshot before operation if is update
-			preData := map[string]interface{}{}
-			var instID int
-			var retStrErr int
-			if targetMethod == common.HTTPUpdate {
-				preData, retStrErr = cli.getInstDeteilByCondition(req, objID, ownerID, input["condition"].(map[string]interface{}))
-				if common.CCSuccess != retStrErr {
-					blog.Errorf("get inst detail error: %v", retStrErr)
-					return http.StatusInternalServerError, nil, isUpdate, defErr.Error(retStrErr)
-				}
-
-				instID, _ = strconv.Atoi(fmt.Sprint(preData[common.BKInstIDField]))
-			}
-
-			// set default InstaName value if not set
-			if _, ok := targetInput[common.BKInstNameField]; !ok {
-				searchObjIDCond := make(map[string]interface{})
-				searchObjIDCond[common.BKObjIDField] = objID
-				searchObjIDCond[common.BKOwnerIDField] = ownerID
-				searchObjIDCondVal, _ := json.Marshal(searchObjIDCond)
-				cli.objcli.SetAddress(cli.CC.ObjCtrl())
-				objName := objID
-				rstItems, rstErr := cli.objcli.SearchMetaObject(searchObjIDCondVal)
-				if nil != rstErr {
-					blog.Error("failed to fetch the object, error info is %s", rstErr.Error())
-				} else if len(rstItems) > 0 {
-					objName = rstItems[0].ObjectName
-				}
-				input[common.BKInstNameField] = fmt.Sprintf("默认 %s)", objName)
-			}
-
-			input[common.BKOwnerIDField] = ownerID
-			input[common.BKObjIDField] = objID
-			input[common.BKDefaultField] = 0
-			input[common.CreateTimeField] = util.GetCurrentTimeStr()
-
-			inputJSON, jsErr := json.Marshal(input)
-			if nil != jsErr {
-				blog.Error("the input json is invalid, error info is %s", jsErr.Error())
-				return http.StatusBadRequest, nil, isUpdate, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-			}
-
-			cURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
-			blog.Debug("inst:%v", string(inputJSON))
-
-			instRes, err := httpcli.ReqHttp(req, cURL, targetMethod, inputJSON)
-			if nil != err {
-				blog.Error("create inst failed, errors:%s", err.Error())
-				return http.StatusInternalServerError, nil, isUpdate, defErr.Error(common.CCErrTopoInstCreateFailed)
-			}
-
-			rsp, ok := cli.IsSuccess([]byte(instRes))
-			if !ok {
-				return http.StatusInternalServerError, nil, isUpdate, fmt.Errorf("%+v", rsp.Message)
-			}
-			{
-				// save change log
-				if targetMethod == common.HTTPSelectPost {
-					instID = int(gjson.Get(instRes, "data."+common.BKInstIDField).Int())
-				}
-				headers := []metadata.Header{}
-				for _, item := range attDes {
-					headers = append(headers, metadata.Header{
-						PropertyID:   item.PropertyID,
-						PropertyName: item.PropertyName,
-					})
-				}
-
-				blog.Infof("new instID = %v", instID)
-				if instID == 0 {
-					blog.Infof("response data: %s", instRes)
-				}
-
-				curData, retStrErr := cli.getInstDetail(req, int(instID), objID, ownerID)
-				if common.CCSuccess != retStrErr {
-					blog.Errorf("get inst detail error: %v, instid(%v) objid(%s) ownerid(%s)", retStrErr, instID, objID, ownerID)
-					return http.StatusInternalServerError, nil, isUpdate, defErr.Error(retStrErr)
-				}
-				auditContent := metadata.Content{
-					PreData: preData,
-					CurData: curData,
-					Headers: headers,
-				}
-				if targetMethod == common.HTTPSelectPost {
-					auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "create inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
-				} else {
-					auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
-				}
-
-			}
-
-			return http.StatusOK, rsp.Data, isUpdate, nil
-		}
+		createFunc := cli.subCreateInst
 
 		att := map[string]interface{}{}
 		att[common.BKObjIDField] = objID
@@ -332,7 +359,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 
 				delete(colInput, "import_from")
 
-				if _, _, isUpdate, rstErr := createFunc(colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
+				if _, _, isUpdate, rstErr := createFunc(req, defErr, colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
 					if !isUpdate {
 						blog.Debug("failed to create inst, error info is %s", rstErr.Error())
 						rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
@@ -350,7 +377,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// create single inst
-		status, rst, _, err := createFunc(input, ownerID, objID, false, nil, attdes)
+		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, nil, attdes)
 		return status, rst, err
 
 	}, resp)
@@ -1100,21 +1127,9 @@ func (cli *instAction) getInstDeteilByCondition(req *restful.Request, objID stri
 	blog.Debug("the return data:%+v", ret)
 	if data, ok := ret["data"].(map[string]interface{}); ok {
 		if info, infoOk := data["info"].([]interface{}); infoOk {
-			for _, infoItem := range info {
-				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
-					for k, v := range dataItem {
-						if assts, ok := v.([]instNameAsst); ok {
-							refs := []metadata.Ref{}
-							for _, ref := range assts {
-								refs = append(refs, metadata.Ref{
-									RefID:   ref.InstID,
-									RefName: ref.InstName,
-								})
-							}
-							dataItem[k] = refs
-						}
-					}
-					return dataItem, common.CCSuccess
+			if len(info) > 0 && info[0] != nil {
+				if ret, ok := info[0].(map[string]interface{}); ok {
+					return ret, common.CCSuccess
 				}
 			}
 		}

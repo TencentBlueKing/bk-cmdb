@@ -48,31 +48,6 @@ const isHttp = {
     }
 }
 Validator.extend('http', isHttp)
-
-// /*
-//     生命周期
-// */
-// const isLifeCycle = {
-//     messages: { // 錯誤提示
-//         zh_CN: field => '请输入格式为 yyyy-MM-dd 的' + field
-//     },
-//     validate: value => { // 驗證規則
-//         return /^(\d{4}-\d{2}-\d{2})$/.test(value)
-//     }
-// }
-// Validator.extend('lifeCycle', isLifeCycle)
-// /*
-//     运维人员
-// */
-// const isMaintainers = {
-//     messages: { // 錯誤提示
-//         zh_CN: field => '请输入' + field
-//     },
-//     validate: value => { // 驗證規則
-//         return value
-//     }
-// }
-// Validator.extend('maintainers', isMaintainers)
 // /*
 //     严格字符
 // */
@@ -85,18 +60,18 @@ Validator.extend('http', isHttp)
 //     }
 // }
 // Validator.extend('strictCharacter', isStrictCharacter)
-// /*
-//     宽松字符
-// */
-// const isLooseCharacter = {
-//     messages: { // 错误提示
-//         zh_CN: field => '请输入' + field
-//     },
-//     validate: value => { // 验证规则
-//         return /^([a-z0-9_]|[,，；;“”‘’。""''])*$/.test(value)
-//     }
-// }
-// Validator.extend('looseCharacter', isLooseCharacter)
+/*
+    宽松字符
+*/
+const isChar = {
+    getMessage (field, args) { // 错误提示
+        return '请输入' + field
+    },
+    validate: value => { // 验证规则
+        return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\(\)-《》,，；;“”‘’。.""'' \\\/])*$/.test(value)
+    }
+}
+Validator.extend('char', isChar)
 // /*
 //     普通名称
 // */const isCommonName = {
@@ -142,6 +117,7 @@ const dictionary = {
     zh_CN: {
         messages: {
             name: () => '请输入正确的内容',
+            char: () => '请输入正确的内容',
             id: () => '格式不正确，只能包含下划线，数字，英文小写',
             http: () => '请输入以http://开头的URL',
             // lifeCycle: () => '请输入格式为 yyyy-MM-dd 的生命周期',
@@ -152,10 +128,11 @@ const dictionary = {
             // ipAddress: () => '请输入正确的IP地址',
             // commonName: () => '请输入正确的名称',
             required: (field) => '请输入' + field,
-            numeric: (field) => '请输入数字'
+            numeric: (field) => '请输入数字',
+            regex: (field) => field + '不合法'
         },
         attributes: {
-            name: '中文名',
+            // name: '中文名',
             id: '英文名'
             // lifeCycle: '生命周期',
             // maintainers: '运维人员',

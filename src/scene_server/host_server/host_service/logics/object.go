@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -41,11 +41,18 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 	condition := make([]interface{}, 0)
 	for _, i := range objectCond {
 		condi := i.(map[string]interface{})
-		value := condi["value"].(float64)
-		conc["field"] = common.BKParentStr
+		field, ok := condi["field"].(string)
+		if false == ok || field != common.BKInstIDField {
+			continue
+		}
+		value, err := util.GetIntByInterface(condi["value"])
+		if nil != err {
+			continue
+		}
+		conc["field"] = common.BKInstParentStr
 		conc["operator"] = condi["operator"]
 		conc["value"] = condi["value"]
-		objectIDArr = append(objectIDArr, int(value))
+		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, conc)
 	for {
@@ -62,7 +69,7 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 		}
 		conc = make(map[string]interface{})
 		condition = make([]interface{}, 0)
-		conc["field"] = common.BKParentStr
+		conc["field"] = common.BKInstParentStr
 		conc["operator"] = common.BKDBIN
 		conc["value"] = sObjectIDArr
 		condition = append(condition, conc)
@@ -77,7 +84,7 @@ func getObjectByParentID(req *restful.Request, valArr []int, objURL string) []in
 	condition := make(map[string]interface{})
 	sCond := make(map[string]interface{})
 	condCell[common.BKDBIN] = valArr
-	sCond[common.BKParentStr] = condCell
+	sCond[common.BKInstParentStr] = condCell
 	condition["condition"] = sCond
 	bodyContent, _ := json.Marshal(condition)
 	url := objURL + "/object/v1/insts/object/search"

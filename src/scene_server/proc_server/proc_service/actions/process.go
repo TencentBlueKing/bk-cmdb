@@ -1,19 +1,20 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package actions
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
@@ -21,12 +22,17 @@ import (
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+	"configcenter/src/source_controller/api/auditlog"
+	"configcenter/src/source_controller/api/metadata"
 	"encoding/json"
+	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
+	api "configcenter/src/source_controller/api/object"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -35,6 +41,7 @@ var process *procAction = &procAction{}
 
 type procAction struct {
 	base.BaseAction
+	objcli *api.Client
 }
 
 func init() {
@@ -43,14 +50,12 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/search/{bk_supplier_account}/{bk_biz_id}", Params: nil, Handler: process.SearchProcess})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}", Params: nil, Handler: process.UpdateProcess})
 	process.CreateAction()
-}
-
-func (cli *procAction) ProcessDetail(req *restful.Request, resp *restful.Response) {
-
+	process.objcli = api.NewClient("")
 }
 
 //UpdateProcess update process
 func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Response) {
+	user := util.GetActionUser(req)
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -81,6 +86,14 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
 		}
+
+		// take snapshot before operation
+		preDetails, err := cli.getProcDetail(req, ownerID, appID, int(procID))
+		if err != nil {
+			blog.Errorf("get inst detail error: %v", err)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+		}
+
 		input := make(map[string]interface{})
 		condition := make(map[string]interface{})
 		condition[common.BKOwnerIDField] = ownerID
@@ -98,6 +111,37 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 			blog.Error("update process error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcUpdateProcessFaile)
 		}
+
+		{
+			// save change log
+			headers := []metadata.Header{}
+			// take snapshot before operation
+			details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
+			if err != nil {
+				blog.Errorf("get inst detail error: %v", err)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+			}
+			curData := map[string]interface{}{}
+			for _, detail := range details {
+				curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+				headers = append(headers,
+					metadata.Header{
+						PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField].(string)),
+						PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
+					})
+			}
+			preData := map[string]interface{}{}
+			for _, detail := range preDetails {
+				preData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+			}
+			auditContent := metadata.Content{
+				CurData: curData,
+				PreData: preData,
+				Headers: headers,
+			}
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContent, "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+		}
+
 		json, err := simplejson.NewJson([]byte(sProcRes))
 		procResData, _ := json.Map()
 		return http.StatusOK, procResData["data"], nil
@@ -162,6 +206,7 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 
 //DeleteProcess delete process
 func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Response) {
+	user := util.GetActionUser(req)
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -174,6 +219,14 @@ func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Respons
 		proIDStr := pathParams[common.BKProcIDField]
 		appID, _ := strconv.Atoi(appIDStr)
 		procID, _ := strconv.Atoi(proIDStr)
+
+		// take snapshot before operation
+		details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
+		if err != nil {
+			blog.Errorf("get inst detail error: %v", err)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+		}
+
 		conditon := make(map[string]interface{})
 		conditon[common.BKAppIDField] = appID
 		conditon[common.BKProcIDField] = procID
@@ -195,13 +248,34 @@ func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Respons
 			blog.Error("delete process error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcDeleteProcessFaile)
 		}
+
+		{
+			// save change log
+			headers := []metadata.Header{}
+
+			preData := map[string]interface{}{}
+			for _, detail := range details {
+				preData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+				headers = append(headers,
+					metadata.Header{
+						PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField].(string)),
+						PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
+					})
+			}
+			auditContent := metadata.Content{
+				PreData: preData,
+				Headers: headers,
+			}
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContent, "delete process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
+		}
+
 		return http.StatusOK, nil, nil
 	}, resp)
 }
 
 //CreateProcess create application
 func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Response) {
-
+	user := util.GetActionUser(req)
 	language := util.GetActionLanguage(req)
 
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -240,6 +314,36 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 			blog.Error("create process error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcCreateProcessFaile)
 		}
+
+		{
+			// save change log
+			instID := gjson.Get(cProcRes, "data."+common.BKProcIDField).Int()
+			if instID == 0 {
+				blog.Errorf("inst id not found")
+			}
+			headers := []metadata.Header{}
+
+			curData := map[string]interface{}{}
+			details, err := cli.getProcDetail(req, ownerID, appID, int(instID))
+			if err != nil {
+				blog.Errorf("get inst detail error: %v", err)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+			}
+			for _, detail := range details {
+				curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+				headers = append(headers,
+					metadata.Header{
+						PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField].(string)),
+						PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
+					})
+			}
+			auditContent := metadata.Content{
+				CurData: curData,
+				Headers: headers,
+			}
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(instID, auditContent, "create process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
+		}
+
 		result := make(map[string]interface{})
 		data := info.Data
 		result[common.BKProcIDField] = data[common.BKProcIDField]

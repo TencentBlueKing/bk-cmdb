@@ -173,7 +173,22 @@
     import bus from '@/eventbus/bus'
     export default {
         props: {
-            outerParams: Object,
+            outerParams: {
+                type: Object,
+                default () {
+                    return {
+                        condition: [{
+                            'bk_obj_id': 'biz',
+                            fields: [],
+                            condition: [{
+                                field: 'default',
+                                operator: '$ne',
+                                value: 1
+                            }]
+                        }]
+                    }
+                }
+            },
             isShowBiz: {
                 type: Boolean,
                 default: true
@@ -277,23 +292,7 @@
                         exact: 0,
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
-                    condition: [{
-                        'bk_obj_id': 'host',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'module',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'set',
-                        fields: [],
-                        condition: []
-                    }, {
-                        'bk_obj_id': 'biz',
-                        fields: [],
-                        condition: []
-                    }]
+                    condition: []
                 }
             }
         },
@@ -715,6 +714,9 @@
                 attribute.form.formValues = {}
                 attribute.form.isMultipleUpdate = false
                 attribute.form.type = 'update'
+                this.getHostDetails(bkHostId)
+            },
+            getHostDetails (bkHostId) {
                 this.$axios.get(`hosts/${this.bkSupplierAccount}/${bkHostId}`).then((res) => {
                     if (res.result) {
                         let values = {
@@ -726,18 +728,15 @@
                                 this.sideslider.attribute.isWindowsOSType = bkPropertyValue !== 'Linux'
                             }
                         })
-                        attribute.form.formValues = values
+                        this.sideslider.attribute.form.formValues = values
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
-
                 this.$axios.get(`hosts/snapshot/${bkHostId}`).then(res => {
                     if (res.result) {
-                        attribute.status.isLoaded = true
+                        this.sideslider.attribute.status.isLoaded = true
                         this.$store.commit('setHostSnapshot', res.data)
-                    } else {
-                        this.$alertMsg('获取主机快照信息失败')
                     }
                 })
             },
@@ -748,8 +747,8 @@
                         this.$alertMsg('保存成功', 'success')
                         this.setTableCurrentPage(1)
                         if (!this.sideslider.attribute.form.isMultipleUpdate) {
-                            this.sideslider.attribute.form.formValues = Object.assign({}, formValues, formData)
                             this.$refs.hostAttribute.displayType = 'list'
+                            this.getHostDetails(bkHostID)
                         }
                     } else {
                         this.$alertMsg(res['bk_error_msg'])

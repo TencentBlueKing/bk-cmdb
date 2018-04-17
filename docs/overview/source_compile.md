@@ -51,15 +51,14 @@ make VERSION=xxxx
 make 
 ```
 
-如因环境限制需要使用特殊的npm镜像地址，编译时需要采用以下命令：
-
-
+大陆地区用户推荐使用npm镜像cnpm进行前端编译，cnpm安装参考[cnpmjs.org](https://cnpmjs.org/)，编译时需要采用以下命令：
 
 ``` shell
-make NPM=xxx
+make NPM=cnpm
 ```
 
-**注:xxx需要替换为需要使用的npm的名字，如:cnpm。特殊的npm 镜像需要自行安装，此处不会自动配置。**
+**注：使用其他npm镜像与此类似**
+
 
 此模式编译后会同时生成前端UI文件和后端服务文件。
 
@@ -78,13 +77,13 @@ make server
 make ui
 ```
 
-如因环境限制需要使用特殊的npm镜像地址，编译时需要采用以下命令：
+大陆地区用户推荐使用npm镜像cnpm进行前端编译，cnpm安装参考[cnpmjs.org](https://cnpmjs.org/)，编译时需要采用以下命令：
 
 ``` shell
-make ui NPM=xxx
+make ui NPM=cnpm
 ```
 
-**注:xxx需要替换为需要使用的npm的名字，如:cnpm。特殊的npm 镜像需要自行安装，此处不会自动配置。**
+**注：使用其他npm镜像与此类似**
 
 
 此模式下仅会编译生成前端UI文件。

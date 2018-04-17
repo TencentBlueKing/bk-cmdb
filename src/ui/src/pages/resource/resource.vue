@@ -87,10 +87,6 @@
                     searchParams: {
                         'bk_biz_id': -1,
                         condition: [{
-                            'bk_obj_id': 'host',
-                            fields: [],
-                            condition: []
-                        }, {
                             'bk_obj_id': 'biz',
                             fields: [],
                             condition: [{
@@ -98,6 +94,10 @@
                                 operator: '$eq',
                                 value: 1
                             }]
+                        }, {
+                            'bk_obj_id': 'host',
+                            fields: [],
+                            condition: []
                         }, {
                             'bk_obj_id': 'module',
                             fields: [],

@@ -87,6 +87,9 @@
         }
         .bk-tab2-content{
             height: calc(100% - 80px);
+            >section{
+                height: 100%;
+            }
         }
     }
 </style>

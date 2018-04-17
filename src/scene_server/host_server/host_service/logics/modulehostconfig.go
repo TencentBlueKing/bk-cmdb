@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -110,7 +110,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	addParams[common.BKModuleIDField] = []int{moduleID}
 	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
 
-	allHostList, err := getHostInfoByConds(req, hostAddr, nil)
+	allHostList, err := GetHostInfoByConds(req, hostAddr, nil)
 	if nil != err {
 		return errors.New("查询主机信息失败"), nil, nil, nil
 	}
@@ -266,7 +266,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 		common.BKHostInnerIPField: IP,
 		common.BKCloudIDField:     common.BKDefaultDirSubArea,
 	}
-	hostList, err := getHostInfoByConds(req, hostAddr, conds)
+	hostList, err := GetHostInfoByConds(req, hostAddr, conds)
 	if nil != err {
 		return errors.New("查询主机信息失败")
 	}
@@ -278,7 +278,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	host[common.BKHostInnerIPField] = IP
 	host[common.BKOSTypeField] = osType
 
-	host["bk_input_from"] = common.HostAddMethodAgent
+	host["import_from"] = common.HostAddMethodAgent
 	host[common.BKCloudIDField] = common.BKDefaultDirSubArea
 	defaultFields := getHostFields(ownerID, ObjAddr)
 	//补充未填写字段的默认值
@@ -336,9 +336,6 @@ func GetObjectFields(ownerID, objID, ObjAddr string) map[string]map[string]inter
 	for _, j := range result {
 		propertyID := j.PropertyID
 		fieldType := j.PropertyType
-		if j.IsReadOnly {
-			continue
-		}
 		switch fieldType {
 		case common.FiledTypeSingleChar:
 			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
@@ -375,7 +372,7 @@ func convertHostInfo(hosts []interface{}) map[string]interface{} {
 	return hostMap
 }
 
-func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}) ([]interface{}, error) {
+func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}) ([]interface{}, error) {
 	hostURL = hostURL + "/host/v1/hosts/search"
 	getParams := make(map[string]interface{})
 	getParams["fields"] = nil
@@ -383,8 +380,10 @@ func getHostInfoByConds(req *restful.Request, hostURL string, conds map[string]i
 	getParams["start"] = 0
 	getParams["limit"] = common.BKNoLimit
 	getParams["sort"] = common.BKHostIDField
-
+	blog.Info("get host info by conds url:%s", hostURL)
+	blog.Info("get host info by conds params:%v", getParams)
 	isSucess, message, iRetData := GetHttpResult(req, hostURL, common.HTTPSelectPost, getParams)
+	blog.Info("get host info by conds return:%v", iRetData)
 	if !isSucess {
 		return nil, errors.New("获取主机信息失败;" + message)
 	}

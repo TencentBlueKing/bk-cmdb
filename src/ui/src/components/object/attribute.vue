@@ -53,14 +53,10 @@
                                                         @change="clearFieldValue(property)">
                                                     <span>{{property['bk_property_name']}}</span>
                                                 </label>
-                                                <i class="icon-tooltips" v-if="property['placeholder']" v-tooltip="property['placeholder']"></i>
+                                                <i class="icon-tooltips" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
                                             </div>
                                             <div class="attribute-item-field">
-                                                <input v-if="property['bk_property_type'] === 'int'" 
-                                                    type="number" class="bk-form-input"
-                                                    :disabled="checkIsFieldDisabled(property)" 
-                                                    v-model.number="localValues[property['bk_property_id']]">
-                                                <v-member-selector v-else-if="property['bk_property_type'] === 'objuser'"
+                                                <v-member-selector v-if="property['bk_property_type'] === 'objuser'"
                                                     :disabled="checkIsFieldDisabled(property)"
                                                     :selected.sync="localValues[property['bk_property_id']]" 
                                                     :multiple="true">
@@ -109,7 +105,7 @@
                                                     type="text" class="bk-form-input"
                                                     :disabled="checkIsFieldDisabled(property)" 
                                                     v-model.trim="localValues[property['bk_property_id']]">
-                                                <template v-if="checkIsNeedValidate(property) && getValidateRules(property)">
+                                                <template v-if="getValidateRules(property)">
                                                     <v-validate class="attribute-validate-result"
                                                         v-validate="getValidateRules(property)"
                                                         :name="property['bk_property_name']" 
@@ -278,6 +274,9 @@
                     }
                     if (this.isMultipleUpdate && !this.multipleEditableFields[bkPropertyId]) {
                         delete formData[bkPropertyId]
+                    }
+                    if (Array.isArray(formData[bkPropertyId])) {
+                        formData[bkPropertyId] = formData[bkPropertyId].filter(({id}) => !!id).map(({bk_inst_id: bkInstId}) => bkInstId).join(',')
                     }
                 })
                 // 增量更新，删除未变更的字段
@@ -488,13 +487,6 @@
                 this.localValues = {}
                 this.$forceUpdate()
             },
-            checkIsNeedValidate (property) {
-                if ((this.type === 'create' && property['isrequired']) || (this.type === 'update' && property['editable'])) {
-                    return true
-                } else {
-                    return false
-                }
-            },
             getValidateRules (property) {
                 let rules = {}
                 let {
@@ -518,6 +510,12 @@
                         rules['regex'] = option
                     }
                 }
+                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    rules['char'] = true
+                }
+                if (bkPropertyType === 'int') {
+                    rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
+                }
                 return rules
             },
             submit () {
@@ -533,6 +531,13 @@
             },
             deleteObject () {
                 this.$emit('delete', Object.assign({}, this.formValues))
+            },
+            htmlEncode (str) {
+                let c = document.createElement('div')
+                c.innerHTML = str
+                let output = c.innerText
+                c = null
+                return output
             }
         },
         components: {
