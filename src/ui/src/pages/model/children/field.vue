@@ -91,8 +91,8 @@
                                                     data-parsley-required="true"
                                                     data-parsley-required-message="该字段是必填项"
                                                     data-parsley-maxlength="20"
-                                                    data-parsley-pattern="^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,15}$"
-                                                    data-parsley-pattern-message="包含了非下划线的特殊字符"
+                                                    :data-parsley-pattern="reg"
+                                                    data-parsley-pattern-message="包含了非法字符"
                                                     data-parsley-trigger="input blur"
                                                     >
                                                 </div>
@@ -271,7 +271,7 @@
                                                             data-parsley-required="true"
                                                             data-parsley-required-message="该字段是必填项"
                                                             data-parsley-maxlength="15"
-                                                            :data-parsley-pattern="enumReg"
+                                                            :data-parsley-pattern="reg"
                                                             data-parsley-pattern-message="包含了非法字符"
                                                             data-parsley-trigger="blur"
                                                             data-parsley-no-repeat="change"
@@ -558,8 +558,8 @@
                                             data-parsley-required="true"
                                             data-parsley-required-message="该字段是必填项"
                                             data-parsley-maxlength="20"
-                                            data-parsley-pattern="^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,15}$"
-                                            data-parsley-pattern-message="包含了非下划线的特殊字符"
+                                            :data-parsley-pattern="reg"
+                                            data-parsley-pattern-message="包含了非法字符"
                                             data-parsley-trigger="input blur"
                                             >
                                         </div>
@@ -789,7 +789,7 @@
                                                 data-parsley-required="true"
                                                 data-parsley-required-message="该字段是必填项"
                                                 data-parsley-maxlength="15"
-                                                :data-parsley-pattern="enumReg"
+                                                :data-parsley-pattern="reg"
                                                 data-parsley-pattern-message="包含了非法字符"
                                                 data-parsley-trigger="blur"
                                                 data-parsley-no-repeat="new"
@@ -1205,7 +1205,7 @@
         },
         data () {
             return {
-                enumReg: '^([a-zA-Z0-9_]||[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]|[,，；;“”‘’。."\' +-]){1,15}$',
+                reg: '^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."\' \\/]){1,15}$',
                 isSelectErrorShow: false,       // 关联模型为空时的提示状态
                 isEnumErrorShow: false,         // 枚举内容为空是的提示状态
                 tips: {
@@ -1408,25 +1408,22 @@
                 let opt = null
                 switch (type) {
                     case 'int':
-                        opt = JSON.stringify({
+                        opt = {
                             min: option.min,
                             max: option.max
-                        })
-                        break
-                    case 'longchar':
-                        opt = option
-                        break
-                    case 'singlechar':
-                        opt = option
+                        }
                         break
                     case 'enum':
-                        // opt = JSON.stringify(option)
-                        option.list[option.defaultIndex]['is_default'] = true
-                        opt = JSON.stringify(option.list)
+                        option.list.map((item, index) => {
+                            item['is_default'] = index === option.defaultIndex
+                        })
+                        opt = option.list
                         break
+                    case 'longchar':
+                    case 'singlechar':
                     case 'singleasst':
                     case 'multiasst':
-                        opt = JSON.stringify(option)
+                        opt = option
                         break
                 }
                 return opt
@@ -1443,16 +1440,15 @@
                     case 'singleasst':
                     case 'multiasst':
                         if (item['Option'] !== 'undefined') {
-                            option = JSON.parse(item['Option'])
+                            option = item['Option']
                         }
                         break
                     case 'enum':
                         if (item['Option'] !== 'undefined') {
-                            let opt = JSON.parse(item['Option'])
+                            let opt = item['Option']
                             let defaultIndex = ''
                             for (let i = 0; i < opt.length; i++) {
-                                if (opt[i].hasOwnProperty('is_default')) {
-                                    delete opt[i]['is_default']
+                                if (opt[i].hasOwnProperty('is_default') && opt[i]['is_default']) {
                                     defaultIndex = i
                                     break
                                 }
@@ -1461,7 +1457,6 @@
                                 list: opt,
                                 defaultIndex: defaultIndex
                             }
-                            // option = JSON.parse(item['Option'])
                         }
                         break
                     case 'longchar':
@@ -1498,13 +1493,6 @@
                         for (let item of res.data) {
                             // 解决后端变量与前端重名问题
                             item.Option = item.option
-                            // delete item.option
-                            // 注释暂时不删
-                            // if (item.IsPre) {
-                            //     this.fieldList.unshift(item)
-                            // } else {
-                            //     this.fieldList.push(item)
-                            // }
                             if (item['isonly'] && item['isrequired']) {
                                 haveValue.unshift(item)
                             } else if (item['isonly']) {
@@ -1515,7 +1503,6 @@
                                 empty.push(item)
                             }
                             this.fieldList = haveValue.concat(empty)
-                            // console.log(this.fieldList, 'item')
                         }
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
@@ -1532,9 +1519,6 @@
             */
             toggleDetailShow (item, index) {
                 $('#validate-form-change').parsley().reset()
-                // if (item.IsPre) {
-                //     return
-                // }
                 if (!this.fieldList[index].isShow) {
                     this.parseFieldOption(item, index)
                     this.curFieldInfo['bk_property_name'] = item['bk_property_name']
@@ -1544,7 +1528,6 @@
                     this.curFieldInfo['placeholder'] = item['placeholder']
                     this.curFieldInfo['unit'] = item['unit']
                     this.curFieldInfo['bk_asst_forward'] = ''
-                    // this.curFieldInfo['bk_asst_forward'] = item['bk_asst_forward']
                 }
                 for (var i = 0; i < this.fieldList.length; i++) {
                     if (index === i) {

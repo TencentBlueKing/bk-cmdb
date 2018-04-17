@@ -703,6 +703,7 @@
         }
         .icon-cc-derivation,
         .icon-cc-import,
+        .icon-cc-history,
         .icon-cc-setting{
             font-size: 16px;
             position: relative;
