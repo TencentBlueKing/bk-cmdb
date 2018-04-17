@@ -262,7 +262,7 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 				},
 				"bk_asst_obj_id": keyObjID,
 				"bk_obj_id":      objID,
-			}, instAsstItems, "", 0, common.BKNoLimit)
+			}, &instAsstItems, "", 0, common.BKNoLimit)
 			if nil != err {
 				blog.Errorf("can not get the inst association data from db, error info is %s", err.Error())
 				continue
