@@ -30,5 +30,5 @@ type ConfCenter interface {
 
 // NewConfCenter create a ConfCenter object
 func NewConfCenter(serv string) ConfCenter {
-	return confHandler.NewConfCenter(serv, types.CC_MODULE_HOST)
+	return confHandler.NewConfCenter(serv, types.CC_MODULE_APISERVER)
 }
