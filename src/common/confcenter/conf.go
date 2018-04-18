@@ -156,6 +156,7 @@ func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
+	blog.Infof("%v", cc.langCtx)
 
 	return cc.langCtx
 }

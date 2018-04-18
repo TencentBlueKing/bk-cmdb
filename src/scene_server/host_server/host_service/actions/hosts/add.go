@@ -21,9 +21,8 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"io/ioutil"
-
 	"github.com/emicklei/go-restful"
+	"io/ioutil"
 )
 
 func init() {

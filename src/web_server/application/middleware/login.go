@@ -103,11 +103,19 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 //isAuthed check user is authed
 func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
-		c.SetCookie("blueking_language", defaultlanguage, 0, "/", "", false, false)
 		session := sessions.Default(c)
+
+		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
+		if "" == cookieLanuage || nil != err {
+			c.SetCookie(common.BKHTTPCookieLanugageKey, defaultlanguage, 0, "/", "", false, false)
+			session.Set("language", defaultlanguage)
+
+		} else if cookieLanuage != session.Get("lanugage") {
+			session.Set("language", cookieLanuage)
+		}
+
 		session.Set("userName", "admin")
 		session.Set("role", "1")
-		session.Set("language", defaultlanguage)
 		session.Set("owner_uin", "0")
 		session.Set("skiplogin", "1")
 		session.Save()
