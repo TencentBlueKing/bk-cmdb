@@ -16,6 +16,7 @@ import Router from 'vue-router'
 Vue.use(Router)
 
 const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index')
+const pageHosts = () => import(/* webpackChunkName: "page-hosts" */ '@/pages/hosts/hosts')
 const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
 const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
 const pageProcess = () => import(/* webpackChunkName: "page-process" */ '@/pages/process/process')
@@ -43,7 +44,10 @@ var router = new Router({
         components: require('@/pages/403')
     }, {
         path: '/',
-        component: pageIndex,
+        component: pageIndex
+    }, {
+        path: '/hosts',
+        component: pageHosts,
         meta: {
             setBkBizId: true
         }

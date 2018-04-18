@@ -23,8 +23,20 @@ const state = {
         selected: parseInt(Cookies.get('bk_biz_id')) || -1
     },
     memberList: [],
-    authority: null,
-    adminAuthority: null,
+    authority: {
+        'model_config': {},
+        'system_config': {
+            'back_config': null,
+            'global_busi': null
+        }
+    },
+    adminAuthority: {
+        'model_config': {},
+        'system_config': {
+            'back_config': null,
+            'global_busi': null
+        }
+    },
     isAdmin: window.isAdmin === '1',
     navigation: {},
     usercustom: {},          // 用户字段配置

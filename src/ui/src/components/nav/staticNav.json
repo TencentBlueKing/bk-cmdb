@@ -10,7 +10,7 @@
         "id": "index",
         "name": "主机",
         "international": "message.navBizHost",
-        "path": "/",
+        "path": "/hosts",
         "authorized": true,
         "authority": ["search", "create", "update", "delete"]
     }, {
