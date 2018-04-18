@@ -43,7 +43,12 @@
                 <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
-                <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
+                <div class="fr">
+                    <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
+                    <button class="bk-button del-button fl ml10" @click="showFiling" title="查看删除历史">
+                        <i class="icon-cc-history"></i>
+                    </button>
+                </div>
             </div>
         </v-index>
         <v-sideslider 
@@ -63,13 +68,18 @@
                     <div class="automatic-import">
                         <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
                         <div class="back-contain">
-                            <img src="../../common/images/icon/icon-back.png">
+                            <i class="icon-cc-skip"></i>
                             <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入Agent安装APP']")}}</a>
                         </div>
                     </div>
                 </bk-tabpanel>
             </bk-tab>
         </v-sideslider>
+        <v-delete-history
+            :isShow.sync="filing.isShow"
+            :objId="'host'"
+            :objTableHeader="index.table.header"
+        ></v-delete-history>
    </div>
 </template>
 
@@ -77,10 +87,14 @@
     import vIndex from '@/pages/index/index'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
+    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
             return {
+                filing: {
+                    isShow: false
+                },
                 index: {
                     bkBizId: '',
                     selectedHost: [],
@@ -107,6 +121,10 @@
                             fields: [],
                             condition: []
                         }]
+                    },
+                    table: {
+                        header: [],
+                        allAttr: []
                     }
                 },
                 slider: {
@@ -155,13 +173,13 @@
                         h('span', '选中的 '),
                         h('span', {
                             style: {
-                                color: '#498fe0'
+                                color: '#3c96ff'
                             }
                         }, this.index.selectedHost.length),
                         h('span', ' 个主机转移到 '),
                         h('span', {
                             style: {
-                                color: '#498fe0'
+                                color: '#3c96ff'
                             }
                         }, selected.label),
                         h('span', ' 下的空闲机模块')
@@ -238,6 +256,11 @@
                 } else {
                     this.$alertMsg(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
                 }
+            },
+            showFiling () {
+                this.index.table.header = this.$refs.index.table.tableHeader
+                this.index.table.allAttr = this.$refs.index.attribute
+                this.filing.isShow = true
             }
         },
         created () {
@@ -248,12 +271,14 @@
         components: {
             vImport,
             vIndex,
-            vSideslider
+            vSideslider,
+            vDeleteHistory
         }
     }
 </script>
 <style lang="scss" scoped>
     .host-resource-wrapper{
+        position: relative;
         height: 100%;
     }
     .biz-selector {
@@ -261,11 +286,14 @@
         vertical-align: middle;
         width: 200px;
     }
+    .icon-cc-history{
+        font-size: 16px;
+    }
     .del-button{
         width: 36px;
         padding: 0;
         &:hover{
-                .icon-cc-del{
+            .icon-cc-del{
                 color: #ef4c4c;
             }
         }
@@ -277,11 +305,12 @@
         }
         .back-contain{
             cursor:pointer;
+            color: #3c96ff;
             img{
                 margin-right: 5px;
             }
             a{
-                color:#498fe0;
+                color:#3c96ff;
             }
         }
     }

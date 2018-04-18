@@ -20,7 +20,7 @@
                 :class="item['is_bind'] ? 'main-btn' : 'vice-btn'">
                 {{item['is_bind'] ? $t("ProcessManagement['已绑定']") : $t("ProcessManagement['未绑定']")}}
             </button>
-        </td>    
+        </td>
     </v-table>
 </template>
 

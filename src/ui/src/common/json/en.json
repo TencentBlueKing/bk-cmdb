@@ -67,7 +67,9 @@
         "该字段": "This field",
         "刷新查询": "Refresh",
         "请选择": "Please Select",
-        "更多属性": "More Properties"
+        "更多属性": "More Properties",
+        "无可编辑属性": "Unedited attribute",
+        "重复的值": "Repeated value"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -263,7 +265,9 @@
         "请输入字段名称": "Please enter field name",
         "新增分组": "Add Group",
         "编辑分组": "Modify Group",
-        "单击选择对应图标": "Click to select the corresponding icon"
+        "单击选择对应图标": "Click to select the corresponding icon",
+        "设置为默认值": "Set as default",
+        "请输入ID": "Enter ID"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",

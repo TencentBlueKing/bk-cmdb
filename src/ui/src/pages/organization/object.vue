@@ -9,7 +9,7 @@
  */
 
 <template lang="html">
-   <div class="host-resource-wrapper">
+   <div class="host-resource-wrapper clearfix">
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -27,9 +27,14 @@
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.create">{{$t("Inst['立即创建']")}}</button>
             </div>
-            <button class="bk-button setting fr" @click="settingSlider.isShow = true">
-                <i class="icon-cc-setting"></i>
-            </button>
+            <div class="fr btn-group">
+                <button class="bk-button setting" @click="filing.isShow = true" title="查看删除历史">
+                    <i class="icon-cc-history"></i>
+                </button>
+                <button class="bk-button setting" @click="settingSlider.isShow = true">
+                    <i class="icon-cc-setting"></i>
+                </button>
+            </div>
             <div class="quick-search fr">
                 <div class="fl left-select">
                     <bk-select :selected.sync="filter.selected" ref="filterSelector" @on-selected="setFilterType">
@@ -61,8 +66,9 @@
                 @handlePageSizeChange="setTableSize"
                 @handleTableAllCheck="getAllObjectId">
                     <template v-for="({property,id,name}, index) in table.header" :slot="id" slot-scope="{ item }" 
-                    v-if="property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== ''">
-                        <td>{{getAssociateCell(item[id])}}</td>
+                    v-if="(property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== '') || property['bk_property_type'] === 'enum'">
+                        <td v-if="property['bk_property_type'] === 'enum'">{{getEnumCell(item[id], property)}}</td>
+                        <td v-else>{{getAssociateCell(item[id])}}</td>
                     </template>
             </v-object-table>
             <v-sideslider
@@ -122,6 +128,11 @@
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
+        <v-delete-history
+            :isShow.sync="filing.isShow"
+            :objId="objId"
+            :objTableHeader="table.header"
+        ></v-delete-history>
    </div>
 </template>
 
@@ -135,6 +146,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
+    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
     export default {
         mixins: [Authority],
         data () {
@@ -160,6 +172,9 @@
                     },
                     defaultSort: '-bk_biz_id',
                     sort: ''
+                },
+                filing: {
+                    isShow: false
                 },
                 // 侧滑状态
                 slider: {
@@ -594,6 +609,11 @@
                     })
                 }
                 return label.join(',')
+            },
+            getEnumCell (data, property) {
+                return property.option.find(({id}) => {
+                    return id === data
+                })['name']
             }
         },
         mounted () {
@@ -613,7 +633,8 @@
             vHistory,
             vImport,
             vSideslider,
-            vConfigField
+            vConfigField,
+            vDeleteHistory
         }
     }
 </script>
@@ -690,6 +711,7 @@
         }
         .icon-cc-derivation,
         .icon-cc-import,
+        .icon-cc-history,
         .icon-cc-setting{
             font-size: 16px;
             position: relative;
@@ -860,10 +882,8 @@
 </style>
 
 <style media="screen" lang="scss">
-    .bk-date .date-dropdown-panel{
-        z-index: 999;
-    }
     .host-resource-wrapper{
+        position: relative;
         .errorInfo-wrapper{
             input[name="date-select"]{
                 border: 1px solid #ff3737;

@@ -10,6 +10,9 @@
 
 <template lang="html">
     <div id="app">
+        <div class="error-message-content is-chrome" v-show="isChromeShow">
+            <span>您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
+        </div>
         <i class="bk-icon icon-dedent" id="iconCloseNav" :class="{'close': isShow}" @click="closeNav"></i>
         <v-navigation :isClose="isShow"></v-navigation>
         <v-header @quickCheck="quickCheck"></v-header>
@@ -30,6 +33,7 @@
         },
         data () {
             return {
+                isChromeShow: true,
                 isShow: false,
                 searchVal: ''
             }
@@ -47,7 +51,13 @@
             },
             quickCheck (searchVal) {
                 this.searchVal = searchVal
+            },
+            closeInfo () {
+                this.isChromeShow = false
             }
+        },
+        created () {
+            this.isChromeShow = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
         }
     }
 </script>
@@ -76,5 +86,23 @@
     .clearfix:after{
         content: '';
         font-size: 0;
+    }
+    .error-message-content{
+        position: fixed;
+        top: 0;
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        background: #f8f6db;
+        z-index: 99999;
+        span{
+            color: #ff5656;
+            margin-right: 20px;
+        }
+        i{
+            cursor: pointer;
+            color: #ff5656;
+        }
     }
 </style>
