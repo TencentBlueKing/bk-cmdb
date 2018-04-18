@@ -59,9 +59,10 @@
         },
         watch: {
             allClassify (newVal, oldVal) {
-                if (!oldVal.length) {
-                    this.initActiveClassify()
-                }
+                // console.log(oldVal.length)
+                // if (!oldVal.length) {
+                this.initActiveClassify()
+                // }
             }
         },
         methods: {
@@ -162,7 +163,10 @@
                 }
             },
             initActiveClassify () {
-                this.changeClassify(this.$deepClone(this.allClassify[0]))
+                let index = this.allClassify.findIndex(({bk_classification_id: bkClassificationId}) => {
+                    return bkClassificationId === this.activeClassify['bk_classification_id']
+                })
+                this.changeClassify(this.$deepClone(this.allClassify[index]))
             }
         },
         created () {

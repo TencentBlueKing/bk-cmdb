@@ -34,7 +34,7 @@
                         </div>
                     </div>
                     <div class="group-content group-content-classify">
-                        <span class="title-name">模型</span>
+                        <span class="title-name">{{$t('OperationAudit[\'模型\']')}}</span>
                         <div class="selector-content selector-content-classify">
                             <bk-select
                                 :selected.sync="filter.classify"
