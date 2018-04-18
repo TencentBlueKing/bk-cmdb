@@ -64,18 +64,6 @@
                 "delete"
             ]
         }, {
-            "id": "model",
-            "name": "模型管理2",
-            "international": "message.navSystemModel",
-            "path": "/model2",
-            "authorized": false,
-            "authority": [
-                "search",
-                "create",
-                "update",
-                "delete"
-            ]
-        }, {
             "id": "permission",
             "name": "权限管理",
             "international": "message.navPermissions",
