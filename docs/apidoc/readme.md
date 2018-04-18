@@ -8,15 +8,15 @@
 * [自定义API](host_custom_api.md)
 
 #### 对象资源操类
-* [对象模型分类](object_module_classify.md)
-* [对象模型](object_module.md)
-* [对象属性模型](object_module_property.md)
+* [对象模型分类](object_model_classify.md)
+* [对象模型](object_model.md)
+* [对象属性模型](object_model_property.md)
 * [主线模型管理](object_main_line_module.md)
-* [字段分组管理](object_module_field_group.md)
+* [字段分组管理](object_model_field_group.md)
 * [通用对象实例管理](object_common_inst.md)
 * [业务管理](object_biz.md)
 * [集群管理](object_set.md)
-* [模块管理](object_model.md)
+* [模块管理](object_module.md)
 
 #### 进程资源类
 * [进程管理](proc_config.md)
