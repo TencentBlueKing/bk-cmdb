@@ -504,13 +504,13 @@ const (
 const (
 
 	// HostAddMethodExcel add a host method
-	HostAddMethodExcel = "excel"
+	HostAddMethodExcel = "1"
 
 	// HostAddMethodAgent add a  agent method
-	HostAddMethodAgent = "agent"
+	HostAddMethodAgent = "2"
 
 	// HostAddMethodAPI add api method
-	HostAddMethodAPI = "api"
+	HostAddMethodAPI = "3"
 
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
