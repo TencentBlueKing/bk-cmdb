@@ -197,6 +197,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 func (cli *moduleAction) AddModule(req *restful.Request, resp *restful.Response) {
 	blog.Debug("addModule start!")
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	err := req.Request.ParseForm()
 	if err != nil {

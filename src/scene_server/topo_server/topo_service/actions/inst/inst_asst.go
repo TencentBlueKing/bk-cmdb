@@ -22,6 +22,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/api/object"
 	"encoding/json"
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -51,7 +52,7 @@ func (cli *instAction) createInstAssociation(instAsst []interface{}) error {
 	return cli.CC.InstCli.InsertMuti(metadata.InstAsst{}.TableName(), instAsst...)
 }
 
-func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, input map[string]interface{}) error {
+func (cli *instAction) updateInstAssociation(forward *object.ForwardParam, instID int, ownerID, objID string, input map[string]interface{}) error {
 
 	// get association fields
 	asst := map[string]interface{}{}
@@ -59,7 +60,7 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 	asst[common.BKObjIDField] = objID
 	searchData, _ := json.Marshal(asst)
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
-	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 	if nil != asstErr {
 		blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
 		return asstErr

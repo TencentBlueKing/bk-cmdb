@@ -295,13 +295,9 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		input, err := js.Map()
-<<<<<<< HEAD
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
-=======
 		input[common.BKAppIDField] = appID
 
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), defErr)
->>>>>>> qq/master
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommFieldNotValid)
