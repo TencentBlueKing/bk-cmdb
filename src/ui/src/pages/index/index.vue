@@ -2,23 +2,27 @@
     <div class="index-wrapper">
         <v-search></v-search>
         <transition name="fade">
-            <div class="classify-container" v-show="display.type === 'classify'">
+            <div class="classify-container" v-show="display.type === 'classification'">
                 <ul class="classify-list">
-                    <li class="classify-item clearfix" v-for="(classify, index) in classifies" :key="index" @click="showModels(classify)">
-                        <div :class="['classify-navigator', {navigated: classify.navigated}]" @click.stop="toggleClassifyNavVisible(classify)">
+                    <li class="classify-item clearfix" v-for="(classification, index) in authorizedClassifications" :key="index" @click="showModels(classification)">
+                        <div 
+                            :class="['classify-navigator', {navigated: isClassificationNavigated(classification)}]"
+                            @click.stop="toggleClassifyNavVisible(classification)">
                             <span class="icon-cc-thumbtack"></span>
-                            <span>{{classify.navigated ? '取消导航' : '添加导航'}}</span>
+                            <span>{{isClassificationNavigated(classification) ? $t("Index['取消导航']") : $t("Index['添加导航']")}}</span>
                         </div>
                         <div class="classify-icon fl">
-                            <i :class="classify['bk_classification_icon']"></i>
+                            <i :class="classification['bk_classification_icon']"></i>
                         </div>
                         <div class="classify-name">
-                            <h2  class="classify-name-text">{{classify['bk_classification_name']}}</h2>
-                            <span class="classify-model-count">{{`模型：${classify['bk_objects'].length}个`}}</span>
+                            <h2  class="classify-name-text">{{classification['bk_classification_name']}}</h2>
+                            <span class="classify-model-count">
+                                {{$tc("Index['模型数量']",  classification['bk_objects'].length, {count: classification['bk_objects'].length})}}
+                            </span>
                         </div>
                         <div class="classify-models">
                             <router-link exact class="classify-model-link"
-                                v-for="(model, index) in classify['bk_objects']"
+                                v-for="(model, index) in classification['bk_objects']"
                                 v-if="index < 4"
                                 :key="index"
                                 :title="model['bk_obj_name']"
@@ -33,14 +37,14 @@
         </transition>
         <transition name="fade">
             <div class="model-container" v-show="display.type === 'model'">
-                <bk-button class="model-return" type="primary" @click="display.type = 'classify'">返回上级</bk-button>
+                <bk-button class="model-return" type="primary" @click="display.type = 'classification'">{{$t("Index['返回上级']")}}</bk-button>
                 <div class="model-list">
-                    <router-link exact class="model-item" v-for="(model, index) in displayClassify['bk_objects']"
+                    <router-link exact class="model-item" v-for="(model, index) in displayClassification['bk_objects']"
                         :key="index"
-                        :to="`organization/${model['bk_obj_id']}`">
-                        <div :class="['classify-navigator', {navigated: model.navigated}]" @click.prevent.stop="toggleModelNavVisible(model)">
+                        :to="`/organization/${model['bk_obj_id']}`">
+                        <div :class="['classify-navigator', {navigated: isModelNavigated(model)}]" @click.prevent.stop="toggleModelNavVisible(model)">
                             <span class="icon-cc-thumbtack"></span>
-                            <span>{{model.navigated ? '取消导航' : '添加导航'}}</span>
+                            <span>{{isModelNavigated(model) ? $t("Index['取消导航']") : $t("Index['添加导航']")}}</span>
                         </div>
                         <div class="model-icon fl">
                             <i :class="model['bk_obj_icon']"></i>
@@ -65,105 +69,76 @@
                     keyword: ''
                 },
                 display: {
-                    type: 'classify',
-                    displayClassifyId: '',
-                    invisibleClassify: ['bk_host_manage', 'bk_biz_topo']
+                    type: 'classification',
+                    displayClassificationId: null
                 }
             }
         },
         computed: {
-            ...mapGetters(['allClassify', 'authority', 'adminAuthority']),
             ...mapGetters('usercustom', ['usercustom']),
-            // 筛选出有权限的模型
-            modelAuthority () {
-                let authority = window.isAdmin === '1' ? this.adminAuthority : this.authority
-                let modelConfig = authority['model_config']
-                let classifyAuthority = Object.keys(modelConfig).filter(classifyId => {
-                    return !this.display.invisibleClassify.includes(classifyId) && Object.keys(modelConfig[classifyId]).length
-                })
-                let modelAuthority = {}
-                classifyAuthority.forEach(classifyId => {
-                    modelAuthority[classifyId] = Object.keys(modelConfig[classifyId])
-                })
-                return modelAuthority
-            },
+            ...mapGetters('navigation', ['authorizedClassifications']),
             // 用户自定义导航内容
-            navigation () {
+            userCustomNavigation () {
                 return this.usercustom.navigation || {}
             },
-            // 根据用户模型权限，设置分类数据
-            classifies () {
-                let modelAuthority = this.modelAuthority
-                // 1.删除没有权限的分类
-                let allClassifyClone = JSON.parse(JSON.stringify(this.allClassify))
-                allClassifyClone = allClassifyClone.filter(({bk_classification_id: bkClassficationId}) => {
-                    return modelAuthority.hasOwnProperty(bkClassficationId)
-                })
-                // 2.删出有权限的分类下没有权限的模型
-                allClassifyClone.forEach(({bk_classification_id: bkClassficationId, bk_objects: bkObjects}, index, originalClassify) => {
-                    originalClassify[index]['bk_objects'] = bkObjects.filter(({bk_obj_id: bkObjId}) => {
-                        return modelAuthority[bkClassficationId].includes(bkObjId)
-                    })
-                })
-                // 3.检查是否被加入导航
-                let navigation = this.navigation
-                allClassifyClone.forEach(classify => {
-                    let {bk_classification_id: bkClassficationId, bk_objects: bkObjects} = classify
-                    bkObjects.forEach(bkObject => {
-                        if (!navigation.hasOwnProperty(bkClassficationId)) {
-                            bkObject.navigated = false
-                        } else {
-                            bkObject.navigated = navigation[bkClassficationId].some(navigationObjId => navigationObjId === bkObject['bk_obj_id'])
-                        }
-                    })
-                    classify.navigated = !bkObjects.some(({navigated}) => !navigated)
-                })
-                return allClassifyClone.filter(({bk_objects: bkObjects}) => !!bkObjects.length)
-            },
             // 当前模型视图所对应的分类
-            displayClassify () {
-                if (this.display.displayClassifyId && this.display.type === 'model') {
-                    return this.classifies.find(({bk_classification_id: bkClassficationId}) => bkClassficationId === this.display.displayClassifyId)
+            displayClassification () {
+                if (this.display.displayClassificationId && this.display.type === 'model') {
+                    return this.authorizedClassifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.display.displayClassificationId)
                 }
                 return {'bk_objects': []}
             }
         },
-        created () {
-            // 获取用户自定义内容
-            this.$store.dispatch('usercustom/getUserCustom')
-        },
         methods: {
             // 显示视图
-            showModels (classify) {
+            showModels (classification) {
                 this.display.type = 'model'
-                this.display.displayClassifyId = classify['bk_classification_id']
+                this.display.displayClassificationId = classification['bk_classification_id']
+            },
+            // 检测分类是否已添加到导航
+            isClassificationNavigated (classification) {
+                let userCustomNavigation = this.userCustomNavigation
+                if (!userCustomNavigation.hasOwnProperty(classification['bk_classification_id'])) {
+                    return false
+                }
+                return !classification['bk_objects'].some(model => {
+                    return !userCustomNavigation[classification['bk_classification_id']].includes(model['bk_obj_id'])
+                })
+            },
+            isModelNavigated (model) {
+                let userCustomNavigation = this.userCustomNavigation
+                if (!userCustomNavigation.hasOwnProperty(model['bk_classification_id'])) {
+                    return false
+                }
+                return userCustomNavigation[model['bk_classification_id']].includes(model['bk_obj_id'])
             },
             // 分类视图添加/取消导航切换
-            toggleClassifyNavVisible (classify) {
-                let navigation = JSON.parse(JSON.stringify(this.navigation))
-                let {
-                    'bk_classification_id': bkClassficationId,
-                    'bk_objects': bkObjects,
-                    navigated
-                } = classify
-                navigation[bkClassficationId] = navigated ? [] : bkObjects.map(({bk_obj_id: bkObjId}) => bkObjId)
-                this.$store.dispatch('usercustom/updateUserCustom', {navigation}, !navigated)
+            toggleClassifyNavVisible (classification) {
+                let navigation = JSON.parse(JSON.stringify(this.userCustomNavigation))
+                let isFormerNavigated = this.isClassificationNavigated(classification)
+                navigation[classification['bk_classification_id']] = isFormerNavigated ? [] : classification['bk_objects'].map(({bk_obj_id: bkObjId}) => bkObjId)
+                this.$store.dispatch('usercustom/updateUserCustom', {navigation}).then(res => {
+                    if (res.result) {
+                        this.$alertMsg(isFormerNavigated ? this.$t("Index['取消导航成功']") : this.$t("Index['添加导航成功']"), 'success')
+                    }
+                })
             },
             // 模型视图添加/取消导航切换
             toggleModelNavVisible (model) {
-                let navigation = JSON.parse(JSON.stringify(this.navigation))
-                let {
-                    'bk_classification_id': bkClassficationId,
-                    'bk_objects': bkObjects,
-                    navigated
-                } = this.displayClassify
-                navigation[bkClassficationId] = navigation[bkClassficationId] || []
-                if (model.navigated) {
-                    navigation[bkClassficationId] = navigation[bkClassficationId].filter(bkObjId => bkObjId !== model['bk_obj_id'])
+                let navigation = JSON.parse(JSON.stringify(this.userCustomNavigation))
+                let isFormerNavigated = this.isModelNavigated(model)
+                let classificationId = model['bk_classification_id']
+                navigation[classificationId] = navigation[classificationId] || []
+                if (isFormerNavigated) {
+                    navigation[classificationId] = navigation[classificationId].filter(bkObjId => bkObjId !== model['bk_obj_id'])
                 } else {
-                    navigation[bkClassficationId].push(model['bk_obj_id'])
+                    navigation[classificationId].push(model['bk_obj_id'])
                 }
-                this.$store.dispatch('usercustom/updateUserCustom', {navigation}, !model.navigated)
+                this.$store.dispatch('usercustom/updateUserCustom', {navigation}).then(res => {
+                    if (res.result) {
+                        this.$alertMsg(isFormerNavigated ? this.$t("Index['取消导航成功']") : this.$t("Index['添加导航成功']"), 'success')
+                    }
+                })
             }
         },
         components: {

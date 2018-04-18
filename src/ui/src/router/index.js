@@ -9,7 +9,7 @@
  */
 
 import Vue from 'vue'
-import {mapMutations} from 'vuex'
+import {mapMutations, mapGetters} from 'vuex'
 import store from '@/store'
 import Router from 'vue-router'
 
@@ -27,10 +27,27 @@ const pageOrganization = () => import(/* webpackChunkName: "page-organization" *
 const pageTopology = () => import(/* webpackChunkName: "page-topology" */ '@/pages/topology/topology')
 const pageCustomQuery = () => import(/* webpackChunkName: "page-customQuery" */ '@/pages/customQuery/customQuery')
 
-var loadingView = new Vue({
+var routerVue = new Vue({
     store: store,
+    computed: {
+        ...mapGetters('navigation', ['authorizedNavigation'])
+    },
     methods: {
-        ...mapMutations(['setGlobalLoading'])
+        ...mapMutations(['setGlobalLoading']),
+        async isAuthorized (to) {
+            await this.$store.dispatch('navigation/getAuthority')
+            await Promise.all([this.$store.dispatch('navigation/getClassifications'), this.$store.dispatch('usercustom/getUserCustom')])
+            let isAuthorized = false
+            let authorizedPath = ['/', '/403', '/404']
+            if (authorizedPath.includes(to.path)) {
+                isAuthorized = true
+            } else {
+                isAuthorized = this.authorizedNavigation.some(({id, children}) => {
+                    return children.some(({path}) => path === to.path)
+                })
+            }
+            return Promise.resolve(isAuthorized)
+        }
     }
 })
 
@@ -93,14 +110,19 @@ var router = new Router({
     }]
 })
 
-router.beforeEach((to, from, next) => {
-    loadingView.setGlobalLoading(true)
-    if (!to.matched.some(({meta}) => meta.setBkBizId)) {
-        delete loadingView.$axios.defaults.headers.bk_biz_id
+router.beforeEach(async (to, from, next) => {
+    routerVue.setGlobalLoading(true)
+    let isAuthorized = await routerVue.isAuthorized(to)
+    if (isAuthorized) {
+        if (!to.matched.some(({meta}) => meta.setBkBizId)) {
+            delete routerVue.$axios.defaults.headers.bk_biz_id
+        }
+        next()
+    } else {
+        next('/403')
     }
-    next()
 })
 router.afterEach((to, from) => {
-    loadingView.setGlobalLoading(false)
+    routerVue.setGlobalLoading(false)
 })
 export default router

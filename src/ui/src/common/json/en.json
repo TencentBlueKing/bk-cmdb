@@ -69,6 +69,15 @@
         "请选择": "Please Select",
         "更多属性": "More Properties"
     },
+    "Index": {
+        "首页": "Index",
+        "添加导航": "Add Navigation",
+        "取消导航": "Cancel Navigation",
+        "添加导航成功": "Add navigation success",
+        "取消导航成功": "Cancel navigation success",
+        "模型数量": "Model: 1 item | Models: {count} items",
+        "返回上级": "Return"
+    },
     "OperationAudit": {
         "操作审计": "Operation Audit",
         "请选择业务": "Please Select Business",
