@@ -180,7 +180,7 @@ data 字段说明
 
 ### 删除对象实例
 
-- API: DELETE  /api/{version}/inst/{bk_supplier_account}/{bk_biz_id}/{bk_inst_id}
+- API: DELETE  /api/{version}/inst/{bk_supplier_account}/{bk_obj_id}/{bk_inst_id}
 - API 名称：delete_inst
 - 功能说明：
 	- 中文： 删除实例
@@ -195,7 +195,7 @@ data 字段说明
 | 字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
 |bk_supplier_account|string|是|无|开发商账号|supplier account code|
-|bk_biz_id|int|是|无|业务ID|the application id|
+|bk_obj_id|int|是|无|对象ID|the object id|
 |bk_inst_id|int|是|无|实例ID|the inst id|
 
 
