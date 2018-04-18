@@ -265,19 +265,34 @@
                                                 <div v-if="item.isShow">
                                                     <div class="form-enum-wrapper" v-for="(field, fieldIndex) in item.option.list">
                                                         <span class="span-enum-radio" @click="item.option.defaultIndex = fieldIndex" title="设置为默认值" :class="{'active': fieldIndex === item.option.defaultIndex}"></span>
-                                                        <input type="text" placeholder="请输入名称英文数字"
-                                                            v-model.trim="field.name"
-                                                            maxlength="15"
-                                                            data-parsley-required="true"
-                                                            data-parsley-required-message="该字段是必填项"
-                                                            data-parsley-maxlength="15"
-                                                            :data-parsley-pattern="reg"
-                                                            data-parsley-pattern-message="包含了非法字符"
-                                                            data-parsley-trigger="blur"
-                                                            data-parsley-no-repeat="change"
-                                                            :data-parsley-errors-container="'#changeEnumError'+fieldIndex"
-                                                            @input="forceUpdate('change')"
-                                                        >
+                                                        <div class="fl">
+                                                            <input class="enum-id" type="text" placeholder="请输入ID"
+                                                                v-model.trim="field.id"
+                                                                maxlength="15"
+                                                                data-parsley-required="true"
+                                                                data-parsley-required-message="该字段是必填项"
+                                                                data-parsley-pattern="^[a-zA-Z0-9_]{1,20}$"
+                                                                data-parsley-pattern-message="包含了非法字符"
+                                                                data-parsley-trigger="blur"
+                                                                data-parsley-no-repeat="changeId"
+                                                                @input="forceUpdate('newId')"
+                                                            >
+                                                        </div>
+                                                        <div class="fl">
+                                                            <input type="text" placeholder="请输入名称英文数字"
+                                                                v-model.trim="field.name"
+                                                                maxlength="15"
+                                                                data-parsley-required="true"
+                                                                data-parsley-required-message="该字段是必填项"
+                                                                data-parsley-maxlength="15"
+                                                                :data-parsley-pattern="reg"
+                                                                data-parsley-pattern-message="包含了非法字符"
+                                                                data-parsley-trigger="blur"
+                                                                data-parsley-no-repeat="change"
+                                                                :data-parsley-errors-container="'#changeEnumError'+fieldIndex"
+                                                                @input="forceUpdate('change')"
+                                                            >
+                                                        </div>
                                                         <!-- <button class="bk-icon icon-arrows-up"
                                                             :disabled="fieldIndex === 0"
                                                             @click.prevent="enumUp('change',fieldIndex,index)"
@@ -783,19 +798,35 @@
                                     <div v-if="newFieldInfo.propertyType === 'enum'">
                                         <div class="form-enum-wrapper" v-for="(field, fieldIndex) in newFieldInfo.option.list">
                                             <span class="span-enum-radio" @click="newFieldInfo.option.defaultIndex = fieldIndex" title="设置为默认值" :class="{'active': fieldIndex === newFieldInfo.option.defaultIndex}"></span>
-                                            <input type="text" placeholder="请输入名称英文数字"
-                                                v-model.trim="field.name"
-                                                maxlength="15"
-                                                data-parsley-required="true"
-                                                data-parsley-required-message="该字段是必填项"
-                                                data-parsley-maxlength="15"
-                                                :data-parsley-pattern="reg"
-                                                data-parsley-pattern-message="包含了非法字符"
-                                                data-parsley-trigger="blur"
-                                                data-parsley-no-repeat="new"
-                                                :data-parsley-errors-container="'#newEnumError'+fieldIndex"
-                                                @input="forceUpdate('new')"
-                                            >
+                                            <div class="fl">
+                                                <input class="enum-id" type="text" placeholder="请输入ID"
+                                                    v-model.trim="field.id"
+                                                    maxlength="15"
+                                                    data-parsley-required="true"
+                                                    data-parsley-required-message="该字段是必填项"
+                                                    data-parsley-pattern="^[a-zA-Z0-9_]{1,20}$"
+                                                    data-parsley-pattern-message="包含了非法字符"
+                                                    data-parsley-trigger="blur"
+                                                    data-parsley-no-repeat="newId"
+                                                    @input="forceUpdate('newId')"
+                                                >
+                                            </div>
+                                            <div class="fl">
+                                                <input class="enum-name" type="text" placeholder="请输入名称英文数字"
+                                                    v-model.trim="field.name"
+                                                    maxlength="15"
+                                                    data-parsley-required="true"
+                                                    data-parsley-required-message="该字段是必填项"
+                                                    data-parsley-maxlength="15"
+                                                    :data-parsley-pattern="reg"
+                                                    data-parsley-pattern-message="包含了非法字符"
+                                                    data-parsley-trigger="blur"
+                                                    data-parsley-no-repeat="new"
+                                                    :data-parsley-errors-container="'#newEnumError'+fieldIndex"
+                                                    @input="forceUpdate('new')"
+                                                >
+                                                <div class="form-enum-error" :id="'newEnumError'+fieldIndex"></div>
+                                            </div>
                                             <!-- <button class="bk-icon icon-arrows-up"
                                                 :disabled="fieldIndex === 0"
                                                 @click.prevent="enumUp('new',fieldIndex)"
@@ -810,7 +841,6 @@
                                             ><i class="icon-cc-del"></i></button>
                                             <button class="bk-icon icon-plus" @click.prevent="addEnum('new',fieldIndex)" v-if="fieldIndex === (newFieldInfo.option.list.length -1)"></button>
                                             <!-- 表单验证错误信息容器 -->
-                                            <div class="form-enum-error" :id="'newEnumError'+fieldIndex"></div>
                                             <!-- 拖拽标识点，暂未实现，隐藏 -->
                                             <i class="form-enum-wrapper-dot" hidden></i>
                                         </div>
@@ -1726,7 +1756,7 @@
                         break
                     case 'enum':
                         this.newFieldInfo.option = {
-                            list: [{name: ''}],
+                            list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
                         // this.newFieldInfo.option = [{name: '', is_default: 0}]
@@ -2495,11 +2525,18 @@
         input {
             font-size: 12px;
             vertical-align: middle;
-            width: 350px;
+            // width: 350px;
             height: 30px;
             border-radius: 2px;
             border: 1px solid #bec6de;
             padding: 0 10px;
+            &.enum-id{
+                width: 90px;
+                margin-right: 10px;
+            }
+            &.enum-name{
+                width: 250px;
+            }
         }
         .enum-radio{
             display: inline-block;
