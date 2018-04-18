@@ -324,7 +324,14 @@ func (cli *appAction) GetAppSetModuleTreeByAppId(req *restful.Request, resp *res
 		return
 	}
 
-	appID := formData["ApplicationID"][0]
+	intAppID, err := util.GetInt64ByInterface(formData["ApplicationID"][0])
+
+	if nil != err {
+		blog.Error("getAppSetModuleTreeByAppID   appID:%v, error:%v", formData["ApplicationID"][0], err)
+		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
+		return
+	}
+	/*appID := formData["ApplicationID"][0]
 
 	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", cli.CC.TopoAPI(), common.BKDefaultOwnerID, appID)
 	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
@@ -347,7 +354,14 @@ func (cli *appAction) GetAppSetModuleTreeByAppId(req *restful.Request, resp *res
 	if false == ok {
 		blog.Error("assign error resDataV2 is not map[string]interface{}, resDataV2:%v", resDataV2)
 	}
-	defaultTopo, err := getDefaultTopo(req, appID, cli.CC.TopoAPI())
+	*/
+	topo, errCode := logics.GetAppTopo(req, cli.CC, common.BKDefaultOwnerID, intAppID)
+	if 0 != errCode {
+		converter.RespFailV2(errCode, defErr.Error(errCode).Error(), resp)
+		return
+	}
+
+	/*defaultTopo, err := getDefaultTopo(req, appID, cli.CC.TopoAPI())
 
 	if nil != err {
 		blog.Error("getDefaultTopo error")
@@ -356,7 +370,7 @@ func (cli *appAction) GetAppSetModuleTreeByAppId(req *restful.Request, resp *res
 	}
 	// combin idle pool set
 	topo = appendDefaultTopo(topo, defaultTopo)
-	blog.Infof("appendDefaultTopo topo:%v", topo)
+	blog.Infof("appendDefaultTopo topo:%v", topo)*/
 	//  get host number
 	if nil != topo {
 		setModuleHostCount([]map[string]interface{}{topo}, req)

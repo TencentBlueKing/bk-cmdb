@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package subscription
 
 import (
@@ -332,8 +332,8 @@ func (cli *subscriptionAction) Ping(req *restful.Request, resp *restful.Response
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		pjson := gjson.ParseBytes(value)
-		callbackurl := pjson.Get("bk_callback_url").String()
-		callbackBody := pjson.Get("bk_data").String()
+		callbackurl := pjson.Get("callback_url").String()
+		callbackBody := pjson.Get("data").String()
 
 		blog.Infof("requesting callback: %v,%s", callbackurl, callbackBody)
 		callbackreq, _ := http.NewRequest("POST", callbackurl, bytes.NewBufferString(callbackBody))
@@ -349,8 +349,8 @@ func (cli *subscriptionAction) Ping(req *restful.Request, resp *restful.Response
 			blog.Error("test distribute error:%v", err)
 		}
 		result := map[string]interface{}{}
-		result["bk_http_status"] = callbackResp.StatusCode
-		result["bk_response_body"] = string(callbackRespBody)
+		result["http_status"] = callbackResp.StatusCode
+		result["response_body"] = string(callbackRespBody)
 
 		return http.StatusOK, result, nil
 	}, resp)
@@ -368,7 +368,7 @@ func (cli *subscriptionAction) Telnet(req *restful.Request, resp *restful.Respon
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		pjson := gjson.ParseBytes(value)
-		callbackurl := pjson.Get("bk_callback_url").String()
+		callbackurl := pjson.Get("callback_url").String()
 		uri, err := getDailAddress(callbackurl)
 		if err != nil {
 			blog.Error("telent callback error:%v", err)
@@ -379,7 +379,7 @@ func (cli *subscriptionAction) Telnet(req *restful.Request, resp *restful.Respon
 		_, err = net.Dial("tcp", uri)
 		if err != nil {
 			blog.Error("telent callback error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribePingFailed)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeTelnetFailed)
 		}
 
 		return http.StatusOK, nil, nil

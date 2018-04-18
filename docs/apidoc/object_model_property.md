@@ -4,7 +4,7 @@
 - API:   POST /api/{version}/object/attr
 - API 名称：create_object_attribute
 - 功能说明：
-	- 中文： 新建呢模型属性
+	- 中文： 新建模型属性
 	- English：create object attribute 
 
 - input body
