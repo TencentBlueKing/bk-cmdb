@@ -21,10 +21,10 @@
             <p>此分类下无模型</p>
             <bk-button type="primary" class="create-btn" @click="createModel">立即创建</bk-button>
         </div>
-        <button class="bk-button vis-button vis-enable" v-if="addModelAvailable && disableModelList.length" @click="isShowDisableList = true">
+        <bk-button class="bk-button vis-button vis-enable" v-if="addModelAvailable && disableModelList.length" @click="isShowDisableList = true">
             <i class="bk-icon icon-minus-circle-shape"></i>
             <span class="vis-button-text">{{disableModelList.length}}</span>
-        </button>
+        </bk-button>
         <transition name="topo-disable-list">
             <div class="topo-disable" v-show="isShowDisableList">
                 <label class="disable-title">
@@ -123,12 +123,18 @@
             }
         },
         watch: {
-            'activeClassify.bk_classification_id' () {
+            'activeClassify' () {
                 this.isShowDisableList = false
                 this.init()
             }
         },
         methods: {
+            /*
+                编辑模型
+            */
+            editModel () {
+                this.$emit('editModel')
+            },
             /*
                 创建模型
             */
@@ -377,11 +383,9 @@
                 获取当前模型
             */
             getModelById (id) {
-                for (let i = 0; i < this.modelList.length; i++) {
-                    if (this.modelList[i]['bk_obj_id'] === id) {
-                        return this.modelList[i]
-                    }
-                }
+                return this.modelList.find(({bk_obj_id: bkObjId}) => {
+                    return bkObjId === id
+                })
             },
             /*
                 初始化拓扑图
@@ -442,7 +446,19 @@
             },
             async init () {
                 this.isTopoLoading = true
-                this.modelList = this.$deepClone(this.activeClassify['bk_objects'])
+                let modelList = this.$deepClone(this.activeClassify['bk_objects'])
+                for (let key in this.activeClassify['bk_asst_objects']) {
+                    let object = this.activeClassify['bk_asst_objects'][key]
+                    object.map(asstModel => {
+                        let model = modelList.find(({bk_classification_id: bkClassificationId}) => {
+                            return bkClassificationId === asstModel['bk_classification_id']
+                        })
+                        if (!model) {
+                            modelList.push(asstModel)
+                        }
+                    })
+                }
+                this.modelList = modelList
                 this.initEdges(await this.getTopoStructure())
                 this.initNodes()
             }
@@ -578,16 +594,17 @@
                 vertical-align: middle;
                 font-size: 12px;
                 margin: 0 3px;
-            },
+            }
             [class^="icon-cc-"],
-            .bk-icon{
+            .bk-icon,
+            &.bk-icon{
                 font-weight: bold;
                 font-size: 14px;
             }
-            &:not(.vis-create, .vis-del):hover{
+            &:not(.vis-create):hover{
                 color: #6eb1ff;
             }
-            &:not(.vis-create, .vis-del):active{
+            &:not(.vis-create):active{
                 color: #3188ed;
             }
         }

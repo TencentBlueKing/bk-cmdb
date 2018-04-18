@@ -24,7 +24,7 @@
             <template v-else>
                 <div class="relevance-none">
                     <img src="../../common/images/no-relevance.png" alt="">
-                    <div>当前还未有关联项</div>
+                    <div>{{$t("Common['当前还未有关联项']")}}</div>
                 </div>
             </template>
         </ul>
