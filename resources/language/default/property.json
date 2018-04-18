@@ -8,7 +8,6 @@
     "biz_property_operator": "操作人员",
     "biz_property_time_zone": "时区",
     "biz_property_language": "语言",
-
     "set_property_bk_biz_id": "业务ID",
     "set_property_bk_set_name": "集群名字",
     "set_property_bk_set_desc": "集群描述",
@@ -16,17 +15,14 @@
     "set_property_bk_service_status": "服务状态",
     "set_property_description": "备注",
     "set_property_bk_capacity": "设计容量",
-
     "module_property_bk_biz_id": "业务ID",
     "module_property_bk_set_id": "集群ID",
     "module_property_bk_module_name": "模块名",
     "module_property_bk_module_type": "模块类型",
     "module_property_operator": "主要维护人",
     "module_property_bk_bak_operator": "备份维护人",
-
     "plat_property_bk_cloud_name": "云区域",
     "plat_property_bk_supplier_account": "供应商",
-
     "host_property_bk_host_innerip": "内网IP",
     "host_property_bk_host_outerip": "外网IP",
     "host_property_operator": "主要维护人",
@@ -51,7 +47,6 @@
     "host_property_bk_outer_mac": "外网MAC",
     "host_property_create_time": "录入时间",
     "host_property_import_from": "录入方式",
-
     "process_property_bk_process_name": "进程名称",
     "process_property_bk_process_description": "进程描述",
     "process_property_bind_ip": "绑定IP",

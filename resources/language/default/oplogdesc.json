@@ -22,5 +22,5 @@
     "auditlog_update set": "修改集群",
     "auditlog_create module": "创建模块",
     "auditlog_delete module": "删除模块",
-    "auditlog_update module": "更新模块信息",
+    "auditlog_update module": "更新模块信息"
 }
