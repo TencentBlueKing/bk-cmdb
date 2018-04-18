@@ -20,7 +20,7 @@
                 :class="item['is_bind'] ? 'main-btn' : 'vice-btn'">
                 {{item['is_bind'] ? '已绑定' : '未绑定'}}
             </button>
-        </td>    
+        </td>
     </v-table>
 </template>
 
