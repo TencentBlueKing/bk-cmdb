@@ -189,8 +189,6 @@
     import vField from './children/field'
     import vLayout from './children/layout'
     import vOther from './children/other'
-    import vRule from './children/rule'
-    import vSort from './children/sort'
     import vTopo from '@/components/topo/topo'
     import {mapGetters, mapActions} from 'vuex'
     const iconList = require('@/common/json/modelIcon.json')
@@ -407,35 +405,6 @@
                     bk_classification_type: ''
                 }
             },
-            // checkParams () {
-            //     if (this.curTempClassify.bk_classification_name === '') {
-            //         this.$alertMsg('请填写模型分类名称')
-            //         return false
-            //     }
-            //     if (this.curTempClassify.bk_classification_id === '') {
-            //         this.$alertMsg('请填写模型分类ID')
-            //         return false
-            //     }
-            //     if (this.curTempClassify.bk_classification_name.length > 20) {
-            //         this.$alertMsg('模型分类名称最多为20个字符')
-            //         return false
-            //     }
-            //     let reg = new RegExp(/^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/)
-            //     if (!reg.test(this.curTempClassify.bk_classification_name)) {
-            //         this.$alertMsg('包含了非下划线的特殊字符')
-            //         return false
-            //     }
-            //     if (this.curTempClassify.bk_classification_id.length > 20) {
-            //         this.$alertMsg('模型分类ID最多为20个字符')
-            //         return false
-            //     }
-            //     reg = new RegExp(/^[A-Za-z][a-zA-Z0-9_]{1,20}$/)
-            //     if (!reg.test(this.curTempClassify.bk_classification_id)) {
-            //         this.$alertMsg('模型ID必须为英文')
-            //         return false
-            //     }
-            //     return true
-            // },
             /*
                 保存分类
             */
@@ -714,17 +683,6 @@
             */
             getTopogical () {
                 this.changeClassify()
-                // let params = {
-                //     ClassificationId: this.curClassify.ClassificationId
-                // }
-                // this.$axios.post(`object/classification/${this.getOwnerId}/objects`, params).then(res => {
-                //     if (res.result) {
-                //         this.topoList = res.data[0].Objects
-                //         this.setModelAttr()
-                //     } else {
-                //         this.$alertMsg(res['bk_error_msg'])
-                //     }
-                // })
             },
             getTopogical2 () {
                 let params = {
@@ -857,8 +815,6 @@
             vField,
             vLayout,
             vOther,
-            vSort,
-            vRule,
             vPop
         }
     }
