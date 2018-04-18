@@ -22,6 +22,11 @@
             @handlePageSizeChange="setCurrentSize"
             @handleTableSortClick="setCurrentSort"
             @handleRowClick="showProcessAttribute">
+            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }" v-if="property['bk_property_type'] === 'enum'">
+                <td>
+                    {{getEnumCell(item[id], property)}}
+                </td>
+            </template>
         </v-table>
         <v-side-slider
             :isShow.sync="slider.isShow"
@@ -132,7 +137,8 @@
                     } = property
                     let headerItem = {
                         id: bkPropertyId,
-                        name: bkPropertyName
+                        name: bkPropertyName,
+                        property: property
                     }
                     if (isonly && isrequired) {
                         headerLead.push(headerItem)
@@ -151,6 +157,14 @@
             }
         },
         methods: {
+            getEnumCell (data, property) {
+                let obj = property.option.find(({id}) => {
+                    return id === data
+                })
+                if (obj) {
+                    return obj.name
+                }
+            },
             createProcess () {
                 this.slider.title.text = '新增进程'
                 this.slider.tab.active = 'attribute'

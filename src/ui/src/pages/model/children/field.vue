@@ -279,7 +279,7 @@
                                                             >
                                                         </div>
                                                         <div class="fl">
-                                                            <input type="text" placeholder="请输入名称英文数字"
+                                                            <input class="enum-name" type="text" placeholder="请输入名称英文数字"
                                                                 v-model.trim="field.name"
                                                                 maxlength="15"
                                                                 data-parsley-required="true"

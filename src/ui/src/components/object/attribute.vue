@@ -431,9 +431,12 @@
                     } else if (bkPropertyType === 'time') {
                         return this.$formatTime(value)
                     } else if (bkPropertyType === 'enum') {
-                        return property.option.find(({id}) => {
+                        let obj = property.option.find(({id}) => {
                             return id === value
-                        })['name']
+                        })
+                        if (obj) {
+                            return obj.name
+                        }
                     } else {
                         return value
                     }

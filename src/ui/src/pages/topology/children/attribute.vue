@@ -67,6 +67,9 @@
                             <template v-if="property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst'">
                                 {{getAsstLabel(formValues[property['bk_property_id']])}}
                             </template>
+                            <template v-else-if="property['bk_property_type'] === 'enum'">
+                                {{getEnumLabel(formValues[property['bk_property_id']], property)}}
+                            </template>
                             <template v-else>
                                 {{localValues[property['bk_property_id']]}}
                             </template>
@@ -233,6 +236,16 @@
                 }
                 return value
             },
+            getEnumLabel (value, property) {
+                if (value) {
+                    let obj = property.option.find(({id}) => {
+                        return id === value
+                    })
+                    if (obj) {
+                        return obj.name
+                    }
+                }
+            },
             setDate (date, bkPropertyId) {
                 if (this.localValues.hasOwnProperty(bkPropertyId)) {
                     this.localValues[bkPropertyId] = date
@@ -261,7 +274,7 @@
                 }
                 if (property.hasOwnProperty('option')) {
                     if (bkPropertyType === 'int') {
-                        option = JSON.parse(option)
+                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min')) {
                             rules['min_value'] = option.min
                         }
