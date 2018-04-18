@@ -1,5 +1,8 @@
 [
     {
+        "value": "icon-cc-business"
+    },
+    {
         "value": "icon-cc-square"
     },
     {
@@ -64,9 +67,6 @@
     },
     {
         "value": "icon-cc-triangle"
-    },
-    {
-        "value": "icon-cc-business"
     },
     {
         "value": "icon-cc-columnar"

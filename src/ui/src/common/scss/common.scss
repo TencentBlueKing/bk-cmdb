@@ -326,7 +326,7 @@ body{
             white-space: break-word;
             white-space: nowrap;
         }
-        .sideslider > .content{
+        .sideslider > .slide-content{
             height: calc(100% - 60px);
             .bk-tab2{
                 height: 100%;
@@ -725,4 +725,7 @@ body[lang="en"]{
 .is-danger{
     color: #ff5656;
     font-size: 12px;
+}
+.bk-date .date-dropdown-panel{
+    z-index: 1111;
 }

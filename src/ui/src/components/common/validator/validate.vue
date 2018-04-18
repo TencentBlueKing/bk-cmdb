@@ -1,5 +1,6 @@
 <template>
-    <span class="form-validate-message" v-show="$parent.errors.has(name)">{{$parent.errors.first(name)}}</span>
+    <!-- <span class="form-validate-message" v-show="$parent.errors.has(name)">{{$parent.errors.first(name)}}</span> -->
+    <span class="form-validate-message" v-show="$parent.errors.has(name)">内容不合法</span>
 </template>
 <script>
     export default {

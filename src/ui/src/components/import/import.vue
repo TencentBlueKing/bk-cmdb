@@ -10,7 +10,7 @@
 
 <template lang="html">
     <div>
-        <div class="up-file upload-file">
+        <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
             <img src="../../common/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
             <i18n path="Inst['导入提示']" tag="p" :places="{allowType: allowType.join(','), maxSize: maxSize}">
@@ -85,6 +85,7 @@
         },
         data () {
             return {
+                isLoading: false,
                 uploaded: false,
                 failed: false,
                 fileInfo: {
@@ -122,6 +123,7 @@
                     this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
                     let formData = new FormData()
                     formData.append('file', files[0])
+                    this.isLoading = true
                     this.$axios.post(this.importUrl, formData).then(res => {
                         this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
                         if (res.result) {
@@ -142,8 +144,10 @@
                         this.$nextTick(() => {
                             this.calcFailListHeight()
                         })
+                        this.isLoading = false
                     }).catch(error => {
                         this.reset()
+                        this.isLoading = false
                         this.$emit('error', error)
                     })
                 }
@@ -190,7 +194,7 @@
                 color:#bec6de;
             }
             .click-text{
-                color:#498fe0;
+                color: #3c96ff;
                 cursor:pointer;
                 position:relative;
             }
@@ -199,7 +203,7 @@
     .input-file{
         left: 0;
         top: 0;
-        color: #498fe0;
+        color: #3c96ff;
         cursor: pointer;
         position: relative;
         border: none !important;
@@ -214,10 +218,10 @@
         border: none;
         background: #fff;
         padding: 0;
-        color: #498fe0;
+        color: #3c96ff;
         outline: none;
         &:hover{
-            color:#498fe0;
+            color:#3c96ff;
         }
     }
 
@@ -235,7 +239,7 @@
         transition: all .5s ease;
         &:hover{
             background-color: #fff;
-            border-color: #498fe0;
+            border-color: #3c96ff;
             box-shadow: 0 4px 6px rgba(0,0,0,.1);
             p {
                 color: #6b7baa;
@@ -248,7 +252,7 @@
             font-weight: bold;
             color: #bec6de;
             b {
-                color: #498fe0;
+                color: #3c96ff;
             }
         }
     }
