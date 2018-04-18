@@ -1,5 +1,8 @@
 {
-    "apiv2_set_default_name":"idle pool",
-
-    "":""
+    "apiv2_set_default_name": "idle pool",
+    "apiv2_module_type_error": "Incorrect module type",
+    "apiv2_module_edit_multi_module_name": "Only one module can be updated at a time",
+    "apiv2_module_name_lt_24": "The module name cannot be longer than 24 bytes.",
+    "apiv2_set_name_lt_24": "The cluster name cannot exceed 24 bytes in length",
+    "": ""
 }
