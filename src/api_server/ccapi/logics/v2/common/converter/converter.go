@@ -191,6 +191,12 @@ func ResToV2ForModuleMapList(respV3 string) (interface{}, error) {
 		if itemMap[common.BKModuleNameField].(string) == common.DefaultResModuleName {
 			itemMap[common.BKDefaultField] = "1"
 		}
+		moduleType, ok := itemMap[common.BKModuleTypeField]
+		if false == ok || nil == moduleType {
+			moduleType = "1"
+		}
+		moduleType = fmt.Sprintf("%v", moduleType)
+
 		resDataV2 = append(resDataV2, map[string]interface{}{
 			"ModuleID":      convMap[common.BKModuleIDField],
 			"ApplicationID": convMap[common.BKAppIDField],
@@ -200,7 +206,8 @@ func ResToV2ForModuleMapList(respV3 string) (interface{}, error) {
 			"Default":    itemMap[common.BKDefaultField],
 			//"Description": "",
 			//"Operator": "",
-			"SetID": convMap[common.BKSetIDField],
+			"ModuleType": moduleType,
+			"SetID":      convMap[common.BKSetIDField],
 		})
 	}
 
@@ -813,6 +820,19 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	}
 	maintainer = strings.Replace(maintainer, ",", ";", -1)
 	productPm = strings.Replace(productPm, ",", ";", -1)
+	lifecycle := ""
+	if nil != itemMap["life_cycle"] {
+		lifecycle, _ = itemMap["life_cycle"].(string)
+	}
+	language := "中文"
+	if nil != itemMap["language"] {
+		language, _ = itemMap["language"].(string)
+	}
+
+	timeZone := "Asia/Shanghai"
+	if nil != itemMap[common.BKTimeZoneField] {
+		timeZone, _ = itemMap[common.BKTimeZoneField].(string)
+	}
 	itemMapV2 := map[string]interface{}{
 		"ApplicationName": itemMap[common.BKAppNameField],
 		//"Description": "",
@@ -828,12 +848,13 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		"CompanyID":   "0",
 		"Owner":       "",
 		"ProductPm":   productPm,
-		"LifeCycle":   "1",
+		"LifeCycle":   lifecycle,
+		"Lanuage":     language,
+		"TimeZone":    timeZone,
 
 		"LastTime":   convertToV2Time(itemMap[common.LastTimeField]),
 		"DeptName":   "",
 		"CreateTime": convertToV2Time(itemMap[common.CreateTimeField]),
-		"TimeZone":   itemMap[common.BKTimeZoneField],
 	}
 	return itemMapV2, nil
 }

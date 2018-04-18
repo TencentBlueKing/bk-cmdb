@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package application
 
 import (
@@ -100,6 +100,7 @@ func (cli *moduleAction) GetModulesByApp(req *restful.Request, resp *restful.Res
 func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Response) {
 	blog.Debug("updateModule start!")
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	err := req.Request.ParseForm()
 	if err != nil {
@@ -143,13 +144,12 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 	if "" != Operator {
 		reqData[common.BKBakOperatorField] = BakOperator
 	}
-	if "" != Operator {
+	if "" != ModuleType {
 		if ModuleType == "1" {
-			ModuleType = "普通"
 		} else if ModuleType == "2" {
-			ModuleType = "数据库"
+
 		} else {
-			msg := "模块类型不正确"
+			msg := defLang.Language("apiv2_module_type_error")
 			blog.Error("updateModule error:%v", msg)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 			return
@@ -161,13 +161,13 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 	if len(moduleIDArr) == 1 && len(formData["ModuleName"]) > 0 {
 		reqData[common.BKModuleNameField] = moduleName
 	} else {
-		msg := "一次只能更新一个模块"
+		msg := defLang.Language("apiv2_module_edit_multi_module_name") //"一次只能更新一个模块"
 		blog.Debug("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	if len(moduleName) > 24 {
-		msg := "模块名长度不能大于24个字节"
+		msg := defLang.Language("apiv2_module_name_lt_24") //"模块名长度不能大于24个字节"
 		blog.Debug("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
@@ -236,7 +236,7 @@ func (cli *moduleAction) AddModule(req *restful.Request, resp *restful.Response)
 		if moduleType == "普通" || moduleType == "数据库" {
 			reqParam[common.BKModuleTypeField] = moduleType
 		} else {
-			msg = "bk_module_type 不正确"
+			msg := defLang.Language("apiv2_module_type_error")
 			blog.Error("addModule error: %s", msg)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 			return
@@ -246,7 +246,7 @@ func (cli *moduleAction) AddModule(req *restful.Request, resp *restful.Response)
 	}
 
 	if "1" != moduleType && "2" != moduleType {
-		msg = "bk_module_type 不正确"
+		msg := defLang.Language("apiv2_module_type_error")
 		blog.Error("addModule error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
