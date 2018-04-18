@@ -393,7 +393,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		asst[common.BKObjIDField] = objID
 		searchData, _ = json.Marshal(asst)
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
-		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 		if nil != asstErr {
 			blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
@@ -443,11 +443,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// create single inst
-<<<<<<< HEAD
-		status, rst, _, err := createFunc(forward, req, defErr, input, ownerID, objID, false, nil, attdes)
-=======
-		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, asstDes, attdes)
->>>>>>> qq/master
+		status, rst, _, err := createFunc(forward, req, defErr, input, ownerID, objID, false, asstDes, attdes)
 		return status, rst, err
 
 	}, resp)
@@ -683,7 +679,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// set the inst association table
-		if err := cli.updateInstAssociation(instID, ownerID, objID, data); nil != err {
+		if err := cli.updateInstAssociation(forward, instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
 
