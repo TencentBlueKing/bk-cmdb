@@ -1,35 +1,46 @@
 package api
 
 import (
+	"configcenter/src/framework/core/input"
+	"configcenter/src/framework/core/manager"
 	"configcenter/src/framework/core/publisher"
 	"configcenter/src/framework/core/timer"
 	"context"
 )
 
-// CreateFramework create a new framework
-func CreateFramework() (*Framework, error) {
+//  mgr the global variable for the manager
+var mgr *manager.Manager
+
+func init() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// create Framework
-	fr := &Framework{
-		workers: MapWorker{},
-		context: ctx,
-		cancel:  cancel,
-	}
+	mgr = manager.New()
 
 	/** initialize the default configuration */
 
+	// set inputer manager
+	mgr.InputerMgr = input.New()
+
 	// set the timer
-	fr.Timer = timer.New(ctx)
+	mgr.Timer = timer.New(ctx)
 
 	// set publisher manager
-	fr.Publisher = publisher.New()
+	mgr.Publisher = publisher.New()
 
-	return fr, nil
+	/** start the main business loop */
+	go mgr.Run(ctx, cancel)
+
 }
 
-// DestoryFramework destory the framework
-func DestoryFramework(fr *Framework) error {
-	return fr.stop()
+// UnInit destory the framework
+func UnInit() error {
+	defer func() {
+		mgr = nil
+	}()
+	if nil == mgr {
+		return nil
+	}
+	return manager.Delete(mgr)
 }
