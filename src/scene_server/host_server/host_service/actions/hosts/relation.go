@@ -356,7 +356,6 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		//fmt.Println(moduleURL)
 		conds := make(map[string]interface{})
 		moduleNameLogKey := "idle"
 		if common.DefaultResModuleName == moduleName {
@@ -392,7 +391,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 			}
 			if false == bl {
-				blog.Error("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
+				blog.Error("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, hostID)
 			}
 
