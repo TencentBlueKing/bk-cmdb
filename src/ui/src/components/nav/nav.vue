@@ -15,6 +15,14 @@
         </div>
         <div class="nav-list">
             <ul>
+                <li :class="{open: $route.path === '/'}">
+                    <router-link exact to="/" title="首页">
+                        <span class="icon-box">
+                            <i class="bk-icon icon-home-shape"></i>
+                        </span>
+                        <span class="nav-name text-hd">首页</span>
+                    </router-link>
+                </li>
                 <template v-for="(navType, navIndex) in navigationOrder">
                     <li v-if="navigation[navType] && navigation[navType]['authorized'] && navigation[navType]['children'].length"
                         :class="{'open': navigation[navType]['isOpen']}"
@@ -222,8 +230,8 @@
             checkAuthority () {
                 if (this.authority && Object.keys(this.authority).length && this.allClassify.length) {
                     let currentPath = this.$route.path
-                    // let currentPath = this.$route.fullPath
-                    if (currentPath !== '/403' && currentPath !== '/404') {
+                    let doNotCheckPath = ['/', '/403', '/404']
+                    if (!doNotCheckPath.includes(currentPath)) {
                         let isAuthorized = false
                         for (let navType in this.navigation) {
                             this.navigation[navType]['children'].map(({authorized, path}) => {

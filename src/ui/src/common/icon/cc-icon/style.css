@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?wpsvmi');
-  src:  url('fonts/icomoon.eot?wpsvmi#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?wpsvmi') format('truetype'),
-    url('fonts/icomoon.woff?wpsvmi') format('woff'),
-    url('fonts/icomoon.svg?wpsvmi#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?u4dn23');
+  src:  url('fonts/icomoon.eot?u4dn23#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?u4dn23') format('truetype'),
+    url('fonts/icomoon.woff?u4dn23') format('woff'),
+    url('fonts/icomoon.svg?u4dn23#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -81,10 +81,10 @@
 .icon-cc-create-business:before {
   content: "\e912";
 }
-.icon-cc-cube-entity:before {
+.icon-cc-cube:before {
   content: "\e913";
 }
-.icon-cc-cube:before {
+.icon-cc-cube-entity:before {
   content: "\e914";
 }
 .icon-cc-curve:before {
@@ -123,13 +123,13 @@
 .icon-cc-home:before {
   content: "\e920";
 }
-.icon-cc-host-breakdown:before {
+.icon-cc-host:before {
   content: "\e921";
 }
-.icon-cc-host-free-pool:before {
+.icon-cc-host-breakdown:before {
   content: "\e922";
 }
-.icon-cc-host:before {
+.icon-cc-host-free-pool:before {
   content: "\e923";
 }
 .icon-cc-icon-city:before {
@@ -156,47 +156,47 @@
 .icon-cc-lock:before {
   content: "\e92b";
 }
-.icon-cc-logo-text .path1:before {
+.icon-cc-logo:before {
   content: "\e92c";
+}
+.icon-cc-logo-text .path1:before {
+  content: "\e92d";
   color: rgb(255, 255, 255);
 }
 .icon-cc-logo-text .path2:before {
-  content: "\e92d";
+  content: "\e92e";
   margin-left: -1em;
   color: rgb(0, 0, 0);
 }
 .icon-cc-logo-text .path3:before {
-  content: "\e92e";
-  margin-left: -1em;
-  color: rgb(255, 255, 255);
-}
-.icon-cc-logo-text .path4:before {
   content: "\e92f";
   margin-left: -1em;
   color: rgb(255, 255, 255);
 }
-.icon-cc-logo-text .path5:before {
+.icon-cc-logo-text .path4:before {
   content: "\e930";
   margin-left: -1em;
   color: rgb(255, 255, 255);
 }
-.icon-cc-logo-text .path6:before {
+.icon-cc-logo-text .path5:before {
   content: "\e931";
   margin-left: -1em;
   color: rgb(255, 255, 255);
 }
-.icon-cc-logo-text .path7:before {
+.icon-cc-logo-text .path6:before {
   content: "\e932";
   margin-left: -1em;
   color: rgb(255, 255, 255);
 }
-.icon-cc-logo-text .path8:before {
+.icon-cc-logo-text .path7:before {
   content: "\e933";
   margin-left: -1em;
   color: rgb(255, 255, 255);
 }
-.icon-cc-logo:before {
+.icon-cc-logo-text .path8:before {
   content: "\e934";
+  margin-left: -1em;
+  color: rgb(255, 255, 255);
 }
 .icon-cc-logout:before {
   content: "\e935";
@@ -225,10 +225,10 @@
 .icon-cc-pie-chart:before {
   content: "\e93d";
 }
-.icon-cc-plus-circle:before {
+.icon-cc-plus:before {
   content: "\e93e";
 }
-.icon-cc-plus:before {
+.icon-cc-plus-circle:before {
   content: "\e93f";
 }
 .icon-cc-process:before {
@@ -303,18 +303,21 @@
 .icon-cc-switch:before {
   content: "\e957";
 }
-.icon-cc-triangle-sider:before {
+.icon-cc-thumbtack:before {
   content: "\e958";
 }
 .icon-cc-triangle:before {
   content: "\e959";
 }
-.icon-cc-user:before {
+.icon-cc-triangle-sider:before {
   content: "\e95a";
 }
-.icon-cc-win7:before {
+.icon-cc-user:before {
   content: "\e95b";
 }
-.icon-cc-wireless:before {
+.icon-cc-win7:before {
   content: "\e95c";
+}
+.icon-cc-wireless:before {
+  content: "\e95d";
 }

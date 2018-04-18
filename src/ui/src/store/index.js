@@ -19,6 +19,7 @@ import process from './modules/process'
 import index from './modules/index'
 import hostTransferPop from './modules/hostTransferPop'
 import hostSnapshot from './modules/hostSnapshot'
+import usercustom from './modules/usercustom'
 
 Vue.use(Vuex)
 
@@ -28,6 +29,7 @@ export default new Vuex.Store({
         process,
         index,
         hostTransferPop,
-        hostSnapshot
+        hostSnapshot,
+        usercustom
     }
 })

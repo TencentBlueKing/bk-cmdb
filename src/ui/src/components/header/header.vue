@@ -120,7 +120,7 @@
             quickSearch () {
                 if (this.searchText.length) {
                     bus.$emit('quickSearch')
-                    this.$router.push('/')
+                    this.$router.push('/hosts')
                 }
             },
             showQuickSearch () {
