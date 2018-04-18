@@ -7,8 +7,14 @@ import (
 // InputerStatus the inputer status type definition.
 type InputerStatus int
 
+// InputerType the inputer type definition
+type InputerType int
+
 // InputerKey the inputer name
 type InputerKey string
+
+// MapInputer inputer object
+type MapInputer map[InputerKey]*wrapInputer
 
 // Inputer status type
 const (
@@ -27,14 +33,36 @@ const (
 	ExceptionExitStatus
 )
 
-// MapInputer inputer object
-type MapInputer map[InputerKey]*wrapInputer
+// InputerType definition
+const (
+	// ExecuteOnce only execute onece, non-blocking
+	ExecuteOnce InputerType = iota
+
+	// ExecuteTiming timing execute
+	ExecuteTiming
+
+	// ExecuteLoop loop execution does not exit, blocking
+	ExecuteLoop
+
+	// ExecuteTransaction execute once as a transaction, non-blocking
+	ExecuteTransaction
+
+	// ExecuteTimingTransaction, non-blocking
+	ExecuteTimingTransaction
+)
+
+// InputerParams the inputer params
+type InputerParams struct {
+	IsBlock bool
+	Target  Inputer
+	Kind    InputerType
+}
 
 // Manager is the interface that must be implemented by every input manager.
 type Manager interface {
 
 	// AddInputer add a new inputer
-	AddInputer(target Inputer) InputerKey
+	AddInputer(params InputerParams) InputerKey
 
 	// RemoveInputer remove the Inputer by a WorkerKey
 	RemoveInputer(key InputerKey)
@@ -49,43 +77,14 @@ type Manager interface {
 // Inputer is the interface that must be implemented by every Inputer.
 type Inputer interface {
 
-	// IsBlock true is block , false is non-blocking
-	IsBlock() bool
-
 	// Description the Inputer description.
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
-	// Run the input main loop. This should block until singnalled to stop by invocation of the Stop() method.
-	Run() error
+	// Input input data
+	Input() error
 
 	// Stop is the invoked to signal that the Run() method should its execution.
 	// It will be invoked at most once.
 	Stop() error
-}
-
-// wrapInputer the Inputer wrapper
-type wrapInputer struct {
-	status  InputerStatus
-	inputer Inputer
-}
-
-func (cli *wrapInputer) SetStatus(status InputerStatus) {
-	cli.status = status
-}
-
-func (cli *wrapInputer) GetStatus() InputerStatus {
-	return cli.status
-}
-
-func (cli *wrapInputer) Name() string {
-	return cli.inputer.Name()
-}
-
-func (cli *wrapInputer) Run() error {
-	return cli.inputer.Run()
-}
-
-func (cli *wrapInputer) Stop() {
-	cli.inputer.Stop()
 }

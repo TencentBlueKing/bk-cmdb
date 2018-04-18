@@ -4,7 +4,7 @@ import (
 	"configcenter/src/framework/api"
 	"context"
 
-	_ "configcenter/src/framework/example" // load example
+	_ "configcenter/src/framework/plugins" // load all plugins
 )
 
 func main() {

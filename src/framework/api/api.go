@@ -3,8 +3,7 @@ package api
 import (
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/manager"
-	"configcenter/src/framework/core/publisher"
-	"configcenter/src/framework/core/timer"
+	"configcenter/src/framework/core/output"
 	"context"
 )
 
@@ -20,14 +19,11 @@ func init() {
 
 	/** initialize the default configuration */
 
+	// set outputer manager
+	mgr.OutputerMgr = output.New()
+
 	// set inputer manager
 	mgr.InputerMgr = input.New()
-
-	// set the timer
-	mgr.Timer = timer.New(ctx)
-
-	// set publisher manager
-	mgr.Publisher = publisher.New()
 
 	/** start the main business loop */
 	go mgr.Run(ctx, cancel)

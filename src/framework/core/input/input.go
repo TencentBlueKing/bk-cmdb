@@ -14,12 +14,16 @@ type manager struct {
 	inputers    MapInputer
 }
 
-func (cli *manager) AddInputer(target Inputer) InputerKey {
+func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	key := makeInputerKey()
 
 	cli.inputerLock.Lock()
-	cli.inputers[key] = &wrapInputer{inputer: target, status: NormalStatus}
+	cli.inputers[key] = &wrapInputer{
+		inputer: params.Target,
+		status:  NormalStatus,
+		kind:    params.Kind,
+	}
 	cli.inputerLock.Unlock()
 
 	return key
@@ -32,21 +36,6 @@ func (cli *manager) RemoveInputer(key InputerKey) {
 	defer cli.inputerLock.Unlock()
 
 	deleteInputer(cli.inputers, key)
-}
-
-// executeInputer start the Inputer
-func (cli *manager) executeInputer(Inputer *wrapInputer) {
-
-	log.Infof("the Inputer(%s) will to run", Inputer.Name())
-
-	if err := Inputer.Run(); nil != err {
-		log.Errorf("the Inputer(%s) exit from business cycle, the error is %s", Inputer.Name(), err.Error())
-		Inputer.SetStatus(ExceptionExitStatus)
-		return
-	}
-
-	log.Infof("the Inputer(%s) normal exit", Inputer.Name())
-	Inputer.SetStatus(StoppedStatus)
 }
 
 // Stop used to stop the business cycles.

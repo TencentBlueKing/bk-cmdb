@@ -2,6 +2,7 @@ package example
 
 import (
 	"configcenter/src/framework/api"
+	"configcenter/src/framework/core/output"
 	"fmt"
 )
 
@@ -16,7 +17,7 @@ type myInputer struct {
 
 // IsBlock true is block , false is non-blocking
 func (cli *myInputer) IsBlock() bool {
-	return true
+	return false
 }
 
 // Description the Inputer description.
@@ -25,9 +26,19 @@ func (cli *myInputer) Name() string {
 	return "name_myinputer"
 }
 
-// Run the input main loop. This should block until singnalled to stop by invocation of the Stop() method.
-func (cli *myInputer) Run() error {
+// Input the input main loop. This should block until singnalled to stop by invocation of the Stop() method.
+func (cli *myInputer) Input() error {
 	fmt.Println("my_inputer")
+
+	_, sender, _ := api.CreateCustomOutputer("example_output", func(data output.MapStr) error {
+		fmt.Println("outputer:", data)
+		return nil
+	})
+	fmt.Println("put:", sender)
+	sender.Put(output.MapStr{
+		"test": "outputer",
+		"hoid": "",
+	})
 	return nil
 }
 

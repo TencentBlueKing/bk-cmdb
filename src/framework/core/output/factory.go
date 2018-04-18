@@ -1,6 +1,11 @@
 package output
 
-// New create a new Output instance
-func New() Outputer{
-    return Output{}
+// New create a new Manager instance
+func New() Manager {
+
+	mgr := &manager{
+		outputers: MapOutputer{},
+	}
+
+	return mgr
 }
