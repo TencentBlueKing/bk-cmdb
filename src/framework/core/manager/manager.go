@@ -2,16 +2,14 @@ package manager
 
 import (
 	"configcenter/src/framework/core/input"
-	"configcenter/src/framework/core/publisher"
-	"configcenter/src/framework/core/timer"
+	"configcenter/src/framework/core/output"
 	"context"
 )
 
 // Manager contains the basic framework data and the publisher client used to publis events.
 type Manager struct {
-	InputerMgr input.Manager
-	Timer      timer.Timer
-	Publisher  publisher.Publisher
+	OutputerMgr output.Manager
+	InputerMgr  input.Manager
 }
 
 // stop used to stop the business cycles.
