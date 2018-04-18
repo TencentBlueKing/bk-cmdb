@@ -349,8 +349,8 @@ func (cli *subscriptionAction) Ping(req *restful.Request, resp *restful.Response
 			blog.Error("test distribute error:%v", err)
 		}
 		result := map[string]interface{}{}
-		result["bk_http_status"] = callbackResp.StatusCode
-		result["bk_response_body"] = string(callbackRespBody)
+		result["http_status"] = callbackResp.StatusCode
+		result["response_body"] = string(callbackRespBody)
 
 		return http.StatusOK, result, nil
 	}, resp)
