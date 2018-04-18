@@ -276,6 +276,59 @@ host_info object 说明：
 | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
 | data | null | 请求返回的数据 |the data response|
 
+### 转移主机至模块
+* API:  POST /api/{version}/hosts/modules/biz/mutiple
+* API名称： transfer_host_to_mutiple_biz_modules
+* 功能说明：
+	* 中文：转移主机至模块，此模块属于不同业务
+	* English ：transfer host to module,this module belongs to different business
+* input boy:
+* input:
+```
+{
+    "bk_biz_id":10,
+    "bk_module_id":58,
+    "host_info":[
+     {
+       "bk_host_innerip":"10.20.30.45",
+       "bk_cloud_id":0
+    }]
+}
+```
+* input字段说明:
+
+| 名称  | 类型 |必填| 默认值 | 说明 |Description|
+| ---  | ---  | --- |---  | --- | ---|
+| bk_biz_id| int| 是|无|业务id | business ID|
+| bk_host_id| int array| 是| 无|主机id| host ID|
+| host_info| object array| 是| 无|主机信息| 主机信息数组|
+
+host_info说明：
+
+| 名称  | 类型 |必填| 默认值 | 说明 |Description|
+| ---  | ---  | --- |---  | --- | ---|
+| bk_host_innerip| string| 是|无|主机内网ip | host inner ip|
+| bk_cloud_id| int | 是| 无|主机云区域ID| host cloud ID|
+
+* output:
+```
+{
+    "result":true,
+    "bk_error_code":0,
+    "bk_error_msg":"success",
+    "data":"sucess"
+}
+```
+
+* output字段说明
+
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
+
 
 
 

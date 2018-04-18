@@ -246,13 +246,12 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 	}
 
 	data := rstRes.Data.(map[string]interface{})
-	count, ok := data["count"]
-	if !ok {
+	count, err := util.GetIntByInterface(data["count"])
+	if nil != err {
 		blog.Error("get data error :%v", data)
 		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
 	}
-	cnt := count.(float64)
-	if cnt != 0 {
+	if 0 != count {
 		blog.Error("duplicate data ")
 		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 	}
@@ -309,16 +308,15 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 		return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
 	}
 	data := rstRes.Data.(map[string]interface{})
-	count, ok := data["count"]
-	if !ok {
+	count, err := util.GetIntByInterface(data["count"])
+	if nil != err {
 		err := "data false"
 		blog.Error("data struct false %v", err)
 		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
 	}
-	cnt := count.(float64)
-	if cnt == 0 {
+	if 0 == count {
 		return true, nil
-	} else if cnt == 1 {
+	} else if 1 == count {
 		info, ok := data["info"]
 		if false == ok {
 			blog.Error("data struct false lack info %v", data)
@@ -337,13 +335,12 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 				blog.Error("data struct false no objID%v", objIDName)
 				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 			}
-			instIDcic64, err := util.GetInt64ByInterface(instIDc)
+			instIDci, err := util.GetIntByInterface(instIDc)
 
 			if nil != err {
-				blog.Error("data struct false no instID not int 64, error info is %s", err.Error())
+				blog.Error("instID not int , error info is %s", err.Error())
 				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 			}
-			instIDci := int(instIDcic64)
 			if instIDci == instID {
 				return true, nil
 			}
