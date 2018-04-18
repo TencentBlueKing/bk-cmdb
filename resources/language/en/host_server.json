@@ -1,7 +1,7 @@
 {
     "host_search_fail": "Survey main machine communication bad lost",
     "host_search_fail_with_errmsg": "Survey mainframe breathless,% s",
-    "host_import_innerip_empty": "% d line inline ip sky",
+    "host_import_innerip_empty": "% d line inner ip empty",
     "host_import_property_need_set": "% d line network% s required",
     "host_import_update_fail": "% d line% s update failed% v",
     "host_import_add_fail": "% d line% s new failed% s",
