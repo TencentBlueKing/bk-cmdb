@@ -582,10 +582,10 @@
                 this.attr.type = type
                 if (type === 'create') {
                     this.slider.title.icon = 'icon-cc-create-business'
-                    this.slider.title.text = `${this.$t("Common['创建']")}${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['创建']")} ${this.objName}`
                 } else {
                     this.slider.title.icon = 'icon-cc-edit'
-                    this.slider.title.text = `${this.$t("Common['编辑']")}${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['编辑']")} ${this.objName}`
                 }
                 this.slider.isShow = true
             },
@@ -611,9 +611,12 @@
                 return label.join(',')
             },
             getEnumCell (data, property) {
-                return property.option.find(({id}) => {
+                let obj = property.option.find(({id}) => {
                     return id === data
-                })['name']
+                })
+                if (obj) {
+                    return obj.name
+                }
             }
         },
         mounted () {

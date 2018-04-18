@@ -145,7 +145,11 @@
             }
         },
         computed: {
-            ...mapGetters(['bkBizList', 'bkSupplierAccount']),
+            ...mapGetters([
+                'bkBizList',
+                'bkSupplierAccount',
+                'language'
+            ]),
             hasSelectedHost () {
                 return this.index.selectedHost.length
             },
@@ -167,9 +171,24 @@
             },
             confirmTransfer (selected, index) {
                 let h = this.$createElement
-                this.$bkInfo({
-                    title: this.$t("HostResourcePool['请确认是否转移']"),
-                    content: h('p', [
+                let content = ''
+                if (this.language === 'en') {
+                    content = h('p', [
+                        h('span', 'Selected '),
+                        h('span', {
+                            style: {
+                                color: '#3c96ff'
+                            }
+                        }, this.index.selectedHost.length),
+                        h('span', ' Hosts Transfer to Idle machine under '),
+                        h('span', {
+                            style: {
+                                color: '#3c96ff'
+                            }
+                        }, selected.label)
+                    ])
+                } else {
+                    content = h('p', [
                         h('span', '选中的 '),
                         h('span', {
                             style: {
@@ -183,7 +202,11 @@
                             }
                         }, selected.label),
                         h('span', ' 下的空闲机模块')
-                    ]),
+                    ])
+                }
+                this.$bkInfo({
+                    title: this.$t("HostResourcePool['请确认是否转移']"),
+                    content,
                     confirmFn: () => {
                         this.transferHost()
                     }

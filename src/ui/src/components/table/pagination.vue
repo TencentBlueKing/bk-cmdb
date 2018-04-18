@@ -12,7 +12,7 @@
     <div class="table-page-contain clearfix" :class="{'empty': !tableList.length}">
         <div v-show="tableList.length" class="clearfix page-info-box">
             <div class="page-info fl">
-                <span class="mr20" v-if="hasCheckbox">已选{{chooseId.length}}行</span>
+                <span class="mr20" v-if="hasCheckbox">{{$tc('Common["已选N行"]', chooseId.length, {N: chooseId.length})}}</span>
                 <span>{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
                 <span class="ml20 mr20">
                     <i18n path="Common['每页显示']" tag="span">
