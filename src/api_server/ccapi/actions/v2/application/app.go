@@ -504,7 +504,7 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 	param := make(common.KvMap)
 	param[common.BKAppNameField] = formData.Get("ApplicationName")
 	param[common.BKMaintainersField] = formData.Get("Maintainers")
-	param[common.BKLanguageField] = "中文"
+	param[common.BKLanguageField] = 1
 
 	timeZone := formData.Get("TimeZone")
 	if "" != timeZone {
