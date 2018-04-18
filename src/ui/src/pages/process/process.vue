@@ -5,9 +5,9 @@
                 :filterable="true" 
                 :selected.sync="filter.bkBizId">
             </v-application-selector>
-            <bk-button class="fl" type="primary" @click="createProcess">新增进程</bk-button>
+            <bk-button class="fl" type="primary" @click="createProcess">{{$t("ProcessManagement['新增进程']")}}</bk-button>
             <div class="filter-text fr">
-                <input type="text" class="bk-form-input" placeholder="进程名称搜索" 
+                <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
                     v-model.trim="filter.text" @keyup.enter="setCurrentPage(1)">
                     <i class="bk-icon icon-search" @click="setCurrentPage(1)"></i>
             </div>
@@ -27,7 +27,7 @@
             :isShow.sync="slider.isShow"
             :title="slider.title">
             <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" :class="['tab-wrapper', slider.tab.active]">
-                <bk-tabpanel name="attribute" title="属性">
+                <bk-tabpanel name="attribute" :title="$t('ProcessManagement[\'属性\']')">
                     <v-attribute :active="slider.isShow && slider.tab.active === 'attribute'"
                         :type="slider.tab.attribute.type"
                         :formFields="attribute"
@@ -37,10 +37,10 @@
                         @delete="deleteProcess">
                     </v-attribute>
                 </bk-tabpanel>
-                <bk-tabpanel name="bind" title="模块绑定" :show="slider.tab.type === 'update'">
+                <bk-tabpanel name="bind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="slider.tab.type === 'update'">
                     <v-module :bkProcessId="slider.tab.module.bkProcessId" :bkBizId="filter.bkBizId"></v-module>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" title="变更记录" :show="slider.tab.type === 'update'">
+                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="slider.tab.type === 'update'">
                     <v-history :active="slider.tab.active === 'history'" :type="'process'" :instId="slider.tab.history.bkProcessId"></v-history>
                 </bk-tabpanel>
             </bk-tab>
@@ -78,7 +78,7 @@
                 slider: {
                     isShow: false,
                     title: {
-                        text: '新增进程',
+                        text: this.$t("ProcessManagement['新增进程']"),
                         icon: 'icon-cc-cube-entity'
                     },
                     tab: {
@@ -152,7 +152,7 @@
         },
         methods: {
             createProcess () {
-                this.slider.title.text = '新增进程'
+                this.slider.title.text = this.$t("ProcessManagement['新增进程']")
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'create'
                 this.slider.tab.attribute.type = 'create'
@@ -163,7 +163,7 @@
                 if (this.slider.tab.attribute.type === 'create') {
                     this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData).then(res => {
                         if (res.result) {
-                            this.$alertMsg('新增进程成功', 'success')
+                            this.$alertMsg(this.$t("ProcessManagement['新增进程成功']"), 'success')
                             this.setCurrentPage(1)
                             this.closeSlider()
                         } else {
@@ -173,7 +173,7 @@
                 } else {
                     this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData).then(res => {
                         if (res.result) {
-                            this.$alertMsg('修改进程成功', 'success')
+                            this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
                             this.setCurrentPage(1)
                             this.closeSlider()
                         } else {
@@ -184,13 +184,13 @@
             },
             deleteProcess (data) {
                 this.$bkInfo({
-                    title: `确认要删除进程${data['bk_process_name']}`,
+                    title: this.$t("ProcessManagement['确认要删除进程']", {processName: data['bk_process_name']}),
                     confirmFn: () => {
                         this.$axios.delete(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${data['bk_process_id']}`).then((res) => {
                             if (res.result) {
                                 this.closeSlider()
                                 this.setCurrentPage(1)
-                                this.$alertMsg('删除进程成功', 'success')
+                                this.$alertMsg(this.$t("ProcessManagement['删除进程成功']"), 'success')
                             } else {
                                 this.$alertMsg(res['bk_error_msg'])
                             }
@@ -199,7 +199,7 @@
                 })
             },
             showProcessAttribute (item) {
-                this.slider.title.text = '编辑进程'
+                this.slider.title.text = this.$t("ProcessManagement['编辑进程']")
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'update'
                 this.slider.tab.attribute.type = 'update'
@@ -251,7 +251,7 @@
                     this.table.isLoading = false
                     this.table.list = []
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t("Common['您没有当前业务的权限']"))
                     }
                 })
             },

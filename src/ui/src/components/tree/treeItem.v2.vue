@@ -8,7 +8,7 @@
                 <i v-if="treeData['default'] === 1" class="tree-icon fl icon-cc-host-free-pool"></i>
                 <i v-else-if="treeData['default'] === 2" class="tree-icon fl icon-cc-host-breakdown"></i>
                 <i v-else class="tree-icon tree-icon-name fl">{{treeData['default'] ? treeData['bk_inst_name'][0]: treeData['bk_obj_name'][0]}}</i>
-                <i class="tree-icon tree-icon-add fr" v-if="isShowAdd && active" @click.stop="addNode" :title="`新增${optionModel['bk_next_name']}`">新增</i>
+                <i class="tree-icon tree-icon-add fr" v-if="isShowAdd && active" @click.stop="addNode" :title="`${$t('Common[\'新增\']')}-${optionModel['bk_next_name']}`">{{$t('Common[\'新增\']')}}</i>
                 <div class="node-name" :title="treeData['bk_inst_name']">{{treeData['bk_inst_name']}}</div>
             </div>  
         </div>

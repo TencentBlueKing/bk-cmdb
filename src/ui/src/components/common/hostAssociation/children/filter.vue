@@ -1,7 +1,7 @@
 <template>
     <div class="host-filter-list clearfix">
         <div class="screening-group">
-            <label class="screening-group-label">选择业务</label>
+            <label class="screening-group-label">{{$t('Hosts[\'选择业务\']')}}</label>
             <div class="screening-group-item screening-group-item-app">
                 <v-application-selector
                     :filterable="true"
@@ -11,7 +11,7 @@
             </div>
         </div>
         <div class="screening-group">
-            <label class="screening-group-label">内网IP</label>
+            <label class="screening-group-label">{{$t("Hosts['内网IP']")}}</label>
             <div class="screening-group-item screening-group-item-ip">
                 <input class="bk-form-input" v-model.trim="ip.text"></input>
             </div>
@@ -110,24 +110,24 @@
                 operators: {
                     'default': [{
                         value: '$eq',
-                        label: '等于'
+                        label: this.$t("Common['等于']")
                     }, {
                         value: '$ne',
-                        label: '不等于'
+                        label: this.$t("Common['不等于']")
                     }],
                     'char': [{
                         value: '$regex',
-                        label: '包含'
+                        label: this.$t("Common['包含']")
                     }, {
                         value: '$eq',
-                        label: '等于'
+                        label: this.$t("Common['等于']")
                     }, {
                         value: '$ne',
-                        label: '不等于'
+                        label: this.$t("Common['不等于']")
                     }],
                     'date': [{
                         value: '$in',
-                        label: '包含'
+                        label: this.$t("Common['包含']")
                     }]
                 },
                 typeOfChar: ['singlechar', 'longchar'],

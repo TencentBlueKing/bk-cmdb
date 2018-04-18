@@ -14,7 +14,7 @@
             <div class="title clearfix">
                 <h3 class="fl">Route-n</h3>
                 <div class="content fr clearfix">
-                    <div class="info-title">最近更新时间：</div>
+                    <div class="info-title">{{$t('HostResourcePool[\'最近更新时间\']')}}：</div>
                     <div class="info-detail">{{getHostSnapshot.upTime}}</div>
                 </div>
             </div>
