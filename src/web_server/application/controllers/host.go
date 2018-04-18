@@ -18,23 +18,19 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/http/httpclient"
-	//"configcenter/src/common/language"
 	"configcenter/src/common/types"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/application/logics"
+	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/tealeg/xlsx"
 	_ "io"
 	"math/rand"
-
-	webCommon "configcenter/src/web_server/common"
 	"net/http"
 	"os"
 	"reflect"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
 )
 
 var (
@@ -52,7 +48,7 @@ func init() {
 // ImportHost import host
 func ImportHost(c *gin.Context) {
 	cc := api.NewAPIResource()
-	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
+	language := logics.GetLanugaeByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -80,6 +76,7 @@ func ImportHost(c *gin.Context) {
 	}
 	defer os.Remove(filePath) //del file
 	f, err := xlsx.OpenFile(filePath)
+	fmt.Println(err)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -93,7 +90,7 @@ func ImportHost(c *gin.Context) {
 		return
 	}
 	if 0 == len(hosts) {
-		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebOpenFileFail, "").Error(), nil)
+		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -125,7 +122,7 @@ func ExportHost(c *gin.Context) {
 
 	logics.SetProxyHeader(c)
 
-	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
+	language := logics.GetLanugaeByHTTPRequest(c)
 	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -219,7 +216,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	if nil != err {
 		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
 	}
-	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
+	language := logics.GetLanugaeByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 

@@ -98,7 +98,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 			}
 			langMap[language[0]][key] = val
 		}
-
+		blog.Infof("%v", langMap)
 		return nil
 
 	})
@@ -153,6 +153,8 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 
 	// find language package form resource cache
 	codemgr := cli.getLanguageKey(language)
+	fmt.Println(codemgr)
+
 	if nil == codemgr {
 		return fmt.Sprintf(UnknownTheLanguageStrf, language)
 	}
@@ -166,6 +168,7 @@ func (cli *ccLanguageHelper) languageStrf(language, key string, args ...interfac
 
 	// find language from resource cache
 	codemgr := cli.getLanguageKey(language)
+	fmt.Println(codemgr)
 	if nil == codemgr {
 		return fmt.Sprintf(UnknownTheLanguageStrf, language)
 	}

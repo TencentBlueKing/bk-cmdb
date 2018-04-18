@@ -18,20 +18,16 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/types"
-
 	"configcenter/src/web_server/application/logics"
-
-	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/tealeg/xlsx"
 	"math/rand"
 	"net/http"
 	"os"
 	"reflect"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
 )
 
 func init() {
@@ -44,7 +40,7 @@ func ImportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 
 	cc := api.NewAPIResource()
-	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
+	language := logics.GetLanugaeByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -110,7 +106,7 @@ func ImportInst(c *gin.Context) {
 func ExportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	cc := api.NewAPIResource()
-	language := util.GetActionLanguageByHTTPHeader(c.Request.Header)
+	language := logics.GetLanugaeByHTTPRequest(c)
 	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 

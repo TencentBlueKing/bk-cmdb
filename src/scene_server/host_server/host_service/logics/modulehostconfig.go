@@ -431,7 +431,7 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 	reply, err := httpcli.ReqHttp(req, url, method, []byte(strParams))
 	blog.Info("get request result:%v", string(reply))
 	if err != nil {
-		blog.Error("http do error, params:%s, error:%s", strParams, err.Error())
+		blog.Error("http do error, uri:%s, params:%s, error:%s", url, strParams, err.Error())
 		return false, err.Error(), nil
 	}
 
@@ -518,7 +518,7 @@ func GetAppInfo(req *restful.Request, fields string, conditon map[string]interfa
 	params["fields"] = fields
 
 	blog.Info("get application info  url:%s", URL)
-	blog.Info("get application info  url:%v", params)
+	blog.Info("get application info  params:%v", params)
 	isSuccess, errMsg, data := GetHttpResult(req, URL, common.HTTPSelectPost, params)
 	if !isSuccess {
 		blog.Error("get application info  error, params:%v, error:%s", params, errMsg)

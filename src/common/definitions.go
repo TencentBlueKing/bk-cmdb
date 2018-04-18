@@ -599,4 +599,6 @@ const (
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPCookieLanugageKey = "blueking_language"
+	BKSessionLanugageKey    = "language"
 )
