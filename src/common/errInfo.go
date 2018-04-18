@@ -278,6 +278,8 @@ const (
 
 	// CCErrEventSubscribePingFailed failed to ping the filed
 	CCErrEventSubscribePingFailed = 1103004
+	// CCErrEventSubscribePingFailed failed to telnet the filed
+	CCErrEventSubscribeTelnetFailed = 1103005
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000

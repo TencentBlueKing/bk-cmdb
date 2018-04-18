@@ -143,3 +143,17 @@ type PropertyGroup struct {
 func (PropertyGroup) TableName() string {
 	return "cc_PropertyGroup"
 }
+
+// InstAsst an association definition between instances.
+type InstAsst struct {
+	ID           int64  `bson:"id" json:"id"`
+	InstID       int64  `bson:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID     string `bson:"bk_obj_id" json:"bk_obj_id"`
+	AsstInstID   int64  `bson:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	AsstObjectID string `bson:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+}
+
+// TableName return the table name
+func (InstAsst) TableName() string {
+	return "cc_InstAsst"
+}

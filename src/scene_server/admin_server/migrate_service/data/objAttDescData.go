@@ -156,6 +156,8 @@ func ProcRow() []*metadata.ObjectAttDes {
 	// groupGsekitManage := mCommon.Proc_gsekit_manage_info
 	dataRows := []*metadata.ObjectAttDes{
 		//base info
+		//&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_process_id", PropertyName: "进程ID", IsSystem: true, IsRequired: true, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: "{}"},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeInt, Option: "{}"},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: common.BKProcessNameField, PropertyName: "进程名称", IsRequired: true, IsOnly: true, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "description", PropertyName: "进程描述", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FiledTypeSingleChar, Option: ""},
 
