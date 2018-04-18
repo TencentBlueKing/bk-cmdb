@@ -363,9 +363,6 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 
-	CC_Err_Comm_Host_Get_FAIL     = 4303
-	CC_Err_Comm_Host_Get_FAIL_STR = "get host fail"
-
 	// api server v2 error 1170xxx, follow-up will be deleted
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len

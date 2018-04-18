@@ -1148,8 +1148,7 @@ func (cli *hostAction) DelHostInApp(req *restful.Request, resp *restful.Response
 		//err = delSetConfigHost(param)
 		var rst api.BKAPIRsp
 		if "not found" == fmt.Sprintf("%v", err) {
-			// cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		}
 		if nil != err {
 			blog.Error("delSetConfigHost error:%v", err)
@@ -1158,9 +1157,7 @@ func (cli *hostAction) DelHostInApp(req *restful.Request, resp *restful.Response
 		}
 
 		// deal result
-
-		// cli.Response(&rst, resp)
-		return http.StatusOK, rst.Data, nil
+		return http.StatusOK, &rst, nil
 	}, resp)
 }
 

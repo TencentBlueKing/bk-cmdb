@@ -112,8 +112,7 @@ func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Respons
 		// deal result
 		var rst api.BKAPIRsp
 		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-			// cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		} else {
 			blog.Error("unmarshal the json failed, error: %v", jserr)
 		}
@@ -325,8 +324,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 		//err = delSetConfigHost(param)
 		var rst api.BKAPIRsp
 		if "not found" == fmt.Sprintf("%v", err) {
-			// cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		}
 		if nil != err {
 			blog.Error("delSetConfigHost error:%v", err)
@@ -335,8 +333,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 
 		// deal result
 
-		// cli.Response(&rst, resp)
-		return http.StatusOK, rst.Data, nil
+		return http.StatusOK, &rst, nil
 	}, resp)
 }
 

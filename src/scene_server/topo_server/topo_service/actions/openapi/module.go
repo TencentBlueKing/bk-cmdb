@@ -105,12 +105,11 @@ func (cli *moduleAction) SearchModuleByApp(req *restful.Request, resp *restful.R
 		// deal result
 		var rst api.BKAPIRsp
 		if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
-			// cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		} else {
 			blog.Error("unmarshal the json failed, error information is %v", jserr)
 		}
-		return http.StatusOK, rst.Data, nil
+		return http.StatusOK, &rst, nil
 	}, resp)
 }
 
@@ -178,8 +177,7 @@ func (cli *moduleAction) SearchModuleByProperty(req *restful.Request, resp *rest
 		// deal result
 		var rst api.BKAPIRsp
 		if jserr := json.Unmarshal([]byte(moduleRes), &rst); nil == jserr {
-			cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		} else {
 			blog.Error("unmarshal the json failed, error information is %v", jserr)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -269,8 +267,7 @@ func (cli *moduleAction) UpdateMultiModule(req *restful.Request, resp *restful.R
 		// deal result
 		var rst api.BKAPIRsp
 		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-			// cli.Response(&rst, resp)
-			return http.StatusOK, rst.Data, nil
+			return http.StatusOK, &rst, nil
 		} else {
 			blog.Error("unmarshal the json failed, error: %v", jserr)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleUpdateFailed)
