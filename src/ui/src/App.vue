@@ -9,22 +9,23 @@
  */
 
 <template lang="html">
-    <div id="app">
+    <div id="app" class="clearfix">
         <div class="error-message-content is-chrome" v-show="isChromeShow">
             <span>您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
         </div>
-        <i class="bk-icon icon-dedent" id="iconCloseNav" :class="{'close': isShow}" @click="closeNav"></i>
-        <v-navigation :isClose="isShow"></v-navigation>
-        <v-header @quickCheck="quickCheck"></v-header>
-        <div id="content-wrapper" :class="{'content-wrapper':!isShow,'content-control':isShow}" v-bkloading="{isLoading: globalLoading}">
-            <router-view/>
+        <v-navigation class="fl"></v-navigation>
+        <div :class="['main', {fold: fold}]">
+            <v-header @quickCheck="quickCheck"></v-header>
+            <div class="content-wrapper" v-bkloading="{isLoading: globalLoading}">
+                <router-view/>
+            </div>
         </div>
     </div>
 </template>
 <script>
     import vHeader from '@/components/header/header'
-    import vNavigation from '@/components/nav/nav'
-    import { mapActions, mapGetters } from 'vuex'
+    import vNavigation from '@/components/nav/nav.v2'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'app',
         components: {
@@ -34,21 +35,14 @@
         data () {
             return {
                 isChromeShow: true,
-                isShow: false,
                 searchVal: ''
             }
         },
         computed: {
-            ...mapGetters(['globalLoading'])
+            ...mapGetters(['globalLoading']),
+            ...mapGetters('navigation', ['fold'])
         },
         methods: {
-            ...mapActions(['getAllClassify']),
-            /*
-                导航伸缩时，右侧内容变化
-            */
-            closeNav () {
-                this.isShow = !this.isShow
-            },
             quickCheck (searchVal) {
                 this.searchVal = searchVal
             },
@@ -63,19 +57,9 @@
 </script>
 <style lang="scss" scoped>
     $primaryColor: #737987;
-    #iconCloseNav.icon-dedent{
-        position: absolute;
-        left: 240px;
-        top: 18px;
-        font-size: 16px;
-        color:$primaryColor;
-        cursor: pointer;
-        transition: left .5s;
-        z-index: 1001;
-        &.close{
-            left: 80px;
-            transform: rotate(180deg);
-        }
+    .main{
+        overflow: hidden;
+        height: 100%;
     }
 </style>
 <style lang="scss">

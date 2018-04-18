@@ -1,12 +1,4 @@
-import { $axios } from '@/api/axios'
-import bkMessage from '@/magicbox/bk-magic/components/message'
-const alertMsg = (message, theme = 'error', delay = 3000) => {
-    bkMessage({
-        message,
-        theme,
-        delay
-    })
-}
+import { $axios, $alertMsg } from '@/api/axios'
 
 const state = {
     usercustom: {},
@@ -33,22 +25,23 @@ const actions = {
             if (res.result) {
                 commit('setUserCustom', res.data)
             } else {
-                alertMsg(res.message)
+                $alertMsg(res['bk_error_msg'])
             }
+            return res
         }).catch(() => {
             state.result = false
             state.promise = null
         })
         return state.promise
     },
-    updateUserCustom ({commit, state}, usercustom, visible) {
+    updateUserCustom ({commit, state}, usercustom) {
         return $axios.post('usercustom', JSON.stringify(usercustom)).then(res => {
             if (res.result) {
                 commit('setUserCustom', usercustom)
-                alertMsg(visible ? '添加导航成功' : '取消导航成功', 'success')
             } else {
-                alertMsg(res.message)
+                $alertMsg(res['bk_error_msg'])
             }
+            return res
         })
     }
 }

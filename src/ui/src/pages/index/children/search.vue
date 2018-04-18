@@ -1,7 +1,7 @@
 <template>
     <div class="search-container">
         <div class="search-box">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" placeholder="快速查询..."
+            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="`${$t('Common[\'快速查询\']')}...`"
                 v-model.trim="keyword"
                 @keydown="handleKeydow($event)">
             <label class="bk-icon icon-search" for="indexSearch"></label>
