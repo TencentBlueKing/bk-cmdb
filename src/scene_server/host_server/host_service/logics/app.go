@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -17,9 +17,11 @@ import (
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
 	appParse "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"encoding/json"
-
+	"errors"
 	"fmt"
+
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -120,4 +122,64 @@ func GetSingleApp(req *restful.Request, objURL string, cond interface{}) (map[st
 		return app, nil
 	}
 	return nil, nil
+}
+
+//GetAppInfo get app info
+func GetAppInfo(req *restful.Request, fields string, conditon map[string]interface{}, hostAddr string) (map[string]interface{}, error) {
+	//moduleURL := "http://" + cc.ObjCtrl + "/object/v1/insts/module/search"
+	URL := hostAddr + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
+	params := make(map[string]interface{})
+	params["condition"] = conditon
+	params["sort"] = common.BKAppIDField
+	params["start"] = 0
+	params["limit"] = 1
+	params["fields"] = fields
+
+	blog.Info("get application info  url:%s", URL)
+	blog.Info("get application info  url:%v", params)
+	isSuccess, errMsg, data := GetHttpResult(req, URL, common.HTTPSelectPost, params)
+	if !isSuccess {
+		blog.Error("get application info  error, params:%v, error:%s", params, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	dataInterface := data.(map[string]interface{})
+	info := dataInterface["info"].([]interface{})
+	if 1 != len(info) {
+		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
+		return nil, errors.New("业务不存在")
+	}
+	row := info[0].(map[string]interface{})
+
+	if 0 == len(row) {
+		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
+		return nil, errors.New("业务存在")
+	}
+
+	return row, nil
+}
+
+//GetDefaultAppID get default biz id
+func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string) (int, error) {
+	conds := make(map[string]interface{})
+	conds[common.BKOwnerIDField] = ownerID
+	conds[common.BKDefaultField] = common.DefaultAppFlag
+	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	if nil != err {
+		blog.Errorf("get default app info error:%v", err.Error())
+		return 0, err
+	}
+	return util.GetIntByInterface(appinfo[common.BKAppIDField])
+}
+
+//GetDefaultAppID get supplier ID
+func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, hostAddr string) (int, error) {
+	conds := make(map[string]interface{})
+	conds[common.BKSupplierIDField] = supplierID
+	conds[common.BKDefaultField] = common.DefaultAppFlag
+	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	if nil != err {
+		blog.Errorf("get default app info error:%v", err.Error())
+		return 0, err
+	}
+	return util.GetIntByInterface(appinfo[common.BKAppIDField])
 }

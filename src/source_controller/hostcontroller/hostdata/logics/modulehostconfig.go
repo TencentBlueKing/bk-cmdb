@@ -1,21 +1,21 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	eventtypes "configcenter/src/scene_server/event_server/types"
 	metadataTable "configcenter/src/source_controller/api/metadata"
@@ -236,7 +236,7 @@ func GetResourcePoolApp(cc *api.APIResource, ownerID int) (int, error) {
 }
 
 //check if host belong to empty module
-func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []int) ([]int, error) {
+func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []int) ([]int, []int, error) {
 
 	moduleHostConfig := metadataTable.ModuleHostConfig{}
 	conds := make(map[string]interface{}, 1)
@@ -246,26 +246,41 @@ func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []in
 	err := cc.InstCli.GetMutilByCondition(moduleHostConfig.TableName(), []string{common.BKHostIDField, common.BKModuleIDField}, conds, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		blog.Error("get modulehostconfig error:%s", err.Error())
-		return nil, errors.New("获取主机与模块关系失败")
+		return nil, nil, errors.New("获取主机与模块关系失败")
 	}
 	var errHostIDs []int
+	var faultHostIDs []int
 	mapHost := make(map[int]int, 0)
 	for _, item := range result {
 		row := item.(bson.M)
-		moduleID, _ := util.GetIntByInterface(row[common.BKModuleIDField])
-		hostID, _ := util.GetIntByInterface(row[common.BKHostIDField])
-		if moduleID != emptyModuleID {
+		moduleID, err := util.GetIntByInterface(row[common.BKModuleIDField])
+		if nil != err {
+			continue
+		}
+		hostID, err := util.GetIntByInterface(row[common.BKHostIDField])
+		if nil != err {
+			continue
+		}
+		rowAppID, err := util.GetIntByInterface(row[common.BKHostIDField])
+		if nil != err {
+			continue
+		}
+		//host not belong to this biz
+		if rowAppID != appID {
+			faultHostIDs = append(faultHostIDs, hostID)
+		}
+		//host belong to this biz, but not in idle module
+		if moduleID != emptyModuleID && rowAppID == appID {
 			_, ok := mapHost[hostID]
 			if !ok {
 				errHostIDs = append(errHostIDs, hostID)
 				mapHost[hostID] = hostID
 			}
-			//errHostIDs = append(errHostIDs, hostID)
 		}
 
 	}
 
-	return errHostIDs, err
+	return errHostIDs, faultHostIDs, err
 }
 
 //获取业务下的默认模块
