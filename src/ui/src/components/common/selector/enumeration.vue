@@ -1,9 +1,9 @@
 <template>
     <bk-select :selected.sync="localSelected" :disabled="disabled" @on-selected="handleSelected">
         <bk-select-option v-for="(option, index) in localOptions"
-            :key="option.name"
+            :key="option.id"
             :label="option.name"
-            :value="option.name">
+            :value="option.id">
         </bk-select-option>
     </bk-select>    
 </template>
@@ -71,7 +71,7 @@
                 } else if (this.selected) {
                     this.localSelected = this.selected
                 } else if (this.defaultOption) {
-                    this.localSelected = this.defaultOption.name
+                    this.localSelected = this.defaultOption.id
                 } else {
                     this.localSelected = ''
                 }
