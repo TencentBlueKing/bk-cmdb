@@ -415,22 +415,28 @@
                     bk_property_type: bkPropertyType
                 } = property
                 let value = this.formValues[bkPropertyId]
-                if (property['bk_asst_obj_id']) {
-                    let associateName = []
-                    if (Array.isArray(value)) {
-                        value.map(({bk_inst_name: bkInstName}) => {
-                            if (bkInstName) {
-                                associateName.push(bkInstName)
-                            }
-                        })
+                if (value !== undefined) {
+                    if (property['bk_asst_obj_id']) {
+                        let associateName = []
+                        if (Array.isArray(value)) {
+                            value.map(({bk_inst_name: bkInstName}) => {
+                                if (bkInstName) {
+                                    associateName.push(bkInstName)
+                                }
+                            })
+                        }
+                        return associateName.join(',')
+                    } else if (bkPropertyType === 'date') {
+                        return this.$formatTime(value, 'YYYY-MM-DD')
+                    } else if (bkPropertyType === 'time') {
+                        return this.$formatTime(value)
+                    } else if (bkPropertyType === 'enum') {
+                        return property.option.find(({id}) => {
+                            return id === value
+                        })['name']
+                    } else {
+                        return value
                     }
-                    return associateName.join(',')
-                } else if (bkPropertyType === 'date') {
-                    return this.$formatTime(value, 'YYYY-MM-DD')
-                } else if (bkPropertyType === 'time') {
-                    return this.$formatTime(value)
-                } else {
-                    return value
                 }
             },
             // 判断是否可编辑
@@ -499,7 +505,7 @@
                 }
                 if (property.hasOwnProperty('option') && option) {
                     if (bkPropertyType === 'int') {
-                        option = JSON.parse(option)
+                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min') && option.min) {
                             rules['min_value'] = option.min
                         }

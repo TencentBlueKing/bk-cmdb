@@ -64,8 +64,9 @@
                 @handlePageSizeChange="setTableSize"
                 @handleTableAllCheck="getAllObjectId">
                     <template v-for="({property,id,name}, index) in table.header" :slot="id" slot-scope="{ item }" 
-                    v-if="property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== ''">
-                        <td>{{getAssociateCell(item[id])}}</td>
+                    v-if="(property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== '') || property['bk_property_type'] === 'enum'">
+                        <td v-if="property['bk_property_type'] === 'enum'">{{getEnumCell(item[id], property)}}</td>
+                        <td v-else>{{getAssociateCell(item[id])}}</td>
                     </template>
             </v-object-table>
             <v-sideslider
@@ -606,6 +607,11 @@
                     })
                 }
                 return label.join(',')
+            },
+            getEnumCell (data, property) {
+                return property.option.find(({id}) => {
+                    return id === data
+                })['name']
             }
         },
         mounted () {
