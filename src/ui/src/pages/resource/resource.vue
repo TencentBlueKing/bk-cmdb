@@ -10,18 +10,18 @@
 
 <template>
    <div class="host-resource-wrapper">
-        <v-index 
-            ref="index"
+        <v-hosts 
+            ref="hosts"
             :isShowBiz="false" 
             :isShowCollect="false" 
             :isShowHistory="false" 
-            :outerParams="index.searchParams"
+            :outerParams="hosts.searchParams"
             @choose="setSelectedHost" 
             @attrLoaded="search">
             <div class="button-contain clearfix" slot="btnGroup">
                 <bk-select class="biz-selector fl mr10" :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
                     :disabled="!hasSelectedHost"
-                    :selected.sync="index.bkBizId" 
+                    :selected.sync="hosts.bkBizId" 
                     :filterable="true"
                     @on-selected="confirmTransfer">
                     <bk-select-option v-for="(bkBiz, index) in bkBizList"
@@ -31,7 +31,7 @@
                     </bk-select-option>
                 </bk-select>
                 <form ref="exportForm" :action="exportUrl" method="POST" class="fl mr10">
-                    <input type="hidden" name="bk_host_id" :value="index.selectedHost">
+                    <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
                     <input type="hidden" name="bk_biz_id" value="-1">
                     <button class="bk-button"
                         :disabled="!hasSelectedHost"
@@ -50,7 +50,7 @@
                     </button>
                 </div>
             </div>
-        </v-index>
+        </v-hosts>
         <v-sideslider 
             :title="slider.title"
             :isShow.sync="slider.isShow">
@@ -78,13 +78,13 @@
         <v-delete-history
             :isShow.sync="filing.isShow"
             :objId="'host'"
-            :objTableHeader="index.table.header"
+            :objTableHeader="hosts.table.header"
         ></v-delete-history>
    </div>
 </template>
 
 <script type="text/javascript">
-    import vIndex from '@/pages/index/index'
+    import vHosts from '@/pages/hosts/hosts'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
@@ -95,7 +95,7 @@
                 filing: {
                     isShow: false
                 },
-                index: {
+                hosts: {
                     bkBizId: '',
                     selectedHost: [],
                     searchParams: {
@@ -151,7 +151,7 @@
                 'language'
             ]),
             hasSelectedHost () {
-                return this.index.selectedHost.length
+                return this.hosts.selectedHost.length
             },
             exportUrl () {
                 return `${window.siteUrl}hosts/export`
@@ -179,7 +179,7 @@
                             style: {
                                 color: '#3c96ff'
                             }
-                        }, this.index.selectedHost.length),
+                        }, this.hosts.selectedHost.length),
                         h('span', ' Hosts Transfer to Idle machine under '),
                         h('span', {
                             style: {
@@ -194,7 +194,7 @@
                             style: {
                                 color: '#3c96ff'
                             }
-                        }, this.index.selectedHost.length),
+                        }, this.hosts.selectedHost.length),
                         h('span', ' 个主机转移到 '),
                         h('span', {
                             style: {
@@ -214,14 +214,14 @@
             },
             transferHost () {
                 this.$axios.post('hosts/modules/resource/idle', {
-                    'bk_biz_id': this.index.bkBizId,
-                    'bk_host_id': this.index.selectedHost
+                    'bk_biz_id': this.hosts.bkBizId,
+                    'bk_host_id': this.hosts.selectedHost
                 }).then(res => {
                     if (res.result) {
                         this.$alertMsg(this.$t("HostResourcePool['分配成功']"), 'success')
-                        this.index.selectedHost = []
-                        this.$refs.index.transferSuccess()
-                        this.index.bkBizId = ''
+                        this.hosts.selectedHost = []
+                        this.$refs.hosts.transferSuccess()
+                        this.hosts.bkBizId = ''
                         this.search()
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
@@ -234,7 +234,7 @@
                     confirmFn: () => {
                         this.$axios.delete('hosts/batch', {
                             data: JSON.stringify({
-                                'bk_host_id': this.index.selectedHost.join(','),
+                                'bk_host_id': this.hosts.selectedHost.join(','),
                                 'bk_supplier_account': this.bkSupplierAccount
                             })
                         }).then(res => {
@@ -247,7 +247,7 @@
                                     type: 'success'
                                 })
                                 this.search()
-                                this.$refs.index.clearChooseId()
+                                this.$refs.hosts.clearChooseId()
                             } else {
                                 this.$alertMsg(res['bk_error_msg'])
                             }
@@ -257,10 +257,10 @@
             },
             search () {
                 // 构造新对象，触发v-index中watch outerParams
-                this.index.searchParams = Object.assign({}, this.index.searchParams)
+                this.hosts.searchParams = Object.assign({}, this.hosts.searchParams)
             },
             setSelectedHost (chooseId) {
-                this.index.selectedHost = chooseId
+                this.hosts.selectedHost = chooseId
             },
             exportChoose () {
                 this.$refs.exportForm.submit()
@@ -281,8 +281,8 @@
                 }
             },
             showFiling () {
-                this.index.table.header = this.$refs.index.table.tableHeader
-                this.index.table.allAttr = this.$refs.index.attribute
+                this.hosts.table.header = this.$refs.hosts.table.tableHeader
+                this.hosts.table.allAttr = this.$refs.hosts.attribute
                 this.filing.isShow = true
             }
         },
@@ -293,7 +293,7 @@
         },
         components: {
             vImport,
-            vIndex,
+            vHosts,
             vSideslider,
             vDeleteHistory
         }

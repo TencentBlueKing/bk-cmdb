@@ -241,7 +241,7 @@
                 })
                 let defaultObj = ['host', 'module', 'set', 'biz']
                 defaultObj.forEach(id => {
-                    if (!filter.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                    if (!filter.condition.some(({bk_obj_id: bkObjId}) => bkObjId === id)) {
                         filter.condition.push({
                             'bk_obj_id': id,
                             fields: [],
@@ -397,6 +397,13 @@
                     screeningBtnClassList.remove('fixed')
                 }
             }
+        },
+        beforeDestroy () {
+            this.$store.commit('setQuickSearchParams', {
+                text: '',
+                type: 'ip'
+            })
+            this.resetQueryColumnData()
         },
         components: {
             vApplicationSelector,

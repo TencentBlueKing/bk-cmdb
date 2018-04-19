@@ -9,22 +9,25 @@
  */
 
 <template lang="html">
-    <div id="app">
+    <div id="app" class="clearfix">
         <div class="error-message-content is-chrome" v-show="isChromeShow">
             <span>{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
         </div>
-        <i class="bk-icon icon-dedent" id="iconCloseNav" :class="{'close': isShow}" @click="closeNav"></i>
-        <v-navigation :isClose="isShow"></v-navigation>
-        <v-header @quickCheck="quickCheck"></v-header>
-        <div id="content-wrapper" :class="{'content-wrapper':!isShow,'content-control':isShow}" v-bkloading="{isLoading: globalLoading}">
-            <router-view/>
+        <v-navigation class="fl"></v-navigation>
+        <div class="main-container">
+            <v-header></v-header>
+            <div class="main-wrapper">
+                <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
+                    <router-view/>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 <script>
     import vHeader from '@/components/header/header'
     import vNavigation from '@/components/nav/nav'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'app',
         components: {
@@ -33,25 +36,14 @@
         },
         data () {
             return {
-                isChromeShow: true,
-                isShow: false,
-                searchVal: ''
+                isChromeShow: true
             }
         },
         computed: {
-            ...mapGetters(['globalLoading'])
+            ...mapGetters(['globalLoading']),
+            ...mapGetters('navigation', ['fold'])
         },
         methods: {
-            ...mapActions(['getAllClassify']),
-            /*
-                导航伸缩时，右侧内容变化
-            */
-            closeNav () {
-                this.isShow = !this.isShow
-            },
-            quickCheck (searchVal) {
-                this.searchVal = searchVal
-            },
             closeInfo () {
                 this.isChromeShow = false
             }
@@ -63,18 +55,22 @@
 </script>
 <style lang="scss" scoped>
     $primaryColor: #737987;
-    #iconCloseNav.icon-dedent{
-        position: absolute;
-        left: 240px;
-        top: 18px;
-        font-size: 16px;
-        color:$primaryColor;
-        cursor: pointer;
-        transition: left .5s;
-        z-index: 1001;
-        &.close{
-            left: 80px;
-            transform: rotate(180deg);
+    .main-container{
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+        .main-wrapper{
+            height: 100%;
+            padding-top: 50px;
+            overflow: auto;
+            position: relative;
+            .content-wrapper{
+                height: 100%;
+                min-width: 1060px;
+                &.fold{
+                    min-width: 1220px;
+                }
+            }
         }
     }
 </style>
@@ -83,26 +79,4 @@
     @import './common/icon/cc-icon/style.css';
     @import './common/icon/bk-icon-2.0/iconfont.css';
     @import './magicbox/bk-magicbox-ui/bk.scss';
-    .clearfix:after{
-        content: '';
-        font-size: 0;
-    }
-    .error-message-content{
-        position: fixed;
-        top: 0;
-        width: 100%;
-        height: 40px;
-        line-height: 40px;
-        text-align: center;
-        background: #f8f6db;
-        z-index: 99999;
-        span{
-            color: #ff5656;
-            margin-right: 20px;
-        }
-        i{
-            cursor: pointer;
-            color: #ff5656;
-        }
-    }
 </style>

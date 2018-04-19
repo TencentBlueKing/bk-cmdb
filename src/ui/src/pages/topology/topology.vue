@@ -21,9 +21,9 @@
         <div class="topo-view-ctn">
             <bk-tab :active-name="view.tab.active" @tab-changed="tabChanged" class="topo-view-tab">
                 <bk-tabpanel name="host" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <v-index ref="index" :outerParams="searchParams" :isShowRefresh="true" :outerLoading="tree.loading">
+                    <v-hosts ref="hosts" :outerParams="searchParams" :isShowRefresh="true" :outerLoading="tree.loading">
                         <div slot="filter"></div>
-                    </v-index>
+                    </v-hosts>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')" :show="isShowAttribute">
                     <v-attribute ref="topoAttribute"
@@ -46,7 +46,7 @@
 <script>
     import vApplicationSelector from '@/components/common/selector/application'
     import vTree from '@/components/tree/tree.v2'
-    import vIndex from '@/pages/index/index'
+    import vHosts from '@/pages/hosts/hosts'
     import vAttribute from './children/attribute'
     import { mapGetters } from 'vuex'
     export default {
@@ -381,7 +381,7 @@
             },
             /* 点击节点，设置查询参数 */
             handleNodeClick (activeNode, activeParentNode) {
-                this.$refs.index.clearChooseId()
+                this.$refs.hosts.clearChooseId()
                 this.tree.activeNode = activeNode
                 this.tree.activeParentNode = activeParentNode
                 this.view.attribute.type = 'update'
@@ -436,7 +436,7 @@
                 }
                 let defaultObj = ['host', 'module', 'set', 'biz']
                 defaultObj.forEach(id => {
-                    if (!params.condition.some(({bk_biz_id: bkObjId}) => bkObjId === id)) {
+                    if (!params.condition.some(({bk_obj_id: bkObjId}) => bkObjId === id)) {
                         params.condition.push({
                             'bk_obj_id': id,
                             fields: [],
@@ -463,7 +463,7 @@
         components: {
             vApplicationSelector,
             vTree,
-            vIndex,
+            vHosts,
             vAttribute
         }
     }
