@@ -24,7 +24,6 @@
 </template>
 
 <script type="text/javascript">
-    import bus from '@/eventbus/bus'
     export default {
         props: {
             /*
