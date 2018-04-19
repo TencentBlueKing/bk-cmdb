@@ -17,7 +17,6 @@
                         <span class="vm">{{title.text}}</span>
                     </h3>
                 </slot>
-                <!-- <span class="close" @click="closeSlider">关闭</span> -->
                 <slot name="content"></slot>
             </div>
         </div>
@@ -25,6 +24,7 @@
 </template>
 
 <script type="text/javascript">
+    import bus from '@/eventbus/bus'
     export default {
         props: {
             /*
@@ -57,6 +57,13 @@
             hasQuickClose: {
                 type: Boolean,
                 default: true
+            },
+            /*
+                是否有关闭确认提示
+            */
+            hasCloseConfirm: {
+                type: Boolean,
+                default: false
             }
         },
         watch: {
@@ -74,7 +81,11 @@
         },
         methods: {
             closeSlider () {
-                this.$emit('update:isShow', false)
+                if (this.hasCloseConfirm) {
+                    bus.$emit('closeSlider')
+                } else {
+                    this.$emit('update:isShow', false)
+                }
             },
             quickClose () {
                 if (this.hasQuickClose) {
