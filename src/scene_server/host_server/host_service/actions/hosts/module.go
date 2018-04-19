@@ -69,12 +69,21 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoModuleSelectFailed)
 		}
 		if 0 == len(module) {
-			blog.Error("destination module  not found , params:%v, error:%v", data.ModuleID, err.Error())
+			blog.Error("destination module  not found ")
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMulueIDNotfoundFailed)
 		}
+
+		//get default biz
+		defaultAppID, err := logics.GetDefaultAppID(req, common.BKDefaultOwnerID, common.BKAppIDField, m.CC.ObjCtrl())
+		if nil != err {
+			blog.Error("get default appID error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
+
+		}
+		blog.Info("default biz id %v", defaultAppID)
 		var errMsg []string
 		var succ []string
-		var hostIdArr []int
+		var hostIDArr []int
 		for index, hostInfo := range data.HostInfoArr {
 
 			//check if host exist
@@ -84,7 +93,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			}
 			hostList, err := logics.GetHostInfoByConds(req, m.CC.HostCtrl(), hostCond)
 			if nil != err || 0 == len(hostList) {
-				blog.Error("get host info error, params:%v, error:%v", hostCond, err.Error())
+				blog.Error("get host info error, params:%v, error:%v", hostCond, err)
 				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
 				continue
 
@@ -98,15 +107,14 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
 				continue
 			}
-			hostId, err := util.GetIntByInterface(hostMap[common.BKHostIDField])
+			hostID, err := util.GetIntByInterface(hostMap[common.BKHostIDField])
 			if nil != err {
 				blog.Error("host not exsit, params:%v, error:%v", hostCond, err.Error())
 				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
 				continue
 			}
 			moduleHostCond := common.KvMap{
-				common.BKHostIDField:   []int{hostId},
-				common.BKModuleIDField: []int{data.ModuleID},
+				common.BKHostIDField: []int{hostID},
 			}
 			moduleHostConfig, err := logics.GetConfigByCond(req, m.CC.HostCtrl(), moduleHostCond)
 			if nil != err {
@@ -114,10 +122,28 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 				errMsg = append(errMsg, fmt.Sprintf("%s 获取主机模块关系失败", hostInfo.IP))
 				continue
 			}
-			if 0 != len(moduleHostConfig) {
-				blog.Error("host exist in module, params:%v, error:%v", moduleHostCond, err)
-				errMsg = append(errMsg, fmt.Sprintf("%s 主机已经存在于当前模块中", hostInfo.IP))
-				continue
+			//if host belong to resource, remove from it first
+			for _, mh := range moduleHostConfig {
+				if mh[common.BKAppIDField] == defaultAppID {
+					//delete it from resource
+					params := make(map[string]interface{})
+					params[common.BKAppIDField] = defaultAppID
+					params[common.BKHostIDField] = hostID
+
+					delModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/defaultmodules"
+					isSuccess, _, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, params)
+					if !isSuccess {
+						blog.Error("remove modulehostconfig error, params:%v, error:%s", params, errMsg)
+						errMsg = append(errMsg, fmt.Sprintf("%s 主机从资源池中清除失败", hostInfo.IP))
+						continue
+					}
+				}
+
+				if mh[common.BKModuleIDField] == data.ModuleID {
+					blog.Error("host exist in module, params:%v, error:%v", moduleHostCond, err)
+					errMsg = append(errMsg, fmt.Sprintf("%s 主机已经存在于当前模块中", hostInfo.IP))
+					continue
+				}
 			}
 
 			//add host to this module
@@ -125,14 +151,14 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			addModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
 			params[common.BKAppIDField] = data.ApplicationID
 			params[common.BKModuleIDField] = []int{data.ModuleID}
-			params[common.BKHostIDField] = hostId
+			params[common.BKHostIDField] = hostID
 			isSuccess, errMsgStr, _ := logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, params)
 			if !isSuccess {
 				blog.Error("add modulehostconfig error, params:%v, error:%s", params, errMsgStr)
 				errMsg = append(errMsg, fmt.Sprintf("%s 主机添加到模块失败", hostInfo.IP))
 
 			}
-			hostIdArr = append(hostIdArr, hostId)
+			hostIDArr = append(hostIDArr, hostID)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommResourceInitFailed)
 			}
@@ -146,7 +172,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			return http.StatusInternalServerError, retData, defErr.Error(common.CCErrAddHostToModule)
 		}
 
-		logClient, err := logics.NewHostModuleConfigLog(req, hostIdArr, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
+		logClient, err := logics.NewHostModuleConfigLog(req, hostIDArr, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
 		user := util.GetActionUser(req)
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 		return http.StatusOK, nil, nil
