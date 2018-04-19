@@ -73,7 +73,7 @@
             </v-object-table>
             <v-sideslider
                 :isShow.sync="slider.isShow"
-                :hasQuickClose="true"
+                :hasCloseConfirm="true"
                 :title="slider.title"
                 @closeSlider="closeObjectSlider">
                 <div class="slide-content" slot="content">
@@ -86,6 +86,7 @@
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
                                 :isBatchUpdate="false"
+                                @closeSlider="closeObjectSlider"
                                 @submit="saveObjectAttr"
                                 @delete="confirmDelete">
                             </v-object-attr>
