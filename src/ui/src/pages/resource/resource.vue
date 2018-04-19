@@ -78,7 +78,7 @@
         <v-delete-history
             :isShow.sync="filing.isShow"
             :objId="'host'"
-            :objTableHeader="index.table.header"
+            :objTableHeader="hosts.table.header"
         ></v-delete-history>
    </div>
 </template>
@@ -179,7 +179,7 @@
                             style: {
                                 color: '#3c96ff'
                             }
-                        }, this.index.selectedHost.length),
+                        }, this.hosts.selectedHost.length),
                         h('span', ' Hosts Transfer to Idle machine under '),
                         h('span', {
                             style: {
@@ -281,8 +281,8 @@
                 }
             },
             showFiling () {
-                this.index.table.header = this.$refs.index.table.tableHeader
-                this.index.table.allAttr = this.$refs.index.attribute
+                this.hosts.table.header = this.$refs.hosts.table.tableHeader
+                this.hosts.table.allAttr = this.$refs.hosts.attribute
                 this.filing.isShow = true
             }
         },
