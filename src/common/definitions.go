@@ -602,3 +602,8 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
 )
+
+const (
+	// DefaultAppLifeCycleNormal  biz life cycle normal
+	DefaultAppLifeCycleNormal = "2"
+)

@@ -58,6 +58,7 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 		delete(params, common.BKTimeZoneField)
 		delete(params, common.BKLanguageField)
 	}
+	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(params)
 	url := cc.TopoAPI() + "/topo/v1/app/default/" + ownerID

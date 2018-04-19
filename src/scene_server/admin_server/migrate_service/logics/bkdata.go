@@ -117,6 +117,7 @@ func addBKApp(req *restful.Request) error {
 		delete(appModelData, common.BKTimeZoneField)
 		delete(appModelData, common.BKLanguageField)
 	}
+	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(appModelData)
 	url := topoAPI + "/topo/v1/app/" + ownerID
