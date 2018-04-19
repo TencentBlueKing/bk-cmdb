@@ -60,6 +60,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -81,6 +82,12 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 		*obj.CreateTime = time.Now()
 		obj.LastTime = new(time.Time)
 		*obj.LastTime = time.Now()
+
+		if obj.IsPre {
+			if obj.PropertyID == common.BKInstNameField {
+				obj.PropertyName = util.FirstNotEmptyString(defLang.Language("common_property_"+obj.PropertyID), obj.PropertyName, obj.PropertyID)
+			}
+		}
 
 		if 0 == len(obj.PropertyGroup) {
 			obj.PropertyGroup = "default" // empty value

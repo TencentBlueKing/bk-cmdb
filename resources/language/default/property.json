@@ -1,4 +1,6 @@
 {
+    "common_property_bk_inst_name":"实例名",
+
     "biz_property_bk_biz_name": "业务名",
     "biz_property_life_cycle": "生命周期",
     "biz_property_bk_biz_maintainer": "运维人员",
