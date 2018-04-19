@@ -764,13 +764,6 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 		}
 	}
 
-	/*    "process_property_bind_ip_enum_1": "127.0.0.1",
-	"process_property_bind_ip_enum_2": "0.0.0.0",
-	"process_property_bind_ip_enum_3": "第一内网IP",
-	"process_property_bind_ip_enum_4": "第一外网IP",
-	"process_property_protocol_enum_1": "TCP",
-	"process_property_protocol_enum_2": "UDP",*/
-
 	convFields := []string{common.BKWorkPath, common.BKFuncIDField, common.BKFuncName,
 		common.BKBindIP, common.BKUser, "start_cmd", "stop_cmd", common.BKProcessNameField, common.BKPort,
 		common.BKProtocol, "pid_file", "restart_cmd", "face_stop_cmd", "auto_start", "timeout", "priority", "proc_num"}
