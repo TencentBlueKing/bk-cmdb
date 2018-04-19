@@ -82,17 +82,17 @@ func (cli *topoAction) createDefaultInst(ownerID, objectID, objectName string, p
 	switch objectID {
 	case common.BKInnerObjIDApp:
 		targetOBJ = common.BKInnerObjIDApp
-		input[common.BKAppNameField] = "默认业务" + objectName
+		input[common.BKAppNameField] = objectName
 	case common.BKInnerObjIDModule:
 		targetOBJ = common.BKInnerObjIDModule
-		input[common.BKModuleNameField] = "默认模块" + objectName
+		input[common.BKModuleNameField] = objectName
 	case common.BKInnerObjIDSet:
 		targetOBJ = common.BKInnerObjIDSet
-		input[common.BKSetNameField] = "默认集群" + objectName
+		input[common.BKSetNameField] = objectName
 	default:
 		targetOBJ = common.BKINnerObjIDObject
 		input[common.BKObjIDField] = objectID
-		input[common.BKInstNameField] = "默认实例" + objectName
+		input[common.BKInstNameField] = objectName
 	}
 
 	inputJSON, jsErr := json.Marshal(input)
