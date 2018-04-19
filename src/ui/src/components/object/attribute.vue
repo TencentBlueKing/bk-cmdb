@@ -191,6 +191,10 @@
             objId: {
                 type: String,
                 default: ''
+            },
+            isShowCloseConfirm: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -299,6 +303,7 @@
                         }
                     }
                 }
+                console.log(this.localValues)
                 return formData
             }
         },
