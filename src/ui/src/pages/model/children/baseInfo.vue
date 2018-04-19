@@ -276,7 +276,7 @@
                                 bk_obj_name: this.baseInfo['bk_obj_name'],
                                 bk_obj_id: this.baseInfo['bk_obj_id']
                             })
-                            this.$store.commit('updateClassify', {
+                            this.$store.commit('navigation/updateModel', {
                                 bk_classification_id: this.classificationId,
                                 bk_obj_id: this.baseInfo['bk_obj_id'],
                                 bk_obj_name: this.baseInfo['bk_obj_name']

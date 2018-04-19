@@ -192,7 +192,7 @@
     import vRule from './children/rule'
     import vSort from './children/sort'
     import vTopo from '@/components/topo/topo'
-    import {mapGetters, mapActions} from 'vuex'
+    import {mapGetters} from 'vuex'
     const iconList = require('@/common/json/modelIcon.json')
     export default {
         data () {
@@ -273,7 +273,6 @@
             }
         },
         methods: {
-            ...mapActions(['getAllClassify']),
             updateIsChangeClassify (val) {
                 this.isChangeClassify = val
             },
@@ -455,7 +454,7 @@
                             this.isEditClassify = false
                             this.isPopShow = false
                             this.isChoose = true
-                            this.$store.commit('updateClassify', {
+                            this.$store.commit('navigation/updateClassification', {
                                 bk_classification_id: classification['bk_classification_id'],
                                 bk_classification_name: classification['bk_classification_name'],
                                 bk_classification_icon: classification['bk_classification_icon']
@@ -693,7 +692,7 @@
                     // if (this.insertType === '') {
                     //     this.updateTopo()
                     // }
-                    this.getAllClassify()
+                    this.$store.dispatch('navigation/getClassifications', true)
                     this.curModel['id'] = obj['id']
                     this.sliderTitle.text = `${obj['bk_obj_name']})`
                     this.curModel['bk_obj_id'] = obj['bk_obj_id']

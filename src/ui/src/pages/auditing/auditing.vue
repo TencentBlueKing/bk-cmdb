@@ -39,7 +39,7 @@
                             <bk-select
                                 :selected.sync="filter.classify"
                                 :filterable="true">   
-                                <template v-for="(classifyGroup, groupIndex) in allClassify">
+                                <template v-for="(classifyGroup, groupIndex) in activeClassifications">
                                     <bk-option-group v-if="classifyGroup['bk_objects'].length"
                                             :label="classifyGroup['bk_classification_name']"
                                             :key="groupIndex">
@@ -201,10 +201,10 @@
         computed: {
             /* 从store中回去操作对象列表 */
             ...mapGetters([
-                'allClassify',
                 'bkBizList',
                 'language'
             ]),
+            ...mapGetters('navigation', ['activeClassifications']),
             /* 开始时间 */
             startDate () {
                 return this.$formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD')

@@ -11,9 +11,8 @@
 html,
 body {
     height: 100%;
-    min-width: 1280px;
     position: relative;
-    overflow: auto;
+    overflow: hidden;
     font-family: 'pingFang-SC-Regular,Microsoft Yahei,Arial';
     color: #737987;
 }
@@ -148,21 +147,9 @@ textarea {
 }
 
 
-.content-wrapper {
-    transition: all 0.5s;
-    height: calc(100% - 50px);
-}
-
-.content-wrapper.content-control {
-    margin-left: 60px;
-}
-
 #app {
     height: 100%;
-} // .bk-dialog-btn.bk-btn-primary:hover{
-//     background-color: #4d597d;
-//     border-color: #4d597d;
-// }
+}
 .bk-dialog-btn-confirm {
     // border: 1px solid #6b7baa;
 }
@@ -806,4 +793,27 @@ input.parsley-error {
 .is-danger {
     color: #ff5656;
     font-size: 12px;
+}
+
+.clearfix:after{
+    content: '';
+    font-size: 0;
+}
+.error-message-content{
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    background: #f8f6db;
+    z-index: 99999;
+    span{
+        color: #ff5656;
+        margin-right: 20px;
+    }
+    i{
+        cursor: pointer;
+        color: #ff5656;
+    }
 }

@@ -188,6 +188,11 @@
         border-bottom: 1px solid $borderColor;
         padding:7px 20px 0 11px;
         font-size: 14px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        z-index: 100;
         .header-right-contain{
             .select-trigger-box{
                 top: 0;
