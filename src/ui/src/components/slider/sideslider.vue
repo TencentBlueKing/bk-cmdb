@@ -60,7 +60,7 @@
             /*
                 是否需要显示关闭弹窗确认提示
             */
-            isShowCloseConfirm: {
+            isCloseConfirmShow: {
                 type: Boolean,
                 default: false
             }
@@ -80,7 +80,7 @@
         },
         methods: {
             closeSlider () {
-                if (this.isShowCloseConfirm) {
+                if (this.isCloseConfirmShow) {
                     this.$bkInfo({
                         content: '退出会导致未保存信息丢失，是否确认？',
                         confirmFn: () => {

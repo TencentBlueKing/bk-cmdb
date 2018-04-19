@@ -74,7 +74,7 @@
             <v-sideslider
                 :isShow.sync="slider.isShow"
                 :hasQuickClose="true"
-                :isShowCloseConfirm="slider.isShowCloseConfirm"
+                :isCloseConfirmShow="slider.isCloseConfirmShow"
                 :title="slider.title"
                 @closeSlider="closeObjectSlider">
                 <div class="slide-content" slot="content">
@@ -87,7 +87,7 @@
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
                                 :isBatchUpdate="false"
-                                :isShowCloseConfirm.sync="slider.isShowCloseConfirm"
+                                :isCloseConfirmShow.sync="slider.isCloseConfirmShow"
                                 @submit="saveObjectAttr"
                                 @delete="confirmDelete">
                             </v-object-attr>
@@ -181,7 +181,7 @@
                 // 侧滑状态
                 slider: {
                     isShow: false,
-                    isShowCloseConfirm: false,
+                    isCloseConfirmShow: false,
                     title: {
                         icon: '',
                         text: ''
