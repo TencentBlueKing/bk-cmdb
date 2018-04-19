@@ -294,7 +294,7 @@
         components: {
             vImport,
             vHosts,
-            vSideslider
+            vSideslider,
             vDeleteHistory
         }
     }
