@@ -16,6 +16,7 @@ import (
 	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"encoding/json"
 	"errors"
@@ -590,7 +591,7 @@ func ResToV2ForEnterIP(respV3 string) error {
 }
 
 // ResV2ToForProcList get process info for v2
-func ResV2ToForProcList(resDataV3 interface{}) interface{} {
+func ResV2ToForProcList(resDataV3 interface{}, defLang language.DefaultCCLanguageIf) interface{} {
 	resDataArrV3 := resDataV3.([]interface{})
 	ret := make([]interface{}, 0)
 	for _, item := range resDataArrV3 {
@@ -602,7 +603,7 @@ func ResV2ToForProcList(resDataV3 interface{}) interface{} {
 			"ApplicationName": itemMap[common.BKAppNameField],
 			"InnerIP":         itemMap[common.BKHostInnerIPField],
 			"OuterIP":         itemMap[common.BKHostOuterIPField],
-			"process":         getOneProcData(itemMap["process"]),
+			"process":         getOneProcData(itemMap["process"], defLang),
 		})
 
 	}
@@ -705,7 +706,7 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 }
 
 // getOneProcData get one process data
-func getOneProcData(data interface{}) interface{} {
+func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) interface{} {
 	var ret interface{}
 
 	itemMap := data.(map[string]interface{})
@@ -732,6 +733,43 @@ func getOneProcData(data interface{}) interface{} {
 	default:
 		updateTime = ""
 	}
+	protocal, ok := itemMap[common.BKProtocol].(string)
+	if false == ok {
+		protocal = ""
+	} else {
+		switch protocal {
+		case "1":
+			protocal = "TCP"
+		case "2":
+			protocal = "UDP"
+		default:
+			protocal = ""
+		}
+	}
+	bindIP, ok := itemMap[common.BKBindIP].(string)
+	if false == ok {
+		bindIP = ""
+	} else {
+		switch bindIP {
+		case "1":
+			bindIP = "127.0.0.1"
+		case "2":
+			bindIP = "0.0.0.0"
+		case "3":
+			bindIP = defLang.Language("apiv2_process_bind_innerip") //"第一内网IP"
+		case "4":
+			bindIP = defLang.Language("apiv2_process_bind_outerip") //"第一公网IP"
+		default:
+			bindIP = ""
+		}
+	}
+
+	/*    "process_property_bind_ip_enum_1": "127.0.0.1",
+	"process_property_bind_ip_enum_2": "0.0.0.0",
+	"process_property_bind_ip_enum_3": "第一内网IP",
+	"process_property_bind_ip_enum_4": "第一外网IP",
+	"process_property_protocol_enum_1": "TCP",
+	"process_property_protocol_enum_2": "UDP",*/
 
 	convFields := []string{common.BKWorkPath, common.BKFuncIDField, common.BKFuncName,
 		common.BKBindIP, common.BKUser, "start_cmd", "stop_cmd", common.BKProcessNameField, common.BKPort,
@@ -754,7 +792,7 @@ func getOneProcData(data interface{}) interface{} {
 		"ProcessName": itemMap[common.BKProcessNameField],
 		"OpTimeout":   itemMap["timeout"],       //"0",
 		"KillCmd":     itemMap["face_stop_cmd"], //"",
-		"Protocol":    itemMap[common.BKProtocol],
+		"Protocol":    protocal,
 		"Seq":         itemMap["priority"], //0",
 		"ProcGrp":     "",
 		"Port":        itemMap[common.BKPort],
