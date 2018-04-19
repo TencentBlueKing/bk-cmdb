@@ -180,13 +180,14 @@
     .classify-list{
         font-size: 0;
         margin: 0 auto;
+        max-width: 1600px;
         .classify-item{
             font-size: 14px;
             position: relative;
             display: inline-block;
-            width: 390px;
+            width: 380px;
             height: 200px;
-            margin: 10px;
+            margin: 0 10px 20px;
             background-color: #fff;
             box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.13);
             border-radius: 2px;
@@ -248,11 +249,11 @@
         position: relative;
         height: calc(100% - 114px);
         .model-return{
-            margin: 0 20px 4px;
+            margin: 0 20px 14px;
         }
     }
     .model-list{
-        height: calc(100% - 40px);
+        height: calc(100% - 50px);
         overflow-x: hidden;
         overflow-y: auto;
         font-size: 0;
@@ -262,7 +263,7 @@
             display: inline-block;
             width: 316px;
             height: 130px;
-            margin: 10px 0 10px 20px;
+            margin: 0 0 20px 20px;
             font-size: 14px;
             background-color: #ffffff;
             box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.13);
@@ -303,67 +304,44 @@
     }
 </style>
 <style lang="scss">
-    /* 导航栏收起时的九宫格宽度 */
-    @media (max-width: 1679px){
-        .content-control{
+    /* 导航栏收起时的分类列表宽度 */
+    /* screen <= 1279 放2个分类 */
+    @media (max-width: 1279px){
+        .content-wrapper.fold{
+            .index-wrapper{
+                .classify-list{
+                    width: 820px;
+                }
+            }
+        }
+    }
+    /* 1280 <= screen <= 1679 放三个分类*/
+    @media (min-width: 1280px) and (max-width: 1679px) {
+        .content-wrapper.fold{
             .index-wrapper{
                 .classify-list{
                     width: 1220px;
-                    .classify-item{
-                        width: 380px;
-                    }
                 }
             }
         }
     }
-    @media (min-width: 1680px) and (max-width: 1759px) {
-        .content-control{
-            .index-wrapper{
-                .classify-list{
-                    width: 1620px;
-                    .classify-item{
-                        width: 380px;
-                    }
-                }
-            }
-        }
-    }
-    @media (min-width: 1760px) {
-        .content-control{
-            .index-wrapper{
-                .classify-list{
-                    width: 1700px;
-                }
-            }
-        }
-    }
-    /* 导航展示时的九宫格宽度 */
+    /* 导航展开时的分类列表宽度 */
+    /* screen <= 1439 放2个分类 */
     @media (max-width: 1439px) {
         .content-wrapper{
             .index-wrapper{
                 .classify-list{
-                    width: 860px;
+                    width: 820px;
                 }
             }
         }
     }
-    @media (min-width: 1440px) and (max-width: 1499px) {
+    /* 1440 <= screen <= 1839 放三个分类*/
+    @media (min-width: 1440px) and (max-width: 1839px) {
         .content-wrapper{
             .index-wrapper{
                 .classify-list{
                     width: 1220px;
-                    .classify-item{
-                        width: 380px;
-                    }
-                }
-            }
-        }
-    }
-    @media (min-width: 1500px) and (max-width: 1919px) {
-        .content-wrapper{
-            .index-wrapper{
-                .classify-list{
-                    width: 1280px;
                 }
             }
         }

@@ -68,7 +68,7 @@
                 height: 100%;
                 min-width: 1060px;
                 &.fold{
-                    min-wdth: 1220px;
+                    min-width: 1220px;
                 }
             }
         }
