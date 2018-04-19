@@ -24,7 +24,6 @@
 </template>
 
 <script type="text/javascript">
-    import bus from '@/eventbus/bus'
     export default {
         props: {
             /*
@@ -59,9 +58,9 @@
                 default: true
             },
             /*
-                是否有关闭确认提示
+                是否需要显示关闭弹窗确认提示
             */
-            hasCloseConfirm: {
+            isShowCloseConfirm: {
                 type: Boolean,
                 default: false
             }
@@ -81,7 +80,16 @@
         },
         methods: {
             closeSlider () {
-                this.$emit('update:isShow', false)
+                if (this.isShowCloseConfirm) {
+                    this.$bkInfo({
+                        content: '退出会导致未保存信息丢失，是否确认？',
+                        confirmFn: () => {
+                            this.$emit('update:isShow', false)
+                        }
+                    })
+                } else {
+                    this.$emit('update:isShow', false)
+                }
             },
             quickClose () {
                 if (this.hasQuickClose) {
