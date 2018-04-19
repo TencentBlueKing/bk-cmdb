@@ -208,10 +208,10 @@
         },
         computed: {
             ...mapGetters([
-                'allClassify',
                 'bkSupplierAccount',
                 'usercustom'
             ]),
+            ...mapGetters('navigation', ['activeClassifications']),
             // 当前路由对应的模型ID
             objId () {
                 return this.$route.params.objId
@@ -219,14 +219,12 @@
             // 当前路由对应的模型名称
             objName () {
                 let objName = ''
-                this.allClassify.map(classify => {
-                    if (classify['bk_objects'] && classify['bk_objects'].length) {
-                        classify['bk_objects'].map(model => {
-                            if (model['bk_obj_id'] === this.objId) {
-                                objName = model['bk_obj_name']
-                            }
-                        })
-                    }
+                this.activeClassifications.map(classify => {
+                    classify['bk_objects'].map(model => {
+                        if (model['bk_obj_id'] === this.objId) {
+                            objName = model['bk_obj_name']
+                        }
+                    })
                 })
                 return objName
             },
