@@ -9,7 +9,7 @@
  */
 
 <template>
-    <div class="">
+    <div>
         <div class="tab-content" v-if="isLoaded && hostSnapshot">
             <div class="attribute-list clearfix">
                 <div class="title clearfix">
@@ -135,7 +135,7 @@
                     title: {
                         text: '总CPU使用率',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -144,7 +144,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -164,7 +164,7 @@
                     title: {
                         text: '总内存使用率',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -173,7 +173,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -193,7 +193,7 @@
                     title: {
                         text: '磁盘使用情况',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -202,7 +202,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -242,7 +242,7 @@
             margin-bottom:40px;
             .title{
                 h3{
-                    color:#bec6de;
+                    color:#333948;
                     font-size:14px;
                     font-weight: bold;
                     line-height:1;
@@ -254,7 +254,7 @@
                     padding-right: 30px;
                     .info-title{
                         float: left;
-                        color: #bec6de;
+                        color: #333948;
                     }
                     .info-detail{
                         float: left;

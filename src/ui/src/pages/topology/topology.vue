@@ -199,7 +199,7 @@
                     if (instRes.result && internalRes.result) {
                         let internalModule = internalRes.data.module.map(module => {
                             return {
-                                'default': module['bk_module_name'] === '空闲机' ? 1 : 2,
+                                'default': module['bk_module_name'] === '空闲机' || module['bk_module_name'] === 'idle machine' ? 1 : 2,
                                 'bk_obj_id': 'module',
                                 'bk_obj_name': this.$t('Hosts[\'模块\']'),
                                 'bk_inst_id': module['bk_module_id'],
