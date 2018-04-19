@@ -2,6 +2,7 @@ package metric
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/types"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -64,7 +65,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 			Module:     conf.ModuleName,
 			Address:    fmt.Sprintf("%s:%d", conf.IP, conf.MetricPort),
 			HealthMeta: h,
-			AtTime:     time.Now().Unix(),
+			AtTime:     types.Now(),
 		}
 
 		rsp := HealthResponse{

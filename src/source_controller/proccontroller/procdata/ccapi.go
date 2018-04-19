@@ -23,6 +23,7 @@ import (
 	confCenter "configcenter/src/source_controller/proccontroller/procdata/config"
 	"configcenter/src/source_controller/proccontroller/procdata/rdiscover"
 	"configcenter/src/storage"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -194,38 +195,47 @@ func (ccAPI *CCAPIServer) NewMetricServer(ip string, port uint) error {
 
 // HealthMetric check netservice is health
 func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
-	allhealthy := true
-	meta := metric.HealthMeta{}
+
+	meta := metric.HealthMeta{IsHealthy: true}
 	a := api.GetAPIResource()
 
-	mongoHealthy := metric.HealthItem{}
-	err := a.InstCli.Ping()
-	if err != nil {
-		allhealthy = false
+	// check mongo
+	mongoHealthy := metric.HealthItem{Name: "mongo"}
+	if err := a.InstCli.Ping(); err != nil {
+		mongoHealthy.IsHealthy = false
+		mongoHealthy.Message = err.Error()
+	} else {
+		mongoHealthy.IsHealthy = true
 	}
 	meta.Items = append(meta.Items, mongoHealthy)
-	if a.CacheCli.Ping() != nil {
-		return false
+
+	// check redis
+	redisHealthy := metric.HealthItem{Name: "redis"}
+	if err := a.CacheCli.Ping(); err != nil {
+		redisHealthy.IsHealthy = false
+		redisHealthy.Message = err.Error()
+	} else {
+		redisHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, redisHealthy)
+
+	// check http server
+	httpHealthy := metric.HealthItem{Name: "http"}
+	httpHealthy.IsHealthy = ccAPI.onworking
+	if ccAPI.onworking {
+		httpHealthy.Message = fmt.Sprintf("listening on %s", ccAPI.conf.AddrPort)
+	} else {
+		httpHealthy.Message = "not listening http"
+	}
+	meta.Items = append(meta.Items, httpHealthy)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "proccontroller is not healthy"
+			break
+		}
 	}
 
-	healthy := ccAPI.IsHealthy()
-	message := "proccontroller is healthy"
-	if healthy {
-		message = "proccontroller is not healthy"
-	}
-
-	return
-}
-
-func (ccAPI *CCAPIServer) IsHealthy() bool {
-	a := api.GetAPIResource()
-
-	if a.InstCli.Ping() != nil {
-		return false
-	}
-	if a.CacheCli.Ping() != nil {
-		return false
-	}
-
-	return ccAPI.onworking
+	return meta
 }

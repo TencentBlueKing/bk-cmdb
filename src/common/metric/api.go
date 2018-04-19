@@ -46,10 +46,14 @@ type HealthMeta struct {
 	Items []HealthItem `json:"items"`
 }
 
+// HealthItem define
 type HealthItem struct {
+	// item name
 	Name string `json:"name"`
-
-	HealthMeta `json:",inline"`
+	// if this module is healthy
+	IsHealthy bool `json:"healthy"`
+	// messages which describes the health status
+	Message string `json:"message"`
 }
 
 // MetricMeta define the MetricMeta that shows the named metric
