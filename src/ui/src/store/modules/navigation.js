@@ -26,6 +26,7 @@ const getters = {
     fold: state => state.fold,
     classifications: state => state.classifications,
     result: state => state.result,
+    authority: state => state.authority,
     // 可用分类
     activeClassifications: state => {
         let classifications = state.classifications
@@ -41,7 +42,7 @@ const getters = {
                 'bk_classification_id': bkClassificationId,
                 'bk_objects': bkObjects
             } = classification
-            return !state.invisibleClassifications.includes(bkClassificationId) && bkObjects.length
+            return !state.invisibleClassifications.includes(bkClassificationId) && Array.isArray(bkObjects) && bkObjects.length
         })
         return activeClassifications
     },
@@ -122,8 +123,8 @@ const getters = {
     }
 }
 const actions = {
-    async getClassifications ({commit, state, rootState}) {
-        if (state.result.classification) {
+    async getClassifications ({commit, state, rootState}, forceUpdate = false) {
+        if (state.result.classification && !forceUpdate) {
             return Promise.resolve({result: true, data: state.classifications})
         }
         let classifications = []
@@ -175,6 +176,31 @@ const mutations = {
     setClassifications (state, classifications) {
         state.result.classification = true
         state.classifications = classifications
+    },
+    updateClassification (state, classification) {
+        if (classification.hasOwnProperty('bk_classification_id')) {
+            let targetClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => {
+                return bkClassificationId === classification['bk_classification_id']
+            })
+            if (targetClassification) {
+                Object.assign(targetClassification, classification)
+            }
+        }
+    },
+    updateModel (state, model) {
+        if (model.hasOwnProperty('bk_classification_id') && model.hasOwnProperty('bk_obj_id')) {
+            let targetClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => {
+                return bkClassificationId === model['bk_classification_id']
+            })
+            if (targetClassification) {
+                let targetModel = targetClassification['bk_objects'].find(({bk_obj_id: bkObjId}) => {
+                    return bkObjId === model['bk_obj_id']
+                })
+                if (targetModel) {
+                    Object.assign(targetModel, model)
+                }
+            }
+        }
     }
 }
 

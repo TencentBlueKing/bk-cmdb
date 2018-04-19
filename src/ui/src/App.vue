@@ -14,17 +14,19 @@
             <span>您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
         </div>
         <v-navigation class="fl"></v-navigation>
-        <div :class="['main', {fold: fold}]">
-            <v-header @quickCheck="quickCheck"></v-header>
-            <div class="content-wrapper" v-bkloading="{isLoading: globalLoading}">
-                <router-view/>
+        <div class="main-container">
+            <v-header></v-header>
+            <div class="main-wrapper">
+                <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
+                    <router-view/>
+                </div>
             </div>
         </div>
     </div>
 </template>
 <script>
     import vHeader from '@/components/header/header'
-    import vNavigation from '@/components/nav/nav.v2'
+    import vNavigation from '@/components/nav/nav'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
@@ -34,8 +36,7 @@
         },
         data () {
             return {
-                isChromeShow: true,
-                searchVal: ''
+                isChromeShow: true
             }
         },
         computed: {
@@ -43,9 +44,6 @@
             ...mapGetters('navigation', ['fold'])
         },
         methods: {
-            quickCheck (searchVal) {
-                this.searchVal = searchVal
-            },
             closeInfo () {
                 this.isChromeShow = false
             }
@@ -57,9 +55,23 @@
 </script>
 <style lang="scss" scoped>
     $primaryColor: #737987;
-    .main{
+    .main-container{
         overflow: hidden;
         height: 100%;
+        position: relative;
+        .main-wrapper{
+            height: 100%;
+            padding-top: 50px;
+            overflow: auto;
+            position: relative;
+            .content-wrapper{
+                height: 100%;
+                min-width: 1060px;
+                &.fold{
+                    min-wdth: 1220px;
+                }
+            }
+        }
     }
 </style>
 <style lang="scss">
@@ -67,26 +79,4 @@
     @import './common/icon/cc-icon/style.css';
     @import './common/icon/bk-icon-2.0/iconfont.css';
     @import './magicbox/bk-magicbox-ui/bk.scss';
-    .clearfix:after{
-        content: '';
-        font-size: 0;
-    }
-    .error-message-content{
-        position: fixed;
-        top: 0;
-        width: 100%;
-        height: 40px;
-        line-height: 40px;
-        text-align: center;
-        background: #f8f6db;
-        z-index: 99999;
-        span{
-            color: #ff5656;
-            margin-right: 20px;
-        }
-        i{
-            cursor: pointer;
-            color: #ff5656;
-        }
-    }
 </style>
