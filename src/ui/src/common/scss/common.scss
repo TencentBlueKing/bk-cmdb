@@ -794,7 +794,6 @@ input.parsley-error {
     color: #ff5656;
     font-size: 12px;
 }
-
 .clearfix:after{
     content: '';
     font-size: 0;
@@ -816,4 +815,7 @@ input.parsley-error {
         cursor: pointer;
         color: #ff5656;
     }
+}
+.bk-date .date-dropdown-panel{
+    z-index: 1111;
 }

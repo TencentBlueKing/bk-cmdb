@@ -11,7 +11,7 @@
 <template lang="html">
     <div id="app" class="clearfix">
         <div class="error-message-content is-chrome" v-show="isChromeShow">
-            <span>您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
+            <span>{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
         </div>
         <v-navigation class="fl"></v-navigation>
         <div class="main-container">

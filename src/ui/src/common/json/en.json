@@ -28,14 +28,15 @@
         "主机转移": "Host Transfer",
         "业务": "Business",
         "已选N项": "{N} items selected",
-        "确认转移": "Confirmation of transfer",
+        "已选N行": "{N} rows selected",
+        "确认转移": "Confirm",
         "覆盖": "Cover",
         "更新": "Update",
         "转移确认": "Transfer to {target} will clear the current module binding, confirm?",
         "转移成功": "Successful Transfer",
         "您没有主机转移的权限": "You do not have permission to transfer from the host",
         "主机资源池": "Host Resource Pool",
-        "后台配置": "Background Configuration",
+        "后台配置": "System config",
         "属性编辑": "Modify",
         "当前还未有关联项": "There are no related items yet",
         "系统出现异常，请记录下错误场景并与开发人员联系，谢谢": "The system is abnormal. Please record the error scene and contact the developer. Thank you.",
@@ -68,7 +69,14 @@
         "刷新查询": "Refresh",
         "请选择": "Please Select",
         "更多属性": "More Properties",
-        "创建": "Create "
+        "无可编辑属性": "Unedited attribute",
+        "重复的值": "Repeated value",
+        "创建": "Create",
+        "您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果": "Your browser is not Chrome, we recommend using the latest version of Chrome for the best experience",
+        "已删除历史": "Deleted History",
+        "返回": "Back",
+        "查看删除历史": "Deleted History",
+        "中文名": "Description"
     },
     "Index": {
         "首页": "Index",
@@ -155,7 +163,7 @@
         "系统相关": "System",
         "全局业务": "Global Business",
         "资源池管理": "Resource Pool",
-        "后台配置": "Background Configuration",
+        "后台配置": "System config",
         "事件推送配置": "Event Push Configuration ",
         "模型配置": "Module Configuration ",
         "模型相关": "Model-Related",
@@ -273,7 +281,9 @@
         "请输入字段名称": "Please enter field name",
         "新增分组": "Add Group",
         "编辑分组": "Modify Group",
-        "单击选择对应图标": "Click to select the corresponding icon"
+        "单击选择对应图标": "Click to select the corresponding icon",
+        "设置为默认值": "Set as default",
+        "请输入ID": "Enter ID"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",

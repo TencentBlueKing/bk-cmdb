@@ -199,26 +199,6 @@
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
-                                            <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
-                                            <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
-                                            <div class="from-selcet-wrapper">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isonly']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
-                                        </div>
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('Common["正则验证"]')}}</label>
                                             <div class="from-common-content reg-verification ">
@@ -259,19 +239,36 @@
                                             <div v-if="item.isShow">
                                                 <div class="form-enum-wrapper" v-for="(field, fieldIndex) in item.option.list">
                                                     <span class="span-enum-radio" @click="item.option.defaultIndex = fieldIndex" :title="$t('ModelManagement[\'设置为默认值\']')" :class="{'active': fieldIndex === item.option.defaultIndex}"></span>
-                                                    <input type="text" :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
-                                                        v-model.trim="field.name"
-                                                        maxlength="15"
-                                                        data-parsley-required="true"
-                                                        :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
-                                                        data-parsley-maxlength="15"
-                                                        :data-parsley-pattern="enumReg"
-                                                        :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
-                                                        data-parsley-trigger="blur"
-                                                        data-parsley-no-repeat="change"
-                                                        :data-parsley-errors-container="'#changeEnumError'+fieldIndex"
-                                                        @input="forceUpdate('change')"
-                                                    >
+                                                    <div class="enum-id">
+                                                        <input type="text" :placeholder="$t('ModelManagement[\'请输入ID\']')"
+                                                            v-model.trim="field.id"
+                                                            maxlength="15"
+                                                            data-parsley-required="true"
+                                                            :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
+                                                            data-parsley-pattern="^[a-zA-Z0-9_]{1,20}$"
+                                                            :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
+                                                            data-parsley-trigger="blur"
+                                                            data-parsley-no-repeat="changeId"
+                                                            @input="forceUpdate('newId')"
+                                                        >
+                                                    </div>
+                                                    <div class="enum-name">
+                                                        <input type="text" :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
+                                                            v-model.trim="field.name"
+                                                            maxlength="15"
+                                                            data-parsley-required="true"
+                                                            :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
+                                                            data-parsley-maxlength="15"
+                                                            :data-parsley-pattern="reg"
+                                                            :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
+                                                            data-parsley-trigger="blur"
+                                                            data-parsley-no-repeat="change"
+                                                            :data-parsley-errors-container="'#changeEnumError'+fieldIndex"
+                                                            @input="forceUpdate('change')"
+                                                        >
+                                                        <!-- 表单验证错误信息容器 -->
+                                                        <div class="form-enum-error" :id="'changeEnumError'+fieldIndex"></div>
+                                                    </div>
                                                     <!-- <button class="bk-icon icon-arrows-up"
                                                         :disabled="fieldIndex === 0"
                                                         @click.prevent="enumUp('change',fieldIndex,index)"
@@ -285,8 +282,6 @@
                                                         @click.prevent="deleteEnum('change',fieldIndex,index)"
                                                     ><i class="icon-cc-del"></i></button>
                                                     <button class="bk-icon icon-plus" @click.prevent="addEnum('change',fieldIndex,index)" v-if="fieldIndex === (item.option.list.length -1)"></button>
-                                                    <!-- 表单验证错误信息容器 -->
-                                                    <div class="form-enum-error" :id="'changeEnumError'+fieldIndex"></div>
                                                     <!-- 拖拽标识点，暂未实现，隐藏 -->
                                                     <i class="form-enum-wrapper-dot" hidden></i>
                                                 </div>
@@ -294,6 +289,7 @@
                                             <div class="enum-disabled" v-if="isReadOnly"></div>
                                         </div>
                                     </div>
+
                                     <!-- 日期 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'date'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
@@ -551,8 +547,8 @@
                                             data-parsley-required="true"
                                             :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
                                             data-parsley-maxlength="20"
-                                            data-parsley-pattern="^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,15}$"
-                                            :data-parsley-pattern-message="$t('ModelManagement[\'包含了非下划线的特殊字符\']')"
+                                            :data-parsley-pattern="reg"
+                                            :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
                                             data-parsley-trigger="input blur"
                                             >
                                         </div>
@@ -775,20 +771,36 @@
                                     <div v-pre class="clearfix"></div>
                                     <div v-if="newFieldInfo.propertyType === 'enum'">
                                         <div class="form-enum-wrapper" v-for="(field, fieldIndex) in newFieldInfo.option.list">
-                                            <span class="span-enum-radio" @click="newFieldInfo.option.defaultIndex = fieldIndex" :title="$t('ModelManagement[\'设置为默认值\']')" :class="{'active': fieldIndex === newFieldInfo.option.defaultIndex}"></span>
-                                            <input type="text" :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
-                                                v-model.trim="field.name"
-                                                maxlength="15"
-                                                data-parsley-required="true"
-                                                :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
-                                                data-parsley-maxlength="15"
-                                                :data-parsley-pattern="enumReg"
-                                                :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
-                                                data-parsley-trigger="blur"
-                                                data-parsley-no-repeat="new"
-                                                :data-parsley-errors-container="'#newEnumError'+fieldIndex"
-                                                @input="forceUpdate('new')"
-                                            >
+                                            <span class="span-enum-radio" @click="newFieldInfo.option.defaultIndex = fieldIndex" title="设置为默认值" :class="{'active': fieldIndex === newFieldInfo.option.defaultIndex}"></span>
+                                            <div class="enum-id">
+                                                <input type="text" :placeholder="$t('ModelManagement[\'请输入ID\']')"
+                                                    v-model.trim="field.id"
+                                                    maxlength="15"
+                                                    data-parsley-required="true"
+                                                    :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
+                                                    data-parsley-pattern="^[a-zA-Z0-9_]{1,20}$"
+                                                    :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
+                                                    data-parsley-trigger="blur"
+                                                    data-parsley-no-repeat="newId"
+                                                    @input="forceUpdate('newId')"
+                                                >
+                                            </div>
+                                            <div class="enum-name">
+                                                <input type="text" :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
+                                                    v-model.trim="field.name"
+                                                    maxlength="15"
+                                                    data-parsley-required="true"
+                                                    :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
+                                                    data-parsley-maxlength="15"
+                                                    :data-parsley-pattern="reg"
+                                                    :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
+                                                    data-parsley-trigger="blur"
+                                                    data-parsley-no-repeat="new"
+                                                    :data-parsley-errors-container="'#newEnumError'+fieldIndex"
+                                                    @input="forceUpdate('new')"
+                                                >
+                                                <div class="form-enum-error" :id="'newEnumError'+fieldIndex"></div>
+                                            </div>
                                             <!-- <button class="bk-icon icon-arrows-up"
                                                 :disabled="fieldIndex === 0"
                                                 @click.prevent="enumUp('new',fieldIndex)"
@@ -803,7 +815,6 @@
                                             ><i class="icon-cc-del"></i></button>
                                             <button class="bk-icon icon-plus" @click.prevent="addEnum('new',fieldIndex)" v-if="fieldIndex === (newFieldInfo.option.list.length -1)"></button>
                                             <!-- 表单验证错误信息容器 -->
-                                            <div class="form-enum-error" :id="'newEnumError'+fieldIndex"></div>
                                             <!-- 拖拽标识点，暂未实现，隐藏 -->
                                             <i class="form-enum-wrapper-dot" hidden></i>
                                         </div>
@@ -1128,7 +1139,6 @@
             </form>
         </div>
     </div>
-   
 </template>
 
 <script type="text/javascript">
@@ -1205,7 +1215,7 @@
         },
         data () {
             return {
-                enumReg: '^([a-zA-Z0-9_]||[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]|[,，；;“”‘’。."\' +-]){1,15}$',
+                reg: '^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."\' \\/]){1,15}$',
                 isSelectErrorShow: false,       // 关联模型为空时的提示状态
                 isEnumErrorShow: false,         // 枚举内容为空是的提示状态
                 tips: {
@@ -1457,25 +1467,22 @@
                 let opt = null
                 switch (type) {
                     case 'int':
-                        opt = JSON.stringify({
+                        opt = {
                             min: option.min,
                             max: option.max
-                        })
-                        break
-                    case 'longchar':
-                        opt = option
-                        break
-                    case 'singlechar':
-                        opt = option
+                        }
                         break
                     case 'enum':
-                        // opt = JSON.stringify(option)
-                        option.list[option.defaultIndex]['is_default'] = true
-                        opt = JSON.stringify(option.list)
+                        option.list.map((item, index) => {
+                            item['is_default'] = index === option.defaultIndex
+                        })
+                        opt = option.list
                         break
+                    case 'longchar':
+                    case 'singlechar':
                     case 'singleasst':
                     case 'multiasst':
-                        opt = JSON.stringify(option)
+                        opt = option
                         break
                 }
                 return opt
@@ -1492,16 +1499,15 @@
                     case 'singleasst':
                     case 'multiasst':
                         if (item['Option'] !== 'undefined') {
-                            option = JSON.parse(item['Option'])
+                            option = item['Option']
                         }
                         break
                     case 'enum':
                         if (item['Option'] !== 'undefined') {
-                            let opt = JSON.parse(item['Option'])
+                            let opt = item['Option']
                             let defaultIndex = ''
                             for (let i = 0; i < opt.length; i++) {
-                                if (opt[i].hasOwnProperty('is_default')) {
-                                    delete opt[i]['is_default']
+                                if (opt[i].hasOwnProperty('is_default') && opt[i]['is_default']) {
                                     defaultIndex = i
                                     break
                                 }
@@ -1510,7 +1516,6 @@
                                 list: opt,
                                 defaultIndex: defaultIndex
                             }
-                            // option = JSON.parse(item['Option'])
                         }
                         break
                     case 'longchar':
@@ -1547,13 +1552,6 @@
                         for (let item of res.data) {
                             // 解决后端变量与前端重名问题
                             item.Option = item.option
-                            // delete item.option
-                            // 注释暂时不删
-                            // if (item.IsPre) {
-                            //     this.fieldList.unshift(item)
-                            // } else {
-                            //     this.fieldList.push(item)
-                            // }
                             if (item['isonly'] && item['isrequired']) {
                                 haveValue.unshift(item)
                             } else if (item['isonly']) {
@@ -1564,7 +1562,6 @@
                                 empty.push(item)
                             }
                             this.fieldList = haveValue.concat(empty)
-                            // console.log(this.fieldList, 'item')
                         }
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
@@ -1581,9 +1578,6 @@
             */
             toggleDetailShow (item, index) {
                 $('#validate-form-change').parsley().reset()
-                // if (item.IsPre) {
-                //     return
-                // }
                 if (!this.fieldList[index].isShow) {
                     this.parseFieldOption(item, index)
                     this.curFieldInfo['bk_property_name'] = item['bk_property_name']
@@ -1593,7 +1587,6 @@
                     this.curFieldInfo['placeholder'] = item['placeholder']
                     this.curFieldInfo['unit'] = item['unit']
                     this.curFieldInfo['bk_asst_forward'] = ''
-                    // this.curFieldInfo['bk_asst_forward'] = item['bk_asst_forward']
                 }
                 for (var i = 0; i < this.fieldList.length; i++) {
                     if (index === i) {
@@ -1795,7 +1788,7 @@
                         break
                     case 'enum':
                         this.newFieldInfo.option = {
-                            list: [{name: ''}],
+                            list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
                         // this.newFieldInfo.option = [{name: '', is_default: 0}]
@@ -2028,7 +2021,7 @@
                         },
                         messages: {
                             'en': 'This value should not be repeated',
-                            'zh-cn': '重复的值'
+                            'zh-cn': this.$t('Common["重复的值"]')
                         }
                     })
                 }
@@ -2568,10 +2561,25 @@
         font-size: 0;
         position: relative;
         float: left;
+        .enum-id{
+            float: left;
+            width: 90px;
+            margin-right: 10px;
+            input{
+                width: 90px;
+            }
+        }
+        .enum-name{
+            float: left;
+            width: 250px;
+            input{
+                width: 250px;
+            }
+        }
         input {
             font-size: 12px;
             vertical-align: middle;
-            width: 350px;
+            // width: 350px;
             height: 30px;
             border-radius: 2px;
             border: 1px solid #bec6de;

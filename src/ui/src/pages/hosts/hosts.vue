@@ -476,6 +476,12 @@
                         value = this.$formatTime(value, 'YYYY-MM-DD')
                     } else if (property['bk_property_type'] === 'time') {
                         value = this.$formatTime(value)
+                    } else if (property['bk_property_type'] === 'enum') {
+                        if (value) {
+                            value = property.option.find(({id}) => {
+                                return id === value
+                            })['name']
+                        }
                     }
                     return value
                 }
