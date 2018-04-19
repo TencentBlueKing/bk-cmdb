@@ -45,7 +45,7 @@
                 </button>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
-                    <button class="bk-button del-button fl ml10" @click="showFiling" title="查看删除历史">
+                    <button class="bk-button del-button fl ml10" @click="showFiling" :title="$t('Common[\'查看删除历史\']')">
                         <i class="icon-cc-history"></i>
                     </button>
                 </div>

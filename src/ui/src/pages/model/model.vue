@@ -191,7 +191,7 @@
     import vOther from './children/other'
     import vTopo from '@/components/topo/topo'
     import {mapGetters, mapActions} from 'vuex'
-    const iconList = require('@/common/json/modelIcon.json')
+    const iconList = require('@/common/json/classIcon.json')
     export default {
         data () {
             return {

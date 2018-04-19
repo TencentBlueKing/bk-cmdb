@@ -25,7 +25,7 @@
                             </div>
                             <div class="select-icon-list" v-show="isIconDrop">
                                 <ul>
-                                    <li v-for="(item,index) in list" @click.stop.prevent="chooseIcon(index, item)">
+                                    <li v-for="(item,index) in list" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
                                         <i :class="item.value"></i>
                                     </li>
                                 </ul>
@@ -451,12 +451,14 @@
                 position: absolute;
                 top: 44px;
                 left: 0;
-                width: 382px;
-                min-height: 206px;
+                width: 390px;
+                height: 206px;
                 border: 1px solid #bec6de;
                 z-index: 500;
                 background: #fff;
                 box-shadow: 0 2px 2px rgba(0,0,0,.1);
+                overflow: auto;
+                @include scrollbar;
                 ul{
                     padding: 0;
                     margin: 0;
@@ -467,6 +469,9 @@
                         line-height: 46px;
                         float: left;
                         cursor: pointer;
+                        &.active{
+                            color: #498fe0;
+                        }
                         i{
                             font-size: 24px;
                         }
