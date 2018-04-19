@@ -1,32 +1,35 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
 	hostParse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/host_service/instapi"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 )
 
+// HostSearch search host by mutiple condition
 func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
 	var hostCond, appCond, setCond, moduleCond, objectCond hostParse.SearchCondition
 	appIDArr := make([]int, 0)
@@ -317,4 +320,56 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	result["count"] = cnt
 
 	return result, err
+}
+
+func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}) ([]interface{}, error) {
+	hostURL = hostURL + "/host/v1/hosts/search"
+	getParams := make(map[string]interface{})
+	getParams["fields"] = nil
+	getParams["condition"] = conds
+	getParams["start"] = 0
+	getParams["limit"] = common.BKNoLimit
+	getParams["sort"] = common.BKHostIDField
+	blog.Info("get host info by conds url:%s", hostURL)
+	blog.Info("get host info by conds params:%v", getParams)
+	isSucess, message, iRetData := GetHttpResult(req, hostURL, common.HTTPSelectPost, getParams)
+	blog.Info("get host info by conds return:%v", iRetData)
+	if !isSucess {
+		return nil, errors.New("获取主机信息失败;" + message)
+	}
+	if nil == iRetData {
+		return nil, nil
+	}
+	retData := iRetData.(map[string]interface{})
+	data, _ := retData["info"]
+	if nil == data {
+		return nil, nil
+	}
+	return data.([]interface{}), nil
+}
+
+//IsExistHostIDInApp  is host exsit in app
+func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int) (bool, error) {
+	conds := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID}
+	url := CC.HostCtrl() + "/host/v1/meta/hosts/modules/search"
+	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPSelectPost, conds)
+	blog.Info("IsExistHostIDInApp request url:%s, params:{appid:%d, hostid:%d}", url, appID, hostID)
+	blog.Info("IsExistHostIDInApp res:%v,%s, %v", isSucess, errmsg, data)
+	if !isSucess {
+		return false, errors.New("获取主机关系失败;" + errmsg)
+	}
+	//数据为空
+	if nil == data {
+		return false, nil
+	}
+	ids, ok := data.([]interface{})
+	if !ok {
+		return false, errors.New(fmt.Sprintf("获取主机关系返回值格式错误;%v", data))
+	}
+
+	if len(ids) > 0 {
+		return true, nil
+	}
+	return false, nil
+
 }
