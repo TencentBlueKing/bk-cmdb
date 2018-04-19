@@ -192,7 +192,7 @@
                 type: String,
                 default: ''
             },
-            isShowCloseConfirm: {
+            isCloseConfirmShow: {
                 type: Boolean,
                 default: false
             }
@@ -303,7 +303,34 @@
                         }
                     }
                 }
-                console.log(this.localValues)
+
+                // 校验是否需要显示关闭确认弹窗
+                let isConfirmShow = false
+                if (this.type === 'create') {
+                    isConfirmShow = Object.values(this.localValues).some(val => {
+                        return val.length
+                    })
+                } else {
+                    for (let key in formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        let value = this.formValues[key]
+                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+                            value = []
+                            this.formValues[key].map(formValue => {
+                                value.push(formValue['bk_inst_id'])
+                            })
+                            value = value.join(',')
+                        }
+                        if (value !== formData[key] && !(formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
+                            isConfirmShow = true
+                            break
+                        }
+                    }
+                }
+                this.$emit('update:isCloseConfirmShow', isConfirmShow)
+                
                 return formData
             }
         },
