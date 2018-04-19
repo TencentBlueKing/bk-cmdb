@@ -1,4 +1,6 @@
 {
+    "common_property_bk_inst_name":"instance name",
+    
     "biz_property_bk_biz_name": "business name",
     "biz_property_life_cycle": "lifecycle",
     "biz_property_bk_biz_maintainer": "maintainer",
