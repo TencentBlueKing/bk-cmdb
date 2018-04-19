@@ -322,6 +322,12 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			instCondition[common.BKInstIDField] = map[string]interface{}{
 				common.BKDBIN: targetInstIDS,
 			}
+		} else if 0 != len(js.Condition) {
+			if _, ok := js.Condition[objID]; !ok {
+				instCondition[common.BKInstIDField] = map[string]interface{}{
+					common.BKDBIN: targetInstIDS,
+				}
+			}
 		}
 
 		searchParams["condition"] = instCondition
