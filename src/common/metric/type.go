@@ -80,11 +80,17 @@ type MetaData struct {
 	Labels     map[string]string `json:"label"`
 }
 
+type HealthResponse struct {
+	Code    int        `json:"code"`
+	OK      bool       `json:"ok"`
+	Message string     `json:"message"`
+	Data    HealthInfo `json:"data"`
+	Result  bool
+}
+
 type HealthInfo struct {
-	RunMode    RunModeType `json:"runMode"`
-	Module     string      `json:"module"`
-	ClusterID  string      `json:"clusterID"`
-	IP         string      `json:"ip"`
+	Module     string `json:"module"`
+	Address    string `json:"address"`
 	HealthMeta `json:",inline"`
-	AtTime     int64 `json:"atTime"`
+	AtTime     int64 `json:"at_time"`
 }

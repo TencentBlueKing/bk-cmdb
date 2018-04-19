@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"configcenter/src/common"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -60,14 +61,20 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 		w.Header().Set("Content-Type", "application/json")
 		h := healthFunc()
 		info := HealthInfo{
-			RunMode:    conf.RunMode,
 			Module:     conf.ModuleName,
-			ClusterID:  conf.ClusterID,
-			IP:         conf.IP,
+			Address:    fmt.Sprintf("%s:%d", conf.IP, conf.MetricPort),
 			HealthMeta: h,
 			AtTime:     time.Now().Unix(),
 		}
-		js, err := json.Marshal(info)
+
+		rsp := HealthResponse{
+			Code:    common.CCSuccess,
+			Data:    info,
+			OK:      h.IsHealthy,
+			Result:  h.IsHealthy,
+			Message: h.Message,
+		}
+		js, err := json.Marshal(rsp)
 		if nil != err {
 			w.WriteHeader(http.StatusInternalServerError)
 			info := fmt.Sprintf("get health info failed. err: %v", err)
