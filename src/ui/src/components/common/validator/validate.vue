@@ -1,8 +1,9 @@
 <template>
-    <!-- <span class="form-validate-message" v-show="$parent.errors.has(name)">{{$parent.errors.first(name)}}</span> -->
-    <span class="form-validate-message" v-show="$parent.errors.has(name)">内容不合法</span>
+    <span v-if="language === 'en'" class="form-validate-message" v-show="$parent.errors.has(name)">{{$parent.errors.first(name)}}</span>
+    <span v-else class="form-validate-message" v-show="$parent.errors.has(name)">内容不合法</span>
 </template>
 <script>
+    import {mapGetters} from 'vuex'
     export default {
         props: {
             value: {
@@ -14,6 +15,9 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'language'
+            ]),
             name () {
                 return this.$attrs['name'] || this.$attrs['data-vv-name']
             }

@@ -1,18 +1,19 @@
 <template>
     <div class="filing-wrapper" v-show="isShow">
         <div class="title-contain clearfix">
-            <span class="title">已删除历史</span>
+            <span class="title">{{$t('Common["已删除历史"]')}}</span>
             <div class="fr operation-group">
                 <bk-daterangepicker
                     ref="dateRangePicker"
                     class="datepicker"
+                    :ranges="ranges"
                     :range-separator="'-'"
                     :quick-select="true"
                     :start-date="startDate"
                     :end-date="endDate"
                     @change="setFilterTime">
                 </bk-daterangepicker>
-                <bk-button type="primary" @click="closeFiling">返回</bk-button>
+                <bk-button type="primary" @click="closeFiling">{{$t('Common["返回"]')}}</bk-button>
             </div>
         </div>
         <div class="table-content">
@@ -33,6 +34,7 @@
 <script>
     import moment from 'moment'
     import vTable from '@/components/table/table'
+    import {mapGetters} from 'vuex'
     export default {
         props: {
             isShow: {
@@ -53,6 +55,7 @@
                     count: 0,
                     size: 10
                 },
+                ranges: [],
                 tableList: [],
                 isLoading: false,
                 opTime: [],
@@ -60,6 +63,9 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'language'
+            ]),
             tableHeader () {
                 let header = this.$deepClone(this.objTableHeader)
                 // 为业务时删除第一列的ID
@@ -71,7 +77,7 @@
                 }
                 header.push({
                     id: 'op_time',
-                    name: '更新时间'
+                    name: this.$t('EventPush["更新时间"]')
                 })
                 header.unshift({
                     id: 'id',
@@ -188,6 +194,23 @@
             },
             closeFiling () {
                 this.$emit('update:isShow', false)
+            }
+        },
+        created () {
+            if (this.language === 'en') {
+                this.ranges = {
+                    'Yesterday': [moment().subtract(1, 'days'), moment()],
+                    'Last Week': [moment().subtract(7, 'days'), moment()],
+                    'Last Month': [moment().subtract(1, 'month'), moment()],
+                    'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                }
+            } else {
+                this.ranges = {
+                    昨天: [moment().subtract(1, 'days'), moment()],
+                    最近一周: [moment().subtract(7, 'days'), moment()],
+                    最近一个月: [moment().subtract(1, 'month'), moment()],
+                    最近三个月: [moment().subtract(3, 'month'), moment()]
+                }
             }
         },
         components: {

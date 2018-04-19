@@ -29,7 +29,7 @@
         "业务": "Business",
         "已选N项": "{N} items selected",
         "已选N行": "{N} rows selected",
-        "确认转移": "Confirmation of transfer",
+        "确认转移": "Confirm",
         "覆盖": "Cover",
         "更新": "Update",
         "转移确认": "Transfer to {target} will clear the current module binding, confirm?",
@@ -72,7 +72,11 @@
         "无可编辑属性": "Unedited attribute",
         "重复的值": "Repeated value",
         "创建": "Create",
-        "您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果": "Your browser is not Chrome, we recommend using the latest version of Chrome for the best experience"
+        "您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果": "Your browser is not Chrome, we recommend using the latest version of Chrome for the best experience",
+        "已删除历史": "Deleted History",
+        "返回": "Back",
+        "查看删除历史": "Deleted History",
+        "中文名": "Description"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

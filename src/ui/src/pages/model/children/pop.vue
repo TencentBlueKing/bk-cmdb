@@ -20,9 +20,9 @@
                             <input type="text" class="bk-form-input fr" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
-                            :data-vv-name="$t('ModelManagement[\'中文名\']')"
+                            :data-vv-name="$t('Common[\'中文名\']')"
                             v-validate="'required|name'">
-                            <span v-show="errors.has($t('ModelManagement[\'中文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'中文名\']')) }}</span>
+                            <span v-show="errors.has($t('Common[\'中文名\']'))" class="help is-danger">{{ errors.first($t('Common[\'中文名\']')) }}</span>
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
@@ -30,7 +30,7 @@
                             :data-vv-name="$t('ModelManagement[\'英文名\']')"
                             :disabled="type==='edit'"
                             v-validate="'required|id'">
-                            <span v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</span>
+                            <div v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</div>
                         </li> 
                     </ul>
                     <div class="content-right" @click="isIconListShow = true">
@@ -70,7 +70,7 @@
 </template>
 
 <script>
-    const iconList = require('@/common/json/modelIcon.json')
+    const iconList = require('@/common/json/classIcon.json')
     export default {
         props: {
             /*
@@ -106,7 +106,7 @@
                 isIconListShow: false,          // 图标弹窗
                 iconList: [],
                 localValue: {
-                    bk_classification_icon: 'icon-cc-business',
+                    bk_classification_icon: 'icon-cc-default-class',
                     bk_classification_name: '',
                     bk_classification_id: ''
                 },
@@ -133,7 +133,7 @@
                         }
                     } else {
                         this.localValue = {
-                            bk_classification_icon: 'icon-cc-business',
+                            bk_classification_icon: 'icon-cc-default-class',
                             bk_classification_name: '',
                             bk_classification_id: ''
                         }
@@ -293,6 +293,7 @@
                 left: 0;
                 padding: 20px 13px 0;
                 .icon-box{
+                    height: 236px;
                     .icon{
                         float: left;
                         width: 77px;
