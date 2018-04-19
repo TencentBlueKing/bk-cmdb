@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	confCenter "configcenter/src/source_controller/proccontroller/procdata/config"
 	"configcenter/src/source_controller/proccontroller/procdata/rdiscover"
 	"configcenter/src/storage"
@@ -28,10 +29,11 @@ import (
 
 //CCAPIServer define data struct of bcs ccapi server
 type CCAPIServer struct {
-	conf     *config.CCAPIConfig
-	httpServ *httpserver.HttpServer
-	rd       *rdiscover.RegDiscover
-	cfCenter *confCenter.ConfCenter
+	conf      *config.CCAPIConfig
+	httpServ  *httpserver.HttpServer
+	rd        *rdiscover.RegDiscover
+	cfCenter  *confCenter.ConfCenter
+	onworking bool
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -51,11 +53,12 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	// RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
-
-	//ConfCenter
+	// ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
+	// MetricServer
+	err := s.NewMetricServer(addr, port)
 
-	return s, nil
+	return s, err
 }
 
 //Stop the ccapi server
@@ -87,6 +90,9 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 		// end temp code
 		confData = ccAPI.cfCenter.GetConfigureCxt()
+		if len(chErr) > 0 {
+			return <-chErr
+		}
 		if confData == nil {
 			blog.Warnf("fail to get configure, will get again")
 			time.Sleep(time.Second * 2)
@@ -154,6 +160,8 @@ func (ccAPI *CCAPIServer) Start() error {
 	go func() {
 		wg.Wait()
 		ccAPI.initHttpServ()
+		ccAPI.onworking = true
+		defer func() { ccAPI.onworking = false }()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -165,7 +173,6 @@ func (ccAPI *CCAPIServer) Start() error {
 		return err
 	}
 
-	return nil
 }
 
 func (ccAPI *CCAPIServer) initHttpServ() error {
@@ -176,20 +183,49 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	return nil
 }
 
-func metric() error {
-	conf := metric.Config{}
-	if err := metric.NewMetricController(conf, HealthMetric, nil); err != nil {
-		return err
+func (ccAPI *CCAPIServer) NewMetricServer(ip string, port uint) error {
+	conf := metric.Config{
+		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		IP:         ip,
+		MetricPort: metric.MetricPort,
 	}
-
-	return nil
+	return metric.NewMetricController(conf, ccAPI.HealthMetric)
 }
 
 // HealthMetric check netservice is health
-func HealthMetric() metric.HealthMeta {
-	return metric.HealthMeta{
-		CurrentRole: metric.SlaveRole,
-		IsHealthy:   true,
-		Message:     "proccontroller is healthy",
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+	allhealthy := true
+	meta := metric.HealthMeta{}
+	a := api.GetAPIResource()
+
+	mongoHealthy := metric.HealthItem{}
+	err := a.InstCli.Ping()
+	if err != nil {
+		allhealthy = false
 	}
+	meta.Items = append(meta.Items, mongoHealthy)
+	if a.CacheCli.Ping() != nil {
+		return false
+	}
+
+	healthy := ccAPI.IsHealthy()
+	message := "proccontroller is healthy"
+	if healthy {
+		message = "proccontroller is not healthy"
+	}
+
+	return
+}
+
+func (ccAPI *CCAPIServer) IsHealthy() bool {
+	a := api.GetAPIResource()
+
+	if a.InstCli.Ping() != nil {
+		return false
+	}
+	if a.CacheCli.Ping() != nil {
+		return false
+	}
+
+	return ccAPI.onworking
 }

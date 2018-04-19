@@ -9,20 +9,15 @@ type RunModeType string
 // used when your module running with Master_Slave_Mode mode
 type RoleType string
 
+// metric const define
 const (
-	Master_Slave_Mode  RunModeType = "master-slave"
-	Master_Master_Mode RunModeType = "master-master"
-	MasterRole         RoleType    = "master"
-	SlaveRole          RoleType    = "slave"
-	UnknownRole        RoleType    = "unknown"
+	MetricPort = 60060
 )
 
+// Config define metric's define
 type Config struct {
 	// name of your module
 	ModuleName string
-	// running mode of your module
-	// could be one of Master_Slave_Mode or Master_Master_Mode
-	RunMode RunModeType
 	// ip address of this module running on
 	IP string
 	// port number of the metric's http handler depends on.
@@ -38,20 +33,26 @@ type Config struct {
 	CertPasswd  string
 }
 
+// HealthFunc returns HealthMeta
 type HealthFunc func() HealthMeta
 
+// HealthMeta define the HealthMeta that shows whether this server healthy
 type HealthMeta struct {
-	// the running role of your module when you are running with Master_Slave_Mode.
-	// must be not empty. if you set with an empty value, an error will be occurred.
-	// when your module is running in Master_Master_Mode,  this filed should be set
-	// with value of "Slave".
-	CurrentRole RoleType `json:"current_role"`
 	// if this module is healthy
 	IsHealthy bool `json:"healthy"`
 	// messages which describes the health status
 	Message string `json:"message"`
+
+	Items []HealthItem `json:"items"`
 }
 
+type HealthItem struct {
+	Name string `json:"name"`
+
+	HealthMeta `json:",inline"`
+}
+
+// MetricMeta define the MetricMeta that shows the named metric
 type MetricMeta struct {
 	// metric's name
 	Name string `json:"name"`
