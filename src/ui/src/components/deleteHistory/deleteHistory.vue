@@ -181,9 +181,11 @@
                             item['op_time'] = this.$formatTime(moment(item['op_time']))
                         } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
                             let name = []
-                            item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
-                                name.push(bkInstName)
-                            })
+                            if (item.content['pre_data'].hasOwnProperty(list.id)) {
+                                item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
+                                    name.push(bkInstName)
+                                })
+                            }
                             item[list.id] = name.join(',')
                         } else {
                             item[list.id] = item.content['pre_data'][list.id]
