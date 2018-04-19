@@ -141,7 +141,6 @@
     </div>
 </template>
 <script>
-    import bus from '@/eventbus/bus'
     import vMemberSelector from '@/components/common/selector/member'
     import vEnumeration from '@/components/common/selector/enumeration'
     import vAssociation from '@/components/common/selector/association'
@@ -549,26 +548,6 @@
                 c = null
                 return output
             }
-        },
-        created () {
-            bus.$on('closeSlider', () => {
-                let isConfirmShow = false
-                if (this.type === 'create') {
-                    isConfirmShow = Object.values(this.localValues).some(val => {
-                        return val.length
-                    })
-                }
-                if (isConfirmShow) {
-                    this.$bkInfo({
-                        title: '退出会导致未保存信息丢失，是否确认？',
-                        confirmFn: () => {
-                            this.$emit('closeSlider')
-                        }
-                    })
-                } else {
-                    this.$emit('closeSlider')
-                }
-            })
         },
         components: {
             vMemberSelector,

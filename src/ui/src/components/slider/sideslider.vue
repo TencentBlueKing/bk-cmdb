@@ -57,13 +57,6 @@
             hasQuickClose: {
                 type: Boolean,
                 default: true
-            },
-            /*
-                是否有关闭确认提示
-            */
-            hasCloseConfirm: {
-                type: Boolean,
-                default: false
             }
         },
         watch: {
@@ -81,11 +74,7 @@
         },
         methods: {
             closeSlider () {
-                if (this.hasCloseConfirm) {
-                    bus.$emit('closeSlider')
-                } else {
-                    this.$emit('update:isShow', false)
-                }
+                this.$emit('update:isShow', false)
             },
             quickClose () {
                 if (this.hasQuickClose) {
