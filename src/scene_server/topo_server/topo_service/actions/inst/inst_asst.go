@@ -26,6 +26,7 @@ import (
 	"fmt"
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -313,24 +314,27 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			}
 
 			// search the association insts
-			instAsstItems := make([]metadata.InstAsst, 0)
-			err := cli.CC.InstCli.GetMutilByCondition(metadata.InstAsst{}.TableName(), nil, map[string]interface{}{
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
+			input := map[string]interface{}{
 				"bk_asst_inst_id": map[string]interface{}{
 					common.BKDBIN: asstInstIDS,
 				},
 				"bk_asst_obj_id": keyObjID,
 				"bk_obj_id":      objID,
-			}, &instAsstItems, "", 0, common.BKNoLimit)
+			}
+
+			inputJSON, _ := json.Marshal(input)
+			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
 			if nil != err {
-				blog.Errorf("can not get the inst association data from db, error info is %s", err.Error())
+				blog.Errorf("failed to search the inst association, condition is %s ,error is %s", string(inputJSON), err.Error())
 				continue
 			}
 
-			// extract the instid
-			blog.Debug("the inst association items %v", instAsstItems)
-			for _, item := range instAsstItems {
-				targetInstIDS = append(targetInstIDS, item.InstID)
-			}
+			gjson.Get(objRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
+
+				targetInstIDS = append(targetInstIDS, value.Int())
+				return true
+			})
 
 		}
 
