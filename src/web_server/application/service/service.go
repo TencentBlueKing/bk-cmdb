@@ -187,7 +187,8 @@ func (ccWeb *CCWebServer) Start() error {
 
 		// MetricServer
 		conf := metric.Config{
-			ModuleName: types.CC_MODULE_PROCCONTROLLER,
+			ModuleName:    types.CC_MODULE_WEBSERVER,
+			ServerAddress: ccWeb.conf.AddrPort,
 		}
 		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
 		for _, metricAction := range metricActions {
@@ -244,34 +245,17 @@ func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
 
 // HealthMetric check netservice is health
 func (ccWeb *CCWebServer) HealthMetric() metric.HealthMeta {
-
 	meta := metric.HealthMeta{IsHealthy: true}
-	a := api.GetAPIResource()
 
-	// check mongo
-	mongoHealthy := metric.HealthItem{Name: "mongo"}
-	if err := a.InstCli.Ping(); err != nil {
-		mongoHealthy.IsHealthy = false
-		mongoHealthy.Message = err.Error()
-	} else {
-		mongoHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, mongoHealthy)
-
-	// check redis
-	redisHealthy := metric.HealthItem{Name: "redis"}
-	if err := a.CacheCli.Ping(); err != nil {
-		redisHealthy.IsHealthy = false
-		redisHealthy.Message = err.Error()
-	} else {
-		redisHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, redisHealthy)
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccWeb.rd.Ping()))
+	// check dependence
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_APISERVER, metric.CheckHealthy(middleware.APIAddr())))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "proccontroller is not healthy"
+			meta.Message = "webserver is not healthy"
 			break
 		}
 	}

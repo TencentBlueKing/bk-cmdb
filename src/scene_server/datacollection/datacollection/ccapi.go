@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
+	dccommon "configcenter/src/scene_server/datacollection/common"
 	confCenter "configcenter/src/scene_server/datacollection/datacollection/config"
 	"configcenter/src/scene_server/datacollection/datacollection/rdiscover"
 	"configcenter/src/source_controller/common/instdata"
@@ -142,7 +143,8 @@ func (ccAPI *CCAPIServer) initHTTPServ() error {
 	// ccAPI.httpServ.RegisterWebServer("/datacollection/{version}", nil, a.Actions)
 	// MetricServer
 	conf := metric.Config{
-		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		ModuleName:    types.CC_MODULE_DATACOLLECTION,
+		ServerAddress: ccAPI.conf.AddrPort,
 	}
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
@@ -162,29 +164,18 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 	a := api.GetAPIResource()
 
 	// check mongo
-	mongoHealthy := metric.HealthItem{Name: "mongo"}
-	if err := a.InstCli.Ping(); err != nil {
-		mongoHealthy.IsHealthy = false
-		mongoHealthy.Message = err.Error()
-	} else {
-		mongoHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, mongoHealthy)
-
-	// check redis
-	redisHealthy := metric.HealthItem{Name: "redis"}
-	if err := a.CacheCli.Ping(); err != nil {
-		redisHealthy.IsHealthy = false
-		redisHealthy.Message = err.Error()
-	} else {
-		redisHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, redisHealthy)
+	meta.Items = append(meta.Items, metric.NewHealthItem("mongo", a.InstCli.Ping()))
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("redis", dccommon.Rediscli.Ping().Err()))
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("snapredis", dccommon.Snapcli.Ping().Err()))
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "proccontroller is not healthy"
+			meta.Message = "datacollecion is not healthy"
 			break
 		}
 	}

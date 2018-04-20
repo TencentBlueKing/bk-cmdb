@@ -24,7 +24,10 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"fmt"
 	"github.com/emicklei/go-restful"
+	"net"
 	"time"
 )
 
@@ -110,10 +113,8 @@ func (ccAPI *CCAPIServer) Start() error {
 	a.AddrSrv = ccAPI.rd
 	//check host controller server
 	a.HostAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_HOST, a.AddrSrv)
-
 	//check object controller server
 	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
-
 	//check object controller server
 	a.ProcAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_PROC, a.AddrSrv)
 
@@ -157,7 +158,6 @@ func (ccAPI *CCAPIServer) Start() error {
 		return err
 	}
 
-	return nil
 }
 
 func (ccAPI *CCAPIServer) initHttpServ() error {
@@ -165,7 +165,8 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	ccAPI.httpServ.RegisterWebServer("/api", rdapi.AllGlobalFilter(), a.Actions)
 	// MetricServer
 	conf := metric.Config{
-		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		ModuleName:    types.CC_MODULE_APISERVER,
+		ServerAddress: ccAPI.conf.AddrPort,
 	}
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
@@ -181,34 +182,40 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 
 // HealthMetric check netservice is health
 func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
-
-	meta := metric.HealthMeta{IsHealthy: true}
 	a := api.GetAPIResource()
+	meta := metric.HealthMeta{IsHealthy: true}
 
-	// check mongo
-	mongoHealthy := metric.HealthItem{Name: "mongo"}
-	if err := a.InstCli.Ping(); err != nil {
-		mongoHealthy.IsHealthy = false
-		mongoHealthy.Message = err.Error()
-	} else {
-		mongoHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, mongoHealthy)
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
 
-	// check redis
-	redisHealthy := metric.HealthItem{Name: "redis"}
-	if err := a.CacheCli.Ping(); err != nil {
-		redisHealthy.IsHealthy = false
-		redisHealthy.Message = err.Error()
-	} else {
-		redisHealthy.IsHealthy = true
+	// check dependence
+	for module := range types.AllModule {
+		if module == types.CC_MODULE_APISERVER {
+			continue
+		}
+		address, _ := a.AddrSrv.GetServer(module)
+		if "" == address {
+			meta.Items = append(meta.Items, metric.NewHealthItem(module, fmt.Errorf("% server not active", module)))
+			continue
+		}
+		if module == types.CC_MODULE_WEBSERVER {
+			// in order to prevent dead loop,
+			// we will not check web server health via it's interface /healthz
+			dailaddr, err := util.GetDailAddress(address)
+			if err != nil {
+				blog.Errorf("GetDailAddress error: %v", err)
+			}
+			_, err = net.Dial("tcp", dailaddr)
+			meta.Items = append(meta.Items, metric.NewHealthItem(module, err))
+			continue
+		}
+		meta.Items = append(meta.Items, metric.NewHealthItem(module, metric.CheckHealthy(address)))
 	}
-	meta.Items = append(meta.Items, redisHealthy)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "proccontroller is not healthy"
+			meta.Message = "apiserver is not healthy"
 			break
 		}
 	}
