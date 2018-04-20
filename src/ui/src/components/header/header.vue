@@ -413,6 +413,7 @@
         font-size: 16px;
         color: $textColor;
         margin: 9px 0 0 0;
+        cursor: pointer;
         &.close{
             transform: rotate(180deg);
         }
