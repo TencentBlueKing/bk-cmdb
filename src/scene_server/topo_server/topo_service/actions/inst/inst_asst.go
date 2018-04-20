@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	"encoding/json"
+	"fmt"
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 	"io/ioutil"
@@ -44,14 +45,30 @@ type AssociationParams struct {
 	Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }
 
-func (cli *instAction) createInstAssociation(instAsst []interface{}) error {
+func (cli *instAction) createInstAssociation(req *restful.Request, instAsst []interface{}) error {
 	if 0 == len(instAsst) {
 		return nil
 	}
-	return cli.CC.InstCli.InsertMuti(metadata.InstAsst{}.TableName(), instAsst...)
+	for _, item := range instAsst {
+		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
+		inputJSON, err := json.Marshal(item)
+		if nil != err {
+			return err
+		}
+		objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPCreate, []byte(inputJSON))
+		if nil != err {
+			return err
+		}
+
+		if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+			blog.Error("failed to create the inst asst , error info is %s", objRes)
+			continue
+		}
+	}
+	return nil
 }
 
-func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, input map[string]interface{}) error {
+func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, ownerID, objID string, input map[string]interface{}) error {
 
 	// get association fields
 	asst := map[string]interface{}{}
@@ -82,12 +99,6 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 					}
 
 					asstInst := metadata.InstAsst{}
-					id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-					asstInst.ID = id
-					if nil != err {
-						blog.Error("faild to create id, error info is %s", err.Error())
-					}
-
 					asstInst.InstID = int64(instID)
 					asstInst.AsstInstID = iID
 					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
@@ -97,11 +108,6 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 
 			case int64, int:
 				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
@@ -109,11 +115,6 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 				asstFieldVal = append(asstFieldVal, asstInst)
 			case json.Number:
 				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = t.Int64()
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
@@ -126,22 +127,38 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 		}
 	}
 
-	err := cli.deleteInstAssociation(instID, ownerID, objID)
+	err := cli.deleteInstAssociation(req, instID, ownerID, objID)
 	if nil != err {
 		blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
 		return err
 	}
 
-	return cli.createInstAssociation(asstFieldVal)
+	return cli.createInstAssociation(req, asstFieldVal)
 
 }
 
-func (cli *instAction) deleteInstAssociation(instID int, ownerID, objID string) error {
+func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID string) error {
 
-	return cli.CC.InstCli.DelByCondition(metadata.InstAsst{}.TableName(), map[string]interface{}{
+	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
+	input := map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
-	})
+	}
+	inputJSON, err := json.Marshal(input)
+	if nil != err {
+		return err
+	}
+	objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+	if nil != err {
+		return err
+	}
+
+	if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+		blog.Error("failed to delete the inst asst , error info is %s", objRes)
+		return fmt.Errorf("failed to delete the inst asst, %s:%d", objID, instID)
+	}
+
+	return nil
 }
 
 func (cli *instAction) searchAssociationInst(req *restful.Request, objID string, searchParams map[string]interface{}) ([]int64, error) {
@@ -321,6 +338,12 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		if 0 != len(targetInstIDS) {
 			instCondition[common.BKInstIDField] = map[string]interface{}{
 				common.BKDBIN: targetInstIDS,
+			}
+		} else if 0 != len(js.Condition) {
+			if _, ok := js.Condition[objID]; !ok {
+				instCondition[common.BKInstIDField] = map[string]interface{}{
+					common.BKDBIN: targetInstIDS,
+				}
 			}
 		}
 
