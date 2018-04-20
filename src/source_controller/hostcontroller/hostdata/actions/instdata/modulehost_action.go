@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
@@ -326,7 +326,7 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 			blog.Error("获取业务默认模块失败 error:%s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
 		}
-		errHostIDs, err := logics.CheckHostInIDle(cc, params.ApplicationID, idleModuleID, params.HostID)
+		errHostIDs, faultHostIDs, err := logics.CheckHostInIDle(cc, params.ApplicationID, idleModuleID, params.HostID)
 		if nil != err {
 			blog.Error("获取主机模块关系失败， error:%s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
@@ -338,12 +338,16 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 		}
 		var succ, addErr, delErr []int
 		for _, hostID := range params.HostID {
-			//add new host
-			_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
-			if nil != err {
-				addErr = append(addErr, hostID)
-				continue
+
+			//host not belong to other biz, add new host
+			if !util.ContainsInt(faultHostIDs, hostID) {
+				_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
+				if nil != err {
+					addErr = append(addErr, hostID)
+					continue
+				}
 			}
+
 			//delete origin relation
 			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, idleModuleID, params.ApplicationID)
 			if nil != err {

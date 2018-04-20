@@ -70,7 +70,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 func getChanName() (string, error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
-	if err := instdata.GetObjectByCondition(common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
+	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
 		return "", err
 	}
 	if len(results) <= 0 {

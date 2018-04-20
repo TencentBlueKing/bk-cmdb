@@ -79,9 +79,10 @@ func (ccAPI *CCAPIServer) Start() error {
 	config, _ := a.ParseConfig()
 	confDir := config["confs.dir"]
 	errres := config["errors.res"]
+	languageres := config["language.res"]
 
 	// configure center
-	err := ccAPI.cfCenter.Start(confDir, errres)
+	err := ccAPI.cfCenter.Start(confDir, errres, languageres)
 	if err != nil {
 		blog.Errorf("configure center module start failed!. err:%s", err.Error())
 		return err
@@ -100,7 +101,7 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	} else {
 		for {
-			errcode := ccAPI.cfCenter.GetLanguageCxt()
+			errcode := ccAPI.cfCenter.GetErrorCxt()
 			if errcode == nil {
 				blog.Warnf("fail to get language package, will get again")
 				time.Sleep(time.Second * 2)
@@ -134,7 +135,7 @@ func (ccAPI *CCAPIServer) Start() error {
 				wg.Done()
 				return
 			}
-			time.Sleep(time.Millisecond * 500)
+			time.Sleep(time.Second)
 		}
 	}
 	all := []string{

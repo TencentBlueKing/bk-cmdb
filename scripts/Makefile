@@ -40,7 +40,9 @@ ${TARGET_NAME}: $(GOFILES_ALL)
 	@rm -rf ${BIN_PATH}/${TARGET_NAME}
 	@mkdir -p ${BIN_PATH}/${TARGET_NAME}/conf/errors
 	@mkdir -p ${BIN_PATH}/${TARGET_NAME}/conf/certs
+	@mkdir -p ${BIN_PATH}/${TARGET_NAME}/conf/language
 	@cp -R ${RESOURCE_DIR}/errors/*  ${BIN_PATH}/${TARGET_NAME}/conf/errors
+	@cp -R ${RESOURCE_DIR}/language/*  ${BIN_PATH}/${TARGET_NAME}/conf/language
 	@sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;s/cmdb-port-placeholder/${TARGET_PORT}/g' ${SCRIPT_DIR}/template.sh.start > ${BIN_PATH}/${TARGET_NAME}/start.sh
 	@sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g' ${SCRIPT_DIR}/template.sh.stop > ${BIN_PATH}/${TARGET_NAME}/stop.sh
 	@sed  -e 's/admin_port_placeholer/${TARGET_PORT}/g' ${SCRIPT_DIR}/init_db.sh >  ${BIN_PATH}/${TARGET_NAME}/init_db.sh

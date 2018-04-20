@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package manager
 
 import (
@@ -58,135 +58,135 @@ func (cli *topoMgr) Get(target interface{}) string {
 }
 
 // object asst interface
-func (cli *topoMgr) CreateObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[ObjectAsst].(ObjectAsstLogic)
-	return target.CreateObjectAsst(obj, errProxy)
+	return target.CreateObjectAsst(forward, obj, errProxy)
 }
 
-func (cli *topoMgr) SelectObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.ObjAsstDes, error) {
+func (cli *topoMgr) SelectObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.ObjAsstDes, error) {
 	target := cli.logics[ObjectAsst].(ObjectAsstLogic)
-	return target.SelectObjectAsst(obj, errProxy)
+	return target.SelectObjectAsst(forward, obj, errProxy)
 }
 
-func (cli *topoMgr) UpdateObjectAsst(selector, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObjectAsst(forward *api.ForwardParam, selector, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectAsst].(ObjectAsstLogic)
-	return target.UpdateObjectAsst(selector, obj, errProxy)
+	return target.UpdateObjectAsst(forward, selector, obj, errProxy)
 }
 
-func (cli *topoMgr) DeleteObjectAsstByID(id int, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObjectAsstByID(forward *api.ForwardParam, id int, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectAsst].(ObjectAsstLogic)
-	return target.DeleteObjectAsstByID(id, errProxy)
+	return target.DeleteObjectAsstByID(forward, id, errProxy)
 }
 
-func (cli *topoMgr) DeleteObjectAsst(obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObjectAsst(forward *api.ForwardParam, obj map[string]interface{}, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectAsst].(ObjectAsstLogic)
-	return target.DeleteObjectAsst(obj, errProxy)
+	return target.DeleteObjectAsst(forward, obj, errProxy)
 }
 
 // object attribute interface
-func (cli *topoMgr) CreateTopoModel(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateTopoModel(forward *api.ForwardParam, obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.CreateTopoModel(obj, errProxy)
+	return target.CreateTopoModel(forward, obj, errProxy)
 }
-func (cli *topoMgr) SelectTopoModel(rstitems []TopoModelRsp, ownerid, objid, clsid, preid, prename string, errProxy errors.DefaultCCErrorIf) ([]TopoModelRsp, error) {
+func (cli *topoMgr) SelectTopoModel(forward *api.ForwardParam, rstitems []TopoModelRsp, ownerid, objid, clsid, preid, prename string, errProxy errors.DefaultCCErrorIf) ([]TopoModelRsp, error) {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.SelectTopoModel(rstitems, ownerid, objid, clsid, preid, prename, errProxy)
+	return target.SelectTopoModel(forward, rstitems, ownerid, objid, clsid, preid, prename, errProxy)
 }
-func (cli *topoMgr) DeleteTopoModel(ownerid, objid string, assotype int, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteTopoModel(forward *api.ForwardParam, ownerid, objid string, assotype int, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.DeleteTopoModel(ownerid, objid, assotype, errProxy)
+	return target.DeleteTopoModel(forward, ownerid, objid, assotype, errProxy)
 }
-func (cli *topoMgr) CreateObjectAtt(params api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateObjectAtt(forward *api.ForwardParam, params api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.CreateObjectAtt(params, errProxy)
-}
-
-func (cli *topoMgr) SelectObjectAtt(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
-	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.SelectObjectAtt(params, errProxy)
+	return target.CreateObjectAtt(forward, params, errProxy)
 }
 
-func (cli *topoMgr) UpdateObjectAtt(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) SelectObjectAtt(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.UpdateObjectAtt(id, params, errProxy)
+	return target.SelectObjectAtt(forward, params, errProxy)
 }
 
-func (cli *topoMgr) DeleteObjectAtt(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObjectAtt(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
-	return target.DeleteObjectAtt(id, params, errProxy)
+	return target.UpdateObjectAtt(forward, id, params, errProxy)
+}
+
+func (cli *topoMgr) DeleteObjectAtt(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+	target := cli.logics[ObjectAttribute].(ObjectAttLogic)
+	return target.DeleteObjectAtt(forward, id, params, errProxy)
 }
 
 // object class interface
-func (cli *topoMgr) CreateObjectClass(params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateObjectClass(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[ObjectClass].(ObjectClassLogic)
-	return target.CreateObjectClass(params, errProxy)
+	return target.CreateObjectClass(forward, params, errProxy)
 }
 
-func (cli *topoMgr) SelectObjectClass(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error) {
+func (cli *topoMgr) SelectObjectClass(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error) {
 	target := cli.logics[ObjectClass].(ObjectClassLogic)
-	return target.SelectObjectClass(params, errProxy)
+	return target.SelectObjectClass(forward, params, errProxy)
 }
 
-func (cli *topoMgr) SelectObjectClassWithObjects(ownerID string, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error) {
+func (cli *topoMgr) SelectObjectClassWithObjects(forward *api.ForwardParam, ownerID string, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error) {
 	target := cli.logics[ObjectClass].(ObjectClassLogic)
-	return target.SelectObjectClassWithObjects(ownerID, params, errProxy)
+	return target.SelectObjectClassWithObjects(forward, ownerID, params, errProxy)
 }
-func (cli *topoMgr) UpdateObjectClass(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObjectClass(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectClass].(ObjectClassLogic)
-	return target.UpdateObjectClass(id, params, errProxy)
+	return target.UpdateObjectClass(forward, id, params, errProxy)
 }
-func (cli *topoMgr) DeleteObjectClass(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObjectClass(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectClass].(ObjectClassLogic)
-	return target.DeleteObjectClass(id, params, errProxy)
+	return target.DeleteObjectClass(forward, id, params, errProxy)
 }
 
 // object attribute group interface
-func (cli *topoMgr) CreateObjectGroup(params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateObjectGroup(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.CreateObjectGroup(params, errProxy)
+	return target.CreateObjectGroup(forward, params, errProxy)
 }
-func (cli *topoMgr) UpdateObjectGroup(params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObjectGroup(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.UpdateObjectGroup(params, errProxy)
+	return target.UpdateObjectGroup(forward, params, errProxy)
 }
-func (cli *topoMgr) UpdateObjectGroupProperty(params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObjectGroupProperty(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.UpdateObjectGroupProperty(params, errProxy)
+	return target.UpdateObjectGroupProperty(forward, params, errProxy)
 }
-func (cli *topoMgr) DeleteObjectGroup(id int, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObjectGroup(forward *api.ForwardParam, id int, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.DeleteObjectGroup(id, errProxy)
+	return target.DeleteObjectGroup(forward, id, errProxy)
 }
-func (cli *topoMgr) DeleteObjectGroupProperty(ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObjectGroupProperty(forward *api.ForwardParam, ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.DeleteObjectGroupProperty(ownerID, objectID, propertyID, groupID, errProxy)
+	return target.DeleteObjectGroupProperty(forward, ownerID, objectID, propertyID, groupID, errProxy)
 }
 
-func (cli *topoMgr) SelectPropertyGroupByObjectID(ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error) {
+func (cli *topoMgr) SelectPropertyGroupByObjectID(forward *api.ForwardParam, ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error) {
 	target := cli.logics[ObjectGroup].(ObjectAttGroupLogic)
-	return target.SelectPropertyGroupByObjectID(ownerID, objectID, data, errProxy)
+	return target.SelectPropertyGroupByObjectID(forward, ownerID, objectID, data, errProxy)
 }
 
 // CreateObject create a new object
-func (cli *topoMgr) CreateObject(params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *topoMgr) CreateObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 	target := cli.logics[Object].(ObjectLogic)
-	return target.CreateObject(params, errProxy)
+	return target.CreateObject(forward, params, errProxy)
 }
 
 // SelectObject select objects
-func (cli *topoMgr) SelectObject(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error) {
+func (cli *topoMgr) SelectObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error) {
 	target := cli.logics[Object].(ObjectLogic)
-	return target.SelectObject(params, errProxy)
+	return target.SelectObject(forward, params, errProxy)
 }
 
 // UpdateObject update object info
-func (cli *topoMgr) UpdateObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) UpdateObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[Object].(ObjectLogic)
-	return target.UpdateObject(id, params, errProxy)
+	return target.UpdateObject(forward, id, params, errProxy)
 }
 
 // DeleteObject delete object info
-func (cli *topoMgr) DeleteObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoMgr) DeleteObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	target := cli.logics[Object].(ObjectLogic)
-	return target.DeleteObject(id, params, errProxy)
+	return target.DeleteObject(forward, id, params, errProxy)
 }

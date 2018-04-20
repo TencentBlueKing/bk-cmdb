@@ -18,12 +18,12 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/scene_server/topo_server/topo_service/config"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"configcenter/src/scene_server/topo_server/topo_service/rdiscover"
-
 	"time"
 )
 
@@ -32,7 +32,7 @@ type CCAPIServer struct {
 	conf     *config.CCAPIConfig
 	httpServ *httpserver.HttpServer
 	rd       *rdiscover.RegDiscover
-	cfCenter *confCenter.ConfCenter
+	cfCenter confCenter.ConfCenter
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -124,7 +124,7 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	} else {
 		for {
-			errcode := ccAPI.cfCenter.GetLanguageCxt()
+			errcode := ccAPI.cfCenter.GetErrorCxt()
 			if errcode == nil {
 				blog.Warnf("fail to get language package, will get again")
 				time.Sleep(time.Second * 2)
@@ -132,6 +132,30 @@ func (ccAPI *CCAPIServer) Start() error {
 			} else {
 				errif := errors.NewFromCtx(errcode)
 				a.Error = errif
+				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
+
+	// load the language resource
+	if langres, ok := config["language.res"]; ok {
+		if langif, err := language.New(langres); nil != err {
+			blog.Error("failed to create errors object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Lang = langif
+		}
+	} else {
+		for {
+			errcode := ccAPI.cfCenter.GetLanguageResCxt()
+			if errcode == nil {
+				blog.Warnf("fail to get language package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				langif := language.NewFromCtx(errcode)
+				a.Lang = langif
 				blog.Info("lanugage package loaded")
 				break
 			}
