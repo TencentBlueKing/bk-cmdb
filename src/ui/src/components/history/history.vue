@@ -39,14 +39,23 @@
                 :defaultSort="table.defaultSort"
                 @handleTableSortClick="setTableSort"
                 @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setPageSize">
+                @handlePageSizeChange="setPageSize"
+                @handleRowClick="showDetails">
             </v-table>
+        </div>
+        <div class="history-details" v-show="details.isShow" v-click-outside="closeDetails">
+            <p class="details-title">
+                <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
+                <i class="bk-icon icon-close" @click="closeDetails"></i>
+            </p>
+            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content"></v-history-details>
         </div>
     </div>
 </template>
 <script>
     import vTable from '@/components/table/table'
     import vMemberSelector from '@/components/common/selector/member'
+    import vHistoryDetails from '@/components/history/details'
     import moment from 'moment'
     export default {
         props: {
@@ -63,6 +72,11 @@
         },
         data () {
             return {
+                details: {
+                    isShow: false,
+                    data: null,
+                    clickoutside: true
+                },
                 filter: {
                     date: [],
                     user: ''
@@ -134,6 +148,20 @@
             }
         },
         methods: {
+            showDetails (item) {
+                this.details.isShow = true
+                this.details.clickoutside = true
+                this.details.data = item
+                this.$nextTick(() => {
+                    this.details.clickoutside = false
+                })
+            },
+            closeDetails () {
+                if (!this.details.clickoutside) {
+                    this.details.isShow = false
+                    this.details.data = null
+                }
+            },
             getHistory () {
                 this.table.isLoading = true
                 this.$axios.post('audit/search', this.searchParams).then(res => {
@@ -174,12 +202,16 @@
         },
         components: {
             vTable,
-            vMemberSelector
+            vMemberSelector,
+            vHistoryDetails
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .history-wrapper{
+        position: relative;
+    }
     .history-filter{
         padding: 20px 0;
         position: relative;
@@ -206,6 +238,30 @@
             }
             .bk-button{
                 width: 96px;
+            }
+        }
+    }
+    .history-details{
+        position: absolute;
+        top:20px;
+        left: 30px;
+        width: 709px;
+        height: 524px;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 9px 0px rgba(0, 0, 0, 0.4);
+        z-index: 1;
+        .details-title{
+            position: relative;
+            line-height: 26px;
+            color: #333948;
+            padding: 0 40px;
+            font-weight: bold;
+            .icon-close{
+                font-size: 14px;
+                position: absolute;
+                right: 12px;
+                top: 0;
+                cursor: pointer;
             }
         }
     }
