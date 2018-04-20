@@ -11,20 +11,26 @@
             </div>
             <div ref="historyCompare" class="history-compare" @scroll="setHeader" v-bkloading="{isLoading: loadingAttribute}">
                 <table ref="compareTableHeader" class="compare-table-header">
+                    <colgroup>
+                        <col v-for="(width, index) in colWidth" :width="width">
+                    </colgroup>
                     <thead>
                         <tr class="compare-header-row">
-                            <td class="compare-header-cell" width="130"></td>
-                            <td class="compare-header-cell" width="280">{{$t("OperationAudit['变更前']")}}</td>
-                            <td class="compare-header-cell" width="280">{{$t("OperationAudit['变更后']")}}</td>
+                            <td ref="propertyCell" class="compare-header-cell"></td>
+                            <td ref="preCell" class="compare-header-cell">{{$t("OperationAudit['变更前']")}}</td>
+                            <td ref="curCell" class="compare-header-cell">{{$t("OperationAudit['变更后']")}}</td>
                         </tr>
                     </thead>
                 </table>
                 <table class="compare-table-body">
+                    <colgroup>
+                        <col v-for="(width, index) in colWidth" :width="width">
+                    </colgroup>
                     <tbody>
                         <tr :class="['compare-body-row', {changed: isChanged(header)}]" v-for="(header, index) in compareHeader" :key="index">
-                            <td class="compare-body-cell header" width="130">{{header['bk_property_name']}}</td>
-                            <td class="compare-body-cell pre" width="280">{{getCompareBodyCell(header, 'pre_data')}}</td>
-                            <td class="compare-body-cell cur" width="280">{{getCompareBodyCell(header, 'cur_data')}}</td>
+                            <td class="compare-body-cell header">{{header['bk_property_name']}}</td>
+                            <td class="compare-body-cell pre">{{getCompareBodyCell(header, 'pre_data')}}</td>
+                            <td class="compare-body-cell cur">{{getCompareBodyCell(header, 'cur_data')}}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -65,7 +71,8 @@
                 }, {
                     label: 'OperationAudit[\'描述\']',
                     key: 'op_desc'
-                }]
+                }],
+                colWidth: [130, 280, 280]
             }
         },
         computed: {
@@ -102,6 +109,11 @@
                 } else {
                     this.loadingAttribute = false
                 }
+            },
+            details (details) {
+                if (details) {
+                    this.calcColWidth()
+                }
             }
         },
         methods: {
@@ -129,6 +141,13 @@
             },
             setHeader () {
                 this.$refs.compareTableHeader.style.top = this.$refs.historyCompare.scrollTop + 'px'
+            },
+            calcColWidth () {
+                this.$nextTick(() => {
+                    this.colWidth[0] = this.$refs.propertyCell.getBoundingClientRect().width
+                    this.colWidth[1] = this.$refs.preCell.getBoundingClientRect().width - 1
+                    this.colWidth[2] = this.$refs.curCell.getBoundingClientRect().width - 1
+                })
             }
         }
     }
