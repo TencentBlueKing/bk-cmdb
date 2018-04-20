@@ -58,7 +58,14 @@
                 default: true
             },
             /*
-                是否需要显示关闭弹窗确认提示
+                是否需要显示二次确认弹窗
+            */
+            hasCloseConfirm: {
+                type: Boolean,
+                default: false
+            },
+            /*
+                二次确认弹窗显示状态
             */
             isCloseConfirmShow: {
                 type: Boolean,
@@ -80,15 +87,22 @@
         },
         methods: {
             closeSlider () {
-                if (this.isCloseConfirmShow) {
-                    this.$bkInfo({
-                        content: '退出会导致未保存信息丢失，是否确认？',
-                        confirmFn: () => {
-                            this.$emit('update:isShow', false)
+                if (this.hasCloseConfirm) {
+                    this.$emit('closeSlider')
+                    this.$nextTick(() => {
+                        if (this.isCloseConfirmShow) {
+                            this.$bkInfo({
+                                title: '退出会导致未保存信息丢失，是否确认？',
+                                confirmFn: () => {
+                                    this.$emit('update:isShow', false)
+                                }
+                            })
+                        } else {
+                            this.$emit('update:isShow')
                         }
                     })
                 } else {
-                    this.$emit('update:isShow', false)
+                    this.$emit('update:isShow')
                 }
             },
             quickClose () {
