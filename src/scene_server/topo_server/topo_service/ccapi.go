@@ -169,6 +169,14 @@ func (ccAPI *CCAPIServer) Start() error {
 	//check audit controller server
 	a.AuditCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_AUDITCONTROLLER, a.AddrSrv)
 
+	// get the mongodb
+	go func() {
+		err := a.GetDataCli(config, "mongodb")
+		if err != nil {
+			blog.Error("connect mongodb error exit! err:%s", err.Error())
+		}
+	}()
+
 	//RDiscover
 	go func() {
 		err := ccAPI.rd.Start()
