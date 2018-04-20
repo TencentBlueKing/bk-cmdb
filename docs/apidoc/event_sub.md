@@ -1,7 +1,7 @@
 
 ### 订阅事件
 
-- API: POST /api/v1/event/subscribe/{supplier_account}/{bk_biz_id}
+- API: POST /api/{version}/event/subscribe/{supplier_account}/{bk_biz_id}
 - API 名称: subscribe_event
 - 功能说明：
 	- 中文：事件订阅
@@ -69,7 +69,7 @@ data 字段说明
 
 ### 退订事件
 
-- API: DELETE /api/v1/event/subscribe/{supplier_account}/{bk_biz_id}/{subscription_id}
+- API: DELETE /api/{version}/event/subscribe/{supplier_account}/{bk_biz_id}/{subscription_id}
 - API 名称：unsubcribe_event
 - 功能说明：
 	- 中文：退订
@@ -112,7 +112,7 @@ data 字段说明
 
 ### 修改订阅
 
-- API: PUT  /api/v1/event/subscribe/{supplier_account}/{biz_id}/{subscription_id}
+- API: PUT  /api/{version}/event/subscribe/{supplier_account}/{biz_id}/{subscription_id}
 - API 名称：update_event_subscribe
 	- 中文：修改订阅
 	- English：update the event subscription
@@ -171,7 +171,7 @@ data 字段说明
 
 ### 查询订阅
 
-- API: POST /api/v1/event/subscribe/search/{supplier_account}/{biz_id}
+- API: POST /api/{version}/event/subscribe/search/{supplier_account}/{biz_id}
 - API 名称：search_subscription
 	- 中文：查询订阅
 	- English：search subscriptions
@@ -247,7 +247,7 @@ data 字段说明
 
 ### 测试推送
 
-- API: POST /api/v1/event/subscribe/ping
+- API: POST /api/{version}/event/subscribe/ping
 - API 名称：ping_subscription
 	- 中文：推送测试
 	- English：push test
@@ -293,7 +293,7 @@ data 字段说明
 
 ### 测试推送（只测试连通性）
 
-- API: POST /api/v1/event/subscribe/telnet
+- API: POST /api/{version}/event/subscribe/telnet
 - API 名称： testing_connection
 	- 中文：连通性测试
 	- English：connectivity testing
