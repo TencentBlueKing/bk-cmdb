@@ -2,7 +2,7 @@ package example
 
 import (
 	"configcenter/src/framework/api"
-	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
 	"fmt"
 )
 
@@ -30,15 +30,16 @@ func (cli *myInputer) Name() string {
 func (cli *myInputer) Input() error {
 	fmt.Println("my_inputer")
 
-	_, sender, _ := api.CreateCustomOutputer("example_output", func(data output.MapStr) error {
+	_, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
 		fmt.Println("outputer:", data)
 		return nil
 	})
 	fmt.Println("put:", sender)
-	sender.Put(output.MapStr{
+	sender.Put(types.MapStr{
 		"test": "outputer",
 		"hoid": "",
 	})
+
 	return nil
 }
 

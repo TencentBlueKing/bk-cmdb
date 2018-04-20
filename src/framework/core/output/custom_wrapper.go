@@ -1,8 +1,10 @@
 package output
 
+import "configcenter/src/framework/core/types"
+
 type customWrapper struct {
 	name    string
-	runFunc func(data MapStr) error
+	runFunc func(data types.MapStr) error
 }
 
 // Name the Inputer description.
@@ -12,7 +14,7 @@ func (cli *customWrapper) Name() string {
 }
 
 // Run the output main loop. This should block until singnalled to stop by invocation of the Stop() method.
-func (cli *customWrapper) Put(data MapStr) error {
+func (cli *customWrapper) Put(data types.MapStr) error {
 	return cli.runFunc(data)
 }
 

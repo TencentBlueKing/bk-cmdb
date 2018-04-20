@@ -1,14 +1,15 @@
 package model
 
+import "configcenter/src/framework/core/types"
+
 var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
-	ClassificationID   string   `json:"bk_classification_id"`
-	ClassificationName string   `json:"bk_classification_name"`
-	ClassificationType string   `json:"bk_classification_type"`
-	ClassificationIcon string   `json:"bk_classification_icon"`
-	models             []*Model // all the models of this classification
+	ClassificationID   string `json:"bk_classification_id"`
+	ClassificationName string `json:"bk_classification_name"`
+	ClassificationType string `json:"bk_classification_type"`
+	ClassificationIcon string `json:"bk_classification_icon"`
 }
 
 func (cli *classification) GetID() string {
@@ -34,7 +35,12 @@ func (cli *classification) CreateModel() Model {
 	return m
 }
 
-func (cli *classification) FindModels(modelName string) (Iterator, error) {
-	// TODO: 返回已经包含一定数量的Model数据的迭代器。
+func (cli *classification) FindModelsLikeName(modelName string) (Iterator, error) {
+	// TODO: 按照名字正则查找，返回已经包含一定数量的Model数据的迭代器。
+	return nil, nil
+}
+
+func (cli *classification) FindModelsByCondition(condition types.MapStr) (Iterator, error) {
+	// TODO: 按照条件查找，返回一定数量的Model
 	return nil, nil
 }

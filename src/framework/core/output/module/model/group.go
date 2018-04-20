@@ -1,16 +1,17 @@
 package model
 
+import "configcenter/src/framework/core/types"
+
 var _ Group = (*group)(nil)
 
 type group struct {
-	GroupID    string       `json:"bk_group_id"`
-	GroupName  string       `json:"bk_group_name"`
-	GroupIndex int          `json:"bk_group_index"`
-	ObjectID   string       `json:"bk_obj_id"`
-	OwnerID    string       `json:"bk_supplier_account"`
-	IsDefault  bool         `json:"bk_isdefault"`
-	IsPre      bool         `json:"ispre"`
-	attrs      []*attribute // all the attributes of this group for a model
+	GroupID    string `json:"bk_group_id"`
+	GroupName  string `json:"bk_group_name"`
+	GroupIndex int    `json:"bk_group_index"`
+	ObjectID   string `json:"bk_obj_id"`
+	OwnerID    string `json:"bk_supplier_account"`
+	IsDefault  bool   `json:"bk_isdefault"`
+	IsPre      bool   `json:"ispre"`
 }
 
 func (cli *group) SetID(id string) {
@@ -58,7 +59,12 @@ func (cli *group) CreateAttribute() Attribute {
 	return attr
 }
 
-func (cli *group) FindAttributes(attributeName string) (AttributeIterator, error) {
-	// TODO: 返回已经包含一定数量的Atribute数据的迭代器。
+func (cli *group) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
+	// TODO: 按照名字正则查找
+	return nil, nil
+}
+
+func (cli *group) FindAttributesByCondition(condition types.MapStr) (AttributeIterator, error) {
+	// TODO: 按照条件查找
 	return nil, nil
 }
