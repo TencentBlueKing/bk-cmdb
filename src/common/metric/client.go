@@ -19,7 +19,7 @@ import (
 
 var metricController *MetricController
 
-func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) error {
+func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
 	metricController = new(MetricController)
 	meta := MetaData{
 		Module:     conf.ModuleName,
@@ -28,9 +28,6 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 		ClusterID:  conf.ClusterID,
 		Labels:     conf.Labels,
 	}
-	if err := meta.Valid(); nil != err {
-		return err
-	}
 
 	// set default golang metric.
 	collectors = append(collectors, newGoMetricCollector())
@@ -38,14 +35,9 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 	metricController.MetaData = &meta
 	metricController.Collectors = make(map[CollectorName]CollectInter)
 	for _, c := range collectors {
-		if _, exist := metricController.Collectors[c.Name]; false == exist {
-			metricController.Collectors[c.Name] = c.Collector
-		} else {
-			return fmt.Errorf("duplicate collector name: %s", c.Name)
-		}
+		metricController.Collectors[c.Name] = c.Collector
 	}
 
-	mux := http.NewServeMux()
 	metricHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		metric, err := metricController.PackMetrics()
@@ -85,13 +77,12 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 		w.Write(js)
 	})
 
-	mux.Handle("/metrics", metricHandler)
-	mux.Handle("/healthz", healthHandler)
-
-	if err := listenAndServe(conf, mux); err != nil {
-		return fmt.Errorf("listen and serve failed, err: %v", err)
+	actions := []Action{
+		{Path: "/metrics", HandlerFunc: metricHandler},
+		{Path: "/healthz", HandlerFunc: healthHandler},
 	}
-	return nil
+
+	return actions
 }
 
 func listenAndServe(c Config, mux http.Handler) error {

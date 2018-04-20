@@ -42,7 +42,6 @@ type CCWebServer struct {
 	httpServ *gin.Engine
 	rd       *rdiscover.RegDiscover
 	cfCenter *confCenter.ConfCenter
-	httpheal bool
 }
 
 func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
@@ -63,9 +62,7 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	a.AddrSrv = s.rd
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-	// MetricServer
-	err := s.NewMetricServer(addr, port)
-	return s, err
+	return s, nil
 }
 
 //Stop the ccapi server
@@ -188,8 +185,16 @@ func (ccWeb *CCWebServer) Start() error {
 			})
 		})
 
-		ccWeb.httpheal = true
-		defer func() { ccWeb.httpheal = false }()
+		// MetricServer
+		conf := metric.Config{
+			ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		}
+		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
+		for _, metricAction := range metricActions {
+			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
+				metricAction.HandlerFunc(c.Writer, c.Request)
+			})
+		}
 
 		ip, _ := ccWeb.conf.GetAddress()
 		port, _ := ccWeb.conf.GetPort()
@@ -237,15 +242,6 @@ func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
 	}
 }
 
-func (ccWeb *CCWebServer) NewMetricServer(ip string, port uint) error {
-	conf := metric.Config{
-		ModuleName: types.CC_MODULE_PROCCONTROLLER,
-		IP:         ip,
-		MetricPort: metric.MetricPort,
-	}
-	return metric.NewMetricController(conf, ccWeb.HealthMetric)
-}
-
 // HealthMetric check netservice is health
 func (ccWeb *CCWebServer) HealthMetric() metric.HealthMeta {
 
@@ -271,16 +267,6 @@ func (ccWeb *CCWebServer) HealthMetric() metric.HealthMeta {
 		redisHealthy.IsHealthy = true
 	}
 	meta.Items = append(meta.Items, redisHealthy)
-
-	// check http server
-	httpHealthy := metric.HealthItem{Name: "http"}
-	httpHealthy.IsHealthy = ccWeb.httpheal
-	if ccWeb.httpheal {
-		httpHealthy.Message = "listening on " + ccWeb.conf.AddrPort
-	} else {
-		httpHealthy.Message = "not listening http"
-	}
-	meta.Items = append(meta.Items, httpHealthy)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

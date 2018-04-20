@@ -1,6 +1,6 @@
 package metric
 
-func NewMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) error {
+func NewMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
 	return newMetricController(conf, healthFunc, collectors...)
 }
 

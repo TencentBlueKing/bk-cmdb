@@ -4,6 +4,7 @@ import (
 	"configcenter/src/common/types"
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 type MetricFamily struct {
@@ -94,4 +95,9 @@ type HealthInfo struct {
 	Address    string `json:"address"`
 	HealthMeta `json:",inline"`
 	AtTime     types.Time `json:"at_time"`
+}
+
+type Action struct {
+	Path        string
+	HandlerFunc http.HandlerFunc
 }
