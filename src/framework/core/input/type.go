@@ -1,6 +1,7 @@
 package input
 
 import (
+	"configcenter/src/framework/core/output"
 	"context"
 )
 
@@ -56,6 +57,7 @@ type InputerParams struct {
 	IsBlock bool
 	Target  Inputer
 	Kind    InputerType
+	Putter  output.Puter
 }
 
 // Manager is the interface that must be implemented by every input manager.
@@ -81,10 +83,6 @@ type Inputer interface {
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
-	// Input input data
-	Input() error
-
-	// Stop is the invoked to signal that the Run() method should its execution.
-	// It will be invoked at most once.
-	Stop() error
+	// Input should not be blocked
+	Input() (interface{}, error)
 }
