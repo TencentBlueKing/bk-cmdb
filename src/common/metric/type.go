@@ -3,7 +3,6 @@ package metric
 import (
 	"configcenter/src/common/types"
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -11,23 +10,6 @@ type MetricFamily struct {
 	MetaData     *MetaData                   `json:"metaData"`
 	MetricBundle map[CollectorName][]*Metric `json:"metricBundle"`
 	ReportTimeMs int64                       `json:"reportTimeMs"`
-}
-
-func (m MetaData) Valid() error {
-	var errs []error
-	if len(m.Module) == 0 {
-		errs = append(errs, errors.New("module is null."))
-	}
-
-	if len(m.IP) == 0 {
-		errs = append(errs, errors.New("IPAddr is null"))
-	}
-
-	if len(errs) != 0 {
-		return fmt.Errorf("%v", errs)
-	}
-
-	return nil
 }
 
 type Metric struct {
@@ -75,11 +57,10 @@ type Collector struct {
 }
 
 type MetaData struct {
-	Module     string            `json:"module"`
-	IP         string            `json:"ip"`
-	MetricPort uint              `json:"metricPort"`
-	ClusterID  string            `json:"clusterID"`
-	Labels     map[string]string `json:"label"`
+	Module        string            `json:"module"`
+	ServerAddress string            `json:"server_address"`
+	ClusterID     string            `json:"clusterID"`
+	Labels        map[string]string `json:"label"`
 }
 
 type HealthResponse struct {
@@ -87,7 +68,7 @@ type HealthResponse struct {
 	OK      bool       `json:"ok"`
 	Message string     `json:"message"`
 	Data    HealthInfo `json:"data"`
-	Result  bool
+	Result  bool       `json:"result"`
 }
 
 type HealthInfo struct {

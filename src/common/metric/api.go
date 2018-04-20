@@ -1,5 +1,12 @@
 package metric
 
+import (
+	"configcenter/src/common/http/httpclient"
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
 func NewMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
 	return newMetricController(conf, healthFunc, collectors...)
 }
@@ -18,12 +25,8 @@ const (
 type Config struct {
 	// name of your module
 	ModuleName string
-	// ip address of this module running on
-	IP string
-	// port number of the metric's http handler depends on.
-	MetricPort uint
-	// cluster id of your module belongs to.
-	ClusterID string
+	// server address
+	ServerAddress string
 	// self defined info labeled on your metrics.
 	Labels map[string]string
 	// metric http server's ssl configuration
@@ -81,4 +84,36 @@ func NewCollector(name string, collector CollectInter) *Collector {
 		Name:      CollectorName(name),
 		Collector: collector,
 	}
+}
+
+func CheckHealthy(address string) error {
+	if "" == address {
+		return errors.New("address not found")
+	}
+	out, err := httpclient.NewHttpClient().GET(address+"/healthz", nil, nil)
+	if err != nil {
+		return err
+	}
+	resp := HealthResponse{}
+	err = json.Unmarshal(out, &resp)
+	if err != nil {
+		fmt.Printf("healthz return %s", out)
+		return err
+	}
+	if !resp.Result {
+		return errors.New(resp.Message)
+	}
+	return nil
+}
+
+// NewHealthItem build the HealthItem depend on checkHealthFuc return
+func NewHealthItem(name string, err error) HealthItem {
+	mongoHealthy := HealthItem{Name: name}
+	if err != nil {
+		mongoHealthy.IsHealthy = false
+		mongoHealthy.Message = err.Error()
+	} else {
+		mongoHealthy.IsHealthy = true
+	}
+	return mongoHealthy
 }

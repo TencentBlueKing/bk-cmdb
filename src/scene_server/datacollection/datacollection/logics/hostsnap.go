@@ -216,7 +216,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			}
 
 			// set snap cache
-			h.redisCli.Set(common.REDIS_SNAP_KEY_PREFIX+hostid, data, time.Minute*10)
+			h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10)
 
 			// update host fields value
 			condition := map[string]interface{}{bkcommon.BKHostIDField: host[bkcommon.BKHostIDField]}
@@ -349,9 +349,9 @@ func (h *HostSnap) concede() {
 	blog.Info("concede")
 	h.isMaster = false
 	h.subscribing = false
-	val := h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Val()
+	val := h.redisCli.Get(common.MasterProcLockKey).Val()
 	if len(val) > 5 && h.id == val[0:5] {
-		h.redisCli.Del(common.MASTER_PROC_LOCK_KEY)
+		h.redisCli.Del(common.MasterProcLockKey)
 	}
 }
 
@@ -360,20 +360,20 @@ func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
 	if h.isMaster {
 		var val string
-		val, err = h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Result()
+		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
 		}
 		if len(val) > 5 && h.id == val[0:len(h.id)] {
 			blog.Infof("master check : i am still master")
-			h.redisCli.Set(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
+			h.redisCli.Set(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
 			ok = true
 		} else {
 			blog.Infof("exit master,val = %v, id = %v", val, h.id)
 			h.isMaster = false
 		}
 	} else {
-		ok, err = h.redisCli.SetNX(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
+		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
 		}

@@ -162,7 +162,8 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	ccAPI.httpServ.RegisterWebServer("/process/{version}", rdapi.AllGlobalFilter(), a.Actions)
 	// MetricServer
 	conf := metric.Config{
-		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		ModuleName:    types.CC_MODULE_PROC,
+		ServerAddress: ccAPI.conf.AddrPort,
 	}
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
@@ -177,34 +178,22 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 
 // HealthMetric check netservice is health
 func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
-
-	meta := metric.HealthMeta{IsHealthy: true}
 	a := api.GetAPIResource()
+	meta := metric.HealthMeta{IsHealthy: true}
 
-	// check mongo
-	mongoHealthy := metric.HealthItem{Name: "mongo"}
-	if err := a.InstCli.Ping(); err != nil {
-		mongoHealthy.IsHealthy = false
-		mongoHealthy.Message = err.Error()
-	} else {
-		mongoHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, mongoHealthy)
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
 
-	// check redis
-	redisHealthy := metric.HealthItem{Name: "redis"}
-	if err := a.CacheCli.Ping(); err != nil {
-		redisHealthy.IsHealthy = false
-		redisHealthy.Message = err.Error()
-	} else {
-		redisHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, redisHealthy)
+	// check dependence
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_OBJECTCONTROLLER, metric.CheckHealthy(a.ObjCtrl())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_AUDITCONTROLLER, metric.CheckHealthy(a.AuditCtrl())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_HOSTCONTROLLER, metric.CheckHealthy(a.HostCtrl())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_PROCCONTROLLER, metric.CheckHealthy(a.ProcCtrl())))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "proccontroller is not healthy"
+			meta.Message = "procserver is not healthy"
 			break
 		}
 	}

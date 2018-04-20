@@ -158,7 +158,8 @@ func (ccAPI *CCAPIServer) InitHttpServ(config map[string]string) error {
 	ccAPI.httpServ.RegisterWebServer("/object/{version}", nil, a.Actions)
 	// MetricServer
 	conf := metric.Config{
-		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		ModuleName:    types.CC_MODULE_OBJECTCONTROLLER,
+		ServerAddress: ccAPI.conf.AddrPort,
 	}
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
@@ -205,29 +206,16 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 	a := api.GetAPIResource()
 
 	// check mongo
-	mongoHealthy := metric.HealthItem{Name: "mongo"}
-	if err := a.InstCli.Ping(); err != nil {
-		mongoHealthy.IsHealthy = false
-		mongoHealthy.Message = err.Error()
-	} else {
-		mongoHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, mongoHealthy)
-
+	meta.Items = append(meta.Items, metric.NewHealthItem("mongo", a.InstCli.Ping()))
 	// check redis
-	redisHealthy := metric.HealthItem{Name: "redis"}
-	if err := a.CacheCli.Ping(); err != nil {
-		redisHealthy.IsHealthy = false
-		redisHealthy.Message = err.Error()
-	} else {
-		redisHealthy.IsHealthy = true
-	}
-	meta.Items = append(meta.Items, redisHealthy)
+	meta.Items = append(meta.Items, metric.NewHealthItem("redis", a.CacheCli.Ping()))
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "proccontroller is not healthy"
+			meta.Message = "objectcontroller is not healthy"
 			break
 		}
 	}

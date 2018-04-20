@@ -3,18 +3,12 @@ package metric
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/types"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net"
 	"net/http"
-	"strconv"
 	"time"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/common/ssl"
 )
 
 var metricController *MetricController
@@ -22,11 +16,9 @@ var metricController *MetricController
 func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
 	metricController = new(MetricController)
 	meta := MetaData{
-		Module:     conf.ModuleName,
-		IP:         conf.IP,
-		MetricPort: conf.MetricPort,
-		ClusterID:  conf.ClusterID,
-		Labels:     conf.Labels,
+		Module:        conf.ModuleName,
+		ServerAddress: conf.ServerAddress,
+		Labels:        conf.Labels,
 	}
 
 	// set default golang metric.
@@ -55,7 +47,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 		h := healthFunc()
 		info := HealthInfo{
 			Module:     conf.ModuleName,
-			Address:    fmt.Sprintf("%s:%d", conf.IP, conf.MetricPort),
+			Address:    conf.ServerAddress,
 			HealthMeta: h,
 			AtTime:     types.Now(),
 		}
@@ -83,48 +75,6 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 	}
 
 	return actions
-}
-
-func listenAndServe(c Config, mux http.Handler) error {
-	addr := fmt.Sprintf("%s:%d", c.IP, c.MetricPort)
-
-	if c.SvrCertFile == "" && c.SvrKeyFile == "" {
-		go func() {
-			blog.Infof("started metric and listen insecure server on %s", addr)
-			blog.Fatal(http.ListenAndServe(addr, mux))
-		}()
-		return nil
-	}
-
-	// user https
-	ca, err := ioutil.ReadFile(c.SvrCaFile)
-	if nil != err {
-		return err
-	}
-	capool := x509.NewCertPool()
-	capool.AppendCertsFromPEM(ca)
-	tlsconfig, err := ssl.ServerTslConfVerityClient(c.SvrCaFile,
-		c.SvrCertFile,
-		c.SvrKeyFile,
-		c.CertPasswd)
-	if err != nil {
-		return err
-	}
-	tlsconfig.BuildNameToCertificate()
-
-	blog.Info("start metric secure serve on %s", addr)
-
-	ln, err := net.Listen("tcp", net.JoinHostPort(c.IP, strconv.FormatUint(uint64(c.MetricPort), 10)))
-	if err != nil {
-		return err
-	}
-	listener := tls.NewListener(ln, tlsconfig)
-	go func() {
-		if err := http.Serve(listener, mux); nil != err {
-			blog.Fatalf("server https failed. err: %v", err)
-		}
-	}()
-	return nil
 }
 
 type MetricController struct {
