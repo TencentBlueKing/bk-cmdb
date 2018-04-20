@@ -104,11 +104,6 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 					}
 
 					asstInst := metadata.InstAsst{}
-					id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-					asstInst.ID = id
-					if nil != err {
-						blog.Error("faild to create id, error info is %s", err.Error())
-					}
 					asstInst.AsstInstID = iID
 					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
 					asstInst.ObjectID = objID
