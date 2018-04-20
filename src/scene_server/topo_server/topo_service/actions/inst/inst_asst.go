@@ -324,7 +324,7 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			}
 
 			inputJSON, _ := json.Marshal(input)
-			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPSelectPost, []byte(inputJSON))
 			if nil != err {
 				blog.Errorf("failed to search the inst association, condition is %s ,error is %s", string(inputJSON), err.Error())
 				continue
