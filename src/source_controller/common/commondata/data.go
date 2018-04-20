@@ -24,10 +24,10 @@ const (
 	CC_time_type_parse_flag = "cc_time_type"
 )
 
-var ObjTypeTableMap = map[string]string{common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: BKTableNameInstAsst}
+var ObjTypeTableMap = map[string]string{common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: common.BKTableNameInstAsst}
 
 var ObjTableMap = map[string]string{
-	common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: BKTableNameInstAsst}
+	common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: common.BKTableNameInstAsst}
 
 type DataBase struct {
 	ID         int       `auto_increment;primary_key"`
