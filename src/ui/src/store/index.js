@@ -21,7 +21,7 @@ import hostTransferPop from './modules/hostTransferPop'
 import hostSnapshot from './modules/hostSnapshot'
 import usercustom from './modules/usercustom'
 import navigation from './modules/navigation'
-
+import object from './modules/object'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -32,6 +32,7 @@ export default new Vuex.Store({
         hostTransferPop,
         hostSnapshot,
         usercustom,
-        navigation
+        navigation,
+        object
     }
 })
