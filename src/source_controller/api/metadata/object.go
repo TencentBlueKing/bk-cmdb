@@ -146,7 +146,7 @@ func (PropertyGroup) TableName() string {
 
 // InstAsst an association definition between instances.
 type InstAsst struct {
-	ID           int64  `bson:"id" json:"id"`
+	ID           int64  `bson:"id" json:"-"`
 	InstID       int64  `bson:"bk_inst_id" json:"bk_inst_id"`
 	ObjectID     string `bson:"bk_obj_id" json:"bk_obj_id"`
 	AsstInstID   int64  `bson:"bk_asst_inst_id" json:"bk_asst_inst_id"`
