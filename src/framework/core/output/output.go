@@ -3,6 +3,8 @@ package output
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 	"sync"
 )
 
@@ -14,6 +16,23 @@ type manager struct {
 	outputerLock sync.RWMutex
 	outputers    MapOutputer
 }
+
+// CreateClassification create a new classification
+func (cli *manager) CreateClassification() model.Classification {
+	return model.CreateClassification()
+}
+
+// FindClassificationsLikeName find a array of the classification by the name
+func (cli *manager) FindClassificationsLikeName(name string) (model.ClassificationIterator, error) {
+	return model.FindClassificationsLikeName(name)
+}
+
+// FindClassificationsByCondition find a array of the classification by the condition
+func (cli *manager) FindClassificationsByCondition(condition types.MapStr) (model.ClassificationIterator, error) {
+	return model.FindClassificationsByCondition(condition)
+}
+
+/** the following  methods are used to maintence the custom outputer */
 
 func (cli *manager) AddOutputer(target Outputer) OutputerKey {
 
@@ -55,7 +74,7 @@ func (cli *manager) FetchOutputer(key OutputerKey) Puter {
 
 	return nil
 }
-func (cli *manager) CreateCustomOutputer(name string, run func(data MapStr) error) (OutputerKey, Puter) {
+func (cli *manager) CreateCustomOutputer(name string, run func(data types.MapStr) error) (OutputerKey, Puter) {
 
 	log.Infof("creater custom outputer:%s", name)
 	wrapper := &customWrapper{

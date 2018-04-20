@@ -1,33 +1,17 @@
 package output
 
-import ()
-
-// MapStr the common event data definition
-type MapStr map[string]interface{}
+import (
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
+)
 
 // OutputerKey the output name
 type OutputerKey string
 
-// Manager is the interface that must be implemented by every output manager.
-type Manager interface {
-
-	// AddOutputer add a new outputer instance
-	AddOutputer(target Outputer) OutputerKey
-
-	// RemoveOutputer delete the outputer instace by the outputer key
-	RemoveOutputer(key OutputerKey)
-
-	// FetchOutputer find and return the puter by the outputer key
-	FetchOutputer(key OutputerKey) Puter
-
-	// CreateCustomOutputer create a new custom outputer
-	CreateCustomOutputer(name string, run func(data MapStr) error) (OutputerKey, Puter)
-}
-
 // Puter send the data input
 type Puter interface {
 	// save into the storage
-	Put(data MapStr) error
+	Put(data types.MapStr) error
 }
 
 // Outputer is the interface that must be implemented by every Outputer.
@@ -38,9 +22,45 @@ type Outputer interface {
 	Name() string
 
 	// Run the output main loop. This should block until singnalled to stop by invocation of the Stop() method.
-	Put(data MapStr) error
+	Put(data types.MapStr) error
 
 	// Stop is the invoked to signal that the Run() method should its execution.
 	// It will be invoked at most once.
 	Stop() error
+}
+
+// ModelOutputer the interface which used to maintence the model
+type ModelOutputer interface {
+	// CreateClassification create a new classification
+	CreateClassification() model.Classification
+
+	// FindClassificationsLikeName find a array of the classification by the name
+	FindClassificationsLikeName(name string) (model.ClassificationIterator, error)
+
+	// FindClassificationsByCondition find a array of the classification by the condition
+	FindClassificationsByCondition(condition types.MapStr) (model.ClassificationIterator, error)
+}
+
+// CustomOutputer the interface which used to maintence the custom outputer
+type CustomOutputer interface {
+	// AddOutputer add a new outputer instance
+	AddOutputer(target Outputer) OutputerKey
+
+	// RemoveOutputer delete the outputer instace by the outputer key
+	RemoveOutputer(key OutputerKey)
+
+	// FetchOutputer find and return the puter by the outputer key
+	FetchOutputer(key OutputerKey) Puter
+
+	// CreateCustomOutputer create a new custom outputer
+	CreateCustomOutputer(name string, run func(data types.MapStr) error) (OutputerKey, Puter)
+}
+
+// Manager is the interface that must be implemented by every output manager.
+type Manager interface {
+	// Model interface
+	ModelOutputer
+
+	// Custom outputer
+	CustomOutputer
 }
