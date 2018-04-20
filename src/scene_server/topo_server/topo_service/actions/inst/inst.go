@@ -299,7 +299,7 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 			asstFieldVal[idxItem] = t
 		}
 	}
-	if err := cli.createInstAssociation(asstFieldVal); nil != err {
+	if err := cli.createInstAssociation(req, asstFieldVal); nil != err {
 		blog.Errorf("failed to create the inst association, error info is %s ", err.Error())
 	}
 
@@ -531,7 +531,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			input[common.BKInstIDField] = delItem.instID
 
 			// delete the association
-			if err := cli.deleteInstAssociation(delItem.instID, delItem.ownerID, delItem.objID); nil != err {
+			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
 				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
 			}
 
@@ -661,7 +661,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// set the inst association table
-		if err := cli.updateInstAssociation(instID, ownerID, objID, data); nil != err {
+		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
 
