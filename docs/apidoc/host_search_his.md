@@ -1,6 +1,6 @@
 
 ### 新加主机查询历史
-* API: POST /api/v1/hosts/history
+* API: POST /api/{version}/hosts/history
 * API名称： create_host_search_history
 * 功能说明：
 	* 中文：主机查询历史
@@ -49,7 +49,7 @@ data 字段说明：
 | id | string | 查询记录的主键ID |search record primary key ID|
 
 ### 获取主机查询历史
-* API: GET /api/v1/hosts/history/{start}/{limit} 
+* API: GET /api/{version}/hosts/history/{start}/{limit} 
 * API名称： search_host_search_history
 * 功能说明：
 	* 中文：主机查询历史
