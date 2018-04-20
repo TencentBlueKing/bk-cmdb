@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
+	// "net/http"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -145,7 +145,7 @@ func (cli *BaseAction) ResponseFailedEx(httpcode int, errno int, errmsg, info in
 // ResponseFailed deal with the http  code and response
 func (cli *BaseAction) ResponseFailed(errno int, errmsg interface{}, resp *restful.Response) {
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(http.StatusBadRequest)
+	// resp.WriteHeader(http.StatusBadRequest)
 	rsp, rsperr := cli.CC.CreateAPIRspStr(errno, errmsg)
 	if nil != rsperr {
 		blog.Error("create response failed, error information is %v", rsperr)
