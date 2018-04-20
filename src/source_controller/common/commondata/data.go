@@ -28,13 +28,14 @@ const (
 )
 
 var ObjTableMap = map[string]string{
-	common.BKInnerObjIDApp:    common.BKTableNameBaseApp,
-	common.BKInnerObjIDSet:    common.BKTableNameBaseSet,
-	common.BKInnerObjIDModule: common.BKTableNameBaseModule,
-	common.BKINnerObjIDObject: common.BKTableNameBaseInst,
-	common.BKInnerObjIDHost:   common.BKTableNameBaseHost,
-	common.BKInnerObjIDProc:   common.BKTableNameBaseProcess,
-	common.BKInnerObjIDPlat:   common.BKTableNameBasePlat,
+	common.BKInnerObjIDApp:     common.BKTableNameBaseApp,
+	common.BKInnerObjIDSet:     common.BKTableNameBaseSet,
+	common.BKInnerObjIDModule:  common.BKTableNameBaseModule,
+	common.BKINnerObjIDObject:  common.BKTableNameBaseInst,
+	common.BKInnerObjIDHost:    common.BKTableNameBaseHost,
+	common.BKInnerObjIDProc:    common.BKTableNameBaseProcess,
+	common.BKInnerObjIDPlat:    common.BKTableNameBasePlat,
+	common.BKTableNameInstAsst: common.BKTableNameInstAsst,
 }
 
 // GetInstTableName returns inst data table name
@@ -47,7 +48,7 @@ func GetInstTableName(objID string) string {
 }
 
 type DataBase struct {
-	ID         int       `auto_increment;primary_key"`
+	ID         int       `gorm:"auto_increment;primary_key"`
 	CreateTime time.Time `gorm:"column:CreateTime"`
 }
 
