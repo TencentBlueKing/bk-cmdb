@@ -7,7 +7,12 @@ import (
 )
 
 func init() {
-	api.AddInputerAndExecuteOnce(target)
+	_, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
+		fmt.Println("outputer:", data)
+		return nil
+	})
+	fmt.Println("put:", sender)
+	api.AddInputerAndExecuteOnce(target, sender)
 }
 
 var target = &myInputer{}
@@ -26,25 +31,12 @@ func (cli *myInputer) Name() string {
 	return "name_myinputer"
 }
 
-// Input the input main loop. This should block until singnalled to stop by invocation of the Stop() method.
-func (cli *myInputer) Input() error {
+// Input the input should not be blocked
+func (cli *myInputer) Input() (interface{}, error) {
 	fmt.Println("my_inputer")
 
-	_, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
-		fmt.Println("outputer:", data)
-		return nil
-	})
-	fmt.Println("put:", sender)
-	sender.Put(types.MapStr{
+	return types.MapStr{
 		"test": "outputer",
 		"hoid": "",
-	})
-
-	return nil
-}
-
-// Stop is the invoked to signal that the Run() method should its execution.
-// It will be invoked at most once.
-func (cli *myInputer) Stop() error {
-	return nil
+	}, nil
 }
