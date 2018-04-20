@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ccapi
 
 import (
@@ -18,6 +18,8 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	confCenter "configcenter/src/source_controller/objectcontroller/objectdata/config"
 	"configcenter/src/source_controller/objectcontroller/objectdata/rdiscover"
 	"configcenter/src/storage"
@@ -31,6 +33,7 @@ type CCAPIServer struct {
 	httpServ *httpserver.HttpServer
 	rd       *rdiscover.RegDiscover
 	cfCenter *confCenter.ConfCenter
+	httpheal bool
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -132,6 +135,8 @@ func (ccAPI *CCAPIServer) Start() error {
 
 	//http server
 	go func() {
+		ccAPI.httpheal = true
+		defer func() { ccAPI.httpheal = false }()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -180,4 +185,60 @@ func (ccAPI *CCAPIServer) InitHttpServ(config map[string]string) error {
 		return <-chErr
 	}
 	return nil
+}
+
+func (ccAPI *CCAPIServer) NewMetricServer(ip string, port uint) error {
+	conf := metric.Config{
+		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		IP:         ip,
+		MetricPort: metric.MetricPort,
+	}
+	return metric.NewMetricController(conf, ccAPI.HealthMetric)
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	mongoHealthy := metric.HealthItem{Name: "mongo"}
+	if err := a.InstCli.Ping(); err != nil {
+		mongoHealthy.IsHealthy = false
+		mongoHealthy.Message = err.Error()
+	} else {
+		mongoHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, mongoHealthy)
+
+	// check redis
+	redisHealthy := metric.HealthItem{Name: "redis"}
+	if err := a.CacheCli.Ping(); err != nil {
+		redisHealthy.IsHealthy = false
+		redisHealthy.Message = err.Error()
+	} else {
+		redisHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, redisHealthy)
+
+	// check http server
+	httpHealthy := metric.HealthItem{Name: "http"}
+	httpHealthy.IsHealthy = ccAPI.httpheal
+	if ccAPI.httpheal {
+		httpHealthy.Message = "listening on " + ccAPI.conf.AddrPort
+	} else {
+		httpHealthy.Message = "not listening http"
+	}
+	meta.Items = append(meta.Items, httpHealthy)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "proccontroller is not healthy"
+			break
+		}
+	}
+
+	return meta
 }

@@ -23,18 +23,17 @@ import (
 	confCenter "configcenter/src/source_controller/proccontroller/procdata/config"
 	"configcenter/src/source_controller/proccontroller/procdata/rdiscover"
 	"configcenter/src/storage"
-	"fmt"
 	"sync"
 	"time"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
 type CCAPIServer struct {
-	conf      *config.CCAPIConfig
-	httpServ  *httpserver.HttpServer
-	rd        *rdiscover.RegDiscover
-	cfCenter  *confCenter.ConfCenter
-	onworking bool
+	conf     *config.CCAPIConfig
+	httpServ *httpserver.HttpServer
+	rd       *rdiscover.RegDiscover
+	cfCenter *confCenter.ConfCenter
+	httpheal bool
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -161,8 +160,8 @@ func (ccAPI *CCAPIServer) Start() error {
 	go func() {
 		wg.Wait()
 		ccAPI.initHttpServ()
-		ccAPI.onworking = true
-		defer func() { ccAPI.onworking = false }()
+		ccAPI.httpheal = true
+		defer func() { ccAPI.httpheal = false }()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -221,9 +220,9 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 
 	// check http server
 	httpHealthy := metric.HealthItem{Name: "http"}
-	httpHealthy.IsHealthy = ccAPI.onworking
-	if ccAPI.onworking {
-		httpHealthy.Message = fmt.Sprintf("listening on %s", ccAPI.conf.AddrPort)
+	httpHealthy.IsHealthy = ccAPI.httpheal
+	if ccAPI.httpheal {
+		httpHealthy.Message = "listening on " + ccAPI.conf.AddrPort
 	} else {
 		httpHealthy.Message = "not listening http"
 	}
