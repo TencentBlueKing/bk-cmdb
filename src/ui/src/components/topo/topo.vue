@@ -311,7 +311,7 @@
                                 </svg>
                                 <foreignObject x="0" y="58" width="100%" height="100%">
                                     <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
-                                        <div style="color:${svgColor.color};text-align: center;width: 50px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${node['bk_obj_name']}</div>
+                                        <div style="color:${svgColor.color};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${node['bk_obj_name']}</div>
                                     </div>
                                 </foreignObject>
                             </svg>`

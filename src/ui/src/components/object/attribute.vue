@@ -191,10 +191,6 @@
             objId: {
                 type: String,
                 default: ''
-            },
-            isCloseConfirmShow: {
-                type: Boolean,
-                default: false
             }
         },
         data () {
@@ -303,33 +299,6 @@
                         }
                     }
                 }
-
-                // 校验是否需要显示关闭确认弹窗
-                let isConfirmShow = false
-                if (this.type === 'create') {
-                    isConfirmShow = Object.values(this.localValues).some(val => {
-                        return val.length
-                    })
-                } else {
-                    for (let key in formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
-                            return bkPropertyId === key
-                        })
-                        let value = this.formValues[key]
-                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
-                            value = []
-                            this.formValues[key].map(formValue => {
-                                value.push(formValue['bk_inst_id'])
-                            })
-                            value = value.join(',')
-                        }
-                        if (value !== formData[key] && !(formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
-                            isConfirmShow = true
-                            break
-                        }
-                    }
-                }
-                this.$emit('update:isCloseConfirmShow', isConfirmShow)
                 
                 return formData
             }
@@ -352,6 +321,7 @@
                 this.isNoneGroupHide = true
                 if (displayType === 'list') {
                     this.localValues = {}
+                    this.$emit('update:isCloseConfirmShow', false)
                 } else if (this.type === 'update') {
                     this.setUpdateInitData()
                 }
@@ -378,6 +348,49 @@
                     this.getbkPropertyGroups()
                 }
             }
+            // isCloseConfirmShow (isShow) {
+            //     if (isShow) {
+            //         // 校验是否需要显示关闭确认弹窗
+            //         let isConfirmShow = false
+            //         if (this.type === 'create') {
+            //             isConfirmShow = Object.values(this.localValues).some(val => {
+            //                 return val.length
+            //             })
+            //         } else {
+            //             for (let key in this.formData) {
+            //                 let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+            //                     return bkPropertyId === key
+            //                 })
+            //                 let value = this.formValues[key]
+            //                 if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+            //                     value = []
+            //                     if (this.formValues.hasOwnProperty(key)) {
+            //                         this.formValues[key].map(formValue => {
+            //                             value.push(formValue['bk_inst_id'])
+            //                         })
+            //                     }
+            //                     value = value.join(',')
+            //                 }
+            //                 if (value !== this.formData[key] && !(this.formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
+            //                     isConfirmShow = true
+            //                     break
+            //                 }
+            //             }
+            //         }
+            //         if (isConfirmShow) {
+            //             this.$bkInfo({
+            //                 title: '退出会导致未保存信息丢失，是否确认？',
+            //                 confirmFn: () => {
+            //                     this.$emit('update:isSliderShow', false)
+            //                     this.$emit('update:isCloseConfirmShow', false)
+            //                 }
+            //             })
+            //         } else {
+            //             this.$emit('update:isSliderShow', false)
+            //             this.$emit('update:isCloseConfirmShow', false)
+            //         }
+            //     }
+            // }
         },
         beforeMount () {
             if (this.objId) {
@@ -385,6 +398,35 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                let isConfirmShow = false
+                if (this.type === 'create') {
+                    isConfirmShow = Object.values(this.localValues).some(val => {
+                        return val.length
+                    })
+                } else {
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        let value = this.formValues[key]
+                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+                            value = []
+                            if (this.formValues.hasOwnProperty(key)) {
+                                this.formValues[key].map(formValue => {
+                                    value.push(formValue['bk_inst_id'])
+                                })
+                            }
+                            value = value.join(',')
+                        }
+                        if (value !== this.formData[key] && !(this.formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
+                            isConfirmShow = true
+                            break
+                        }
+                    }
+                }
+                return isConfirmShow
+            },
             confirmHost (hostInfo) {
                 this.hideSelectHost()
             },
