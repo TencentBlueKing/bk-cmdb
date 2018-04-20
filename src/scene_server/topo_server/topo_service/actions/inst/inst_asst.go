@@ -99,12 +99,6 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 					}
 
 					asstInst := metadata.InstAsst{}
-					id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-					asstInst.ID = id
-					if nil != err {
-						blog.Error("faild to create id, error info is %s", err.Error())
-					}
-
 					asstInst.InstID = int64(instID)
 					asstInst.AsstInstID = iID
 					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
@@ -114,11 +108,6 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 
 			case int64, int:
 				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
@@ -126,11 +115,6 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 				asstFieldVal = append(asstFieldVal, asstInst)
 			case json.Number:
 				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = t.Int64()
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
