@@ -115,17 +115,18 @@
             }
             .nav-item{
                 position: relative;
+                &:hover{
+                    .nav-classification-name,
+                    .nav-classification-model{
+                        display: block;
+                    }
+                    .nav-classification{
+                        background-color: $navActiveColor;
+                    }
+                }
             }
             .nav-classification{
                 text-align: center;
-                &:hover{
-                    .nav-classification-name{
-                        display: block;
-                    }
-                    ~ .nav-classification-model{
-                        display: block;
-                    }
-                }
                 .nav-classification-icon{
                     margin: 0;
                 }
@@ -152,6 +153,9 @@
                 top: 100%;
                 z-index: 1;
                 background-color: #2f3c5d;
+                &:hover{
+                    display: block;
+                }
                 .nav-classification-link{
                     padding: 0 10px 0 37px;
                 }
