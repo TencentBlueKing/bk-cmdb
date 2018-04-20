@@ -85,7 +85,8 @@
         "添加导航成功": "Add navigation success",
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
-        "返回上级": "Return"
+        "返回上级": "Return",
+        "开始查询": "Please enter at least 3 characters to start the query"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -102,7 +103,10 @@
         "操作时间": "Operation Time",
         "类型": "Type",
         "全部": "All",
-        "IP": "IP"
+        "IP": "IP",
+        "操作详情": "Operation Details",
+        "变更前": "Before Change",
+        "变更后": "After Change"
     },
     "EventPush": {
         "事件推送": "Event Push",

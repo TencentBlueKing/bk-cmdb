@@ -99,21 +99,29 @@
                         @handlePageTurning="setCurrentPage"
                         @handlePageSizeChange="setCurrentSize"
                         @handleTableSortClick="setCurrentSort"
+                        @handleRowClick="showDetails"
                     >
                     </v-table>
                 </div>
             </div>
         </div>
+        <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
+            <v-history-details :details="details.data" slot="content"></v-history-details>
+        </v-sideslider>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import moment from 'moment'
+    import vSideslider from '@/components/slider/sideslider'
+    import vHistoryDetails from '@/components/history/details'
     import vTable from '@/components/table/table'
     export default {
         components: {
-            vTable
+            vTable,
+            vSideslider,
+            vHistoryDetails
         },
         data () {
             return {
@@ -195,7 +203,11 @@
                 }],
                 tableList: [],
                 defaultSort: '-op_time',
-                sort: '-op_time'
+                sort: '-op_time',
+                details: {
+                    isShow: false,
+                    data: null
+                }
             }
         },
         computed: {
@@ -368,13 +380,9 @@
                     obj[key] = value
                 }
             },
-            leftPadding (str, targetLength = 2, padding = 0) {
-                let strLength = [...str.toString()].length
-                if (strLength < targetLength) {
-                    return (new Array(targetLength - strLength)).fill(padding).join('') + str
-                } else {
-                    return str
-                }
+            showDetails (item) {
+                this.details.data = item
+                this.details.isShow = true
             }
         }
     }
