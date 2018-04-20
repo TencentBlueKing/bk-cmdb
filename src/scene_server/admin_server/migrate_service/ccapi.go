@@ -18,14 +18,13 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"sync"
-	"time"
-	// migrateCommon "configcenter/src/scene_server/admin_server/common"
 	confCenter "configcenter/src/scene_server/admin_server/migrate_service/config"
 	"configcenter/src/scene_server/admin_server/migrate_service/rdiscover"
-	//"time"
+	"sync"
+	"time"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -34,6 +33,7 @@ type CCAPIServer struct {
 	httpServ *httpserver.HttpServer
 	rd       *rdiscover.RegDiscover
 	cfCenter *confCenter.ConfCenter
+	httpheal bool
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -61,8 +61,9 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(confCenterAddrs)
-
-	return s, nil
+	// MetricServer
+	err := s.NewMetricServer(addr, port)
+	return s, err
 }
 
 //Stop the ccapi server
@@ -150,6 +151,8 @@ func (ccAPI *CCAPIServer) Start() error {
 
 	go func() {
 		wg.Wait()
+		ccAPI.httpheal = true
+		defer func() { ccAPI.httpheal = false }()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -169,4 +172,60 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	ccAPI.httpServ.RegisterWebServer("/migrate/{version}", rdapi.GlobalFilter(types.CC_MODULE_PROC, types.CC_MODULE_TOPO), a.Actions)
 
 	return nil
+}
+
+func (ccAPI *CCAPIServer) NewMetricServer(ip string, port uint) error {
+	conf := metric.Config{
+		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		IP:         ip,
+		MetricPort: metric.MetricPort,
+	}
+	return metric.NewMetricController(conf, ccAPI.HealthMetric)
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	mongoHealthy := metric.HealthItem{Name: "mongo"}
+	if err := a.InstCli.Ping(); err != nil {
+		mongoHealthy.IsHealthy = false
+		mongoHealthy.Message = err.Error()
+	} else {
+		mongoHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, mongoHealthy)
+
+	// check redis
+	redisHealthy := metric.HealthItem{Name: "redis"}
+	if err := a.CacheCli.Ping(); err != nil {
+		redisHealthy.IsHealthy = false
+		redisHealthy.Message = err.Error()
+	} else {
+		redisHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, redisHealthy)
+
+	// check http server
+	httpHealthy := metric.HealthItem{Name: "http"}
+	httpHealthy.IsHealthy = ccAPI.httpheal
+	if ccAPI.httpheal {
+		httpHealthy.Message = "listening on " + ccAPI.conf.AddrPort
+	} else {
+		httpHealthy.Message = "not listening http"
+	}
+	meta.Items = append(meta.Items, httpHealthy)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "proccontroller is not healthy"
+			break
+		}
+	}
+
+	return meta
 }

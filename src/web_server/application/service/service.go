@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package service
 
 import (
@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/http/httpserver/webserver"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/web_server/application/config"
@@ -41,6 +42,7 @@ type CCWebServer struct {
 	httpServ *gin.Engine
 	rd       *rdiscover.RegDiscover
 	cfCenter *confCenter.ConfCenter
+	httpheal bool
 }
 
 func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
@@ -61,8 +63,9 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	a.AddrSrv = s.rd
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-
-	return s, nil
+	// MetricServer
+	err := s.NewMetricServer(addr, port)
+	return s, err
 }
 
 //Stop the ccapi server
@@ -185,6 +188,9 @@ func (ccWeb *CCWebServer) Start() error {
 			})
 		})
 
+		ccWeb.httpheal = true
+		defer func() { ccWeb.httpheal = false }()
+
 		ip, _ := ccWeb.conf.GetAddress()
 		port, _ := ccWeb.conf.GetPort()
 		portStr := strconv.Itoa(int(port))
@@ -229,4 +235,60 @@ func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
 			blog.Error("unrecognized action verb: %s", action.Verb)
 		}
 	}
+}
+
+func (ccWeb *CCWebServer) NewMetricServer(ip string, port uint) error {
+	conf := metric.Config{
+		ModuleName: types.CC_MODULE_PROCCONTROLLER,
+		IP:         ip,
+		MetricPort: metric.MetricPort,
+	}
+	return metric.NewMetricController(conf, ccWeb.HealthMetric)
+}
+
+// HealthMetric check netservice is health
+func (ccWeb *CCWebServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	mongoHealthy := metric.HealthItem{Name: "mongo"}
+	if err := a.InstCli.Ping(); err != nil {
+		mongoHealthy.IsHealthy = false
+		mongoHealthy.Message = err.Error()
+	} else {
+		mongoHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, mongoHealthy)
+
+	// check redis
+	redisHealthy := metric.HealthItem{Name: "redis"}
+	if err := a.CacheCli.Ping(); err != nil {
+		redisHealthy.IsHealthy = false
+		redisHealthy.Message = err.Error()
+	} else {
+		redisHealthy.IsHealthy = true
+	}
+	meta.Items = append(meta.Items, redisHealthy)
+
+	// check http server
+	httpHealthy := metric.HealthItem{Name: "http"}
+	httpHealthy.IsHealthy = ccWeb.httpheal
+	if ccWeb.httpheal {
+		httpHealthy.Message = "listening on " + ccWeb.conf.AddrPort
+	} else {
+		httpHealthy.Message = "not listening http"
+	}
+	meta.Items = append(meta.Items, httpHealthy)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "proccontroller is not healthy"
+			break
+		}
+	}
+
+	return meta
 }
