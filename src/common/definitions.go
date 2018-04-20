@@ -122,6 +122,10 @@ const (
 )
 
 const (
+
+	// BKFIeldID the id definition
+	BKFieldID = "id"
+
 	// BKDefaultField the default field
 	BKDefaultField = "default"
 
@@ -539,6 +543,9 @@ const (
 
 	// BKTableNameObjClassifiction the table name of the object classification
 	BKTableNameObjClassifiction = "cc_ObjClassification"
+
+	// BKTableNameInstAsst the table name of the inst association
+	BKTableNameInstAsst = "cc_InstAsst"
 )
 
 const (
