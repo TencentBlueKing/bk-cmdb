@@ -91,6 +91,29 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	for idxItem, item := range asstDes {
 		if inputVal, ok := targetInput[item.ObjectAttID]; ok {
 			switch t := inputVal.(type) {
+			case int64, int:
+				iID, iIDErr := util.GetInt64ByInterface(t)
+				if nil != iIDErr {
+					blog.Error("can not convert the data (%v) into int64, error info is %s", t, iIDErr.Error())
+					continue
+				}
+				asstInst := metadata.InstAsst{}
+				asstInst.AsstInstID = iID
+				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
+				asstInst.ObjectID = objID
+				asstFieldVal = append(asstFieldVal, asstInst)
+			case json.Number:
+
+				iID, iIDErr := util.GetInt64ByInterface(t)
+				if nil != iIDErr {
+					blog.Error("can not convert the data (%v) into int64, error info is %s", t, iIDErr.Error())
+					continue
+				}
+				asstInst := metadata.InstAsst{}
+				asstInst.AsstInstID = iID
+				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
+				asstInst.ObjectID = objID
+				asstFieldVal = append(asstFieldVal, asstInst)
 			case string:
 				asstIDS := strings.Split(t, ",")
 				for _, id := range asstIDS {
