@@ -13,7 +13,7 @@ type attribute struct {
 	PropertyIndex int    `json:"bk_property_index"`
 	Unit          string `json:"unit"`
 	Placeholder   string `json:"placeholder"`
-	Editable      bool   `json:"editable"`
+	IsEditable    bool   `json:"editable"`
 	IsPre         bool   `json:"ispre"`
 	IsRequired    bool   `json:"isrequired"`
 	IsReadOnly    bool   `json:"isreadonly"`
@@ -42,12 +42,28 @@ func (cli *attribute) SetPlaceholer(placeHoler string) {
 	cli.Placeholder = placeHoler
 }
 
-func (cli *attribute) SetEditable(editable bool) {
-	cli.Editable = editable
+func (cli *attribute) SetEditable() {
+	cli.IsEditable = true
 }
 
-func (cli *attribute) SetRequired(required bool) {
-	cli.IsRequired = required
+func (cli *attribute) SetNonEditable() {
+	cli.IsEditable = false
+}
+
+func (cli *attribute) Editable() bool {
+	return cli.IsEditable
+}
+
+func (cli *attribute) SetRequired() {
+	cli.IsRequired = true
+}
+
+func (cli *attribute) SetNonRequired() {
+	cli.IsRequired = false
+}
+
+func (cli *attribute) Required() bool {
+	return cli.IsRequired
 }
 
 func (cli *attribute) SetKey(isKey bool) {
