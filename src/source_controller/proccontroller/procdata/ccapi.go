@@ -13,6 +13,7 @@
 package ccapi
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
@@ -23,6 +24,7 @@ import (
 	confCenter "configcenter/src/source_controller/proccontroller/procdata/config"
 	"configcenter/src/source_controller/proccontroller/procdata/rdiscover"
 	"configcenter/src/storage"
+	"github.com/emicklei/go-restful"
 	"sync"
 	"time"
 )
@@ -33,7 +35,6 @@ type CCAPIServer struct {
 	httpServ *httpserver.HttpServer
 	rd       *rdiscover.RegDiscover
 	cfCenter *confCenter.ConfCenter
-	httpheal bool
 }
 
 func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
@@ -55,10 +56,8 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	// ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-	// MetricServer
-	err := s.NewMetricServer(addr, port)
 
-	return s, err
+	return s, nil
 }
 
 //Stop the ccapi server
@@ -160,8 +159,6 @@ func (ccAPI *CCAPIServer) Start() error {
 	go func() {
 		wg.Wait()
 		ccAPI.initHttpServ()
-		ccAPI.httpheal = true
-		defer func() { ccAPI.httpheal = false }()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -179,17 +176,20 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	a := api.NewAPIResource()
 
 	ccAPI.httpServ.RegisterWebServer("/process/{version}", nil, a.Actions)
-
-	return nil
-}
-
-func (ccAPI *CCAPIServer) NewMetricServer(ip string, port uint) error {
+	// MetricServer
 	conf := metric.Config{
 		ModuleName: types.CC_MODULE_PROCCONTROLLER,
-		IP:         ip,
-		MetricPort: metric.MetricPort,
 	}
-	return metric.NewMetricController(conf, ccAPI.HealthMetric)
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
+
+	return nil
 }
 
 // HealthMetric check netservice is health
@@ -217,16 +217,6 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 		redisHealthy.IsHealthy = true
 	}
 	meta.Items = append(meta.Items, redisHealthy)
-
-	// check http server
-	httpHealthy := metric.HealthItem{Name: "http"}
-	httpHealthy.IsHealthy = ccAPI.httpheal
-	if ccAPI.httpheal {
-		httpHealthy.Message = "listening on " + ccAPI.conf.AddrPort
-	} else {
-		httpHealthy.Message = "not listening http"
-	}
-	meta.Items = append(meta.Items, httpHealthy)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
