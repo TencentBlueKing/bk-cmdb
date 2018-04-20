@@ -58,6 +58,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.DeleteInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo})
 
@@ -84,6 +85,8 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	user := util.GetActionUser(req)
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
+	// extract the data for the associated field
+	asstFieldVal := cli.extractDataFromAssociationField(0, targetInput, asstDes)
 
 	// check
 	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
@@ -223,6 +226,7 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	if !ok {
 		return http.StatusInternalServerError, nil, isUpdate, fmt.Errorf("%+v", rsp.Message)
 	}
+
 	{
 		// save change log
 		if targetMethod == common.HTTPSelectPost {
@@ -257,6 +261,16 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
+	}
+
+	// set the inst association table
+	for idxItem, item := range asstFieldVal {
+		_ = item
+		asstFieldVal[idxItem].InstID = int64(instID)
+	}
+
+	if err := cli.createInstAssociation(req, asstFieldVal); nil != err {
+		blog.Errorf("failed to create the inst association, error info is %s ", err.Error())
 	}
 
 	return http.StatusOK, rsp.Data, isUpdate, nil
@@ -316,10 +330,13 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			}
 			blog.Debug("the batch info %+v", *innerBatchInfo.BatchInfo)
 		}
+
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
+
 		// define create inst function
 		createFunc := cli.subCreateInst
 
+		// get object attributes fields
 		att := map[string]interface{}{}
 		att[common.BKObjIDField] = objID
 		att[common.BKOwnerIDField] = ownerID
@@ -333,6 +350,19 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to read the object att, error is %s ", restErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstSelectFailed)
 		}
+
+		// get association fields
+		asst := map[string]interface{}{}
+		asst[common.BKOwnerIDField] = ownerID
+		asst[common.BKObjIDField] = objID
+		searchData, _ = json.Marshal(asst)
+		cli.objcli.SetAddress(cli.CC.ObjCtrl())
+		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+		if nil != asstErr {
+			blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
+		}
+
 		// create batch
 		if nil != innerBatchInfo.BatchInfo {
 
@@ -340,18 +370,6 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				Errors       []string `json:"error"`
 				Success      []string `json:"success"`
 				UpdateErrors []string `json:"update_error"`
-			}
-
-			// get association fields
-			asst := map[string]interface{}{}
-			asst[common.BKOwnerIDField] = ownerID
-			asst[common.BKObjIDField] = objID
-			searchData, _ := json.Marshal(asst)
-			cli.objcli.SetAddress(cli.CC.ObjCtrl())
-			asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
-			if nil != asstErr {
-				blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
 			}
 
 			rsts := &batchResult{}
@@ -377,7 +395,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// create single inst
-		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, nil, attdes)
+		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, asstDes, attdes)
 		return status, rst, err
 
 	}, resp)
@@ -481,6 +499,11 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			input[common.BKOwnerIDField] = delItem.ownerID
 			input[common.BKObjIDField] = delItem.objID
 			input[common.BKInstIDField] = delItem.instID
+
+			// delete the association
+			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
+				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
+			}
 
 			// take snapshot before operation
 			preData, retStrErr := cli.getInstDetail(req, delItem.instID, delItem.objID, delItem.ownerID)
@@ -607,6 +630,12 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 		}
 
+		// set the inst association table
+		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
+			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
+		}
+
+		// update the inst value
 		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 		inputJSON, jsErr := json.Marshal(input)
@@ -1338,75 +1367,6 @@ func (cli *instAction) SelectInst(req *restful.Request, resp *restful.Response) 
 
 }
 
-/**
-* pause develop
-func (cli *instAction) convertCondition(req *restful.Request, condition map[string]interface{}, ownerID, objID string) (map[string]interface{}, int) {
-
-	blog.Debug("ownerid(%s) objid(%s) the input condition is: %+v", ownerID, objID, condition)
-	rstMap, rstErr := cli.getObjectAsst(objID, ownerID)
-	if common.CCSuccess != rstErr {
-		blog.Error("can not get the association object, error code is %d", rstErr)
-		return nil, rstErr
-	}
-
-	for propertyID, asstObjID := range rstMap {
-		if subCondition, ok := condition[propertyID]; ok {
-			targetCondition, targetOK := subCondition.(map[string]interface{})
-			if targetOK {
-				innerCondition := map[string]interface{}{}
-				targetpre := cli.CC.ObjCtrl() + "/object/v1/insts/"
-				objType := ""
-				switch asstObjID {
-				case common.BKInnerObjIDHost:
-					objType = ""
-					targetpre = cli.CC.HostCtrl() + "/host/v1/hosts"
-					innerCondition[common.BKHostNameField] = targetCondition
-				case common.BKInnerObjIDModule:
-					objType = common.BKInnerObjIDModule
-					//condition[common.BKModuleIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-					innerCondition[common.BKModuleNameField] = targetCondition
-				case common.BKInnerObjIDApp:
-					objType = common.BKInnerObjIDApp
-					innerCondition[common.BKAppNameField] = targetCondition
-					//condition[common.BKAppIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-				case common.BKInnerObjIDSet:
-					objType = common.BKInnerObjIDSet
-					innerCondition[common.BKSetNameField] = targetCondition
-					//condition[common.BKSetIDField] = instID
-					//condition[common.BKOwnerIDField] = ownerID
-				default:
-					objType = common.BKINnerObjIDObject
-					innerCondition[common.BKInstNameField] = targetCondition
-					// condition[common.BKObjIDField] = objID
-					// condition[common.BKInstIDField] = instID
-					// condition[common.BKOwnerIDField] = ownerID
-				}
-				searchParam, jsErr := json.Marshal(map[string]interface{}{
-					"condition": innerCondition,
-				})
-				if jsErr != nil {
-					return nil, common.CCErrCommJSONMarshalFailed
-				}
-				sURL := targetpre + objType + "/search"
-				objRes, err := httpcli.ReqHttp(req, sURL, "POST", searchParam)
-				if nil != err {
-					blog.Error("failed to select the insts, error info is %s", err.Error())
-					return nil, common.CCErrTopoInstSelectFailed
-				}
-				blog.Debug("the obj innercondition(%+v) res: %s", innerCondition, objRes)
-
-			} else {
-				blog.Error("the target is not a valid map object, the data is %+v", targetCondition)
-			}
-		}
-	}
-
-	blog.Debug("ownerid(%s) objid(%s) the input condition is: %+v", ownerID, objID, condition)
-	return condition, common.CCSuccess
-}
-**/
 // SelectInsts search insts by condition
 func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response) {
 	blog.Info("select insts")
@@ -1441,14 +1401,6 @@ func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response)
 			}
 
 			condition := params.ParseAppSearchParams(js.Condition)
-
-			// convert the association field
-			/*
-				* pause develop
-				_, conErr := cli.convertCondition(req, condition, ownerID, objID)
-				if common.CCSuccess != conErr {
-				}
-			*/
 
 			condition[common.BKOwnerIDField] = ownerID
 			condition[common.BKObjIDField] = objID

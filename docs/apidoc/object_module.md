@@ -22,7 +22,6 @@
 
 | 字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
-|default|int|是|false|内置模块:0-普通模块,1-空闲机,2-故障机|inner field. 0-common module.1-idle module, 2- fault module|
 |bk_set_id|int|是|无|集群id|the set id|
 |bk_parent_id|int|是|无|父实例节点的ID，当前实例节点的上一级实例节点，在拓扑结构中对于Module一般指的是Set的bk_set_id|the parent inst id|
 |bk_module_id|string|是|无|模块标识|the module indentifier|
