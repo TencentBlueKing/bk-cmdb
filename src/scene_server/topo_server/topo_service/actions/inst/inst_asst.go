@@ -316,11 +316,19 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			// search the association insts
 			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst + "/search"
 			input := map[string]interface{}{
-				"bk_asst_inst_id": map[string]interface{}{
-					common.BKDBIN: asstInstIDS,
+				"page": map[string]interface{}{
+					"start": 0,
+					"sort":  "",
+					"limit": common.BKNoLimit,
 				},
-				"bk_asst_obj_id": keyObjID,
-				"bk_obj_id":      objID,
+				"condition": map[string]interface{}{
+					"bk_asst_inst_id": map[string]interface{}{
+						common.BKDBIN: asstInstIDS,
+					},
+					"bk_asst_obj_id": keyObjID,
+					"bk_obj_id":      objID,
+				},
+				"fields": "",
 			}
 
 			inputJSON, _ := json.Marshal(input)
