@@ -12,21 +12,30 @@ type manager struct {
 	cancel      context.CancelFunc
 	inputerLock sync.RWMutex
 	inputers    MapInputer
+	inputerChan chan *wrapInputer
 }
 
 func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	key := makeInputerKey()
 
-	cli.inputerLock.Lock()
-	cli.inputers[key] = &wrapInputer{
+	target := &wrapInputer{
 		inputer:   params.Target,
 		status:    NormalStatus,
 		kind:      params.Kind,
 		putter:    params.Putter,
 		exception: params.Exception,
 	}
+
+	cli.inputerLock.Lock()
+	cli.inputers[key] = target
 	cli.inputerLock.Unlock()
+
+	select {
+	case cli.inputerChan <- target:
+	default:
+		log.Fatal("failed to puth the inputer")
+	}
 
 	return key
 }
@@ -70,6 +79,10 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 		case <-ctx.Done():
 			log.Info("will exit from inputer main business cycle")
 			goto end
+
+		case target := <-cli.inputerChan:
+			go cli.executeInputer(target)
+
 		case <-time.After(time.Second * 10):
 
 			cli.inputerLock.RLock()
