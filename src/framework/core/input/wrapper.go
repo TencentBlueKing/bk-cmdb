@@ -6,10 +6,11 @@ import (
 
 // wrapInputer the Inputer wrapper
 type wrapInputer struct {
-	kind    InputerType
-	status  InputerStatus
-	inputer Inputer
-	putter  output.Puter
+	kind      InputerType
+	status    InputerStatus
+	inputer   Inputer
+	putter    output.Puter
+	exception ExceptionFunc
 }
 
 func (cli *wrapInputer) SetStatus(status InputerStatus) {
@@ -24,7 +25,7 @@ func (cli *wrapInputer) Name() string {
 	return cli.inputer.Name()
 }
 
-func (cli *wrapInputer) Input() (interface{}, error) {
+func (cli *wrapInputer) Input() interface{} {
 	return cli.inputer.Input()
 }
 

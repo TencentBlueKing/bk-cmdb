@@ -12,7 +12,7 @@ func init() {
 		return nil
 	})
 	fmt.Println("put:", sender)
-	api.AddInputerAndExecuteOnce(target, sender)
+	api.RegisterInputerAndExecuteOnce(target, sender, nil)
 }
 
 var target = &myInputer{}
@@ -32,11 +32,11 @@ func (cli *myInputer) Name() string {
 }
 
 // Input the input should not be blocked
-func (cli *myInputer) Input() (interface{}, error) {
+func (cli *myInputer) Input() interface{} {
 	fmt.Println("my_inputer")
 
 	return types.MapStr{
 		"test": "outputer",
 		"hoid": "",
-	}, nil
+	}
 }
