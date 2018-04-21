@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package userapi
 
 import (
@@ -88,7 +88,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	params["create_user"] = util.GetActionUser(req)
 	code, reply, err := client.Create(params)
 	if nil != err {
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_Host_Get_FAIL, err.Error(), nil, resp)
+		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrHostGetFail, err.Error(), nil, resp)
 		return
 	}
 	if code != http.StatusOK {
@@ -98,7 +98,6 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 	u.ResponseSuccess(reply.Data, resp)
 	return
-
 }
 
 //Update update user api content
@@ -290,13 +289,13 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 
 	err = json.Unmarshal([]byte(cond), &input)
 	if nil != err {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err.Error(), resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, err.Error(), resp)
 		return
 	}
 
 	input.AppID, _ = util.GetIntByInterface(data[common.BKAppIDField])
 	if fmt.Sprintf("%d", input.AppID) != appID {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, "请输入正确的业务ID", resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, "请输入正确的业务ID", resp)
 		return
 	}
 
@@ -305,7 +304,7 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 
 	retData, err := logics.HostSearch(req, input, u.CC.HostCtrl(), u.CC.ObjCtrl())
 	if nil != err {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err.Error(), resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, err.Error(), resp)
 		return
 	}
 

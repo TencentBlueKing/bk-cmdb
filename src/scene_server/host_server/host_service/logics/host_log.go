@@ -117,7 +117,7 @@ func (h *HostLog) getHostDetail(instID string) (interface{}, int) {
 	gResult := gHostData["result"].(bool)
 	if false == gResult {
 		blog.Error("GetHostDetail  info error :%v", err)
-		return nil, common.CC_Err_Comm_Host_Get_FAIL
+		return nil, common.CCErrHostGetFail
 	}
 
 	hostData := gHostData["data"].(map[string]interface{})
@@ -140,7 +140,7 @@ func (h *HostLog) GetHostLog(instID string, isDel bool) (*metadata.Content, int)
 		if "" != h.instID && instID != h.instID {
 			errString := fmt.Sprintf("instID error: instId not equal， source:%s, curent:%s", h.instID, instID)
 			blog.Errorf(errString)
-			return nil, common.CC_Err_Comm_APP_CHECK_HOST_FAIL
+			return nil, common.CCErrTopoHasHostCheckFailed
 		}
 		h.instID = instID
 
@@ -172,7 +172,6 @@ func GetHostLogFields(req *restful.Request, ownerID, objCtrl string) ([]metadata
 	gAttrResult := gHostAttr["result"].(bool)
 	if false == gAttrResult {
 		blog.Error("GetHostDetailByID  attr error :%v", err)
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
 		return nil, common.CCErrCommHTTPReadBodyFailed
 	}
 	hostAttrArr := gHostAttr["data"].([]interface{})

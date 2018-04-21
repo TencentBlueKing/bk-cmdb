@@ -14,6 +14,7 @@ package host
 
 import (
 	"configcenter/src/common"
+	"reflect"
 
 	logics "configcenter/src/api_server/ccapi/logics/v2"
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
@@ -69,6 +70,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/cloneHostProperty", Params: nil, Handler: host.CloneHostProperty, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/delHostInApp", Params: nil, Handler: host.DelHostInApp, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/getgitServerIp", Params: nil, Handler: host.GetGitServerIp, FilterHandler: nil, Version: v2.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/addhost", Params: nil, Handler: host.AddHost, FilterHandler: nil, Version: v2.APIVersion})
 
 	// set cc api interface
 	host.CreateAction()
@@ -690,6 +692,110 @@ func (cli *hostAction) EnterIP(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	converter.RespSuccessV2("", resp)
+}
+
+func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
+	blog.Debug("AddHostToModule start!")
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Errorf("AddHostToModule error:%v", err)
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+	formData := req.Request.Form
+	moduleName := formData.Get("moduleName")
+	appName := formData.Get("appName")
+	setName := formData.Get("setName")
+	ipArr := strings.Split(formData["ip"][0], ",")
+	platIDInt, _ := strconv.Atoi(formData["platId"][0])
+	param := map[string]interface{}{
+		common.BKIPListField:  ipArr,
+		common.BKCloudIDField: platIDInt,
+	}
+	paramJSON, _ := json.Marshal(param)
+	//根据ip获取主机信息
+	url := fmt.Sprintf("%s/host/v1/gethostlistbyip", cli.CC.HostAPI())
+	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJSON))
+	if nil != err {
+		blog.Error("AddHostToModule url:%s, params:%s, error:%s ", url, string(paramJSON), err.Error())
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	js, err := simplejson.NewJson([]byte(rspV3))
+	if nil != err {
+		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		blog.Errorf("AddHostToModule error simplejson.NewJson error, data:%s", string(rspV3))
+		return
+	}
+	hostsMap, err := js.Map()
+	if nil != err {
+		blog.Errorf("AddHostToModule error js.Map error, data:%s", string(rspV3))
+		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		return
+	}
+	hostData := reflect.ValueOf(hostsMap["data"])
+	input := make(common.KvMap)
+	input["ips"] = ipArr
+	input[common.BKModuleNameField] = moduleName
+	input[common.BKSetNameField] = setName
+	input[common.BKAppNameField] = appName
+	input[common.BKOwnerIDField] = common.BKDefaultOwnerID
+	//ip+platid主机不在当前供应商下 添加
+	if hostData.Len() > 0 {
+		blog.Errorf("hostdata 信息存在,%v", hostData)
+		var appID, moduleID, setID, hostID int
+		var osType, hostname string
+		for _, item := range hostsMap["data"].([]interface{}) {
+			blog.Error("item:%v", item)
+			newAppID := item.(map[string]interface{})[common.BKAppIDField]
+			newModuleID := item.(map[string]interface{})[common.BKModuleIDField]
+			newSetID := item.(map[string]interface{})[common.BKSetIDField]
+			appID, _ = util.GetIntByInterface(newAppID)
+			moduleID, _ = util.GetIntByInterface(newModuleID)
+			setID, _ = util.GetIntByInterface(newSetID)
+			osType = item.(map[string]interface{})[common.BKOSNameField].(string)
+			hostname = item.(map[string]interface{})[common.BKHostNameField].(string)
+			newhostID := item.(map[string]interface{})[common.BKHostIDField]
+			hostID, _ = util.GetIntByInterface(newhostID)
+		}
+		blog.Errorf("hostname:%s,ostype:%s,appid:%d,setid:%d,muduleid:%d", hostname, osType, appID, setID, moduleID)
+		blog.Error("ip host not found")
+		input[common.BKModuleIDField] = moduleID
+		input[common.BKSetIDField] = setID
+		input[common.BKAppIDField] = appID
+		input[common.BKOSNameField] = osType
+		input[common.BKHostNameField] = hostname
+		input[common.BKHostIDField] = hostID
+		paramJSON, _ = json.Marshal(input)
+		url = fmt.Sprintf("%s/host/v1/host/addhostfromapi", cli.CC.HostAPI())
+		blog.Infof("http request for add module url:%s, params:%s", url, string(paramJSON))
+		rspV3, err = httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJSON))
+		blog.Infof("http request for add module url:%s, reply:%s", url, rspV3)
+		if err != nil {
+			blog.Error("EnterIP url:%s, params:%s, error:%s", url, string(paramJSON), err.Error())
+			converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+			return
+		}
+		converter.RespSuccessV2("", resp)
+		return
+	}
+
+	// hostdata没有找到 添加ip到资源池
+	blog.Error("ip host not found")
+	paramJSON, _ = json.Marshal(input)
+	url = fmt.Sprintf("%s/host/v1/host/add/module", cli.CC.HostAPI())
+	blog.Infof("http request for add module url:%s, params:%s", url, string(paramJSON))
+	rspV3, err = httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJSON))
+	blog.Infof("http request for add module url:%s, reply:%s", url, rspV3)
+	if err != nil {
+		blog.Error("EnterIP url:%s, params:%s, error:%s", url, string(paramJSON), err.Error())
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	// converter.RespSuccessV2("", resp)
+	return
+
 }
 
 //getIPAndProxxyByCompany   get proxy by  commpay

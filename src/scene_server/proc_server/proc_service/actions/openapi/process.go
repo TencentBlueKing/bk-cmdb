@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 
 	"reflect"
@@ -39,208 +40,208 @@ type procAction struct {
 
 //根据业务ID获取进程端口
 func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	// 获取AppID
-	blog.Error("GetProcessPortByApplicationID start")
-	pathParams := req.PathParameters()
-	appID, err := strconv.Atoi(pathParams[common.BKAppIDField])
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		// 获取AppID
+		blog.Error("GetProcessPortByApplicationID start")
+		pathParams := req.PathParameters()
+		appID, err := strconv.Atoi(pathParams[common.BKAppIDField])
 
-	value, _ := ioutil.ReadAll(req.Request.Body)
-	bodyData := make([]map[string]interface{}, 0)
-	err = json.Unmarshal([]byte(value), &bodyData)
-	blog.Debug("bodyData:%v", bodyData)
-	if nil != err {
-		blog.Error("GetProcessPortByApplicationID error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-
-	modules := bodyData
-	// 根据模块获取所有关联的进程，建立Map ModuleToProcesses
-	moduleToProcessesMap := make(map[int][]interface{})
-	for _, module := range modules {
-		moduleName, ok := module[common.BKModuleNameField].(string)
-		if false == ok {
-			blog.Error("assign error module['ModuleName'] is not string, module:%v", module)
-			continue
-		}
-		processes, err := GetProcessesByModuleName(req, moduleName, cli.CC.ObjCtrl())
+		value, _ := ioutil.ReadAll(req.Request.Body)
+		bodyData := make([]map[string]interface{}, 0)
+		err = json.Unmarshal([]byte(value), &bodyData)
+		blog.Debug("bodyData:%v", bodyData)
 		if nil != err {
-			msg := fmt.Sprintf("GetProcessesByModuleName error:%v", err)
-			blog.Error(msg)
-			cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, msg, resp)
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+
 		}
-		if len(processes) > 0 {
-			moduleToProcessesMap[int(module[common.BKModuleIDField].(float64))] = processes
-		}
-	}
-	blog.Debug("moduleToProcessesMap%v", moduleToProcessesMap)
-	moduleHostConfigs, err := getModuleHostConfigsByAppID(appID, req)
-	if nil != err {
-		blog.Error("GetProcessPortByApplicationID error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	blog.Debug("moduleHostConfigs:%v", moduleHostConfigs)
-	// 根据AppID获取AppInfo
-	appInfoMap, err := getAppInfoByID(appID, req)
-	if nil != err {
-		blog.Error("GetProcessPortByApplicationID error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	appInfoTemp, ok := appInfoMap[appID]
-	if !ok {
-		blog.Error("GetProcessPortByApplicationID error : can not find app by id: %d", appID)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
 
-	appInfo := appInfoTemp.(map[string]interface{})
-
-	hostMap, err := getHostMapByAppID(moduleHostConfigs, req)
-	if nil != err {
-		blog.Error("GetProcessPortByApplicationID error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	blog.Debug("GetProcessPortByApplicationID  hostMap:%v", hostMap)
-	hostMapTemp := make(map[int]map[string]interface{})
-	resData := make([]interface{}, 0)
-	for _, moduleHostConfig := range moduleHostConfigs {
-		hostID := moduleHostConfig[common.BKHostIDField]
-		moduleID := moduleHostConfig[common.BKModuleIDField]
-		host, ok := hostMapTemp[hostID]
-		if ok {
-			processes := moduleToProcessesMap[moduleID]
-			hostProcesses := host[common.BKProcField].([]map[string]interface{})
-			for _, process := range processes {
-				processMap, ok := process.(map[string]interface{})
-				if false == ok {
-					blog.Error("assign error process is not map[string]interface{},process:%v", process)
-					continue
-				}
-				hostProcesses = append(hostProcesses, processMap)
-			}
-
-		} else {
-			host, hasHost := hostMap[hostID]
-			processes, hasProc := moduleToProcessesMap[moduleID]
-
-			if !hasHost || !hasProc {
+		modules := bodyData
+		// 根据模块获取所有关联的进程，建立Map ModuleToProcesses
+		moduleToProcessesMap := make(map[int][]interface{})
+		for _, module := range modules {
+			moduleName, ok := module[common.BKModuleNameField].(string)
+			if false == ok {
+				blog.Error("assign error module['ModuleName'] is not string, module:%v", module)
 				continue
 			}
+			processes, err := GetProcessesByModuleName(req, moduleName, cli.CC.ObjCtrl())
+			if nil != err {
+				msg := fmt.Sprintf("GetProcessesByModuleName error:%v", err)
+				blog.Error(msg)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
 
-			host[common.BKProcField] = processes
-			host[common.BKAppNameField] = appInfo[common.BKAppNameField]
-			host[common.BKAppIDField] = appID
-			host[common.BKCloudIDField] = host[common.BKCloudIDField]
-			//(host, common.BKCloudIDField)
-			resData = append(resData, host)
-			hostMapTemp[hostID] = host
+			}
+			if len(processes) > 0 {
+				moduleToProcessesMap[int(module[common.BKModuleIDField].(float64))] = processes
+			}
 		}
-	}
-	blog.Error("resDta:%v", resData)
-	cli.ResponseSuccess(resData, resp)
+		blog.Debug("moduleToProcessesMap%v", moduleToProcessesMap)
+		moduleHostConfigs, err := getModuleHostConfigsByAppID(appID, req)
+		if nil != err {
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+		blog.Debug("moduleHostConfigs:%v", moduleHostConfigs)
+		// 根据AppID获取AppInfo
+		appInfoMap, err := getAppInfoByID(appID, req)
+		if nil != err {
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+		appInfoTemp, ok := appInfoMap[appID]
+		if !ok {
+			blog.Error("GetProcessPortByApplicationID error : can not find app by id: %d", appID)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+
+		appInfo := appInfoTemp.(map[string]interface{})
+
+		hostMap, err := getHostMapByAppID(moduleHostConfigs, req)
+		if nil != err {
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+		blog.Debug("GetProcessPortByApplicationID  hostMap:%v", hostMap)
+		hostMapTemp := make(map[int]map[string]interface{})
+		resData := make([]interface{}, 0)
+		for _, moduleHostConfig := range moduleHostConfigs {
+			hostID := moduleHostConfig[common.BKHostIDField]
+			moduleID := moduleHostConfig[common.BKModuleIDField]
+			host, ok := hostMapTemp[hostID]
+			if ok {
+				processes := moduleToProcessesMap[moduleID]
+				hostProcesses := host[common.BKProcField].([]map[string]interface{})
+				for _, process := range processes {
+					processMap, ok := process.(map[string]interface{})
+					if false == ok {
+						blog.Error("assign error process is not map[string]interface{},process:%v", process)
+						continue
+					}
+					hostProcesses = append(hostProcesses, processMap)
+				}
+
+			} else {
+				host, hasHost := hostMap[hostID]
+				processes, hasProc := moduleToProcessesMap[moduleID]
+
+				if !hasHost || !hasProc {
+					continue
+				}
+
+				host[common.BKProcField] = processes
+				host[common.BKAppNameField] = appInfo[common.BKAppNameField]
+				host[common.BKAppIDField] = appID
+				host[common.BKCloudIDField] = host[common.BKCloudIDField]
+				//(host, common.BKCloudIDField)
+				resData = append(resData, host)
+				hostMapTemp[hostID] = host
+			}
+		}
+		blog.Error("resDta:%v", resData)
+		// cli.ResponseSuccess(resData, resp)
+		return http.StatusOK, resData, nil
+	}, resp)
 }
 
 //根据IP获取进程端口
 func (cli *procAction) getProcessPortByIP(req *restful.Request, resp *restful.Response) {
-	// 获取AppId
-	blog.Debug("getProcessPortByIP start")
-	value, _ := ioutil.ReadAll(req.Request.Body)
-	input := make(map[string]interface{})
-	err := json.Unmarshal([]byte(value), &input)
-	if nil != err {
-		blog.Error("getProcessPortByIP error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	ipArr := input["ipArr"]
-	hostCondition := map[string]interface{}{common.BKHostInnerIPField: map[string]interface{}{"$in": ipArr}}
-	hostData, hostIdArr, err := getHostMapByCond(req, hostCondition)
-	if nil != err {
-		blog.Error("getProcessPortByIP error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	// 获取appId
-	configCondition := map[string]interface{}{
-		common.BKHostIDField: hostIdArr,
-	}
-	confArr, err := getConfigByCond(req, cli.CC.HostCtrl(), configCondition)
-	if nil != err {
-		blog.Error("getProcessPortByIP error :%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-		return
-	}
-	//根据业务id获取进程
-	blog.Debug("configArr:%v", confArr)
-	resultData := make([]interface{}, 0)
-	for _, item := range confArr {
-		appId := item[common.BKAppIDField]
-		moduleId := item[common.BKModuleIDField]
-		hostId := item[common.BKHostIDField]
-		//业务
-		appData, err := getAppInfoByID(appId, req)
-		if nil != err {
-			blog.Error("getProcessPortByIP getAppInfoById error :%v", err)
-			cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-			return
-		}
-		//模块
-		moduleData, err := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), map[string]interface{}{
-			common.BKModuleIDField: moduleId,
-			common.BKAppIDField:    appId,
-		})
-		moduleName := moduleData[moduleId].(map[string]interface{})[common.BKModuleNameField]
-		blog.Debug("moduleData:%v", moduleData)
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-		//进程
-		procData, err := getProcessMapByAppID(appId, req)
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		// 获取AppId
+		blog.Debug("getProcessPortByIP start")
+		value, _ := ioutil.ReadAll(req.Request.Body)
+		input := make(map[string]interface{})
+		err := json.Unmarshal([]byte(value), &input)
 		if nil != err {
-			blog.Error("getProcessPortByIP getProcessMapByAppId error :%v", err)
-			cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-			return
+			blog.Error("getProcessPortByIP error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-		blog.Debug("procDatass:%v", procData)
-		//获取绑定关系
-		result := make(map[string]interface{})
-		for _, procDataV := range procData {
-			procId, _ := util.GetIntByInterface(procDataV[common.BKProcIDField].(json.Number))
-			procModuleData, err := GetProcessBindModule(req, appId, int(procId))
+		ipArr := input["ipArr"]
+		hostCondition := map[string]interface{}{common.BKHostInnerIPField: map[string]interface{}{"$in": ipArr}}
+		hostData, hostIdArr, err := getHostMapByCond(req, hostCondition)
+		if nil != err {
+			blog.Error("getProcessPortByIP error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+		// 获取appId
+		configCondition := map[string]interface{}{
+			common.BKHostIDField: hostIdArr,
+		}
+		confArr, err := getConfigByCond(req, cli.CC.HostCtrl(), configCondition)
+		if nil != err {
+			blog.Error("getProcessPortByIP error :%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+		}
+		//根据业务id获取进程
+		blog.Debug("configArr:%v", confArr)
+		resultData := make([]interface{}, 0)
+		for _, item := range confArr {
+			appId := item[common.BKAppIDField]
+			moduleId := item[common.BKModuleIDField]
+			hostId := item[common.BKHostIDField]
+			//业务
+			appData, err := getAppInfoByID(appId, req)
 			if nil != err {
-				blog.Error("getProcessPortByIP GetProcessBindModule error :%v", err)
-				cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, common.CC_Err_Comm_GET_PROC_FAIL_STR, resp)
-				return
+				blog.Error("getProcessPortByIP getAppInfoById error :%v", err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
 			}
-			blog.Debug("procModuleData:%v", procModuleData)
-			blog.Debug("moduleName %s", moduleName)
-			for _, procModuleV := range procModuleData {
+			//模块
+			moduleData, err := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), map[string]interface{}{
+				common.BKModuleIDField: moduleId,
+				common.BKAppIDField:    appId,
+			})
+			moduleName := moduleData[moduleId].(map[string]interface{})[common.BKModuleNameField]
+			blog.Debug("moduleData:%v", moduleData)
 
-				itemMap, _ := procModuleV.(map[string]interface{})[common.BKModuleNameField].(string)
-				blog.Debug("process module, %v", itemMap)
-				if itemMap == moduleName {
-					result[common.BKAppNameField] = appData[appId].(map[string]interface{})[common.BKAppNameField]
-					result[common.BKAppIDField] = appId
-					result[common.BKHostIDField] = hostId
-					result[common.BKHostInnerIPField] = hostData[hostId].(map[string]interface{})[common.BKHostInnerIPField]
-					result[common.BKHostOuterIPField] = hostData[hostId].(map[string]interface{})[common.BKHostOuterIPField]
-					if procDataV[common.BKBindIP].(string) == "第一内网IP" {
-						procDataV[common.BKBindIP] = hostData[hostId].(map[string]interface{})[common.BKHostInnerIPField]
+			//进程
+			procData, err := getProcessMapByAppID(appId, req)
+			if nil != err {
+				blog.Error("getProcessPortByIP getProcessMapByAppId error :%v", err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+			}
+			blog.Debug("procDatass:%v", procData)
+			//获取绑定关系
+			result := make(map[string]interface{})
+			for _, procDataV := range procData {
+				procId, _ := util.GetIntByInterface(procDataV[common.BKProcIDField].(json.Number))
+				procModuleData, err := GetProcessBindModule(req, appId, int(procId))
+				if nil != err {
+					blog.Error("getProcessPortByIP GetProcessBindModule error :%v", err)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcGetFail)
+				}
+				blog.Debug("procModuleData:%v", procModuleData)
+				blog.Debug("moduleName %s", moduleName)
+				for _, procModuleV := range procModuleData {
+
+					itemMap, _ := procModuleV.(map[string]interface{})[common.BKModuleNameField].(string)
+					blog.Debug("process module, %v", itemMap)
+					if itemMap == moduleName {
+						result[common.BKAppNameField] = appData[appId].(map[string]interface{})[common.BKAppNameField]
+						result[common.BKAppIDField] = appId
+						result[common.BKHostIDField] = hostId
+						result[common.BKHostInnerIPField] = hostData[hostId].(map[string]interface{})[common.BKHostInnerIPField]
+						result[common.BKHostOuterIPField] = hostData[hostId].(map[string]interface{})[common.BKHostOuterIPField]
+						if procDataV[common.BKBindIP].(string) == "第一内网IP" {
+							procDataV[common.BKBindIP] = hostData[hostId].(map[string]interface{})[common.BKHostInnerIPField]
+						}
+						if procDataV[common.BKBindIP].(string) == "第一公网IP" {
+							procDataV[common.BKBindIP] = hostData[hostId].(map[string]interface{})[common.BKHostOuterIPField]
+						}
+						delete(procDataV, common.BKAppIDField)
+						delete(procDataV, common.BKProcIDField)
+						result["process"] = procDataV
+						resultData = append(resultData, result)
 					}
-					if procDataV[common.BKBindIP].(string) == "第一公网IP" {
-						procDataV[common.BKBindIP] = hostData[hostId].(map[string]interface{})[common.BKHostOuterIPField]
-					}
-					delete(procDataV, common.BKAppIDField)
-					delete(procDataV, common.BKProcIDField)
-					result["process"] = procDataV
-					resultData = append(resultData, result)
 				}
 			}
 		}
-	}
-	cli.ResponseSuccess(resultData, resp)
+		// cli.ResponseSuccess(resultData, resp)
+		return http.StatusOK, resultData, nil
+	}, resp)
 }
 
 //get modulemap by cond
