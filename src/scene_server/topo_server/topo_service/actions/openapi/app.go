@@ -77,6 +77,10 @@ func (cli *appAction) SearchAllApp(req *restful.Request, resp *restful.Response)
 		}
 		info := make(map[string]interface{})
 		json, err := simplejson.NewJson([]byte(appInfo))
+		if nil != err {
+			blog.Errorf("get all app error simplejson.NewJson error, data:%s", string(appInfo))
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
 		info, _ = json.Map()
 		return http.StatusOK, info, nil
 	}, resp)
