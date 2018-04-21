@@ -17,6 +17,9 @@ type InputerKey string
 // MapInputer inputer object
 type MapInputer map[InputerKey]*wrapInputer
 
+// ExceptionFunc the exception callback
+type ExceptionFunc func(data interface{}, errMsg error)
+
 // Inputer status type
 const (
 
@@ -54,10 +57,11 @@ const (
 
 // InputerParams the inputer params
 type InputerParams struct {
-	IsBlock bool
-	Target  Inputer
-	Kind    InputerType
-	Putter  output.Puter
+	IsBlock   bool
+	Target    Inputer
+	Kind      InputerType
+	Putter    output.Puter
+	Exception ExceptionFunc
 }
 
 // Manager is the interface that must be implemented by every input manager.
@@ -84,5 +88,5 @@ type Inputer interface {
 	Name() string
 
 	// Input should not be blocked
-	Input() (interface{}, error)
+	Input() interface{}
 }

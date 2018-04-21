@@ -20,10 +20,11 @@ func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	cli.inputerLock.Lock()
 	cli.inputers[key] = &wrapInputer{
-		inputer: params.Target,
-		status:  NormalStatus,
-		kind:    params.Kind,
-		putter:  params.Putter,
+		inputer:   params.Target,
+		status:    NormalStatus,
+		kind:      params.Kind,
+		putter:    params.Putter,
+		exception: params.Exception,
 	}
 	cli.inputerLock.Unlock()
 

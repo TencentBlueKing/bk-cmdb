@@ -6,57 +6,50 @@ import (
 	"time"
 )
 
-// AddInputerAndExecuteOnce execute a non-blocking inputer, only execute once
-func AddInputerAndExecuteOnce(inputer input.Inputer, putter output.Puter) (input.InputerKey, error) {
+// RegisterInputerAndExecuteOnce execute a non-blocking inputer, only execute once
+func RegisterInputerAndExecuteOnce(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock: false,
-		Target:  inputer,
-		Kind:    input.ExecuteOnce,
-		Putter:  putter,
+		IsBlock:   false,
+		Target:    inputer,
+		Kind:      input.ExecuteOnce,
+		Putter:    putter,
+		Exception: exceptionFunc,
 	}), nil
 }
 
-// AddInputerAndExecuteTiming  regularly execute a non-blocking inputer
-func AddInputerAndExecuteTiming(inputer input.Inputer, duration time.Duration, putter output.Puter) (input.InputerKey, error) {
+// RegisterInputerAndExecuteTiming  regularly execute a non-blocking inputer
+func RegisterInputerAndExecuteTiming(inputer input.Inputer, duration time.Duration, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock: false,
-		Target:  inputer,
-		Kind:    input.ExecuteTiming,
-		Putter:  putter,
+		IsBlock:   false,
+		Target:    inputer,
+		Kind:      input.ExecuteTiming,
+		Putter:    putter,
+		Exception: exceptionFunc,
 	}), nil
 }
 
-// AddInputerAndExecuteLoop block to execute a  inputer
-func AddInputerAndExecuteLoop(inputer input.Inputer, putter output.Puter) (input.InputerKey, error) {
+// RegisterInputerAndExecuteTransaction execute a non-blocking inputer as a transaction
+func RegisterInputerAndExecuteTransaction(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock: true,
-		Target:  inputer,
-		Kind:    input.ExecuteLoop,
-		Putter:  putter,
+		IsBlock:   false,
+		Target:    inputer,
+		Kind:      input.ExecuteTransaction,
+		Putter:    putter,
+		Exception: exceptionFunc,
 	}), nil
 }
 
-// AddInputerAndExecuteTransaction execute a non-blocking inputer as a transaction
-func AddInputerAndExecuteTransaction(inputer input.Inputer, putter output.Puter) (input.InputerKey, error) {
+// RegisterInputerAndExecuteTimingTransaction execute a non-blocking inputer as a timing transaction
+func RegisterInputerAndExecuteTimingTransaction(inputer input.Inputer, duration time.Duration, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock: false,
-		Target:  inputer,
-		Kind:    input.ExecuteTransaction,
-		Putter:  putter,
-	}), nil
-}
-
-// AddInputerAndExecuteTimingTransaction execute a non-blocking inputer as a timing transaction
-func AddInputerAndExecuteTimingTransaction(inputer input.Inputer, duration time.Duration, putter output.Puter) (input.InputerKey, error) {
-
-	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock: false,
-		Target:  inputer,
-		Kind:    input.ExecuteTimingTransaction,
-		Putter:  putter,
+		IsBlock:   false,
+		Target:    inputer,
+		Kind:      input.ExecuteTimingTransaction,
+		Putter:    putter,
+		Exception: exceptionFunc,
 	}), nil
 }
