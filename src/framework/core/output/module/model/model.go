@@ -1,6 +1,9 @@
 package model
 
-import "configcenter/src/framework/core/types"
+import (
+	"configcenter/src/framework/core/types"
+	"fmt"
+)
 
 var _ Model = (*model)(nil)
 
@@ -20,6 +23,7 @@ type model struct {
 }
 
 func (cli *model) Save() error {
+	fmt.Println("test model")
 	return nil
 }
 
@@ -36,38 +40,70 @@ func (cli *model) SetIcon(iconName string) {
 	cli.ObjIcon = iconName
 }
 
+func (cli *model) GetIcon() string {
+	return cli.ObjIcon
+}
+
 func (cli *model) SetID(id string) {
 	cli.ObjectID = id
+}
+
+func (cli *model) GetID() string {
+	return cli.ObjectID
 }
 
 func (cli *model) SetName(name string) {
 	cli.ObjectName = name
 }
+func (cli *model) GetName() string {
+	return cli.ObjectName
+}
 
-func (cli *model) SetPaused(isPaused bool) {
-	cli.IsPaused = isPaused
+func (cli *model) SetPaused() {
+	cli.IsPaused = true
+}
+
+func (cli *model) SetNonPaused() {
+	cli.IsPaused = false
+}
+
+func (cli *model) Paused() bool {
+	return cli.IsPaused
 }
 
 func (cli *model) SetPosition(position string) {
 	cli.Position = position
 }
 
+func (cli *model) GetPosition() string {
+	return cli.Position
+}
+
 func (cli *model) SetSupplierAccount(ownerID string) {
 	cli.OwnerID = ownerID
+}
+func (cli *model) GetSupplierAccount() string {
+	return cli.OwnerID
 }
 
 func (cli *model) SetDescription(desc string) {
 	cli.Description = desc
 }
-
+func (cli *model) GetDescription() string {
+	return cli.Description
+}
 func (cli *model) SetCreator(creator string) {
 	cli.Creator = creator
 }
-
+func (cli *model) GetCreator() string {
+	return cli.Creator
+}
 func (cli *model) SetModifier(modifier string) {
 	cli.Modifier = modifier
 }
-
+func (cli *model) GetModifier() string {
+	return cli.Modifier
+}
 func (cli *model) CreateGroup() Group {
 	g := &group{}
 	return g
@@ -88,9 +124,4 @@ func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
 func (cli *model) FindGroupsByCondition(condition types.MapStr) (GroupIterator, error) {
 	// TODO:按照条件查找
 	return nil, nil
-}
-func (cli *model) CreateInst() Inst {
-	// TODO: 基于当前模型创建的实例，实例对象需要集成校验模式，能够知道自己包含的字段，以及字段的属性。
-	tmp := &inst{}
-	return tmp
 }

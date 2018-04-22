@@ -54,17 +54,27 @@ type Iterator interface {
 // Model the interface declaration for model maintence
 type Model interface {
 	types.Saver
-
-	SetClassification(class Classification)
 	SetIcon(iconName string)
+	GetIcon() string
 	SetID(id string)
+	GetID() string
 	SetName(name string)
-	SetPaused(isPaused bool)
+	GetName() string
+
+	SetPaused()
+	SetNonPaused()
+	Paused() bool
+
 	SetPosition(position string)
+	GetPosition() string
 	SetSupplierAccount(ownerID string)
+	GetSupplierAccount() string
 	SetDescription(desc string)
+	GetDescription() string
 	SetCreator(creator string)
+	GetCreator() string
 	SetModifier(modifier string)
+	GetModifier() string
 
 	CreateAttribute() Attribute
 	CreateGroup() Group
@@ -74,8 +84,6 @@ type Model interface {
 
 	FindGroupsLikeName(groupName string) (GroupIterator, error)
 	FindGroupsByCondition(condition types.MapStr) (GroupIterator, error)
-
-	CreateInst() Inst
 }
 
 // AttributeIterator the attribute iterator
@@ -100,11 +108,4 @@ type Attribute interface {
 	SetKey(isKey bool)
 	SetOption(option string)
 	SetDescrition(des string)
-}
-
-// Inst the instance operator interface
-type Inst interface {
-	types.Saver
-
-	SetValue(key string, value interface{})
 }
