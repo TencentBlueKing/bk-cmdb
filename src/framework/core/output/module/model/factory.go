@@ -1,8 +1,6 @@
 package model
 
-import (
-	"configcenter/src/framework/core/types"
-)
+import "configcenter/src/framework/common"
 
 // CreateClassification create a new Classification instance
 func CreateClassification() Classification {
@@ -16,7 +14,7 @@ func FindClassificationsLikeName(name string) (ClassificationIterator, error) {
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition types.MapStr) (ClassificationIterator, error) {
+func FindClassificationsByCondition(condition *common.Condition) (ClassificationIterator, error) {
 	// TODO: 按照条件搜索
 	return nil, nil
 }

@@ -1,8 +1,8 @@
 package inst
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/types"
 )
 
 func createSet(target model.Model) (Inst, error) {
@@ -16,7 +16,7 @@ func findSetsLikeName(target model.Model, businessName string) (Iterator, error)
 }
 
 // findSetsByCondition find all insts by condition
-func findSetsByCondition(target model.Model, condition types.MapStr) (Iterator, error) {
+func findSetsByCondition(target model.Model, condition *common.Condition) (Iterator, error) {
 	// TODO:按照条件读取所有实例
 	return nil, nil
 }

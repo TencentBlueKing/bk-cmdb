@@ -1,9 +1,9 @@
 package inst
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/model"
 	mtypes "configcenter/src/framework/core/output/module/types"
-	"configcenter/src/framework/core/types"
 )
 
 // CreateInst creat a new inst for the model
@@ -55,7 +55,7 @@ func FindInstsLikeName(target model.Model, instName string) (Iterator, error) {
 }
 
 // FindInstsByCondition find all insts by condition
-func FindInstsByCondition(target model.Model, condition types.MapStr) (Iterator, error) {
+func FindInstsByCondition(target model.Model, condition *common.Condition) (Iterator, error) {
 	// TODO:按照条件读取所有实例
 	switch target.GetID() {
 	case mtypes.BKInnerObjIDBusiness:

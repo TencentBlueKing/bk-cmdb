@@ -1,9 +1,9 @@
 package output
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/types"
 )
 
 // CreateInst create a instance for the model
@@ -17,6 +17,6 @@ func (cli *manager) FindInstsLikeName(target model.Model, instName string) (inst
 }
 
 // FindInstsByCondition find all insts by the condition
-func (cli *manager) FindInstsByCondition(target model.Model, condition types.MapStr) (inst.Iterator, error) {
+func (cli *manager) FindInstsByCondition(target model.Model, condition *common.Condition) (inst.Iterator, error) {
 	return inst.FindInstsByCondition(target, condition)
 }

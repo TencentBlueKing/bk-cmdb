@@ -1,6 +1,7 @@
 package api
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
@@ -33,6 +34,6 @@ func FindClassificationsLikeName(name string) (model.ClassificationIterator, err
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition types.MapStr) (model.ClassificationIterator, error) {
+func FindClassificationsByCondition(condition *common.Condition) (model.ClassificationIterator, error) {
 	return mgr.OutputerMgr.FindClassificationsByCondition(condition)
 }

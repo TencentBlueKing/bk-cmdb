@@ -1,8 +1,8 @@
 package inst
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/types"
 )
 
 func createModule(target model.Model) (Inst, error) {
@@ -16,7 +16,7 @@ func findModulesLikeName(target model.Model, businessName string) (Iterator, err
 }
 
 // findModulesByCondition find all insts by condition
-func findModulesByCondition(target model.Model, condition types.MapStr) (Iterator, error) {
+func findModulesByCondition(target model.Model, condition *common.Condition) (Iterator, error) {
 	// TODO:按照条件读取所有实例
 	return nil, nil
 }
