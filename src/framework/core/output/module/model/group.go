@@ -14,6 +14,10 @@ type group struct {
 	IsPre      bool   `json:"ispre"`
 }
 
+func (cli *group) Save() error {
+	return nil
+}
+
 func (cli *group) SetID(id string) {
 	cli.GroupID = id
 }

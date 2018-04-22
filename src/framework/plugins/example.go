@@ -7,22 +7,18 @@ import (
 )
 
 func init() {
+
 	_, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
 		fmt.Println("outputer:", data)
 		return nil
 	})
-	fmt.Println("put:", sender)
-	api.RegisterInputerAndExecuteOnce(target, sender, nil)
+
+	api.RegisterInputer(target, sender, nil)
 }
 
 var target = &myInputer{}
 
 type myInputer struct {
-}
-
-// IsBlock true is block , false is non-blocking
-func (cli *myInputer) IsBlock() bool {
-	return false
 }
 
 // Description the Inputer description.

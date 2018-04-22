@@ -26,6 +26,10 @@ type attribute struct {
 	Creator       string `json:"creator"`
 }
 
+func (cli *attribute) Save() error {
+	return nil
+}
+
 func (cli *attribute) SetID(id string) {
 	cli.PropertyID = id
 }

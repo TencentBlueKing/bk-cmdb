@@ -12,6 +12,10 @@ type classification struct {
 	ClassificationIcon string `json:"bk_classification_icon"`
 }
 
+func (cli *classification) Save() error {
+	return nil
+}
+
 func (cli *classification) GetID() string {
 	return cli.ClassificationID
 }

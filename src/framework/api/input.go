@@ -3,14 +3,14 @@ package api
 import (
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
 	"time"
 )
 
-// RegisterInputerAndExecuteOnce execute a non-blocking inputer, only execute once
-func RegisterInputerAndExecuteOnce(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
+// RegisterInputer execute a non-blocking inputer, only execute once
+func RegisterInputer(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock:   false,
 		Target:    inputer,
 		Kind:      input.ExecuteOnce,
 		Putter:    putter,
@@ -18,38 +18,30 @@ func RegisterInputerAndExecuteOnce(inputer input.Inputer, putter output.Puter, e
 	}), nil
 }
 
-// RegisterInputerAndExecuteTiming  regularly execute a non-blocking inputer
-func RegisterInputerAndExecuteTiming(inputer input.Inputer, duration time.Duration, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
+// RegisterTimingInputer execute a non-blocking timing inputer, only execute once
+func RegisterTimingInputer(inputer input.Inputer, putter output.Puter, frequency time.Duration, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
 
 	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock:   false,
+		IsTiming:  true,
+		Frequency: frequency,
 		Target:    inputer,
-		Kind:      input.ExecuteTiming,
+		Kind:      input.ExecuteOnce,
 		Putter:    putter,
 		Exception: exceptionFunc,
 	}), nil
 }
 
-// RegisterInputerAndExecuteTransaction execute a non-blocking inputer as a transaction
-func RegisterInputerAndExecuteTransaction(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
-
-	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock:   false,
-		Target:    inputer,
-		Kind:      input.ExecuteTransaction,
-		Putter:    putter,
-		Exception: exceptionFunc,
-	}), nil
+// CreateTransaction create a common transaction
+func CreateTransaction() input.Transaction {
+	return mgr.InputerMgr.CreateTransaction()
 }
 
-// RegisterInputerAndExecuteTimingTransaction execute a non-blocking inputer as a timing transaction
-func RegisterInputerAndExecuteTimingTransaction(inputer input.Inputer, duration time.Duration, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) {
+// CreateTimingTransaction create a timing transaction
+func CreateTimingTransaction(duration time.Duration) input.Transaction {
+	return mgr.InputerMgr.CreateTimingTransaction(duration)
+}
 
-	return mgr.InputerMgr.AddInputer(input.InputerParams{
-		IsBlock:   false,
-		Target:    inputer,
-		Kind:      input.ExecuteTimingTransaction,
-		Putter:    putter,
-		Exception: exceptionFunc,
-	}), nil
+// CreateCommonEvent create a common event
+func CreateCommonEvent(saver types.Saver) interface{} {
+	return saver
 }

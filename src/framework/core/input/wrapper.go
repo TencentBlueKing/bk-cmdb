@@ -2,10 +2,13 @@ package input
 
 import (
 	"configcenter/src/framework/core/output"
+	"time"
 )
 
 // wrapInputer the Inputer wrapper
 type wrapInputer struct {
+	isTiming  bool
+	frequency time.Duration
 	kind      InputerType
 	status    InputerStatus
 	inputer   Inputer
@@ -19,6 +22,10 @@ func (cli *wrapInputer) SetStatus(status InputerStatus) {
 
 func (cli *wrapInputer) GetStatus() InputerStatus {
 	return cli.status
+}
+
+func (cli *wrapInputer) GetFrequency() time.Duration {
+	return cli.frequency
 }
 
 func (cli *wrapInputer) Name() string {

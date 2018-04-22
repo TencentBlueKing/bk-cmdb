@@ -19,6 +19,10 @@ type model struct {
 	Modifier    string `json:"modifier"`
 }
 
+func (cli *model) Save() error {
+	return nil
+}
+
 func (cli *model) CreateAttribute() Attribute {
 	attr := &attribute{}
 	return attr
