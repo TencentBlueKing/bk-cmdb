@@ -15,11 +15,23 @@ type manager struct {
 	inputerChan chan *wrapInputer
 }
 
+// CreateTransaction create a common transaction
+func (cli *manager) CreateTransaction() Transaction {
+	return &transaction{}
+}
+
+// CreateTimingTransaction create a timing transaction
+func (cli *manager) CreateTimingTransaction(duration time.Duration) Transaction {
+	return &transaction{isTiming: true, duration: duration}
+}
+
 func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	key := makeInputerKey()
 
 	target := &wrapInputer{
+		frequency: params.Frequency,
+		isTiming:  params.IsTiming,
 		inputer:   params.Target,
 		status:    NormalStatus,
 		kind:      params.Kind,
@@ -69,8 +81,8 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 	cli.cancel = cancel
 
 	// start all existing Inputers
-	for _, Inputer := range cli.inputers {
-		go cli.executeInputer(Inputer)
+	for _, inputer := range cli.inputers {
+		go cli.executeInputer(ctx, inputer)
 	}
 
 	// check the stat of the Inputer regularly, and start it if there is any new
@@ -81,19 +93,19 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 			goto end
 
 		case target := <-cli.inputerChan:
-			go cli.executeInputer(target)
+			go cli.executeInputer(ctx, target)
 
 		case <-time.After(time.Second * 10):
 
 			cli.inputerLock.RLock()
 
 			// scan the all Inputers and restart the stoped Inputer
-			for _, Inputer := range cli.inputers {
-				switch Inputer.GetStatus() {
+			for _, inputer := range cli.inputers {
+				switch inputer.GetStatus() {
 				case NormalStatus:
-					go cli.executeInputer(Inputer)
+					go cli.executeInputer(ctx, inputer)
 				case WaitingToRunStatus:
-					go cli.executeInputer(Inputer)
+					go cli.executeInputer(ctx, inputer)
 				case RunningStatus:
 					// pass
 				case StoppingStatus:
@@ -101,9 +113,9 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 				case StoppedStatus:
 					// pass
 				case ExceptionExitStatus:
-					go cli.executeInputer(Inputer)
+					go cli.executeInputer(ctx, inputer)
 				default:
-					log.Fatalf("unknown the Inputer status (%d)", Inputer.GetStatus())
+					log.Fatalf("unknown the Inputer status (%d)", inputer.GetStatus())
 				}
 			}
 

@@ -2,7 +2,9 @@ package input
 
 import (
 	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
 	"context"
+	"time"
 )
 
 // InputerStatus the inputer status type definition.
@@ -55,9 +57,18 @@ const (
 	ExecuteTimingTransaction
 )
 
+// Transaction the input Transaction
+type Transaction interface {
+	// AddSaver add a saver
+	AddSaver(saver types.Saver)
+	// Execute execute this transaction
+	Execute() error
+}
+
 // InputerParams the inputer params
 type InputerParams struct {
-	IsBlock   bool
+	IsTiming  bool
+	Frequency time.Duration
 	Target    Inputer
 	Kind      InputerType
 	Putter    output.Puter
@@ -66,6 +77,12 @@ type InputerParams struct {
 
 // Manager is the interface that must be implemented by every input manager.
 type Manager interface {
+
+	// CreateTransaction create a common transaction
+	CreateTransaction() Transaction
+
+	// CreateTimingTransaction create a timing transaction
+	CreateTimingTransaction(duration time.Duration) Transaction
 
 	// AddInputer add a new inputer
 	AddInputer(params InputerParams) InputerKey

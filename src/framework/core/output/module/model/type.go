@@ -9,6 +9,8 @@ type GroupIterator interface {
 
 // Group the interface declaration for model maintence
 type Group interface {
+	types.Saver
+
 	SetID(id string)
 	GetID() string
 	SetName(name string)
@@ -32,6 +34,8 @@ type ClassificationIterator interface {
 
 // Classification the interface declaration for model classification
 type Classification interface {
+	types.Saver
+
 	SetID(id string)
 	SetName(name string)
 	SetIcon(iconName string)
@@ -49,6 +53,8 @@ type Iterator interface {
 
 // Model the interface declaration for model maintence
 type Model interface {
+	types.Saver
+
 	SetClassification(class Classification)
 	SetIcon(iconName string)
 	SetID(id string)
@@ -79,6 +85,8 @@ type AttributeIterator interface {
 
 // Attribute the interface declaration for model attribute maintence
 type Attribute interface {
+	types.Saver
+
 	SetID(id string)
 	SetName(name string)
 	SetUnit(unit string)
@@ -96,6 +104,7 @@ type Attribute interface {
 
 // Inst the instance operator interface
 type Inst interface {
+	types.Saver
+
 	SetValue(key string, value interface{})
-	Save() error
 }
