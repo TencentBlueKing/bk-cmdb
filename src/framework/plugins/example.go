@@ -35,4 +35,15 @@ func (cli *myInputer) Input() interface{} {
 		"test": "outputer",
 		"hoid": "",
 	}
+
+	/*
+
+		cls := api.CreateClassification()
+
+		model := cls.CreateModel()
+		attr := model.CreateAttribute()
+		attr.SetName("test")
+
+		return api.CreateCommonEvent(cls)
+	*/
 }
