@@ -1,6 +1,7 @@
 package output
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
@@ -39,7 +40,7 @@ type ModelOutputer interface {
 	FindClassificationsLikeName(name string) (model.ClassificationIterator, error)
 
 	// FindClassificationsByCondition find a array of the classification by the condition
-	FindClassificationsByCondition(condition types.MapStr) (model.ClassificationIterator, error)
+	FindClassificationsByCondition(condition *common.Condition) (model.ClassificationIterator, error)
 }
 
 // CustomOutputer the interface which used to maintence the custom outputer
@@ -64,7 +65,7 @@ type InstOutputer interface {
 	// FindInstsLikeName find all insts by the name
 	FindInstsLikeName(target model.Model, instName string) (inst.Iterator, error)
 	// FindInstsByCondition find all insts by the condition
-	FindInstsByCondition(target model.Model, condition types.MapStr) (inst.Iterator, error)
+	FindInstsByCondition(target model.Model, condition *common.Condition) (inst.Iterator, error)
 }
 
 // Manager is the interface that must be implemented by every output manager.

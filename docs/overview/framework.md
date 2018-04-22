@@ -28,6 +28,13 @@ Inputer 是必须要自己实现的接口。
 
 ## API List
 
+### 创建构造查询条件对象，用于构建查询条件
+> 1. 方法：CreateCondition(tableName string) *common.Condition
+> 2. 参数：
+>> - tableName：表名。
+> 3. 返回值：
+>> - Condition：查询条件对象，用于构造查询条件。
+
 ### 常规Inputer 注册，此方法注册的Inputer仅会被框架执行一次
 > 1. 方法：RegisterInputer(inputer input.Inputer, putter output.Puter, exceptionFunc input.ExceptionFunc) (input.InputerKey, error) 
 > 2. 参数：
