@@ -447,10 +447,12 @@
                 this.searchParams = params
             },
             tabChanged (active) {
-                this.view.tab.active = active
-                this.view.attribute.formValues = {}
-                if (active === 'host') {
-                    this.view.attribute.type = 'update'
+                if (active !== this.view.tab.active) {
+                    this.view.tab.active = active
+                    this.view.attribute.formValues = {}
+                    if (active === 'host') {
+                        this.view.attribute.type = 'update'
+                    }
                 }
             },
             cancelCreate () {
