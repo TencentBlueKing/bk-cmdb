@@ -77,8 +77,9 @@
              *  切换tab
              */
             toggleTab (index) {
-                this.calcActiveName = this.navList[index].name
-                this.$emit('tab-changed', this.calcActiveName, index)
+                // this.calcActiveName = this.navList[index].name
+                // this.$emit('tab-changed', this.calcActiveName, index)
+                this.$emit('tab-changed', this.navList[index].name)
             },
             addNavItem (item) {
                 this.navList.push(item)
