@@ -25,9 +25,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/emicklei/go-restful"
 	"strconv"
 	"strings"
+
+	"github.com/emicklei/go-restful"
 )
 
 var proc *procAction = &procAction{}
@@ -170,7 +171,8 @@ func (cli *procAction) GetProcessPortByIP(req *restful.Request, resp *restful.Re
 
 	if !rspMap["result"].(bool) {
 		blog.Error("GetProcessPortByIP error:%s", rspMap[common.HTTPBKAPIErrorMessage])
-		converter.RespFailV2(rspMap[common.HTTPBKAPIErrorCode].(int), rspMap[common.HTTPBKAPIErrorMessage].(string), resp)
+		errorIDInt, _ := util.GetIntByInterface(rspMap[common.HTTPBKAPIErrorCode])
+		converter.RespFailV2(errorIDInt, rspMap[common.HTTPBKAPIErrorMessage].(string), resp)
 		return
 	}
 	if nil == rspMap["data"] {

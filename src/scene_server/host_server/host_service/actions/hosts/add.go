@@ -31,6 +31,7 @@ func init() {
 
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/addhost", Params: nil, Handler: hostModuleConfig.AddHost})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: hostModuleConfig.AddHostFromAgent})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/addhostfromapi", Params: nil, Handler: hostModuleConfig.AddHostFromAPI})
 }
 
 // AddHost add host
@@ -87,6 +88,45 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			retData["update_error"] = updateErrRow
 
 			return http.StatusInternalServerError, retData, defErr.Error(common.CCErrHostCreateFail)
+		}
+	}, resp)
+}
+
+//	AddHostFromApi add host
+func (m *hostModuleConfigAction) AddHostFromAPI(req *restful.Request, resp *restful.Response) {
+	type inputStruct struct {
+		Ips        []string `json:"ips"`
+		ModuleID   int      `json:"bk_module_id"`
+		SetID      int      `json:"bk_set_id"`
+		AppID      int      `json:"bk_biz_id"`
+		HostID     int      `json:"bk_host_id"`
+		ModuleName string   `json:"bk_module_name"`
+		SetName    string   `json:"bk_set_name"`
+		AppName    string   `json:"bk_biz_name"`
+		OsType     string   `json:"bk_os_name,omitempy"`
+		HostName   string   `json:"bk_host_name,omitempy"`
+		OwnerID    string   `json:"bk_supplier_account"`
+	}
+	language := util.GetActionLanguage(req)
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
+	m.CallResponseEx(func() (int, interface{}, error) {
+		value, _ := ioutil.ReadAll(req.Request.Body)
+		blog.Errorf("api value====%v", value)
+		var data inputStruct
+		err := json.Unmarshal([]byte(value), &data)
+		if nil != err {
+			blog.Error(" api fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		err = logics.AddHostV2(req, data.AppID, data.HostID, data.ModuleID, data.AppName, data.SetName, data.ModuleName, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		retData := make(map[string]interface{})
+		retData["success"] = "add success"
+
+		if nil == err {
+			return http.StatusOK, retData, nil
+		} else {
+			retData["error"] = err
+			return http.StatusInternalServerError, retData, defErr.Errorf(common.CCErrHostAddRelationFail, data.HostID)
 		}
 	}, resp)
 }

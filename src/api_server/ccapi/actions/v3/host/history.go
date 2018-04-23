@@ -45,6 +45,7 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 			io.WriteString(resp, rsp)
 		}
+		return
 	}
 
 	resp.Write([]byte(reply))
@@ -65,6 +66,7 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 			io.WriteString(resp, rsp)
 		}
+		return
 	}
 	resp.Write([]byte(reply))
 }

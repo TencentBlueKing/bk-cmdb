@@ -250,3 +250,91 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	return nil
 
 }
+
+// AddHostV2 add host to module
+func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setName, moduleName string, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) error {
+	//默认业务与主机业务一致 说明主机存在资源池
+	//get default app
+	ownerAppID, err := GetDefaultAppID(req, common.BKDefaultOwnerID, common.BKAppIDField, ObjAddr)
+	blog.Errorf("ownerAppID===%d", ownerAppID)
+	if err != nil {
+		blog.Infof("ownerid %s 资源池未找到", ownerAppID)
+		return errors.New("not found resource pool")
+	}
+	if 0 == ownerAppID {
+		blog.Infof("ownerid %s 资源池未找到", ownerAppID)
+		return errors.New("not found resource pool")
+	}
+	introAppID, _, moduleID, err := GetTopoIDByName(req, common.BKDefaultOwnerID, appName, setName, moduleName, ObjAddr, errHandle)
+	if nil != err {
+		blog.Error("get app  topology id by name error:%s, msg: applicationName:%s, setName:%s, moduleName:%s", err.Error(), appName, setName, moduleName)
+		return errors.New("search appliaction module not foud ")
+	}
+	blog.Errorf("--->>> appid:%s,==moduleid:%s,dataid:%s", introAppID, moduleID, appID)
+	//如果为0 说明输入的不存在 返回成功
+	if 0 == introAppID || 0 == moduleID {
+		return nil
+	}
+	user := sencecommon.GetUserFromHeader(req)
+	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
+	if 0 != ownerAppID && appID == ownerAppID {
+		blog.Errorf("default app 一致")
+		params := make(map[string]interface{})
+		params[common.BKAppIDField] = appID
+		params[common.BKHostIDField] = hostID
+		delModulesURL := hostAddr + "/host/v1/meta/hosts/defaultmodules"
+		isSuccess, _, _ := GetHttpResult(req, delModulesURL, common.HTTPDelete, params)
+		if !isSuccess {
+			blog.Error("remove modulehostconfig error, params:%v, error:%v", params, err)
+			return errors.New("remove modulehostconfig error")
+		}
+		logClient.SetDescSuffix("delete host from resource pool")
+		blog.Errorf("remove ok")
+
+		moduleHostConfigParams := make(map[string]interface{})
+		moduleHostConfigParams[common.BKAppIDField] = introAppID
+		moduleHostConfigParams[common.BKHostIDField] = hostID
+		moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+		addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+
+		isSuccess, errMsg, _ := GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
+		if !isSuccess {
+			blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+			return errors.New("add hosthostconfig error")
+		}
+		logClient.SetDescSuffix("add host to module")
+		logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
+		blog.Errorf("--------------_>>>>ok")
+		return nil
+	} else {
+		if introAppID == appID { //传入的ID和所在的业务ID一致
+			// IsExistHostIDInApp 判断主机是否在传入的业务中
+			blog.Errorf("is exist host in app")
+			moduleHostConfigParams := make(map[string]interface{})
+			moduleHostConfigParams[common.BKAppIDField] = appID
+			moduleHostConfigParams[common.BKHostIDField] = hostID
+			delModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+			isSuccess, errMsg, _ := GetHttpResult(req, delModulesURL, common.HTTPDelete, moduleHostConfigParams)
+			if !isSuccess {
+				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+				return errors.New("remove hosthostconfig error")
+			}
+			logClient.SetDescSuffix("delete host from module")
+			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+			addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+
+			isSuccess, errMsg, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
+			if !isSuccess {
+				blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+				return errors.New("add hosthostconfig error")
+			}
+			logClient.SetDescSuffix("add host to module")
+			logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
+			return nil
+		}
+		blog.Errorf("host in other app")
+		//说明主机在其他业务中 返回失败
+		return errors.New("host in other app")
+	}
+	return nil
+}

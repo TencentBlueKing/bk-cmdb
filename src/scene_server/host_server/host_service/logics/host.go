@@ -159,8 +159,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
 	blog.Info("Get Host By Cond return :%s", string(reply))
 	if err != nil {
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return nil, errors.New(string(common.CCErrHostGetFail))
+		return nil, errors.New("Get Host Failed")
 	}
 
 	js, err := simplejson.NewJson([]byte(reply))
@@ -169,8 +168,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	hostData := output["data"]
 	hostResult, ok := hostData.(map[string]interface{})
 	if false == ok {
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return nil, errors.New(string(common.CCErrHostGetFail))
+		return nil, errors.New("Get Host Failed")
 	}
 
 	// deal the host
