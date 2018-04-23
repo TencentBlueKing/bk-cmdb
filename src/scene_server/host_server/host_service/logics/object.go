@@ -126,7 +126,7 @@ func GetTopoIDByName(req *restful.Request, ownerID, appName, setName, moduleName
 	appInfo, appErr := GetSingleApp(req, objURL, common.KvMap{common.BKAppNameField: appName, common.BKOwnerIDField: ownerID})
 	if nil != appErr {
 		blog.Errorf("getTopoIDByName get app info error; %s", appErr.Error())
-		return 0, 0, 0, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return 0, 0, 0, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	appID, _ := util.GetIntByInterface(appInfo[common.BKAppIDField])
@@ -150,7 +150,7 @@ func GetTopoIDByName(req *restful.Request, ownerID, appName, setName, moduleName
 	setIDs, setErr := GetSetIDByCond(req, objURL, setCond)
 	if nil != setErr {
 		blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
-		return 0, 0, 0, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return 0, 0, 0, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if 0 == len(setIDs) || 0 >= setIDs[0] {
 		blog.Info("getTopoIDByName get set info not found; applicationName: %s, setName: %s", appName, setName)
@@ -173,7 +173,7 @@ func GetTopoIDByName(req *restful.Request, ownerID, appName, setName, moduleName
 
 	if nil != moduleErr {
 		blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
-		return 0, 0, 0, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return 0, 0, 0, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if 0 == len(moduleIDs) || 0 >= moduleIDs[0] {
 		blog.Info("getTopoIDByName get module info not found; applicationName: %s, setName: %s, moduleName: %s", appName, setName, moduleName)

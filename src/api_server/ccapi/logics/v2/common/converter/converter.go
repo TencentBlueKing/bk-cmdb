@@ -59,6 +59,7 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 	if err != nil {
 		blog.Errorf("ResToV2ForRoleApp error:%v, reply:%v", err, res_v2)
 		RespFailV2(common.Json_Marshal_ERR, common.Json_Marshal_ERR_STR, resp)
+
 	}
 
 	blog.Debug("RespSuccessV2 data:%s", string(s))
