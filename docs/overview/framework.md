@@ -14,10 +14,10 @@ type Inputer interface {
     Name() string
 
     // Input the execution function
-	Input() interface{}
+    Input() interface{}
 	
-	// Stop stop the Input function
-	Stop() error
+    // Stop stop the Input function
+    Stop() error
 
 }
 
