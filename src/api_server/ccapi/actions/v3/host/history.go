@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"fmt"
+	"io"
 
 	httpcli "configcenter/src/common/http/httpclient"
 
@@ -37,8 +38,15 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 
 	reply, err := httpcli.ReqForward(req, url, common.HTTPCreate)
 	if nil != err {
-		cli.CC.CreateAPIRspStr(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		rsp, rsperr := cli.CC.CreateAPIRspStr(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		if nil != rsperr {
+			blog.Error("create response failed, error information is %v", rsperr)
+		} else {
+			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
+			io.WriteString(resp, rsp)
+		}
 	}
+
 	resp.Write([]byte(reply))
 }
 
@@ -50,7 +58,13 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 
 	reply, err := httpcli.ReqForward(req, url, common.HTTPSelectGet)
 	if nil != err {
-		cli.CC.CreateAPIRspStr(common.CC_Err_Comm_http_DO, err.Error())
+		rsp, rsperr := cli.CC.CreateAPIRspStr(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		if nil != rsperr {
+			blog.Error("create response failed, error information is %v", rsperr)
+		} else {
+			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
+			io.WriteString(resp, rsp)
+		}
 	}
 	resp.Write([]byte(reply))
 }

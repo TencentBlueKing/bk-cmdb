@@ -58,13 +58,13 @@ func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Respons
 
 		appID, err := strconv.Atoi(req.PathParameter("appid"))
 		if nil != err {
-			blog.Error("convert appid to int error:%v", err)
+			blog.Errorf("convert appid to int error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 		}
 
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
-			blog.Error("read request body failed, error:%v", err)
+			blog.Errorf("read request body failed, error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 
 		}
@@ -74,7 +74,7 @@ func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Respons
 		input := make(map[string]interface{})
 		err = json.Unmarshal(value, &input)
 		if nil != err {
-			blog.Error("unmarshal json error:%v", err)
+			blog.Errorf("unmarshal json error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 		}
 
@@ -94,17 +94,17 @@ func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Respons
 
 		paramJson, err := json.Marshal(param)
 		if nil != err {
-			blog.Error("Marshal json error:%v", err)
+			blog.Errorf("Marshal json error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 
 		}
 
 		res, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(paramJson))
-		blog.Error("uUrl:%v", uURL)
-		blog.Error("res:%v", res)
+		blog.Errorf("uUrl:%v", uURL)
+		blog.Errorf("res:%v", res)
 
 		if nil != err {
-			blog.Error("request ctrl error:%v", err)
+			blog.Errorf("request ctrl error:%v", err)
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetUpdateFailed)
 
 		}
@@ -114,7 +114,7 @@ func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Respons
 		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
 			return http.StatusOK, &rst, nil
 		} else {
-			blog.Error("unmarshal the json failed, error: %v", jserr)
+			blog.Errorf("unmarshal the json failed, error: %v", jserr)
 		}
 		return http.StatusOK, nil, nil
 	}, resp)
@@ -125,7 +125,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	blog.Debug("DeleteMultiSet start !")
 	appID, err := strconv.Atoi(req.PathParameter("appid"))
 	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
+		blog.Errorf("convert appid to int error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -134,7 +134,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
+		blog.Errorf("read request body failed, error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
 		return
 	}
@@ -145,7 +145,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	err = json.Unmarshal(value, &input)
 
 	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
+		blog.Errorf("unmarshal json error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -154,7 +154,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	setIDStrArr := strings.Split(setIDStr.(string), ",")
 	hostIDArr := make([]int, 0)
 	moduleIDArr := make([]int, 0)
-	blog.Error("setIdArr:%v", setIDStrArr)
+	blog.Errorf("setIdArr:%v", setIDStrArr)
 	setIDArr, err := util.SliceStrToInt(setIDStrArr)
 	//判断集群下是否有主机
 	rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{
@@ -163,7 +163,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	})
 
 	if nil != rstErr {
-		blog.Error("failed to check set wether it has hosts, error info is %s", rstErr.Error())
+		blog.Errorf("failed to check set wether it has hosts, error info is %s", rstErr.Error())
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -206,7 +206,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	}
 	err = deleteObj(req, paramModule, "module", cli.CC.ObjCtrl())
 	if nil != err {
-		blog.Error("delete module error %v", err)
+		blog.Errorf("delete module error %v", err)
 		return
 	}
 
@@ -219,7 +219,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 
 	err = deleteObj(req, paramSet, "set", cli.CC.ObjCtrl())
 	if nil != err {
-		blog.Error("delete set error %v", err)
+		blog.Errorf("delete set error %v", err)
 		return
 	}
 	// deal result
@@ -236,7 +236,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 	blog.Debug("inputJson%v", string(inputJson))
 
 	if nil != err {
-		blog.Error("Marshal json error:%v", err)
+		blog.Errorf("Marshal json error:%v", err)
 		return err
 	}
 
@@ -244,7 +244,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 	blog.Debug("del res:%v", res)
 
 	if nil != err {
-		blog.Error("request ctrl error:%v", err)
+		blog.Errorf("request ctrl error:%v", err)
 		return err
 	}
 	if "" != res {
@@ -258,7 +258,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 			}
 
 		} else {
-			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			blog.Errorf("unmarshal the json failed, error information is %v", jserr)
 			return jserr
 		}
 	} else {
@@ -274,7 +274,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 		blog.Debug("DeleteSetHost start !")
 		appID, err := strconv.Atoi(req.PathParameter("appid"))
 		if nil != err {
-			blog.Error("convert appid to int error:%v", err)
+			blog.Errorf("convert appid to int error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 		}
 
@@ -282,7 +282,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
-			blog.Error("read request body failed, error:%v", err)
+			blog.Errorf("read request body failed, error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
@@ -291,7 +291,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 		input := make(map[string]interface{})
 		err = json.Unmarshal(value, &input)
 		if nil != err {
-			blog.Error("unmarshal json error:%v", err)
+			blog.Errorf("unmarshal json error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 		}
 
@@ -309,14 +309,14 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 		blog.Debug("inputJson%v", string(inputJson))
 
 		if nil != err {
-			blog.Error("Marshal json error:%v", err)
+			blog.Errorf("Marshal json error:%v", err)
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
 		}
 
 		res, err := httpcli.ReqHttp(req, uUrl, common.HTTPDelete, []byte(inputJson))
 		blog.Debug("del res:%v", res)
 		if nil != err {
-			blog.Error("request ctrl error:%v", err)
+			blog.Errorf("request ctrl error:%v", err)
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 
 		}
@@ -327,7 +327,7 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 			return http.StatusOK, &rst, nil
 		}
 		if nil != err {
-			blog.Error("delSetConfigHost error:%v", err)
+			blog.Errorf("delSetConfigHost error:%v", err)
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
 		}
 
@@ -342,7 +342,7 @@ func delSetConfigHost(params map[string]interface{}) error {
 	blog.Debug("params:%v", params)
 	err := set.CC.InstCli.DelByCondition("cc_ModuleHostConfig", params)
 	if err != nil {
-		blog.Error("fail to delSetConfigHost: %v", err)
+		blog.Errorf("fail to delSetConfigHost: %v", err)
 		return err
 	}
 	return nil
@@ -388,13 +388,13 @@ func getModuleByCond(req *restful.Request, objCtrl string, cond interface{}) ([]
 	sURL := objCtrl + "/object/v1/insts/module/search"
 	inputJson, err := json.Marshal(searchParams)
 	if nil != err {
-		blog.Error("inputJson :%v", err)
+		blog.Errorf("inputJson :%v", err)
 
 	}
 	moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
 	blog.Debug("moduleRes:%v", moduleRes)
 	if nil != err {
-		blog.Error("get module :%v", err)
+		blog.Errorf("get module :%v", err)
 	}
 	js, _ := simplejson.NewJson([]byte(moduleRes))
 	moduleMap, _ := js.Map()

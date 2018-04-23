@@ -139,7 +139,7 @@ func (h *HostLog) GetHostLog(instID string, isDel bool) (*metadata.Content, int)
 	if false == isDel {
 		if "" != h.instID && instID != h.instID {
 			errString := fmt.Sprintf("instID error: instId not equal， source:%s, curent:%s", h.instID, instID)
-			blog.Errorf(errString)
+			blog.Error(errString)
 			return nil, common.CCErrTopoHasHostCheckFailed
 		}
 		h.instID = instID
