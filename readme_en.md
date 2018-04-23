@@ -32,18 +32,18 @@ The open source version will be in both BlueKing Community Edition and Enterpris
 If you want to know more about the above features, please refer to the [Function Description (In Chinese)] (http://bk.tencent.com/document/bkprod/000120.html)
 
 ## Getting started
-* [Download and Compile (In Chinese)] (docs/overview/source_compile.md)
-* [Installation and Deployment (In Chinese)] (docs/overview/installation.md)
-* [API Instructions (In Chinese)] (docs/apidoc/readme.md)
+* [Download and Compile (In Chinese)](docs/overview/source_compile.md)
+* [Installation and Deployment (In Chinese)](docs/overview/installation.md)
+* [API Instructions (In Chinese)](docs/apidoc/readme.md)
 
 ## Version plan
-* [Version iteration rules (In Chinese)] (docs/VERSION.md)
+* [Version iteration rules (In Chinese)](docs/VERSION.md)
 
 ## Support
-1. Refer to the bk-cmdb installation document [Installation Documentation (In Chinese)] (docs/overview/installation.md)
-2. Read [source (In Chinese)] (https://github.com/Tencent/bk-cmdb/tree/master)
-3. Read the wiki (In Chinese) (https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) or ask for help
-4. Learn about BlueKing Community related information: [Blue Whale Community Edition 1 Group] (https://jq.qq.com/?_wv=1027&k=5zk8F7G)
+1. Refer to the bk-cmdb installation document [Installation Documentation (In Chinese)](docs/overview/installation.md)
+2. Read [source (In Chinese)](https://github.com/Tencent/bk-cmdb/tree/master)
+3. Read the wiki (In Chinese)(https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) or ask for help
+4. Learn about BlueKing Community related information: [Blue Whale Community Edition 1 Group](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
 5. Contact us, technical exchange QQ group:
 
 ![qq](docs/resource/img/qq.png)
