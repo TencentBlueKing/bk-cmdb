@@ -20,8 +20,8 @@ type Inputer interface {
 ```
 
 Inputer 是必须要自己实现的接口。
-> 1. Name 方法返回此Inputer的名字，如果Inputer运行过程中出现错误，框架会在输出的错误日志里用调用此方法，为了便于调试建议使用方返回唯一的名字。
-> 2. Input 是Inputer 接口唯一向框架输出数据的接口。开发者需要在此方法的实现里面自己组织需要的数据，并且是非阻塞实现，并将经过以下三个方法进行处理后的数据返回：
+> 1. Name 方法返回此Inputer的名字，如果Inputer运行过程中出现错误，框架会在输出的错误日志里用调用此方法，为了便于调试建议使用方返回唯一的名字。
+> 2. Input 是Inputer 接口唯一向框架输出数据的接口。开发者需要在此方法的实现里面自己组织需要的数据，并且是非阻塞实现，并将经过以下三个方法进行处理后的数据返回：
 >> - CreateTransaction
 >> - CreateTimingTransaction
 >> - CreateCommonEvent
@@ -46,8 +46,8 @@ Inputer 是必须要自己实现的接口。
 > 参数：
 > 
 >> - inputer：所有实现了input.Inputer接口的对象实例。
->> - putter：自定义的 output.Putter接口实现。
->> - exceptionFunc：异常回调方法。在框架执行Inputer出现异常的时候会调用此方法。
+>> - putter：自定义的output.Putter接口实现。
+>> - exceptionFunc：异常回调方法。在框架执行Inputer出现异常的时候会调用此方法。
 >
 > 返回值：
 >> - input.InputerKey：Inputer 成功注册如框架后，框架会为此Inputer生成一个唯一的Key。
@@ -59,9 +59,9 @@ Inputer 是必须要自己实现的接口。
 > 参数：
 > 
 >> - inputer：所有实现了input.Inputer接口的对象实例。
->> - putter：自定义的 output.Putter接口实现。
+>> - putter：自定义的 output.Putter接口实现。
 >> - frequency：执行此Inputer 的时间间隔。
->> - exceptionFunc：异常回调方法。在框架执行Inputer出现异常的时候会调用此方法。
+>> - exceptionFunc：异常回调方法。在框架执行Inputer出现异常的时候会调用此方法。
 >
 > 返回值：
 >> - input.InputerKey：Inputer 成功注册如框架后，框架会为此Inputer生成一个唯一的Key。
