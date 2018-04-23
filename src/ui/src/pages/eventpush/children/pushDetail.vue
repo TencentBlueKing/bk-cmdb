@@ -68,7 +68,7 @@
                         <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                             v-if="tempEventData['confirm_mode'] === 'regular'"
                             v-model.trim="tempEventData['confirm_pattern']['regular']"
-                            :data-vv-name="$t('ModelManagement[\'该字段\']')"
+                            :data-vv-name="$t('Common[\'该字段\']')"
                             v-validate="'required'"
                         >
                         <input type="text" class="bk-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
@@ -318,12 +318,40 @@
                             subscription_form: {...this.tempEventData['subscription_form'], ...subscriptionForm},
                             time_out: this.curEvent['time_out']
                         }
-                        this.eventData = {...this.tempEventData}
+                        this.eventData = this.$deepClone(this.tempEventData)
                     }
                 }
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                let tempEventData = this.tempEventData
+                let eventData = this.eventData
+                for (let key in tempEventData) {
+                    if (key === 'confirm_pattern') {
+                        if (tempEventData[key][tempEventData['confirm_mode']] !== eventData[key][eventData['confirm_mode']]) {
+                            return true
+                        }
+                    } else if (key === 'subscription_form') {
+                        if (this.type === 'add') {
+                            if (this.selectNum) {
+                                return true
+                            }
+                        } else {
+                            let tempList = JSON.stringify(tempEventData[key])
+                            let list = JSON.stringify(eventData[key])
+                            if (tempList !== list) {
+                                return true
+                            }
+                        }
+                    } else {
+                        if (tempEventData[key] !== eventData[key]) {
+                            return true
+                        }
+                    }
+                }
+                return false
+            },
             /*
                 全选按钮
             */
@@ -483,7 +511,7 @@
                     subscription_form: {},
                     time_out: 60
                 }
-                this.eventData = {...this.tempEventData}
+                this.eventData = this.$deepClone(this.tempEventData)
             },
             closePop () {
                 this.isPopShow = false

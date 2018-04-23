@@ -89,7 +89,6 @@
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
                                 :isBatchUpdate="false"
-                                :isSliderShow.sync="slider.isShow"
                                 @submit="saveObjectAttr"
                                 @delete="confirmDelete">
                             </v-object-attr>

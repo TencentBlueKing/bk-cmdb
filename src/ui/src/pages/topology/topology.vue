@@ -482,6 +482,18 @@
                 this.tabChanged('host')
             }
         },
+        beforeRouteLeave (to, from, next) {
+            if (this.$refs.topoAttribute.isCloseConfirmShow()) {
+                this.$bkInfo({
+                    title: '退出会导致未保存信息丢失，是否确认？',
+                    confirmFn: () => {
+                        next(true)
+                    }
+                })
+            } else {
+                next(true)
+            }
+        },
         created () {
             this.getTopoModel()
         },
