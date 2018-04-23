@@ -320,17 +320,13 @@ func (cli *myInputer) Name() string {
 
 // Input the input should not be blocked
 func (cli *myInputer) Input() interface{} {
-    fmt.Println("my_inputer")
-
-    
-
-    // 此方法仅用于内置Outputer 的数据返回
+   
     // 1. 构建模型分类
     // 2. 通过模型分类构建model
     // 3. 通过model 构建模型属性
-	cls := api.CreateClassification()
-	cls.SetName("test_name")
-	cls.Save()
+    cls := api.CreateClassification()
+    cls.SetName("test_name")
+    cls.Save()
 
     model := cls.CreateModel()
     attr := model.CreateAttribute()
