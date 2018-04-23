@@ -4,7 +4,7 @@
 [![Release Version](https://img.shields.io/badge/release-3.0.6-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 
-[(English Documents Available)](./README_en.md)
+[(English Documents Available)](readme_en.md)
 
 蓝鲸配置平台（蓝鲸CMDB）是一个基于运维场景设计的企业配置管理服务。
 
