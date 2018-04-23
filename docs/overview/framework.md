@@ -51,7 +51,7 @@ Inputer 是必须要自己实现的接口。
 >
 > 返回值：
 >> - input.InputerKey：Inputer 成功注册如框架后，框架会为此Inputer生成一个唯一的Key。
->> - error：注册Inputer失败后的错误信息。
+>> - error：注册Inputer失败后的错误信息。
 
 ### 需要定时执行的Inputer注册，此方法注册的Inputer会被框架定时执行
 > 方法：RegisterTimingInputer(inputer input.Inputer, putter output.Puter, frequency time.Duration, exceptionFunc input.ExceptionFunc) (input.InputerKey, error)
