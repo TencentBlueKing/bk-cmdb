@@ -1,6 +1,9 @@
 package model
 
-import "configcenter/src/framework/core/types"
+import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/types"
+)
 
 // GroupIterator the group iterator
 type GroupIterator interface {
@@ -24,7 +27,7 @@ type Group interface {
 
 	CreateAttribute() Attribute
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
-	FindAttributesByCondition(condition types.MapStr) (AttributeIterator, error)
+	FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error)
 }
 
 // ClassificationIterator the classification iterator
@@ -43,7 +46,7 @@ type Classification interface {
 
 	CreateModel() Model
 	FindModelsLikeName(modelName string) (Iterator, error)
-	FindModelsByCondition(condition types.MapStr) (Iterator, error)
+	FindModelsByCondition(condition *common.Condition) (Iterator, error)
 }
 
 // Iterator the model iterator
@@ -80,10 +83,10 @@ type Model interface {
 	CreateGroup() Group
 
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
-	FindAttributesByCondition(condition types.MapStr) (AttributeIterator, error)
+	FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error)
 
 	FindGroupsLikeName(groupName string) (GroupIterator, error)
-	FindGroupsByCondition(condition types.MapStr) (GroupIterator, error)
+	FindGroupsByCondition(condition *common.Condition) (GroupIterator, error)
 }
 
 // AttributeIterator the attribute iterator

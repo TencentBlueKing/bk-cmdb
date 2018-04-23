@@ -1,6 +1,6 @@
 package model
 
-import "configcenter/src/framework/core/types"
+import "configcenter/src/framework/common"
 
 var _ Classification = (*classification)(nil)
 
@@ -44,7 +44,7 @@ func (cli *classification) FindModelsLikeName(modelName string) (Iterator, error
 	return nil, nil
 }
 
-func (cli *classification) FindModelsByCondition(condition types.MapStr) (Iterator, error) {
+func (cli *classification) FindModelsByCondition(condition *common.Condition) (Iterator, error) {
 	// TODO: 按照条件查找，返回一定数量的Model
 	return nil, nil
 }
