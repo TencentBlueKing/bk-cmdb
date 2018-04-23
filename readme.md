@@ -4,6 +4,9 @@
 [![Release Version](https://img.shields.io/badge/release-3.0.6-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 
+## English Readme
+[English Readme](readme_en.md)
+
 蓝鲸配置平台（蓝鲸CMDB）是一个基于运维场景设计的企业配置管理服务。
 
 本次开源的是全新重构的3.0版本。相对于2.0提供了全新自定义模型管理，用户不仅可以方便地实现内置模型属性的拓展，同时也能够根据不同的企业需求随时新增模型和关联关系，把网络、中间件、虚拟资源等纳入到CMDB的管理中。除此之外还增加了更多符合场景需要的新功能：机器数据快照、数据自动发现、变更事件主动推送、更加精细的权限管理、可拓展的业务拓扑等功能。
@@ -56,9 +59,6 @@
 ## FAQ
 
 https://github.com/Tencent/bk-cmdb/wiki/FAQ
-
-## English Readme
-[English Readme](readme_en.md)
 
 ## License
 bk-cmdb 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE) 。
