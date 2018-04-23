@@ -1,7 +1,7 @@
 package model
 
 import (
-	"configcenter/src/framework/core/types"
+	"configcenter/src/framework/common"
 	"fmt"
 )
 
@@ -113,7 +113,7 @@ func (cli *model) FindAttributesLikeName(attributeName string) (AttributeIterato
 	// TODO:按照名字正则查找
 	return nil, nil
 }
-func (cli *model) FindAttributesByCondition(condition types.MapStr) (AttributeIterator, error) {
+func (cli *model) FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error) {
 	// TODO:按照条件查找
 	return nil, nil
 }
@@ -121,7 +121,7 @@ func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
 	// TODO:按照名字正则查找
 	return nil, nil
 }
-func (cli *model) FindGroupsByCondition(condition types.MapStr) (GroupIterator, error) {
+func (cli *model) FindGroupsByCondition(condition *common.Condition) (GroupIterator, error) {
 	// TODO:按照条件查找
 	return nil, nil
 }

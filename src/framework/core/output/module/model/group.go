@@ -1,6 +1,8 @@
 package model
 
-import "configcenter/src/framework/core/types"
+import (
+	"configcenter/src/framework/common"
+)
 
 var _ Group = (*group)(nil)
 
@@ -68,7 +70,7 @@ func (cli *group) FindAttributesLikeName(attributeName string) (AttributeIterato
 	return nil, nil
 }
 
-func (cli *group) FindAttributesByCondition(condition types.MapStr) (AttributeIterator, error) {
+func (cli *group) FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error) {
 	// TODO: 按照条件查找
 	return nil, nil
 }
