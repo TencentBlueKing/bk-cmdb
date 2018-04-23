@@ -13,8 +13,12 @@ type Inputer interface {
     // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
     Name() string
 
-    // Input should not be blocked
-    Input() interface{}
+    // Input the execution function
+	Input() interface{}
+	
+	// Stop stop the Input function
+	Stop() error
+
 }
 
 ```
@@ -67,35 +71,6 @@ Inputer 是必须要自己实现的接口。
 >> - input.InputerKey：Inputer 成功注册如框架后，框架会为此Inputer生成一个唯一的Key。
 >> - error：注册Inputer失败后的错误信息。
 
-### 创建事务对象，被此对象包装过的对象会被归类为一个事务，执行过程不会被打断。
-> 方法：CreateTransaction() input.Transaction
-> 参数：
-> 
->> - 无输入参数
->
-> 返回值：
-> 
->> - input.Transaction：事务对象，可以容纳所有实现了Saver接口的方法。
-
-
-### 创建定时事务对象，被此对象包装过的对象会被归类为一个事务，执行过程不会被打断。
-> 方法：CreateTimingTransaction(duration time.Duration) input.Transaction
-> 
-> 参数：
-> 
->> - duration：次事务被执行的时间间隔。
->
-> 返回值：
->> - input.Transaction：事务对象，可以容纳所有实现了Saver接口的方法。
-
-### 创建普通事件
-> 方法：CreateCommonEvent(saver types.Saver) interface{} 
-> 
-> 参数：
->> - saver: 所有实现了Saver接口的方法。（框架层面提供的：inst, model 系列的接口均有实现saver接口）
->
-> 返回值：
->> - 包装后的对象。
 
 
 ### 创建业务对象
@@ -332,12 +307,6 @@ import (
 )
 
 func init() {
-
-    _, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
-        fmt.Println("outputer:", data)
-        return nil
-    })
-
     api.RegisterInputer(target, sender, nil)
 }
 
@@ -356,27 +325,26 @@ func (cli *myInputer) Name() string {
 func (cli *myInputer) Input() interface{} {
     fmt.Println("my_inputer")
 
-    // 1. 返回 MapStr对象，此方法用于有Inputer绑定了自定义Outputer的时候使用，内置Outputer不采用此方法传递数据。
-    /**
-    return types.MapStr{
-        "test": "outputer",
-        "hoid": "",
-    }
-    */
+    
 
     // 此方法仅用于内置Outputer 的数据返回
     // 1. 构建模型分类
     // 2. 通过模型分类构建model
     // 3. 通过model 构建模型属性
-    // 4. 利用包装器对要返回的数据做处理。
-    cls := api.CreateClassification()
+	cls := api.CreateClassification()
+	cls.SetName("test_name")
+	cls.Save()
 
     model := cls.CreateModel()
     attr := model.CreateAttribute()
     attr.SetName("test")
 
-    return api.CreateCommonEvent(cls)
+    return nil
 
+}
+
+func(cli *myInputer)Stop()error{
+    return nil
 }
 
 ```
