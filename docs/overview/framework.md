@@ -25,10 +25,7 @@ type Inputer interface {
 
 Inputer 是必须要自己实现的接口。
 > 1. Name 方法返回此Inputer的名字，如果Inputer运行过程中出现错误，框架会在输出的错误日志里用调用此方法，为了便于调试建议使用方返回唯一的名字。
-> 2. Input 是Inputer 接口唯一向框架输出数据的接口。开发者需要在此方法的实现里面自己组织需要的数据，并且是非阻塞实现，并将经过以下三个方法进行处理后的数据返回：
->> - CreateTransaction
->> - CreateTimingTransaction
->> - CreateCommonEvent
+> 2. Input 是Inputer 的方法，执行开发者的代码入口方法。
 
 ## API List
 
