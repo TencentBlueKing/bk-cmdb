@@ -65,7 +65,7 @@ Inputer 是必须要自己实现的接口。
 >
 > 返回值：
 >> - input.InputerKey：Inputer 成功注册如框架后，框架会为此Inputer生成一个唯一的Key。
->> - error：注册Inputer失败后的错误信息。
+>> - error：注册Inputer失败后的错误信息。
 
 ### 创建事务对象，被此对象包装过的对象会被归类为一个事务，执行过程不会被打断。
 > 方法：CreateTransaction() input.Transaction
