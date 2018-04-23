@@ -356,6 +356,9 @@
         methods: {
             isCloseConfirmShow () {
                 let isConfirmShow = false
+                if (this.displayType === 'list') {
+                    return false
+                }
                 if (this.type === 'create') {
                     isConfirmShow = Object.values(this.localValues).some(val => {
                         return val.length

@@ -98,11 +98,11 @@
                                 }
                             })
                         } else {
-                            this.$emit('update:isShow')
+                            this.$emit('update:isShow', false)
                         }
                     })
                 } else {
-                    this.$emit('update:isShow')
+                    this.$emit('update:isShow', false)
                 }
             },
             quickClose () {

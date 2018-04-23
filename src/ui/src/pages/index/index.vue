@@ -90,7 +90,10 @@
         <v-sideslider 
             :isShow.sync="sideslider.isShow" 
             :title="sideslider.title"
-            :width="sideslider.width">
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="sideslider.isCloseConfirmShow"
+            :width="sideslider.width"
+            @closeSlider="closeSliderConfirm">
             <div slot="content" class="sideslider-content" :class="`sideslider-content-${sideslider.type}`">
                 <bk-tab class="attribute-tab" style="border:none;"
                     v-show="sideslider.type === 'attribute'"
@@ -261,6 +264,7 @@
                     type: 'attribute',
                     width: 800,
                     isShow: false,
+                    isCloseConfirmShow: false,
                     title: {
                         text: this.$t('HostResourcePool[\'主机属性\']')
                     },
@@ -388,6 +392,9 @@
             }
         },
         methods: {
+            closeSliderConfirm () {
+                this.sideslider.isCloseConfirmShow = this.$refs.hostAttribute.isCloseConfirmShow()
+            },
             clearChooseId () {
                 this.table.chooseId = []
             },
