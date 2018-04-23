@@ -204,9 +204,14 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 			dailaddr, err := util.GetDailAddress(address)
 			if err != nil {
 				blog.Errorf("GetDailAddress error: %v", err)
+				meta.Items = append(meta.Items, metric.NewHealthItem(module, fmt.Errorf("% server not active", module)))
+				continue
 			}
-			_, err = net.Dial("tcp", dailaddr)
+			conn, err := net.Dial("tcp", dailaddr)
 			meta.Items = append(meta.Items, metric.NewHealthItem(module, err))
+			if err == nil {
+				conn.Close()
+			}
 			continue
 		}
 		meta.Items = append(meta.Items, metric.NewHealthItem(module, metric.CheckHealthy(address)))

@@ -375,11 +375,12 @@ func (cli *subscriptionAction) Telnet(req *restful.Request, resp *restful.Respon
 		}
 		blog.Infof("telnet %", uri)
 
-		_, err = net.Dial("tcp", uri)
+		conn, err := net.Dial("tcp", uri)
 		if err != nil {
 			blog.Error("telent callback error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeTelnetFailed)
 		}
+		conn.Close()
 
 		return http.StatusOK, nil, nil
 	}, resp)
