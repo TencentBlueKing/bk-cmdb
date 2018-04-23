@@ -57,5 +57,8 @@
 
 https://github.com/Tencent/bk-cmdb/wiki/FAQ
 
+## English Readme
+[English Readme](readme_en.md)
+
 ## License
 bk-cmdb 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE) 。
