@@ -110,10 +110,11 @@
             :classification="curTempClassify"
             @confirm="saveClassify"
         ></v-pop>
-        <v-sideslider :isShow.sync="isBusinessShow"
+        <v-sideslider :isShow.sync="slider.isBusinessShow"
         :title="sliderTitle"
         :hasQuickClose="true"
-        @closeSlider="updateTopo">
+        :hasCloseConfirm="true"
+        @closeSlider="closeSliderConfirm">
             <div class="content slide-content clearfix" slot="content">
                 <bk-tab :active-name="curTabName" @tab-changed="tabChanged">
                     <!-- <bk-tabpanel name="base-info" title="模型配置">
@@ -134,13 +135,15 @@
                         :bk_classification_id="curClassify['bk_classification_id']"
                         :type="curModel.type"
                         :id="curModel['id']"
-                        :isShow="isBusinessShow"
+                        :isShow="slider.isBusinessShow"
                         :objId="curModel['bk_obj_id']"
                         :isMainLine="isMainLine"
                         :classificationId="curClassify['bk_classification_id']"
                         :associationId="curInsertInfo.preObj"
                         :isReadOnly="isModelDetailReadOnly"
                         :isCreateField="isCreateField"
+                        :isSliderShow.sync="slider.isBusinessShow"
+                        :isCloseConfirmShow.sync="slider.isConfirmShow"
                         @getTopogical="getTopogical"
                         @cancel="cancel"
                         @baseInfoSuccess="baseInfoSuccess"
@@ -211,7 +214,10 @@
                     icon: 'icon-cc-model'
                 },
                 curTabName: 'host',
-                isBusinessShow: false,
+                slider: {
+                    isBusinessShow: false,
+                    isConfirmShow: false
+                },
                 classifyList: [],           // 分类列表
                 isEditClassify: false,
                 curClassify: {},            // 当前类型
@@ -264,7 +270,7 @@
             }
         },
         watch: {
-            isBusinessShow (val) {
+            'slider.isBusinessShow' (val) {
                 if (!val) {
                     this.changeClassify()
                 }
@@ -272,6 +278,9 @@
         },
         methods: {
             ...mapActions(['getAllClassify']),
+            closeSliderConfirm () {
+                
+            },
             updateIsChangeClassify (val) {
                 this.isChangeClassify = val
             },
@@ -321,7 +330,7 @@
                 }
             },
             closeBusiness () {
-                this.isBusinessShow = false
+                this.slider.isBusinessShow = false
             },
             /*
                 新增模型
@@ -339,7 +348,7 @@
                 this.curTabName = 'host'
                 this.curModel = {}
                 this.curModel.type = 'new'
-                this.isBusinessShow = true
+                this.slider.isBusinessShow = true
             },
             /*
                 编辑模型
@@ -359,7 +368,7 @@
                 setTimeout(function () {
                     self.$refs.field.init()
                 }, 300)
-                this.isBusinessShow = true
+                this.slider.isBusinessShow = true
                 this.isEditClassify = false
             },
             /*
@@ -703,7 +712,7 @@
                 取消按钮
             */
             cancel () {
-                this.isBusinessShow = false
+                this.slider.isBusinessShow = false
             },
             /*
                 更新topo图
