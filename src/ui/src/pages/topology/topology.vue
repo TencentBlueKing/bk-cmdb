@@ -21,7 +21,12 @@
         <div class="topo-view-ctn">
             <bk-tab :active-name="view.tab.active" @tab-changed="tabChanged" class="topo-view-tab">
                 <bk-tabpanel name="host" title="主机调配">
-                    <v-index ref="index" :outerParams="searchParams" :isShowRefresh="true" :outerLoading="tree.loading">
+                    <v-index ref="index"
+                        :outerParams="searchParams"
+                        :isShowRefresh="true"
+                        :outerLoading="tree.loading"
+                        :isShowCrossImport="attributeBkObjId === 'module'"
+                        @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-index>
                 </bk-tabpanel>
@@ -41,6 +46,13 @@
                 </bk-tabpanel>
             </bk-tab>
         </div>
+        <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="600" :padding="0">
+            <v-cross-import  slot="content"
+                :is-show.sync="view.crossImport.isShow"
+                :bizId="tree.bkBizId"
+                :moduleId="tree.activeNode['bk_inst_id']">
+            </v-cross-import>
+        </bk-dialog>
     </div>
 </template>
 <script>
@@ -48,6 +60,7 @@
     import vTree from '@/components/tree/tree.v2'
     import vIndex from '@/pages/index/index'
     import vAttribute from './children/attribute'
+    import vCrossImport from './children/crossImport'
     import { mapGetters } from 'vuex'
     export default {
         data () {
@@ -69,6 +82,9 @@
                         type: 'update',
                         formValues: {},
                         isLoading: true
+                    },
+                    crossImport: {
+                        isShow: false
                     }
                 },
                 nodeToggleRecord: {},
@@ -446,6 +462,9 @@
                 })
                 this.searchParams = params
             },
+            handleCrossImport () {
+                this.view.crossImport.isShow = true
+            },
             tabChanged (active) {
                 this.view.tab.active = active
                 this.view.attribute.formValues = {}
@@ -464,7 +483,8 @@
             vApplicationSelector,
             vTree,
             vIndex,
-            vAttribute
+            vAttribute,
+            vCrossImport
         }
     }
 </script>
