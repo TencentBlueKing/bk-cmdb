@@ -42,6 +42,10 @@
                 <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">更多属性</a>
             </div>
         </div>
+        <div class="search-tips" v-show="showTips" v-bkloading="{isLoading: loading}">
+            <p v-if="noResult">未查询到该IP地址对应的主机</p>
+            <p v-else>请输入完整IP地址进行查询</p>
+        </div>
         <div class="search-footer">
             <bk-button type="primary" @click="doCrossImport" :disabled="!Object.keys(result).length">确定</bk-button>
             <button class="bk-button vice-btn" @click="cancelCrossImport">取消</button>
@@ -68,15 +72,18 @@
         data () {
             return {
                 search: {
-                    plat: [],
+                    plat: [{bk_inst_id: 0, bk_inst_name: '直连区域'}],
                     selectedPlat: 0,
-                    ip: '10.20.30.44'
+                    ip: ''
                 },
                 result: {},
                 resultPlat: 0,
+                noResult: false,
                 isNoneGroupHide: true,
                 attribute: {},
-                propertyGroups: {}
+                propertyGroups: {},
+                loading: false,
+                showTips: true
             }
         },
         computed: {
@@ -118,8 +125,11 @@
                 if (isShow) {
                     this.getHostAttribute()
                     this.getPropertyGroups()
-                    this.getPlat()
+                    // this.getPlat()
                 }
+            },
+            'search.ip' () {
+                this.noResult = false
             }
         },
         methods: {
@@ -199,10 +209,12 @@
                 this.search.ip = ''
                 this.result = {}
                 this.resultPlat = 0
+                this.noResult = false
             },
             doSearch () {
                 if (this.isValidIp) {
                     this.loading = true
+                    this.noResult = false
                     this.resultPlat = this.search.selectedPlat
                     this.$axios.post('hosts/search', {
                         bk_biz_id: -1,
@@ -226,7 +238,13 @@
                         }
                     }).then(res => {
                         if (res.result) {
-                            this.result = res.data.count ? res.data.info[0]['host'] : {}
+                            if (res.data.count) {
+                                this.noResult = false
+                                this.result = res.data.info[0]['host']
+                            } else {
+                                this.noResult = true
+                                this.result = {}
+                            }
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -237,7 +255,7 @@
                 }
             },
             doCrossImport () {
-                this.$axios.post('hosts/modules/biz/mutiple', {
+                this.$axios.post('hosts/modules/biz/mutilple', {
                     bk_biz_id: this.bizId,
                     bk_module_id: this.moduleId,
                     host_info: [{
@@ -247,9 +265,14 @@
                 }).then(res => {
                     if (res.result) {
                         this.$alertMsg('导入成功', 'success')
+                        this.$emit('update:isShow', false)
                         this.$emit('handleCrossImportSuccess')
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        if (res.data.error && res.data.error.length) {
+                            this.$alertMsg(res.data.error[0])
+                        } else {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
                     }
                 })
             },
@@ -381,6 +404,10 @@
                 transform: rotate(180deg);
             }
         }
+    }
+    .search-tips{
+        padding: 20px;
+        text-align: center;
     }
     .search-footer{
         text-align: right;
