@@ -232,7 +232,7 @@
                     config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
                 }
                 if (this.filter.selected && this.filter.value) {
-                    if (this.filter.type === 'bool') {
+                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                         config.params.condition[this.filter.selected] = this.filter.value === 'true'
                     } else {
                         config.params.condition[this.filter.selected] = this.filter.value
@@ -265,6 +265,7 @@
                 // 页码调整到第一页
                 this.table.pagination.current = 1
                 this.filter.value = ''
+                this.table.chooseId = []
                 // 初始化表格
                 this.initTable()
             },
