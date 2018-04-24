@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	api "configcenter/src/source_controller/api/object"
@@ -35,9 +36,9 @@ import (
 
 // ConditionItem subcondition
 type ConditionItem struct {
-	Field    string `json:"field,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	Value    string `json:"value,omitempty"`
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
 }
 
 // AssociationParams  association params
@@ -291,7 +292,15 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 				} else {
 					if objID == keyObjID {
 						// deal self condition
-						instCondition[objCondition.Field] = objCondition.Value
+						switch t := objCondition.Value.(type) {
+						case string:
+							instCondition[objCondition.Field] = map[string]interface{}{
+								common.BKDBEQ: params.SpeceialCharChange(t),
+							}
+						default:
+							instCondition[objCondition.Field] = objCondition.Value
+						}
+
 					} else {
 						// deal association condition
 						condition[objCondition.Field] = objCondition.Value
