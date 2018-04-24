@@ -32,8 +32,8 @@ func (cli *wrapInputer) Name() string {
 	return cli.inputer.Name()
 }
 
-func (cli *wrapInputer) Input() interface{} {
-	return cli.inputer.Input()
+func (cli *wrapInputer) Run() interface{} {
+	return cli.inputer.Run()
 }
 
 func (cli *wrapInputer) Stop() {

@@ -15,16 +15,6 @@ type manager struct {
 	inputerChan chan *wrapInputer
 }
 
-// CreateTransaction create a common transaction
-func (cli *manager) CreateTransaction() Transaction {
-	return &transaction{}
-}
-
-// CreateTimingTransaction create a timing transaction
-func (cli *manager) CreateTimingTransaction(duration time.Duration) Transaction {
-	return &transaction{isTiming: true, duration: duration}
-}
-
 func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	key := makeInputerKey()

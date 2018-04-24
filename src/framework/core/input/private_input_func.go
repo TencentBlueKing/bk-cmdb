@@ -12,10 +12,12 @@ import (
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) {
 
-	inputObj := inputer.Input()
+	inputObj := inputer.Run()
 
 	// inputer 分：事物、定时、常规实现
 	switch t := inputObj.(type) {
+	case error:
+		log.Errorf("return some errors from the inputer, error info is %s", t.Error())
 	case nil:
 		log.Info("return the data is nil")
 	case types.MapStr:
