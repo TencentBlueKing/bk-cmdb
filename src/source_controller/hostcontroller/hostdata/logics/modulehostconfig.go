@@ -243,7 +243,7 @@ func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []in
 	conds[common.BKHostIDField] = bson.M{common.BKDBIN: hostIDs}
 	result := make([]interface{}, 0)
 
-	err := cc.InstCli.GetMutilByCondition(moduleHostConfig.TableName(), []string{common.BKHostIDField, common.BKModuleIDField}, conds, &result, "", 0, common.BKNoLimit)
+	err := cc.InstCli.GetMutilByCondition(moduleHostConfig.TableName(), []string{common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField}, conds, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		blog.Error("get modulehostconfig error:%s", err.Error())
 		return nil, nil, errors.New("获取主机与模块关系失败")
@@ -261,7 +261,7 @@ func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []in
 		if nil != err {
 			continue
 		}
-		rowAppID, err := util.GetIntByInterface(row[common.BKHostIDField])
+		rowAppID, err := util.GetIntByInterface(row[common.BKAppIDField])
 		if nil != err {
 			continue
 		}
