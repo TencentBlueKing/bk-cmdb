@@ -78,6 +78,17 @@ func ParseCommonParams(input []interface{}, output map[string]interface{}) error
 	return nil
 }
 
+func SpeceialCharChange(targetStr string) string {
+
+	re := regexp.MustCompile("([\\^\\$\\(\\)\\*\\+\\?\\.\\\\\\|\\[\\]\\{\\}])")
+	delItems := re.FindAllString(targetStr, -1)
+	for _, target := range delItems {
+		targetStr = strings.Replace(targetStr, target, fmt.Sprintf("\\\\%s", target), -1)
+	}
+
+	return targetStr
+}
+
 func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
 	output := make(map[string]interface{})
 	for i, j := range input {
@@ -86,12 +97,7 @@ func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
 		case reflect.String:
 			d := make(map[string]interface{})
 			targetStr := j.(string)
-			re := regexp.MustCompile("([\\^\\$\\(\\)\\*\\+\\?\\.\\\\\\|\\[\\]\\{\\}])")
-			delItems := re.FindAllString(targetStr, -1)
-			for _, target := range delItems {
-				targetStr = strings.Replace(targetStr, target, fmt.Sprintf("\\\\%s", target), -1)
-			}
-			d[common.BKDBLIKE] = targetStr
+			d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
 			output[i] = d
 		default:
 			output[i] = j
