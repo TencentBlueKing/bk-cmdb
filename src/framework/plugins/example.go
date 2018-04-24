@@ -14,7 +14,6 @@ func init() {
 	})
 
 	api.RegisterInputer(target, sender, nil)
-	api.RegisterTimingInputer()
 }
 
 var target = &myInputer{}
@@ -28,8 +27,8 @@ func (cli *myInputer) Name() string {
 	return "name_myinputer"
 }
 
-// Input the input should not be blocked
-func (cli *myInputer) Input() interface{} {
+// Run the input should not be blocked
+func (cli *myInputer) Run() interface{} {
 
 	fmt.Println("my_inputer")
 
@@ -68,4 +67,8 @@ func (cli *myInputer) Input() interface{} {
 
 	return nil
 
+}
+
+func (cli *myInputer) Stop() error {
+	return nil
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/output"
-	"configcenter/src/framework/core/types"
 	"time"
 )
 
@@ -29,19 +28,4 @@ func RegisterTimingInputer(inputer input.Inputer, putter output.Puter, frequency
 		Putter:    putter,
 		Exception: exceptionFunc,
 	}), nil
-}
-
-// CreateTransaction create a common transaction
-func CreateTransaction() input.Transaction {
-	return mgr.InputerMgr.CreateTransaction()
-}
-
-// CreateTimingTransaction create a timing transaction
-func CreateTimingTransaction(duration time.Duration) input.Transaction {
-	return mgr.InputerMgr.CreateTimingTransaction(duration)
-}
-
-// CreateCommonEvent create a common event
-func CreateCommonEvent(saver types.Saver) interface{} {
-	return saver
 }

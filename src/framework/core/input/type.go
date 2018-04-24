@@ -2,7 +2,6 @@ package input
 
 import (
 	"configcenter/src/framework/core/output"
-	"configcenter/src/framework/core/types"
 	"context"
 	"time"
 )
@@ -49,21 +48,7 @@ const (
 
 	// ExecuteLoop loop execution does not exit, blocking
 	ExecuteLoop
-
-	// ExecuteTransaction execute once as a transaction, non-blocking
-	ExecuteTransaction
-
-	// ExecuteTimingTransaction, non-blocking
-	ExecuteTimingTransaction
 )
-
-// Transaction the input Transaction
-type Transaction interface {
-	// AddSaver add a saver
-	AddSaver(saver types.Saver)
-	// Execute execute this transaction
-	Execute() error
-}
 
 // InputerParams the inputer params
 type InputerParams struct {
@@ -77,12 +62,6 @@ type InputerParams struct {
 
 // Manager is the interface that must be implemented by every input manager.
 type Manager interface {
-
-	// CreateTransaction create a common transaction
-	CreateTransaction() Transaction
-
-	// CreateTimingTransaction create a timing transaction
-	CreateTimingTransaction(duration time.Duration) Transaction
 
 	// AddInputer add a new inputer
 	AddInputer(params InputerParams) InputerKey
@@ -104,6 +83,9 @@ type Inputer interface {
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
-	// Input should not be blocked
-	Input() interface{}
+	// Run execute the user logics
+	Run() interface{}
+
+	// Stop stop the run function
+	Stop() error
 }
