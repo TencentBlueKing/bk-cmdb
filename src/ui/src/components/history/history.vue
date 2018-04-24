@@ -13,7 +13,7 @@
         <div class="history-filter clearfix">
             <div class="filter-group date fl">
                 <label>时间范围</label>
-                <bk-daterangepicker class="filter-field"
+                <bk-daterangepicker class="filter-field" ref="dateRangePicker"
                     @change="setFilterDate"
                     :range-separator="'-'"
                     :quick-select="false"
@@ -128,7 +128,11 @@
                 if (active) {
                     this.getHistory()
                 } else {
-                    // this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
+                    let $dateRangePicker = this.$refs.dateRangePicker
+                    $dateRangePicker.selectedDateView = `${this.initDate.start} - ${this.initDate.end}`
+                    $dateRangePicker.selectedDateRange = [this.initDate.start, this.initDate.end]
+                    $dateRangePicker.selectedDateRangeTmp = [this.initDate.start, this.initDate.end]
+                    this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
                     this.filter.user = ''
                 }
             }
