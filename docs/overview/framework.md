@@ -15,8 +15,8 @@ type Inputer interface {
     // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
     Name() string
 
-    // Input the execution function
-    Input() interface{}
+    // Run the execution function
+    Run() interface{}
 	
     // Stop stop the Input function
     Stop() error
@@ -332,7 +332,7 @@ func (cli *myInputer) Name() string {
 }
 
 // Input the input should not be blocked
-func (cli *myInputer) Input() interface{} {
+func (cli *myInputer) Run() interface{} {
    
     // 1. 构建模型分类
     // 2. 通过模型分类构建model
