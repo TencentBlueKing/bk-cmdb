@@ -34,7 +34,7 @@
             :hasCloseConfirm="true"
             :title="slider.title"
             @closeSlider="closeSliderConfirm">
-            <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" :class="['tab-wrapper', slider.tab.active]">
+            <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" :class="['tab-wrapper', slider.tab.active]" style="border:none;">
                 <bk-tabpanel name="attribute" :title="$t('ProcessManagement[\'属性\']')">
                     <v-attribute :active="slider.isShow && slider.tab.active === 'attribute'"
                         ref="attribute"

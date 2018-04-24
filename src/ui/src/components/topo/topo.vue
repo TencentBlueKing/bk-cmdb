@@ -292,7 +292,7 @@
                         } else {
                             svgColor = svgForUser
                         }
-                        if (!this.isBelongtoCurclassify(node['bk_obj_id'])) {
+                        if (!this.isBelongtoCurclassify(node['bk_obj_id']) || node['bk_obj_id'] === 'plat') {
                             svgColor = svgForOther
                         }
                         // 没有图标的话就设置一个默认图标
@@ -446,7 +446,7 @@
                     // 点击了具体某个节点
                     if (params.nodes.length) {
                         let id = params.nodes[0]
-                        if (this.isBelongtoCurclassify(id)) {
+                        if (this.isBelongtoCurclassify(id) && id !== 'plat') {
                             self.$emit('nodeClick', self.getModelById(id))
                         }
                     }
