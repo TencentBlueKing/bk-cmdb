@@ -26,3 +26,7 @@
 * [用户行为记录](user_costum.md)
 * [权限管理](user_privilege.md)
 * [事件订阅](event_sub.md)
+
+#### 调用指引
+* api请求调用请使用cmdb_apiserver的地址
+* 请在http请求中加入BK_USER和HTTP_BLUEKING_SUPPLIER_ID 这两个参数， 分别代表调用用户和供应商的ID（默认为0）

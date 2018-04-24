@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # read the new version tarbar position
-read -p "please input the new version package position:" new_version_package
+new_version_package=$1
+if [ -z new_version_package]; then
+    read -p "please input the new version package position:" new_version_package
+fi
 
 # check the file
 if [ -f $new_version_package ];then
