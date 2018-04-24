@@ -111,8 +111,8 @@
         ></v-pop>
         <v-sideslider :isShow.sync="slider.isBusinessShow"
         :title="sliderTitle"
-        :hasQuickClose="true"
         :hasCloseConfirm="true"
+        :isCloseConfirmShow="slider.isCloseConfirmShow"
         @closeSlider="closeSliderConfirm">
             <div class="content slide-content clearfix" slot="content">
                 <bk-tab :active-name="curTabName" @tab-changed="tabChanged">
@@ -129,7 +129,6 @@
                         :isReadOnly="isModelDetailReadOnly"
                         :isCreateField="isCreateField"
                         :isSliderShow.sync="slider.isBusinessShow"
-                        :isCloseConfirmShow.sync="slider.isConfirmShow"
                         @getTopogical="getTopogical"
                         @cancel="cancel"
                         @baseInfoSuccess="baseInfoSuccess"
@@ -195,7 +194,7 @@
                 curTabName: 'host',
                 slider: {
                     isBusinessShow: false,
-                    isConfirmShow: false
+                    isCloseConfirmShow: false
                 },
                 classifyList: [],           // 分类列表
                 isEditClassify: false,
@@ -258,7 +257,7 @@
         methods: {
             ...mapActions(['getAllClassify']),
             closeSliderConfirm () {
-                
+                this.slider.isCloseConfirmShow = this.$refs.field.isCloseConfirmShow()
             },
             updateIsChangeClassify (val) {
                 this.isChangeClassify = val
