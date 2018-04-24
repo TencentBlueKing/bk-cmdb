@@ -4,6 +4,7 @@ import (
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/types"
 	"fmt"
+	"time"
 )
 
 func init() {
@@ -13,7 +14,8 @@ func init() {
 		return nil
 	})
 
-	api.RegisterInputer(target, sender, nil)
+	// api.RegisterInputer(target, sender, nil)
+	api.RegisterTimingInputer(target, sender, time.Second*5, nil)
 }
 
 var target = &myInputer{}
@@ -30,42 +32,10 @@ func (cli *myInputer) Name() string {
 // Run the input should not be blocked
 func (cli *myInputer) Run() interface{} {
 
-	fmt.Println("my_inputer")
-
-	// 1. 返回 MapStr对象，此方法用于有Inputer绑定了自定义Outputer的时候使用，内置Outputer不采用此方法传递数据。
-	/**
 	return types.MapStr{
 		"test": "outputer",
 		"hoid": "",
 	}
-	*/
-
-	// 此方法仅用于内置Outputer 的数据返回
-	// 1. 构建模型分类
-	// 2. 通过模型分类构建model
-	// 3. 通过model 构建模型属性
-	// 4. 利用包装器对要返回的数据做处理。
-
-	//api.CreateBusiness()
-
-	// TODO: inputer 内部显示调用 save
-	// 多inputer 运行
-	// inputer 定时跑  ，长期跑
-	// 事务有cc 底层api 实现。（一时半会搞不了，不在框架里做）
-	cls := api.CreateClassification() // 必填参数
-
-	//cls.FindModelsByCondition()
-
-	model := cls.CreateModel()
-
-	grp := model.CreateGroup()
-
-	grp.CreateAttribute()
-
-	attr := model.CreateAttribute()
-	attr.SetName("test")
-
-	return nil
 
 }
 
