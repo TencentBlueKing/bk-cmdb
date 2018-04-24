@@ -39,6 +39,7 @@ package:
 	rm -rf $(SOURCE_ROOT)/bin/pub/cmdb
 	mkdir -p $(SOURCE_ROOT)/bin/pub && cp -R $(BIN_PATH) ./bin/pub/cmdb
 	cd $(SOURCE_ROOT)/bin/pub && tar -zvcf cmdb.tar.gz cmdb
+	@echo -e "\033[34mpackage file could be found at $(SOURCE_ROOT)/bin/pub/cmdb.tar.gz \033[0m"
 
 .PHONY:enterprise
 enterprise:
