@@ -181,6 +181,18 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                if (this.type === 'new') {
+                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-business') {
+                        return true
+                    }
+                } else {
+                    if (this.baseInfo['bk_obj_name'] !== this.baseInfoCopy['bk_obj_name'] || this.baseInfo['bk_obj_icon'] !== this.baseInfoCopy['bk_obj_icon']) {
+                        return true
+                    }
+                }
+                return false
+            },
             /*
                 点击出现选中icon下拉框
             */
@@ -231,6 +243,7 @@
                 this.$axios.post('objects', params).then(res => {
                     if (res.result) {
                         this.baseInfo = res.data[0]
+                        this.baseInfoCopy = this.$deepClone(res.data[0])
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
