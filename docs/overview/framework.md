@@ -103,6 +103,17 @@ Inputer 是必须要自己实现的接口。
 >> - inst.Inst： 实例接口对象，包含对当前实例数据进行维护的接口。
 >> - error: 如果创建模块失败会返回错误。
 
+### 创建主机对象
+> 方法：CreateHost()(inst.Inst, error) 
+> 
+> 参数：
+>> - 无输入参数
+>
+> 返回值：
+> 
+>> - inst.Inst： 实例接口对象，包含对当前实例数据进行维护的接口。
+>> - error: 如果创建业务失败会返回错误。
+
 ### 创建普通对象
 > 方法：CreateCommonInst(target model.Model) (inst.Inst, error)
 > 
