@@ -123,6 +123,7 @@
         watch: {
             isShow (isShow) {
                 if (isShow) {
+                    this.reset()
                     this.getHostAttribute()
                     this.getPropertyGroups()
                     this.getPlat()
@@ -213,6 +214,7 @@
                 this.result = {}
                 this.resultPlat = 0
                 this.noResult = false
+                this.showTips = true
             },
             doSearch () {
                 if (this.isValidIp) {
@@ -242,6 +244,7 @@
                     }).then(res => {
                         if (res.result) {
                             if (res.data.count) {
+                                this.showTips = false
                                 this.noResult = false
                                 this.result = res.data.info[0]['host']
                             } else {
