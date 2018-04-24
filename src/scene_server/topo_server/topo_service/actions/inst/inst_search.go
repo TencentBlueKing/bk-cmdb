@@ -63,7 +63,10 @@ func (cli *instAction) InstSearch(req *restful.Request, resp *restful.Response) 
 			condition[common.BKOwnerIDField] = map[string]interface{}{
 				common.BKDBIN: []string{"", ownerID},
 			}
-			condition[common.BKObjIDField] = objID
+
+			if common.BKInnerObjIDPlat != objID {
+				condition[common.BKObjIDField] = objID
+			}
 
 			page := js.Page
 
@@ -78,7 +81,10 @@ func (cli *instAction) InstSearch(req *restful.Request, resp *restful.Response) 
 			condition[common.BKOwnerIDField] = map[string]interface{}{
 				common.BKDBIN: []string{"", ownerID},
 			}
-			condition[common.BKObjIDField] = objID
+
+			if common.BKInnerObjIDPlat != objID {
+				condition[common.BKObjIDField] = objID
+			}
 			searchParams["condition"] = condition
 			searchParams["fields"] = ""
 			searchParams["start"] = 0
