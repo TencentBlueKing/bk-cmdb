@@ -360,9 +360,25 @@
                     return false
                 }
                 if (this.type === 'create') {
-                    isConfirmShow = Object.values(this.localValues).some(val => {
-                        return val.length
-                    })
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        if (property['bk_property_type'] === 'enum') {
+                            let isDefault = property.option.find(({id}) => {
+                                return id === this.formData[key]
+                            })['is_default']
+                            if (!isDefault) {
+                                isConfirmShow = true
+                                break
+                            }
+                        } else {
+                            if (this.formData[key].length) {
+                                isConfirmShow = true
+                                break
+                            }
+                        }
+                    }
                 } else {
                     for (let key in this.formData) {
                         let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
@@ -384,6 +400,7 @@
                         }
                     }
                 }
+                console.log(111, isConfirmShow)
                 return isConfirmShow
             },
             confirmHost (hostInfo) {

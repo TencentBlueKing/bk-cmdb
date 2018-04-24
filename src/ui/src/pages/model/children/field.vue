@@ -1841,7 +1841,8 @@
                 // 只有关联类型才添加以下三个参数
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
                     if (option !== 'undefined') {
-                        params['bk_asst_obj_id'] = JSON.parse(option).value
+                        // params['bk_asst_obj_id'] = JSON.parse(option).value
+                        params['bk_asst_obj_id'] = option.value
                     }
                     params['bk_property_id'] = item['bk_property_id']
                     params['bk_obj_id'] = this.objId
@@ -1850,6 +1851,7 @@
                 this.$axios.put(`object/attr/${item['id']}`, params).then(res => {
                     if (res.result) {
                         this.getModelField()
+                        this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
