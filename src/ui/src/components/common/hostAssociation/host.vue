@@ -1,6 +1,7 @@
 <template>
     <div>
         <input class="bk-form-input selected-host" type="text" readonly :value="localSelected.join(',')" @click="isSelectBoxShow = !isSelectBoxShow">
+        <i class="bk-icon icon-close bk-selector-icon clear-icon" @click.stop="clear" v-show="localSelected.length"></i>
         <div class="selectbox-wrapper" v-show="isSelectBoxShow" @click.self="handleCancel">
             <div class="selectbox-box">
                 <div class="top-box">
@@ -169,7 +170,8 @@
         methods: {
             initLocalSelected () {
                 if (Array.isArray(this.selected)) {
-                    this.localSelected = this.selected.map(({bk_inst_name: bkInstName}) => bkInstName)
+                    let availableSelected = this.selected.filter(({id}) => id !== '')
+                    this.localSelected = availableSelected.map(({bk_inst_name: bkInstName}) => bkInstName)
                 }
             },
             initChoosed () {
@@ -358,7 +360,10 @@
             handleConfirm () {
                 this.isSelectBoxShow = false
                 this.setLocalSelected()
-                this.$emit('update:selected', this.table.chooseId.join(','))
+                let availableId = this.table.chooseId.filter(id => {
+                    return !!this.table.allHost.find(({bk_host_id: bkHostId}) => bkHostId === id)
+                })
+                this.$emit('update:selected', availableId.join(','))
             },
             setLocalSelected () {
                 let selectedHost = this.table.allHost.filter(({bk_host_id: bkHostId}) => this.table.chooseId.indexOf(bkHostId) !== -1)
@@ -366,6 +371,11 @@
             },
             handleCancel () {
                 this.isSelectBoxShow = false
+                this.initLocalSelected()
+            },
+            clear () {
+                this.table.chooseId = []
+                this.handleConfirm()
             }
         },
         components: {

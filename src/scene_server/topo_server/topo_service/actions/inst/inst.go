@@ -85,41 +85,8 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	user := util.GetActionUser(req)
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
-
 	// extract the data for the associated field
-	asstFieldVal := make([]interface{}, 0)
-	for idxItem, item := range asstDes {
-		if inputVal, ok := targetInput[item.ObjectAttID]; ok {
-			switch t := inputVal.(type) {
-			case string:
-				asstIDS := strings.Split(t, ",")
-				for _, id := range asstIDS {
-					if 0 == len(id) {
-						continue
-					}
-					iID, iIDErr := util.GetInt64ByInterface(id)
-					if nil != iIDErr {
-						blog.Error("can not convert the data (%s) into int64, error info is %s", id, iIDErr.Error())
-						continue
-					}
-
-					asstInst := metadata.InstAsst{}
-					id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-					asstInst.ID = id
-					if nil != err {
-						blog.Error("faild to create id, error info is %s", err.Error())
-					}
-					asstInst.AsstInstID = iID
-					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
-					asstInst.ObjectID = objID
-					asstFieldVal = append(asstFieldVal, asstInst)
-				}
-
-			default:
-				blog.Warnf("the target data (%v) type is not a string ", t)
-			}
-		}
-	}
+	asstFieldVal := cli.extractDataFromAssociationField(0, targetInput, asstDes)
 
 	// check
 	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
@@ -298,13 +265,11 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 
 	// set the inst association table
 	for idxItem, item := range asstFieldVal {
-		switch t := item.(type) {
-		case metadata.InstAsst:
-			t.InstID = int64(instID)
-			asstFieldVal[idxItem] = t
-		}
+		_ = item
+		asstFieldVal[idxItem].InstID = int64(instID)
 	}
-	if err := cli.createInstAssociation(asstFieldVal); nil != err {
+
+	if err := cli.createInstAssociation(req, asstFieldVal); nil != err {
 		blog.Errorf("failed to create the inst association, error info is %s ", err.Error())
 	}
 
@@ -536,7 +501,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			input[common.BKInstIDField] = delItem.instID
 
 			// delete the association
-			if err := cli.deleteInstAssociation(delItem.instID, delItem.ownerID, delItem.objID); nil != err {
+			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
 				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
 			}
 
@@ -666,7 +631,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// set the inst association table
-		if err := cli.updateInstAssociation(instID, ownerID, objID, data); nil != err {
+		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
 
@@ -1130,6 +1095,10 @@ func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, inst
 					for key, val := range rstmap {
 
 						if keyItem, keyItemOk := dataItem[key]; keyItemOk {
+
+							if nil == keyItem {
+								continue
+							}
 
 							keyItemStr := fmt.Sprintf("%v", keyItem)
 							blog.Debug("keyitemstr:%s", keyItemStr)

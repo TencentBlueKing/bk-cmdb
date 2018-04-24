@@ -47,10 +47,10 @@
                     </bk-select>
                 </div>
                 <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" 
-                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="setTablePage(1)">
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
                 <input v-else type="text" class="bk-form-input search-text" 
-                    :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="setTablePage(1)">
-                <i class="bk-icon icon-search" @click="setTablePage(1)"></i>
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
+                <i class="bk-icon icon-search" @click="doFilter"></i>
             </div>
         </div>
         <div class="table-contain">
@@ -541,6 +541,10 @@
             setTablePage (page) {
                 this.table.pagination.current = page
                 this.getTableList()
+            },
+            doFilter () {
+                this.table.chooseId = []
+                this.setTablePage(1)
             },
             // 保存新增/修改的属性
             saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {

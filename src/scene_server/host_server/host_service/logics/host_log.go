@@ -121,7 +121,9 @@ func (h *HostLog) getHostDetail(instID string) (interface{}, int) {
 	}
 
 	hostData := gHostData["data"].(map[string]interface{})
-
+	if nil != hostData {
+		h.innerIP, _ = hostData[common.BKHostInnerIPField]
+	}
 	return hostData, common.CCSuccess
 }
 

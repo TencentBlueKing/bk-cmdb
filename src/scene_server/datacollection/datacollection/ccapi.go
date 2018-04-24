@@ -1,25 +1,30 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ccapi
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
+	dccommon "configcenter/src/scene_server/datacollection/common"
 	confCenter "configcenter/src/scene_server/datacollection/datacollection/config"
 	"configcenter/src/scene_server/datacollection/datacollection/rdiscover"
 	"configcenter/src/source_controller/common/instdata"
+	"github.com/emicklei/go-restful"
 	"time"
 )
 
@@ -50,7 +55,6 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-
 	return s, nil
 }
 
@@ -107,6 +111,12 @@ func (ccAPI *CCAPIServer) Start() error {
 	instdata.DataH = a.InstCli
 
 	go func() {
+		err := ccAPI.httpServ.ListenAndServe()
+		blog.Error("http listen and serve failed! err:%s", err.Error())
+		chErr <- err
+	}()
+
+	go func() {
 		err := a.RunAutoAction(config)
 		if err != nil {
 			blog.Error("Run  auto execute action  error exit! err:%s", err.Error())
@@ -129,7 +139,46 @@ func (ccAPI *CCAPIServer) Start() error {
 }
 
 func (ccAPI *CCAPIServer) initHTTPServ() error {
-	// a := api.NewAPIResource()
+	api.NewAPIResource()
 	// ccAPI.httpServ.RegisterWebServer("/datacollection/{version}", nil, a.Actions)
+	// MetricServer
+	conf := metric.Config{
+		ModuleName:    types.CC_MODULE_DATACOLLECTION,
+		ServerAddress: ccAPI.conf.AddrPort,
+	}
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
 	return nil
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("mongo", a.InstCli.Ping()))
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("redis", dccommon.Rediscli.Ping().Err()))
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("snapredis", dccommon.Snapcli.Ping().Err()))
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "datacollecion is not healthy"
+			break
+		}
+	}
+
+	return meta
 }
