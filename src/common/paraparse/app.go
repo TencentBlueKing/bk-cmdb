@@ -88,7 +88,7 @@ func SpeceialCharChange(targetStr string) string {
 			continue
 		}
 		tmp[target] = struct{}{}
-		targetStr = strings.Replace(targetStr, target, fmt.Sprintf("\\\\%s", target), -1)
+		targetStr = strings.Replace(targetStr, target, fmt.Sprintf(`\\%s`, target), -1)
 	}
 
 	return targetStr
