@@ -60,7 +60,9 @@ func (cli *instAction) InstSearch(req *restful.Request, resp *restful.Response) 
 
 			condition := params.ParseAppSearchParams(js.Condition)
 
-			condition[common.BKOwnerIDField] = ownerID
+			condition[common.BKOwnerIDField] = map[string]interface{}{
+				common.BKDBIN: []string{"", ownerID},
+			}
 			condition[common.BKObjIDField] = objID
 
 			page := js.Page
