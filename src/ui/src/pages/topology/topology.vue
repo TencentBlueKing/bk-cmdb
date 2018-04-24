@@ -46,7 +46,7 @@
                 </bk-tabpanel>
             </bk-tab>
         </div>
-        <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="600" :padding="0">
+        <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="700" :padding="0">
             <v-cross-import  slot="content"
                 :is-show.sync="view.crossImport.isShow"
                 :bizId="tree.bkBizId"

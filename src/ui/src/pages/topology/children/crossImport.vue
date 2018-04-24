@@ -3,8 +3,8 @@
         <div class="search-container">
             <bk-select class="search-area search-field" :selected.sync="search.selectedPlat">
                 <bk-select-option v-for="(plat, index) in search.plat" :key="index"
-                    :label="plat['bk_inst_name']"
-                    :value="plat['bk_inst_id']">
+                    :label="plat['bk_cloud_name']"
+                    :value="plat['bk_cloud_id']">
                 </bk-select-option>
             </bk-select>
             <span class="search-ip search-field">
@@ -72,8 +72,8 @@
         data () {
             return {
                 search: {
-                    plat: [{bk_inst_id: 0, bk_inst_name: '直连区域'}],
-                    selectedPlat: 0,
+                    plat: [],
+                    selectedPlat: -1,
                     ip: ''
                 },
                 result: {},
@@ -125,7 +125,7 @@
                 if (isShow) {
                     this.getHostAttribute()
                     this.getPropertyGroups()
-                    // this.getPlat()
+                    this.getPlat()
                 }
             },
             'search.ip' () {
@@ -162,17 +162,20 @@
             },
             getPlat () {
                 if (!this.search.plat.length) {
-                    this.$axios.post('inst/search/0/plat', {
+                    this.$axios.post(`inst/search/owner/${this.bkSupplierAccount}/object/plat`, {
                         condition: {},
                         fields: [],
-                        page: {sort: 'bk_inst_id'}
+                        page: {}
                     }).then(res => {
                         if (res.result) {
                             this.search.plat = res.data.info
+                            this.search.selectedPlat = 0
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
                     })
+                } else {
+                    this.search.selectedPlat = 0
                 }
             },
             getGroupName (groupId) {
@@ -294,11 +297,11 @@
             font-size: 14px;
         }
         .search-area{
-            width: 100px;
+            width: 150px;
         }
         .search-ip{
             position: relative;
-            width: 340px;
+            width: 390px;
             margin: 0 10px;
             .bk-form-input{
                 padding-right: 36px;
