@@ -73,7 +73,9 @@ func (cli *instAction) InstSearch(req *restful.Request, resp *restful.Response) 
 
 		} else {
 			condition := make(map[string]interface{}, 0)
-			condition[common.BKOwnerIDField] = ownerID
+			condition[common.BKOwnerIDField] = map[string]interface{}{
+				common.BKDBIN: []string{"", ownerID},
+			}
 			condition[common.BKObjIDField] = objID
 			searchParams["condition"] = condition
 			searchParams["fields"] = ""
