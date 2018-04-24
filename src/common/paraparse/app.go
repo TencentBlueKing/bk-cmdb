@@ -80,9 +80,14 @@ func ParseCommonParams(input []interface{}, output map[string]interface{}) error
 
 func SpeceialCharChange(targetStr string) string {
 
-	re := regexp.MustCompile("([\\^\\$\\(\\)\\*\\+\\?\\.\\\\\\|\\[\\]\\{\\}])")
+	re := regexp.MustCompile(`([\^\$\(\)\*\+\?\.\\\|\[\]\{\}])`)
 	delItems := re.FindAllString(targetStr, -1)
+	tmp := map[string]struct{}{}
 	for _, target := range delItems {
+		if _, ok := tmp[target]; ok {
+			continue
+		}
+		tmp[target] = struct{}{}
 		targetStr = strings.Replace(targetStr, target, fmt.Sprintf("\\\\%s", target), -1)
 	}
 
