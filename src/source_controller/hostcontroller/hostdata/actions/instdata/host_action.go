@@ -158,7 +158,7 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
-		data := common.KvMap{"key": dcCommon.REDIS_SNAP_KEY_PREFIX + hostID}
+		data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
 		var result interface{} = ""
 		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 
