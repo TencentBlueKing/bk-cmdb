@@ -50,7 +50,8 @@
             <v-cross-import  slot="content"
                 :is-show.sync="view.crossImport.isShow"
                 :bizId="tree.bkBizId"
-                :moduleId="tree.activeNode['bk_inst_id']">
+                :moduleId="tree.activeNode['bk_inst_id']"
+                @handleCrossImportSuccess="setSearchParams">
             </v-cross-import>
         </bk-dialog>
     </div>

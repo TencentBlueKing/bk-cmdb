@@ -12,7 +12,7 @@
                     v-model.trim="search.ip"
                     placeholder="请输入IP地址"
                     @keydown.enter="doSearch">
-                <i class="bk-icon icon-close-circle" v-show="search.ip.length" @click="search.ip = ''"></i>
+                <i class="bk-icon icon-close-circle" v-show="search.ip.length" @click="reset"></i>
             </span>
             <bk-button class="search-btn search-field" type="primary" :disabled="!isValidIp" @click="doSearch">查询</bk-button>
         </div>
@@ -43,7 +43,7 @@
             </div>
         </div>
         <div class="search-footer">
-            <bk-button type="primary" @click="doCrossImport">确定</bk-button>
+            <bk-button type="primary" @click="doCrossImport" :disabled="!Object.keys(result).length">确定</bk-button>
             <button class="bk-button vice-btn" @click="cancelCrossImport">取消</button>
         </div>
     </div>
@@ -195,6 +195,11 @@
                     return value
                 }
             },
+            reset () {
+                this.search.ip = ''
+                this.result = {}
+                this.resultPlat = 0
+            },
             doSearch () {
                 if (this.isValidIp) {
                     this.loading = true
@@ -242,15 +247,14 @@
                 }).then(res => {
                     if (res.result) {
                         this.$alertMsg('导入成功', 'success')
+                        this.$emit('handleCrossImportSuccess')
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
             },
             cancelCrossImport () {
-                this.search.ip = ''
-                this.search.selectedPlat = 0
-                this.result = {}
+                this.reset()
                 this.$emit('update:isShow', false)
             }
         }
@@ -384,5 +388,10 @@
         line-height: 60px;
         border-top: 1px solid #e5e5e5;
         background-color: #fafafa;
+        padding: 0 20px;
+        font-size: 0;
+        .bk-button{
+            margin: 0 0 0 20px;
+        }
     }
 </style>
