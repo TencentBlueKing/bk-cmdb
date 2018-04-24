@@ -1,5 +1,7 @@
 # CMDB 3.0 二次开发框架说明
 
+**注：功能还在开发中，此文档仅供参考，在开发过程中，最终发布之前此文档内列举的接口有可能会微调。**
+
 ## Inputer 接口声明
 
 接口声明如下：
@@ -13,8 +15,8 @@ type Inputer interface {
     // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
     Name() string
 
-    // Input the execution function
-    Input() interface{}
+    // Run the execution function
+    Run() interface{}
 	
     // Stop stop the Input function
     Stop() error
@@ -81,7 +83,7 @@ Inputer 是必须要自己实现的接口。
 >> - inst.Inst： 实例接口对象，包含对当前实例数据进行维护的接口。
 >> - error: 如果创建业务失败会返回错误。
 
-### 创建业务对象
+### 创建集群对象
 > 方法：CreateSet() (inst.Inst, error)
 > 
 > 参数：
@@ -102,6 +104,17 @@ Inputer 是必须要自己实现的接口。
 > 
 >> - inst.Inst： 实例接口对象，包含对当前实例数据进行维护的接口。
 >> - error: 如果创建模块失败会返回错误。
+
+### 创建主机对象
+> 方法：CreateHost()(inst.Inst, error) 
+> 
+> 参数：
+>> - 无输入参数
+>
+> 返回值：
+> 
+>> - inst.Inst： 实例接口对象，包含对当前实例数据进行维护的接口。
+>> - error: 如果创建业务失败会返回错误。
 
 ### 创建普通对象
 > 方法：CreateCommonInst(target model.Model) (inst.Inst, error)
@@ -319,7 +332,7 @@ func (cli *myInputer) Name() string {
 }
 
 // Input the input should not be blocked
-func (cli *myInputer) Input() interface{} {
+func (cli *myInputer) Run() interface{} {
    
     // 1. 构建模型分类
     // 2. 通过模型分类构建model
