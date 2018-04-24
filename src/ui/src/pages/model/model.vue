@@ -26,7 +26,6 @@
             </div>
         </div>
         <div class="right-contain clearfix">
-            <!-- <span class="icon-content icon-content-del" :class="{'is-disabled': curClassify.bk_classification_type === 'inner'}"  v-if="curClassify.bk_classification_type!=='inner'&&curClassify.ClassificationId!==''"  @click="deleteClassify(curClassify)"><i class="icon-cc-del cp f12" title="删除分类"  ></i></span> -->
             <div class="model-box clearfix" v-bkloading="{isLoading: isTopoLoading}">
                 <div class="model-diagram" v-if="curClassify['bk_classification_id']">
                     <div class="model-topo-box" v-show="topoList.length != 0 && !isCreateShow">
@@ -117,19 +116,6 @@
         @closeSlider="closeSliderConfirm">
             <div class="content slide-content clearfix" slot="content">
                 <bk-tab :active-name="curTabName" @tab-changed="tabChanged">
-                    <!-- <bk-tabpanel name="base-info" title="模型配置">
-                        <v-base-info ref="baseInfo"
-                        :isShow="isBusinessShow"
-                        :ClassificationId='curClassify.ClassificationId'
-                        :AssociationId="curInsertInfo.PreObjID"
-                        :type="curModel.type"
-                        :isReadOnly="isModelDetailReadOnly"
-                        :isMainLine="isMainLine"
-                        @baseInfoSuccess="baseInfoSuccess"
-                        @confirm="baseInfoSuccess"
-                        @cancel="cancel">
-                        </v-base-info>
-                    </bk-tabpanel> -->
                     <bk-tabpanel name="host" :title="$t('ModelManagement[\'模型配置\']')">
                         <v-field ref="field"
                         :bk_classification_id="curClassify['bk_classification_id']"
@@ -158,13 +144,6 @@
                         :isNewField="isNewField"
                         ></v-layout>
                     </bk-tabpanel>
-                    <!-- 后期迭代会用上 -->
-                    <!-- <bk-tabpanel name="rule" title="权限规则" :show="curModel.type==='change'">
-                        <v-rule></v-rule>
-                    </bk-tabpanel>
-                    <bk-tabpanel name="sort" title="排序" :show="curModel.type==='change'">
-                        <v-sort></v-sort>
-                    </bk-tabpanel> -->
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
                         <v-other
                             :parentClassificationId = "curClassify['bk_classification_id']"
@@ -377,12 +356,6 @@
             restartModelConfirm (item) {
                 this.isModelDetailReadOnly = true
                 this.editModel(item)
-                // this.$bkInfo({
-                //     title: '确认要启用该模型？',
-                //     confirmFn () {
-                //         self.restartModel(item)
-                //     }
-                // })
             },
             /*
                 重新启用模型
@@ -668,9 +641,6 @@
             */
             baseInfoSuccess (obj) {
                 if (this.curModel.type === 'new') {
-                    // if (this.insertType === '') {
-                    //     this.updateTopo()
-                    // }
                     this.getAllClassify()
                     this.curModel['id'] = obj['id']
                     this.sliderTitle.text = `${obj['bk_obj_name']})`

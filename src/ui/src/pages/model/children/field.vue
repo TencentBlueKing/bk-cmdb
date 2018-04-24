@@ -9,7 +9,7 @@
  */
 
 <template lang="html">
-    <div class="allField" @click="closePop">
+    <div class="allField">
         <v-base-info ref="baseInfo"
         :isShow="isShow"
         :objId="objId"
@@ -1406,9 +1406,6 @@
                     this.$refs.fileInput.value = ''
                     this.isLoading = false
                 })
-            },
-            closePop () {
-                this.$refs.baseInfo.closeDrop()
             },
             /*
                 保存基本信息成功
