@@ -61,6 +61,10 @@ func getInnerNameByObjectID(objID string) string {
 		return common.BKInnerObjIDApp
 	case common.BKInnerObjIDSet:
 		return common.BKInnerObjIDSet
+	case common.BKInnerObjIDPlat:
+		return common.BKInnerObjIDPlat
+	case common.BKInnerObjIDProc:
+		return common.BKInnerObjIDProc
 	default:
 		return common.BKINnerObjIDObject
 	}
