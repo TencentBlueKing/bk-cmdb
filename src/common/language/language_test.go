@@ -71,4 +71,11 @@ func TestLoad(t *testing.T) {
 	testKey = "test_key_format_int"
 	fmt.Printf("\ndefault[%s]%s\n\n", testKey, defaultLanguage.Languagef(testKey, 123))
 
+	testKey = "space    "
+	fmt.Printf("\ndefault key:%s  content:%s \n\n", testKey, defaultLanguage.Language(testKey))
+	testKey = "space    space"
+	fmt.Printf("\ndefault  key:%s  content:%s \n\n", testKey, defaultLanguage.Language(testKey))
+	testKey = "space    space_not_found"
+	fmt.Printf("\ndefault not found   key:%s  content:%s\n\n", testKey, defaultLanguage.Language(testKey))
+
 }

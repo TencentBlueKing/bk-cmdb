@@ -15,16 +15,17 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/util"
 	sencecommon "configcenter/src/scene_server/common"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"errors"
 	"fmt"
-
 	restful "github.com/emicklei/go-restful"
 )
 
 //getHostFields 获取主所有字段和默认值
-func getHostFields(ownerID, ObjAddr string) map[string]map[string]interface{} {
-	return GetObjectFields(ownerID, common.BKInnerObjIDHost, ObjAddr)
+func getHostFields(forward *sourceAPI.ForwardParam, ownerID, ObjAddr string) map[string]map[string]interface{} {
+	return GetObjectFields(forward, ownerID, common.BKInnerObjIDHost, ObjAddr)
 }
 
 //convertHostInfo convert host info，InnerIP+SubArea key map[string]interface
@@ -42,28 +43,32 @@ func convertHostInfo(hosts []interface{}) map[string]interface{} {
 //MoveHostToResourcePool move host to resource pool
 func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int, hostID []int) (interface{}, error) {
 	user := sencecommon.GetUserFromHeader(req)
+	language := util.GetActionLanguage(req)
+	//errHandle := CC.Error.CreateDefaultCCErrorIf(language)
+	langHandle := CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	conds := make(map[string]interface{})
 	conds[common.BKAppIDField] = appID
-	appinfo, err := GetAppInfo(req, common.BKOwnerIDField, conds, CC.ObjCtrl())
+	appinfo, err := GetAppInfo(req, common.BKOwnerIDField, conds, CC.ObjCtrl(), langHandle)
 	if err != nil {
 		return nil, err
 	}
 	ownerID := appinfo[common.BKOwnerIDField].(string)
 	if "" == ownerID {
-		return nil, errors.New("未找到资源池")
+		return nil, errors.New(langHandle.Language("host_resource_pool_not_exist")) // "未找到资源池")
 	}
 	//get default biz
-	ownerAppID, err := GetDefaultAppID(req, ownerID, common.BKAppIDField, CC.ObjCtrl())
+	ownerAppID, err := GetDefaultAppID(req, ownerID, common.BKAppIDField, CC.ObjCtrl(), langHandle)
 	if err != nil {
-		return nil, errors.New("获取资源池信息失败，" + err.Error())
+		return nil, errors.New(langHandle.Languagef("host_resource_pool_get_fail", err.Error()))
 
 	}
 	if 0 == appID {
-		return nil, errors.New("资源池不存在")
+		return nil, errors.New(langHandle.Language("host_resource_pool_not_exist")) // "未找到资源池")
+		//return nil, errors.New("资源池不存在")
 	}
 	if ownerAppID == appID {
-		return nil, errors.New("当前主机已经属于资源池，不需要转移")
+		return nil, errors.New(langHandle.Language("host_belong_resource_pool")) // "当前主机已经属于资源池，不需要转移")
 	}
 
 	//get resource set
@@ -73,7 +78,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	mconds[common.BKAppIDField] = ownerAppID
 	moduleID, err := GetSingleModuleID(req, mconds, CC.ObjCtrl())
 	if nil != err {
-		return nil, errors.New("获取资源池模块信息失败" + err.Error())
+		return nil, errors.New(langHandle.Languagef("host_resource_module_get_fail", err.Error())) //("获取资源池模块信息失败" + err.Error())
 	}
 
 	logClient, err := NewHostModuleConfigLog(req, nil, CC.HostCtrl(), CC.ObjCtrl(), CC.AuditCtrl())
@@ -84,9 +89,9 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	url := CC.HostCtrl() + "/host/v1/meta/hosts/resource"
 	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPUpdate, conds)
 	if !isSucess {
-		return data, errors.New("更新主机关系失败;" + errmsg)
+		return data, errors.New(langHandle.Languagef("host_move_to_resource", errmsg)) //"更新主机关系失败;" + errmsg)
 	}
-	logClient.SetDescSuffix("; 转移主机到资源池")
+	logClient.SetDesc("move host to resource pool")
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 
 	return data, err

@@ -12,33 +12,34 @@
     <div class="table-page-contain clearfix" :class="{'empty': !tableList.length}">
         <div v-show="tableList.length" class="clearfix page-info-box">
             <div class="page-info fl">
-                <span class="mr20" v-if="hasCheckbox">已选{{chooseId.length}}行</span>
-                <span>第&nbsp;{{pagination.current}}&nbsp;页&nbsp;/&nbsp;总&nbsp;{{totalPage}}&nbsp;页</span>
+                <span class="mr20" v-if="hasCheckbox">{{$tc('Common["已选N行"]', chooseId.length, {N: chooseId.length})}}</span>
+                <span>{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
                 <span class="ml20 mr20">
-                    每页显示<span class="select_page_setting mr5">
-                        <bk-select class="select-box" ref="sizeSelector"
-                            :selected.sync="defaultSize" 
-                            :list="pagelist">
-                            <bk-select-option v-for="(option, index) in pagelist" 
-                                :key="index" 
-                                :value="option.value" 
-                                :label="option.label">
-                            </bk-select-option>
-                        </bk-select>
-                    </span>
-                    行
+                    <i18n path="Common['每页显示']" tag="span">
+                        <span class="select_page_setting mr5" place="page">
+                            <bk-select class="select-box" ref="sizeSelector"
+                                :selected.sync="defaultSize" 
+                                :list="pagelist">
+                                <bk-select-option v-for="(option, index) in pagelist" 
+                                    :key="index" 
+                                    :value="option.value" 
+                                    :label="option.label">
+                                </bk-select-option>
+                            </bk-select>
+                        </span>
+                    </i18n>
                 </span>
             </div>
             <div class="bk-page bk-page-compact fr">
                 <ul class="pagination">
-                    <li title="首页" :class="['page-item', {'disabled': pagination.current === 1}]" v-show="pagination.current !== 1">
+                    <li :title="$t('Common[\'首页\']')" :class="['page-item', {'disabled': pagination.current === 1}]" v-show="pagination.current !== 1">
                         <button class="page-button" style="font-size: 12px;" 
                             :disabled="pagination.current === 1" 
                             @click="turnToPage(1)">
                             <i class="icon-cc-backward"></i>
                         </button>
                     </li>
-                    <li title="上一页" :class="['page-item', {'disabled': pagination.current === 1}]" v-show="pagination.current !== 1">
+                    <li :title="$t('Common[\'上一页\']')" :class="['page-item', {'disabled': pagination.current === 1}]" v-show="pagination.current !== 1">
                         <button class="page-button" 
                             :disabled="pagination.current === 1" 
                             @click="turnToPage(pagination.current - 1)">
@@ -47,7 +48,7 @@
                     </li>
                     <li class="page-item"
                         v-for="(page, index) in pageNum"
-                        :title="`第${page}页`"
+                        :title="`${page}`"
                         :class="{'cur-page':pagination.current === page}"  
                         :key="index">
                         <button class="page-button" 
@@ -55,14 +56,14 @@
                             {{page}}
                         </button>
                     </li>
-                    <li title="下一页" :class="['page-item', {'disabled': pagination.current === totalPage}]" v-show="pagination.current !== totalPage">
+                    <li :title="$t('Common[\'下一页\']')" :class="['page-item', {'disabled': pagination.current === totalPage}]" v-show="pagination.current !== totalPage">
                         <button class="page-button"
                             :disabled="pagination.current === totalPage"
                             @click="turnToPage(pagination.current + 1)">
                             <i class="icon-cc-angle-right"></i>
                         </button>
                     </li>
-                    <li title="尾页" :class="['page-item', {'disabled': pagination.current === totalPage}]" v-show="pagination.current !== totalPage">
+                    <li :title="$t('Common[\'尾页\']')" :class="['page-item', {'disabled': pagination.current === totalPage}]" v-show="pagination.current !== totalPage">
                         <button class="page-button" style="font-size: 12px;" 
                             :disabled="pagination.current === totalPage" 
                             @click="turnToPage(totalPage)">
@@ -76,6 +77,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             tableList: {
@@ -98,6 +100,9 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'language'
+            ]),
             totalPage () {
                 return Math.ceil(this.pagination.count / this.pagination.size)
             },

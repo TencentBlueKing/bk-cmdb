@@ -80,10 +80,10 @@ func (r *RegDiscover) Start() error {
 		if module == types.CC_MODULE_APISERVER {
 			continue
 		}
-		modulePath := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_HOST
+		modulePath := types.CC_SERV_BASEPATH + "/" + module //types.CC_MODULE_HOST
 		rdEvent, err := r.rd.DiscoverService(modulePath)
 		if err != nil {
-			blog.Errorf("fail to register discover for host_server. err:%s", err.Error())
+			blog.Errorf("fail to register discover for %s. err:%s", module, err.Error())
 			return err
 		}
 		go r.discover(module, rdEvent)
@@ -138,7 +138,6 @@ func (r *RegDiscover) discover(module string, rdEvent <-chan *RegisterDiscover.D
 
 			hosts = append(hosts, host)
 		}
-
 		r.serverLock.Lock()
 		r.servers[module] = hosts
 		r.serverLock.Unlock()

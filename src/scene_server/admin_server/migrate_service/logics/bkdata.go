@@ -95,7 +95,11 @@ func BKAppInit(req *restful.Request, cc *api.APIResource, ownerID string) error 
 			return err
 		}
 
-		addBKProcess(req)
+		err = addBKProcess(req)
+		if nil != err {
+			blog.Error("add bk process err :%v ", err)
+			return err
+		}
 	}
 	return nil
 
@@ -108,11 +112,12 @@ func addBKApp(req *restful.Request) error {
 
 	if data.Distribution == common.RevisionEnterprise {
 		appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
-		appModelData[common.BKLanguageField] = "中文"
+		appModelData[common.BKLanguageField] = "1" //"中文"
 	} else {
 		delete(appModelData, common.BKTimeZoneField)
 		delete(appModelData, common.BKLanguageField)
 	}
+	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(appModelData)
 	url := topoAPI + "/topo/v1/app/" + ownerID

@@ -21,6 +21,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/host_service/logics"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -1282,7 +1283,8 @@ func updateHostMain(req *restful.Request, hostCondition, data map[string]interfa
 	}
 
 	language := util.GetActionLanguage(req)
-	valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr}, errIf.CreateDefaultCCErrorIf(language))
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr}, forward, errIf.CreateDefaultCCErrorIf(language))
 	ok, validErr := valid.ValidMap(data, common.ValidUpdate, hostIDArr[0])
 	if false == ok && nil != validErr {
 		blog.Error("updateHostMain error: %v", validErr)

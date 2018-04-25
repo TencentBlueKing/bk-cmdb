@@ -16,22 +16,34 @@ import router from './router'
 import store from './store'
 import VueI18n from 'vue-i18n'
 
-import VeeValidate, {Validator} from 'vee-validate'
-import zh from 'vee-validate/dist/locale/zh_CN'
+import VeeValidate from 'vee-validate'
 import dictionary from './common/js/Validator'
 import bkMagic from './magicbox/bk-magic'
 
 import i18nConfig from './common/js/i18n'
 import VTooltip from 'v-tooltip'
 import vClickOutside from 'v-click-outside'
+import Cookies from 'js-cookie'
 import moment from 'moment'
 import '@/api/axios'
 
+const languageTranslate = {
+    'zh_cn': 'zh_CN',
+    'zh-cn': 'zh_CN',
+    'zh': 'zh_CN'
+}
+const bkMagicLang = {
+    'zh_CN': 'zh',
+    'en': 'en'
+}
+let language = Cookies.get('blueking_language') || 'zh_CN'
+language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
+document.body.setAttribute('lang', language)
 Vue.use(VTooltip)
 Vue.use(vClickOutside)
 Vue.use(VueI18n)
 Vue.use(bkMagic)
-Vue.use(VeeValidate, {locale: 'zh_CN'})
+Vue.use(VeeValidate, {locale: language})
 
 Vue.directive('focus', {
     update (el, binding) {
@@ -40,7 +52,6 @@ Vue.directive('focus', {
         }
     }
 })
-Validator.localize(zh)
 
 Vue.config.productionTip = false
 
@@ -74,9 +85,13 @@ let vm = new Vue({
     router,
     template: '<App/>',
     i18n: new VueI18n({
-        locale: 'zh',
-        messages: i18nConfig
+        locale: language,
+        messages: i18nConfig,
+        fallbackLocal: 'zh_CN'
     }),
     store,
-    components: { App }
+    components: { App },
+    created () {
+        this.setLang(bkMagicLang[language])
+    }
 })
