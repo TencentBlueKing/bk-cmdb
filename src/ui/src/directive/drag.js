@@ -44,8 +44,8 @@ let install = Vue => {
 
                     moveX = positionX + mouseX - mousedownX
                     moveY = positionY + mouseY - mousedownY
-                    target.style.left = moveX + 'px'
-                    target.style.top = moveY + 'px'
+                    target.style.left = `${moveX}px`
+                    target.style.top = `${moveY}px`
                 }
                 return false
             })
