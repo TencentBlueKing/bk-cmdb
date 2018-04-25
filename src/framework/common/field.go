@@ -51,14 +51,14 @@ func (cli *field) ToMapStr() types.MapStr {
 
 // Eqset a filed equal a value
 func (cli *field) Eq(val interface{}) Condition {
-	cli.opeartor = "$eq"
+	cli.opeartor = cccommon.BKDBEQ
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // NotEq set a filed equal a value
 func (cli *field) NotEq(val interface{}) Condition {
-	cli.opeartor = "$ne"
+	cli.opeartor = cccommon.BKDBNE
 	cli.fieldValue = val
 	return cli.condition
 }
@@ -72,42 +72,42 @@ func (cli *field) Like(val interface{}) Condition {
 
 // In in a array
 func (cli *field) In(val interface{}) Condition {
-	cli.opeartor = "$in"
+	cli.opeartor = cccommon.BKDBIN
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // NotIn not in a array
 func (cli *field) NotIn(val interface{}) Condition {
-	cli.opeartor = "$nin"
+	cli.opeartor = cccommon.BKDBNIN
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // Lt lower than a  value
 func (cli *field) Lt(val interface{}) Condition {
-	cli.opeartor = "$lt"
+	cli.opeartor = cccommon.BKDBLT
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // Lte lower or equal than a value
 func (cli *field) Lte(val interface{}) Condition {
-	cli.opeartor = "$lte"
+	cli.opeartor = cccommon.BKDBLTE
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // Gt greater than a value
 func (cli *field) Gt(val interface{}) Condition {
-	cli.opeartor = "$ge"
+	cli.opeartor = cccommon.BKDBGT
 	cli.fieldValue = val
 	return cli.condition
 }
 
 // Gte greater or euqal than a value
 func (cli *field) Gte(val interface{}) Condition {
-	cli.opeartor = "$gte"
+	cli.opeartor = cccommon.BKDBGTE
 	cli.fieldValue = val
 	return cli.condition
 }
