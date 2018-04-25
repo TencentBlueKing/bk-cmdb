@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	dccommon "configcenter/src/scene_server/datacollection/common"
 	"configcenter/src/scene_server/datacollection/datacollection/logics"
 	"configcenter/src/source_controller/common/instdata"
 	"fmt"
@@ -46,10 +47,12 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	if nil != err {
 		return err
 	}
+	dccommon.Snapcli = snapcli
 	rediscli, err := getSnapClient(config, "redis")
 	if nil != err {
 		return err
 	}
+	dccommon.Rediscli = rediscli
 	chanName := ""
 	for {
 		chanName, err = getChanName()
@@ -70,7 +73,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 func getChanName() (string, error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
-	if err := instdata.GetObjectByCondition(common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
+	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
 		return "", err
 	}
 	if len(results) <= 0 {

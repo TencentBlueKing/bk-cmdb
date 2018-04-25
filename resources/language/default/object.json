@@ -1,0 +1,9 @@
+{
+    "object_host": "主机",
+    "object_biz": "业务",
+    "object_set": "集群",
+    "object_module": "模块",
+    "object_process": "进程",
+    "object_plat": "子网区域",
+    "": ""
+}

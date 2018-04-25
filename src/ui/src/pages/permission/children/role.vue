@@ -13,17 +13,17 @@
         <div class="role-options clearfix">
             <div class="role-options-search fl clearfix">
                 <div class="search-group fl">
-                    <label for="searchGroupName">角色名搜索</label>
+                    <label for="searchGroupName">{{$t('Permission["角色名搜索"]')}}</label>
                     <input class="bk-form-input" type="text" id="searchGroupName" v-model.trim="filter['group_name']" @keyup.enter="getRoleList">
                 </div>
                 <div class="search-group fl">
-                    <label for="SearchUserName">成员搜索</label>
+                    <label for="SearchUserName">{{$t('Permission["成员搜索"]')}}</label>
                     <input class="bk-form-input" type="text" id="SearchUserName" v-model.trim="filter['user_list']" @keyup.enter="getRoleList">
                 </div>
             </div>
             <div class="role-options-create fr">
                 <bk-button type="primary" @click.prevent="createRole">
-                    新增角色
+                    {{$t('Permission["新增角色"]')}}
                 </bk-button>
             </div>
         </div>
@@ -88,13 +88,13 @@
                 table: {
                     header: [{
                         id: 'group_name',
-                        name: '角色名称'
+                        name: this.$t('Permission["角色名称"]')
                     }, {
                         id: 'user_list',
-                        name: '成员'
+                        name: this.$t('Permission["成员"]')
                     }, {
                         id: 'operation',
-                        name: '操作',
+                        name: this.$t('Permission["操作"]'),
                         attr: {
                             align: 'center'
                         }
@@ -105,10 +105,28 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount'
+                'bkSupplierAccount',
+                'language'
             ]),
             hasFilter () {
                 return this.filter.group_name !== '' || this.filter.user_list !== ''
+            }
+        },
+        watch: {
+            'language' () {
+                this.table.header = [{
+                    id: 'group_name',
+                    name: this.$t('Permission["角色名称"]')
+                }, {
+                    id: 'user_list',
+                    name: this.$t('Permission["成员"]')
+                }, {
+                    id: 'operation',
+                    name: this.$t('Permission["操作"]'),
+                    attr: {
+                        align: 'center'
+                    }
+                }]
             }
         },
         methods: {
@@ -142,7 +160,7 @@
                 this.form.isShow = true
             },
             confirmDeleteRole (role) {
-                this.deleteInfo.content = `确定删除角色${role['group_name']}？`
+                this.deleteInfo.content = this.$tc('Permission["确认删除角色"]', role['group_name'], {name: role['group_name']})
                 this.deleteInfo.role = role
                 this.deleteInfo.isShow = true
             },
@@ -152,7 +170,7 @@
             deleteRole (role) {
                 this.$axios.delete(`topo/privilege/group/${this.bkSupplierAccount}/${role['group_id']}`).then((res) => {
                     if (res.result) {
-                        this.$alertMsg('删除成功', 'success')
+                        this.$alertMsg(this.$t('Permission["删除成功"]'), 'success')
                         this.getRoleList()
                     } else {
                         this.$alertMsg(res['bk_error_msg'])

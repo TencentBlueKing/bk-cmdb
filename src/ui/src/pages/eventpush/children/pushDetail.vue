@@ -14,24 +14,24 @@
             <form id="validate-event">
                 <div class="form-item">
                     <label for="" class="label-name">
-                        推送名称<span class="color-danger">*</span>
+                        {{$t('EventPush["推送名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" placeholder="请输入推送名称"
+                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
-                            data-vv-name="推送名称"
+                            :data-vv-name="$t('EventPush[\'推送名称\']')"
                             v-validate="'required'"
                         >
-                        <span v-show="errors.has('推送名称')" class="color-danger">{{ errors.first('推送名称') }}</span>
+                        <span v-show="errors.has($t('EventPush[\'推送名称\']'))" class="color-danger">{{ errors.first($t('EventPush[\'推送名称\']')) }}</span>
                     </div>
                 </div>
                 <div class="form-item">
                     <label for="" class="label-name">
-                        系统名称
+                        {{$t('EventPush["系统名称"]')}}
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" placeholder="请输入系统名称"
+                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
                             v-model.trim="tempEventData['system_name']"
                         >
                     </div>
@@ -41,61 +41,63 @@
                         URL<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" placeholder="请输入URL"
+                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                             v-model.trim="tempEventData['callback_url']"
                             v-validate="'required|http'"
                             data-vv-name="http"
                         >
                         <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
                     </div>
-                    <bk-button class="fl" type="default" style="margin-left:10px" @click.prevent="testPush">测试推送</bk-button>
+                    <bk-button class="fl" type="default" style="margin-left:10px" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                 </div>
                 <div class="form-item">
                     <label for="" class="label-name">
-                        成功确认方式<span class="color-danger">*</span>
+                        {{$t('EventPush["成功确认方式"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
                         <label for="http" class="bk-form-radio bk-radio-small">
                             <input type="radio" name="confimType" id="http" value="httpstatus"
                                 v-model="tempEventData['confirm_mode']"
-                            >HTTP状态
+                            >{{$t('EventPush["HTTP状态"]')}}
                         </label>
                         <label for="reg" class="bk-form-radio bk-radio-small">
                             <input type="radio" name="confimType" id="reg" value="regular"
                                 v-model="tempEventData['confirm_mode']"
-                            >正则验证
+                            >{{$t('Common["正则验证"]')}}
                         </label>
-                        <input type="text" class="bk-form-input" placeholder="请输入正则验证"
+                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                             v-if="tempEventData['confirm_mode'] === 'regular'"
                             v-model.trim="tempEventData['confirm_pattern']['regular']"
-                            data-vv-name="该字段"
+                            :data-vv-name="$t('ModelManagement[\'该字段\']')"
                             v-validate="'required'"
                         >
-                        <input type="text" class="bk-form-input number" placeholder="成功标志"
+                        <input type="text" class="bk-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
                             v-else
                             v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
-                            data-vv-name="该字段"
+                            :data-vv-name="$t('Common[\'该字段\']')"
                         >
-                        <span v-show="errors.has('该字段')" class="color-danger">{{ errors.first('该字段') }}</span>
+                        <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
                     </div>
                 </div>
                 <div class="form-item">
                     <label for="" class="label-name">
-                        超时时间<span class="color-danger">*</span>
+                        {{$t('EventPush["超时时间"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content length-short">
-                        <input type="text" class="bk-form-input" placeholder="单位：秒"
+                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
                             v-model.trim="tempEventData['time_out']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
-                            data-vv-name="超时时间"
+                            :data-vv-name="$t('EventPush[\'超时时间\']')"
                             maxlength="10"
                         ><span class="unit">S</span>
-                        <div v-show="errors.has('超时时间')" class="color-danger">{{ errors.first('超时时间') }}</div>
+                        <div v-show="errors.has($t('EventPush[\'超时时间\']'))" class="color-danger">{{ errors.first($t('EventPush[\'超时时间\']')) }}</div>
                     </div>
                 </div>
             </form>
-            <div class="info"><span :class="{'text-danger': subscriptionFormError}">至少选择1个事件</span>，已选择 <span class="num">{{selectNum}}</span> 个</div>
+            <div class="info">
+                <span :class="{'text-danger': subscriptionFormError}">{{$t('EventPush["至少选择1个事件"]')}}</span>，<i18n path="EventPush['已选择']"><span class="num" place="number">{{selectNum}}</span></i18n>
+            </div>
             <ul class="event-wrapper">
                 <li class="event-box clearfix"
                     :key="index"
@@ -115,19 +117,19 @@
                                                 <input type="checkbox"
                                                 value="hostall"
                                                 :checked="tempEventData['subscription_form'][item.id].length == 2"
-                                                id="hostall" @change="checkAll('host')"><i class="bk-checkbox-text" title="全选">全选</i>
+                                                id="hostall" @change="checkAll('host')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                             </label>
                                             <label for="hostcreate" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
                                                 v-model="tempEventData['subscription_form'][item.id]"
                                                 value="hostcreate"
-                                                id="hostcreate"><i class="bk-checkbox-text" title="新增主机">新增主机</i>
+                                                id="hostcreate"><i class="bk-checkbox-text" :title="$t('EventPush[\'新增主机\']')">{{$t('EventPush["新增主机"]')}}</i>
                                             </label>
                                             <label for="hostdelete" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
                                                 value="hostdelete"
                                                 v-model="tempEventData['subscription_form'][item.id]"
-                                                id="hostdelete"><i class="bk-checkbox-text" title="删除主机">删除主机</i>
+                                                id="hostdelete"><i class="bk-checkbox-text" :title="$t('EventPush[\'删除主机\']')">{{$t('EventPush["删除主机"]')}}</i>
                                             </label>
                                         </div>
                                     </template>
@@ -138,19 +140,19 @@
                                                 <input type="checkbox"
                                                 :value="'moduleall'"
                                                 :checked="tempEventData['subscription_form'][item.id].length == 2"
-                                                :id="'moduleall'" @change="checkAll('module')"><i class="bk-checkbox-text" title="全选">全选</i>
+                                                :id="'moduleall'" @change="checkAll('module')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                             </label>
                                             <label :for="item.id+'update'" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
                                                 v-model="tempEventData['subscription_form'][item.id]"
                                                 :value="item.id+'update'"
-                                                :id="item.id+'update'"><i class="bk-checkbox-text" title="编辑">编辑</i>
+                                                :id="item.id+'update'"><i class="bk-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                             </label>
                                             <label for="moduletransfer" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
                                                 value="moduletransfer"
                                                 v-model="tempEventData['subscription_form'][item.id]"
-                                                id="moduletransfer"><i class="bk-checkbox-text" title="模块转移">模块转移</i>
+                                                id="moduletransfer"><i class="bk-checkbox-text" :title="$t('EventPush[\'模块转移\']')">{{$t('EventPush["模块转移"]')}}</i>
                                             </label>
                                         </div>
                                     </template>
@@ -163,25 +165,25 @@
                                             :value="item.id+'all'"
                                             @change="checkAll(item.id)"
                                             :checked="tempEventData['subscription_form'][item.id].length == 3"
-                                            :id="item.id+'all'"><i class="bk-checkbox-text" title="全选">全选</i>
+                                            :id="item.id+'all'"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
                                         <label :for="item.id+'create'" class="bk-form-checkbox bk-checkbox-small">
                                             <input type="checkbox"
                                             v-model="tempEventData['subscription_form'][item.id]"
                                             :value="item.id+'create'"
-                                            :id="item.id+'create'"><i class="bk-checkbox-text" title="新增">新增</i>
+                                            :id="item.id+'create'"><i class="bk-checkbox-text" :title="$t('Common[\'新增\']')">{{$t('Common["新增"]')}}</i>
                                         </label>
                                         <label :for="item.id+'update'" class="bk-form-checkbox bk-checkbox-small">
                                             <input type="checkbox"
                                             :value="item.id+'update'"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            :id="item.id+'update'"><i class="bk-checkbox-text" title="编辑">编辑</i>
+                                            :id="item.id+'update'"><i class="bk-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                         </label>
                                         <label :for="item.id+'delete'" class="bk-form-checkbox bk-checkbox-small">
                                             <input type="checkbox"
                                             :value="item.id+'delete'"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            :id="item.id+'delete'"><i class="bk-checkbox-text" title="删除">删除</i>
+                                            :id="item.id+'delete'"><i class="bk-checkbox-text" :title="$t('Common[\'删除\']')">{{$t('Common["删除"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
@@ -192,8 +194,8 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" class="btn" @click="save">保存</bk-button>
-            <bk-button type="default" class="btn vice-btn" @click="cancel">取消</bk-button>
+            <bk-button type="primary" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
         <div class="pop-master" v-show="isPopShow">
             <v-pop
@@ -253,7 +255,8 @@
         computed: {
             ...mapGetters([
                 'bkSupplierAccount',
-                'allClassify'
+                'allClassify',
+                'language'
             ]),
             /*
                 推送事件已选数量
@@ -391,7 +394,7 @@
                             data: params
                         }).then(res => {
                             if (res.result) {
-                                this.$alertMsg('保存成功', 'success')
+                                this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')
                                 this.eventData = {...this.tempEventData}
                                 if (this.type === 'add') {
                                     this.$emit('saveSuccess', res.data['subscription_id'])
@@ -436,13 +439,13 @@
                 eventPushList.unshift({
                     isDefault: true,
                     isHidden: false,
-                    name: '主机业务',
+                    name: this.$t('EventPush["主机业务"]'),
                     children: [{
                         id: 'host',   // 该名字只是为了做区分
-                        name: '资源池'
+                        name: this.$t('EventPush["资源池"]')
                     }, {
                         id: 'module',     // 该名字只是为了做区分
-                        name: '主机'
+                        name: this.$t('EventPush["主机"]')
                     }]
                 })
                 this.eventPushList = eventPushList
