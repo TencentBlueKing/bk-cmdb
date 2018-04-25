@@ -234,8 +234,8 @@
             .classify-model-link{
                 display: inline-block;
                 vertical-align: middle;
-                max-width: 70px;
-                margin: 0 18px;
+                max-width: 62px;
+                margin: 0 12px;
                 color: $textColor;
                 @include ellipsis;
                 &:hover{
