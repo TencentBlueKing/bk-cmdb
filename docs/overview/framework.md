@@ -32,7 +32,7 @@ Inputer 是必须要自己实现的接口。
 ## API List
 
 ### 创建构造查询条件对象，用于构建查询条件
-> 方法：CreateCondition(tableName string) *common.Condition
+> 方法：CreateCondition() *common.Condition
 > 
 > 参数：
 > 
