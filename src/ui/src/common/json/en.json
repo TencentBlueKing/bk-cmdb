@@ -76,7 +76,10 @@
         "已删除历史": "Deleted History",
         "返回": "Back",
         "查看删除历史": "Deleted History",
-        "中文名": "Description"
+        "中文名": "Description",
+        "复制": "Copy",
+        "复制成功": "Copy Success",
+        "复制失败": "Copy Fail"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
