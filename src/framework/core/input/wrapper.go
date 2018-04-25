@@ -37,5 +37,5 @@ func (cli *wrapInputer) Run() interface{} {
 }
 
 func (cli *wrapInputer) Stop() {
-	//cli.inputer.Stop()
+	cli.inputer.Stop()
 }

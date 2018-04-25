@@ -54,10 +54,14 @@ func (cli *manager) RemoveInputer(key InputerKey) {
 // Stop used to stop the business cycles.
 func (cli *manager) Stop() error {
 
+	// stop the main loop
+	if nil != cli.cancel {
+		cli.cancel()
+	}
 	// stop the all Inputers
 	cli.inputerLock.Lock()
-	for _, Inputer := range cli.inputers {
-		Inputer.Stop()
+	for _, inputer := range cli.inputers {
+		inputer.Stop()
 	}
 	cli.inputerLock.Unlock()
 
