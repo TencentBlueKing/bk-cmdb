@@ -30,38 +30,53 @@
             </div>
         </slot>
         <div class="table-container">
-            <slot name="btnGroup">
-                <div class="btn-group clearfix">
-                    <button class="bk-button bk-default"
-                        :disabled="!table.chooseId.length" 
-                        @click="multipleUpdate">
-                        <i class="icon-cc-edit"></i>
-                        <span>{{$t("BusinessTopology['修改']")}}</span>
-                    </button>
-                    <button class="bk-button"
-                        :disabled="!table.chooseId.length"
-                        @click="transferHost">
-                        <i class="icon-cc-shift"></i>
-                        <span>{{$t("BusinessTopology['转移']")}}</span>
-                    </button>
-                    <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
-                        <input type="hidden" name="bk_host_id" :value="table.chooseId">
-                        <input type="hidden" name="bk_biz_id" value="-1">
+            <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
+                <bk-dropdown-menu ref="dropdown" class="mr10">
+                    <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
+                        <span>{{$t('Common["复制"]')}}</span>
+                        <i :class="['bk-icon icon-angle-down',{'icon-flip': isDropdownShow}]"></i>
+                    </bk-button>
+                    <ul class="bk-dropdown-list" slot="dropdown-content">
+                        <template v-for="(item, index) in table.tableHeader">
+                            <li v-if="index">
+                                <a href="javascript:;" class="copy" :data-clipboard-text="getClipText(item)">{{item.name}}</a>
+                            </li>
+                        </template>
+                    </ul>
+                </bk-dropdown-menu>
+                <slot name="btnGroup">
+                    <div class="btn-group clearfix">
+                        <button class="bk-button bk-default"
+                            :disabled="!table.chooseId.length" 
+                            @click="multipleUpdate">
+                            <i class="icon-cc-edit"></i>
+                            <span>{{$t("BusinessTopology['修改']")}}</span>
+                        </button>
                         <button class="bk-button"
                             :disabled="!table.chooseId.length"
-                            @click.prevent="exportChoose">
-                            <i class="icon-cc-derivation"></i>
-                            <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                            @click="transferHost">
+                            <i class="icon-cc-shift"></i>
+                            <span>{{$t("BusinessTopology['转移']")}}</span>
                         </button>
-                    </form>
-                    <button class="bk-button button-setting" @click="setTableField">
-                        <i class="icon-cc-setting"></i>
-                    </button>
-                    <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
-                        {{$t("HostResourcePool['刷新查询']")}}
-                    </bk-button>
-                </div>
-            </slot>
+                        <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
+                            <input type="hidden" name="bk_host_id" :value="table.chooseId">
+                            <input type="hidden" name="bk_biz_id" value="-1">
+                            <button class="bk-button"
+                                :disabled="!table.chooseId.length"
+                                @click.prevent="exportChoose">
+                                <i class="icon-cc-derivation"></i>
+                                <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                            </button>
+                        </form>
+                        <button class="bk-button button-setting" @click="setTableField">
+                            <i class="icon-cc-setting"></i>
+                        </button>
+                        <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
+                            {{$t("HostResourcePool['刷新查询']")}}
+                        </bk-button>
+                    </div>
+                </slot>
+            </div>
             <v-table class="index-table"
                 ref="indexTable"
                 :tableHeader="table.tableHeader"
@@ -176,6 +191,7 @@
     import vHost from './children/host'
     import vRouter from './children/router'
     import bus from '@/eventbus/bus'
+    import Clipboard from 'clipboard'
     export default {
         props: {
             outerParams: {
@@ -217,6 +233,9 @@
         },
         data () {
             return {
+                isDropdownShow: false,
+                selectedList: [],
+                forSelectedList: [],
                 bkBizId: '',
                 table: {
                     tableHeader: [],
@@ -373,7 +392,8 @@
             outerParams () {
                 this.setTableCurrentPage(1)
             },
-            'table.chooseId' (chooseId) {
+            'table.chooseId' (chooseId, oldVal) {
+                this.setSelectedList(chooseId, oldVal)
                 this.$emit('choose', chooseId)
             },
             attrLoaded (attrLoaded) {
@@ -392,6 +412,34 @@
             }
         },
         methods: {
+            getClipText (item) {
+                let text = []
+                this.selectedList.map(selected => {
+                    let value = this.getCellValue(item.property, selected)
+                    if (value) {
+                        text.push(value)
+                    }
+                })
+                return text.join(',')
+            },
+            setSelectedList (newId, oldId) {
+                let diffIdList = newId.concat(oldId).filter(id => !newId.includes(id) || !oldId.includes(id))
+                if (newId.length > oldId.length) {
+                    let list = this.forSelectedList.filter(li => {
+                        return diffIdList.findIndex(id => {
+                            return id === li.host['bk_host_id']
+                        }) !== -1
+                    })
+                    this.selectedList = this.selectedList.concat(list)
+                } else {
+                    let list = this.selectedList.filter(li => {
+                        return diffIdList.findIndex(id => {
+                            return id === li.host['bk_host_id']
+                        }) === -1
+                    })
+                    this.selectedList = list
+                }
+            },
             closeSliderConfirm () {
                 this.sideslider.isCloseConfirmShow = this.$refs.hostAttribute.isCloseConfirmShow()
             },
@@ -697,6 +745,7 @@
                     if (res.result) {
                         this.table.pagination.count = res.data.count
                         this.table.tableList = res.data.info
+                        this.forSelectedList = this.$deepClone(res.data.info)
                         this.historyParams = {
                             content: JSON.stringify(this.searchParams)
                         }
@@ -779,17 +828,18 @@
                     let allHostId = []
                     let searchParams = JSON.parse(this.historyParams['content'])
                     searchParams.page = {}
-                    searchParams.condition.map(({bk_obj_id: bkObjId, fields}) => {
-                        if (bkObjId === 'host') {
-                            fields.push('bk_host_id')
-                        }
-                    })
+                    // searchParams.condition.map(({bk_obj_id: bkObjId, fields}) => {
+                    //     if (bkObjId === 'host') {
+                    //         fields.push('bk_host_id')
+                    //     }
+                    // })
                     this.table.isLoading = true
                     this.$axios.post('hosts/search/', searchParams).then(res => {
                         if (res.result) {
                             res.data.info.forEach((item, index) => {
                                 allHostId.push(item['host']['bk_host_id'])
                             })
+                            this.forSelectedList = res.data.info
                             this.table.chooseId = allHostId
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
@@ -877,6 +927,15 @@
                     this.setTableCurrentPage(1)
                 })
             })
+            this.$nextTick(() => {
+                let clipboard = new Clipboard('.copy')
+                clipboard.on('success', () => {
+                    this.$alertMsg(this.$t('Common["复制成功"]'), 'success')
+                })
+                clipboard.on('error', () => {
+                    this.$alertMsg(this.$t('Common["复制失败"]'))
+                })
+            })
         },
         components: {
             vTable,
@@ -902,7 +961,14 @@
     padding: 20px;
     height: 100%;
     overflow: hidden;
+    .dropdown-btn{
+        width: 100px;
+        cursor: default;
+    }
     .btn-group{
+        display: inline-block;
+        width: calc(100% - 110px);
+        vertical-align: middle;
         font-size: 0;
         .bk-button{
             font-size: 14px;

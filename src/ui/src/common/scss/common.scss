@@ -729,3 +729,11 @@ body[lang="en"]{
 .bk-date .date-dropdown-panel{
     z-index: 1111;
 }
+.btn-wrapper {
+    font-size: 0;
+    &.disabled {
+        .bk-dropdown-content{
+            display: none !important;
+        }
+    }
+}
