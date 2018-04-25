@@ -85,8 +85,8 @@
                                                 data-parsley-required="true"
                                                 :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
                                                 data-parsley-maxlength="20"
-                                                data-parsley-pattern="^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,15}$"
-                                                :data-parsley-pattern-message="$t('ModelManagement[\'包含了非下划线的特殊字符\']')"
+                                                :data-parsley-pattern="reg"
+                                                :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
                                                 data-parsley-trigger="input blur"
                                                 >
                                             </div>
