@@ -57,13 +57,13 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 }
 
 //GetObjectFields get object fields
-func GetObjectFields(ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
+func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
 	data := make(map[string]interface{})
 	data[common.BKOwnerIDField] = ownerID
 	data[common.BKObjIDField] = objID
 	info, _ := json.Marshal(data)
 	client := sourceAPI.NewClient(ObjAddr)
-	result, _ := client.SearchMetaObjectAtt([]byte(info))
+	result, _ := client.SearchMetaObjectAtt(forward, []byte(info))
 	fields := make(map[string]map[string]interface{})
 	for _, j := range result {
 		propertyID := j.PropertyID

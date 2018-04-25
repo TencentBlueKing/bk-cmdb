@@ -14,6 +14,7 @@ package config
 
 import (
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/language"
 	"encoding/json"
 
 	"configcenter/src/common/blog"
@@ -33,8 +34,10 @@ type ConfCenter struct {
 	rootCtx      context.Context
 	cancel       context.CancelFunc
 	ctx          []byte
-	errorcode    map[string]errors.ErrorCode
 	ctxLock      sync.RWMutex
+	errorcode    map[string]errors.ErrorCode
+	langCtx      map[string]language.LanguageMap
+	langLock     sync.RWMutex
 }
 
 // NewConfCenter create a ConfCenter object
@@ -51,7 +54,7 @@ func (cc *ConfCenter) Ping() error {
 }
 
 // Start the configure center module service
-func (cc *ConfCenter) Start(confDir, errres string) error {
+func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	// create root context
 	cc.rootCtx, cc.cancel = context.WithCancel(context.Background())
 
@@ -68,23 +71,37 @@ func (cc *ConfCenter) Start(confDir, errres string) error {
 	// confPath := types.CC_SERVCONF_BASEPATH + "/" + types.CC_MODULE_MIGRATE
 	// confEvent, err := cc.confRegDiscv.DiscoverConfig(confPath)
 
-	if err := cc.WriteLanguagePackage2Center(errres); err != nil {
-		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+	if err := cc.WriteErrorRes2Center(errres); err != nil {
+		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 	} else {
-		blog.Infof("writed languate packages to center %v", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("writed error resource to center %v", types.CC_SERVERROR_BASEPATH)
 	}
 
-	languageEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
+		return err
+	}
+
+	if err := cc.WriteLanguageRes2Center(languageres); err != nil {
+		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+	} else {
+		blog.Infof("writed languate packages to center %v", types.CC_SERVLANG_BASEPATH)
+	}
+
+	langEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVLANG_BASEPATH)
+	if err != nil {
+		blog.Errorf("fail to discover language resource for objectcontroller service. err:%s", err.Error())
 		return err
 	}
 
 	go func() {
 		for {
 			select {
-			case confEvn := <-languageEvent:
-				cc.dealLanguageEvent(confEvn.Data)
+			case confEvn := <-errorResEvent:
+				cc.dealErrorResEvent(confEvn.Data)
+			case langEvn := <-langEvent:
+				cc.dealLanguageResEvent(langEvn.Data)
 			case <-cc.rootCtx.Done():
 				blog.Warn("configure discover service done")
 			}
@@ -110,7 +127,7 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 	return cc.ctx
 }
 
-func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
+func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
 
@@ -128,8 +145,37 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
+// GetLanguageResCxt fetch the language packages
+func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {
+	cc.langLock.RLock()
+	defer cc.langLock.RUnlock()
+
+	return cc.langCtx
+}
+
+func (cc *ConfCenter) dealLanguageResEvent(data []byte) error {
 	blog.Info("language has changed")
+
+	cc.langLock.Lock()
+	defer cc.langLock.Unlock()
+
+	langMap := map[string]language.LanguageMap{}
+	err := json.Unmarshal(data, &langMap)
+	if err != nil {
+		return err
+	}
+
+	cc.langCtx = langMap
+	a := api.GetAPIResource()
+	if a.Lang != nil {
+		a.Lang.Load(langMap)
+	}
+
+	return nil
+}
+
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
+	blog.Info("error resource has changed")
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()
@@ -146,12 +192,10 @@ func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
 		a.Error.Load(errorcode)
 	}
 
-	blog.InfoJSON("loaded language package: %s", errorcode)
-
 	return nil
 }
 
-func (cc *ConfCenter) WriteLanguagePackage2Center(errorres string) error {
+func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	info, err := os.Stat(errorres)
 	if os.ErrNotExist == err {
 		return fmt.Errorf("directory %s not exists", errorres)
@@ -170,6 +214,28 @@ func (cc *ConfCenter) WriteLanguagePackage2Center(errorres string) error {
 
 	data, err := json.Marshal(errcode)
 	key := types.CC_SERVERROR_BASEPATH
+	return cc.confRegDiscv.Write(key, data)
+}
+
+func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
+	info, err := os.Stat(languageres)
+	if os.ErrNotExist == err {
+		return fmt.Errorf("directory %s not exists", languageres)
+	}
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%s is not directory", languageres)
+	}
+
+	languagepack, err := language.LoadLanguageResourceFromDir(languageres)
+	if err != nil {
+		return fmt.Errorf("load language resource error: %s", err)
+	}
+
+	data, err := json.Marshal(languagepack)
+	key := types.CC_SERVLANG_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
 

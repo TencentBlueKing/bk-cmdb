@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package middleware
 
 import (
@@ -47,6 +47,8 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 	skipLogin := params[5]
 	multipleOwner := params[6]
 	isMultiOwner := true
+	defaultlanguage := params[7]
+
 	if "0" == multipleOwner {
 		isMultiOwner = false
 	}
@@ -56,7 +58,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 		//		blog.Info("login page:%v", loginPage)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
-		if isAuthed(c, isMultiOwner, skipLogin) {
+		if isAuthed(c, isMultiOwner, skipLogin, defaultlanguage) {
 			//valid resource acess privilege
 			ok := ValidResAccess(pathArr, c)
 			if false == ok {
@@ -99,12 +101,21 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 }
 
 //isAuthed check user is authed
-func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin string) bool {
+func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
 		session := sessions.Default(c)
+
+		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
+		if "" == cookieLanuage || nil != err {
+			c.SetCookie(common.BKHTTPCookieLanugageKey, defaultlanguage, 0, "/", "", false, false)
+			session.Set("language", defaultlanguage)
+
+		} else if cookieLanuage != session.Get("lanugage") {
+			session.Set("language", cookieLanuage)
+		}
+
 		session.Set("userName", "admin")
 		session.Set("role", "1")
-		session.Set("language", "zh-cn")
 		session.Set("owner_uin", "0")
 		session.Set("skiplogin", "1")
 		session.Save()
@@ -195,16 +206,20 @@ func loginUser(c *gin.Context, isMultiOwner bool) bool {
 		}
 	}
 
+	cookielanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
 	session.Set("userName", userName)
 	session.Set("chName", chName)
 	session.Set("phone", phone)
 	session.Set("email", email)
 	session.Set("role", role)
-	session.Set("language", language)
 	session.Set("bk_token", bk_token)
 	session.Set("owner_uin", ownerID)
-
+	if "" != cookielanguage {
+		session.Set("language", cookielanguage)
+	} else {
+		session.Set("language", language)
+	}
 	session.Save()
 	return true
 }

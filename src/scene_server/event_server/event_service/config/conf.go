@@ -65,7 +65,7 @@ func (cc *ConfCenter) Start() error {
 		return err
 	}
 
-	languageEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
 		return err
@@ -74,8 +74,8 @@ func (cc *ConfCenter) Start() error {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-languageEvent:
-			cc.dealLanguageEvent(confEvn.Data)
+		case confEvn := <-errorResEvent:
+			cc.dealErrorResEvent(confEvn.Data)
 		case <-cc.rootCtx.Done():
 			blog.Warn("configure discover service done")
 			return nil
@@ -100,8 +100,8 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 	return cc.ctx
 }
 
-// GetLanguageCxt fetch the language packages
-func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
+// GetErrorCxt fetch the language packages
+func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
 
@@ -119,7 +119,7 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	blog.Info("language has changed")
 
 	cc.ctxLock.Lock()
