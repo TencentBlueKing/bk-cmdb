@@ -54,7 +54,7 @@
                             <span>{{$t("HostResourcePool['导出选中']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">导入</button>
+                    <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['导入']")}}</button>
                     <button class="bk-button button-setting" @click="setTableField">
                         <i class="icon-cc-setting"></i>
                     </button>

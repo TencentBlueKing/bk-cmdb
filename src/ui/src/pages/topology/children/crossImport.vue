@@ -10,11 +10,11 @@
             <span class="search-ip search-field">
                 <input class="bk-form-input" type="text"
                     v-model.trim="search.ip"
-                    placeholder="请输入IP地址"
+                    :placeholder="$t('BusinessTopology[\'请输入IP地址\']')"
                     @keydown.enter="doSearch">
                 <i class="bk-icon icon-close-circle" v-show="search.ip.length" @click="reset"></i>
             </span>
-            <bk-button class="search-btn search-field" type="primary" :disabled="!isValidIp" @click="doSearch">查询</bk-button>
+            <bk-button class="search-btn search-field" type="primary" :disabled="!isValidIp" @click="doSearch">{{$t("Common['查询']")}}</bk-button>
         </div>
         <div class="search-result" v-if="Object.keys(result).length">
             <div class="attribute-group" v-for="(groupId, groupIndex) in hostPropertyGroupOrder"
@@ -39,16 +39,16 @@
                 </ul>
             </div>
              <div class="attribute-group-more" v-if="groupedHostProperty['none'].length">
-                <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">更多属性</a>
+                <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">{{$t("Common['更多属性']")}}</a>
             </div>
         </div>
         <div class="search-tips" v-show="showTips" v-bkloading="{isLoading: loading}">
-            <p v-if="noResult">未查询到该IP地址对应的主机</p>
-            <p v-else>请输入完整IP地址进行查询</p>
+            <p v-if="noResult">{{$t("BusinessTopology['未查询到该IP地址对应的主机']")}}</p>
+            <p v-else>{{$t("BusinessTopology['请输入完整IP地址进行查询']")}}</p>
         </div>
         <div class="search-footer">
-            <bk-button type="primary" @click="doCrossImport" :disabled="!Object.keys(result).length">确定</bk-button>
-            <button class="bk-button vice-btn" @click="cancelCrossImport">取消</button>
+            <bk-button type="primary" @click="doCrossImport" :disabled="!Object.keys(result).length">{{$t("Common['确定']")}}</bk-button>
+            <button class="bk-button vice-btn" @click="cancelCrossImport">{{$t("Common['取消']")}}</button>
         </div>
     </div>
 </template>
@@ -181,7 +181,7 @@
             },
             getGroupName (groupId) {
                 if (groupId === 'none') {
-                    return '更多属性'
+                    return this.$t("Common['更多属性']")
                 }
                 return this.hostPropertyGroup.find(({bk_group_id: bkGroupId}) => bkGroupId === groupId)['bk_group_name']
             },
@@ -270,7 +270,7 @@
                     }]
                 }).then(res => {
                     if (res.result) {
-                        this.$alertMsg('导入成功', 'success')
+                        this.$alertMsg(this.$t("Common['导入成功']"), 'success')
                         this.$emit('update:isShow', false)
                         this.$emit('handleCrossImportSuccess')
                     } else {

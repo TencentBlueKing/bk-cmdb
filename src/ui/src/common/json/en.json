@@ -76,7 +76,9 @@
         "已删除历史": "Deleted History",
         "返回": "Back",
         "查看删除历史": "Deleted History",
-        "中文名": "Description"
+        "中文名": "Description",
+        "导入": "Import",
+        "导入成功": "Imported Successfully"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -367,7 +369,10 @@
         "修改": "Modify",
         "转移": "Transfer",
         "列表显示属性配置": "List display property configuration",
-        "节点属性": "Node properties"
+        "节点属性": "Node properties",
+        "请输入IP地址": "Please Input IP Address",
+        "未查询到该IP地址对应的主机": "Do not find host with this IP address",
+        "请输入完整IP地址进行查询": "Please input full IP address to search"
     },
     "Hosts": {
         "主机管理": "Hosts Manage",
