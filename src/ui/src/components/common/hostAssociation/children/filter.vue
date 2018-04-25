@@ -11,7 +11,7 @@
             </div>
         </div>
         <div class="screening-group">
-            <label class="screening-group-label">{{$t("Common['内网IP']")}}</label>
+            <label class="screening-group-label">{{$t("Hosts['内网IP']")}}</label>
             <div class="screening-group-item screening-group-item-ip">
                 <input class="bk-form-input" v-model.trim="ip.text"></input>
             </div>
