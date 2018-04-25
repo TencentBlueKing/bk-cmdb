@@ -415,13 +415,13 @@ func (valid *ValidMap) validInt(val interface{}, key string, option string) (boo
 		return true, nil
 	}
 	if reflect.TypeOf(val).Kind() == reflect.String {
-		valStr := reflect.ValueOf(val).String()
-		var re error
-		value, re = strconv.Atoi(valStr)
-		if nil != re {
-			blog.Error("params  not int")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
-		}
+		//		valStr := reflect.ValueOf(val).String()
+		//		var re error
+		//		value, re = strconv.Atoi(valStr)
+		//		if nil != re {
+		blog.Error("params  not int")
+		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
+		//		}
 	}
 	var intObjOption IntOption
 	if reflect.TypeOf(val).Kind() == reflect.Int {

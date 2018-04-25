@@ -237,6 +237,9 @@ const (
 	// BKAsstObjIDField the property obj id field
 	BKAsstObjIDField = "bk_asst_obj_id"
 
+	// BKAsstInstIDField the property inst id field
+	BKAsstInstIDField = "bk_asst_inst_id"
+
 	// BKOptionField the option field
 	BKOptionField = "option"
 
@@ -419,6 +422,8 @@ const DefaultAppName string = "资源池"
 
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
+
+const BKMainLine = "mainline"
 
 const (
 
