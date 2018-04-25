@@ -1,27 +1,29 @@
 package common
 
-import "configcenter/src/framework/core/types"
+import (
+	"configcenter/src/framework/core/types"
+)
 
 // CreateCondition create a condition object
-func CreateCondition(tableName string) Condition {
-	return &condition{tableName: tableName}
+func CreateCondition() Condition {
+	return &condition{}
 }
 
 // Condition condition interface
 type Condition interface {
-	CreateField(filedName string) Field
+	Field(fieldName string) Field
+	ToMapStr() types.MapStr
 }
 
 // Condition the condition definition
 type condition struct {
-	tableName string
-	fields    []Field
+	fields []Field
 }
 
 // CreateField create a field
-func (cli *condition) CreateField(filedName string) Field {
+func (cli *condition) Field(fieldName string) Field {
 	field := &field{
-		fieldName: filedName,
+		fieldName: fieldName,
 		condition: cli,
 	}
 	cli.fields = append(cli.fields, field)
@@ -30,5 +32,9 @@ func (cli *condition) CreateField(filedName string) Field {
 
 // ToMapStr to MapStr object
 func (cli *condition) ToMapStr() types.MapStr {
-	return nil
+	tmpResult := types.MapStr{}
+	for _, item := range cli.fields {
+		tmpResult.Merge(item.ToMapStr())
+	}
+	return tmpResult
 }
