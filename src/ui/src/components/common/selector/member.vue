@@ -1,6 +1,6 @@
 <template>
     <div  v-click-outside="memberInputReset"
-        :data-placeholder="placeholder"
+        :data-placeholder="$t(`Common['${placeholder}']`)"
         :class="['member-selector', {'active': focus, 'placeholder': !focus && !localSelected.length, 'disabled': disabled}]">
         <div class="member-wrapper">
             <div ref="memberContainer" :class="['member-container', {'active': focus , 'ellipsis': showEllipsis}]" @click="handleSelectorClick(localSelected.length)">
@@ -107,6 +107,7 @@
             },
             memberInputText (memberInputText) {
                 this.setFilterMember()
+                this.$refs.memberList.scrollTop = 0
             },
             focus (focus) {
                 this.calcEmmiter() // 获得焦点时，选择器会展开, 需要重新计算已选人员tag前后光标定位元素的宽度
@@ -114,6 +115,7 @@
                     this.updateMemberListPosition()
                 } else {
                     this.selectedIndex = null
+                    this.$refs.memberList.scrollTop = 0
                 }
             },
             selectedIndex (selectedIndex) {

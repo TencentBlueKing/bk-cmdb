@@ -11,7 +11,7 @@
 　　"host_info":{
 　　　　"0":{
 　　　　　　"bk_host_innerip":"127.0.0.1",
-　　　　　　"import_from":"api",
+　　　　　　"import_from":"1",
 　　　　　　"bk_cloud_id":1
 　　　　}
 　　},

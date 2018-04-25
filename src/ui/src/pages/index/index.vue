@@ -36,13 +36,13 @@
                         :disabled="!table.chooseId.length" 
                         @click="multipleUpdate">
                         <i class="icon-cc-edit"></i>
-                        <span>修改</span>
+                        <span>{{$t("BusinessTopology['修改']")}}</span>
                     </button>
                     <button class="bk-button"
                         :disabled="!table.chooseId.length"
                         @click="transferHost">
                         <i class="icon-cc-shift"></i>
-                        <span>转移</span>
+                        <span>{{$t("BusinessTopology['转移']")}}</span>
                     </button>
                     <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
                         <input type="hidden" name="bk_host_id" :value="table.chooseId">
@@ -51,14 +51,16 @@
                             :disabled="!table.chooseId.length"
                             @click.prevent="exportChoose">
                             <i class="icon-cc-derivation"></i>
-                            <span>导出选中</span>
+                            <span>{{$t("HostResourcePool['导出选中']")}}</span>
                         </button>
                     </form>
                     <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">导入</button>
                     <button class="bk-button button-setting" @click="setTableField">
                         <i class="icon-cc-setting"></i>
                     </button>
-                    <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">刷新查询</bk-button>
+                    <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
+                        {{$t("HostResourcePool['刷新查询']")}}
+                    </bk-button>
                 </div>
             </slot>
             <v-table class="index-table"
@@ -95,7 +97,7 @@
                     v-show="sideslider.type === 'attribute'"
                     :active-name="sideslider.attribute.active" 
                     @tab-changed="attributeTabChanged">
-                    <bk-tabpanel name="attribute" title="主机属性">
+                    <bk-tabpanel name="attribute" :title="$t('HostResourcePool[\'主机属性\']')">
                         <v-attribute ref="hostAttribute"
                             :objId="'host'"
                             :showDelete="false"
@@ -107,14 +109,14 @@
                             @submit="saveHostAttribute">
                         </v-attribute>
                     </bk-tabpanel>
-                    <bk-tabpanel name="relevance" title="关联" :show="!sideslider.attribute.form.isMultipleUpdate">
+                    <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="!sideslider.attribute.form.isMultipleUpdate">
                         <v-relevance style="padding: 30px 0;"
                             :isShow="sideslider.attribute.active==='relevance'"
                             :objId="'host'"
                             :ObjectID="sideslider.attribute.form.formValues['bk_host_id']"
                         ></v-relevance>
                     </bk-tabpanel>
-                    <bk-tabpanel name="status" title="实时状态" 
+                    <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')"
                         :show="!sideslider.attribute.form.isMultipleUpdate">
                         <v-status :isShow="sideslider.attribute.active==='status'" 
                             :isSidesliderShow="sideslider.isShow"
@@ -130,7 +132,7 @@
                         :show="!sideslider.attribute.form.isMultipleUpdate && !sideslider.attribute.isWindowsOSType && hostSnapshot !== ''">
                         <v-router></v-router>
                     </bk-tabpanel>
-                    <bk-tabpanel name="history" title="变更记录" 
+                    <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')"
                         :show="!sideslider.attribute.form.isMultipleUpdate && sideslider.attribute.form.type === 'update'">
                         <v-history 
                             :type="'host'" 
@@ -238,22 +240,22 @@
                 },
                 attribute: [{
                     'bk_obj_id': 'host',
-                    'bk_obj_name': '主机',
+                    'bk_obj_name': this.$t('Hosts[\'主机\']'),
                     'properties': [],
                     'loaded': false
                 }, {
                     'bk_obj_id': 'module',
-                    'bk_obj_name': '模块',
+                    'bk_obj_name': this.$t('Hosts[\'模块\']'),
                     'properties': [],
                     'loaded': false
                 }, {
                     'bk_obj_id': 'set',
-                    'bk_obj_name': '集群',
+                    'bk_obj_name': this.$t('Hosts[\'集群\']'),
                     'properties': [],
                     'loaded': false
                 }, {
                     'bk_obj_id': 'biz',
-                    'bk_obj_name': '业务',
+                    'bk_obj_name': this.$t('Common[\'业务\']'),
                     'properties': [],
                     'loaded': false
                 }],
@@ -265,7 +267,7 @@
                     width: 800,
                     isShow: false,
                     title: {
-                        text: '主机属性'
+                        text: this.$t('HostResourcePool[\'主机属性\']')
                     },
                     attribute: {
                         active: 'attribute',
@@ -441,7 +443,7 @@
                     }
                 }).catch((e) => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
                     }
                 })
             },
@@ -479,6 +481,12 @@
                         value = this.$formatTime(value, 'YYYY-MM-DD')
                     } else if (property['bk_property_type'] === 'time') {
                         value = this.$formatTime(value)
+                    } else if (property['bk_property_type'] === 'enum') {
+                        if (value) {
+                            value = property.option.find(({id}) => {
+                                return id === value
+                            })['name']
+                        }
                     }
                     return value
                 }
@@ -496,7 +504,7 @@
                 this.sideslider.width = 800
                 this.sideslider.isShow = true
                 this.sideslider.type = 'attribute'
-                this.sideslider.title.text = '主机属性'
+                this.sideslider.title.text = this.$t('HostResourcePool[\'主机属性\']')
                 attribute.active = 'attribute'
                 attribute.form.isMultipleUpdate = true
                 attribute.form.formValues = {bk_host_id: this.table.chooseId.join(',')}
@@ -514,12 +522,12 @@
             },
             setTableField () {
                 let extraProperty = [{
-                    bk_property_name: '集群名',
+                    bk_property_name: this.$t('Hosts[\'集群名\']'),
                     bk_property_id: 'bk_set_name',
                     bk_obj_id: 'set',
                     bk_isapi: false
                 }, {
-                    bk_property_name: '模块名',
+                    bk_property_name: this.$t('Hosts[\'模块名\']'),
                     bk_property_id: 'bk_module_name',
                     bk_obj_id: 'module',
                     bk_isapi: false
@@ -530,12 +538,12 @@
                 this.sideslider.width = 600
                 this.sideslider.isShow = true
                 this.sideslider.type = 'field'
-                this.sideslider.title.text = '列表显示属性配置'
+                this.sideslider.title.text = this.$t('BusinessTopology[\'列表显示属性配置\']')
                 this.sideslider.fields.type = 'displayColumns'
                 this.sideslider.fields.isShowExclude = true
                 this.sideslider.fields.fieldOptions = [{
                     'bk_obj_id': 'host',
-                    'bk_obj_name': '主机',
+                    'bk_obj_name': this.$t('Hosts[\'主机\']'),
                     'properties': properties,
                     'loaded': true
                 }]
@@ -552,7 +560,7 @@
                 this.sideslider.width = 600
                 this.sideslider.isShow = true
                 this.sideslider.type = 'field'
-                this.sideslider.title.text = '主机筛选项设置'
+                this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
                 this.sideslider.fields.fieldOptions = this.attribute
@@ -697,7 +705,7 @@
                     this.table.isLoading = false
                     this.table.tableList = []
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
                     }
                 })
             },
@@ -714,7 +722,7 @@
                 this.sideslider.width = 800
                 this.sideslider.isShow = true
                 this.sideslider.type = 'attribute'
-                this.sideslider.title.text = '主机属性'
+                this.sideslider.title.text = this.$t('HostResourcePool[\'主机属性\']')
                 attribute.active = 'attribute'
                 attribute.form.formValues = {}
                 attribute.form.isMultipleUpdate = false
@@ -749,7 +757,7 @@
                 let { bk_host_id: bkHostID } = formValues
                 this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()})).then(res => {
                     if (res.result) {
-                        this.$alertMsg('保存成功', 'success')
+                        this.$alertMsg(this.$t('Common[\'保存成功\']'), 'success')
                         this.setTableCurrentPage(1)
                         if (!this.sideslider.attribute.form.isMultipleUpdate) {
                             this.$refs.hostAttribute.displayType = 'list'
@@ -760,7 +768,7 @@
                     }
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('权限不足')
+                        this.$alertMsg(this.$t('Common[\'权限不足\']'))
                     }
                 })
             },

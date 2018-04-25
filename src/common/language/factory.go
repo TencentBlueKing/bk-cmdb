@@ -30,6 +30,7 @@ func New(dir string) (CCLanguageIf, error) {
 
 // NewFromCtx  get lange helper
 func NewFromCtx(lang map[string]LanguageMap) CCLanguageIf {
-	tmp := &ccLanguageHelper{lang: lang}
+	tmp := &ccLanguageHelper{}
+	tmp.Load(lang)
 	return tmp
 }

@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package config
 
 import (
@@ -41,6 +41,11 @@ func NewConfCenter(serv string) *ConfCenter {
 	}
 }
 
+// Ping to ping server
+func (cc *ConfCenter) Ping() error {
+	return cc.confRegDiscv.Ping()
+}
+
 // Start the configure center module service
 func (cc *ConfCenter) Start() error {
 	// create root context
@@ -60,7 +65,7 @@ func (cc *ConfCenter) Start() error {
 		return err
 	}
 
-	languageEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
+	errorResEvent, err := cc.confRegDiscv.DiscoverConfig(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("fail to discover configure for migrate service. err:%s", err.Error())
 		return err
@@ -69,8 +74,8 @@ func (cc *ConfCenter) Start() error {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-languageEvent:
-			cc.dealLanguageEvent(confEvn.Data)
+		case confEvn := <-errorResEvent:
+			cc.dealErrorResEvent(confEvn.Data)
 		case <-cc.rootCtx.Done():
 			blog.Warn("configure discover service done")
 			return nil
@@ -95,8 +100,8 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 	return cc.ctx
 }
 
-// GetLanguageCxt fetch the language packages
-func (cc *ConfCenter) GetLanguageCxt() map[string]errors.ErrorCode {
+// GetErrorCxt fetch the language packages
+func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 	cc.ctxLock.RLock()
 	defer cc.ctxLock.RUnlock()
 
@@ -114,7 +119,7 @@ func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
 	return nil
 }
 
-func (cc *ConfCenter) dealLanguageEvent(data []byte) error {
+func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 	blog.Info("language has changed")
 
 	cc.ctxLock.Lock()
