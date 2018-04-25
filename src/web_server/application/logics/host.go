@@ -106,7 +106,7 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header, kvMap 
 	return hostInfo, nil
 }
 
-//GetImportHosts get import hosts
+// GetImportHosts get import hosts
 func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
 	if 0 == len(f.Sheets) {
@@ -118,39 +118,6 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 	}
 
 	return GetExcelData(sheet, nil, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0, defLang)
-}
-
-//getPropertyTypeAliasName  return propertyType name, whether to export,
-func getPropertyTypeAliasName(propertyType string) (string, bool) {
-	var skip bool
-	var name string
-	switch propertyType {
-	case common.FiledTypeSingleChar:
-		name = common.FiledTypeSingleCharName
-	case common.FiledTypeLongChar:
-		name = common.FiledTypeLongCharName
-	case common.FiledTypeInt:
-		name = common.FiledTypeIntName
-	case common.FiledTypeEnum:
-		name = common.FiledTypeEnumName
-	case common.FiledTypeDate:
-		name = common.FiledTypeDateName
-	case common.FiledTypeTime:
-		name = common.FiledTypeDateName
-	case common.FiledTypeUser:
-		name = common.FiledTypeUserName
-	case common.FiledTypeSingleAsst:
-		name = common.FiledTypeSingleAsstName
-	case common.FieldTypeMultiAsst:
-		name = common.FiledTypeMultiAsstName
-	case common.FiledTypeBool:
-		name = common.FiledTypeBoolName
-	case common.FieldTypeTimeZone:
-		name = common.FiledTypeTimeZoneName
-	default:
-		name = "not found field type"
-	}
-	return name, skip
 }
 
 //httpRequest do http request
