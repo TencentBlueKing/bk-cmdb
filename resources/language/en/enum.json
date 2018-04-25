@@ -35,5 +35,21 @@
     "process_property_protocol_enum_1": "TCP",
     "process_property_protocol_enum_2": "UDP",
 
+    "bk_switch_property_protocol_enum_1": "ready",
+    "bk_switch_property_protocol_enum_2": "online",
+    "bk_switch_property_protocol_enum_3": "offline",
+
+    "bk_router_property_protocol_enum_1": "ready",
+    "bk_router_property_protocol_enum_2": "online",
+    "bk_router_property_protocol_enum_3": "offline",
+
+    "bk_load_balance_property_protocol_enum_1": "ready",
+    "bk_load_balance_property_protocol_enum_2": "online",
+    "bk_load_balance_property_protocol_enum_3": "offline",
+
+    "bk_firewall_property_protocol_enum_1": "ready",
+    "bk_firewall_property_protocol_enum_2": "online",
+    "bk_firewall_property_protocol_enum_3": "offline",
+
     "":""
 }

@@ -63,6 +63,15 @@ func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
 	dataRows = append(dataRows, data.HostRow()...)
 	dataRows = append(dataRows, data.ProcRow()...)
 	dataRows = append(dataRows, data.PlatRow()...)
+
+	dataRows = append(dataRows, data.SwitchRow()...)
+	dataRows = append(dataRows, data.RouterRow()...)
+	dataRows = append(dataRows, data.LoadBalanceRow()...)
+	dataRows = append(dataRows, data.FirewallRow()...)
+	dataRows = append(dataRows, data.WeblogicRow()...)
+	dataRows = append(dataRows, data.ApacheRow()...)
+	dataRows = append(dataRows, data.TomcatRow()...)
+
 	t := new(time.Time)
 	*t = time.Now()
 	for _, r := range dataRows {
