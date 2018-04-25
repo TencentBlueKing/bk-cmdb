@@ -1,24 +1,25 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"github.com/emicklei/go-restful"
 	"io/ioutil"
@@ -64,7 +65,7 @@ func (cli *objClsAction) CreateClassification(req *restful.Request, resp *restfu
 	language := util.GetActionLanguage(req)
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -76,7 +77,7 @@ func (cli *objClsAction) CreateClassification(req *restful.Request, resp *restfu
 		}
 
 		// deal data
-		result, ctrErr := cli.mgr.CreateObjectClass(val, defErr)
+		result, ctrErr := cli.mgr.CreateObjectClass(forward, val, defErr)
 		if nil == ctrErr {
 			return http.StatusOK, map[string]int{"id": result}, nil
 		}
@@ -93,7 +94,7 @@ func (cli *objClsAction) SelectClassificationWithParams(req *restful.Request, re
 	language := util.GetActionLanguage(req)
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -105,7 +106,7 @@ func (cli *objClsAction) SelectClassificationWithParams(req *restful.Request, re
 		}
 
 		// deal data
-		result, ctrErr := cli.mgr.SelectObjectClass(val, defErr)
+		result, ctrErr := cli.mgr.SelectObjectClass(forward, val, defErr)
 		if nil == ctrErr {
 			return http.StatusOK, result, nil
 		}
@@ -123,7 +124,7 @@ func (cli *objClsAction) SelectClassificationWithObjects(req *restful.Request, r
 	language := util.GetActionLanguage(req)
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -138,14 +139,14 @@ func (cli *objClsAction) SelectClassificationWithObjects(req *restful.Request, r
 		}
 
 		// deal data
-		result, ctrErr := cli.mgr.SelectObjectClassWithObjects(ownerID, val, defErr)
+		result, ctrErr := cli.mgr.SelectObjectClassWithObjects(forward, ownerID, val, defErr)
 		for idx, item := range result {
 			result[idx].AsstObjects = make(map[string][]interface{})
 			for _, subItem := range item.Objects {
 				search := map[string]interface{}{}
 				search[common.BKOwnerIDField] = subItem.OwnerID
 				search[common.BKObjIDField] = subItem.ObjectID
-				asstRst, asstErr := cli.mgr.SelectObjectAsst(search, defErr)
+				asstRst, asstErr := cli.mgr.SelectObjectAsst(forward, search, defErr)
 				if nil != asstErr {
 					blog.Error("failed to search class object , error info is %s", asstErr.Error())
 					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectClassificationSelectFailed)
@@ -158,7 +159,7 @@ func (cli *objClsAction) SelectClassificationWithObjects(req *restful.Request, r
 					condition[common.BKOwnerIDField] = asstItem.OwnerID
 					condition[common.BKObjIDField] = asstItem.AsstObjID
 					conditionStr, _ := json.Marshal(condition)
-					objs, objErr := cli.mgr.SelectObject(conditionStr, defErr)
+					objs, objErr := cli.mgr.SelectObject(forward, conditionStr, defErr)
 					if nil != objErr {
 						blog.Error("failed to find the asst , error info is %s", objErr.Error())
 						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectClassificationSelectFailed)
@@ -189,6 +190,7 @@ func (cli *objClsAction) UpdateClassification(req *restful.Request, resp *restfu
 	language := util.GetActionLanguage(req)
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -207,7 +209,7 @@ func (cli *objClsAction) UpdateClassification(req *restful.Request, resp *restfu
 		}
 
 		// deal data
-		ctrErr := cli.mgr.UpdateObjectClass(id, val, defErr)
+		ctrErr := cli.mgr.UpdateObjectClass(forward, id, val, defErr)
 		if nil == ctrErr {
 			return http.StatusOK, nil, nil
 		}
@@ -226,6 +228,7 @@ func (cli *objClsAction) DeleteClassification(req *restful.Request, resp *restfu
 	language := util.GetActionLanguage(req)
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -249,7 +252,7 @@ func (cli *objClsAction) DeleteClassification(req *restful.Request, resp *restfu
 			"id": id,
 		}
 		conditionStr, _ := json.Marshal(condition)
-		rstItems, rstErr := cli.mgr.SelectObjectClass(conditionStr, defErr)
+		rstItems, rstErr := cli.mgr.SelectObjectClass(forward, conditionStr, defErr)
 		if nil != rstErr {
 			blog.Error("failed to search classification by id(%d), error info is %s", id, rstErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectClassificationDeleteFailed)
@@ -265,7 +268,7 @@ func (cli *objClsAction) DeleteClassification(req *restful.Request, resp *restfu
 				"bk_classification_id": rst.ClassificationID,
 			}
 			objConditionStr, _ := json.Marshal(objCondition)
-			objItems, objErr := cli.mgr.SelectObject(objConditionStr, defErr)
+			objItems, objErr := cli.mgr.SelectObject(forward, objConditionStr, defErr)
 			if nil != objErr {
 				blog.Error("failed to search object with classificationid(%s), error info is %s", rst.ClassificationID, objErr.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectClassificationDeleteFailed)
@@ -278,7 +281,7 @@ func (cli *objClsAction) DeleteClassification(req *restful.Request, resp *restfu
 		}
 
 		// deal data
-		ctrErr := cli.mgr.DeleteObjectClass(id, val, defErr)
+		ctrErr := cli.mgr.DeleteObjectClass(forward, id, val, defErr)
 		if nil == ctrErr {
 			return http.StatusOK, nil, nil
 		}

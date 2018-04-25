@@ -248,7 +248,7 @@
                 }
                 if (this.filter.selected && this.filter.value) {
                     if (this.objId === 'biz') {
-                        if (this.filter.type === 'bool') {
+                        if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                             config.params.condition[this.filter.selected] = this.filter.value === 'true'
                         } else {
                             config.params.condition[this.filter.selected] = this.filter.value
@@ -265,7 +265,7 @@
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
                                 operator: '$eq',
-                                value: this.filter.value === 'true'
+                                value: ['true', 'false'].includes(this.filter.value) ? this.filter.value === 'true' : this.filter.value
                             }]
                         } else {
                             config.params.condition[this.objId] = [{
@@ -307,6 +307,7 @@
                 // 页码调整到第一页
                 this.table.pagination.current = 1
                 this.filter.value = ''
+                this.table.chooseId = []
                 // 初始化表格
                 this.initTable()
             },
