@@ -46,10 +46,7 @@
 	"1001046": "Query User Group Permissions",
 	"1001047": "Query User Rights",
 	"1001048": "Create Role Rights",
-	
 	"1101080": "The module does not exist, please refresh the page",
-	"":""
-	
-	}
-
-	
+	"1101081": "blueking business does not allow deletion",
+	"": "" 
+}

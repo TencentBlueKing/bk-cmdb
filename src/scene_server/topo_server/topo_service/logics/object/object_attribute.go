@@ -49,7 +49,7 @@ func (cli *objAttLogic) SetManager(mgr manager.Manager) error {
 }
 
 // CreateModel create main line topo object
-func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *objAttLogic) CreateTopoModel(forward *api.ForwardParam, obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
 
 	blog.Info("create %v", obj)
 
@@ -73,7 +73,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objtmp[common.BKOwnerIDField] = obj.OwnerID
 	objtmp[common.BKObjIDField] = obj.ObjectID
 	objTmpJSON, _ := json.Marshal(objtmp)
-	if items, err := cli.mgr.SelectObject(objTmpJSON, errProxy); nil != err {
+	if items, err := cli.mgr.SelectObject(forward, objTmpJSON, errProxy); nil != err {
 		blog.Error("the existence test failed, error:%s", err.Error())
 		return 0, err
 	} else if 0 == len(items) {
@@ -85,7 +85,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objtmp[common.BKOwnerIDField] = obj.OwnerID
 	objtmp[common.BKObjIDField] = obj.AssociationID
 	objTmpJSON, _ = json.Marshal(objtmp)
-	if items, err := cli.mgr.SelectObject(objTmpJSON, errProxy); nil != err {
+	if items, err := cli.mgr.SelectObject(forward, objTmpJSON, errProxy); nil != err {
 		blog.Error("the existence test failed, error:%s", err.Error())
 		return 0, err
 	} else if 0 == len(items) {
@@ -104,7 +104,7 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	objasst["bk_object_att_id"] = obj.PropertyID
 
 	// to create object association	, failed return
-	id, operr := cli.mgr.CreateObjectAsst(objasst, errProxy)
+	id, operr := cli.mgr.CreateObjectAsst(forward, objasst, errProxy)
 	// check objatt data
 	if nil != operr {
 		return 0, operr
@@ -127,10 +127,10 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	}
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	innerAttID, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	innerAttID, rstErr := cli.objcli.CreateMetaObjectAtt(forward, val)
 	if nil != rstErr {
 		blog.Error("failed to create the inner filed for the owner(%s) object(%s)", obj.OwnerID, obj.ObjectID)
-		cli.mgr.DeleteObjectAsstByID(id, errProxy)
+		cli.mgr.DeleteObjectAsstByID(forward, id, errProxy)
 		return innerAttID, rstErr
 	}
 
@@ -142,17 +142,17 @@ func (cli *objAttLogic) CreateTopoModel(obj api.ObjAttDes, errProxy errors.Defau
 	}
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	rst, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	rst, rstErr := cli.objcli.CreateMetaObjectAtt(forward, val)
 	if nil != rstErr {
-		cli.mgr.DeleteObjectAsstByID(id, errProxy)
-		cli.objcli.DeleteMetaObjectAtt(innerAttID, []byte("{}"))
+		cli.mgr.DeleteObjectAsstByID(forward, id, errProxy)
+		cli.objcli.DeleteMetaObjectAtt(forward, innerAttID, []byte("{}"))
 		return rst, rstErr
 	}
 
 	return rst, rstErr
 }
 
-func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error) {
 
 	// base check
 	if 0 == len(obj.OwnerID) {
@@ -195,7 +195,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 	checkObjCond[common.BKObjIDField] = obj.ObjectID
 	checkObjCondVal, _ := json.Marshal(checkObjCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObject(checkObjCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObject(forward, checkObjCondVal); nil != err {
 		blog.Error("the existence test failed, error:%s", err.Error())
 		return 0, err
 	} else if 0 == len(items) {
@@ -210,7 +210,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 	checkAttNameCond["bk_property_name"] = obj.PropertyName
 	checkAttNameCondVal, _ := json.Marshal(checkAttNameCond)
 
-	if items, itemErr := cli.objcli.SearchMetaObjectAtt(checkAttNameCondVal); nil != itemErr {
+	if items, itemErr := cli.objcli.SearchMetaObjectAtt(forward, checkAttNameCondVal); nil != itemErr {
 		blog.Error("create objectt failed, error:%s", itemErr.Error())
 		return 0, itemErr
 	} else if 0 != len(items) {
@@ -225,7 +225,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 	checkAttIDCond["bk_property_id"] = obj.PropertyID
 	checkAttIDCondVal, _ := json.Marshal(checkAttIDCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, itemErr := cli.objcli.SearchMetaObjectAtt(checkAttIDCondVal); nil != itemErr {
+	if items, itemErr := cli.objcli.SearchMetaObjectAtt(forward, checkAttIDCondVal); nil != itemErr {
 		blog.Error("create objectt failed, error:%s", itemErr.Error())
 		return 0, itemErr
 	} else if 0 != len(items) {
@@ -241,7 +241,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 			"bk_isdefault": true,
 		}
 		groupConditionStr, _ := json.Marshal(groupCondition)
-		groupDes, groupDesErr := cli.objcli.SelectPropertyGroupByObjectID(obj.OwnerID, obj.ObjectID, groupConditionStr)
+		groupDes, groupDesErr := cli.objcli.SelectPropertyGroupByObjectID(forward, obj.OwnerID, obj.ObjectID, groupConditionStr)
 		if nil != groupDesErr {
 			blog.Error("failed to found the group config, error info is %s", groupDesErr.Error())
 		}
@@ -268,7 +268,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 		checkObjCond[common.BKObjIDField] = obj.AssociationID
 		checkObjCondVal, _ := json.Marshal(checkObjCond)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if items, err := cli.objcli.SearchMetaObject(checkObjCondVal); nil != err {
+		if items, err := cli.objcli.SearchMetaObject(forward, checkObjCondVal); nil != err {
 			blog.Error("the existence test failed, error:%s", err.Error())
 			return 0, err
 		} else if 0 == len(items) {
@@ -276,7 +276,7 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 			return 0, fmt.Errorf("AssociationID[%s] is invalid", obj.AssociationID)
 		}
 
-		id, opErr := cli.mgr.CreateObjectAsst(objasst, errProxy)
+		id, opErr := cli.mgr.CreateObjectAsst(forward, objasst, errProxy)
 		// check objatt data
 		if nil != opErr {
 			return 0, opErr
@@ -286,16 +286,16 @@ func (cli *objAttLogic) CreateObjectAtt(obj api.ObjAttDes, errProxy errors.Defau
 	}
 
 	val, _ := json.Marshal(obj)
-	rst, rstErr := cli.objcli.CreateMetaObjectAtt(val)
+	rst, rstErr := cli.objcli.CreateMetaObjectAtt(forward, val)
 	if nil != rstErr && 0 != asstID {
-		cli.mgr.DeleteObjectAsstByID(asstID, errProxy)
+		cli.mgr.DeleteObjectAsstByID(forward, asstID, errProxy)
 		return rst, rstErr
 	}
 
 	return rst, rstErr
 }
 
-func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
 
 	if attrID <= 0 {
 		blog.Error("ID is invalid, %d", attrID)
@@ -304,7 +304,7 @@ func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.
 
 	// check whether it is exists
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	itemObj, itemErr := cli.objcli.SearchMetaObjectAttByID(attrID)
+	itemObj, itemErr := cli.objcli.SearchMetaObjectAttByID(forward, attrID)
 	if nil != itemErr {
 		blog.Error("update objectt failed, error:%s", itemErr.Error())
 		return itemErr
@@ -336,7 +336,7 @@ func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.
 		checkAttNameCond["bk_property_name"] = propertyName
 		checkAttNameCondVal, _ := json.Marshal(checkAttNameCond)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if items, itemErr := cli.objcli.SearchMetaObjectAtt(checkAttNameCondVal); nil != itemErr {
+		if items, itemErr := cli.objcli.SearchMetaObjectAtt(forward, checkAttNameCondVal); nil != itemErr {
 			blog.Error("update objectt failed, error:%s", itemErr.Error())
 			return itemErr
 		} else if 0 != len(items) {
@@ -387,7 +387,7 @@ func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.
 		//delasst["AsstObjID"] = obj.AssociationID
 		delAsstVal, _ := json.Marshal(delAsst)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if delErr := cli.objcli.DeleteMetaObjectAsst(0, delAsstVal); nil != delErr {
+		if delErr := cli.objcli.DeleteMetaObjectAsst(forward, 0, delAsstVal); nil != delErr {
 			blog.Error("delete association failed, error:%s", delErr.Error())
 			return delErr
 		}
@@ -402,10 +402,10 @@ func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.
 
 		newAsstVal, _ := json.Marshal(newAsst)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if _, crtErr := cli.objcli.CreateMetaObjectAsst(newAsstVal); nil != crtErr {
+		if _, crtErr := cli.objcli.CreateMetaObjectAsst(forward, newAsstVal); nil != crtErr {
 
 			blog.Error("create association failed, error:%s", crtErr.Error())
-			if _, crtErr = cli.objcli.CreateMetaObjectAsst(delAsstVal); nil != crtErr {
+			if _, crtErr = cli.objcli.CreateMetaObjectAsst(forward, delAsstVal); nil != crtErr {
 
 				blog.Error("create new association failed, and reset the old association failed, error:%s", crtErr.Error())
 				return fmt.Errorf("create new association failed, and reset the old association failed, error:%s", crtErr.Error())
@@ -452,11 +452,11 @@ func (cli *objAttLogic) UpdateObjectAtt(attrID int, val []byte, errProxy errors.
 
 	objAttVal, _ := json.Marshal(objAtt)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.UpdateMetaObjectAtt(attrID, objAttVal)
+	return cli.objcli.UpdateMetaObjectAtt(forward, attrID, objAttVal)
 }
 
 // deleteTopoModel delete main line topo object
-func (cli *objAttLogic) DeleteTopoModel(ownerID, objID string, assoType int, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttLogic) DeleteTopoModel(forward *api.ForwardParam, ownerID, objID string, assoType int, errProxy errors.DefaultCCErrorIf) error {
 
 	objAsst := map[string]interface{}{}
 	obj := map[string]interface{}{}
@@ -489,7 +489,7 @@ func (cli *objAttLogic) DeleteTopoModel(ownerID, objID string, assoType int, err
 
 	blog.Debug("delete objectatt, %s", string(val))
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	rstErr := cli.objcli.DeleteMetaObjectAtt(0, val)
+	rstErr := cli.objcli.DeleteMetaObjectAtt(forward, 0, val)
 	if nil != rstErr {
 		blog.Error("delete object att failed, error informationis %v", rstErr)
 		return rstErr
@@ -497,7 +497,7 @@ func (cli *objAttLogic) DeleteTopoModel(ownerID, objID string, assoType int, err
 
 	// delete asst
 	blog.Debug("delete association %v", objAsst)
-	if delErr := cli.mgr.DeleteObjectAsst(objAsst, errProxy); nil != delErr {
+	if delErr := cli.mgr.DeleteObjectAsst(forward, objAsst, errProxy); nil != delErr {
 		blog.Error("delete association failed, error information is %v", delErr)
 		return delErr
 	}
@@ -505,7 +505,7 @@ func (cli *objAttLogic) DeleteTopoModel(ownerID, objID string, assoType int, err
 	return rstErr
 }
 
-func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttLogic) DeleteObjectAtt(forward *api.ForwardParam, attrID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
 
 	if 0 > attrID {
 		blog.Error("ID is invalid, ID is %d", attrID)
@@ -550,7 +550,7 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 
 			checkObjAttCondVal, _ := json.Marshal(checkObjAttCond)
 			cli.objcli.SetAddress(cli.cfg.Get(cli))
-			if items, itemsErr := cli.objcli.SearchMetaObjectAtt(checkObjAttCondVal); nil != itemsErr {
+			if items, itemsErr := cli.objcli.SearchMetaObjectAtt(forward, checkObjAttCondVal); nil != itemsErr {
 				blog.Error("failed to search meta object attribute, error info is %s", itemsErr.Error())
 				return itemsErr
 			} else if 0 == len(items) {
@@ -563,7 +563,7 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 	} else {
 		// read object attribute by id
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		objAtt, rstErr := cli.objcli.SearchMetaObjectAttByID(attrID)
+		objAtt, rstErr := cli.objcli.SearchMetaObjectAttByID(forward, attrID)
 		if nil != rstErr {
 			blog.Error("call subsearch failed for object attribute, objatt id %v", attrID)
 			return fmt.Errorf("nothing to be deleted, please check the condition")
@@ -580,14 +580,14 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 	}
 
 	// save the old association map
-	oldAsstItems, tmpErr := cli.mgr.SelectObjectAsst(objAsst, errProxy)
+	oldAsstItems, tmpErr := cli.mgr.SelectObjectAsst(forward, objAsst, errProxy)
 	if nil != tmpErr {
 		blog.Error("cache the old data failed, error:%s", tmpErr.Error())
 		return tmpErr
 	}
 	// delete association map
 	blog.Debug("delete association %v", objAsst)
-	if delErr := cli.mgr.DeleteObjectAsst(objAsst, errProxy); nil != delErr {
+	if delErr := cli.mgr.DeleteObjectAsst(forward, objAsst, errProxy); nil != delErr {
 		blog.Error("delete association failed, error information is %v", delErr)
 		//return delerr
 	}
@@ -595,12 +595,12 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 	// delete object attribute
 	blog.Debug("delete objectatt %d", attrID)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	tmpErr = cli.objcli.DeleteMetaObjectAtt(attrID, val)
+	tmpErr = cli.objcli.DeleteMetaObjectAtt(forward, attrID, val)
 	if nil != tmpErr {
 		for _, tmp := range oldAsstItems {
 			tmpVal, _ := json.Marshal(tmp)
 			cli.objcli.SetAddress(cli.cfg.Get(cli))
-			if _, subTmpErr := cli.objcli.CreateMetaObjectAsst(tmpVal); nil != subTmpErr {
+			if _, subTmpErr := cli.objcli.CreateMetaObjectAsst(forward, tmpVal); nil != subTmpErr {
 				blog.Error("delete objectatt failed, reset the associtation failed, error:%s", subTmpErr.Error())
 			}
 		}
@@ -610,7 +610,7 @@ func (cli *objAttLogic) DeleteObjectAtt(attrID int, val []byte, errProxy errors.
 }
 
 // SelectTopoModel 根据模型ID查询拓扑，仅向下查询
-func (cli *objAttLogic) SelectTopoModel(rstItems []manager.TopoModelRsp, ownerID, objID, clsID, preID, preName string, errProxy errors.DefaultCCErrorIf) ([]manager.TopoModelRsp, error) {
+func (cli *objAttLogic) SelectTopoModel(forward *api.ForwardParam, rstItems []manager.TopoModelRsp, ownerID, objID, clsID, preID, preName string, errProxy errors.DefaultCCErrorIf) ([]manager.TopoModelRsp, error) {
 
 	blog.Info("ownerid %s objid %s", ownerID, objID)
 	// read parent object
@@ -625,7 +625,7 @@ func (cli *objAttLogic) SelectTopoModel(rstItems []manager.TopoModelRsp, ownerID
 
 	parentObjJSON, _ := json.Marshal(parentObj)
 	blog.Debug("json:%v", string(parentObjJSON))
-	parentObjMsg, parentObjErr := cli.mgr.SelectObject(parentObjJSON, errProxy)
+	parentObjMsg, parentObjErr := cli.mgr.SelectObject(forward, parentObjJSON, errProxy)
 	if nil != parentObjErr {
 		blog.Error("search parent object failed, error:%v", parentObjErr)
 		return nil, fmt.Errorf("%v", parentObjErr)
@@ -665,7 +665,7 @@ func (cli *objAttLogic) SelectTopoModel(rstItems []manager.TopoModelRsp, ownerID
 	selector["bk_object_att_id"] = common.BKChildStr
 
 	// 读取关联关系
-	asstMsg, opErr := cli.mgr.SelectObjectAsst(selector, errProxy)
+	asstMsg, opErr := cli.mgr.SelectObjectAsst(forward, selector, errProxy)
 	if nil != opErr {
 		blog.Error("search association failed, error:%v", opErr)
 		return nil, opErr
@@ -689,7 +689,7 @@ func (cli *objAttLogic) SelectTopoModel(rstItems []manager.TopoModelRsp, ownerID
 	}
 
 	childObjJSON, _ := json.Marshal(childObj)
-	childObjMsg, childObjErr := cli.mgr.SelectObject(childObjJSON, errProxy)
+	childObjMsg, childObjErr := cli.mgr.SelectObject(forward, childObjJSON, errProxy)
 	if nil != childObjErr {
 		blog.Error("search child object failed, error:%v", childObjErr)
 		return nil, childObjErr
@@ -711,18 +711,18 @@ func (cli *objAttLogic) SelectTopoModel(rstItems []manager.TopoModelRsp, ownerID
 	rstItems = append(rstItems, topoObj)
 
 	// recursion search
-	return cli.SelectTopoModel(rstItems, itemAsso.OwnerID, itemAsso.ObjectID, clsID, topoObj.ObjID, topoObj.ObjName, errProxy)
+	return cli.SelectTopoModel(forward, rstItems, itemAsso.OwnerID, itemAsso.ObjectID, clsID, topoObj.ObjID, topoObj.ObjName, errProxy)
 }
 
-func (cli *objAttLogic) SelectObjectAtt(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
+func (cli *objAttLogic) SelectObjectAtt(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.searchWithParams(params, errProxy)
+	return cli.searchWithParams(forward, params, errProxy)
 }
 
-func (cli *objAttLogic) subSearchWithParams(val []byte) ([]api.ObjAttDes, error) {
+func (cli *objAttLogic) subSearchWithParams(forward *api.ForwardParam, val []byte) ([]api.ObjAttDes, error) {
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	objs, err := cli.objcli.SearchMetaObjectAttExceptInnerFiled(val)
+	objs, err := cli.objcli.SearchMetaObjectAttExceptInnerFiled(forward, val)
 
 	// TODO need to delete
 
@@ -742,10 +742,10 @@ retry:
 	return objs, err
 }
 
-func (cli *objAttLogic) searchWithParams(val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
+func (cli *objAttLogic) searchWithParams(forward *api.ForwardParam, val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttDes, error) {
 
 	// read object attributes
-	objAtts, rstErr := cli.subSearchWithParams(val)
+	objAtts, rstErr := cli.subSearchWithParams(forward, val)
 	if nil != rstErr {
 		blog.Error("call subsearch failed for object attribute")
 		return nil, rstErr
@@ -759,7 +759,7 @@ func (cli *objAttLogic) searchWithParams(val []byte, errProxy errors.DefaultCCEr
 		objAsst[common.BKOwnerIDField] = tmp.OwnerID
 		objAsst["bk_object_att_id"] = tmp.PropertyID
 
-		asstMsg, asstErr := cli.mgr.SelectObjectAsst(objAsst, errProxy)
+		asstMsg, asstErr := cli.mgr.SelectObjectAsst(forward, objAsst, errProxy)
 		// read property group
 		condition := map[string]interface{}{
 			"bk_group_id":         tmp.PropertyGroup,
@@ -767,7 +767,7 @@ func (cli *objAttLogic) searchWithParams(val []byte, errProxy errors.DefaultCCEr
 			"bk_obj_id":           tmp.ObjectID,
 		}
 		conditionStr, _ := json.Marshal(condition)
-		groups, groupErr := cli.mgr.SelectPropertyGroupByObjectID(tmp.OwnerID, tmp.ObjectID, conditionStr, errProxy)
+		groups, groupErr := cli.mgr.SelectPropertyGroupByObjectID(forward, tmp.OwnerID, tmp.ObjectID, conditionStr, errProxy)
 		if nil != groupErr {
 			blog.Error("failed to search the property group, error info is %s", groupErr.Error())
 		} else if 0 != len(groups) {

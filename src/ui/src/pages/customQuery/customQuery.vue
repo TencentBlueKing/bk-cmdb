@@ -19,11 +19,11 @@
                 </div>
             </div>
             <div class="options-btn-group fl ml10">
-                <bk-button type="primary" class="options-btn mr10" style="display: none">新增指引</bk-button>
-                <bk-button type="primary" @click="showUserAPISlider('create')">新增查询</bk-button>
+                <bk-button type="primary" class="options-btn mr10" style="display: none">{{$t("CustomQuery['新增指引']")}}</bk-button>
+                <bk-button type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
             </div>
             <div class="options-search fr">
-                <input class="bk-form-input" type="text" placeholder="快速查询"
+                <input class="bk-form-input" type="text" :placeholder="$t('Inst[\'快速查询\']')"
                 v-model.trim="filter.name"
                     @keyup.enter="setCurrentPage(1)"
                 >
@@ -89,19 +89,19 @@
                         name: 'ID'
                     }, {
                         id: 'name',
-                        name: '查询名称'
+                        name: this.$t("CustomQuery['查询名称']")
                     }, {
                         id: 'create_user',
-                        name: '创建用户'
+                        name: this.$t("CustomQuery['创建用户']")
                     }, {
                         id: 'create_time',
-                        name: '创建时间'
+                        name: this.$t("CustomQuery['创建时间']")
                     }, {
                         id: 'modify_user',
-                        name: '修改人'
+                        name: this.$t("CustomQuery['修改人']")
                     }, {
                         id: 'last_time',
-                        name: '修改时间'
+                        name: this.$t("CustomQuery['修改时间']")
                     }],
                     list: [],
                     sort: '-last_time',
@@ -118,7 +118,7 @@
                     type: 'create',
                     id: null,
                     title: {
-                        text: '查询定义',
+                        text: this.$t("CustomQuery['查询定义']"),
                         icon: 'icon-cc-edit'
                     }
                 }
@@ -167,7 +167,7 @@
                     this.table.isLoading = false
                     this.table.list = []
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前业务的权限')
+                        this.$alertMsg(this.$t("Common['您没有当前业务的权限']"))
                     }
                 })
             },

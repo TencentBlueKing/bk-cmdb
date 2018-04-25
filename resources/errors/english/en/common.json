@@ -30,6 +30,7 @@
     "1199029": "Function return value format problem",
     "1199030": "HTTP POST parsing failed",
     "1199031": "'%s' initialization failed",
+	"1199032": "params needs to be a string",
 
     "":""
 }
