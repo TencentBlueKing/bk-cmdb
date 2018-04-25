@@ -400,7 +400,6 @@
                         }
                     }
                 }
-                console.log(111, isConfirmShow)
                 return isConfirmShow
             },
             confirmHost (hostInfo) {
