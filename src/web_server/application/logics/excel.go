@@ -17,10 +17,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"errors"
+	"fmt"
 	"net/http"
-	"strings"
-
 	"reflect"
+	"strings"
 
 	lang "configcenter/src/common/language"
 	simplejson "github.com/bitly/go-simplejson"
@@ -32,18 +32,110 @@ var (
 	headerRow int = common.HostAddMethodExcelIndexOffset
 )
 
+// BuildExcelFromData product excel from data
+func BuildExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
+	if 0 == len(filter) {
+		filter = getFilterFields(objID)
+	} else {
+		filter = append(filter, getFilterFields(objID)...)
+	}
+
+	productExcelHealer(fields, filter, sheet, defLang)
+	indexID := getFieldsIDIndexMap(fields)
+
+	var xlsRow *xlsx.Row
+	rowIndex := common.HostAddMethodExcelIndexOffset
+
+	for _, row := range data {
+		hostData, ok := row.(map[string]interface{})
+		if false == ok {
+			msg := fmt.Sprintf("data format error:%v", row)
+			blog.Errorf(msg)
+			return errors.New(msg)
+		}
+
+		rowMap, ok := hostData["host"].(map[string]interface{})
+		if false == ok {
+			msg := fmt.Sprintf("data format error:%v", row)
+			blog.Errorf(msg)
+			return errors.New(msg)
+		}
+		isEmpty := true
+		for id, val := range rowMap {
+			// row unequal nil, pre row not used
+			if nil == xlsRow {
+				//row = sheet.AddRow()
+			}
+			index, ok := indexID[id]
+			if false == ok {
+				continue
+			}
+			isEmpty = true
+			sheet.Cell(rowIndex, index).SetValue(val)
+			fmt.Println(rowIndex, index)
+
+		}
+		if false == isEmpty {
+			rowIndex += 1
+		}
+	}
+
+	return nil
+}
+
+// BuildExcelFromData product excel from data
+func BuildHostExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
+	if 0 == len(filter) {
+		filter = getFilterFields(objID)
+	} else {
+		filter = append(filter, getFilterFields(objID)...)
+	}
+
+	productExcelHealer(fields, filter, sheet, defLang)
+	indexID := getFieldsIDIndexMap(fields)
+	fmt.Println("\n\n ======================== \n\n")
+
+	fmt.Println(data)
+	var xlsRow *xlsx.Row
+	rowIndex := common.HostAddMethodExcelIndexOffset
+
+	for _, row := range data {
+		rowMap, ok := row.(map[string]interface{})
+		if false == ok {
+			msg := fmt.Sprintf("data format error:%v", row)
+			blog.Errorf(msg)
+			return errors.New(msg)
+		}
+		isEmpty := true
+		for id, val := range rowMap {
+			// row unequal nil, pre row not used
+			if nil == xlsRow {
+				//row = sheet.AddRow()
+			}
+			index, ok := indexID[id]
+			if false == ok {
+				continue
+			}
+			isEmpty = true
+			sheet.Cell(rowIndex, index).SetValue(val)
+			fmt.Println(rowIndex, index)
+
+		}
+		if false == isEmpty {
+			rowIndex += 1
+		}
+	}
+
+	return nil
+}
+
 //BuildExcelTemplate  return httpcode, error
 func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf) error {
-	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"start": 0, "limit": common.BKNoLimit}}
-	result, err := httpRequest(url, conds, header)
-	if nil != err {
+	fields, err := GetObjFieldIDs(objID, url, header)
+	if err != nil {
+		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return err
 	}
-	blog.Info("get %s fields  url:%s", objID, url)
-	blog.Info("get %s fields return:%s", objID, result)
-	js, _ := simplejson.NewJson([]byte(result))
-	hostFields, _ := js.Map()
-	fields, _ := hostFields["data"].([]interface{})
 
 	var file *xlsx.File
 	file = xlsx.NewFile()
@@ -52,7 +144,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 		blog.Errorf("get %s fields error:", objID, err.Error())
 		return err
 	}
-	ProductExcelHealer(fields, getFilterFields(objID), sheet, defLang)
+	productExcelHealer(fields, getFilterFields(objID), sheet, defLang)
 	err = file.Save(filename)
 	if nil != err {
 		return err
@@ -61,43 +153,102 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 	return nil
 }
 
-//ProductExcelHealer Excel文件头部，
-func ProductExcelHealer(fields []interface{}, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+// ProductExcelHealer Excel文件头部，
+func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 
 	rowName := sheet.AddRow()
 	rowType := sheet.AddRow()
 	rowEnName := sheet.AddRow()
+
+	styleCell := getCellStyle("C6EFCE", "000000")
+	index := 0
+
 	for _, field := range fields {
-		mapField, _ := field.(map[string]interface{})
-		fieldName, okName := mapField[common.BKPropertyNameField].(string)
+		sheet.Col(index).Width = 18
 
-		if !okName {
-			fieldName = defLang.Language("web_excel_header_field_error") //"[未发现字段名(错误)]"
-		}
-
-		fieldType, _ := mapField[common.BKPropertyTypeField].(string)
-		fieldTypeName, skip := getPropertyTypeAliasName(fieldType)
+		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
 		if true == skip {
 			//不需要用户输入的类型continue
 			continue
 		}
 		isRequire := ""
-		require, _ := mapField["bk_is_required"].(bool)
-		if require {
+
+		if field.IsRequire {
 			isRequire = defLang.Language("web_excel_header_required") //"(必填)"
 		}
-		enName, _ := mapField[common.BKPropertyIDField].(string)
-		if util.Contains(filter, enName) {
+		if util.Contains(filter, field.ID) {
 			continue
 		}
 		cellName := rowName.AddCell()
-		cellName.Value = fieldName + isRequire
+		cellName.Value = field.Name + isRequire
+
+		if true == field.IsRequire {
+			cellName.SetStyle(getCellStyle("92D050", "ff0000"))
+		} else {
+			cellName.SetStyle(getCellStyle("92D050", "000000"))
+
+		}
 
 		cellType := rowType.AddCell()
 		cellType.Value = fieldTypeName
+		cellType.SetStyle(styleCell)
 
 		cellEnName := rowEnName.AddCell()
-		cellEnName.Value = enName
+		cellEnName.Value = field.ID
+		cellEnName.SetStyle(styleCell)
+
+		switch field.PropertyType {
+		case common.FiledTypeInt:
+			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+		case common.FiledTypeEnum:
+			option := field.Option
+			var optionArr []interface{}
+			var enumVals []string
+			switch option.(type) {
+			case string:
+				js, err := simplejson.NewJson([]byte(option.(string)))
+				if nil != err {
+					blog.Errorf("get inst fields error, property:%v", field)
+				} else {
+					optionArr, _ = js.Array()
+				}
+			default:
+				optionArr, _ = option.([]interface{})
+			}
+
+			if nil != optionArr {
+				for _, o := range optionArr {
+					oMap, ok := o.(map[string]interface{})
+					if false == ok {
+						continue
+					}
+					/*id, ok := oMap["id"].(string)
+					if ok {
+						enumVals = append(enumVals, id)
+						continue
+					}*/
+					name, ok := oMap["name"].(string)
+
+					if ok {
+						enumVals = append(enumVals, name)
+						continue
+					}
+				}
+				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+				dd.SetDropList(enumVals)
+				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
+
+			}
+
+		case common.FieldTypeBool:
+			sheet.Col(index).SetType(xlsx.CellTypeBool)
+		default:
+			sheet.Col(index).SetType(xlsx.CellTypeString)
+
+		}
+
+		index += 1 //xlsx column index start from 1
+
 	}
 }
 
@@ -249,27 +400,29 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool
 
 }
 
-//getObjFieldIDs 获取properyID和properyName对应的值
-func getObjFieldIDs(objID, url string, header http.Header) (common.KvMap, error) {
-	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"start": 0, "limit": common.BKNoLimit}}
-	result, err := httpRequest(url, conds, header)
-	if nil != err {
-		return nil, err
+// getCellStyle get cell style from fgColor and fontcolor
+func getCellStyle(fgColor, fontColor string) *xlsx.Style {
+	style := xlsx.NewStyle()
+	style.Fill = *xlsx.DefaultFill()
+	style.Font = *xlsx.DefaultFont()
+	style.ApplyFill = true
+	style.ApplyFont = true
+
+	style.Fill.FgColor = fgColor
+	style.Fill.PatternType = "solid"
+
+	style.Font.Color = fontColor
+
+	return style
+}
+
+// getFieldsIDIndexMap get field property index
+func getFieldsIDIndexMap(fields map[string]Property) map[string]int {
+	index := 0
+	IDNameMap := make(map[string]int)
+	for id, _ := range fields {
+		IDNameMap[id] = index
+		index += 1
 	}
-	blog.Info("get %s fields  url:%s", objID, url)
-	blog.Info("get %s fields return:%s", objID, result)
-	js, _ := simplejson.NewJson([]byte(result))
-	hostFields, _ := js.Map()
-	fields, _ := hostFields["data"].([]interface{})
-	ret := common.KvMap{}
-
-	for _, field := range fields {
-		mapField, _ := field.(map[string]interface{})
-
-		fieldName, _ := mapField[common.BKPropertyNameField].(string)
-		fieldID, _ := mapField[common.BKPropertyIDField].(string)
-		ret[fieldID] = fieldName
-	}
-
-	return ret, nil
+	return IDNameMap
 }

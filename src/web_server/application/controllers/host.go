@@ -29,7 +29,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"reflect"
 	"time"
 )
 
@@ -76,7 +75,6 @@ func ImportHost(c *gin.Context) {
 	}
 	defer os.Remove(filePath) //del file
 	f, err := xlsx.OpenFile(filePath)
-	fmt.Println(err)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -123,7 +121,7 @@ func ExportHost(c *gin.Context) {
 	logics.SetProxyHeader(c)
 
 	language := logics.GetLanugaeByHTTPRequest(c)
-	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
@@ -136,12 +134,13 @@ func ExportHost(c *gin.Context) {
 	}
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
-	var row *xlsx.Row
-	var cell *xlsx.Cell
+	//var row *xlsx.Row
+	//var cell *xlsx.Cell
 
 	file = xlsx.NewFile()
 	sheet, err = file.AddSheet("host")
-	if err != nil {
+
+	/*if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusBadGateway, msg)
@@ -181,6 +180,15 @@ func ExportHost(c *gin.Context) {
 				cell.Value = ""
 			}
 		}
+	}*/
+	objID := common.BKInnerObjIDHost
+	fields, err := logics.GetObjFieldIDs(objID, apiSite, c.Request.Header)
+	err = logics.BuildExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
+	if nil != err {
+		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
 	}
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
@@ -209,7 +217,6 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 	cc := api.NewAPIResource()
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	url := apiSite + fmt.Sprintf("/api/%s/object/attr/search", webCommon.API_VERSION)
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
 	_, err := os.Stat(dir)
@@ -221,7 +228,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = logics.BuildExcelTemplate(url, objID, file, c.Request.Header, defLang)
+	err = logics.BuildExcelTemplate(apiSite, objID, file, c.Request.Header, defLang)
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
