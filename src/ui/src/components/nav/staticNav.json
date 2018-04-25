@@ -3,41 +3,41 @@
     "id": "globalbusi",
     "name": "主机管理",
     "icon": "icon-cc-business",
-    "international": "message.navBiz",
+    "i18n": "Hosts['主机管理']",
     "authorized": true,
     "isOpen": false,
     "children": [{
         "id": "index",
         "name": "主机",
-        "international": "message.navBizHost",
+        "i18n": "Hosts['主机']",
         "path": "/",
         "authorized": true,
         "authority": ["search", "create", "update", "delete"]
     }, {
         "id": "topology",
         "name": "业务拓扑",
-        "international": "message.navBizTopo",
+        "i18n": "BusinessTopology['业务拓扑']",
         "path": "/topology",
         "authorized": true,
         "authority": ["search", "create", "update", "delete"]
     }, {
         "id": "process",
         "name": "进程管理",
-        "international": "message.navProcess",
+        "i18n": "ProcessManagement['进程管理']",
         "path": "/process",
         "authorized": true,
         "authority": ["search", "create", "update", "delete"]
     }, {
         "id": "customQuery",
         "name": "自定义查询",
-        "international": "message.navCustomQuery",
+        "i18n": "CustomQuery['自定义查询']",
         "path": "/customQuery",
         "authorized": true,
         "authority": ["search", "create", "update", "delete"]
     }, {
         "id": "resource",
         "name": "主机资源池",
-        "international": "message.navGlobalHosts",
+        "i18n": "HostResourcePool['主机资源池']",
         "path": "/resource",
         "authorized": false,
         "authority": ["search", "create", "update", "delete"]
@@ -47,14 +47,14 @@
     "id": "backConfig",
     "name": "后台配置",
     "icon": "icon-cc-setting",
-    "international": "message.navSystem",
+    "i18n": "Common['后台配置']",
     "authorized": false,
     "isOpen": false,
     "children": [
         {
             "id": "model",
             "name": "模型管理",
-            "international": "message.navSystemModel",
+            "i18n": "ModelManagement['模型管理']",
             "path": "/model",
             "authorized": false,
             "authority": [
@@ -66,21 +66,21 @@
         }, {
             "id": "permission",
             "name": "权限管理",
-            "international": "message.navPermissions",
+            "i18n": "Permission['权限管理']",
             "path": "/permission",
             "authorized": false,
             "authority": ["search", "create", "update", "delete"]
         }, {
             "id": "event",
             "name": "事件推送",
-            "international": "message.navEventPush",
+            "i18n": "EventPush['事件推送']",
             "path": "/eventpush",
             "authorized": false,
             "authority": ["search", "create", "update", "delete"]
         }, {
             "id": "audit",
             "name": "操作审计",
-            "international": "message.navAuditing",
+            "i18n": "OperationAudit['操作审计']",
             "path": "/auditing",
             "authorized": false,
             "authority": ["search", "create", "update", "delete"]

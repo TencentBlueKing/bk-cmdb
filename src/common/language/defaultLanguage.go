@@ -12,6 +12,10 @@
 
 package language
 
+import (
+	"configcenter/src/common/blog"
+)
+
 // ccDefaultLanguageHelper regular language code helper
 type ccDefaultLanguageHelper struct {
 	languageType string
@@ -21,7 +25,9 @@ type ccDefaultLanguageHelper struct {
 
 // Language returns an content for specific language
 func (cli *ccDefaultLanguageHelper) Language(key string) string {
-	return cli.languageStr(cli.languageType, key)
+	ret := cli.languageStr(cli.languageType, key)
+	blog.Infof("language %s, key %s, ret %s", cli.languageType, key, ret)
+	return ret
 }
 
 // Languagef returns an content with args for specific language

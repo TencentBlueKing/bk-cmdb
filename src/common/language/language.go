@@ -13,6 +13,7 @@
 package language
 
 import (
+	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -49,6 +50,7 @@ func (cli *ccLanguageHelper) Languagef(language string, key string, args ...inte
 
 // load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
+	blog.InfoJSON("loaded language resource: %s", lang)
 	cli.lang = lang
 }
 
@@ -96,7 +98,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 			}
 			langMap[language[0]][key] = val
 		}
-
+		blog.Infof("%v", langMap)
 		return nil
 
 	})
@@ -140,7 +142,7 @@ RESET:
 				goto RESET
 			}
 		}
-		return fmt.Sprintf(UnknownTheKeyStrf, key)
+		return ""
 	}
 
 	return errstr
@@ -151,6 +153,8 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 
 	// find language package form resource cache
 	codemgr := cli.getLanguageKey(language)
+	fmt.Println(codemgr)
+
 	if nil == codemgr {
 		return fmt.Sprintf(UnknownTheLanguageStrf, language)
 	}
@@ -164,6 +168,7 @@ func (cli *ccLanguageHelper) languageStrf(language, key string, args ...interfac
 
 	// find language from resource cache
 	codemgr := cli.getLanguageKey(language)
+	fmt.Println(codemgr)
 	if nil == codemgr {
 		return fmt.Sprintf(UnknownTheLanguageStrf, language)
 	}

@@ -16,11 +16,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
-	errorHandle "configcenter/src/common/errors"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	sencecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/validator"
 	sourceAuditAPI "configcenter/src/source_controller/api/auditlog"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"errors"
 	"fmt"
 
@@ -30,21 +31,28 @@ import (
 )
 
 //AddHost, return error info
-func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) (error, []string, []string, []string) {
-
+func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	user := sencecommon.GetUserFromHeader(req)
 
+	hostAddr := cc.HostCtrl()
+	ObjAddr := cc.ObjCtrl()
+	auditAddr := cc.AuditCtrl()
 	addHostURL := hostAddr + "/host/v1/insts/"
 	uHostURL := ObjAddr + "/object/v1/insts/host"
+
+	language := util.GetActionLanguage(req)
+	errHandle := cc.Error.CreateDefaultCCErrorIf(language)
+	langHandle := cc.Lang.CreateDefaultCCLanguageIf(language)
 
 	addParams := make(map[string]interface{})
 	addParams[common.BKAppIDField] = appID
 	addParams[common.BKModuleIDField] = []int{moduleID}
 	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
 
-	allHostList, err := GetHostInfoByConds(req, hostAddr, nil)
+	allHostList, err := GetHostInfoByConds(req, hostAddr, nil, langHandle)
 	if nil != err {
-		return errors.New("查询主机信息失败"), nil, nil, nil
+		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
 	}
 
 	hostMap := convertHostInfo(allHostList)
@@ -53,7 +61,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	var errMsg, succMsg, updateErrMsg []string   //新加错误， 成功，  更新失败
 	iSubArea := common.BKDefaultDirSubArea
 
-	defaultFields := getHostFields(ownerID, ObjAddr)
+	defaultFields := getHostFields(forward, ownerID, ObjAddr)
 	ts := time.Now().UTC()
 	//operator log
 	var logConents []auditoplog.AuditLogExt
@@ -65,7 +73,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if ok == false || "" == innerIP {
-			errMsg = append(errMsg, fmt.Sprintf("%d行内网ip为空", index))
+			errMsg = append(errMsg, langHandle.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 		notExistFields := []string{} //没有赋值的key，不需要校验
@@ -77,14 +85,15 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			}
 			require, _ := util.GetIntByInterface(value["require"])
 			if require == common.BKTrue {
-				errMsg = append(errMsg, fmt.Sprintf("%d行内网%s必填", index, key))
+
+				errMsg = append(errMsg, langHandle.Languagef("host_import_property_need_set", index, key))
 				continue
 			}
 			notExistFields = append(notExistFields, key)
 		}
 		blog.Infof("no validate fields %v", notExistFields)
 
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, errHandle)
+		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
 
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, ok := hostMap[key]
@@ -111,8 +120,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			isSuccess, message, _ := GetHttpResult(req, uHostURL, common.HTTPUpdate, input)
 			innerIP := host[common.BKHostInnerIPField].(string)
 			if !isSuccess {
-				ret := fmt.Sprintf("%s更新失败%v;", innerIP, message)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%v", index, ret))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("host_import_update_fail", index, innerIP, message))
 				continue
 			}
 			logContent, _ := logObj.GetHostLog(strHostID, false)
@@ -140,8 +148,8 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 			isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 			if !isSuccess {
-				ret := fmt.Sprintf("%s新加失败%s;", host["InnerIP"].(string), message)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, ret))
+				ip, _ := host["InnerIP"].(string)
+				errMsg = append(errMsg, langHandle.Languagef("host_import_add_fail", index, ip, message))
 				continue
 			}
 
@@ -153,7 +161,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			isSuccess, message, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, addParams)
 			if !isSuccess {
 				blog.Error("add hosthostconfig error, params:%v, error:%s", addParams, message)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, innerIP))
+				errMsg = append(errMsg, langHandle.Languagef("host_import_add_host_module", index, innerIP))
 				continue
 			}
 			strHostID := fmt.Sprintf("%d", hostID)
@@ -168,7 +176,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 	if 0 < len(logConents) {
 		logAPIClient := sourceAuditAPI.NewClient(auditAddr)
-		_, err := logAPIClient.AuditHostsLog(logConents, "导入主机", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
+		_, err := logAPIClient.AuditHostsLog(logConents, "import host", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
 		//addAuditLogs(req, logAdd, "新加主机", ownerID, appID, user, auditAddr)
 		if nil != err {
 			blog.Errorf("add audit log error %s", err.Error())
@@ -176,16 +184,24 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return errors.New("导入主机出现错误"), succMsg, updateErrMsg, errMsg
+		return errors.New(langHandle.Language("host_import_err")), succMsg, updateErrMsg, errMsg
 	}
 
 	return nil, succMsg, updateErrMsg, errMsg
 }
 
-//EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
-func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) error {
+// EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
+func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName string, cc *api.APIResource) error {
 
 	user := sencecommon.GetUserFromHeader(req)
+
+	hostAddr := cc.HostCtrl()
+	ObjAddr := cc.ObjCtrl()
+	auditAddr := cc.AuditCtrl()
+
+	language := util.GetActionLanguage(req)
+	//errHandle := cc.Error.CreateDefaultCCErrorIf(language)
+	langHandle := cc.Lang.CreateDefaultCCLanguageIf(language)
 
 	addHostURL := hostAddr + "/host/v1/insts/"
 
@@ -198,9 +214,9 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 		common.BKHostInnerIPField: IP,
 		common.BKCloudIDField:     common.BKDefaultDirSubArea,
 	}
-	hostList, err := GetHostInfoByConds(req, hostAddr, conds)
+	hostList, err := GetHostInfoByConds(req, hostAddr, conds, langHandle)
 	if nil != err {
-		return errors.New("查询主机信息失败")
+		return errors.New(langHandle.Language("host_search_fail")) // "查询主机信息失败")
 	}
 	if len(hostList) > 0 {
 		return nil
@@ -212,7 +228,8 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 
 	host["import_from"] = common.HostAddMethodAgent
 	host[common.BKCloudIDField] = common.BKDefaultDirSubArea
-	defaultFields := getHostFields(ownerID, ObjAddr)
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	defaultFields := getHostFields(forward, ownerID, ObjAddr)
 	//补充未填写字段的默认值
 	for key, val := range defaultFields {
 		_, ok := host[key]
@@ -224,7 +241,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 
 	isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 	if !isSuccess {
-		return errors.New(fmt.Sprintf("add host to cmdb error,error:%s", message))
+		return errors.New(langHandle.Languagef("host_agent_add_host_fail", message))
 	}
 
 	retHost := retData.(map[string]interface{})
@@ -234,7 +251,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	isSuccess, message, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, addParams)
 	if !isSuccess {
 		blog.Error("enterip add hosthostconfig error, params:%v, error:%s", addParams, message)
-		return errors.New(fmt.Sprintf("add hosthostconfig error,error:%s", message))
+		return errors.New(langHandle.Languagef("host_agent_add_host_module_fail", message))
 	}
 
 	//prepare the log
@@ -245,7 +262,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	logAPIClient.AuditHostLog(hostID, content, "enter IP HOST", IP, ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
 	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
 	logClient.SetHostID([]int{hostID})
-	logClient.SetDescPrefix("enter IP ")
+	logClient.SetDesc("host module change")
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 	return nil
 

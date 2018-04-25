@@ -17,7 +17,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver/webserver"
+	"configcenter/src/common/language"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
@@ -60,6 +62,9 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	a.AddrSrv = s.rd
+
+	//	a.Lang = language.New()
+
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
 	return s, nil
@@ -85,7 +90,7 @@ func (ccWeb *CCWebServer) Start() error {
 	var confData []byte
 	_ = confData
 	for {
-		confData = ccWeb.cfCenter.GetConfigureCxt()
+		confData = ccWeb.cfCenter.GetConfigureCtx()
 
 		if confData == nil {
 			blog.Warnf("fail to get configure, will get again")
@@ -100,6 +105,54 @@ func (ccWeb *CCWebServer) Start() error {
 	a := api.NewAPIResource()
 	config, _ := a.ParseConf(confData)
 
+	// load the language resource
+	if dirPath, ok := config["language.res"]; ok {
+		if res, err := language.New(dirPath); nil != err {
+			blog.Error("failed to create language object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Lang = res
+		}
+	} else {
+		for {
+			langCtx := ccWeb.cfCenter.GetLanguageResCxt()
+			if langCtx == nil {
+				blog.Warnf("fail to get language package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				languageif := language.NewFromCtx(langCtx)
+				a.Lang = languageif
+				blog.Info("lanugage package loaded")
+				break
+			}
+		}
+	}
+
+	// load the errors resource
+	if dirPath, ok := config["erros.res"]; ok {
+		if res, err := errors.New(dirPath); nil != err {
+			blog.Error("failed to create errors object, error info is  %s ", err.Error())
+			chErr <- err
+		} else {
+			a.Error = res
+		}
+	} else {
+		for {
+			errCtx := ccWeb.cfCenter.GetErrorResCxt()
+			if errCtx == nil {
+				blog.Warnf("fail to get errors package, will get again")
+				time.Sleep(time.Second * 2)
+				continue
+			} else {
+				errIf := errors.NewFromCtx(errCtx)
+				a.Error = errIf
+				blog.Info("lanugage erros loaded")
+				break
+			}
+		}
+	}
+
 	site := config["site.domain_url"] + "/"
 	version := config["api.version"]
 	loginURL := config["site.bk_login_url"]
@@ -107,6 +160,10 @@ func (ccWeb *CCWebServer) Start() error {
 	check_url := config["site.check_url"]
 	sessionName := config["session.name"]
 	skipLogin := config["session.skip"]
+	defaultlanguage := config["session.defaultlanguage"]
+	if "" == defaultlanguage {
+		defaultlanguage = "zh-cn"
+	}
 	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
@@ -127,7 +184,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 		ccWeb.RegisterActions(a.Wactions)
 		middleware.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
-		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner))
+		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner, defaultlanguage))
 		ccWeb.httpServ.Static("/static", static)
 		blog.Info(static)
 		ccWeb.httpServ.LoadHTMLFiles(static + "/index.html") //("static/index.html")
