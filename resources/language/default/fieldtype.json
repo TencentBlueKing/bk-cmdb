@@ -1,0 +1,17 @@
+{
+	"field_type_singlechar": "短字符",
+	"field_type_longchar": "长字符",
+	"field_type_int": "数字",
+	"field_type_enum": "枚举",
+	"field_type_date": "日期",
+	"field_type_time": "时间",
+	"field_type_objuser": "用户",
+	"field_type_singleasst": "单关联",
+	"field_type_multiasst": "多关联",
+	"field_type_timezone": "时区",
+	"field_type_bool": "布尔",
+	"field_type_bool_true": "是",
+	"field_type_bool_false": "否"
+}
+
+
