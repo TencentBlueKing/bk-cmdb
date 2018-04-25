@@ -281,6 +281,15 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 			searchCond[key] = val
 		}
 	}
+
+	if 1 == len(searchCond) {
+		for key, _ := range searchCond {
+			if key == common.BKAppIDField {
+				return true, nil
+			}
+		}
+	}
+
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
@@ -348,10 +357,11 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 			if instIDci == instID {
 				return true, nil
 			}
+			blog.Error("duplicate data ")
 			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 		}
 	} else {
-		//err := "duplicate data "
+		blog.Error("duplicate data ")
 		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 	}
 	return true, nil

@@ -12,11 +12,16 @@
 
 package types
 
+// zk path
 const (
-	CC_SERV_BASEPATH           = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH       = "/cc/services/config"
-	CC_SERVERROR_BASEPATH      = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH       = "/cc/services/language"
+	CC_SERV_BASEPATH      = "/cc/services/endpoints"
+	CC_SERVCONF_BASEPATH  = "/cc/services/config"
+	CC_SERVERROR_BASEPATH = "/cc/services/errors"
+	CC_SERVLANG_BASEPATH  = "/cc/services/language"
+)
+
+// cc modules
+const (
 	CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
 	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
 	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
@@ -29,6 +34,27 @@ const (
 	CC_MODULE_APISERVER        = "apiserver"
 	CC_MODULE_WEBSERVER        = "webserver"
 	CC_MODULE_EVENTSERVER      = "eventserver"
+)
+
+// AllModule all cc module
+var AllModule = map[string]bool{
+	CC_MODULE_AUDITCONTROLLER:  true,
+	CC_MODULE_HOSTCONTROLLER:   true,
+	CC_MODULE_OBJECTCONTROLLER: true,
+	CC_MODULE_PROCCONTROLLER:   true,
+	CC_MODULE_DATACOLLECTION:   true,
+	CC_MODULE_HOST:             true,
+	CC_MODULE_MIGRATE:          true,
+	CC_MODULE_PROC:             true,
+	CC_MODULE_TOPO:             true,
+	CC_MODULE_APISERVER:        true,
+	CC_MODULE_WEBSERVER:        true,
+	CC_MODULE_EVENTSERVER:      true,
+}
+
+// cc functionality define
+const (
+	CCFunctionalityServicediscover = "servicediscover"
 )
 
 // ServerInfo define base server information

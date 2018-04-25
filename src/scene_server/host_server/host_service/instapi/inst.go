@@ -334,6 +334,10 @@ func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID st
 
 					if keyItem, keyItemOk := dataItem[key]; keyItemOk {
 
+						if nil == keyItem {
+							continue
+						}
+
 						keyItemStr := fmt.Sprintf("%v", keyItem)
 						blog.Debug("keyitemstr:%s", keyItemStr)
 						retData, _, retErr := cli.getInstAsst(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
@@ -380,6 +384,10 @@ func (cli *instHelper) GetInstDetails(req *restful.Request, objID, ownerID, inst
 		for key, val := range rstmap {
 
 			if keyItem, keyItemOk := data[key]; keyItemOk {
+
+				if nil == keyItem {
+					continue
+				}
 
 				keyItemStr := fmt.Sprintf("%v", keyItem)
 				blog.Debug("keyitemstr:%s", keyItemStr)

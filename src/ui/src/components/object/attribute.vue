@@ -101,6 +101,9 @@
                                                         :disabled="checkIsFieldDisabled(property)">
                                                     </input>
                                                 </span>
+                                                <input type="text" class="bk-form-input" v-else-if="property['bk_property_type'] === 'int'"
+                                                    :disabled="checkIsFieldDisabled(property)"
+                                                    v-model.trim.number="localValues[property['bk_property_id']]">
                                                 <input v-else
                                                     type="text" class="bk-form-input"
                                                     :disabled="checkIsFieldDisabled(property)" 

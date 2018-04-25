@@ -15,14 +15,20 @@ package ccapi
 import (
 	confCenter "configcenter/src/api_server/ccapi/config"
 	"configcenter/src/api_server/ccapi/rdiscover"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"fmt"
+	"github.com/emicklei/go-restful"
+	"net"
 	"time"
 )
 
@@ -54,7 +60,6 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	//Configure Center
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-
 	return s, nil
 }
 
@@ -109,10 +114,8 @@ func (ccAPI *CCAPIServer) Start() error {
 	a.AddrSrv = ccAPI.rd
 	//check host controller server
 	a.HostAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_HOST, a.AddrSrv)
-
 	//check object controller server
 	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
-
 	//check object controller server
 	a.ProcAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_PROC, a.AddrSrv)
 
@@ -180,12 +183,72 @@ func (ccAPI *CCAPIServer) Start() error {
 		return err
 	}
 
-	return nil
 }
 
 func (ccAPI *CCAPIServer) initHttpServ() error {
 	a := api.NewAPIResource()
 	ccAPI.httpServ.RegisterWebServer("/api", rdapi.AllGlobalFilter(), a.Actions)
+	// MetricServer
+	conf := metric.Config{
+		ModuleName:    types.CC_MODULE_APISERVER,
+		ServerAddress: ccAPI.conf.AddrPort,
+	}
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
 
 	return nil
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+	a := api.GetAPIResource()
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
+
+	// check dependence
+	for module := range types.AllModule {
+		if module == types.CC_MODULE_APISERVER {
+			continue
+		}
+		address, _ := a.AddrSrv.GetServer(module)
+		if "" == address {
+			meta.Items = append(meta.Items, metric.NewHealthItem(module, fmt.Errorf("% server not active", module)))
+			continue
+		}
+		if module == types.CC_MODULE_WEBSERVER {
+			// in order to prevent dead loop,
+			// we will not check web server health via it's interface /healthz
+			dailaddr, err := util.GetDailAddress(address)
+			if err != nil {
+				blog.Errorf("GetDailAddress error: %v", err)
+				meta.Items = append(meta.Items, metric.NewHealthItem(module, fmt.Errorf("% server not active", module)))
+				continue
+			}
+			conn, err := net.Dial("tcp", dailaddr)
+			meta.Items = append(meta.Items, metric.NewHealthItem(module, err))
+			if err == nil {
+				conn.Close()
+			}
+			continue
+		}
+		meta.Items = append(meta.Items, metric.NewHealthItem(module, metric.CheckHealthy(address)))
+	}
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "apiserver is not healthy"
+			break
+		}
+	}
+
+	return meta
 }
