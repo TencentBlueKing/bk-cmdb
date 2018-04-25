@@ -50,10 +50,7 @@
 	"1101050": "Delete Plat Failed",
 	"1101051": "Create Plat Failed",
 	"1101052": "Plat has host data, can not delete plat",
-	
 	"1101080": "The module does not exist, please refresh the page",
-	"":""
-	
-	}
-
-	
+	"1101081": "blueking business does not allow deletion",
+	"": "" 
+}

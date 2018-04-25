@@ -14,7 +14,7 @@
             <div class="hidden-list">
                 <div class="hidden-list-title">
                     <i class="bk-icon icon-eye-slash-shape"></i>
-                    隐藏字段
+                    {{$t('ModelManagement["隐藏字段"]')}}
                 </div>
                 <ul>
                     <draggable ref="draggableHideField" index="0" class="content-left" v-model="hideField" :options="{animation: 150, group:'field'}" :move="checkMove" @end="checkEnd">
@@ -62,7 +62,7 @@
                 <div class="layout-list-add">
                     <span @click="addFieldGroup">
                         <i class="bk-icon icon-plus"></i>
-                        <span>新增字段分组</span>
+                        <span>{{$t('ModelManagement["新增字段分组"]')}}</span>
                     </span>
                 </div>
             </div>
@@ -335,7 +335,7 @@
             */
             checkGroupName () {
                 for (let i = 0; i < this.groupFieldList.length; i++) {
-                    if (this.groupFieldList[i]['bk_group_name'] === '未命名') {
+                    if (this.groupFieldList[i]['bk_group_name'] === this.$t('ModelManagement["未命名"]')) {
                         return false
                     }
                 }
@@ -346,13 +346,13 @@
             */
             addFieldGroup () {
                 if (!this.checkGroupName()) {
-                    this.$alertMsg('已经存在未命名分组')
+                    this.$alertMsg(this.$t('ModelManagement["已经存在未命名分组"]'))
                     return
                 }
                 let rand = Math.random().toString(36).substr(2)
                 let params = {
                     bk_group_id: rand,  // groupID唯一，前端不展示
-                    bk_group_name: '未命名',
+                    bk_group_name: this.$t('ModelManagement["未命名"]'),
                     bk_group_index: this.lastGroupIndex,
                     bk_obj_id: this.objId,
                     bk_supplier_account: this.bkSupplierAccount
@@ -380,12 +380,12 @@
                 this.groupFieldList.forEach(element => {
                     if (this.labelList[index] === element['bk_group_name'] && item.label !== this.labelList[index]) {
                         status = false
-                        this.$alertMsg('该名字已存在')
+                        this.$alertMsg(this.$t('ModelManagement["该名字已经存在"]'))
                         this.isEditTitle = true     // 编辑状态
                     }
                 })
                 if (this.labelList[index].length > 20) {
-                    this.$alertMsg('分组长度超出限制')
+                    this.$alertMsg(this.$t('ModelManagement["分组长度超出限制"]'))
                     this.isEditTitle = true
                 }
                 if (this.isEditTitle) {
@@ -409,7 +409,7 @@
                     }
                     this.$axios.put('/objectatt/group/update', params).then((res) => {
                         if (res.result) {
-                            this.$alertMsg('修改成功', 'success')
+                            this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
                             this.getFieldGroup().then(res => {
                                 if (res.result) {
                                     this.getAttr()
@@ -443,20 +443,20 @@
                 // 系统内置字段不可删除
                 if (item['ispre']) {
                     status = false
-                    this.$alertMsg('系统内置分组不可删除')
+                    this.$alertMsg(this.$t('ModelManagement["系统内置分组不可删除"]'))
                     return
                 }
                 // "默认字段"分组不可删除
                 if (item['bk_group_id'] === 'default') {
                     status = false
-                    this.$alertMsg('默认字段分组不可删除')
+                    this.$alertMsg(this.$t('ModelManagement["默认字段分组不可删除"]'))
                 } else {
                     if (item.modelField) {
                         item.modelField.forEach(ele => {
                             // modelField 存在必填字段
                             if (ele['bk_isrequired']) {
                                 status = false
-                                this.$alertMsg('该分组中存在必填字段，不可删除')
+                                this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
                             }
                         })
                     }
@@ -470,7 +470,7 @@
                             }
                             this.$axios.put(`/object/attr/${ele['id']}`, params).then((res) => {
                                 if (res.result) {
-                                    this.$alertMsg('删除成功', 'success')
+                                    this.$alertMsg(this.$t('ModelManagement["删除成功"]'), 'success')
                                     this.getAttr()
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
@@ -480,7 +480,7 @@
                     }
                     this.$axios.delete(`/objectatt/group/groupid/${item['id']}`).then((res) => {
                         if (res.result) {
-                            this.$alertMsg('删除分组成功', 'success')
+                            this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
                             this.getFieldGroup().then(res => {
                                 if (res.result) {
                                     this.getAttr()
@@ -502,7 +502,7 @@
                 }
                 this.$axios.put(`/object/attr/${item['id']}`, params).then((res) => {
                     if (res.result) {
-                        this.$alertMsg('隐藏成功', 'success')
+                        this.$alertMsg(this.$t('ModelManagement["隐藏成功"]'), 'success')
                         this.getAttr()
                     } else {
                         this.$alertMsg(res['bk_error_msg'])

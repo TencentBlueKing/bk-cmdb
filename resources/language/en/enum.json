@@ -1,0 +1,39 @@
+{
+    "biz_property_life_cycle_enum_1": "testing",
+    "biz_property_life_cycle_enum_2": "online",
+    "biz_property_life_cycle_enum_3": "offline",
+
+    "biz_property_language_enum_1": "Chinese",
+    "biz_property_language_enum_2": "English",
+
+    "set_property_bk_service_status_enum_1": "opened",
+    "set_property_bk_service_status_enum_2": "closed",
+
+    "set_property_bk_set_env_enum_1": "testing",
+    "set_property_bk_set_env_enum_2": "experience",
+    "set_property_bk_set_env_enum_3": "formal",
+
+    "module_property_bk_module_type_enum_1": "normal",
+    "module_property_bk_module_type_enum_2": "database",
+
+    "host_property_bk_sla_enum_1": "L1",
+    "host_property_bk_sla_enum_2": "L2",
+    "host_property_bk_sla_enum_3": "L3",
+
+    "host_property_bk_os_type_enum_1": "Linux",
+    "host_property_bk_os_type_enum_2": "Windows",
+
+    "host_property_import_from_enum_1": "excel",
+    "host_property_import_from_enum_2": "agent",
+    "host_property_import_from_enum_3": "api",
+
+    "process_property_bind_ip_enum_1": "127.0.0.1",
+    "process_property_bind_ip_enum_2": "0.0.0.0",
+    "process_property_bind_ip_enum_3": "1st Inner IP",
+    "process_property_bind_ip_enum_4": "2nd Outer IP",
+
+    "process_property_protocol_enum_1": "TCP",
+    "process_property_protocol_enum_2": "UDP",
+
+    "":""
+}

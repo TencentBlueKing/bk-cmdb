@@ -284,7 +284,7 @@ func (cli *topoAction) createInsts(ownerID, objectID, objectName string, cacheIn
 }
 
 // updateMainModule update the mainline object topo
-func (cli *topoAction) updateMainModule(oldAsstItems []api.ObjAsstDes, objectID string, errProxy errors.DefaultCCErrorIf) error {
+func (cli *topoAction) updateMainModule(forward *api.ForwardParam, oldAsstItems []api.ObjAsstDes, objectID string, errProxy errors.DefaultCCErrorIf) error {
 
 	// to update the old main line object association
 	for _, objAsst := range oldAsstItems {
@@ -293,7 +293,7 @@ func (cli *topoAction) updateMainModule(oldAsstItems []api.ObjAsstDes, objectID 
 		tmpData, _ := json.Marshal(objAsst)
 		js, _ := simplejson.NewJson(tmpData)
 		cond, _ := js.Map()
-		if err := cli.mgr.UpdateObjectAsst(cond, newObj, errProxy); nil != err {
+		if err := cli.mgr.UpdateObjectAsst(forward, cond, newObj, errProxy); nil != err {
 			blog.Error("failed to update the mainline association, error info is %s ", err.Error())
 		}
 	}
@@ -310,6 +310,8 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
+
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		// read data
 		val, err := ioutil.ReadAll(req.Request.Body)
@@ -330,20 +332,20 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 		asstSearch[common.BKOwnerIDField] = obj.OwnerID
 		asstSearch["bk_asst_obj_id"] = obj.AssociationID
 		asstSearch["bk_object_att_id"] = common.BKChildStr
-		asstDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(asstSearch, defErr)
+		asstDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(forward, asstSearch, defErr)
 		if nil != asstDesItemsErr {
 			blog.Error("failed to cache the old asst, error info is %s", asstDesItemsErr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
 		// to cache the old main inst data, read the parent insts
-		asstInstItems, rsterr := cli.SelectInstTopo(obj.OwnerID, obj.AssociationID, 0, 0, 2, req)
+		asstInstItems, rsterr := cli.SelectInstTopo(forward, obj.OwnerID, obj.AssociationID, 0, 0, 2, req)
 		if nil != rsterr {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineCreatFailed)
 		}
 
 		// create a new main line object
-		if _, err := cli.mgr.CreateObject(val, defErr); nil != err {
+		if _, err := cli.mgr.CreateObject(forward, val, defErr); nil != err {
 			blog.Error("failed to create the main line object, error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineCreatFailed)
 		}
@@ -354,12 +356,12 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 		objAtt.OwnerID = obj.OwnerID
 		objAtt.AssociationID = obj.AssociationID
 		objAtt.AssoType = common.BKChild
-		if _, ctrErr := cli.mgr.CreateTopoModel(objAtt, defErr); nil != ctrErr {
+		if _, ctrErr := cli.mgr.CreateTopoModel(forward, objAtt, defErr); nil != ctrErr {
 			blog.Error("create objectatt failed, error information is %s", ctrErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineCreatFailed)
 		}
 		// to update the old asst, must be first
-		cli.updateMainModule(asstDesItems, obj.ObjectID, defErr)
+		cli.updateMainModule(forward, asstDesItems, obj.ObjectID, defErr)
 
 		// to create insts, must be second
 		if err := cli.createInsts(obj.OwnerID, obj.ObjectID, obj.ObjectName, asstInstItems, req); nil != err {
@@ -379,6 +381,7 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		// read parameters
@@ -396,7 +399,7 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 		asstSearch[common.BKOwnerIDField] = ownerID
 		asstSearch["bk_asst_obj_id"] = objID
 		asstSearch["bk_object_att_id"] = common.BKChildStr
-		asstChildDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(asstSearch, defErr)
+		asstChildDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(forward, asstSearch, defErr)
 		if nil != asstDesItemsErr {
 			blog.Error("failed to cache the old asst, error info is %s", asstDesItemsErr.Error())
 			cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
@@ -404,7 +407,7 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 		}
 		delete(asstSearch, "bk_asst_obj_id")
 		asstSearch[common.BKObjIDField] = objID
-		asstParentDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(asstSearch, defErr)
+		asstParentDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(forward, asstSearch, defErr)
 		if nil != asstDesItemsErr {
 			blog.Error("failed to cache the old asst, error info is %s", asstDesItemsErr.Error())
 			cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
@@ -418,32 +421,32 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 		}
 
 		// to cache the old main inst data, read the parent insts
-		asstChildInstItems, rsterr := cli.SelectInstTopo(ownerID, objID, 0, 0, 2, req)
+		asstChildInstItems, rsterr := cli.SelectInstTopo(forward, ownerID, objID, 0, 0, 2, req)
 		if nil != rsterr {
 			cli.ResponseFailed(common.CC_Err_Comm_http_DO, rsterr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
-		asstParentInstItems, rstErr := cli.SelectInstTopo(ownerID, asstParentDesItems[0].AsstObjID, 0, 0, 2, req)
+		asstParentInstItems, rstErr := cli.SelectInstTopo(forward, ownerID, asstParentDesItems[0].AsstObjID, 0, 0, 2, req)
 		if nil != rstErr {
 			cli.ResponseFailed(common.CC_Err_Comm_http_DO, rsterr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
 		// deal data
-		if ctrErr := cli.mgr.DeleteTopoModel(ownerID, objID, common.BKChild, defErr); nil == ctrErr {
+		if ctrErr := cli.mgr.DeleteTopoModel(forward, ownerID, objID, common.BKChild, defErr); nil == ctrErr {
 
 			// to delete the old main line object
 			objDes := map[string]interface{}{}
 			objDes[common.BKOwnerIDField] = ownerID
 			objDes[common.BKObjIDField] = objID
 			objDesJSON, _ := json.Marshal(objDes)
-			if err := cli.mgr.DeleteObject(0, objDesJSON, defErr); nil != err {
+			if err := cli.mgr.DeleteObject(forward, 0, objDesJSON, defErr); nil != err {
 				blog.Error("failed to delete the object module(%s), data(%s) error info is %s", objID, string(objDesJSON), err.Error())
 			}
 
 			// update the main line module association
-			cli.updateMainModule(asstChildDesItems, asstParentDesItems[0].AsstObjID, defErr)
+			cli.updateMainModule(forward, asstChildDesItems, asstParentDesItems[0].AsstObjID, defErr)
 
 			// update the main inst association
 			cli.updateInsts(ownerID, asstChildInstItems, asstParentInstItems, req)
@@ -467,6 +470,7 @@ func (cli *topoAction) SelectModel(req *restful.Request, resp *restful.Response)
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		blog.Info("select model topo")
@@ -474,7 +478,7 @@ func (cli *topoAction) SelectModel(req *restful.Request, resp *restful.Response)
 		ownerID := req.PathParameter("owner_id")
 
 		// deal data
-		result, ctrErr := cli.mgr.SelectTopoModel(nil, ownerID, common.BKInnerObjIDApp, "", "", "", defErr)
+		result, ctrErr := cli.mgr.SelectTopoModel(forward, nil, ownerID, common.BKInnerObjIDApp, "", "", "", defErr)
 		if nil != ctrErr {
 			blog.Error("select topo model failed, error information is %s", ctrErr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrTopoMainlineSelectFailed)
@@ -491,6 +495,7 @@ func (cli *topoAction) SelectModelByClsID(req *restful.Request, resp *restful.Re
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -498,7 +503,7 @@ func (cli *topoAction) SelectModelByClsID(req *restful.Request, resp *restful.Re
 		clsID := req.PathParameter("cls_id")
 		objID := req.PathParameter("obj_id")
 
-		result, ctrErr := cli.mgr.SelectTopoModel(nil, ownerID, objID, clsID, "", "", defErr)
+		result, ctrErr := cli.mgr.SelectTopoModel(forward, nil, ownerID, objID, clsID, "", "", defErr)
 		if nil != ctrErr {
 			blog.Error("select topo model failed, error information is %s", ctrErr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrTopoMainlineSelectFailed)
@@ -663,7 +668,7 @@ func (cli *topoAction) selectChildInstTopo(req *restful.Request, topoItem []mana
 	return nil
 }
 
-func (cli *topoAction) SelectInstTopo(ownerID, objID string, appID, instID, level int, req *restful.Request) ([]manager.TopoInstRst, error) {
+func (cli *topoAction) SelectInstTopo(forward *api.ForwardParam, ownerID, objID string, appID, instID, level int, req *restful.Request) ([]manager.TopoInstRst, error) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -671,7 +676,7 @@ func (cli *topoAction) SelectInstTopo(ownerID, objID string, appID, instID, leve
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	rstItems, ctrErr := cli.mgr.SelectTopoModel(nil, ownerID, objID, "", "", "", defErr)
+	rstItems, ctrErr := cli.mgr.SelectTopoModel(forward, nil, ownerID, objID, "", "", "", defErr)
 	if nil != ctrErr {
 		blog.Error("select topo model failed, error information is %v, res:%v", ctrErr, rstItems)
 		return nil, ctrErr
@@ -764,13 +769,14 @@ func (cli *topoAction) SelectInst(req *restful.Request, resp *restful.Response) 
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		blog.Info("select model inst ")
 		ownerID := req.PathParameter("owner_id")
 		appID, _ := strconv.Atoi(req.PathParameter("app_id"))
-		rst, rstErr := cli.SelectInstTopo(ownerID, common.BKInnerObjIDApp, appID, 0, 2, req)
+		rst, rstErr := cli.SelectInstTopo(forward, ownerID, common.BKInnerObjIDApp, appID, 0, 2, req)
 		if nil != rstErr {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoTopoSelectFailed)
 		}
@@ -785,6 +791,7 @@ func (cli *topoAction) SelectInstChild(req *restful.Request, resp *restful.Respo
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		blog.Info("select model inst child")
@@ -794,7 +801,7 @@ func (cli *topoAction) SelectInstChild(req *restful.Request, resp *restful.Respo
 		instID, _ := strconv.Atoi(req.PathParameter("inst_id"))
 		objID := req.PathParameter("obj_id")
 
-		rst, rstErr := cli.SelectInstTopo(ownerID, objID, appID, instID, 2, req)
+		rst, rstErr := cli.SelectInstTopo(forward, ownerID, objID, appID, instID, 2, req)
 		if nil != rstErr {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoTopoSelectFailed)
 		}

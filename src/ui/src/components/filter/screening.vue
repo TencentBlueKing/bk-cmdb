@@ -12,7 +12,7 @@
     <div class="screening-wrapper">
         <form>
             <div class="screening-group" v-if="isShowBiz">
-                <label class="screening-group-label">选择业务</label>
+                <label class="screening-group-label">{{$t('Hosts[\'选择业务\']')}}</label>
                 <div class="screening-group-item screening-group-item-app">
                     <v-application-selector
                         :filterable="true"
@@ -29,15 +29,15 @@
                     </textarea>
                     <label class="bk-form-checkbox">
                         <input type="checkbox" v-model="ip['bk_host_innerip']" :disabled="!ip['bk_host_outerip']">
-                        <span>内网</span>
+                        <span>{{$t('HostResourcePool[\'内网\']')}}</span>
                     </label>
                     <label class="bk-form-checkbox">
                         <input type="checkbox" v-model="ip['bk_host_outerip']" :disabled="!ip['bk_host_innerip']">
-                        <span>外网</span>
+                        <span>{{$t('HostResourcePool[\'外网\']')}}</span>
                     </label>
                     <label class="bk-form-checkbox">
                         <input type="checkbox" v-model="ip.exact" :true-value="1" :false-value="0">
-                        <span>精确</span>
+                        <span>{{$t('HostResourcePool[\'精确\']')}}</span>
                     </label>
                 </div>
             </div>
@@ -89,9 +89,9 @@
                             <template v-else-if="column['bk_property_type'] === 'enum'">
                                 <bk-select class="screening-group-item-value" :selected.sync="localQueryColumnData[column['bk_property_id']]['value']">
                                     <template v-if="column['option']">
-                                        <bk-select-option v-for="(option, index) in JSON.parse(column['option'])"
+                                        <bk-select-option v-for="(option, index) in column['option']"
                                             :key="index"
-                                            :value="option.name"
+                                            :value="option.id"
                                             :label="option.name">
                                         </bk-select-option>
                                     </template>
@@ -105,7 +105,7 @@
                 </div>
             </template>
             <div class="screening-btn" ref="screeningBtn">
-                <bk-button type="primary" @click.prevent="refresh">刷新查询</bk-button>
+                <bk-button type="primary" @click.prevent="refresh">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
             </div>
         </form>
     </div>
@@ -150,24 +150,24 @@
                 operators: {
                     'default': [{
                         value: '$eq',
-                        label: '等于'
+                        label: this.$t('Common[\'等于\']')
                     }, {
                         value: '$ne',
-                        label: '不等于'
+                        label: this.$t('Common[\'不等于\']')
                     }],
                     'char': [{
                         value: '$regex',
-                        label: '包含'
+                        label: this.$t('Common[\'包含\']')
                     }, {
                         value: '$eq',
-                        label: '等于'
+                        label: this.$t('Common[\'等于\']')
                     }, {
                         value: '$ne',
-                        label: '不等于'
+                        label: this.$t('Common[\'不等于\']')
                     }],
                     'date': [{
                         value: '$in',
-                        label: '包含'
+                        label: this.$t('Common[\'包含\']')
                     }]
                 },
                 typeOfChar: ['singlechar', 'longchar'],
@@ -398,6 +398,13 @@
                 }
             }
         },
+        beforeDestroy () {
+            this.$store.commit('setQuickSearchParams', {
+                text: '',
+                type: 'ip'
+            })
+            this.resetQueryColumnData()
+        },
         components: {
             vApplicationSelector,
             vMemberSelector
@@ -437,6 +444,12 @@
                 width: 224px;
                 font-size: 14px;
                 float: right;
+            }
+            .bk-form-checkbox{
+                margin-right: 15px;
+                &:last-child{
+                    margin-right: 0;
+                }
             }
         }
     }

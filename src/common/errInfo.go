@@ -328,7 +328,7 @@ const (
 	CCErrProcCreateProcessFaile      = 1108008
 	CCErrProcGetFail                 = 1108009
 
-	// auditlog 11009XXX
+	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
 	CCErrAuditTakeSnapshotFaile = 1109001
 

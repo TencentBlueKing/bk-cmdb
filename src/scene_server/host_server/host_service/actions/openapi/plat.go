@@ -21,6 +21,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -147,7 +148,7 @@ func (cli *platAction) DelPlat(req *restful.Request, resp *restful.Response) {
 // CreatePlat: 添加子网
 func (cli *platAction) CreatePlat(req *restful.Request, resp *restful.Response) {
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
-
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
@@ -169,7 +170,7 @@ func (cli *platAction) CreatePlat(req *restful.Request, resp *restful.Response) 
 
 		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
 		language := util.GetActionLanguage(req)
-		valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), cli.CC.Error.CreateDefaultCCErrorIf(language))
+		valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), forward, cli.CC.Error.CreateDefaultCCErrorIf(language))
 		ok, validErr := valid.ValidMap(input, common.ValidCreate, 0)
 		if false == ok || nil != validErr {
 			blog.Error("CreatePlat error: %v", err)

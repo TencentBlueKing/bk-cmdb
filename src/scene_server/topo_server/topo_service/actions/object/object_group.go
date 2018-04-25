@@ -1,24 +1,25 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	api "configcenter/src/source_controller/api/object"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -63,6 +64,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -74,7 +76,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 		}
 
 		// deal request
-		id, err := cli.mgr.CreateObjectGroup(val, defErr)
+		id, err := cli.mgr.CreateObjectGroup(forward, val, defErr)
 		if nil != err {
 			blog.Error("failed to create object group , error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupCreateFailed)
@@ -92,6 +94,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -103,7 +106,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 		}
 
 		// deal request
-		err = cli.mgr.UpdateObjectGroup(val, defErr)
+		err = cli.mgr.UpdateObjectGroup(forward, val, defErr)
 		if nil != err {
 			blog.Error("failed to update object group, error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupUpdateFailed)
@@ -121,6 +124,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroup(req *restful.Request, resp 
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -132,7 +136,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroup(req *restful.Request, resp 
 		}
 
 		// deal request
-		err := cli.mgr.DeleteObjectGroup(id, defErr)
+		err := cli.mgr.DeleteObjectGroup(forward, id, defErr)
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupDeleteFailed)
 		}
@@ -150,6 +154,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -161,7 +166,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 		}
 
 		// deal request
-		err = cli.mgr.UpdateObjectGroupProperty(val, defErr)
+		err = cli.mgr.UpdateObjectGroupProperty(forward, val, defErr)
 		if nil != err {
 			blog.Error("failed to update object group property, error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupUpdateFailed)
@@ -180,6 +185,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroupObjectAtt(req *restful.Reque
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -190,7 +196,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroupObjectAtt(req *restful.Reque
 		groupID := req.PathParameter("group_id")
 
 		// deal request
-		err := cli.mgr.DeleteObjectGroupProperty(ownerID, objectID, propertyID, groupID, defErr)
+		err := cli.mgr.DeleteObjectGroupProperty(forward, ownerID, objectID, propertyID, groupID, defErr)
 		if nil != err {
 			blog.Error("failed to delete object group property, error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupDeleteFailed)
@@ -210,6 +216,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 
 	// get the default error by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -224,7 +231,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 		}
 
 		// deal request
-		rst, err := cli.mgr.SelectPropertyGroupByObjectID(ownerID, objectID, value, defErr)
+		rst, err := cli.mgr.SelectPropertyGroupByObjectID(forward, ownerID, objectID, value, defErr)
 		if nil != err {
 			blog.Error("failed to delete object group property, error info is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectGroupSelectFailed)
