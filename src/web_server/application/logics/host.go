@@ -1,21 +1,22 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	lang "configcenter/src/common/language"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -106,17 +107,17 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header, kvMap 
 }
 
 //GetImportHosts get import hosts
-func GetImportHosts(f *xlsx.File, url string, header http.Header) (map[int]map[string]interface{}, error) {
+func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
 	if 0 == len(f.Sheets) {
-		return nil, errors.New("文件内容不能为空,未找到工作簿")
+		return nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 	sheet := f.Sheets[0]
 	if nil == sheet {
-		return nil, errors.New("文件内容不能为空,工作内容不存在")
+		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, nil, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0)
+	return GetExcelData(sheet, nil, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0, defLang)
 }
 
 //getPropertyTypeAliasName  return propertyType name, whether to export,

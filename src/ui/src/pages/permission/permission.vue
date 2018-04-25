@@ -11,17 +11,17 @@
 <template>
     <div class="permission-wrapper">
         <bk-tab class="permission-tab" :active-name="activeTabName" @tab-changed="tabChanged">
-            <bk-tabpanel name="role" title="角色">
+            <bk-tabpanel name="role" :title="$t('Permission[\'角色\']')">
                 <v-role @on-search-success="setRoles"
                     @skipToUser="skipToUser"
                 ></v-role>
             </bk-tabpanel>
-            <bk-tabpanel name="authority" title="权限">
+            <bk-tabpanel name="authority" :title="$t('Permission[\'权限\']')">
                 <v-authority :roles="roles"
                     :activeGroup="activeGroup"
                 ></v-authority>
             </bk-tabpanel>
-            <bk-tabpanel name="business" title="业务权限">
+            <bk-tabpanel name="business" :title="$t('Permission[\'业务权限\']')">
                 <v-business></v-business>
             </bk-tabpanel>
         </bk-tab>

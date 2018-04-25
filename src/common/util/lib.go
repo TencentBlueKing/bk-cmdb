@@ -14,6 +14,8 @@ package util
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -100,8 +102,9 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)
 	if "" == language {
-		return "zh-cn"
+		language = "zh-cn"
 	}
+	blog.Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 
@@ -123,4 +126,13 @@ func GetActionOnwerIDAndUser(req *restful.Request) (string, string) {
 	ownerID := GetActionOnwerID(req)
 
 	return ownerID, user
+}
+
+//  GetActionLanguageByHTTPHeader return language from http header
+func GetActionLanguageByHTTPHeader(header http.Header) string {
+	language := header.Get(common.BKHTTPLanguage)
+	if "" == language {
+		return "zh-cn"
+	}
+	return language
 }

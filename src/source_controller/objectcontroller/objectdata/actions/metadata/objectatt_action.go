@@ -1,30 +1,32 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/bitly/go-simplejson"
 
 	"github.com/emicklei/go-restful"
 )
@@ -58,6 +60,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -79,6 +82,12 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 		*obj.CreateTime = time.Now()
 		obj.LastTime = new(time.Time)
 		*obj.LastTime = time.Now()
+
+		if obj.IsPre {
+			if obj.PropertyID == common.BKInstNameField {
+				obj.PropertyName = util.FirstNotEmptyString(defLang.Language("common_property_"+obj.PropertyID), obj.PropertyName, obj.PropertyID)
+			}
+		}
 
 		if 0 == len(obj.PropertyGroup) {
 			obj.PropertyGroup = "default" // empty value
@@ -212,6 +221,7 @@ func (cli *objectAttAction) SelectObjectAttByID(req *restful.Request, resp *rest
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -227,6 +237,13 @@ func (cli *objectAttAction) SelectObjectAttByID(req *restful.Request, resp *rest
 		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectAttDes{}.TableName(), nil, map[string]interface{}{"id": id}, &result, "", 0, 0); nil != selErr {
 			blog.Error("find object by selector failed, error:%s", selErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
+		}
+		// translate language
+		for index := range result {
+			result[index].PropertyName = commondata.TranslatePropertyName(defLang, &result[index])
+			if result[index].PropertyType == common.FiledTypeEnum {
+				result[index].Option = commondata.TranslateEnumName(defLang, &result[index], result[index].Option)
+			}
 		}
 
 		// success
@@ -244,6 +261,7 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -270,8 +288,14 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
 		blog.Debug("the result:%+v", results)
+		// translate language
+		for index := range results {
+			results[index].PropertyName = commondata.TranslatePropertyName(defLang, &results[index])
+			if results[index].PropertyType == common.FiledTypeEnum {
+				results[index].Option = commondata.TranslateEnumName(defLang, &results[index], results[index].Option)
+			}
+		}
 		// success
 		return http.StatusOK, results, nil
-
 	}, resp)
 }

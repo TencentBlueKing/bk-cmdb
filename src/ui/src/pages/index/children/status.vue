@@ -9,35 +9,35 @@
  */
 
 <template>
-    <div class="">
+    <div>
         <div class="tab-content" v-if="isLoaded && hostSnapshot">
             <div class="attribute-list clearfix">
                 <div class="title clearfix">
-                    <h3 class="fl">基本值</h3>
+                    <h3 class="fl">{{$t('HostResourcePool[\'基本值\']')}}</h3>
                     <div class="content fr clearfix">
-                        <div class="info-title">最近更新时间：</div>
+                        <div class="info-title">{{$t('HostResourcePool[\'最近更新时间\']')}}：</div>
                         <div class="info-detail">{{hostSnapshot.upTime}}</div>
                     </div>
                 </div>
                 <ul class="info-list">
                     <li class="attr-item clearfix">
-                        <div class="item-title">总流入量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'总流入量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.rcvRate}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">启动时间：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'启动时间\']')}}：</div>
                         <div class="item-detail">{{bootTime}}</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">总流出量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'总流出量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.sendRate}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">磁盘总量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'磁盘总量\']')}}：</div>
                         <div class="item-detail">{{hostSnapshot.Disk}}GB</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">内存总量：</div>
+                        <div class="item-title">{{$t('HostResourcePool[\'内存总量\']')}}：</div>
                         <div class="item-detail">{{(hostSnapshot.Mem / 1024).toFixed(2)}}GB</div>
                     </li>
                     <li class="attr-item clearfix" v-if="!isWindowsOSType">
@@ -69,7 +69,7 @@
                     </div>
                 </div>
             </div>
-            <p class="box-text">当前主机没有安装 Agent 或者 Agent 已经离线</p>
+            <p class="box-text">{{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}</p>
         </div>
     </div>
 </template>
@@ -135,7 +135,7 @@
                     title: {
                         text: '总CPU使用率',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -144,7 +144,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -164,7 +164,7 @@
                     title: {
                         text: '总内存使用率',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -173,7 +173,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -193,7 +193,7 @@
                     title: {
                         text: '磁盘使用情况',
                         textStyle: {
-                            color: '#bec6de'
+                            color: '#333948'
                         },
                         x: 'center',
                         y: 'bottom'
@@ -202,7 +202,7 @@
                         name: '',
                         type: 'gauge',
                         radius: '80%',
-                        alisLine: {
+                        axisLine: {
                             lineStyle: {
                                 color: [[0.2, '#30d878'], [0.8, '#3C96FF'], [1, '#FF5656']]
                             }
@@ -242,7 +242,7 @@
             margin-bottom:40px;
             .title{
                 h3{
-                    color:#bec6de;
+                    color:#333948;
                     font-size:14px;
                     font-weight: bold;
                     line-height:1;
@@ -254,7 +254,7 @@
                     padding-right: 30px;
                     .info-title{
                         float: left;
-                        color: #bec6de;
+                        color: #333948;
                     }
                     .info-detail{
                         float: left;

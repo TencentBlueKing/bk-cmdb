@@ -54,7 +54,7 @@ func (cli *instHelper) InitInstHelper(hostCtrl, objCtrl string) error {
 }
 
 // getObjectAsst read association objectid the return key is engilish property name, value is the objectid
-func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, int) {
+func (cli *instHelper) GetObjectAsst(forward *api.ForwardParam, objID, ownerID string) (map[string]string, int) {
 
 	rstmap := map[string]string{}
 
@@ -69,7 +69,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 		return nil, common.CCErrCommJSONMarshalFailed
 	}
 	cli.objcli.SetAddress(cli.objCtrl)
-	rests, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+	rests, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 	if nil != restErr {
 		blog.Error("failed to read the object att, error is %s ", restErr.Error())
 		return nil, common.CCErrTopoInstSelectFailed
@@ -93,7 +93,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -116,7 +116,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", restErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -319,7 +319,7 @@ func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, 
 func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}) (map[string]interface{}, int) {
 
 	// get objID asst model and field
-	rstmap, errorno := cli.GetObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.GetObjectAsst(&api.ForwardParam{Header: req.Request.Header}, objID, ownerID)
 	if common.CCSuccess != errorno {
 		return nil, errorno
 	}
@@ -360,7 +360,7 @@ func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID st
 //GetInstDetails get inst detail
 func (cli *instHelper) GetInstDetails(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}) (string, int) {
 
-	rstmap, errorno := cli.GetObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.GetObjectAsst(&api.ForwardParam{Header: req.Request.Header}, objID, ownerID)
 	if common.CCSuccess != errorno {
 		return "", errorno
 	}

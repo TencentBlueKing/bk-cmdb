@@ -186,7 +186,7 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		opClient := auditlog.NewClient(cli.CC.AuditCtrl())
-		opClient.AuditHostsLog(logConents, "删除主机", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeDel)
+		opClient.AuditHostsLog(logConents, "delete host", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeDel)
 
 		return http.StatusOK, common.CCSuccessStr, nil
 	}, resp)
