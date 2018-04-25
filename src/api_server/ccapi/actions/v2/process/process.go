@@ -48,6 +48,7 @@ func init() {
 func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
 	blog.Debug("GetProcessPortByApplicationID start!")
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	err := req.Request.ParseForm()
 	if err != nil {
@@ -113,7 +114,7 @@ func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp 
 	}
 	if nil == rspMap["data"] {
 		emptyData := make([]interface{}, 0)
-		converter.RespSuccessV2(converter.ResV2ToForProcList(emptyData), resp)
+		converter.RespSuccessV2(converter.ResV2ToForProcList(emptyData, defLang), resp)
 		return
 	}
 	converter.RespSuccessV2(converter.GeneralV2Data(rspMap["data"]), resp)
@@ -124,6 +125,7 @@ func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp 
 func (cli *procAction) GetProcessPortByIP(req *restful.Request, resp *restful.Response) {
 	blog.Debug("GetProcessPortByIP start!")
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	err := req.Request.ParseForm()
 	if err != nil {
@@ -175,11 +177,11 @@ func (cli *procAction) GetProcessPortByIP(req *restful.Request, resp *restful.Re
 	}
 	if nil == rspMap["data"] {
 		emptyData := make([]interface{}, 0)
-		converter.RespSuccessV2(converter.ResV2ToForProcList(emptyData), resp)
+		converter.RespSuccessV2(converter.ResV2ToForProcList(emptyData, defLang), resp)
 		return
 	}
 
-	converter.RespSuccessV2(converter.ResV2ToForProcList(rspMap["data"]), resp)
+	converter.RespSuccessV2(converter.ResV2ToForProcList(rspMap["data"], defLang), resp)
 }
 
 func getModulesByAppId(appId string, req *restful.Request, resp *restful.Response) (interface{}, error) {

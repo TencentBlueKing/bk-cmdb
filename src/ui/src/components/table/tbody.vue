@@ -27,7 +27,7 @@
             <slot name="tableEmptyRow">
                 <tr>
                     <td class="table-empty-col" :colspan="tableHeader.length">
-                        <p>暂时没有数据</p>
+                        <p>{{$t("Common['暂时没有数据']")}}</p>
                     </td>
                 </tr>
             </slot>

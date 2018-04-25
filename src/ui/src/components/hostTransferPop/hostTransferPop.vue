@@ -2,12 +2,13 @@
     <div class="transfer-pop" v-show="isShow">
         <div class="transfer-content">
             <div class="content-title">
-                <i class="icon icon-cc-shift mr5"></i>主机转移
+                <i class="icon icon-cc-shift mr5"></i>
+                {{$t('Common[\'主机转移\']')}}
             </div>
             <div class="content-section clearfix">
                 <div class="section-left fl">
                     <div class="section-biz">
-                        <label class="biz-label">业务</label>
+                        <label class="biz-label">{{$t('Common[\'业务\']')}}</label>
                         <v-application-selector class="biz-selector" :disabled="true" :selected.sync="bkBizId">
                         </v-application-selector>
                     </div>
@@ -30,14 +31,16 @@
                 </div>
             </div>
             <div class="content-footer clearfix">
-                <div class="selected-count fl">已选 <span class="color-info">{{selectedList.length}}</span> 项</div>
+                <i18n path="Common['已选N项']" tag="div" class="selected-count fl">
+                    <span class="color-info" place="N">{{selectedList.length}}</span>
+                </i18n>
                 <div class="button-group fr">
-                    <bk-button type="primary" v-if="isNotModule" v-show="selectedList.length" @click="doTransfer(false)">确认转移</bk-button>
+                    <bk-button type="primary" v-if="isNotModule" v-show="selectedList.length" @click="doTransfer(false)">{{$t('Common[\'确认转移\']')}}</bk-button>
                     <template v-else v-show="selectedList.length">
-                        <bk-button type="primary" @click="doTransfer(false)">覆盖</bk-button>
-                        <bk-button type="primary" @click="doTransfer(true)">更新</bk-button>
+                        <bk-button type="primary" @click="doTransfer(false)">{{$t('Common[\'覆盖\']')}}</bk-button>
+                        <bk-button type="primary" @click="doTransfer(true)">{{$t('Common[\'更新\']')}}</bk-button>
                     </template>
-                    <button class="bk-button vice-btn" @click="cancel">取消</button>
+                    <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
                 </div>
             </div>
         </div>
@@ -65,9 +68,9 @@
                     'child': [{
                         'default': 0,
                         'bk_obj_id': 'source',
-                        'bk_obj_name': '资源池',
+                        'bk_obj_name': this.$t('HostResourcePool[\'资源池\']'),
                         'bk_inst_id': 'source',
-                        'bk_inst_name': '资源池',
+                        'bk_inst_name': this.$t('HostResourcePool[\'资源池\']'),
                         'isFolder': false
                     }]
                 },
@@ -154,7 +157,7 @@
                     if (node['default'] || node['bk_inst_id'] === 'source') {
                         if (this.selectedList.length && !this.selectedList[0]['default'] && this.selectedList[0]['bk_inst_id'] !== 'source') {
                             this.$bkInfo({
-                                title: `转移到${node['bk_obj_name']}，会清除当前的模块绑定，是否确认？`,
+                                title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
                                 confirmFn: () => {
                                     this.selectedList = [node]
                                 }
@@ -185,7 +188,7 @@
                     }).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
-                            this.$alertMsg('转移成功', 'success')
+                            this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
                             this.cancel()
                         } else {
                             if (res.data && res.data['bk_host_id']) {
@@ -209,14 +212,14 @@
                     }).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
-                            this.$alertMsg('转移成功', 'success')
+                            this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
                             this.cancel()
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
                     }).catch(e => {
                         if (e.response && e.response.status === 403) {
-                            this.$alertMsg('您没有主机转移的权限')
+                            this.$alertMsg(this.$t('Common[\'您没有主机转移的权限\']'))
                         }
                     })
                 }
@@ -239,7 +242,7 @@
                     if (instRes.result && internalRes.result) {
                         let internalModule = internalRes.data.module.map(module => {
                             return {
-                                'default': module['bk_module_name'] === '空闲机' ? 1 : 2,
+                                'default': module['bk_module_name'] === '空闲机' || module['bk_module_name'] === 'idle machine' ? 1 : 2,
                                 'bk_obj_id': 'module',
                                 'bk_obj_name': '模块',
                                 'bk_inst_id': module['bk_module_id'],
@@ -341,7 +344,7 @@
         .biz-selector{
             display: inline-block;
             vertical-align: center;
-            width: 269px;
+            width: 245px;
         }
     }
     .section-tree{

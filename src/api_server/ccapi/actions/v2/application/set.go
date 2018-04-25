@@ -86,9 +86,9 @@ func (cli *setAction) GetSets(req *restful.Request, resp *restful.Response) {
 		formStatus := formData.Get("SetServiceStatus")
 
 		//服务状态，包含0：关闭，1：开启，默认为1
-		strStatus := "开放"
+		strStatus := "1"
 		if "0" == formStatus {
-			strStatus = "关闭"
+			strStatus = "0"
 		}
 		condition[common.BKSetStatusField] = strStatus
 	}
@@ -96,12 +96,12 @@ func (cli *setAction) GetSets(req *restful.Request, resp *restful.Response) {
 	if "" != formData.Get("SetEnviType") {
 		formEnv := formData.Get("SetEnviType")
 		//env 1：测试 2：体验 3：正式，默认为3
-		strEnv := "正式"
+		strEnv := "3"
 		switch formEnv {
 		case "1":
-			strEnv = "测试"
+			strEnv = "1"
 		case "2":
-			strEnv = "体验"
+			strEnv = "2"
 		}
 		condition[common.BKSetEnvField] = strEnv
 	}
@@ -143,6 +143,8 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 	blog.Debug("addSet start!")
 
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
+
 	err := req.Request.ParseForm()
 	if err != nil {
 		blog.Error("addSet error:%v", err)
@@ -163,7 +165,7 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 
 	reqParam := make(map[string]interface{})
 	if len(formData["SetName"][0]) > 24 {
-		msg = "集群名称长度不能超过24个字节"
+		msg = defLang.Language("apiv2_set_name_lt_24")
 		blog.Error("add set error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2SetNameLenErr, defErr.Errorf(common.CCErrAPIServerV2SetNameLenErr, msg).Error(), resp)
 		return
@@ -413,9 +415,9 @@ func (cli *setAction) UpdateSetServiceStatus(req *restful.Request, resp *restful
 	// service status  combin 0：关闭，1：开启，默认为1
 	switch reqData[common.BKSetStatusField] {
 	case "0":
-		reqData[common.BKSetStatusField] = "关闭"
+		reqData[common.BKSetStatusField] = "1" //"关闭"
 	case "1":
-		reqData[common.BKSetStatusField] = "开放"
+		reqData[common.BKSetStatusField] = "2" //"开放"
 
 	}
 

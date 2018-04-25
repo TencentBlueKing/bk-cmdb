@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package controllers
 
 import (
@@ -18,19 +18,16 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/types"
-
 	"configcenter/src/web_server/application/logics"
-
 	webCommon "configcenter/src/web_server/common"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/tealeg/xlsx"
 	"math/rand"
 	"net/http"
 	"os"
 	"reflect"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
 )
 
 func init() {
@@ -42,9 +39,14 @@ func init() {
 func ImportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 
+	cc := api.NewAPIResource()
+	language := logics.GetLanugaeByHTTPRequest(c)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
 	file, err := c.FormFile("file")
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_UPLOAD_FILE, "未找到上传文件", nil)
+		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -58,28 +60,28 @@ func ImportInst(c *gin.Context) {
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_UPLOAD_FILE, fmt.Sprintf("保存文件失败;error:%s", err.Error()), nil)
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	defer os.Remove(filePath) //delete file
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_OPEN_FILE, fmt.Sprintf("保存上传文件;error:%s", err.Error()), nil)
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	cc := api.NewAPIResource()
+
 	apiAddr, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := apiAddr
-	insts, err := logics.GetImportInsts(f, url, c.Request.Header, 0)
+	insts, err := logics.GetImportInsts(f, url, c.Request.Header, 0, defLang)
 	if 0 == len(insts) {
-		msg := getReturnStr(CODE_ERROR_OPEN_FILE, "文件内容不能为空", nil)
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_OPEN_FILE, err.Error(), nil)
+		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebOpenFileFail, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -104,6 +106,9 @@ func ImportInst(c *gin.Context) {
 func ExportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	cc := api.NewAPIResource()
+	language := logics.GetLanugaeByHTTPRequest(c)
+	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
@@ -114,7 +119,9 @@ func ExportInst(c *gin.Context) {
 	instInfo, err := logics.GetInstData(ownerID, objID, instIDStr, apiSite, c.Request.Header, kvMap)
 	if err != nil {
 		blog.Error(err.Error())
-		c.String(http.StatusBadGateway, "获取实例数据失败, %s", err.Error())
+		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
+
+		c.String(http.StatusBadGateway, msg, nil)
 		return
 	}
 
@@ -127,7 +134,8 @@ func ExportInst(c *gin.Context) {
 	sheet, err = file.AddSheet("inst")
 	if err != nil {
 		blog.Error(err.Error())
-		c.String(http.StatusBadGateway, "创建EXCEL文件失败，%s", err.Error())
+		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
+		c.String(http.StatusBadGateway, msg, nil)
 		return
 
 	}
