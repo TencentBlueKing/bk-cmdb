@@ -74,7 +74,7 @@ ext_key 字段说明： 为根据ip的匹配搜索
                         "create_time":"2018-03-08T14:23:05.05+08:00",
                         "bk_host_id":1,
                         "bk_host_innerip":"127.0.01",
-                        "bk_import_from":"excel"
+                        "bk_import_from":"1"
                     },
                     "cur_data":{
                         "last_time":"2018-03-08T15:10:42.264+08:00",
@@ -87,7 +87,7 @@ ext_key 字段说明： 为根据ip的匹配搜索
                         "create_time":"2018-03-08T14:23:05.05+08:00",
                         "bk_host_id":1,
                         "bk_host_innerip":"127.0.0.1",
-                        "bk_import_from":"excel"
+                        "bk_import_from":"1"
                     },
                     "header":[
                         {

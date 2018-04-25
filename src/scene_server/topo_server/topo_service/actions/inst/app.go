@@ -35,6 +35,7 @@ import (
 	"strconv"
 	"strings"
 
+	api "configcenter/src/source_controller/api/object"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -67,6 +68,7 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 	// 获取该语系下的错误码
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		pathParams := req.PathParameters()
 		appID, _ := strconv.Atoi(pathParams["app_id"])
 		ownerID, _ := pathParams["owner_id"]
@@ -124,7 +126,7 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 		{
 			// save change log
 			instID, _ := strconv.Atoi(fmt.Sprint(appID))
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDApp)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDApp)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditSaveLogFaile)
 			}
@@ -167,7 +169,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		pathParams := req.PathParameters()
 		appID, _ := strconv.Atoi(pathParams["app_id"])
 		ownerID, _ := pathParams["owner_id"]
@@ -183,7 +185,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		data, _ := js.Map()
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), defErr)
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, appID)
 		if nil != err {
 			blog.Errorf("UpdateApp vaild error:%s", err.Error())
@@ -231,7 +233,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 		{
 			// save change log
 			instID, _ := strconv.Atoi(fmt.Sprint(appID))
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDApp)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDApp)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
 			}
@@ -335,6 +337,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 	// get the error by language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		pathParams := req.PathParameters()
 		ownerID := pathParams["owner_id"]
 		user := sencecommon.GetUserFromHeader(req)
@@ -344,7 +347,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		input, err := js.Map()
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), defErr)
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
@@ -366,7 +369,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 		{
 			// save change log
 			instID, _ := strconv.Atoi(fmt.Sprint(appID))
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDApp)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDApp)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
 			}
@@ -488,6 +491,7 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		pathParams := req.PathParameters()
 		ownerID := pathParams["owner_id"]
 		value, _ := ioutil.ReadAll(req.Request.Body)
@@ -497,7 +501,7 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		input, err := js.Map()
-		valid := validator.NewValidMap(ownerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), defErr)
+		valid := validator.NewValidMap(ownerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Errorf("create default app get params error %v", err)

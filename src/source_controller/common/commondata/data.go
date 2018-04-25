@@ -14,7 +14,10 @@ package commondata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/language"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/validator"
+	"configcenter/src/source_controller/api/metadata"
 	"time"
 
 	"github.com/coccyx/timeparser"
@@ -24,13 +27,28 @@ const (
 	CC_time_type_parse_flag = "cc_time_type"
 )
 
-var ObjTypeTableMap = map[string]string{common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: common.BKTableNameInstAsst}
-
 var ObjTableMap = map[string]string{
-	common.BKInnerObjIDApp: "cc_ApplicationBase", common.BKInnerObjIDSet: "cc_SetBase", common.BKInnerObjIDModule: "cc_ModuleBase", common.BKINnerObjIDObject: "cc_ObjectBase", common.BKInnerObjIDHost: "cc_HostBase", common.BKInnerObjIDProc: "cc_Process", common.BKInnerObjIDPlat: "cc_PlatBase", common.BKTableNameInstAsst: common.BKTableNameInstAsst}
+	common.BKInnerObjIDApp:     common.BKTableNameBaseApp,
+	common.BKInnerObjIDSet:     common.BKTableNameBaseSet,
+	common.BKInnerObjIDModule:  common.BKTableNameBaseModule,
+	common.BKINnerObjIDObject:  common.BKTableNameBaseInst,
+	common.BKInnerObjIDHost:    common.BKTableNameBaseHost,
+	common.BKInnerObjIDProc:    common.BKTableNameBaseProcess,
+	common.BKInnerObjIDPlat:    common.BKTableNameBasePlat,
+	common.BKTableNameInstAsst: common.BKTableNameInstAsst,
+}
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	tablename := ObjTableMap[objID]
+	if tablename == "" {
+		tablename = common.BKTableNameBaseInst
+	}
+	return tablename
+}
 
 type DataBase struct {
-	ID         int       `auto_increment;primary_key"`
+	ID         int       `gorm:"auto_increment;primary_key"`
 	CreateTime time.Time `gorm:"column:CreateTime"`
 }
 
@@ -144,4 +162,31 @@ func (O *ObjQueryInput) convInterfaceToTime(val interface{}) (interface{}, error
 		return t, nil
 	}
 
+}
+
+func TranslateObjectName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectDes) string {
+	return util.FirstNotEmptyString(defLang.Language("object_"+att.ObjectID), att.ObjectName, att.ObjectID)
+}
+func TranslateInstName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectDes) string {
+	return util.FirstNotEmptyString(defLang.Language("inst_"+att.ObjectID), att.ObjectName, att.ObjectID)
+}
+
+func TranslatePropertyName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectAttDes) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
+}
+
+func TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.ObjectAttDes, val interface{}) interface{} {
+	options := validator.ParseEnumOption(val)
+	for index := range options {
+		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
+	}
+	return options
+}
+
+func TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att *metadata.PropertyGroup) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_group_"+att.GroupID), att.GroupName, att.GroupID)
+}
+
+func TranslateClassificationName(defLang language.DefaultCCLanguageIf, att *metadata.ObjClassification) string {
+	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ClassificationID), att.ClassificationName, att.ClassificationID)
 }

@@ -14,8 +14,13 @@ package instdata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
 	"errors"
+	"fmt"
+	"reflect"
 )
 
 //GetCntByCondition get count by condition
@@ -49,9 +54,40 @@ func UpdateObjByCondition(objType string, data interface{}, condition interface{
 }
 
 //GetObjectByCondition get object by condition
-func GetObjectByCondition(objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := commondata.ObjTableMap[objType]
-	return DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit)
+	if err := DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+		return err
+	}
+
+	if nil != defLang && (objType == common.BKInnerObjIDApp || objType == common.BKInnerObjIDModule) {
+		switch result.(type) {
+		case *[]map[string]interface{}:
+			results := *result.(*[]map[string]interface{})
+			for index := range results {
+				if objType == common.BKInnerObjIDModule {
+					switch fmt.Sprint(results[index]["default"]) {
+					case "1":
+						results[index][common.BKModuleNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_module_idle"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
+					case "2":
+						results[index][common.BKModuleNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_module_fault"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
+					}
+				} else if objType == common.BKInnerObjIDApp {
+					switch fmt.Sprint(results[index]["default"]) {
+					case "1":
+						results[index][common.BKAppNameField] =
+							util.FirstNotEmptyString(defLang.Language("inst_biz_default"), fmt.Sprint(results[index][common.BKAppNameField]), fmt.Sprint(results[index][common.BKAppIDField]))
+					}
+				}
+			}
+		default:
+			blog.Infof("GetObjectByCondition %v", reflect.TypeOf(result))
+		}
+	}
+
+	return nil
 }
 
 //CreateObject add new object

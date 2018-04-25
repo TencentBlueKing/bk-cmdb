@@ -128,7 +128,7 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 	asst[common.BKObjIDField] = objID
 	searchData, _ := json.Marshal(asst)
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
-	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(&api.ForwardParam{Header: req.Request.Header}, searchData)
 	if nil != asstErr {
 		blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
 		return asstErr
