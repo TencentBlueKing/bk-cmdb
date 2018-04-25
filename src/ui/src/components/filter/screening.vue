@@ -398,6 +398,13 @@
                 }
             }
         },
+        beforeDestroy () {
+            this.$store.commit('setQuickSearchParams', {
+                text: '',
+                type: 'ip'
+            })
+            this.resetQueryColumnData()
+        },
         components: {
             vApplicationSelector,
             vMemberSelector

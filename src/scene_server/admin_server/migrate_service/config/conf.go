@@ -48,6 +48,11 @@ func NewConfCenter(serv string) *ConfCenter {
 	}
 }
 
+// Ping to ping server
+func (cc *ConfCenter) Ping() error {
+	return cc.confRegDiscv.Ping()
+}
+
 // Start the configure center module service
 func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	// create root context

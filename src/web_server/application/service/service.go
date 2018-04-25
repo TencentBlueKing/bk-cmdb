@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/web_server/application/config"
@@ -66,7 +67,6 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-
 	return s, nil
 }
 
@@ -242,6 +242,18 @@ func (ccWeb *CCWebServer) Start() error {
 			})
 		})
 
+		// MetricServer
+		conf := metric.Config{
+			ModuleName:    types.CC_MODULE_WEBSERVER,
+			ServerAddress: ccWeb.conf.AddrPort,
+		}
+		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
+		for _, metricAction := range metricActions {
+			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
+				metricAction.HandlerFunc(c.Writer, c.Request)
+			})
+		}
+
 		ip, _ := ccWeb.conf.GetAddress()
 		port, _ := ccWeb.conf.GetPort()
 		portStr := strconv.Itoa(int(port))
@@ -286,4 +298,24 @@ func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
 			blog.Error("unrecognized action verb: %s", action.Verb)
 		}
 	}
+}
+
+// HealthMetric check netservice is health
+func (ccWeb *CCWebServer) HealthMetric() metric.HealthMeta {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccWeb.rd.Ping()))
+	// check dependence
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_APISERVER, metric.CheckHealthy(middleware.APIAddr())))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "webserver is not healthy"
+			break
+		}
+	}
+
+	return meta
 }

@@ -72,6 +72,11 @@ func (m *MgoCli) Open() error {
 	return nil
 }
 
+// Ping will ping the db server
+func (m *MgoCli) Ping() error {
+	return m.session.Ping()
+}
+
 // GetSession returns mongo session
 func (m *MgoCli) GetSession() interface{} {
 	return m.session

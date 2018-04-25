@@ -13,19 +13,20 @@
 package ccapi
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"sync"
-	"time"
-	// migrateCommon "configcenter/src/scene_server/admin_server/common"
 	confCenter "configcenter/src/scene_server/admin_server/migrate_service/config"
 	"configcenter/src/scene_server/admin_server/migrate_service/rdiscover"
-	//"time"
+	"github.com/emicklei/go-restful"
+	"sync"
+	"time"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -61,7 +62,6 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(confCenterAddrs)
-
 	return s, nil
 }
 
@@ -161,7 +161,6 @@ func (ccAPI *CCAPIServer) Start() error {
 		return err
 	}
 
-	return nil
 }
 
 func (ccAPI *CCAPIServer) initHttpServ() error {
@@ -169,5 +168,46 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 
 	ccAPI.httpServ.RegisterWebServer("/migrate/{version}", rdapi.GlobalFilter(types.CC_MODULE_PROC, types.CC_MODULE_TOPO), a.Actions)
 
+	// MetricServer
+	conf := metric.Config{
+		ModuleName:    types.CC_MODULE_MIGRATE,
+		ServerAddress: ccAPI.conf.AddrPort,
+	}
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
+
 	return nil
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("mongo", a.InstCli.Ping()))
+
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
+
+	// check dependence
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_TOPO, metric.CheckHealthy(a.TopoAPI())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_PROC, metric.CheckHealthy(a.ProcAPI())))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "adminserver is not healthy"
+			break
+		}
+	}
+
+	return meta
 }

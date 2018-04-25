@@ -13,15 +13,19 @@
 package ccapi
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	confCenter "configcenter/src/source_controller/objectcontroller/objectdata/config"
 	"configcenter/src/source_controller/objectcontroller/objectdata/rdiscover"
 	"configcenter/src/storage"
+	"github.com/emicklei/go-restful"
 	"sync"
 	"time"
 )
@@ -177,6 +181,19 @@ func (ccAPI *CCAPIServer) InitHttpServ(config map[string]string) error {
 	chErr := make(chan error, 3)
 	a := api.NewAPIResource()
 	ccAPI.httpServ.RegisterWebServer("/object/{version}", nil, a.Actions)
+	// MetricServer
+	conf := metric.Config{
+		ModuleName:    types.CC_MODULE_OBJECTCONTROLLER,
+		ServerAddress: ccAPI.conf.AddrPort,
+	}
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
 
 	wg := sync.WaitGroup{}
 
@@ -205,4 +222,28 @@ func (ccAPI *CCAPIServer) InitHttpServ(config map[string]string) error {
 		return <-chErr
 	}
 	return nil
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+
+	meta := metric.HealthMeta{IsHealthy: true}
+	a := api.GetAPIResource()
+
+	// check mongo
+	meta.Items = append(meta.Items, metric.NewHealthItem("mongo", a.InstCli.Ping()))
+	// check redis
+	meta.Items = append(meta.Items, metric.NewHealthItem("redis", a.CacheCli.Ping()))
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "objectcontroller is not healthy"
+			break
+		}
+	}
+
+	return meta
 }

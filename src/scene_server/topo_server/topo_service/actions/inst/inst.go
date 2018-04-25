@@ -1110,6 +1110,10 @@ func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, inst
 
 						if keyItem, keyItemOk := dataItem[key]; keyItemOk {
 
+							if nil == keyItem {
+								continue
+							}
+
 							keyItemStr := fmt.Sprintf("%v", keyItem)
 							blog.Debug("keyitemstr:%s", keyItemStr)
 							retData, _, retErr := cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), page)

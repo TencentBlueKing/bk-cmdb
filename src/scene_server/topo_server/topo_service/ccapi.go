@@ -13,17 +13,21 @@
 package ccapi
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/scene_server/topo_server/topo_service/config"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"configcenter/src/scene_server/topo_server/topo_service/rdiscover"
+	"github.com/emicklei/go-restful"
+
 	"time"
 )
 
@@ -54,7 +58,6 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 
 	//ConfCenter
 	s.cfCenter = confCenter.NewConfCenter(s.conf.RegDiscover)
-
 	return s, nil
 }
 
@@ -188,5 +191,40 @@ func (ccAPI *CCAPIServer) Start() error {
 func (ccAPI *CCAPIServer) InitHttpServ() error {
 	a := api.NewAPIResource()
 	ccAPI.httpServ.RegisterWebServer("/topo/{version}", rdapi.AllGlobalFilter(), a.Actions)
+	// MetricServer
+	conf := metric.Config{
+		ModuleName:    types.CC_MODULE_TOPO,
+		ServerAddress: ccAPI.conf.AddrPort,
+	}
+	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
+	as := []*httpserver.Action{}
+	for _, metricAction := range metricActions {
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		}})
+	}
+	ccAPI.httpServ.RegisterWebServer("/", nil, as)
 	return nil
+}
+
+// HealthMetric check netservice is health
+func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
+	a := api.GetAPIResource()
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// check zk
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_OBJECTCONTROLLER, metric.CheckHealthy(a.ObjCtrl())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_AUDITCONTROLLER, metric.CheckHealthy(a.AuditCtrl())))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_HOSTCONTROLLER, metric.CheckHealthy(a.HostCtrl())))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "toposerver is not healthy"
+			break
+		}
+	}
+
+	return meta
 }
