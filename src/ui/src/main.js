@@ -25,6 +25,7 @@ import VTooltip from 'v-tooltip'
 import vClickOutside from 'v-click-outside'
 import Cookies from 'js-cookie'
 import moment from 'moment'
+import vDrag from './directive/drag'
 import '@/api/axios'
 
 const languageTranslate = {
@@ -39,6 +40,7 @@ const bkMagicLang = {
 let language = Cookies.get('blueking_language') || 'zh_CN'
 language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
 document.body.setAttribute('lang', language)
+Vue.use(vDrag)
 Vue.use(VTooltip)
 Vue.use(vClickOutside)
 Vue.use(VueI18n)

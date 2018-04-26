@@ -33,12 +33,14 @@
         </v-table>
         <v-sideslider
             :title="sliderTitle"
-            :isShow.sync="isSliderShow"
-            :hasQuickClose="true"
-            @closeSlider="closeSlider"
+            :isShow.sync="slider.isShow"
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="slider.isCloseConfirmShow"
+            @closeSlider="closeSliderConfirm"
         >
             <v-push-detail
-                :isShow="isSliderShow"
+                ref="detail"
+                :isShow="slider.isShow"
                 :type="operationType"
                 :curEvent="curEvent"
                 @saveSuccess="saveSuccess"
@@ -59,7 +61,10 @@
             return {
                 curEvent: {},
                 operationType: '',              // 当前事件推送操作类型  add/edit
-                isSliderShow: false,            // 弹窗状态
+                slider: {
+                    isShow: false,            // 弹窗状态
+                    isCloseConfirmShow: false
+                },
                 sliderTitle: {
                     text: '',
                     icon: 'icon-cc-edit'
@@ -164,7 +169,7 @@
             */
             editEvent (item) {
                 this.curEvent = {...item}
-                this.isSliderShow = true
+                this.slider.isShow = true
                 this.operationType = 'edit'
                 this.sliderTitle.text = this.$t('EventPush["编辑推送"]')
             },
@@ -213,14 +218,14 @@
             */
             addPush () {
                 this.operationType = 'add'
-                this.isSliderShow = true
+                this.slider.isShow = true
                 this.sliderTitle.text = this.$t('EventPush["新增推送"]')
             },
-            /*
-                关闭推送弹窗
-            */
             closeSlider () {
-                this.isSliderShow = false
+                this.slider.isShow = false
+            },
+            closeSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.detail.isCloseConfirmShow()
             },
             setCurrentPage (current) {
                 this.table.pagination.current = current

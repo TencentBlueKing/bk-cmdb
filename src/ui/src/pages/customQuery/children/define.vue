@@ -157,6 +157,11 @@
                     }]
                 },
                 userProperties: [], // 自定义查询条件
+                dataCopy: {
+                    name: '',
+                    userProperties: [],
+                    attributeSelected: ''
+                },
                 isPropertiesShow: false, // 自定义条件下拉列表展示与否
                 isPreviewShow: false, // 显示预览
                 object: {
@@ -268,6 +273,7 @@
                 })
                 this.attribute.list = tempList.concat(this.attribute.default)
                 this.attribute.selected = selected.join(',')
+                this.dataCopy.attributeSelected = this.attribute.selected
             },
             selectedObjId () {
                 this.$refs.propertySelector.$forceUpdate()
@@ -277,12 +283,26 @@
             this.initObjectProperties()
         },
         methods: {
+            isCloseConfirmShow () {
+                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                    return true
+                }
+                for (let i = 0; i < this.userProperties.length; i++) {
+                    let property = this.userProperties[i]
+                    let propertyCopy = this.dataCopy.userProperties[i]
+                    for (let key in property) {
+                        if (property[key] !== propertyCopy[key]) {
+                            return true
+                        }
+                    }
+                }
+                return false
+            },
             deleteUserAPIConfirm () {
-                var self = this
                 this.$bkInfo({
                     title: this.$t("CustomQuery['确认要删除']", {name: self.apiParams.name}),
-                    confirmFn () {
-                        self.deleteUserAPI()
+                    confirmFn: () => {
+                        this.deleteUserAPI()
                     }
                 })
             },
@@ -360,6 +380,11 @@
                 })
                 this.userProperties = properties
                 this.name = detail['name']
+                this.dataCopy = {
+                    name: detail['name'],
+                    userProperties: this.$deepClone(properties),
+                    attributeSelected: this.attribute.selected
+                }
             },
             addUserProperties ({value: bkPropertyId}, index) {
                 let property = this.getOriginalProperty(bkPropertyId, this.selectedObjId)
@@ -500,7 +525,8 @@
         .userapi-item{
             margin-top: 20px;
             .userapi-name{
-                width: 105px;
+                width: 115px;
+                // width: 105px;
                 line-height: 32px;
                 padding-right: 15px;
                 text-align: right;

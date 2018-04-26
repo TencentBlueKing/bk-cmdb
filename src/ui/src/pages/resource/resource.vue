@@ -92,6 +92,9 @@
     export default {
         data () {
             return {
+                isDropdownShow: false,
+                selectedList: [],
+                forSelectedList: [],
                 filing: {
                     isShow: false
                 },
@@ -303,6 +306,11 @@
     .host-resource-wrapper{
         position: relative;
         height: 100%;
+        .button-contain{
+            display: inline-block;
+            width: calc(100% - 110px);
+            vertical-align: middle;
+        }
     }
     .biz-selector {
         display: inline-block;

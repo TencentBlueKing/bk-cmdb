@@ -72,12 +72,15 @@
             <v-sideslider
                 :isShow.sync="slider.isShow"
                 :hasQuickClose="true"
+                :hasCloseConfirm="true"
+                :isCloseConfirmShow="slider.isCloseConfirmShow"
                 :title="slider.title"
-                @closeSlider="closeObjectSlider">
+                @closeSlider="closeObjectSliderConfirm">
                 <div class="slide-content" slot="content">
                     <bk-tab :active-name="tab.activeName" style="border: none;" @tab-changed="tabChanged">
                         <bk-tabpanel name="attr" :title="$t('Common[\'属性\']')">
                             <v-object-attr 
+                                ref="attribute"
                                 :formFields="attr.formFields" 
                                 :formValues="attr.formValues" 
                                 :type="attr.type"
@@ -177,6 +180,7 @@
                 // 侧滑状态
                 slider: {
                     isShow: false,
+                    isCloseConfirmShow: false,
                     title: {
                         icon: '',
                         text: ''
@@ -304,9 +308,17 @@
                         }
                     })
                 }
+            },
+            'slider.isShow' (isShow) {
+                if (!isShow) {
+                    this.closeObjectSlider()
+                }
             }
         },
         methods: {
+            closeObjectSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.attribute.isCloseConfirmShow()
+            },
             getProperty (id) {
                 return this.attr.formFields.find(({bk_property_id: bkPropertyId}) => bkPropertyId === id)
             },

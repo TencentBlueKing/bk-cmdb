@@ -17,7 +17,6 @@
                         <span class="vm">{{title.text}}</span>
                     </h3>
                 </slot>
-                <!-- <span class="close" @click="closeSlider">关闭</span> -->
                 <slot name="content"></slot>
             </div>
         </div>
@@ -57,6 +56,20 @@
             hasQuickClose: {
                 type: Boolean,
                 default: true
+            },
+            /*
+                是否需要显示二次确认弹窗
+            */
+            hasCloseConfirm: {
+                type: Boolean,
+                default: false
+            },
+            /*
+                二次确认弹窗显示状态
+            */
+            isCloseConfirmShow: {
+                type: Boolean,
+                default: false
             }
         },
         watch: {
@@ -74,7 +87,23 @@
         },
         methods: {
             closeSlider () {
-                this.$emit('update:isShow', false)
+                if (this.hasCloseConfirm) {
+                    this.$emit('closeSlider')
+                    this.$nextTick(() => {
+                        if (this.isCloseConfirmShow) {
+                            this.$bkInfo({
+                                title: '退出会导致未保存信息丢失，是否确认？',
+                                confirmFn: () => {
+                                    this.$emit('update:isShow', false)
+                                }
+                            })
+                        } else {
+                            this.$emit('update:isShow', false)
+                        }
+                    })
+                } else {
+                    this.$emit('update:isShow', false)
+                }
             },
             quickClose () {
                 if (this.hasQuickClose) {

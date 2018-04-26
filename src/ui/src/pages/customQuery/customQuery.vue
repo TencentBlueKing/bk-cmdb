@@ -48,8 +48,12 @@
                 :isShow.sync="slider.isShow"
                 :hasQuickClose="true"
                 :title="slider.title"
+                :hasCloseConfirm="true"
+                :isCloseConfirmShow="slider.isCloseConfirmShow"
+                @closeSlider="closeSliderConfirm"
                 @close="hideUserAPISlider">
                 <v-define slot="content" 
+                    ref="define"
                     :id="slider.id"
                     :bkBizId="filter.bkBizId"
                     :isShow="slider.isShow"
@@ -115,6 +119,7 @@
                 },
                 slider: {
                     isShow: false,
+                    isCloseConfirmShow: false,
                     type: 'create',
                     id: null,
                     title: {
@@ -144,6 +149,9 @@
             }
         },
         methods: {
+            closeSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
+            },
             /* 获取自定义API列表 */
             getUserAPIList () {
                 this.table.isLoading = true

@@ -292,7 +292,7 @@
                         } else {
                             svgColor = svgForUser
                         }
-                        if (!this.isBelongtoCurclassify(node['bk_obj_id'])) {
+                        if (!this.isBelongtoCurclassify(node['bk_obj_id']) || node['bk_obj_id'] === 'plat') {
                             svgColor = svgForOther
                         }
                         // 没有图标的话就设置一个默认图标
@@ -311,7 +311,7 @@
                                 </svg>
                                 <foreignObject x="0" y="58" width="100%" height="100%">
                                     <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
-                                        <div style="color:${svgColor.color};text-align: center;width: 50px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${node['bk_obj_name']}</div>
+                                        <div style="color:${svgColor.color};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${node['bk_obj_name']}</div>
                                     </div>
                                 </foreignObject>
                             </svg>`
@@ -446,7 +446,7 @@
                     // 点击了具体某个节点
                     if (params.nodes.length) {
                         let id = params.nodes[0]
-                        if (this.isBelongtoCurclassify(id)) {
+                        if (this.isBelongtoCurclassify(id) && id !== 'plat') {
                             self.$emit('nodeClick', self.getModelById(id))
                         }
                     }

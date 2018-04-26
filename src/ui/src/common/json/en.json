@@ -77,8 +77,11 @@
         "返回": "Back",
         "查看删除历史": "Deleted History",
         "中文名": "Description",
-        "导入": "Import",
-        "导入成功": "Imported Successfully"
+        "跨业务导入": "Cross Business Import",
+        "导入成功": "Imported Successfully",
+        "复制": "Copy",
+        "复制成功": "Copy Success",
+        "复制失败": "Copy Fail"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
