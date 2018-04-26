@@ -122,6 +122,10 @@ const (
 )
 
 const (
+
+	// BKFIeldID the id definition
+	BKFieldID = "id"
+
 	// BKDefaultField the default field
 	BKDefaultField = "default"
 
@@ -205,6 +209,8 @@ const (
 
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
+
+	BKPropertyGroupField = "bk_property_group"
 
 	// BKPropertyValueField the property value field
 	BKPropertyValueField = "bk_property_value"
@@ -404,7 +410,7 @@ const (
 	ValidUpdate = "update"
 )
 
-// DefaultResSetFlat the default resource set flat
+// DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
 // DefaultAppFlag the default app flag
@@ -502,13 +508,13 @@ const (
 const (
 
 	// HostAddMethodExcel add a host method
-	HostAddMethodExcel = "excel"
+	HostAddMethodExcel = "1"
 
 	// HostAddMethodAgent add a  agent method
-	HostAddMethodAgent = "agent"
+	HostAddMethodAgent = "2"
 
 	// HostAddMethodAPI add api method
-	HostAddMethodAPI = "api"
+	HostAddMethodAPI = "3"
 
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
@@ -539,6 +545,17 @@ const (
 
 	// BKTableNameObjClassifiction the table name of the object classification
 	BKTableNameObjClassifiction = "cc_ObjClassification"
+
+	// BKTableNameInstAsst the table name of the inst association
+	BKTableNameInstAsst = "cc_InstAsst"
+
+	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseHost    = "cc_HostBase"
+	BKTableNameBaseModule  = "cc_ModuleBase"
+	BKTableNameBaseInst    = "cc_ObjectBase"
+	BKTableNameBasePlat    = "cc_PlatBase"
+	BKTableNameBaseSet     = "cc_SetBase"
+	BKTableNameBaseProcess = "cc_Process"
 )
 
 const (
@@ -589,4 +606,11 @@ const (
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPCookieLanugageKey = "blueking_language"
+	BKSessionLanugageKey    = "language"
+)
+
+const (
+	// DefaultAppLifeCycleNormal  biz life cycle normal
+	DefaultAppLifeCycleNormal = "2"
 )

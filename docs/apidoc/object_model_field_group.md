@@ -276,7 +276,7 @@ data 字段说明：
 
 |字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
-|bk_group_id|string|是|无|分组ID|the group id|
+|bk_property_group|string|是|无|分组ID|the group id|
 |bk_property_index|int|否|0|定义属性在同一分组下的顺序|the property index|
 
 
@@ -304,7 +304,7 @@ data 字段说明：
 
 
 ### 删除模型属性分组
-- API: DELETE  /api/{version}/objectatt/group/owner/{bk_supplier_account}/object/{bk_obj_id}/bk_property_ids/{bk_property_id}/bk_group_ids/{bk_group_id}
+- API: DELETE  /api/{version}/objectatt/group/owner/{bk_supplier_account}/object/{bk_obj_id}/propertyids/{bk_property_id}/groupids/{bk_group_id}
 - API 名称：delete_object_property_group
 - 功能说明：
 	- 中文：删除模型属性分组

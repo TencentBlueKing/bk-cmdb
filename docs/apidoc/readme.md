@@ -10,7 +10,7 @@
 #### 对象资源操类
 * [对象模型分类](object_model_classify.md)
 * [对象模型](object_model.md)
-* [对象属性模型](object_model_property.md)
+* [对象模型属性](object_model_property.md)
 * [主线模型管理](object_main_line_module.md)
 * [字段分组管理](object_model_field_group.md)
 * [通用对象实例管理](object_common_inst.md)
@@ -26,3 +26,7 @@
 * [用户行为记录](user_costum.md)
 * [权限管理](user_privilege.md)
 * [事件订阅](event_sub.md)
+
+#### 调用指引
+* api请求调用请使用cmdb_apiserver的地址
+* 请在http请求中加入BK_USER和HTTP_BLUEKING_SUPPLIER_ID 这两个参数， 分别代表调用用户和供应商的ID（默认为0）

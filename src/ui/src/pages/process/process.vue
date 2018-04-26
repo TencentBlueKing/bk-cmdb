@@ -137,6 +137,7 @@
                     let {
                         isonly,
                         isrequired,
+                        'bk_isapi': bkIsapi,
                         'bk_property_id': bkPropertyId,
                         'bk_property_name': bkPropertyName
                     } = property
@@ -145,12 +146,14 @@
                         name: bkPropertyName,
                         property: property
                     }
-                    if (isonly && isrequired) {
-                        headerLead.push(headerItem)
-                    } else if (isonly || isonly) {
-                        headerMiddle.push(headerItem)
-                    } else {
-                        headerTail.push(headerItem)
+                    if (!bkIsapi) {
+                        if (isonly && isrequired) {
+                            headerLead.push(headerItem)
+                        } else if (isonly || isonly) {
+                            headerMiddle.push(headerItem)
+                        } else {
+                            headerTail.push(headerItem)
+                        }
                     }
                 })
                 this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 6)
