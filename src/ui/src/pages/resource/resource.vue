@@ -87,7 +87,7 @@
     import vIndex from '@/pages/index/index'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
-    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
+    import vDeleteHistory from '@/components/history/delete'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
