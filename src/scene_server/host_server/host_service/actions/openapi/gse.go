@@ -118,6 +118,8 @@ func (cli *gseAction) GetAgentStatus(req *restful.Request, resp *restful.Respons
 			"Ip":        hostMap[common.BKHostInnerIPField],
 			"CompanyID": 0,
 			"PlatID":    platIdStr,
+			"CompanyId": 0,
+			"PlatId":    platIdStr,
 		}
 		status := int64(0)
 		if i < agentStatuLen {
