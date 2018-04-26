@@ -1,7 +1,7 @@
 <template>
     <div class="transfer-pop" v-show="isShow">
-        <div class="transfer-content">
-            <div class="content-title">
+        <div class="transfer-content" ref="drag" v-drag="'#drag'">
+            <div class="content-title" id="drag">
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
             </div>
@@ -104,6 +104,7 @@
                         active: true,
                         'bk_inst_id': 'root'
                     }
+                    this.$refs.drag.style = ''
                     this.treeData.child.splice(1)
                 }
             },
@@ -292,9 +293,8 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        margin-left: -321px;
+        transform: translate(-50%, -50%);
         border-radius: 2px;
-        margin-top: -294px;
     }
     .content-title{
         height: 50px;
