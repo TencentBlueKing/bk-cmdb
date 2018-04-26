@@ -171,7 +171,7 @@
                         size: 10,
                         current: 1
                     },
-                    defaultSort: '-bk_biz_id',
+                    defaultSort: '-bk_inst_id',
                     sort: ''
                 },
                 filing: {
@@ -241,20 +241,43 @@
                             limit: this.table.pagination.size,
                             sort: this.table.sort ? this.table.sort : this.table.defaultSort
                         },
-                        fields: [],
+                        fields: this.objId === 'biz' ? [] : {},
                         condition: {}
                     }
                 }
                 if (this.objId === 'biz') {
                     config.url = `biz/search/${this.bkSupplierAccount}`
                 } else {
-                    config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
+                    config.url = `inst/association/search/owner/${this.bkSupplierAccount}/object/${this.objId}`
                 }
                 if (this.filter.selected && this.filter.value) {
-                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
-                        config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                    if (this.objId === 'biz') {
+                        if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
+                            config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                        } else {
+                            config.params.condition[this.filter.selected] = this.filter.value
+                        }
                     } else {
-                        config.params.condition[this.filter.selected] = this.filter.value
+                        if (this.filter.type === 'singleasst' || this.filter.type === 'multiasst') {
+                            let bkAsstObjId = this.getProperty(this.filter.selected)['bk_asst_obj_id']
+                            config.params.condition[bkAsstObjId] = [{
+                                field: 'bk_inst_name',
+                                operator: '$regex',
+                                value: this.filter.value
+                            }]
+                        } else if (this.filter.type === 'bool') {
+                            config.params.condition[this.objId] = [{
+                                field: this.filter.selected,
+                                operator: '$eq',
+                                value: ['true', 'false'].includes(this.filter.value) ? this.filter.value === 'true' : this.filter.value
+                            }]
+                        } else {
+                            config.params.condition[this.objId] = [{
+                                field: this.filter.selected,
+                                operator: '$regex',
+                                value: this.filter.value
+                            }]
+                        }
                     }
                 }
                 return config
@@ -272,7 +295,11 @@
                 return this.filterList.filter(({id}) => {
                     let property = this.getProperty(id)
                     if (property) {
-                        return property['bk_property_type'] !== 'singleasst' && property['bk_property_type'] !== 'multiasst'
+                        if (this.objId === 'biz') {
+                            return property['bk_property_type'] !== 'singleasst' && property['bk_property_type'] !== 'multiasst'
+                        } else {
+                            return property['bk_asst_obj_id'] !== 'biz'
+                        }
                     }
                     return false
                 })
