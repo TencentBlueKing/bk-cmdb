@@ -24,9 +24,6 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// init framework
-	api.Init()
-
 	(&option.Options{}).AddFlags(pflag.CommandLine)
 
 	util.InitFlags()
