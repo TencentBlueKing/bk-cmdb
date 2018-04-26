@@ -93,7 +93,10 @@
         "操作时间": "Operation Time",
         "类型": "Type",
         "全部": "All",
-        "IP": "IP"
+        "IP": "IP",
+        "操作详情": "Operation Details",
+        "变更前": "Before Change",
+        "变更后": "After Change"
     },
     "EventPush": {
         "事件推送": "Event Push",

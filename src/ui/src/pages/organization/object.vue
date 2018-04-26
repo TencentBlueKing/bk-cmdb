@@ -144,7 +144,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
-    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
+    import vDeleteHistory from '@/components/history/delete'
     export default {
         mixins: [Authority],
         data () {
