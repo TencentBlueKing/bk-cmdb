@@ -490,7 +490,7 @@
                     return data
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg(this.$t("Common['您没有当前模型的权限']"))
+                        this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
                 })
             },
@@ -553,7 +553,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg(this.$t("Common['创建成功']"), 'success')
+                            this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
