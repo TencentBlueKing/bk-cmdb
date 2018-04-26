@@ -454,7 +454,7 @@
                     let isConfirmShow = this.$refs.topoAttribute.isCloseConfirmShow()
                     if (isConfirmShow) {
                         this.$bkInfo({
-                            title: '退出会导致未保存信息丢失，是否确认？',
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
                             confirmFn: () => {
                                 this.view.tab.active = active
                                 this.view.attribute.formValues = {}
@@ -485,7 +485,7 @@
         beforeRouteLeave (to, from, next) {
             if (this.$refs.topoAttribute.isCloseConfirmShow()) {
                 this.$bkInfo({
-                    title: '退出会导致未保存信息丢失，是否确认？',
+                    title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
                     confirmFn: () => {
                         next(true)
                     }
