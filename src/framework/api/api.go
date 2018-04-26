@@ -10,8 +10,8 @@ import (
 //  mgr the global variable for the manager
 var mgr *manager.Manager
 
-// Init init the framework
-func Init() {
+// init init the framework
+func init() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
