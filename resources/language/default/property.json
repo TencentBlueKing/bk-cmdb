@@ -49,6 +49,9 @@
     "host_property_bk_outer_mac": "外网MAC",
     "host_property_create_time": "录入时间",
     "host_property_import_from": "录入方式",
+    "host_property_bk_state_name": "所在国家",
+    "host_property_bk_province_name": "所在省份",
+    "host_property_bk_isp_name": "所属运营商",
     "process_property_bk_process_name": "进程名称",
     "process_property_description": "进程描述",
     "process_property_bind_ip": "绑定IP",
@@ -69,6 +72,7 @@
     "process_property_pid_file": "PID文件路径",
     "process_property_auto_start": "是否自动拉起",
     "process_property_auto_time_gap": "拉起间隔",
+    
 
     "bk_switch_property_bk_asset_id":"固资编号",
     "bk_switch_property_bk_sn":"SN",

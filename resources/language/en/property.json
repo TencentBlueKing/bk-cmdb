@@ -53,6 +53,9 @@
     "host_property_bk_outer_mac": "outer MAC",
     "host_property_create_time": "import data",
     "host_property_import_from": "import source",
+    "host_property_bk_state_name": "state name",
+    "host_property_bk_province_name": "province name",
+    "host_property_bk_isp_name": "isp name",
 
     "process_property_bk_process_name": "process name",
     "process_property_description": "process description",
