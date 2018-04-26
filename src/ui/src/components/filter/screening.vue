@@ -57,7 +57,7 @@
                         </template>
                         <template v-else>
                             <!-- 判断条件选择 -->
-                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1">
+                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1 || typeOfAsst.indexOf(column['bk_property_type']) !== -1">
                                 <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
                                     <bk-select-option v-for="(operator, index) in operators['char']"
                                         :key="index"
@@ -171,7 +171,8 @@
                     }]
                 },
                 typeOfChar: ['singlechar', 'longchar'],
-                typeOfDate: ['date', 'time']
+                typeOfDate: ['date', 'time'],
+                typeOfAsst: ['singleasst', 'multiasst']
             }
         },
         computed: {
@@ -219,7 +220,17 @@
                             }
                             filter.condition.push(condition)
                         }
-                        if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
+                        if (this.typeOfAsst.indexOf(property['bk_property_type']) !== -1) {
+                            filter.condition.push({
+                                'bk_obj_id': property['bk_asst_obj_id'],
+                                fields: [],
+                                condition: [{
+                                    field: 'bk_inst_name',
+                                    operator: column.operator,
+                                    value: column.value
+                                }]
+                            })
+                        } else if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
                             condition.condition.push({
                                 field: column.field,
                                 operator: column.operator,
