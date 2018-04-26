@@ -92,7 +92,7 @@
                     this.$nextTick(() => {
                         if (this.isCloseConfirmShow) {
                             this.$bkInfo({
-                                title: '退出会导致未保存信息丢失，是否确认？',
+                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
                                 confirmFn: () => {
                                     this.$emit('update:isShow', false)
                                 }
