@@ -10,23 +10,34 @@
  * limitations under the License.
  */
 
-package model
+package common
 
-import "configcenter/src/framework/common"
+import (
+	"fmt"
+	"reflect"
+)
 
-// CreateClassification create a new Classification instance
-func CreateClassification(name string) Classification {
-	return &classification{ClassificationName: name}
-}
+// GetTags parse a object and get the all tags
+func GetTags(target interface{}) []string {
 
-// FindClassificationsLikeName find a array of the classification by the name
-func FindClassificationsLikeName(name string) (ClassificationIterator, error) {
-	// TODO: 按照名字模糊查找
-	return nil, nil
-}
+	targetType := reflect.TypeOf(target)
+	switch targetType.Kind() {
+	default:
+		return nil
+	case reflect.Ptr:
+		fmt.Printf("hello")
+		targetType = targetType.Elem()
 
-// FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition *common.Condition) (ClassificationIterator, error) {
-	// TODO: 按照条件搜索
-	return nil, nil
+	}
+
+	numField := targetType.NumField()
+	tags := make([]string, 0)
+	for i := 0; i < numField; i++ {
+		structField := targetType.Field(i)
+		if tag, ok := structField.Tag.Lookup("field"); ok {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+
 }

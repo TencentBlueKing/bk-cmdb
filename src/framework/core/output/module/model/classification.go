@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import "configcenter/src/framework/common"
@@ -18,10 +18,10 @@ var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
-	ClassificationID   string `json:"bk_classification_id"`
-	ClassificationName string `json:"bk_classification_name"`
-	ClassificationType string `json:"bk_classification_type"`
-	ClassificationIcon string `json:"bk_classification_icon"`
+	classificationID   string `field:"bk_classification_id"`
+	classificationName string `field:"bk_classification_name"`
+	classificationType string `field:"bk_classification_type"`
+	classificationIcon string `field:"bk_classification_icon"`
 }
 
 func (cli *classification) Save() error {
@@ -29,25 +29,25 @@ func (cli *classification) Save() error {
 }
 
 func (cli *classification) GetID() string {
-	return cli.ClassificationID
+	return cli.classificationID
 }
 
 func (cli *classification) SetID(id string) {
-	cli.ClassificationID = id
+	cli.classificationID = id
 }
 
 func (cli *classification) SetName(name string) {
-	cli.ClassificationName = name
+	cli.classificationName = name
 }
 
 func (cli *classification) SetIcon(iconName string) {
-	cli.ClassificationIcon = iconName
+	cli.classificationIcon = iconName
 }
 
 func (cli *classification) CreateModel() Model {
 	m := &model{}
-	m.ObjCls = cli.ClassificationID
-	m.ObjIcon = cli.ClassificationIcon
+	m.ObjCls = cli.classificationID
+	m.ObjIcon = cli.classificationIcon
 	return m
 }
 
