@@ -54,6 +54,7 @@
                             <span>{{$t("HostResourcePool['导出选中']")}}</span>
                         </button>
                     </form>
+                    <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['导入']")}}</button>
                     <button class="bk-button button-setting" @click="setTableField">
                         <i class="icon-cc-setting"></i>
                     </button>
@@ -190,6 +191,10 @@
                         }]
                     }
                 }
+            },
+            isShowCrossImport: {
+                type: Boolean,
+                default: false
             },
             isShowBiz: {
                 type: Boolean,
@@ -794,6 +799,9 @@
                 } else {
                     this.table.chooseId = []
                 }
+            },
+            handleCrossImport () {
+                this.$emit('handleCrossImport')
             },
             attributeTabChanged (activeName) {
                 this.sideslider.attribute.active = activeName
