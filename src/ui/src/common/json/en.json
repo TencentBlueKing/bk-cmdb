@@ -81,7 +81,8 @@
         "导入成功": "Imported Successfully",
         "复制": "Copy",
         "复制成功": "Copy Success",
-        "复制失败": "Copy Fail"
+        "复制失败": "Copy Fail",
+        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
