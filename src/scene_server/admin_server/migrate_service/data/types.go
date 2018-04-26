@@ -5,10 +5,6 @@ import (
 )
 
 var stateEnum = []validator.EnumVal{
-	{ID: "HK", Name: "中国香港", Type: "text"},
-	{ID: "TW", Name: "中国台湾", Type: "text"},
-	{ID: "MO", Name: "中国澳门", Type: "text"},
-	{ID: "US", Name: "美国", Type: "text"},
 	{ID: "AR", Name: "阿根廷", Type: "text"},
 	{ID: "AD", Name: "安道尔", Type: "text"},
 	{ID: "AE", Name: "阿联酋", Type: "text"},
@@ -246,6 +242,7 @@ var stateEnum = []validator.EnumVal{
 	{ID: "VG", Name: "英属维尔京群岛", Type: "text"},
 	{ID: "VI", Name: "美属维尔京群岛", Type: "text"},
 	{ID: "VN", Name: "越南", Type: "text"},
+	{ID: "US", Name: "美国", Type: "text"},
 	{ID: "VU", Name: "瓦努阿图", Type: "text"},
 	{ID: "WF", Name: "瓦利斯和富图纳", Type: "text"},
 	{ID: "WS", Name: "萨摩亚", Type: "text"},
