@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
@@ -50,7 +50,7 @@ func (cli *objClsLogic) SetManager(mgr manager.Manager) error {
 	return nil
 }
 
-func (cli *objClsLogic) CreateObjectClass(val []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *objClsLogic) CreateObjectClass(forward *api.ForwardParam, val []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 
 	var obj sencapi.ObjectClsDes
 	if jsErr := json.Unmarshal(val, &obj); nil != jsErr {
@@ -74,7 +74,7 @@ func (cli *objClsLogic) CreateObjectClass(val []byte, errProxy errors.DefaultCCE
 	checkIDCond["bk_classification_id"] = obj.ClsID
 	checkIDCondVal, _ := json.Marshal(checkIDCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObjectCls(checkIDCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObjectCls(forward, checkIDCondVal); nil != err {
 		blog.Error("select failed, error:%s", err.Error())
 		return 0, err
 	} else if len(items) > 0 {
@@ -86,7 +86,7 @@ func (cli *objClsLogic) CreateObjectClass(val []byte, errProxy errors.DefaultCCE
 	checkNameCond["bk_classification_name"] = obj.ClsName
 	checkNameCondVal, _ := json.Marshal(checkNameCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObjectCls(checkNameCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObjectCls(forward, checkNameCondVal); nil != err {
 		blog.Error("select failed, error:%s", err.Error())
 		return 0, err
 	} else if len(items) > 0 {
@@ -95,10 +95,10 @@ func (cli *objClsLogic) CreateObjectClass(val []byte, errProxy errors.DefaultCCE
 	}
 
 	blog.Debug("create ", string(val))
-	return cli.objcli.CreateMetaObjectCls(val)
+	return cli.objcli.CreateMetaObjectCls(forward, val)
 }
 
-func (cli *objClsLogic) UpdateObjectClass(clsID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objClsLogic) UpdateObjectClass(forward *api.ForwardParam, clsID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
 
 	if clsID <= 0 {
 		blog.Error("attrid is invalid, %d", clsID)
@@ -122,7 +122,7 @@ func (cli *objClsLogic) UpdateObjectClass(clsID int, val []byte, errProxy errors
 	checkIDCond["id"] = clsID
 	checkIDCondVal, _ := json.Marshal(checkIDCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObjectCls(checkIDCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObjectCls(forward, checkIDCondVal); nil != err {
 		blog.Error("update failed, error:%s", err.Error())
 		return err
 	} else if 0 == len(items) {
@@ -140,7 +140,7 @@ func (cli *objClsLogic) UpdateObjectClass(clsID int, val []byte, errProxy errors
 		checkNameCond["bk_classification_name"] = clsName
 		checkNameCondVal, _ := json.Marshal(checkNameCond)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if items, err := cli.objcli.SearchMetaObjectCls(checkNameCondVal); nil != err {
+		if items, err := cli.objcli.SearchMetaObjectCls(forward, checkNameCondVal); nil != err {
 			blog.Error("select failed, error:%s", err.Error())
 			return err
 		} else if 0 != len(items) {
@@ -154,10 +154,10 @@ func (cli *objClsLogic) UpdateObjectClass(clsID int, val []byte, errProxy errors
 	}
 
 	// execute
-	return cli.objcli.UpdateMetaObjectCls(clsID, val)
+	return cli.objcli.UpdateMetaObjectCls(forward, clsID, val)
 }
 
-func (cli *objClsLogic) DeleteObjectClass(clsID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objClsLogic) DeleteObjectClass(forward *api.ForwardParam, clsID int, val []byte, errProxy errors.DefaultCCErrorIf) error {
 
 	if 0 > clsID {
 		blog.Error("id is invalid, %d", clsID)
@@ -175,7 +175,7 @@ func (cli *objClsLogic) DeleteObjectClass(clsID int, val []byte, errProxy errors
 		val, _ = json.Marshal(checkCond)
 	}
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObjectCls(val); nil != err {
+	if items, err := cli.objcli.SearchMetaObjectCls(forward, val); nil != err {
 		blog.Error("check the target failed, error:%s ", err.Error())
 		return err
 	} else if 0 == len(items) {
@@ -183,21 +183,21 @@ func (cli *objClsLogic) DeleteObjectClass(clsID int, val []byte, errProxy errors
 		return fmt.Errorf("nothing can be deleted, please check the condition")
 	}
 
-	return cli.objcli.DeleteMetaObjectCls(clsID, val)
+	return cli.objcli.DeleteMetaObjectCls(forward, clsID, val)
 }
 
 // SelectObjectClass select object classification
-func (cli *objClsLogic) SelectObjectClass(val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error) {
+func (cli *objClsLogic) SelectObjectClass(forward *api.ForwardParam, val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsDes, error) {
 
 	blog.Debug("search classification %v", string(val))
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.SearchMetaObjectCls(val)
+	return cli.objcli.SearchMetaObjectCls(forward, val)
 }
 
 // SelectObjectClassWithObjects select object classification with associatin objects
-func (cli *objClsLogic) SelectObjectClassWithObjects(ownerID string, val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error) {
+func (cli *objClsLogic) SelectObjectClassWithObjects(forward *api.ForwardParam, ownerID string, val []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjClsObjectDes, error) {
 
 	blog.Debug("search classification objects %v", string(val))
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.SearchMetaObjectClsObjects(ownerID, val)
+	return cli.objcli.SearchMetaObjectClsObjects(forward, ownerID, val)
 }

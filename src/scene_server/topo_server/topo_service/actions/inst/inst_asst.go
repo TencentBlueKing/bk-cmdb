@@ -1,5 +1,3 @@
-package inst
-
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -12,6 +10,8 @@ package inst
  * limitations under the License.
  */
 
+package inst
+
 //
 // Associative instance query
 //
@@ -20,11 +20,15 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
+	"fmt"
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -32,9 +36,9 @@ import (
 
 // ConditionItem subcondition
 type ConditionItem struct {
-	Field    string `json:"field,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	Value    string `json:"value,omitempty"`
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
 }
 
 // AssociationParams  association params
@@ -44,28 +48,32 @@ type AssociationParams struct {
 	Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }
 
-func (cli *instAction) createInstAssociation(instAsst []interface{}) error {
+func (cli *instAction) createInstAssociation(req *restful.Request, instAsst []*metadata.InstAsst) error {
 	if 0 == len(instAsst) {
 		return nil
 	}
-	return cli.CC.InstCli.InsertMuti(metadata.InstAsst{}.TableName(), instAsst...)
+	for _, item := range instAsst {
+		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
+		inputJSON, err := json.Marshal(item)
+		if nil != err {
+			return err
+		}
+		objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPCreate, []byte(inputJSON))
+		if nil != err {
+			return err
+		}
+
+		if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+			blog.Error("failed to create the inst asst , error info is %s", objRes)
+			continue
+		}
+	}
+	return nil
 }
 
-func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, input map[string]interface{}) error {
-
-	// get association fields
-	asst := map[string]interface{}{}
-	asst[common.BKOwnerIDField] = ownerID
-	asst[common.BKObjIDField] = objID
-	searchData, _ := json.Marshal(asst)
-	cli.objcli.SetAddress(cli.CC.ObjCtrl())
-	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
-	if nil != asstErr {
-		blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
-		return asstErr
-	}
+func (cli *instAction) extractDataFromAssociationField(instID int64, input map[string]interface{}, asstDes []api.ObjAsstDes) []*metadata.InstAsst {
 	// extract the data for the associated field
-	asstFieldVal := make([]interface{}, 0)
+	asstFieldVal := make([]*metadata.InstAsst, 0)
 	for idxItem, item := range asstDes {
 		if inputVal, ok := input[item.ObjectAttID]; ok {
 			switch t := inputVal.(type) {
@@ -81,43 +89,27 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 						continue
 					}
 
-					asstInst := metadata.InstAsst{}
-					id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-					asstInst.ID = id
-					if nil != err {
-						blog.Error("faild to create id, error info is %s", err.Error())
-					}
-
+					asstInst := &metadata.InstAsst{}
 					asstInst.InstID = int64(instID)
 					asstInst.AsstInstID = iID
 					asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
-					asstInst.ObjectID = objID
+					asstInst.ObjectID = asstDes[idxItem].ObjectID
 					asstFieldVal = append(asstFieldVal, asstInst)
 				}
 
 			case int64, int:
-				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
+				asstInst := &metadata.InstAsst{}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
-				asstInst.ObjectID = objID
+				asstInst.ObjectID = asstDes[idxItem].ObjectID
 				asstFieldVal = append(asstFieldVal, asstInst)
 			case json.Number:
-				asstInst := metadata.InstAsst{}
-				id, err := cli.CC.InstCli.GetIncID(asstInst.TableName())
-				asstInst.ID = id
-				if nil != err {
-					blog.Error("faild to create id, error info is %s", err.Error())
-				}
+				asstInst := &metadata.InstAsst{}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = t.Int64()
 				asstInst.AsstObjectID = asstDes[idxItem].AsstObjID
-				asstInst.ObjectID = objID
+				asstInst.ObjectID = asstDes[idxItem].ObjectID
 				asstFieldVal = append(asstFieldVal, asstInst)
 
 			default:
@@ -126,22 +118,57 @@ func (cli *instAction) updateInstAssociation(instID int, ownerID, objID string, 
 		}
 	}
 
-	err := cli.deleteInstAssociation(instID, ownerID, objID)
+	return asstFieldVal
+}
+
+func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, ownerID, objID string, input map[string]interface{}) error {
+
+	// get association fields
+	asst := map[string]interface{}{}
+	asst[common.BKOwnerIDField] = ownerID
+	asst[common.BKObjIDField] = objID
+	searchData, _ := json.Marshal(asst)
+	cli.objcli.SetAddress(cli.CC.ObjCtrl())
+	asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(&api.ForwardParam{Header: req.Request.Header}, searchData)
+	if nil != asstErr {
+		blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
+		return asstErr
+	}
+
+	err := cli.deleteInstAssociation(req, instID, ownerID, objID)
 	if nil != err {
 		blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
 		return err
 	}
 
-	return cli.createInstAssociation(asstFieldVal)
+	asstFieldVal := cli.extractDataFromAssociationField(int64(instID), input, asstDes)
+
+	return cli.createInstAssociation(req, asstFieldVal)
 
 }
 
-func (cli *instAction) deleteInstAssociation(instID int, ownerID, objID string) error {
+func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID string) error {
 
-	return cli.CC.InstCli.DelByCondition(metadata.InstAsst{}.TableName(), map[string]interface{}{
+	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
+	input := map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
-	})
+	}
+	inputJSON, err := json.Marshal(input)
+	if nil != err {
+		return err
+	}
+	objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+	if nil != err {
+		return err
+	}
+
+	if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+		blog.Error("failed to delete the inst asst , error info is %s", objRes)
+		return fmt.Errorf("failed to delete the inst asst, %s:%d", objID, instID)
+	}
+
+	return nil
 }
 
 func (cli *instAction) searchAssociationInst(req *restful.Request, objID string, searchParams map[string]interface{}) ([]int64, error) {
@@ -265,7 +292,15 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 				} else {
 					if objID == keyObjID {
 						// deal self condition
-						instCondition[objCondition.Field] = objCondition.Value
+						switch t := objCondition.Value.(type) {
+						case string:
+							instCondition[objCondition.Field] = map[string]interface{}{
+								common.BKDBEQ: params.SpeceialCharChange(t),
+							}
+						default:
+							instCondition[objCondition.Field] = objCondition.Value
+						}
+
 					} else {
 						// deal association condition
 						condition[objCondition.Field] = objCondition.Value
@@ -296,24 +331,35 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 			}
 
 			// search the association insts
-			instAsstItems := make([]metadata.InstAsst, 0)
-			err := cli.CC.InstCli.GetMutilByCondition(metadata.InstAsst{}.TableName(), nil, map[string]interface{}{
-				"bk_asst_inst_id": map[string]interface{}{
-					common.BKDBIN: asstInstIDS,
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst + "/search"
+			input := map[string]interface{}{
+				"page": map[string]interface{}{
+					"start": 0,
+					"sort":  "",
+					"limit": common.BKNoLimit,
 				},
-				"bk_asst_obj_id": keyObjID,
-				"bk_obj_id":      objID,
-			}, &instAsstItems, "", 0, common.BKNoLimit)
+				"condition": map[string]interface{}{
+					"bk_asst_inst_id": map[string]interface{}{
+						common.BKDBIN: asstInstIDS,
+					},
+					"bk_asst_obj_id": keyObjID,
+					"bk_obj_id":      objID,
+				},
+				"fields": "",
+			}
+
+			inputJSON, _ := json.Marshal(input)
+			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPSelectPost, []byte(inputJSON))
 			if nil != err {
-				blog.Errorf("can not get the inst association data from db, error info is %s", err.Error())
+				blog.Errorf("failed to search the inst association, condition is %s ,error is %s", string(inputJSON), err.Error())
 				continue
 			}
 
-			// extract the instid
-			blog.Debug("the inst association items %v", instAsstItems)
-			for _, item := range instAsstItems {
-				targetInstIDS = append(targetInstIDS, item.InstID)
-			}
+			gjson.Get(objRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
+
+				targetInstIDS = append(targetInstIDS, value.Int())
+				return true
+			})
 
 		}
 
@@ -321,6 +367,12 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		if 0 != len(targetInstIDS) {
 			instCondition[common.BKInstIDField] = map[string]interface{}{
 				common.BKDBIN: targetInstIDS,
+			}
+		} else if 0 != len(js.Condition) {
+			if _, ok := js.Condition[objID]; !ok {
+				instCondition[common.BKInstIDField] = map[string]interface{}{
+					common.BKDBIN: targetInstIDS,
+				}
 			}
 		}
 

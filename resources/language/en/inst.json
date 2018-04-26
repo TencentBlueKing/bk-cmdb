@@ -1,0 +1,6 @@
+{
+    "inst_module_idle": "idle machine",
+    "inst_module_fault": "fault machine",
+    "inst_biz_default": "resource pool",
+    "": ""
+}

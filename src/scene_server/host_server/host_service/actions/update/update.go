@@ -23,6 +23,7 @@ import (
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
 	"strconv"
@@ -71,7 +72,8 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		delete(data, common.BKHostIDField)
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), defErr)
+		forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), forward, defErr)
 
 		hostIDArr := strings.Split(hostIDStr, ",")
 		var iHostIDArr []int
@@ -132,7 +134,7 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		opClient := auditlog.NewClient(cli.CC.AuditCtrl())
-		opClient.AuditHostsLog(logLastConents, "修改主机", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
+		opClient.AuditHostsLog(logLastConents, "update host", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
 
 		return http.StatusOK, common.CCSuccessStr, nil
 	}, resp)

@@ -1,0 +1,20 @@
+{
+	"biz_property_group_default": "default",
+	"biz_property_group_role": "role",
+
+	"set_property_group_default": "default",
+
+	"module_property_group_default": "default",
+
+	"host_property_group_default": "default",
+	"host_property_group_auto": "auto discover (from agent)",
+
+	"process_property_group_default": "default",
+	"process_property_group_proc_port": "listener port",
+	"process_property_group_gsekit_baseinfo": "GSEkit base info",
+	"process_property_group_gsekit_manage": "GSEkit manager info",
+
+	"plat_property_group_default": "default",
+	
+    "": ""
+}

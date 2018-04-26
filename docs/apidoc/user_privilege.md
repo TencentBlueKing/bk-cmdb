@@ -162,7 +162,7 @@ data 字段说明：
 | data | null| 请求返回的数据 |return data|
 
 ###  更新用户分组
-* API: POST  /api/{version}/topo/privilege/group/{bk_supplier_account}/{group_id}
+* API: PUT  /api/{version}/topo/privilege/group/{bk_supplier_account}/{group_id}
 * API名称： update_user_group
 * 功能说明：
 	* 中文：更新用户分组
@@ -484,7 +484,7 @@ model config字段说明：
 
 
 ###  更新分组权限
-* API: PUT  /api/{version}/topo/privilege/group/detail/{bk_supplier_account}/{group_id}
+* API: POST  /api/{version}/topo/privilege/group/detail/{bk_supplier_account}/{group_id}
 * API名称： update_group_privilege
 * 功能说明：
 	* 中文： 更新分组权限

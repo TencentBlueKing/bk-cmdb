@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
@@ -47,7 +47,7 @@ func (cli *objAttGroupLogic) SetManager(mgr manager.Manager) error {
 	return nil
 }
 
-func (cli *objAttGroupLogic) CreateObjectGroup(data []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *objAttGroupLogic) CreateObjectGroup(forward *api.ForwardParam, data []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	var selector api.ObjAttGroupDes
 	jsErr := json.Unmarshal(data, &selector)
@@ -60,7 +60,7 @@ func (cli *objAttGroupLogic) CreateObjectGroup(data []byte, errProxy errors.Defa
 	val.GroupName = selector.GroupName
 	val.GroupID = selector.GroupID
 	valstr, _ := json.Marshal(val)
-	items, err := cli.objcli.SelectPropertyGroupByObjectID(selector.OwnerID, selector.ObjectID, valstr)
+	items, err := cli.objcli.SelectPropertyGroupByObjectID(forward, selector.OwnerID, selector.ObjectID, valstr)
 	if nil != err {
 		blog.Error("can not found the data(%s), error info is %s", string(valstr), err.Error())
 		return 0, err
@@ -69,30 +69,30 @@ func (cli *objAttGroupLogic) CreateObjectGroup(data []byte, errProxy errors.Defa
 		blog.Error("repeat the group info %+v", selector)
 		return 0, fmt.Errorf("repeat the group info")
 	}
-	return cli.objcli.CreateMetaObjectAttGroup(data)
+	return cli.objcli.CreateMetaObjectAttGroup(forward, data)
 }
 
-func (cli *objAttGroupLogic) UpdateObjectGroup(data []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttGroupLogic) UpdateObjectGroup(forward *api.ForwardParam, data []byte, errProxy errors.DefaultCCErrorIf) error {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.UpdateMetaObjectAttGroup(data)
+	return cli.objcli.UpdateMetaObjectAttGroup(forward, data)
 }
 
-func (cli *objAttGroupLogic) UpdateObjectGroupProperty(data []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttGroupLogic) UpdateObjectGroupProperty(forward *api.ForwardParam, data []byte, errProxy errors.DefaultCCErrorIf) error {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.UpdateMetaObjectAttGroupProperty(data)
+	return cli.objcli.UpdateMetaObjectAttGroupProperty(forward, data)
 }
 
-func (cli *objAttGroupLogic) DeleteObjectGroup(id int, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttGroupLogic) DeleteObjectGroup(forward *api.ForwardParam, id int, errProxy errors.DefaultCCErrorIf) error {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.DeleteMetaObjectAttGroup(id, nil)
+	return cli.objcli.DeleteMetaObjectAttGroup(forward, id, nil)
 }
 
-func (cli *objAttGroupLogic) DeleteObjectGroupProperty(ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objAttGroupLogic) DeleteObjectGroupProperty(forward *api.ForwardParam, ownerID, objectID, propertyID, groupID string, errProxy errors.DefaultCCErrorIf) error {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.DeleteMetaObjectAttGroupProperty(ownerID, objectID, propertyID, groupID)
+	return cli.objcli.DeleteMetaObjectAttGroupProperty(forward, ownerID, objectID, propertyID, groupID)
 }
 
-func (cli *objAttGroupLogic) SelectPropertyGroupByObjectID(ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error) {
+func (cli *objAttGroupLogic) SelectPropertyGroupByObjectID(forward *api.ForwardParam, ownerID, objectID string, data []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjAttGroupDes, error) {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.SelectPropertyGroupByObjectID(ownerID, objectID, data)
+	return cli.objcli.SelectPropertyGroupByObjectID(forward, ownerID, objectID, data)
 }

@@ -393,7 +393,7 @@ GET /api/{version}/userapi/data/{bk_biz_id}/{id}/{start}/{limit}
                     "bk_host_id":187,
                     "bk_host_name":"nginx.27",
                     "bk_host_type":"虚拟机",
-                    "import_from":"excel",
+                    "import_from":"1",
                     "bk_host_innerip":"10.0.0.0",
                     "bk_cloud_id":0,
                     "aaa":"",

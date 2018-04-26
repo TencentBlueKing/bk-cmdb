@@ -64,6 +64,7 @@ func (m *hostModuleConfigAction) HostModuleRelation(req *restful.Request, resp *
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data moduleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
@@ -88,7 +89,7 @@ func (m *hostModuleConfigAction) HostModuleRelation(req *restful.Request, resp *
 		}
 
 		for _, hostID := range data.HostID {
-			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID)
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
@@ -174,6 +175,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data defaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
@@ -184,7 +186,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		conds := make(map[string]interface{}, 1)
 		conds[common.BKAppIDField] = data.ApplicationID
 		fields := fmt.Sprintf("%s,%s", common.BKOwnerIDField, common.BKAppNameField)
-		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl())
+		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl(), defLang)
 		if err != nil {
 			m.ResponseFailed(common.CC_Err_Comm_APP_QUERY_FAIL, err.Error(), resp)
 		}
@@ -195,7 +197,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		}
 
 		//get default app
-		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl())
+		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 		blog.Infof("ownerid %s default appid %d", ownerID, appID)
 		if err != nil {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
@@ -246,7 +248,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostEditRelationPoolFail)
 		}
 		logClient, err := logics.NewHostModuleConfigLog(req, nil, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
-		logClient.SetDesc(fmt.Sprintf("分配主机到业务[%s]", appinfo[common.BKAppNameField].(string)))
+		logClient.SetDesc("distribution host to app")
 		logClient.SetHostID(data.HostID)
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
@@ -269,6 +271,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 	}
 	language := util.GetActionLanguage(req)
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		value, _ := ioutil.ReadAll(req.Request.Body)
@@ -288,7 +291,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 		var strHostName string
 		if 0 == appID || 0 == moduleID {
 			//get default app
-			ownerAppID, err := logics.GetDefaultAppID(req, data.OwnerID, common.BKAppIDField, m.CC.ObjCtrl())
+			ownerAppID, err := logics.GetDefaultAppID(req, data.OwnerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 			if err != nil {
 				blog.Infof("ownerid %s 资源池未找到", ownerAppID)
 				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, "search "+common.DefaultAppName+" not foud ")
@@ -324,7 +327,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 			}
 
 			//dispatch to app
-			err := logics.EnterIP(req, data.OwnerID, appID, moduleID, ip, data.OsType, strHostName, data.AppName, data.SetName, data.ModuleName, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+			err := logics.EnterIP(req, data.OwnerID, appID, moduleID, ip, data.OsType, strHostName, data.AppName, data.SetName, data.ModuleName, m.CC)
 			if nil != err {
 				blog.Errorf("%s add host error: %s", ip, err.Error())
 				errmsg = append(errmsg, fmt.Sprintf("%s add host error: %s", ip, err.Error()))
@@ -344,6 +347,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data defaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
@@ -352,14 +356,16 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		//fmt.Println(moduleURL)
 		conds := make(map[string]interface{})
+		moduleNameLogKey := "idle"
 		if common.DefaultResModuleName == moduleName {
 			//空闲机
+			moduleNameLogKey = "idle"
 			conds[common.BKDefaultField] = common.DefaultResModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultResModuleName
 		} else {
 			//故障机器
+			moduleNameLogKey = "falult"
 			conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultFaultModuleName
 		}
@@ -379,13 +385,13 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		}
 
 		for _, hostID := range data.HostID {
-			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID)
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 			}
 			if false == bl {
-				blog.Error("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
+				blog.Error("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, hostID)
 			}
 
@@ -406,7 +412,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			}
 		}
 		user := util.GetActionUser(req)
-		logClient.SetDesc("转移主机到" + moduleName)
+		logClient.SetDesc("host to " + moduleNameLogKey + " module")
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
 		return http.StatusOK, nil, nil

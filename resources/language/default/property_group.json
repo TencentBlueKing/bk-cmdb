@@ -1,0 +1,14 @@
+{
+	"biz_property_group_default": "基础信息",
+	"biz_property_group_role": "角色",
+	"set_property_group_default": "基础信息",
+	"module_property_group_default": "基础信息",
+	"host_property_group_default": "基础信息",
+	"host_property_group_auto": "自动发现信息（需要安装agent）",
+	"process_property_group_default": "基础信息",
+	"process_property_group_proc_port": "监听端口",
+	"process_property_group_gsekit_baseinfo": "GSEkit 基本信息",
+	"process_property_group_gsekit_manage": "GSEkit 进程管理信息",
+	"plat_property_group_default": "基础信息",
+	"": ""
+}
