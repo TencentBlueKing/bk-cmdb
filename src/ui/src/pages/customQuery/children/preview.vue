@@ -88,7 +88,7 @@
                 let hostCondition = condition.find(({bk_obj_id: bkObjId}) => {
                     return bkObjId === 'host'
                 })
-                hostCondition.fields = this.previewFields
+                hostCondition['fields'] = this.previewFields
                 let previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
                     condition: condition,
