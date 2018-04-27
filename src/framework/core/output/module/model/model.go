@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
@@ -21,17 +21,17 @@ var _ Model = (*model)(nil)
 
 // model the metadata structure definition of the model
 type model struct {
-	ObjCls      string `json:"bk_classification_id"`
-	ObjIcon     string `json:"bk_obj_icon"`
-	ObjectID    string `json:"bk_obj_id"`
-	ObjectName  string `json:"bk_obj_name"`
-	IsPre       bool   `json:"ispre"`
-	IsPaused    bool   `json:"bk_ispaused"`
-	Position    string `json:"position"`
-	OwnerID     string `json:"bk_supplier_account"`
-	Description string `json:"description"`
-	Creator     string `json:"creator"`
-	Modifier    string `json:"modifier"`
+	objCls      string `field:"bk_classification_id"`
+	objIcon     string `field:"bk_obj_icon"`
+	objectID    string `field:"bk_obj_id"`
+	objectName  string `field:"bk_obj_name"`
+	isPre       bool   `field:"ispre"`
+	isPaused    bool   `field:"bk_ispaused"`
+	position    string `field:"position"`
+	ownerID     string `field:"bk_supplier_account"`
+	description string `field:"description"`
+	creator     string `field:"creator"`
+	modifier    string `field:"modifier"`
 }
 
 func (cli *model) Save() error {
@@ -44,77 +44,81 @@ func (cli *model) CreateAttribute() Attribute {
 	return attr
 }
 
-func (cli *model) SetClassification(class Classification) {
-	cli.ObjCls = class.GetID()
+func (cli *model) SetClassification(classificationID string) {
+	cli.objCls = classificationID
+}
+
+func (cli *model) GetClassification() string {
+	return cli.objCls
 }
 
 func (cli *model) SetIcon(iconName string) {
-	cli.ObjIcon = iconName
+	cli.objIcon = iconName
 }
 
 func (cli *model) GetIcon() string {
-	return cli.ObjIcon
+	return cli.objIcon
 }
 
 func (cli *model) SetID(id string) {
-	cli.ObjectID = id
+	cli.objectID = id
 }
 
 func (cli *model) GetID() string {
-	return cli.ObjectID
+	return cli.objectID
 }
 
 func (cli *model) SetName(name string) {
-	cli.ObjectName = name
+	cli.objectName = name
 }
 func (cli *model) GetName() string {
-	return cli.ObjectName
+	return cli.objectName
 }
 
 func (cli *model) SetPaused() {
-	cli.IsPaused = true
+	cli.isPaused = true
 }
 
 func (cli *model) SetNonPaused() {
-	cli.IsPaused = false
+	cli.isPaused = false
 }
 
 func (cli *model) Paused() bool {
-	return cli.IsPaused
+	return cli.isPaused
 }
 
 func (cli *model) SetPosition(position string) {
-	cli.Position = position
+	cli.position = position
 }
 
 func (cli *model) GetPosition() string {
-	return cli.Position
+	return cli.position
 }
 
 func (cli *model) SetSupplierAccount(ownerID string) {
-	cli.OwnerID = ownerID
+	cli.ownerID = ownerID
 }
 func (cli *model) GetSupplierAccount() string {
-	return cli.OwnerID
+	return cli.ownerID
 }
 
 func (cli *model) SetDescription(desc string) {
-	cli.Description = desc
+	cli.description = desc
 }
 func (cli *model) GetDescription() string {
-	return cli.Description
+	return cli.description
 }
 func (cli *model) SetCreator(creator string) {
-	cli.Creator = creator
+	cli.creator = creator
 }
 func (cli *model) GetCreator() string {
-	return cli.Creator
+	return cli.creator
 }
 func (cli *model) SetModifier(modifier string) {
-	cli.Modifier = modifier
+	cli.modifier = modifier
 }
 func (cli *model) GetModifier() string {
-	return cli.Modifier
+	return cli.modifier
 }
 func (cli *model) CreateGroup() Group {
 	g := &group{}

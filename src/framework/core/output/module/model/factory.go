@@ -12,7 +12,9 @@
 
 package model
 
-import "configcenter/src/framework/common"
+import (
+	"configcenter/src/framework/common"
+)
 
 // CreateClassification create a new Classification instance
 func CreateClassification(name string) Classification {

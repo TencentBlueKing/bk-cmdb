@@ -1,15 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
- * limitations under the License.
- */
- 
 package v3
 
 import (
@@ -21,10 +9,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// CreateClassification create a new classification
-func (cli *Client) CreateClassification(data types.MapStr) (int, error) {
+// CreateObject create a new model object
+func (cli *Client) CreateObject(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification", cli.address)
+	targetURL := fmt.Sprintf("%s/api/v3/object", cli.GetAddress())
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -44,8 +32,8 @@ func (cli *Client) CreateClassification(data types.MapStr) (int, error) {
 	return int(id), nil
 }
 
-// DeleteClassification delete some classification by condition
-func (cli *Client) DeleteClassification(cond common.Condition) error {
+// DeleteObject delete a object by condition
+func (cli *Client) DeleteObject(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	id, err := data.Int("id")
@@ -53,7 +41,7 @@ func (cli *Client) DeleteClassification(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
 
 	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -70,12 +58,37 @@ func (cli *Client) DeleteClassification(cond common.Condition) error {
 	return nil
 }
 
-// SearchClassifications search some classification by condition
-func (cli *Client) SearchClassifications(cond common.Condition) ([]types.MapStr, error) {
+// UpdateObject update a object by condition
+func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error {
+
+	dataCond := cond.ToMapStr()
+	id, err := dataCond.Int("id")
+	if nil != err {
+		return err
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+
+	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+	return nil
+}
+
+// SearchObjects search some objects by condition
+func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classifications", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/objects", cli.GetAddress())
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -99,12 +112,12 @@ func (cli *Client) SearchClassifications(cond common.Condition) ([]types.MapStr,
 	return resultMap, err
 }
 
-// SearchClassificationWithObjects search some classification with objects
-func (cli *Client) SearchClassificationWithObjects(cond common.Condition) ([]types.MapStr, error) {
+// SearchObjectTopo search object topo by condition
+func (cli *Client) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%s/objects", cli.GetAddress(), cli.GetSupplierAccount())
+	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", cli.GetAddress())
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -126,4 +139,5 @@ func (cli *Client) SearchClassificationWithObjects(cond common.Condition) ([]typ
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
 	return resultMap, err
+
 }
