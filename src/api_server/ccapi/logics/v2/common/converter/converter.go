@@ -326,6 +326,8 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			OSType = "linux"
 		case "2":
 			OSType = "windows"
+		default:
+			OSType = ""
 		}
 		setName, ok := itemMap[common.BKSetNameField].(string)
 		if false == ok {
