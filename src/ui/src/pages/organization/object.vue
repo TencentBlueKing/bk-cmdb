@@ -46,7 +46,8 @@
                         </bk-select-option>
                     </bk-select>
                 </div>
-                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" placeholder="$t('Common[\'快速查询\']" v-model.number="filter.value" @keyup.enter="doFilter">
+                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" 
+                :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
                 <input v-else type="text" class="bk-form-input search-text" placeholder="" v-model.trim="filter.value" @keyup.enter="doFilter">
                 <i class="bk-icon icon-search" @click="doFilter"></i>
             </div>
@@ -541,7 +542,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg(this.$t("Common['创建成功']"), 'success')
+                            this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
