@@ -272,12 +272,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = "Linux"
+		ostype = "1" //"Linux"
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = "Windows"
+		ostype = "2" // "Windows"
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
