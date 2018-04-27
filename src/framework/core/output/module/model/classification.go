@@ -12,9 +12,24 @@
 
 package model
 
-import "configcenter/src/framework/common"
+import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/types"
+)
 
 var _ Classification = (*classification)(nil)
+
+const (
+	// ClassificationID the const definition
+	ClassificationID = "bk_classification_id"
+	// ClassificationName the const definition
+	ClassificationName = "bk_classification_name"
+	// ClassificationType the const definition
+	ClassificationType = "bk_classification_type"
+	// ClassificationIcon the const definition
+	ClassificationIcon = "bk_classification_icon"
+)
 
 // classification the model classification definition
 type classification struct {
@@ -24,7 +39,49 @@ type classification struct {
 	classificationIcon string `field:"bk_classification_icon"`
 }
 
+func (cli *classification) ToMapStr() types.MapStr {
+	return types.MapStr{
+		ClassificationID:   cli.classificationID,
+		ClassificationName: cli.classificationName,
+		ClassificationType: cli.classificationType,
+		ClassificationIcon: cli.classificationIcon,
+	}
+}
+
 func (cli *classification) Save() error {
+
+	// construct the search condition
+	cond := common.CreateCondition()
+
+	cond.Field(ClassificationID).Eq(cli.classificationID)
+
+	// search all classifications by condition
+	dataItems, err := v3.GetClient().SearchClassifications(cond)
+	if nil != err {
+		return err
+	}
+
+	// create a new classification
+	if 0 == len(dataItems) {
+		if _, err = v3.GetClient().CreateClassification(cli.ToMapStr()); nil != err {
+			return err
+		}
+		return nil
+	}
+
+	// update the exists one
+	for _, item := range dataItems {
+		item.Set(ClassificationName, cli.classificationName)
+		item.Set(ClassificationIcon, cli.classificationIcon)
+		item.Set(ClassificationType, cli.classificationType)
+		cond := common.CreateCondition()
+		cond.Field(ClassificationID).Eq(cli.classificationID)
+		if err = v3.GetClient().UpdateClassification(item, cond); nil != err {
+			return err
+		}
+	}
+
+	// success
 	return nil
 }
 
@@ -46,8 +103,8 @@ func (cli *classification) SetIcon(iconName string) {
 
 func (cli *classification) CreateModel() Model {
 	m := &model{}
-	m.ObjCls = cli.classificationID
-	m.ObjIcon = cli.classificationIcon
+	m.SetClassification(cli.classificationID)
+	m.SetIcon(cli.classificationIcon)
 	return m
 }
 

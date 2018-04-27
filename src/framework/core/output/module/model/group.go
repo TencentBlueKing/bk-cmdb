@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
@@ -19,13 +19,13 @@ import (
 var _ Group = (*group)(nil)
 
 type group struct {
-	GroupID    string `json:"bk_group_id"`
-	GroupName  string `json:"bk_group_name"`
-	GroupIndex int    `json:"bk_group_index"`
-	ObjectID   string `json:"bk_obj_id"`
-	OwnerID    string `json:"bk_supplier_account"`
-	IsDefault  bool   `json:"bk_isdefault"`
-	IsPre      bool   `json:"ispre"`
+	groupID    string `field:"bk_group_id"`
+	groupName  string `field:"bk_group_name"`
+	groupIndex int    `field:"bk_group_index"`
+	objectID   string `field:"bk_obj_id"`
+	ownerID    string `field:"bk_supplier_account"`
+	isDefault  bool   `field:"bk_isdefault"`
+	isPre      bool   `field:"ispre"`
 }
 
 func (cli *group) Save() error {
@@ -33,43 +33,43 @@ func (cli *group) Save() error {
 }
 
 func (cli *group) SetID(id string) {
-	cli.GroupID = id
+	cli.groupID = id
 }
 
 func (cli *group) GetID() string {
 
-	return cli.GroupID
+	return cli.groupID
 }
 
 func (cli *group) SetName(name string) {
-	cli.GroupName = name
+	cli.groupName = name
 }
 
 func (cli *group) SetIndex(idx int) {
-	cli.GroupIndex = idx
+	cli.groupIndex = idx
 }
 
 func (cli *group) GetIndex() int {
-	return cli.GroupIndex
+	return cli.groupIndex
 }
 
 func (cli *group) SetSupplierAccount(ownerID string) {
-	cli.OwnerID = ownerID
+	cli.ownerID = ownerID
 }
 
 func (cli *group) GetSupplierAccount() string {
-	return cli.OwnerID
+	return cli.ownerID
 }
 
 func (cli *group) SetDefault() {
-	cli.IsDefault = true
+	cli.isDefault = true
 }
 func (cli *group) SetNonDefault() {
-	cli.IsDefault = false
+	cli.isDefault = false
 }
 
 func (cli *group) Default() bool {
-	return cli.IsDefault
+	return cli.isDefault
 }
 
 func (cli *group) CreateAttribute() Attribute {
