@@ -169,7 +169,6 @@
         "权限": "Permission",
         "业务权限": "Business Permission",
         "确认删除角色": "Confirm deletion of the role of {name}?",
-        "确认删除角色XXX？": "Confirm deletion of the role of XXX?",
         "删除成功": "Delete Success",
         "与PaaS同步成员": "Members of sync with the PaaS",
         "跳转配置": "Jump Configuration",
