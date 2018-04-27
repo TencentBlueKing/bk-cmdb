@@ -67,7 +67,7 @@ func FindInstsLikeName(target model.Model, instName string) (Iterator, error) {
 }
 
 // FindInstsByCondition find all insts by condition
-func FindInstsByCondition(target model.Model, condition *common.Condition) (Iterator, error) {
+func FindInstsByCondition(target model.Model, condition common.Condition) (Iterator, error) {
 	// TODO:按照条件读取所有实例
 	switch target.GetID() {
 	case mtypes.BKInnerObjIDBusiness:
