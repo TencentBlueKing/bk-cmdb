@@ -322,9 +322,9 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 		}
 		OSType = strings.ToLower(OSType)
 		switch OSType {
-		case "1":
+		case common.HostOSTypeEnumLinux:
 			OSType = "linux"
-		case "2":
+		case common.HostOSTypeEnumWindows:
 			OSType = "windows"
 		default:
 			OSType = ""
