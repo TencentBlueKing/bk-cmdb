@@ -22,9 +22,10 @@ import (
 	"configcenter/src/scene_server/host_server/host_service/instapi"
 	"encoding/json"
 	"errors"
+	"strings"
+
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
-	"strings"
 )
 
 // HostSearch search host by mutiple condition
@@ -110,13 +111,21 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	}
 
 	//search host id by object
+	firstCond := true
 	if len(objectCondMap) > 0 {
 		for objID, objCond := range objectCondMap {
 			instIDArr := GetObjectInstByCond(req, objID, objCtrl, objCond)
-			instAsstHostIDArr = GetHostIDByInstID(req, objID, objCtrl, instIDArr)
+			instHostIDArr := GetHostIDByInstID(req, objID, objCtrl, instIDArr)
+			if firstCond {
+				instAsstHostIDArr = instHostIDArr
+			} else {
+				instAsstHostIDArr = util.IntArrIntersection(instAsstHostIDArr, instHostIDArr)
+			}
+			firstCond = false
 		}
 
 	}
+	instAsstHostIDArr = util.IntArrayUnique(instAsstHostIDArr)
 	if len(moduleCond.Condition) > 0 {
 		if len(setCond.Condition) > 0 {
 			cond := make(map[string]interface{})
