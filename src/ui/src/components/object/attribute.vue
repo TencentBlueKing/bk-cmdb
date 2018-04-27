@@ -439,6 +439,8 @@
                         })
                         if (obj) {
                             return obj.name
+                        } else {
+                            return ''
                         }
                     } else {
                         return value

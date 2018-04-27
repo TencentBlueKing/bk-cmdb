@@ -637,6 +637,20 @@ func GeneralV2Data(data interface{}) interface{} {
 				} else {
 					mapItem[key] = ""
 				}
+			} else if common.BKProtocol == key {
+				protocal, ok := val.(string)
+				if false == ok {
+					protocal = ""
+				} else {
+					switch protocal {
+					case "1":
+						protocal = "TCP"
+					case "2":
+						protocal = "UDP"
+					default:
+						protocal = ""
+					}
+				}
 			} else {
 				mapItem[key] = GeneralV2Data(val)
 			}

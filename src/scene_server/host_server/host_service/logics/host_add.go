@@ -18,10 +18,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
-	sencecommon "configcenter/src/scene_server/common"
+	scenecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/validator"
 	sourceAuditAPI "configcenter/src/source_controller/api/auditlog"
 	sourceAPI "configcenter/src/source_controller/api/object"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -30,10 +31,10 @@ import (
 	"time"
 )
 
-//AddHost, return error info
+//AddHost return error info
 func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	user := sencecommon.GetUserFromHeader(req)
+	user := scenecommon.GetUserFromHeader(req)
 
 	hostAddr := cc.HostCtrl()
 	ObjAddr := cc.ObjCtrl()
@@ -53,6 +54,19 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	allHostList, err := GetHostInfoByConds(req, hostAddr, nil, langHandle)
 	if nil != err {
 		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
+	}
+
+	//get asst field
+	objCli := sourceAPI.NewClient("")
+	objCli.SetAddress(ObjAddr)
+	asst := map[string]interface{}{}
+	asst[common.BKOwnerIDField] = ownerID
+	asst[common.BKObjIDField] = common.BKInnerObjIDHost
+	searchData, _ := json.Marshal(asst)
+	objCli.SetAddress(ObjAddr)
+	asstDes, err := objCli.SearchMetaObjectAsst(&sourceAPI.ForwardParam{Header: req.Request.Header}, searchData)
+	if nil != err {
+		return errors.New("查询主机属性失败"), nil, nil, nil
 	}
 
 	hostMap := convertHostInfo(allHostList)
@@ -155,6 +169,16 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 			retHost := retData.(map[string]interface{})
 			hostID, _ := util.GetIntByInterface(retHost[common.BKHostIDField])
+
+			//add host asst attr
+			hostAsstData := scenecommon.ExtractDataFromAssociationField(int64(hostID), host, asstDes)
+			err = scenecommon.CreateInstAssociation(ObjAddr, req, hostAsstData)
+			if nil != err {
+				blog.Error("add host asst attr error : %v", err)
+				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, innerIP))
+				continue
+			}
+
 			addParams[common.BKHostIDField] = hostID
 			innerIP := host[common.BKHostInnerIPField].(string)
 
@@ -193,7 +217,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 // EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
 func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName string, cc *api.APIResource) error {
 
-	user := sencecommon.GetUserFromHeader(req)
+	user := scenecommon.GetUserFromHeader(req)
 
 	hostAddr := cc.HostCtrl()
 	ObjAddr := cc.ObjCtrl()
@@ -269,10 +293,14 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 }
 
 // AddHostV2 add host to module
-func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setName, moduleName string, hostAddr, ObjAddr, auditAddr string, errHandle errorHandle.DefaultCCErrorIf) error {
+func AddHostV2(CC *api.APIResource, req *restful.Request, appID, hostID, moduleID int, appName, setName, moduleName string, hostAddr, ObjAddr, auditAddr string) error {
 	//默认业务与主机业务一致 说明主机存在资源池
+	language := util.GetActionLanguage(req)
+	langHandle := CC.Lang.CreateDefaultCCLanguageIf(language)
+	errHandle := CC.Error.CreateDefaultCCErrorIf(language)
+
 	//get default app
-	ownerAppID, err := GetDefaultAppID(req, common.BKDefaultOwnerID, common.BKAppIDField, ObjAddr)
+	ownerAppID, err := GetDefaultAppID(req, common.BKDefaultOwnerID, common.BKAppIDField, ObjAddr, langHandle)
 	blog.Errorf("ownerAppID===%d", ownerAppID)
 	if err != nil {
 		blog.Infof("ownerid %s 资源池未找到", ownerAppID)
@@ -292,7 +320,7 @@ func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setNa
 	if 0 == introAppID || 0 == moduleID {
 		return nil
 	}
-	user := sencecommon.GetUserFromHeader(req)
+	user := scenecommon.GetUserFromHeader(req)
 	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
 	if 0 != ownerAppID && appID == ownerAppID {
 		blog.Errorf("default app 一致")
@@ -305,7 +333,7 @@ func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setNa
 			blog.Error("remove modulehostconfig error, params:%v, error:%v", params, err)
 			return errors.New("remove modulehostconfig error")
 		}
-		logClient.SetDescSuffix("delete host from resource pool")
+		logClient.SetDesc("remove host from modules")
 		blog.Errorf("remove ok")
 
 		moduleHostConfigParams := make(map[string]interface{})
@@ -319,7 +347,7 @@ func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setNa
 			blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
 			return errors.New("add hosthostconfig error")
 		}
-		logClient.SetDescSuffix("add host to module")
+		logClient.SetDesc("add host to module")
 		logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
 		blog.Errorf("--------------_>>>>ok")
 		return nil
@@ -336,7 +364,7 @@ func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setNa
 				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
 				return errors.New("remove hosthostconfig error")
 			}
-			logClient.SetDescSuffix("delete host from module")
+			logClient.SetDesc("delete host from module")
 			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
 			addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
 
@@ -345,7 +373,7 @@ func AddHostV2(req *restful.Request, appID, hostID, moduleID int, appName, setNa
 				blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
 				return errors.New("add hosthostconfig error")
 			}
-			logClient.SetDescSuffix("add host to module")
+			logClient.SetDesc("add host to module")
 			logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
 			return nil
 		}

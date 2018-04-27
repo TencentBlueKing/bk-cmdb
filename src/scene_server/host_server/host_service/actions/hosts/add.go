@@ -21,8 +21,9 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 func init() {
@@ -118,7 +119,7 @@ func (m *hostModuleConfigAction) AddHostFromAPI(req *restful.Request, resp *rest
 			blog.Error(" api fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-		err = logics.AddHostV2(req, data.AppID, data.HostID, data.ModuleID, data.AppName, data.SetName, data.ModuleName, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		err = logics.AddHostV2(m.CC, req, data.AppID, data.HostID, data.ModuleID, data.AppName, data.SetName, data.ModuleName, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
 		retData := make(map[string]interface{})
 		retData["success"] = "add success"
 
