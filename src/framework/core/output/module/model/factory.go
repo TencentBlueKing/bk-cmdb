@@ -16,7 +16,7 @@ import "configcenter/src/framework/common"
 
 // CreateClassification create a new Classification instance
 func CreateClassification(name string) Classification {
-	return &classification{ClassificationName: name}
+	return &classification{classificationName: name}
 }
 
 // FindClassificationsLikeName find a array of the classification by the name
@@ -26,7 +26,7 @@ func FindClassificationsLikeName(name string) (ClassificationIterator, error) {
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition *common.Condition) (ClassificationIterator, error) {
+func FindClassificationsByCondition(condition common.Condition) (ClassificationIterator, error) {
 	// TODO: 按照条件搜索
 	return nil, nil
 }

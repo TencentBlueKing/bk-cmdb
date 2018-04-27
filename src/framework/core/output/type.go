@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package output
 
 import (
@@ -46,13 +46,13 @@ type Outputer interface {
 // ModelOutputer the interface which used to maintence the model
 type ModelOutputer interface {
 	// CreateClassification create a new classification
-	CreateClassification() model.Classification
+	CreateClassification(name string) model.Classification
 
 	// FindClassificationsLikeName find a array of the classification by the name
 	FindClassificationsLikeName(name string) (model.ClassificationIterator, error)
 
 	// FindClassificationsByCondition find a array of the classification by the condition
-	FindClassificationsByCondition(condition *common.Condition) (model.ClassificationIterator, error)
+	FindClassificationsByCondition(condition common.Condition) (model.ClassificationIterator, error)
 }
 
 // CustomOutputer the interface which used to maintence the custom outputer
@@ -77,7 +77,7 @@ type InstOutputer interface {
 	// FindInstsLikeName find all insts by the name
 	FindInstsLikeName(target model.Model, instName string) (inst.Iterator, error)
 	// FindInstsByCondition find all insts by the condition
-	FindInstsByCondition(target model.Model, condition *common.Condition) (inst.Iterator, error)
+	FindInstsByCondition(target model.Model, condition common.Condition) (inst.Iterator, error)
 }
 
 // Manager is the interface that must be implemented by every output manager.
