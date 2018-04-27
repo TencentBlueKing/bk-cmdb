@@ -619,3 +619,9 @@ const (
 	// DefaultAppLifeCycleNormal  biz life cycle normal
 	DefaultAppLifeCycleNormal = "2"
 )
+
+// Host OS type enumeration value
+const (
+	HostOSTypeEnumLinux   = "1"
+	HostOSTypeEnumWindows = "2"
+)

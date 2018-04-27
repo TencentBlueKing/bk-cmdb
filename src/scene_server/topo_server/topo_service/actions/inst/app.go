@@ -135,7 +135,7 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 		}
 		//delete set in app
 		setInput := make(map[string]interface{})
