@@ -431,13 +431,13 @@ func (valid *ValidMap) validInt(val interface{}, key string, option interface{})
 		return true, nil
 	}
 	if reflect.TypeOf(val).Kind() == reflect.String {
-		valStr := reflect.ValueOf(val).String()
-		var re error
-		value, re = strconv.Atoi(valStr)
-		if nil != re {
-			blog.Error("params  not int")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
-		}
+		//		valStr := reflect.ValueOf(val).String()
+		//		var re error
+		//		value, re = strconv.Atoi(valStr)
+		//		if nil != re {
+		blog.Error("params  not int")
+		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
+		//		}
 	}
 	if reflect.TypeOf(val).Kind() == reflect.Int {
 		value2 := reflect.ValueOf(val).Int()
@@ -512,7 +512,7 @@ func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
 }
 
 //valid enum
-func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *ValRule) error {
+func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *ValRule) {
 
 	for key, val := range valData {
 		rule, ok := valRule.FieldRule[key]
@@ -526,10 +526,10 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 			if nil != val {
 				valStr, ok := val.(string)
 				if false == ok {
-					return nil
+					return
 				}
 				if "" != valStr {
-					return nil
+					continue
 				}
 			}
 
@@ -550,7 +550,7 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 
 	}
 
-	return nil
+	return
 }
 
 // ParseEnumOption convert val to []EnumVal
@@ -587,7 +587,6 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 	if false == ok {
 		return true, nil
 	}
-	var defaultOption *EnumVal
 	enumOption := ParseEnumOption(option)
 	match := false
 
@@ -596,15 +595,8 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 			match = true
 			break
 		}
-		if k.IsDefault {
-			dk := k
-			defaultOption = &dk
-		}
 	}
-	if "" == valStr && nil != defaultOption {
-		val = defaultOption.ID
-		valStr = defaultOption.ID
-	}
+
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(valStr) {
 		blog.Error("params %s can not be empty", key)

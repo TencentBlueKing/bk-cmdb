@@ -66,15 +66,18 @@
         },
         methods: {
             setDefaultSelected () {
+                let localSelected = ''
                 if (this.disabled) {
-                    this.localSelected = this.selected ? this.selected : ''
+                    localSelected = this.selected ? this.selected : ''
                 } else if (this.selected) {
-                    this.localSelected = this.selected
+                    localSelected = this.selected
                 } else if (this.defaultOption) {
-                    this.localSelected = this.defaultOption.id
+                    localSelected = this.defaultOption.id
                 } else {
-                    this.localSelected = ''
+                    localSelected = ''
                 }
+                let isInOptions = this.options.find(({id}) => id === localSelected)
+                this.localSelected = isInOptions ? localSelected : ''
             },
             handleSelected () {
                 this.$emit('on-selected', ...arguments)

@@ -61,6 +61,17 @@ func StrArrayUnique(a []string) (ret []string) {
 	return ret
 }
 
+//IntArrayUnique get unique int array
+func IntArrayUnique(a []int) (ret []int) {
+	length := len(a)
+	for i := 0; i < length; i++ {
+		if !ContainsInt(ret, a[i]) {
+			ret = append(ret, a[i])
+		}
+	}
+	return ret
+}
+
 func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
 	for _, a := range slice {
 		if strings.TrimSpace(a) != "" && !Contains(ret, a) {

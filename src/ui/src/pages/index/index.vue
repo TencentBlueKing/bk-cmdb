@@ -537,10 +537,13 @@
                     } else if (property['bk_property_type'] === 'time') {
                         value = this.$formatTime(value)
                     } else if (property['bk_property_type'] === 'enum') {
-                        if (value) {
-                            value = property.option.find(({id}) => {
-                                return id === value
-                            })['name']
+                        let option = property.option.find(({id}) => {
+                            return id === value
+                        })
+                        if (option) {
+                            value = option.name
+                        } else {
+                            value = ''
                         }
                     }
                     return value
