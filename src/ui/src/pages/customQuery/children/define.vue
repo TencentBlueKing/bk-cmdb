@@ -46,6 +46,15 @@
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
                     </span>
+                    <span v-else-if="property.bkPropertyType === 'enum'">
+                        <bk-select :selected.sync="property.value" class="userapi-enum fl">
+                            <bk-select-option v-for="option in getEnumOptions(property)"
+                                :key="option.id"
+                                :value="option.id"
+                                :label="option.name">
+                            </bk-select-option>
+                        </bk-select>
+                    </span>
                     <span v-else>
                         <v-operator 
                             :type="property.bkPropertyType"
@@ -178,7 +187,8 @@
                 },
                 selectedObjId: 'host',
                 operatorMap: {
-                    'time': '$in'
+                    'time': '$in',
+                    'enum': '$eq'
                 }
             }
         },
@@ -407,6 +417,13 @@
                 }
                 return property
             },
+            getEnumOptions (userProperty) {
+                let property = this.getOriginalProperty(userProperty.bkPropertyId, userProperty.bkObjId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
+            },
             /* 删除自定义条件时，恢复下拉列表中对应的项为可点击状态 */
             deleteUserProperty (userProperty, index) {
                 let property = this.getOriginalProperty(userProperty.bkPropertyId, userProperty.bkObjId)
@@ -499,8 +516,9 @@
         color: #737987;
         .userapi-item{
             margin-top: 20px;
+            position: relative;
             .userapi-name{
-                width: 105px;
+                width: 115px;
                 line-height: 32px;
                 padding-right: 15px;
                 text-align: right;
@@ -597,6 +615,8 @@
         position: absolute;
         top: 100%;
         left: 120px;
+        height: 16px;
+        line-height: 16px;
     }
 </style>
 <style lang="scss">
@@ -678,6 +698,26 @@
             height: 32px;
             line-height: 32px;
             border-radius: 2px;
+        }
+    }
+    .bk-select.userapi-enum{
+        width: 460px;
+        margin: 0 5px;
+        height: 32px;
+        line-height: 32px;
+        .bk-select-input{
+            height: 32px;
+            line-height: 32px;
+        }
+    }
+    .userapi-item.form-validate-error{
+        .bk-selector-wrapper{
+            .bk-selector-input{
+                border-color: #ff5656;
+            }
+        }
+        .userapi-text{
+            border-color: #ff5656;
         }
     }
 </style>
