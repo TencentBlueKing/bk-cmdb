@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?ixg9i2');
-  src:  url('fonts/icomoon.eot?ixg9i2#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?ixg9i2') format('truetype'),
-    url('fonts/icomoon.woff?ixg9i2') format('woff'),
-    url('fonts/icomoon.svg?ixg9i2#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?7pdd0d');
+  src:  url('fonts/icomoon.eot?7pdd0d#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?7pdd0d') format('truetype'),
+    url('fonts/icomoon.woff?7pdd0d') format('woff'),
+    url('fonts/icomoon.svg?7pdd0d#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -510,12 +510,15 @@
 .icon-cc-vsphere:before {
   content: "\e9a1";
 }
-.icon-cc-win:before {
+.icon-cc-weblogic:before {
   content: "\e9a2";
 }
-.icon-cc-win7:before {
+.icon-cc-win:before {
   content: "\e9a3";
 }
-.icon-cc-wireless:before {
+.icon-cc-win7:before {
   content: "\e9a4";
+}
+.icon-cc-wireless:before {
+  content: "\e9a5";
 }
