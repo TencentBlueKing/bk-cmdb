@@ -112,7 +112,6 @@ func (m *hostModuleConfigAction) AddHostFromAPI(req *restful.Request, resp *rest
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
 	m.CallResponseEx(func() (int, interface{}, error) {
 		value, _ := ioutil.ReadAll(req.Request.Body)
-		blog.Errorf("api value====%v", value)
 		var data inputStruct
 		err := json.Unmarshal([]byte(value), &data)
 		if nil != err {

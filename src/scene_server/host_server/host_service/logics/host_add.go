@@ -333,7 +333,10 @@ func AddHostV2(CC *api.APIResource, req *restful.Request, appID, hostID, moduleI
 			blog.Error("remove modulehostconfig error, params:%v, error:%v", params, err)
 			return errors.New("remove modulehostconfig error")
 		}
-		logClient.SetDesc("remove host from modules")
+		logClient.SetDesc("remove host from module")
+		host := []int{hostID}
+		logClient.SetHostID(host)
+		logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 		blog.Errorf("remove ok")
 
 		moduleHostConfigParams := make(map[string]interface{})
@@ -348,8 +351,8 @@ func AddHostV2(CC *api.APIResource, req *restful.Request, appID, hostID, moduleI
 			return errors.New("add hosthostconfig error")
 		}
 		logClient.SetDesc("add host to module")
-		logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
-		blog.Errorf("--------------_>>>>ok")
+		logClient.SetHostID(host)
+		logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 		return nil
 	} else {
 		if introAppID == appID { //传入的ID和所在的业务ID一致
@@ -364,7 +367,7 @@ func AddHostV2(CC *api.APIResource, req *restful.Request, appID, hostID, moduleI
 				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
 				return errors.New("remove hosthostconfig error")
 			}
-			logClient.SetDesc("delete host from module")
+			// logClient.SetDesc("delete host from module")
 			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
 			addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
 
@@ -373,8 +376,11 @@ func AddHostV2(CC *api.APIResource, req *restful.Request, appID, hostID, moduleI
 				blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
 				return errors.New("add hosthostconfig error")
 			}
+			blog.Info("add host to module suceess")
 			logClient.SetDesc("add host to module")
-			logClient.SaveLog(fmt.Sprintf("%d", introAppID), user)
+			host := []int{hostID}
+			logClient.SetHostID(host)
+			logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 			return nil
 		}
 		blog.Errorf("host in other app")

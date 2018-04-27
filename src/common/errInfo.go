@@ -363,6 +363,16 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 
+	//web  1111XXX
+	CCErrWebFileNoFound      = 1111001
+	CCErrWebFileSaveFail     = 1111002
+	CCErrWebOpenFileFail     = 1111003
+	CCErrWebFileContentEmpty = 1111004
+	CCErrWebFileContentFail  = 1111005
+	CCErrWebGetHostFail      = 1111006
+	CCErrWebCreateEXCELFail  = 1111007
+	CCErrWebGetObjectFail    = 1111008
+
 	// api server v2 error 1170xxx, follow-up will be deleted
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len

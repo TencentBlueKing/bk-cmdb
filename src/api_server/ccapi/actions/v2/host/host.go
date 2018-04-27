@@ -242,11 +242,6 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(errorIDInt, rspMap[common.HTTPBKAPIErrorMessage].(string), resp)
 		return
 	}
-	if nil == rspMap["data"] {
-		emptyData := make([]interface{}, 0)
-		converter.RespSuccessV2(converter.ResV2ToForProcList(emptyData), resp)
-		return
-	}
 	converter.RespSuccessV2("", resp)
 	return
 
