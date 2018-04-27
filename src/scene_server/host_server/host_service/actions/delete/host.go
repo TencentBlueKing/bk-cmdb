@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	sceneCommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"configcenter/src/source_controller/api/auditlog"
 	"encoding/json"
@@ -152,6 +153,12 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 			blog.Info("delete module host config content:%s", string(inputJson))
 			result, err := httpcli.ReqHttp(req, dMhConfigURL, common.HTTPDelete, []byte(inputJson))
 			blog.Info("delete module host config return:%s", string(result))
+			if nil != err {
+				blog.Error("delete host batch fail:%v", err)
+				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)
+
+			}
+			err = sceneCommon.DeleteInstAssociation(cli.CC.ObjCtrl(), req, hostID, ownerID, common.BKInnerObjIDHost)
 			if nil != err {
 				blog.Error("delete host batch fail:%v", err)
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)

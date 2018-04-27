@@ -18,10 +18,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
-	sencecommon "configcenter/src/scene_server/common"
+	scenecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/validator"
 	sourceAuditAPI "configcenter/src/source_controller/api/auditlog"
 	sourceAPI "configcenter/src/source_controller/api/object"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -33,7 +34,7 @@ import (
 //AddHost, return error info
 func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	user := sencecommon.GetUserFromHeader(req)
+	user := scenecommon.GetUserFromHeader(req)
 
 	hostAddr := cc.HostCtrl()
 	ObjAddr := cc.ObjCtrl()
@@ -53,6 +54,19 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	allHostList, err := GetHostInfoByConds(req, hostAddr, nil, langHandle)
 	if nil != err {
 		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
+	}
+
+	//get asst field
+	objCli := sourceAPI.NewClient("")
+	objCli.SetAddress(ObjAddr)
+	asst := map[string]interface{}{}
+	asst[common.BKOwnerIDField] = ownerID
+	asst[common.BKObjIDField] = common.BKInnerObjIDHost
+	searchData, _ := json.Marshal(asst)
+	objCli.SetAddress(ObjAddr)
+	asstDes, err := objCli.SearchMetaObjectAsst(&sourceAPI.ForwardParam{Header: req.Request.Header}, searchData)
+	if nil != err {
+		return errors.New("查询主机属性失败"), nil, nil, nil
 	}
 
 	hostMap := convertHostInfo(allHostList)
@@ -155,6 +169,16 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 			retHost := retData.(map[string]interface{})
 			hostID, _ := util.GetIntByInterface(retHost[common.BKHostIDField])
+
+			//add host asst attr
+			hostAsstData := scenecommon.ExtractDataFromAssociationField(int64(hostID), host, asstDes)
+			err = scenecommon.CreateInstAssociation(ObjAddr, req, hostAsstData)
+			if nil != err {
+				blog.Error("add host asst attr error : %v", err)
+				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, innerIP))
+				continue
+			}
+
 			addParams[common.BKHostIDField] = hostID
 			innerIP := host[common.BKHostInnerIPField].(string)
 
@@ -193,7 +217,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 // EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
 func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osType, hostname, appName, setName, moduleName string, cc *api.APIResource) error {
 
-	user := sencecommon.GetUserFromHeader(req)
+	user := scenecommon.GetUserFromHeader(req)
 
 	hostAddr := cc.HostCtrl()
 	ObjAddr := cc.ObjCtrl()
