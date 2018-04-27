@@ -121,7 +121,9 @@ func (h *HostLog) getHostDetail(instID string) (interface{}, int) {
 	}
 
 	hostData := gHostData["data"].(map[string]interface{})
-
+	if nil != hostData {
+		h.innerIP, _ = hostData[common.BKHostInnerIPField]
+	}
 	return hostData, common.CCSuccess
 }
 
@@ -333,14 +335,6 @@ func (h *HostModuleConfigLog) SetHostID(hostID []int) error {
 	return errors.New("hostID not empty")
 }
 
-func (h *HostModuleConfigLog) SetDescPrefix(prefix string) {
-	h.prefix = prefix
-}
-
-func (h *HostModuleConfigLog) SetDescSuffix(suffix string) {
-	h.suffix = suffix
-}
-
 func (h *HostModuleConfigLog) SetDesc(desc string) {
 	h.desc = desc
 }
@@ -456,7 +450,7 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 
 	}
 	if "" == h.desc {
-		h.desc = "主机关系变更"
+		h.desc = "host module change"
 	}
 	opClient := auditlog.NewClient(h.auditCtrl)
 	_, err = opClient.AuditHostsLog(logs, h.prefix+h.desc+h.suffix, h.ownerID, appID, user, auditoplog.AuditOpTypeModify)

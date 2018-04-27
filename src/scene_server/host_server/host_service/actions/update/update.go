@@ -19,10 +19,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
+	scenecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
 	"strconv"
@@ -71,13 +73,15 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		delete(data, common.BKHostIDField)
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), defErr)
+		forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), forward, defErr)
 
 		hostIDArr := strings.Split(hostIDStr, ",")
 		var iHostIDArr []int
 		logPreConents := make(map[int]auditoplog.AuditLogExt, 0)
 		hostFields, _ := logics.GetHostLogFields(req, common.BKDefaultOwnerID, cli.CC.ObjCtrl())
 		for _, i := range hostIDArr {
+
 			iHostID, _ := strconv.Atoi(i)
 			//加日志
 			logObj := logics.NewHostLog(req, common.BKDefaultOwnerID, i, cli.CC.HostCtrl(), cli.CC.ObjCtrl(), hostFields)
@@ -118,6 +122,11 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		var logLastConents []auditoplog.AuditLogExt
 		for _, i := range iHostIDArr {
+
+			// set the inst association table
+			if err := scenecommon.UpdateInstAssociation(cli.CC.ObjCtrl(), req, i, common.BKDefaultOwnerID, common.BKInnerObjIDHost, data); nil != err {
+				blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
+			}
 			//get change value
 			logObj := logics.NewHostLog(req, common.BKDefaultOwnerID, fmt.Sprintf("%d", i), cli.CC.HostCtrl(), cli.CC.ObjCtrl(), hostFields)
 			logContent := logObj.GetPreHostData()
@@ -132,7 +141,7 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 
 		}
 		opClient := auditlog.NewClient(cli.CC.AuditCtrl())
-		opClient.AuditHostsLog(logLastConents, "修改主机", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
+		opClient.AuditHostsLog(logLastConents, "update host", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
 
 		return http.StatusOK, common.CCSuccessStr, nil
 	}, resp)

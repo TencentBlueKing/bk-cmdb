@@ -58,6 +58,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.DeleteInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.InstSearch})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo})
@@ -68,7 +69,7 @@ func init() {
 	inst.objcli = api.NewClient("")
 }
 
-func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
+func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
 
 	nonExistsFiled := make([]api.ObjAttDes, 0)
 	ignorItems := make([]string, 0)
@@ -81,7 +82,7 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
-	valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, defErr)
+	valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
 	user := util.GetActionUser(req)
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
@@ -193,7 +194,7 @@ func (cli *instAction) subCreateInst(req *restful.Request, defErr errors.Default
 		searchObjIDCondVal, _ := json.Marshal(searchObjIDCond)
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
 		objName := objID
-		rstItems, rstErr := cli.objcli.SearchMetaObject(searchObjIDCondVal)
+		rstItems, rstErr := cli.objcli.SearchMetaObject(forward, searchObjIDCondVal)
 		if nil != rstErr {
 			blog.Error("failed to fetch the object, error info is %s", rstErr.Error())
 		} else if len(rstItems) > 0 {
@@ -345,7 +346,8 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONMarshalFailed)
 		}
-		attdes, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+		forward := &api.ForwardParam{Header: req.Request.Header}
+		attdes, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 		if nil != restErr {
 			blog.Error("failed to read the object att, error is %s ", restErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstSelectFailed)
@@ -357,7 +359,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		asst[common.BKObjIDField] = objID
 		searchData, _ = json.Marshal(asst)
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
-		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+		asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 		if nil != asstErr {
 			blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
@@ -372,12 +374,24 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				UpdateErrors []string `json:"update_error"`
 			}
 
+			// get association fields
+			asst := map[string]interface{}{}
+			asst[common.BKOwnerIDField] = ownerID
+			asst[common.BKObjIDField] = objID
+			searchData, _ := json.Marshal(asst)
+			cli.objcli.SetAddress(cli.CC.ObjCtrl())
+			asstDes, asstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
+			if nil != asstErr {
+				blog.Error("failed to search the obj asst, search condition(%+v) error info is %s", asst, asstErr.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstCreateFailed)
+			}
+
 			rsts := &batchResult{}
 			for colIDx, colInput := range *innerBatchInfo.BatchInfo {
 
 				delete(colInput, "import_from")
 
-				if _, _, isUpdate, rstErr := createFunc(req, defErr, colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
+				if _, _, isUpdate, rstErr := createFunc(forward, req, defErr, colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
 					if !isUpdate {
 						blog.Debug("failed to create inst, error info is %s", rstErr.Error())
 						rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
@@ -395,7 +409,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// create single inst
-		status, rst, _, err := createFunc(req, defErr, input, ownerID, objID, false, asstDes, attdes)
+		status, rst, _, err := createFunc(forward, req, defErr, input, ownerID, objID, false, asstDes, attdes)
 		return status, rst, err
 
 	}, resp)
@@ -414,7 +428,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		ownerID := req.PathParameter("owner_id")
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
@@ -459,7 +473,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		}
 
 		// read all child inst, level -1 is no limit
-		topoInstItems, topoErr := cli.metaHelperFunc.SelectInstTopo(nextOne.ownerID, nextOne.objID, 0, nextOne.instID, -1, req)
+		topoInstItems, topoErr := cli.metaHelperFunc.SelectInstTopo(forward, nextOne.ownerID, nextOne.objID, 0, nextOne.instID, -1, req)
 		if nil != topoErr {
 			blog.Error("failed to get the inst topo , error info is %s", topoErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
@@ -536,7 +550,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			{
 				// save change log
 				if attDesCache[delItem.objID] == nil {
-					attDes, attErr := cli.getObjAttDes(delItem.ownerID, delItem.objID)
+					attDes, attErr := cli.getObjAttDes(forward, delItem.ownerID, delItem.objID)
 					if common.CCSuccess != attErr {
 						return http.StatusInternalServerError, objRes, defErr.Error(attErr)
 					}
@@ -612,8 +626,8 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to create json object, error info is %s", jsErr.Error())
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-
-		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), defErr)
+		forward := &api.ForwardParam{Header: req.Request.Header}
+		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, instID)
 		if nil != err {
 			blog.Error("failed to valid the params, error info is %s ", err.Error())
@@ -652,7 +666,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 		{
 			// save change log
-			headers, attErr := cli.getHeader(ownerID, objID)
+			headers, attErr := cli.getHeader(forward, ownerID, objID)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, objRes, defErr.Error(attErr)
 			}
@@ -675,8 +689,8 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 }
 
-func (cli *instAction) getHeader(ownerID, objID string) ([]metadata.Header, int) {
-	attDes, attErr := cli.getObjAttDes(ownerID, objID)
+func (cli *instAction) getHeader(forward *api.ForwardParam, ownerID, objID string) ([]metadata.Header, int) {
+	attDes, attErr := cli.getObjAttDes(forward, ownerID, objID)
 	if common.CCSuccess != attErr {
 		return nil, attErr
 	}
@@ -690,13 +704,13 @@ func (cli *instAction) getHeader(ownerID, objID string) ([]metadata.Header, int)
 	return headers, common.CCSuccess
 }
 
-func (cli *instAction) getObjAttDes(ownerID, objID string) ([]api.ObjAttDes, int) {
+func (cli *instAction) getObjAttDes(forward *api.ForwardParam, ownerID, objID string) ([]api.ObjAttDes, int) {
 	condition := map[string]interface{}{}
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKObjIDField] = objID
 	searchData, _ := json.Marshal(condition)
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
-	attDes, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+	attDes, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 	if nil != restErr {
 		blog.Error("failed to read the object att, error is %s ", restErr.Error())
 		return nil, common.CCErrTopoInstSelectFailed
@@ -705,7 +719,7 @@ func (cli *instAction) getObjAttDes(ownerID, objID string) ([]api.ObjAttDes, int
 }
 
 // getObjectAsst read association objectid the return key is engilish property name, value is the objectid
-func (cli *instAction) getObjectAsst(objID, ownerID string) (map[string]string, int) {
+func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID string) (map[string]string, int) {
 
 	rstmap := map[string]string{}
 
@@ -719,7 +733,7 @@ func (cli *instAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 		blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 		return nil, common.CCErrCommJSONMarshalFailed
 	}
-	rests, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+	rests, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 	if nil != restErr {
 		blog.Error("failed to read the object att, error is %s ", restErr.Error())
 		return nil, common.CCErrTopoInstSelectFailed
@@ -743,7 +757,7 @@ func (cli *instAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -765,7 +779,7 @@ func (cli *instAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -968,9 +982,10 @@ func (cli *instAction) getCommonInstTopo(req *restful.Request, objID, ownerID, i
 
 	// set address
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// read the association filed about objID
-	rstmap, errorno := cli.getObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.getObjectAsst(forward, objID, ownerID)
 	if common.CCSuccess != errorno {
 		blog.Error("failed to search the association with ownerid(%s) objectid(%s)", ownerID, objID)
 		return nil, errorno
@@ -1011,7 +1026,7 @@ func (cli *instAction) getCommonInstTopo(req *restful.Request, objID, ownerID, i
 						objConditionStr, _ := json.Marshal(objCondition)
 
 						// get objid information
-						objItems, objErr := cli.objcli.SearchMetaObject(objConditionStr)
+						objItems, objErr := cli.objcli.SearchMetaObject(forward, objConditionStr)
 						if nil != objErr {
 							blog.Error("failed to search objects, error info is %s", objErr.Error())
 							return nil, common.CCErrCommHTTPDoRequestFailed
@@ -1065,10 +1080,10 @@ func (cli *instAction) getCommonInstTopo(req *restful.Request, objID, ownerID, i
 }
 
 func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}) (map[string]interface{}, int) {
-
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	blog.Debug("ownerid(%s) objid(%s)", ownerID, objID)
 	// read object association map
-	rstmap, errorno := cli.getObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.getObjectAsst(forward, objID, ownerID)
 	if common.CCSuccess != errorno {
 		return nil, errorno
 	}
@@ -1095,6 +1110,10 @@ func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, inst
 					for key, val := range rstmap {
 
 						if keyItem, keyItemOk := dataItem[key]; keyItemOk {
+
+							if nil == keyItem {
+								continue
+							}
 
 							keyItemStr := fmt.Sprintf("%v", keyItem)
 							blog.Debug("keyitemstr:%s", keyItemStr)

@@ -13,7 +13,7 @@
         <form class="bk-form" id="validate_form">
             <div class="bk-form-item">
                 <div class="from-common-item">
-                    <label class="from-common-label">图标选择<span class=""> * </span></label>
+                    <label class="from-common-label">{{$t('ModelManagement["图标选择"]')}}<span class=""> * </span></label>
                     <div class="form-contain">
                         <div class="select-icon-content">
                             <div class="select-icon-show" @click.stop.prevent="toggleDrop" :class="{'active':isIconDrop}">
@@ -25,7 +25,7 @@
                             </div>
                             <div class="select-icon-list" v-show="isIconDrop">
                                 <ul>
-                                    <li v-for="(item,index) in list" @click.stop.prevent="chooseIcon(index, item)">
+                                    <li v-for="(item,index) in list" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
                                         <i :class="item.value"></i>
                                     </li>
                                 </ul>
@@ -34,32 +34,32 @@
                     </div>
                 </div>
                 <div class="from-common-item">
-                    <label class="from-common-label">中文名称<span class=""> * </span></label>
+                    <label class="from-common-label">{{$t('ModelManagement["中文名称"]')}}<span class=""> * </span></label>
                     <div class="from-common-content interior-width-control">
                         <input type="text" name="" value=""
                             maxlength="20"
                             :disabled="isReadOnly"
                             name="validation_name"
-                            placeholder="请填写模型名"
+                            :placeholder="$t('ModelManagement[\'请填写模型名\']')"
                             :data-parsley-required="true"
-                            data-parsley-required-message="该字段是必填项"
+                            :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
                             data-parsley-maxlength="20"
                             data-parsley-trigger="input blur"
                             v-model.trim="baseInfo['bk_obj_name']">
                     </div>
                 </div>
                 <div class="from-common-item" style="padding-right: 0">
-                    <label class="from-common-label">英文名称<span class=""> * </span></label>
+                    <label class="from-common-label">{{$t('ModelManagement["英文名称"]')}}<span class=""> * </span></label>
                     <div class="from-common-content interior-width-control">
                         <input type="text" name="" value=""
-                            placeholder="下划线，数字，英文小写的组合"
+                            :placeholder="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"
                             :class="{'is-danger': !baseInfoVerify['bk_obj_id']}" :disabled="type==='change'"
                             :data-parsley-required="true"
                             maxlength="20"
-                            data-parsley-required-message="该字段是必填项"
+                            :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
                             data-parsley-maxlength="20"
                             data-parsley-pattern="[a-z\d_]+"
-                            data-parsley-pattern-message="格式不正确，只能包含下划线，数字，英文小写"
+                            :data-parsley-pattern-message="$t('ModelManagement[\'格式不正确，只能包含下划线，数字，英文小写\']')"
                             data-parsley-trigger="input blur"
                             v-model.trim="baseInfo['bk_obj_id']">
                     </div>
@@ -67,8 +67,8 @@
             </div>
         </form>
         <div class="base-info" v-if="!isReadOnly">
-            <bk-button type="primary" @click="saveBaseInfo">确认</bk-button>
-            <button class="btn vice-btn cancel-btn-sider" type="default" title="取消" @click="cancel">取消</button>
+            <bk-button type="primary" @click="saveBaseInfo">{{$t('Common["确定"]')}}</bk-button>
+            <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
         </div>
     </div>
 </template>
@@ -250,7 +250,7 @@
                                     id: res.data['id']
                                 })
                             } else {
-                                this.$alertMsg('创建模型失败')
+                                this.$alertMsg(this.$t('ModelManagement["创建模型失败"]'))
                             }
                         })
                     } else {
@@ -271,7 +271,7 @@
                     params['bk_ispre'] = this.baseInfo['bk_ispre']
                     this.$axios.put(`object/${this.baseInfo['id']}`, params).then(res => {
                         if (res.result) {
-                            this.$alertMsg('修改成功', 'success')
+                            this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
                             this.$emit('confirm', {
                                 bk_obj_name: this.baseInfo['bk_obj_name'],
                                 bk_obj_id: this.baseInfo['bk_obj_id']
@@ -451,12 +451,14 @@
                 position: absolute;
                 top: 44px;
                 left: 0;
-                width: 382px;
-                min-height: 206px;
+                width: 390px;
+                height: 206px;
                 border: 1px solid #bec6de;
                 z-index: 500;
                 background: #fff;
                 box-shadow: 0 2px 2px rgba(0,0,0,.1);
+                overflow: auto;
+                @include scrollbar;
                 ul{
                     padding: 0;
                     margin: 0;
@@ -467,6 +469,9 @@
                         line-height: 46px;
                         float: left;
                         cursor: pointer;
+                        &.active{
+                            color: #498fe0;
+                        }
                         i{
                             font-size: 24px;
                         }

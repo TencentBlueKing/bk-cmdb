@@ -10,10 +10,13 @@
 
 <template lang="html">
     <div>
-        <div class="up-file upload-file">
+        <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
             <img src="../../common/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
-            <p>将文件拖到此处，或<b>点击上传</b><br>只能上传 {{allowType.join(',')}} 文件，且不超过 {{maxSize}}kb</p>
+            <i18n path="Inst['导入提示']" tag="p" :places="{allowType: allowType.join(','), maxSize: maxSize}">
+                <b place="clickUpload">{{$t("Inst['点击上传']")}}</b>
+                <br place="breakRow">
+            </i18n>
         </div>
         <div :class="['upload-file-info', {'success': uploaded}, {'fail': failed}]">
             <div class="upload-file-name">{{fileInfo.name}}</div>
@@ -26,13 +29,13 @@
         <div class="upload-details" v-if="(uploadResult.success && uploadResult.success.length) || (uploadResult.error && uploadResult.error.length) || (uploadResult.update_error && uploadResult.update_error.length)">
             <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
                 <i class="bk-icon icon-check-circle-shape"></i>
-                <span>成功上传{{uploadResult.success.length}}条数据！</span>
+                <span>{{$t("Inst['成功上传N条数据']", {N: uploadResult.success.length})}}</span>
             </div>
             <!-- 上传失败列表  -->
             <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
                 <div class="upload-details-fail-title">
                     <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>上传失败列表({{uploadResult.error.length}})</span>
+                    <span>{{$t("Inst['上传失败列表']")}}({{uploadResult.error.length}})</span>
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
                     <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg">{{errorMsg}}</li>
@@ -41,7 +44,7 @@
             <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
                 <div class="upload-details-fail-title">
                     <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>更新失败列表({{uploadResult.update_error.length}})</span>
+                    <span>{{$t("Inst['更新失败列表']")}}({{uploadResult.update_error.length}})</span>
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
                     <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg">{{errorMsg}}</li>
@@ -52,7 +55,7 @@
             <slot name="download-desc"></slot>
             <a :href="templateUrl" style="text-decoration: none;">
                 <img src="../../common/images/icon/down_model_icon.png" alt="">
-                <span class="submit-btn">下载模版</span>
+                <span class="submit-btn">{{$t("Inst['下载模版']")}}</span>
             </a>
         </div>
     </div>
@@ -82,6 +85,7 @@
         },
         data () {
             return {
+                isLoading: false,
                 uploaded: false,
                 failed: false,
                 fileInfo: {
@@ -108,30 +112,31 @@
                 let fileInfo = files[0]
                 if (!this.allowTypeRegExp.test(fileInfo.name)) {
                     this.$refs.fileInput.value = ''
-                    this.$alertMsg(`文件格式非法，只能上传 ${this.allowType.join(',')} 文件！`)
+                    this.$alertMsg(this.$t("Inst['文件格式非法']", {allowType: this.allowType.join(',')}))
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$alertMsg(`文件大小不能超过${this.maxSize}kb！`)
+                    this.$alertMsg(this.$t("Inst['文件大小溢出']", {maxSize: this.maxSize}))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
                     this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
                     let formData = new FormData()
                     formData.append('file', files[0])
+                    this.isLoading = true
                     this.$axios.post(this.importUrl, formData).then(res => {
                         this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
                         if (res.result) {
                             this.uploaded = true
-                            this.fileInfo.status = '成功'
+                            this.fileInfo.status = this.$t("Inst['成功']")
                             this.$emit('success', res)
                         } else if (res.data && res.data.success) {
                             this.failed = true
-                            this.fileInfo.status = '部分成功'
+                            this.fileInfo.status = this.$t("Inst['部分成功']")
                             this.$emit('partialSuccess', res)
                         } else {
                             this.failed = true
-                            this.fileInfo.status = '失败'
+                            this.fileInfo.status = this.$t("Inst['失败']")
                             this.$alertMsg(res['bk_error_msg'])
                             this.$emit('error', res)
                         }
@@ -139,8 +144,10 @@
                         this.$nextTick(() => {
                             this.calcFailListHeight()
                         })
+                        this.isLoading = false
                     }).catch(error => {
                         this.reset()
+                        this.isLoading = false
                         this.$emit('error', error)
                     })
                 }
@@ -187,7 +194,7 @@
                 color:#bec6de;
             }
             .click-text{
-                color:#498fe0;
+                color: #3c96ff;
                 cursor:pointer;
                 position:relative;
             }
@@ -196,7 +203,7 @@
     .input-file{
         left: 0;
         top: 0;
-        color: #498fe0;
+        color: #3c96ff;
         cursor: pointer;
         position: relative;
         border: none !important;
@@ -211,10 +218,10 @@
         border: none;
         background: #fff;
         padding: 0;
-        color: #498fe0;
+        color: #3c96ff;
         outline: none;
         &:hover{
-            color:#498fe0;
+            color:#3c96ff;
         }
     }
 
@@ -232,7 +239,7 @@
         transition: all .5s ease;
         &:hover{
             background-color: #fff;
-            border-color: #498fe0;
+            border-color: #3c96ff;
             box-shadow: 0 4px 6px rgba(0,0,0,.1);
             p {
                 color: #6b7baa;
@@ -245,7 +252,7 @@
             font-weight: bold;
             color: #bec6de;
             b {
-                color: #498fe0;
+                color: #3c96ff;
             }
         }
     }

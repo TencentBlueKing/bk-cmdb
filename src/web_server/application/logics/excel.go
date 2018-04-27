@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -17,12 +17,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"reflect"
 
+	lang "configcenter/src/common/language"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
@@ -33,7 +33,7 @@ var (
 )
 
 //BuildExcelTemplate  return httpcode, error
-func BuildExcelTemplate(url, objID, filename string, header http.Header) error {
+func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf) error {
 	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"start": 0, "limit": common.BKNoLimit}}
 	result, err := httpRequest(url, conds, header)
 	if nil != err {
@@ -52,7 +52,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header) error {
 		blog.Errorf("get %s fields error:", objID, err.Error())
 		return err
 	}
-	ProductExcelHealer(fields, getFilterFields(objID), sheet)
+	ProductExcelHealer(fields, getFilterFields(objID), sheet, defLang)
 	err = file.Save(filename)
 	if nil != err {
 		return err
@@ -62,7 +62,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header) error {
 }
 
 //ProductExcelHealer Excel文件头部，
-func ProductExcelHealer(fields []interface{}, filter []string, sheet *xlsx.Sheet) {
+func ProductExcelHealer(fields []interface{}, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 
 	rowName := sheet.AddRow()
 	rowType := sheet.AddRow()
@@ -72,7 +72,7 @@ func ProductExcelHealer(fields []interface{}, filter []string, sheet *xlsx.Sheet
 		fieldName, okName := mapField[common.BKPropertyNameField].(string)
 
 		if !okName {
-			fieldName = "[未发现字段名(错误)]"
+			fieldName = defLang.Language("web_excel_header_field_error") //"[未发现字段名(错误)]"
 		}
 
 		fieldType, _ := mapField[common.BKPropertyTypeField].(string)
@@ -84,7 +84,7 @@ func ProductExcelHealer(fields []interface{}, filter []string, sheet *xlsx.Sheet
 		isRequire := ""
 		require, _ := mapField["bk_is_required"].(bool)
 		if require {
-			isRequire = "(必填)"
+			isRequire = defLang.Language("web_excel_header_required") //"(必填)"
 		}
 		enName, _ := mapField[common.BKPropertyIDField].(string)
 		if util.Contains(filter, enName) {
@@ -115,9 +115,9 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 }
 
 //GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetExcelData(sheet *xlsx.Sheet, fields, defFields common.KvMap, isCheckHeader bool, firstRow int) (map[int]map[string]interface{}, error) {
+func GetExcelData(sheet *xlsx.Sheet, fields, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
-	cols, err := checkExcelHealer(sheet, fields, isCheckHeader)
+	cols, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
 	if nil != err {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func GetExcelData(sheet *xlsx.Sheet, fields, defFields common.KvMap, isCheckHead
 				isEmpty = false
 				host[cols[celIDnex]] = cellValue
 			default:
-				errMsg = fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, (index + 1), (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
 				blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
 			}
 		}
@@ -211,13 +211,13 @@ func getFilterFields(objID string) []string {
 }
 
 // checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool) ([]string, error) {
+func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) ([]string, error) {
 
 	//rowLen := len(sheet.Rows[headerRow-1].Cells)
 	var cells []string
 	var errCells []string
 	if headerRow > len(sheet.Rows) {
-		return nil, errors.New("excel文件中没有数据")
+		return nil, errors.New(defLang.Language("web_excel_not_data"))
 	}
 	nameCells := sheet.Rows[0].Cells
 	for index, name := range sheet.Rows[headerRow-1].Cells {
@@ -243,7 +243,8 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool
 	if 0 == len(errCells) {
 		return cells, nil
 	} else {
-		return nil, errors.New(fmt.Sprintf("导入不存在的字段%s", strings.Join(errCells, ",")))
+		//web_import_field_not_found
+		return nil, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
 	}
 
 }

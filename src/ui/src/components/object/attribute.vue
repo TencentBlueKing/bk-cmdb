@@ -13,7 +13,7 @@
         <template v-if="displayType === 'list'">
             <template v-for="propertyGroup in groupOrder" v-if="bkPropertyGroups.hasOwnProperty(propertyGroup)">
                 <div class="attribute-group" v-show="!(propertyGroup === 'none' && isNoneGroupHide)">
-                    <h3 class="title">{{propertyGroup === 'none' ? '更多属性' : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
+                    <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
                     <ul class="clearfix attribute-list">
                         <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
                             <li class="attribute-item fl" v-if="!property['bk_isapi']" :key="propertyIndex">
@@ -32,7 +32,7 @@
                     </ul>
                 </div>
                  <div class="attribute-group-more" v-if="propertyGroup === 'none'">
-                    <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">更多属性</a>
+                    <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">{{$t("Common['更多属性']")}}</a>
                 </div>
             </template>
         </template>
@@ -41,7 +41,7 @@
                 <template v-for="propertyGroup in groupOrder">
                     <template v-if="checkIsShowGroup(propertyGroup)">
                         <div class="attribute-group" v-show="!(propertyGroup === 'none' && isNoneGroupHide)">
-                            <h3 class="title">{{propertyGroup === 'none' ? '更多属性' : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
+                            <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
                                 <ul class="clearfix attribute-list edit">
                                     <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
                                         <li class="attribute-item fl" :class="property['bk_property_type']" :key="propertyIndex"
@@ -101,6 +101,9 @@
                                                         :disabled="checkIsFieldDisabled(property)">
                                                     </input>
                                                 </span>
+                                                <input type="text" class="bk-form-input" v-else-if="property['bk_property_type'] === 'int'"
+                                                    :disabled="checkIsFieldDisabled(property)"
+                                                    v-model.trim.number="localValues[property['bk_property_id']]">
                                                 <input v-else
                                                     type="text" class="bk-form-input"
                                                     :disabled="checkIsFieldDisabled(property)" 
@@ -118,24 +121,24 @@
                                 </ul>
                         </div>
                         <div class="attribute-group-more" v-if="propertyGroup === 'none'">
-                            <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">更多属性</a>
+                            <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">{{$t("Common['更多属性']")}}</a>
                         </div>
                     </template>
                 </template>
             </form>
             <div v-else>
-                <p class="attribute-no-multiple">无可编辑属性</p>
+                <p class="attribute-no-multiple">{{$t("Common['无可编辑属性']")}}</p>
             </div>
         </template>
         <template v-if="showBtnGroup">
             <div class="attribute-btn-group" v-if="displayType==='list' && type === 'update'">
-                <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">属性编辑</bk-button>
-                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">删除</button>
+                <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">{{$t("Common['属性编辑']")}}</bk-button>
+                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.create">保存</bk-button>
-                <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">保存</bk-button>
-                <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">取消</bk-button>
+                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.create">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>
         </template>
     </div>
@@ -415,22 +418,33 @@
                     bk_property_type: bkPropertyType
                 } = property
                 let value = this.formValues[bkPropertyId]
-                if (property['bk_asst_obj_id']) {
-                    let associateName = []
-                    if (Array.isArray(value)) {
-                        value.map(({bk_inst_name: bkInstName}) => {
-                            if (bkInstName) {
-                                associateName.push(bkInstName)
-                            }
+                if (value !== undefined) {
+                    if (property['bk_asst_obj_id']) {
+                        let associateName = []
+                        if (Array.isArray(value)) {
+                            value.map(({bk_inst_name: bkInstName}) => {
+                                if (bkInstName) {
+                                    associateName.push(bkInstName)
+                                }
+                            })
+                        }
+                        return associateName.join(',')
+                    } else if (bkPropertyType === 'date') {
+                        return this.$formatTime(value, 'YYYY-MM-DD')
+                    } else if (bkPropertyType === 'time') {
+                        return this.$formatTime(value)
+                    } else if (bkPropertyType === 'enum') {
+                        let obj = property.option.find(({id}) => {
+                            return id === value
                         })
+                        if (obj) {
+                            return obj.name
+                        } else {
+                            return ''
+                        }
+                    } else {
+                        return value
                     }
-                    return associateName.join(',')
-                } else if (bkPropertyType === 'date') {
-                    return this.$formatTime(value, 'YYYY-MM-DD')
-                } else if (bkPropertyType === 'time') {
-                    return this.$formatTime(value)
-                } else {
-                    return value
                 }
             },
             // 判断是否可编辑
@@ -499,14 +513,14 @@
                 }
                 if (property.hasOwnProperty('option') && option) {
                     if (bkPropertyType === 'int') {
-                        option = JSON.parse(option)
+                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min') && option.min) {
                             rules['min_value'] = option.min
                         }
                         if (option.hasOwnProperty('max') && option.max) {
                             rules['max_value'] = option.max
                         }
-                    } else if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    } else if ((bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') && option !== null) {
                         rules['regex'] = option
                     }
                 }
