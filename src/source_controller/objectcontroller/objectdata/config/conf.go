@@ -132,7 +132,7 @@ func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 }
 
 func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
-	blog.Info("language has changed")
+	blog.Info("error has changed")
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()
