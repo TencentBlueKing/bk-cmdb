@@ -420,34 +420,25 @@ func parseIntOption(val interface{}) IntOption {
 
 // validInt valid int
 func (valid *ValidMap) validInt(val interface{}, key string, option interface{}) (bool, error) {
-	var value int
-	if nil == val {
+	var value int64
+	if nil == val || "" == val {
 		isIn := util.InArray(key, valid.IsRequireArr)
 		if true == isIn {
-			blog.Error("params  can not be null")
+			blog.Error("params can not be null")
 			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return true, nil
 	}
-	if reflect.TypeOf(val).Kind() == reflect.String {
-		//		valStr := reflect.ValueOf(val).String()
-		//		var re error
-		//		value, re = strconv.Atoi(valStr)
-		//		if nil != re {
-		blog.Error("params  not int")
+
+	// validate type
+	value, err := strconv.ParseInt(fmt.Sprint(val), 10, 64)
+	if err != nil {
+		blog.Error("params not int")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
-		//		}
-	}
-	if reflect.TypeOf(val).Kind() == reflect.Int {
-		value2 := reflect.ValueOf(val).Int()
-		value = int(value2)
-
-	}
-	if 0 == value {
-		value, _ = util.GetIntByInterface(val)
 	}
 
+	// validate by option
 	if option != nil {
 		return true, nil
 	}
@@ -456,11 +447,11 @@ func (valid *ValidMap) validInt(val interface{}, key string, option interface{})
 		return true, nil
 	}
 
-	maxValue, err := strconv.Atoi(intObjOption.Max)
+	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
 	if err != nil {
 		return true, nil
 	}
-	minValue, err := strconv.Atoi(intObjOption.Min)
+	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
 	if err != nil {
 		return true, nil
 	}
