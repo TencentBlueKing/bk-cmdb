@@ -634,3 +634,21 @@ const (
 	// DefaultAppLifeCycleNormal  biz life cycle normal
 	DefaultAppLifeCycleNormal = "2"
 )
+
+// Host OS type enumeration value
+const (
+	HostOSTypeEnumLinux   = "1"
+	HostOSTypeEnumWindows = "2"
+)
+
+// integer const
+const (
+	MaxUint64 = ^uint64(0)
+	MinUint64 = 0
+	MaxInt64  = int64(MaxUint64 >> 1)
+	MinInt64  = -MaxInt64 - 1
+	MaxUint   = ^uint(0)
+	MinUint   = 0
+	MaxInt    = int(MaxUint >> 1)
+	MinInt    = -MaxInt - 1
+)
