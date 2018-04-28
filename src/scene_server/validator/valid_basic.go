@@ -449,11 +449,11 @@ func (valid *ValidMap) validInt(val interface{}, key string, option interface{})
 
 	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
 	if err != nil {
-		return true, nil
+		maxValue = common.MaxInt64
 	}
 	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
 	if err != nil {
-		return true, nil
+		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {
 		blog.Error("params  not valid")
