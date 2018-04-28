@@ -1,20 +1,90 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/types"
+)
+
+const (
+	// PropertyID the property identifier for a object
+	PropertyID = "bk_property_id"
+	// PropertyName the property name for a object
+	PropertyName = "bk_property_name"
+	// PropertyGroup the property group for a object
+	PropertyGroup = "bk_property_group"
+	// PropertyIndex the property index for a object
+	PropertyIndex = "bk_property_index"
+	// Unit the unit for a object
+	Unit = "unit"
+	// PlaceHoler the placeholder for the property
+	PlaceHoler = "placeholder"
+	// IsEditable the editable for the property
+	IsEditable = "editable"
+	// IsRequired  mark the property status which must be set
+	IsRequired = "isrequired"
+	// IsReadOnly mark the property status which can not be editable
+	IsReadOnly = "isreadonly"
+	// IsOnly mark the property is a key
+	IsOnly = "isonly"
+	// IsSystem mark the property is the system inner used
+	IsSystem = "bk_issystem"
+	// IsApi mark the property is the api param
+	IsApi = "bk_isapi"
+	// PropertyType the property type definition
+	PropertyType = "bk_property_type"
+	// Option the field configuration information
+	Option = "option"
+
+	// GroupID the group identifier
+	GroupID = "bk_group_id"
+	// GroupName the group name
+	GroupName = "bk_group_name"
+	// GroupIndex the group index
+	GroupIndex = "bk_group_index"
+	// IsDefault true is default group
+	IsDefault = "bk_isdefault"
+
+	// ObjectIcon the icon name for the object
+	ObjectIcon = "bk_obj_icon"
+	// ObjectID the id for the object
+	ObjectID = "bk_obj_id"
+	// ObjectName the name for the object
+	ObjectName = "bk_obj_name"
+	// IsPre mark the inner object
+	IsPre = "ispre"
+	// IsPaused mark the object status
+	IsPaused = "bk_ispaused"
+	// Position the position to draw the object in the page
+	Position = "position"
+	// SupplierAccount the business id
+	SupplierAccount = "bk_supplier_account"
+	// Description to introduced object
+	Description = "description"
+	// Creator the creator for the object
+	Creator = "creator"
+	// Modifier the last modifier
+	Modifier = "modifier"
+
+	// ClassificationID the const definition
+	ClassificationID = "bk_classification_id"
+	// ClassificationName the const definition
+	ClassificationName = "bk_classification_name"
+	// ClassificationType the const definition
+	ClassificationType = "bk_classification_type"
+	// ClassificationIcon the const definition
+	ClassificationIcon = "bk_classification_icon"
 )
 
 // GroupIterator the group iterator

@@ -20,17 +20,6 @@ import (
 
 var _ Classification = (*classification)(nil)
 
-const (
-	// ClassificationID the const definition
-	ClassificationID = "bk_classification_id"
-	// ClassificationName the const definition
-	ClassificationName = "bk_classification_name"
-	// ClassificationType the const definition
-	ClassificationType = "bk_classification_type"
-	// ClassificationIcon the const definition
-	ClassificationIcon = "bk_classification_icon"
-)
-
 // classification the model classification definition
 type classification struct {
 	ClassificationID   string `field:"bk_classification_id"`

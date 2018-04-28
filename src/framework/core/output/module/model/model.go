@@ -21,17 +21,17 @@ var _ Model = (*model)(nil)
 
 // model the metadata structure definition of the model
 type model struct {
-	objCls      string `field:"bk_classification_id"`
-	objIcon     string `field:"bk_obj_icon"`
-	objectID    string `field:"bk_obj_id"`
-	objectName  string `field:"bk_obj_name"`
-	isPre       bool   `field:"ispre"`
-	isPaused    bool   `field:"bk_ispaused"`
-	position    string `field:"position"`
-	ownerID     string `field:"bk_supplier_account"`
-	description string `field:"description"`
-	creator     string `field:"creator"`
-	modifier    string `field:"modifier"`
+	ObjCls      string `field:"bk_classification_id"`
+	ObjIcon     string `field:"bk_obj_icon"`
+	ObjectID    string `field:"bk_obj_id"`
+	ObjectName  string `field:"bk_obj_name"`
+	IsPre       bool   `field:"ispre"`
+	IsPaused    bool   `field:"bk_ispaused"`
+	Position    string `field:"position"`
+	OwnerID     string `field:"bk_supplier_account"`
+	Description string `field:"description"`
+	Creator     string `field:"creator"`
+	Modifier    string `field:"modifier"`
 }
 
 func (cli *model) Save() error {
@@ -45,80 +45,80 @@ func (cli *model) CreateAttribute() Attribute {
 }
 
 func (cli *model) SetClassification(classificationID string) {
-	cli.objCls = classificationID
+	cli.ObjCls = classificationID
 }
 
 func (cli *model) GetClassification() string {
-	return cli.objCls
+	return cli.ObjCls
 }
 
 func (cli *model) SetIcon(iconName string) {
-	cli.objIcon = iconName
+	cli.ObjIcon = iconName
 }
 
 func (cli *model) GetIcon() string {
-	return cli.objIcon
+	return cli.ObjIcon
 }
 
 func (cli *model) SetID(id string) {
-	cli.objectID = id
+	cli.ObjectID = id
 }
 
 func (cli *model) GetID() string {
-	return cli.objectID
+	return cli.ObjectID
 }
 
 func (cli *model) SetName(name string) {
-	cli.objectName = name
+	cli.ObjectName = name
 }
 func (cli *model) GetName() string {
-	return cli.objectName
+	return cli.ObjectName
 }
 
 func (cli *model) SetPaused() {
-	cli.isPaused = true
+	cli.IsPaused = true
 }
 
 func (cli *model) SetNonPaused() {
-	cli.isPaused = false
+	cli.IsPaused = false
 }
 
 func (cli *model) Paused() bool {
-	return cli.isPaused
+	return cli.IsPaused
 }
 
 func (cli *model) SetPosition(position string) {
-	cli.position = position
+	cli.Position = position
 }
 
 func (cli *model) GetPosition() string {
-	return cli.position
+	return cli.Position
 }
 
 func (cli *model) SetSupplierAccount(ownerID string) {
-	cli.ownerID = ownerID
+	cli.OwnerID = ownerID
 }
 func (cli *model) GetSupplierAccount() string {
-	return cli.ownerID
+	return cli.OwnerID
 }
 
 func (cli *model) SetDescription(desc string) {
-	cli.description = desc
+	cli.Description = desc
 }
 func (cli *model) GetDescription() string {
-	return cli.description
+	return cli.Description
 }
 func (cli *model) SetCreator(creator string) {
-	cli.creator = creator
+	cli.Creator = creator
 }
 func (cli *model) GetCreator() string {
-	return cli.creator
+	return cli.Creator
 }
 func (cli *model) SetModifier(modifier string) {
-	cli.modifier = modifier
+	cli.Modifier = modifier
 }
 func (cli *model) GetModifier() string {
-	return cli.modifier
+	return cli.Modifier
 }
 func (cli *model) CreateGroup() Group {
 	g := &group{}
