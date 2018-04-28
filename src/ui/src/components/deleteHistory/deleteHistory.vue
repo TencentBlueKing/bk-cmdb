@@ -27,7 +27,6 @@
                 @handlePageSizeChange="setCurrentSize"
                 @handleTableSortClick="setCurrentSort"
             >
-                <td v-for="(header, index) in tableHeader"></td>
             </v-table>
         </div>
     </div>
