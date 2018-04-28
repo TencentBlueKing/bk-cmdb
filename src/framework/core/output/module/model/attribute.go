@@ -17,25 +17,25 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
-	ownerID       string `field:"bk_supplier_account"`
-	objectID      string `field:"bk_obj_id"`
-	propertyID    string `field:"bk_property_id"`
-	propertyName  string `field:"bk_property_name"`
-	propertyGroup string `field:"bk_property_group"`
-	propertyIndex int    `field:"bk_property_index"`
-	unit          string `field:"unit"`
-	placeholder   string `field:"placeholder"`
-	isEditable    bool   `field:"editable"`
-	isPre         bool   `field:"ispre"`
-	isRequired    bool   `field:"isrequired"`
-	isReadOnly    bool   `field:"isreadonly"`
-	isOnly        bool   `field:"isonly"`
-	isSystem      bool   `field:"bk_issystem"`
-	isAPI         bool   `field:"bk_isapi"`
-	propertyType  string `field:"bk_property_type"`
-	option        string `field:"option"`
-	description   string `field:"description"`
-	creator       string `field:"creator"`
+	OwnerID       string `field:"bk_supplier_account"`
+	ObjectID      string `field:"bk_obj_id"`
+	PropertyID    string `field:"bk_property_id"`
+	PropertyName  string `field:"bk_property_name"`
+	PropertyGroup string `field:"bk_property_group"`
+	PropertyIndex int    `field:"bk_property_index"`
+	Unit          string `field:"unit"`
+	Placeholder   string `field:"placeholder"`
+	IsEditable    bool   `field:"editable"`
+	IsPre         bool   `field:"ispre"`
+	IsRequired    bool   `field:"isrequired"`
+	IsReadOnly    bool   `field:"isreadonly"`
+	IsOnly        bool   `field:"isonly"`
+	IsSystem      bool   `field:"bk_issystem"`
+	IsAPI         bool   `field:"bk_isapi"`
+	PropertyType  string `field:"bk_property_type"`
+	Option        string `field:"option"`
+	Description   string `field:"description"`
+	Creator       string `field:"creator"`
 }
 
 func (cli *attribute) Save() error {
@@ -43,53 +43,53 @@ func (cli *attribute) Save() error {
 }
 
 func (cli *attribute) SetID(id string) {
-	cli.propertyID = id
+	cli.PropertyID = id
 }
 
 func (cli *attribute) SetName(name string) {
-	cli.propertyName = name
+	cli.PropertyName = name
 }
 
 func (cli *attribute) SetUnit(unit string) {
-	cli.unit = unit
+	cli.Unit = unit
 }
 
 func (cli *attribute) SetPlaceholer(placeHoler string) {
-	cli.placeholder = placeHoler
+	cli.Placeholder = placeHoler
 }
 
 func (cli *attribute) SetEditable() {
-	cli.isEditable = true
+	cli.IsEditable = true
 }
 
 func (cli *attribute) SetNonEditable() {
-	cli.isEditable = false
+	cli.IsEditable = false
 }
 
 func (cli *attribute) Editable() bool {
-	return cli.isEditable
+	return cli.IsEditable
 }
 
 func (cli *attribute) SetRequired() {
-	cli.isRequired = true
+	cli.IsRequired = true
 }
 
 func (cli *attribute) SetNonRequired() {
-	cli.isRequired = false
+	cli.IsRequired = false
 }
 
 func (cli *attribute) Required() bool {
-	return cli.isRequired
+	return cli.IsRequired
 }
 
 func (cli *attribute) SetKey(isKey bool) {
-	cli.isOnly = isKey
+	cli.IsOnly = isKey
 }
 
 func (cli *attribute) SetOption(option string) {
-	cli.option = option
+	cli.Option = option
 }
 
 func (cli *attribute) SetDescrition(des string) {
-	cli.description = des
+	cli.Description = des
 }

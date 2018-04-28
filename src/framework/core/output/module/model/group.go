@@ -19,13 +19,13 @@ import (
 var _ Group = (*group)(nil)
 
 type group struct {
-	groupID    string `field:"bk_group_id"`
-	groupName  string `field:"bk_group_name"`
-	groupIndex int    `field:"bk_group_index"`
-	objectID   string `field:"bk_obj_id"`
-	ownerID    string `field:"bk_supplier_account"`
-	isDefault  bool   `field:"bk_isdefault"`
-	isPre      bool   `field:"ispre"`
+	GroupID    string `field:"bk_group_id"`
+	GroupName  string `field:"bk_group_name"`
+	GroupIndex int    `field:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id"`
+	OwnerID    string `field:"bk_supplier_account"`
+	IsDefault  bool   `field:"bk_isdefault"`
+	IsPre      bool   `field:"ispre"`
 }
 
 func (cli *group) Save() error {
@@ -33,43 +33,43 @@ func (cli *group) Save() error {
 }
 
 func (cli *group) SetID(id string) {
-	cli.groupID = id
+	cli.GroupID = id
 }
 
 func (cli *group) GetID() string {
 
-	return cli.groupID
+	return cli.GroupID
 }
 
 func (cli *group) SetName(name string) {
-	cli.groupName = name
+	cli.GroupName = name
 }
 
 func (cli *group) SetIndex(idx int) {
-	cli.groupIndex = idx
+	cli.GroupIndex = idx
 }
 
 func (cli *group) GetIndex() int {
-	return cli.groupIndex
+	return cli.GroupIndex
 }
 
 func (cli *group) SetSupplierAccount(ownerID string) {
-	cli.ownerID = ownerID
+	cli.OwnerID = ownerID
 }
 
 func (cli *group) GetSupplierAccount() string {
-	return cli.ownerID
+	return cli.OwnerID
 }
 
 func (cli *group) SetDefault() {
-	cli.isDefault = true
+	cli.IsDefault = true
 }
 func (cli *group) SetNonDefault() {
-	cli.isDefault = false
+	cli.IsDefault = false
 }
 
 func (cli *group) Default() bool {
-	return cli.isDefault
+	return cli.IsDefault
 }
 
 func (cli *group) CreateAttribute() Attribute {

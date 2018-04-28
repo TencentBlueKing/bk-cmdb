@@ -44,8 +44,8 @@ func (cli *myInputer) Name() string {
 // Run the input should not be blocked
 func (cli *myInputer) Run() interface{} {
 
-	host, _ := api.CreateHost()
-	host.Save()
+	//host, _ := api.CreateHost()
+	//host.Save()
 	return types.MapStr{
 		"test": "outputer",
 		"hoid": "",
