@@ -24,34 +24,33 @@ import (
 const separator = "."
 
 // ParseFromBytes parse config from data
-func ParseFromBytes(data []byte) (Config, error) {
+func ParseFromBytes(data []byte) error {
 	buf := bytes.NewBuffer(data)
 	return Parse(buf)
 }
 
 // ParseFromFile parse config from file
-func ParseFromFile(path string) (Config, error) {
+func ParseFromFile(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		blog.Infof("path: %s,config file not exits;", path)
-		return nil, err
+		return err
 	}
 	defer f.Close()
 	return Parse(f)
 }
 
 // Parse parse config from reader
-func Parse(rd io.Reader) (Config, error) {
+func Parse(rd io.Reader) error {
 	strcet := ""
 	r := bufio.NewReader(rd)
-	c := Config{}
 	for {
 		b, _, err := r.ReadLine()
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return err
 		}
 
 		s := strings.TrimSpace(string(b))
@@ -106,7 +105,7 @@ func Parse(rd io.Reader) (Config, error) {
 		}
 
 		key := strcet + separator + frist
-		c[key] = strings.TrimSpace(second)
+		config[key] = strings.TrimSpace(second)
 	}
-	return c, nil
+	return nil
 }
