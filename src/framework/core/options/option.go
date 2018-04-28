@@ -19,4 +19,5 @@ import (
 // AddFlags add some flags
 func (cli *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&cli.Config, "config", "", "The config path. e.g conf/api.conf")
+	fs.StringVar(&cli.Config, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 }

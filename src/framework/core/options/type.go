@@ -16,5 +16,6 @@ import ()
 
 // Options is the params
 type Options struct {
-	Config string
+	Config   string
+	Regdiscv string
 }
