@@ -54,17 +54,20 @@ type ValidMap struct {
 	forward      *api.ForwardParam
 }
 
+// InstRst define
 type InstRst struct {
-	Result  bool        `json:result`
-	Code    int         `json:code`
-	Message interface{} `json:message`
-	Data    interface{} `json:data`
+	Result  bool        `json:"result"`
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
+// NewValidMap returns new NewValidMap
 func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
 	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 }
 
+// NewValidMapWithKeyFileds returns new NewValidMap
 func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
 	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 
@@ -74,7 +77,7 @@ func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string
 	return tmp
 }
 
-//basic valid
+// ValidMap basic valid
 func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int) (bool, error) {
 	valRule := NewValRule(valid.ownerID, valid.objCtrl)
 
@@ -190,7 +193,6 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return result, err
 	}
 
-	return true, nil
 }
 
 //valid create unique
@@ -283,7 +285,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	}
 
 	if 1 == len(searchCond) {
-		for key, _ := range searchCond {
+		for key := range searchCond {
 			if key == common.BKAppIDField {
 				return true, nil
 			}
@@ -580,26 +582,31 @@ func ParseEnumOption(val interface{}) []EnumVal {
 
 // validEnum valid enum
 func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}) (bool, error) {
-	valStr, ok := val.(string)
-	if false == ok {
+	// validate require
+	if nil == val || "" == val {
+		if util.InArray(key, valid.IsRequireArr) {
+			blog.Error("params %s can not be empty", key)
+			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
 		return true, nil
 	}
+
+	// validate type
+	valStr, ok := val.(string)
+	if !ok {
+		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+
+	// validate within enum
 	enumOption := ParseEnumOption(option)
 	match := false
-
 	for _, k := range enumOption {
 		if k.ID == valStr {
 			match = true
 			break
 		}
 	}
-
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(valStr) {
-		blog.Error("params %s can not be empty", key)
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
-	if 0 < len(valStr) && !match {
+	if !match {
 		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
 		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
 	}
