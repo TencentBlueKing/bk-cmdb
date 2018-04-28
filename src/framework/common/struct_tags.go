@@ -13,6 +13,7 @@
 package common
 
 import (
+	"configcenter/src/framework/core/types"
 	"fmt"
 	"reflect"
 )
@@ -23,7 +24,7 @@ func GetTags(target interface{}) []string {
 	targetType := reflect.TypeOf(target)
 	switch targetType.Kind() {
 	default:
-		return nil
+		break
 	case reflect.Ptr:
 		fmt.Printf("hello")
 		targetType = targetType.Elem()
@@ -40,4 +41,81 @@ func GetTags(target interface{}) []string {
 	}
 	return tags
 
+}
+
+// SetValueToStructByTags set the struct object field value by tags
+func SetValueToStructByTags(target interface{}, values types.MapStr) {
+
+	targetType := reflect.TypeOf(target)
+	targetValue := reflect.ValueOf(target)
+	switch targetType.Kind() {
+	default:
+		break
+	case reflect.Ptr:
+		targetType = targetType.Elem()
+		targetValue = targetValue.Elem()
+	}
+
+	numField := targetType.NumField()
+	for i := 0; i < numField; i++ {
+		structField := targetType.Field(i)
+		tag, ok := structField.Tag.Lookup("field")
+		if !ok {
+			continue
+		}
+
+		tagVal, ok := values[tag]
+		if !ok {
+			continue
+		}
+
+		fieldValue := targetValue.FieldByName(structField.Name)
+		if !fieldValue.CanSet() {
+			continue
+		}
+
+		switch structField.Type.Kind() {
+		default:
+			break
+		case reflect.Bool:
+			switch t := tagVal.(type) {
+			case bool:
+				fieldValue.SetBool(t)
+			default:
+				break
+			}
+		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
+			switch t := tagVal.(type) {
+			case int:
+				fieldValue.SetInt(int64(t))
+			case int64:
+				fieldValue.SetInt(t)
+			case int32:
+				fieldValue.SetInt(int64(t))
+			case int8:
+				fieldValue.SetInt(int64(t))
+			case int16:
+				fieldValue.SetInt(int64(t))
+			default:
+				break
+			}
+		case reflect.Float32, reflect.Float64:
+			switch t := tagVal.(type) {
+			default:
+				break
+			case float64:
+				fieldValue.SetFloat(t)
+			case float32:
+				fieldValue.SetFloat(float64(t))
+			}
+		case reflect.String:
+			switch t := tagVal.(type) {
+			case string:
+				fieldValue.SetString(t)
+			default:
+				break
+			}
+		}
+
+	}
 }

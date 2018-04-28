@@ -18,17 +18,16 @@ import (
 
 // CreateClassification create a new Classification instance
 func CreateClassification(name string) Classification {
-	return &classification{classificationName: name}
+	return &classification{ClassificationName: name}
 }
 
 // FindClassificationsLikeName find a array of the classification by the name
 func FindClassificationsLikeName(name string) (ClassificationIterator, error) {
-	// TODO: 按照名字模糊查找
-	return nil, nil
+	cond := common.CreateCondition().Field(ClassificationName).Like(name)
+	return newClassificationIterator(cond)
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition common.Condition) (ClassificationIterator, error) {
-	// TODO: 按照条件搜索
-	return nil, nil
+func FindClassificationsByCondition(cond common.Condition) (ClassificationIterator, error) {
+	return newClassificationIterator(cond)
 }
