@@ -13,11 +13,9 @@
 package config
 
 import (
-	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
 	"configcenter/src/common/types"
+	"configcenter/src/framework/core/log"
 	"context"
 	"sync"
 )
@@ -29,9 +27,6 @@ type ConfCenter struct {
 	cancel       context.CancelFunc
 	ctx          []byte
 	ctxLock      sync.RWMutex
-	errorcode    map[string]errors.ErrorCode
-	langCtx      map[string]language.LanguageMap
-	langLock     sync.RWMutex
 }
 
 // NewConfCenter create a ConfCenter object
@@ -54,7 +49,7 @@ func (cc *ConfCenter) Start() error {
 
 	// start configure register and discover service
 	if err := cc.confRegDiscv.Start(); err != nil {
-		blog.Errorf("fail to start config register and discover service. err:%s", err.Error())
+		log.Errorf("fail to start config register and discover service. err:%s", err.Error())
 		return err
 	}
 
@@ -62,7 +57,7 @@ func (cc *ConfCenter) Start() error {
 	confPath := types.CC_SERVCONF_BASEPATH + "/" + types.CC_MODULE_OBJECTCONTROLLER
 	confEvent, err := cc.confRegDiscv.DiscoverConfig(confPath)
 	if err != nil {
-		blog.Errorf("fail to discover configure for objectcontroller service. err:%s", err.Error())
+		log.Errorf("fail to discover configure for objectcontroller service. err:%s", err.Error())
 		return err
 	}
 
@@ -71,7 +66,7 @@ func (cc *ConfCenter) Start() error {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
 		case <-cc.rootCtx.Done():
-			blog.Warn("configure discover service done")
+			log.Warning("configure discover service done")
 			return nil
 		}
 	}
@@ -95,7 +90,7 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 }
 
 func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
-	blog.Info("%s configure has changed", types.CC_MODULE_OBJECTCONTROLLER)
+	log.Info("%s configure has changed", types.CC_MODULE_OBJECTCONTROLLER)
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()
