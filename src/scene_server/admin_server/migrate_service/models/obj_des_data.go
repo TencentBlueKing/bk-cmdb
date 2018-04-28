@@ -93,14 +93,14 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDProc, ObjectName: "进程", ObjIcon: "icon-cc-process", Position: `{"bk_host_manage":{"x":-450,"y":-650}}`},
 		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDPlat, ObjectName: "子网区域", ObjIcon: "icon-cc-subnet", Position: `{"bk_host_manage":{"x":-600,"y":-500}}`},
 
-		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: "bk_switch", ObjectName: "交换机", ObjIcon: "icon-cc-switch2", Position: `{"bk_network":{"x":-200,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: "bk_router", ObjectName: "路由器", ObjIcon: "icon-cc-router", Position: `{"bk_network":{"x":-350,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: "bk_load_balance", ObjectName: "防火墙", ObjIcon: "icon-cc-balance", Position: `{"bk_network":{"x":-500,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: "bk_firewall", ObjectName: "负载均衡", ObjIcon: "icon-cc-firewall", Position: `{"bk_network":{"x":-650,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDSwitch, ObjectName: "交换机", ObjIcon: "icon-cc-switch2", Position: `{"bk_network":{"x":-200,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDRouter, ObjectName: "路由器", ObjIcon: "icon-cc-router", Position: `{"bk_network":{"x":-350,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDBlance, ObjectName: "防火墙", ObjIcon: "icon-cc-balance", Position: `{"bk_network":{"x":-500,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDFirewall, ObjectName: "负载均衡", ObjIcon: "icon-cc-firewall", Position: `{"bk_network":{"x":-650,"y":-50}}`},
 
-		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: "bk_weblogic", ObjectName: "weblogic", ObjIcon: "icon-cc-weblogic", Position: `{"bk_middleware":{"x":-200,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: "bk_apache", ObjectName: "apache", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: "bk_tomcat", ObjectName: "tomcat", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDWeblogic, ObjectName: "weblogic", ObjIcon: "icon-cc-weblogic", Position: `{"bk_middleware":{"x":-200,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDApache, ObjectName: "apache", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDTomcat, ObjectName: "tomcat", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
 	}
 	t := new(time.Time)
 	*t = time.Now()

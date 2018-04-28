@@ -193,7 +193,7 @@ func ProcRow() []*metadata.ObjectAttDes {
 
 // SwitchRow proc structure
 func SwitchRow() []*metadata.ObjectAttDes {
-	objID := "bk_switch"
+	objID := common.BKInnerObjIDSwitch
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -212,7 +212,7 @@ func SwitchRow() []*metadata.ObjectAttDes {
 
 // RouterRow proc structure
 func RouterRow() []*metadata.ObjectAttDes {
-	objID := "bk_router"
+	objID := common.BKInnerObjIDRouter
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -231,7 +231,7 @@ func RouterRow() []*metadata.ObjectAttDes {
 
 // LoadBalanceRow proc structure
 func LoadBalanceRow() []*metadata.ObjectAttDes {
-	objID := "bk_load_balance"
+	objID := common.BKInnerObjIDBlance
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -250,7 +250,7 @@ func LoadBalanceRow() []*metadata.ObjectAttDes {
 
 // FirewallRow proc structure
 func FirewallRow() []*metadata.ObjectAttDes {
-	objID := "bk_firewall"
+	objID := common.BKInnerObjIDFirewall
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -269,7 +269,7 @@ func FirewallRow() []*metadata.ObjectAttDes {
 
 // WeblogicRow proc structure
 func WeblogicRow() []*metadata.ObjectAttDes {
-	objID := "bk_weblogic"
+	objID := common.BKInnerObjIDWeblogic
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_version", PropertyName: "版本", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
@@ -290,7 +290,7 @@ func WeblogicRow() []*metadata.ObjectAttDes {
 
 // TomcatRow proc structure
 func TomcatRow() []*metadata.ObjectAttDes {
-	objID := "bk_tomcat"
+	objID := common.BKInnerObjIDTomcat
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_version", PropertyName: "版本", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
@@ -308,7 +308,7 @@ func TomcatRow() []*metadata.ObjectAttDes {
 
 // ApacheRow proc structure
 func ApacheRow() []*metadata.ObjectAttDes {
-	objID := "bk_apache"
+	objID := common.BKInnerObjIDApache
 	dataRows := []*metadata.ObjectAttDes{
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_version", PropertyName: "版本", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
