@@ -14,6 +14,7 @@ package config
 
 var config Config
 
+// Get returns the parsed config
 func Get() Config {
 	return config
 }
