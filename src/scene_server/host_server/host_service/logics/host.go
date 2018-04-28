@@ -28,6 +28,8 @@ import (
 	restful "github.com/emicklei/go-restful"
 )
 
+const SplitFlag = "##"
+
 // HostSearch search host by mutiple condition
 func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
 	var hostCond, appCond, setCond, moduleCond, mainlineCond hostParse.SearchCondition
@@ -41,9 +43,13 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	disAppIDArr := make([]int, 0)
 	disSetIDArr := make([]int, 0)
 	disModuleIDArr := make([]int, 0)
-	hostAppConfig := make(map[int]int)
+	hostAppConfig := make(map[int][]int)
 	hostSetConfig := make(map[int][]int)
 	hostModuleConfig := make(map[int][]int)
+	moduleSetConfig := make(map[int]int)
+	setAppConfig := make(map[int]int)
+	setIDNameMap := make(map[int]string)
+
 	hostModuleMap := make(map[int]interface{})
 	hostSetMap := make(map[int]interface{})
 	hostAppMap := make(map[int]interface{})
@@ -222,9 +228,13 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	blog.Info("get modulehostconfig map:%v", mhconfig)
 	for _, mh := range mhconfig {
 		hostID := mh[common.BKHostIDField]
-		hostAppConfig[hostID] = mh[common.BKAppIDField]
+		hostAppConfig[hostID] = append(hostSetConfig[hostID], mh[common.BKAppIDField])
 		hostSetConfig[hostID] = append(hostSetConfig[hostID], mh[common.BKSetIDField])
 		hostModuleConfig[hostID] = append(hostModuleConfig[hostID], mh[common.BKModuleIDField])
+
+		moduleSetConfig[mh[common.BKModuleIDField]] = mh[common.BKSetIDField]
+		setAppConfig[mh[common.BKSetIDField]] = mh[common.BKAppIDField]
+
 		disAppIDArr = append(disAppIDArr, mh[common.BKAppIDField])
 		disSetIDArr = append(disSetIDArr, mh[common.BKSetIDField])
 		disModuleIDArr = append(disModuleIDArr, mh[common.BKModuleIDField])
@@ -278,61 +288,110 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 		hostID, _ := host[common.BKHostIDField].(json.Number).Int64()
 		hostID32 := int(hostID)
 		hostData := make(map[string]interface{})
+
 		//appdata
-		appInfo, ok := hostAppMap[hostAppConfig[hostID32]]
-		if ok {
-			hostData[common.BKInnerObjIDApp] = appInfo
-		} else {
-			hostData[common.BKInnerObjIDApp] = make(map[string]interface{})
+		hostAppIDArr, ok := hostAppConfig[hostID32]
+		if false == ok {
+			continue
 		}
+		hostAppData := make([]interface{}, 0)
+		for _, appID := range hostAppIDArr {
+			appInfo, ok := hostAppMap[appID]
+			if ok {
+				hostAppData = append(hostAppData, appInfo)
+			}
+		}
+		hostData[common.BKInnerObjIDApp] = hostAppData
+
 		//setdata
 		hostSetIDArr, ok := hostSetConfig[hostID32]
-		if ok && nil != setCond.Fields {
-			setNameArr := make([]string, 0)
-			for _, setID := range hostSetIDArr {
-				setInfo, ok := hostSetMap[setID]
-				if false == ok {
-					continue
-				}
-				data, ok := setInfo.(map[string]interface{})
-				if false == ok {
-					continue
-				}
-				setName, ok := data[common.BKSetNameField].(string)
-				if false == ok {
-					continue
-				}
-				setNameArr = append(setNameArr, setName)
+		hostSetData := make([]interface{}, 0)
+		for _, setID := range hostSetIDArr {
+			setInfo, ok := hostSetMap[setID]
+			if false == ok {
+				continue
 			}
-			setNameStr := strings.Join(util.StrArrayUnique(setNameArr), ",")
-			hostData[common.BKInnerObjIDSet] = map[string]string{common.BKSetNameField: setNameStr}
-		} else {
-			hostData[common.BKInnerObjIDSet] = make(map[string]interface{})
+			appID := setAppConfig[setID]
+			if false == ok {
+				continue
+			}
+			appInfoI, ok := hostAppMap[appID]
+			if false == ok {
+				continue
+			}
+			appInfo, ok := appInfoI.(map[string]interface{})
+			if false == ok {
+				continue
+			}
+			appName, ok := appInfo[common.BKAppNameField].(string)
+			if false == ok {
+				continue
+			}
+			data, ok := setInfo.(map[string]interface{})
+			if false == ok {
+				continue
+			}
+
+			setName, ok := data[common.BKSetNameField].(string)
+			if false == ok {
+				continue
+			}
+			datacp := make(map[string]interface{})
+			for key, val := range data {
+				datacp[key] = val
+			}
+			datacp[common.BKSetNameField] = appName + SplitFlag + setName
+			hostSetData = append(hostSetData, datacp)
+			setIDNameMap[setID] = setName
 		}
+		hostData[common.BKInnerObjIDSet] = hostSetData
+
 		//moduledata
 		hostModuleIDArr, ok := hostModuleConfig[hostID32]
-		if ok && nil != moduleCond.Fields {
-			moduleNameArr := make([]string, 0)
-			for _, setID := range hostModuleIDArr {
-				moduleInfo, ok := hostModuleMap[setID]
-				if false == ok {
-					continue
-				}
-				data, ok := moduleInfo.(map[string]interface{})
-				if false == ok {
-					continue
-				}
-				moduleName, ok := data[common.BKModuleNameField].(string)
-				if false == ok {
-					continue
-				}
-				moduleNameArr = append(moduleNameArr, moduleName)
+		hostModuleData := make([]interface{}, 0)
+		for _, ModuleID := range hostModuleIDArr {
+			moduleInfo, ok := hostModuleMap[ModuleID]
+			if false == ok {
+				continue
 			}
-			moduleNameStr := strings.Join(util.StrArrayUnique(moduleNameArr), ",")
-			hostData[common.BKInnerObjIDModule] = map[string]string{common.BKModuleNameField: moduleNameStr}
-		} else {
-			hostData[common.BKInnerObjIDModule] = make(map[string]interface{})
+			setID := moduleSetConfig[ModuleID]
+			if false == ok {
+				continue
+			}
+			appID := setAppConfig[setID]
+			if false == ok {
+				continue
+			}
+			appInfoI, ok := hostAppMap[appID]
+			if false == ok {
+				continue
+			}
+			appInfo, ok := appInfoI.(map[string]interface{})
+			if false == ok {
+				continue
+			}
+			appName, ok := appInfo[common.BKAppNameField].(string)
+			if false == ok {
+				continue
+			}
+			data, ok := moduleInfo.(map[string]interface{})
+			if false == ok {
+				continue
+			}
+
+			moduleName, ok := data[common.BKModuleNameField].(string)
+			if false == ok {
+				continue
+			}
+			datacp := make(map[string]interface{})
+			for key, val := range data {
+				datacp[key] = val
+			}
+			setName := setIDNameMap[setID]
+			datacp[common.BKModuleNameField] = appName + SplitFlag + setName + SplitFlag + moduleName
+			hostModuleData = append(hostModuleData, datacp)
 		}
+		hostData[common.BKInnerObjIDModule] = hostModuleData
 
 		hostData[common.BKInnerObjIDHost] = j
 		totalInfo = append(totalInfo, hostData)
