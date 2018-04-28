@@ -29,6 +29,8 @@ import (
 )
 
 const SplitFlag = "##"
+const TopoSetName = "TopSetName"
+const TopoModuleName = "TopModuleName"
 
 // HostSearch search host by mutiple condition
 func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
@@ -340,7 +342,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 			for key, val := range data {
 				datacp[key] = val
 			}
-			datacp[common.BKSetNameField] = appName + SplitFlag + setName
+			datacp[TopoSetName] = appName + SplitFlag + setName
 			hostSetData = append(hostSetData, datacp)
 			setIDNameMap[setID] = setName
 		}
@@ -388,7 +390,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 				datacp[key] = val
 			}
 			setName := setIDNameMap[setID]
-			datacp[common.BKModuleNameField] = appName + SplitFlag + setName + SplitFlag + moduleName
+			datacp[TopoModuleName] = appName + SplitFlag + setName + SplitFlag + moduleName
 			hostModuleData = append(hostModuleData, datacp)
 		}
 		hostData[common.BKInnerObjIDModule] = hostModuleData
