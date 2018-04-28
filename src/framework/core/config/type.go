@@ -12,6 +12,5 @@
 
 package config
 
-type Config struct {
-	Addrport string
-}
+// Config define config type
+type Config map[string]string
