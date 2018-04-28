@@ -14,8 +14,9 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/v3"
 	"configcenter/src/framework/core/types"
+	//"fmt"
 )
 
 var _ ClassificationIterator = (*classificationIterator)(nil)
@@ -27,15 +28,37 @@ type classificationIterator struct {
 }
 
 func newClassificationIterator(cond common.Condition) (ClassificationIterator, error) {
-	// TODO: 在实例化的时候默认查询一定数量的Classification，每次调用Next返回数据中的一个，当读取到缓存的数据的最后一条后开始重新组织数据，直到将数据库里的数据全部读取完毕
+
 	clsIterator := &classificationIterator{
 		cond:   cond,
 		buffer: make([]types.MapStr, 0),
 	}
+
+	items, err := v3.GetClient().SearchClassifications(cond)
+	if nil != err {
+		return nil, err
+	}
+
+	clsIterator.buffer = items
+	clsIterator.bufIdx = 0
+	if 0 == len(clsIterator.buffer) {
+		return nil, nil
+	}
+
 	return clsIterator, nil
 }
 
 func (cli *classificationIterator) Next() (Classification, error) {
 
-	return nil, nil
+	if len(cli.buffer) == cli.bufIdx {
+		cli.bufIdx = 0
+		return nil, nil
+	}
+
+	tmpItem := cli.buffer[cli.bufIdx]
+	cli.bufIdx++
+	returnItem := &classification{}
+	common.SetValueToStructByTags(returnItem, tmpItem)
+
+	return returnItem, nil
 }

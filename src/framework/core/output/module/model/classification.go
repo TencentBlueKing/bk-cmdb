@@ -33,18 +33,18 @@ const (
 
 // classification the model classification definition
 type classification struct {
-	classificationID   string `field:"bk_classification_id"`
-	classificationName string `field:"bk_classification_name"`
-	classificationType string `field:"bk_classification_type"`
-	classificationIcon string `field:"bk_classification_icon"`
+	ClassificationID   string `field:"bk_classification_id"`
+	ClassificationName string `field:"bk_classification_name"`
+	ClassificationType string `field:"bk_classification_type"`
+	ClassificationIcon string `field:"bk_classification_icon"`
 }
 
 func (cli *classification) ToMapStr() types.MapStr {
 	return types.MapStr{
-		ClassificationID:   cli.classificationID,
-		ClassificationName: cli.classificationName,
-		ClassificationType: cli.classificationType,
-		ClassificationIcon: cli.classificationIcon,
+		ClassificationID:   cli.ClassificationID,
+		ClassificationName: cli.ClassificationName,
+		ClassificationType: cli.ClassificationType,
+		ClassificationIcon: cli.ClassificationIcon,
 	}
 }
 
@@ -53,7 +53,7 @@ func (cli *classification) Save() error {
 	// construct the search condition
 	cond := common.CreateCondition()
 
-	cond.Field(ClassificationID).Eq(cli.classificationID)
+	cond.Field(ClassificationID).Eq(cli.ClassificationID)
 
 	// search all classifications by condition
 	dataItems, err := v3.GetClient().SearchClassifications(cond)
@@ -71,11 +71,11 @@ func (cli *classification) Save() error {
 
 	// update the exists one
 	for _, item := range dataItems {
-		item.Set(ClassificationName, cli.classificationName)
-		item.Set(ClassificationIcon, cli.classificationIcon)
-		item.Set(ClassificationType, cli.classificationType)
+		item.Set(ClassificationName, cli.ClassificationName)
+		item.Set(ClassificationIcon, cli.ClassificationIcon)
+		item.Set(ClassificationType, cli.ClassificationType)
 		cond := common.CreateCondition()
-		cond.Field(ClassificationID).Eq(cli.classificationID)
+		cond.Field(ClassificationID).Eq(cli.ClassificationID)
 		if err = v3.GetClient().UpdateClassification(item, cond); nil != err {
 			return err
 		}
@@ -86,25 +86,25 @@ func (cli *classification) Save() error {
 }
 
 func (cli *classification) GetID() string {
-	return cli.classificationID
+	return cli.ClassificationID
 }
 
 func (cli *classification) SetID(id string) {
-	cli.classificationID = id
+	cli.ClassificationID = id
 }
 
 func (cli *classification) SetName(name string) {
-	cli.classificationName = name
+	cli.ClassificationName = name
 }
 
 func (cli *classification) SetIcon(iconName string) {
-	cli.classificationIcon = iconName
+	cli.ClassificationIcon = iconName
 }
 
 func (cli *classification) CreateModel() Model {
 	m := &model{}
-	m.SetClassification(cli.classificationID)
-	m.SetIcon(cli.classificationIcon)
+	m.SetClassification(cli.ClassificationID)
+	m.SetIcon(cli.ClassificationIcon)
 	return m
 }
 
