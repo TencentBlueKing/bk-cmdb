@@ -26,7 +26,8 @@
                 @handlePageTurning="setCurrentPage"
                 @handlePageSizeChange="setCurrentSize"
                 @handleTableSortClick="setCurrentSort"
-            ></v-table>
+            >
+            </v-table>
         </div>
     </div>
 </template>
@@ -187,6 +188,9 @@
                                 })
                             }
                             item[list.id] = name.join(',')
+                        } else if (list.property['bk_property_type'] === 'enum') {
+                            let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
+                            item[list.id] = option ? option.name : ''
                         } else {
                             item[list.id] = item.content['pre_data'][list.id]
                         }

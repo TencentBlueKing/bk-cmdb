@@ -105,7 +105,6 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 		}
 
 		client := auditlogAPI.NewClient(cli.CC.AuditCtrl())
-
 		ret, err := client.GetAuditlogs(dat)
 		blog.Debug("search operation log  params: %v", dat)
 		if nil != err {

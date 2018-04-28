@@ -311,7 +311,7 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 		itemMap := item.(map[string]interface{})
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField, common.BKCloudIDField})
 		if nil != err {
-			blog.Errorf("ResToV2ForHostList error:%s", resDataInfoV3, err.Error())
+			blog.Errorf("ResToV2ForHostList resDataInfoV3 %v, error:%s", resDataInfoV3, err.Error())
 			return nil, err
 		}
 
@@ -321,6 +321,14 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			OSType = ""
 		}
 		OSType = strings.ToLower(OSType)
+		switch OSType {
+		case common.HostOSTypeEnumLinux:
+			OSType = "linux"
+		case common.HostOSTypeEnumWindows:
+			OSType = "windows"
+		default:
+			OSType = ""
+		}
 		setName, ok := itemMap[common.BKSetNameField].(string)
 		if false == ok {
 			blog.Error("assign error itemMap.SetName is not string, itemMap:%v", itemMap)

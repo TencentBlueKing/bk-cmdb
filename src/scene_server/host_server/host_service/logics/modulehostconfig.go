@@ -14,6 +14,7 @@ package logics
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	sencecommon "configcenter/src/scene_server/common"
@@ -81,7 +82,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 		return nil, errors.New(langHandle.Languagef("host_resource_module_get_fail", err.Error())) //("获取资源池模块信息失败" + err.Error())
 	}
 
-	logClient, err := NewHostModuleConfigLog(req, nil, CC.HostCtrl(), CC.ObjCtrl(), CC.AuditCtrl())
+	logClient, err := NewHostModuleConfigLog(req, hostID, CC.HostCtrl(), CC.ObjCtrl(), CC.AuditCtrl())
 
 	conds[common.BKHostIDField] = hostID
 	conds["bk_owner_module_id"] = moduleID
@@ -92,7 +93,10 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 		return data, errors.New(langHandle.Languagef("host_move_to_resource", errmsg)) //"更新主机关系失败;" + errmsg)
 	}
 	logClient.SetDesc("move host to resource pool")
-	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
+	logErr := logClient.SaveLog(fmt.Sprintf("%d", appID), user)
+	if nil != logErr {
+		blog.Errorf("save host to resource pool error, hostID:%d, error:%s", hostID, logErr.Error())
+	}
 
 	return data, err
 }
