@@ -408,6 +408,9 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 
 func parseIntOption(val interface{}) IntOption {
 	intOption := IntOption{}
+	if nil == val || "" == val {
+		return intOption
+	}
 	switch option := val.(type) {
 	case string:
 		json.Unmarshal([]byte(option), &intOption)
@@ -439,7 +442,7 @@ func (valid *ValidMap) validInt(val interface{}, key string, option interface{})
 	}
 
 	// validate by option
-	if option != nil {
+	if nil == option || "" == option {
 		return true, nil
 	}
 	intObjOption := parseIntOption(option)
@@ -547,6 +550,9 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 // ParseEnumOption convert val to []EnumVal
 func ParseEnumOption(val interface{}) []EnumVal {
 	enumOptions := []EnumVal{}
+	if nil == val || "" == val {
+		return enumOptions
+	}
 	switch options := val.(type) {
 	case string:
 		json.Unmarshal([]byte(options), &enumOptions)
