@@ -16,11 +16,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 	"context"
 	"encoding/json"
-	"configcenter/src/common/errors"
 	"sync"
 )
 
@@ -131,7 +131,7 @@ func (cc *ConfCenter) GetErrorResCxt() map[string]errors.ErrorCode {
 }
 
 func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
-	blog.Info("language has changed")
+	blog.Info("error has changed")
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()
@@ -149,7 +149,6 @@ func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
 
 	return nil
 }
-
 
 // GetLanguageResCxt fetch the language packages
 func (cc *ConfCenter) GetLanguageResCxt() map[string]language.LanguageMap {

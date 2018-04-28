@@ -17,10 +17,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpcli "configcenter/src/common/http/httpclient"
+	parse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"encoding/json"
 
 	"github.com/emicklei/go-restful"
+	"github.com/tidwall/gjson"
 )
 
 type ObjectSResult struct {
@@ -77,9 +79,89 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 
 }
 
+//getHostIDByInstID get host Id by inst Id
+func GetHostIDByInstID(req *restful.Request, asstObjId string, objURL string, instIDArr []int) []int {
+
+	//search the association insts
+	hostIDArr := make([]int, 0)
+	sURL := objURL + "/object/v1/insts/" + common.BKTableNameInstAsst + "/search"
+	input := make(map[string]interface{})
+	conditon := make(map[string]interface{})
+	bkAsstInstId := make(map[string]interface{})
+	bkAsstInstId[common.BKDBIN] = instIDArr
+	conditon[common.BKAsstInstIDField] = bkAsstInstId
+	conditon[common.BKAsstObjIDField] = asstObjId
+	conditon[common.BKObjIDField] = common.BKInnerObjIDHost
+	input["condition"] = conditon
+
+	inputJSON, _ := json.Marshal(input)
+	blog.Info("get host id by inst id url: %s", sURL)
+	blog.Info("get host id by inst id content: %s", inputJSON)
+	instRes, err := httpcli.ReqHttp(req, sURL, common.HTTPSelectPost, []byte(inputJSON))
+	if nil != err {
+		blog.Errorf("failed to search the inst association, condition is %s ,error is %s", string(inputJSON), err.Error())
+		return hostIDArr
+	}
+	blog.Info("get host id by inst id return: %s", instRes)
+	gjson.Get(instRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
+
+		hostIDArr = append(hostIDArr, int(value.Int()))
+		return true
+	})
+
+	return util.IntArrayUnique(hostIDArr)
+
+}
+
+//getObjectInstByCond get object inst id by condtion
+func GetObjectInstByCond(req *restful.Request, objID string, objURL string, cond []interface{}) []int {
+	var url string
+	var outField string
+	instIDArr := make([]int, 0)
+	condition := make(map[string]interface{})
+	condc := make(map[string]interface{})
+	parse.ParseCommonParams(cond, condc)
+	if objID == common.BKInnerObjIDPlat {
+		url = objURL + "/object/v1/insts/plat/search"
+		outField = common.BKCloudIDField
+	} else {
+		condc[common.BKObjIDField] = objID
+		url = objURL + "/object/v1/insts/object/search"
+		outField = common.BKInstIDField
+	}
+
+	condition["condition"] = condc
+	bodyContent, _ := json.Marshal(condition)
+	blog.Info("GetObjectInstByCond url :%s", url)
+	blog.Info("GetObjectInstByCond content :%s", string(bodyContent))
+	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
+	blog.Info("GetObjectInstByCond return :%s", string(reply))
+	if err != nil {
+		blog.Error("GetObjectInstByCond err :%v", err)
+		return instIDArr
+	}
+	var sResult ObjectSResult
+	err = json.Unmarshal([]byte(reply), &sResult)
+	if err != nil {
+		blog.Error("GetObjectInstByCond err :%v", err)
+		return instIDArr
+	}
+	if 0 == sResult.Data.Count {
+		return instIDArr
+	}
+	for _, j := range sResult.Data.Info {
+		cell, err := util.GetIntByInterface(j[outField])
+		if nil != err {
+			continue
+		}
+		instIDArr = append(instIDArr, cell)
+	}
+	return instIDArr
+}
+
 //getObjectByParentID get object by parent id
 func getObjectByParentID(req *restful.Request, valArr []int, objURL string) []int {
-	objectIDArr := make([]int, 0)
+	instIDArr := make([]int, 0)
 	condCell := make(map[string]interface{})
 	condition := make(map[string]interface{})
 	sCond := make(map[string]interface{})
@@ -94,28 +176,25 @@ func getObjectByParentID(req *restful.Request, valArr []int, objURL string) []in
 	blog.Info("GetObjectIDByCond return :%s", string(reply))
 	if err != nil {
 		blog.Error("GetsetIDByCond err :%v", err)
-		return objectIDArr
+		return instIDArr
 	}
 	var sResult ObjectSResult
 	err = json.Unmarshal([]byte(reply), &sResult)
 	if err != nil {
 		blog.Error("GetObjectIDByCond err :%v", err)
-		return objectIDArr
+		return instIDArr
 	}
 	if 0 == sResult.Data.Count {
-		return objectIDArr
+		return instIDArr
 	}
 	for _, j := range sResult.Data.Info {
-		var cell64 float64
-		var cell int
-		cell, ok := j[common.BKInstIDField].(int)
-		if false == ok {
-			cell64 = j[common.BKInstIDField].(float64)
-			cell = int(cell64)
+		cell, err := util.GetIntByInterface(j[common.BKInstIDField])
+		if nil != err {
+			continue
 		}
-		objectIDArr = append(objectIDArr, cell)
+		instIDArr = append(instIDArr, cell)
 	}
-	return objectIDArr
+	return instIDArr
 }
 
 //GetTopoIDByName  get topo id by name

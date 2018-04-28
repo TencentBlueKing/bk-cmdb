@@ -85,8 +85,8 @@
                                                 data-parsley-required="true"
                                                 :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
                                                 data-parsley-maxlength="20"
-                                                data-parsley-pattern="^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,15}$"
-                                                :data-parsley-pattern-message="$t('ModelManagement[\'包含了非下划线的特殊字符\']')"
+                                                :data-parsley-pattern="reg"
+                                                :data-parsley-pattern-message="$t('ModelManagement[\'包含了非法字符\']')"
                                                 data-parsley-trigger="input blur"
                                                 >
                                             </div>
@@ -1206,7 +1206,7 @@
                 }
             },
             language (lang) {
-                if (lang === 'zh_CN') {
+                if (lang === 'zh_cn') {
                     this.fieldTypeList = this.fieldTypeListForZh
                 } else {
                     this.fieldTypeList = this.fieldTypeListForEn
@@ -1226,93 +1226,46 @@
                     }
                 },
                 isLoading: false,           // 是否处于加载列表状态
-                fieldTypeList: [],
-                fieldTypeListForZh: [
+                fieldTypeList: [
                     {
                         value: 'singlechar',
-                        label: '短字符'
+                        label: this.$t('ModelManagement["短字符"]')
                     },
                     {
                         value: 'int',
-                        label: '数字'
+                        label: this.$t('ModelManagement["数字"]')
                     },
                     {
                         value: 'enum',
-                        label: '枚举'
+                        label: this.$t('ModelManagement["枚举"]')
                     },
                     {
                         value: 'date',
-                        label: '日期'
+                        label: this.$t('ModelManagement["日期"]')
                     },
                     {
                         value: 'time',
-                        label: '时间'
+                        label: this.$t('ModelManagement["时间"]')
                     },
                     {
                         value: 'longchar',
-                        label: '长字符'
+                        label: this.$t('ModelManagement["长字符"]')
                     },
                     {
                         value: 'singleasst',
-                        label: '单关联'
+                        label: this.$t('ModelManagement["单关联"]')
                     },
                     {
                         value: 'multiasst',
-                        label: '多关联'
+                        label: this.$t('ModelManagement["多关联"]')
                     },
                     {
                         value: 'objuser',
-                        label: '用户'
+                        label: this.$t('ModelManagement["用户"]')
                     },
                     {
                         value: 'timezone',
-                        label: '时区'
-                    },
-                    {
-                        value: 'bool',
-                        label: 'bool'
-                    }
-                ],
-                fieldTypeListForEn: [
-                    {
-                        value: 'singlechar',
-                        label: 'Short Text'
-                    },
-                    {
-                        value: 'int',
-                        label: 'Number'
-                    },
-                    {
-                        value: 'enum',
-                        label: 'Enumeration'
-                    },
-                    {
-                        value: 'date',
-                        label: 'Date'
-                    },
-                    {
-                        value: 'time',
-                        label: 'Time'
-                    },
-                    {
-                        value: 'longchar',
-                        label: 'Long Text'
-                    },
-                    {
-                        value: 'singleasst',
-                        label: 'Single Association'
-                    },
-                    {
-                        value: 'multiasst',
-                        label: 'Multiple Association'
-                    },
-                    {
-                        value: 'objuser',
-                        label: 'User'
-                    },
-                    {
-                        value: 'timezone',
-                        label: 'Timezone'
+                        label: this.$t('ModelManagement["时区"]')
                     },
                     {
                         value: 'bool',
@@ -1453,7 +1406,6 @@
             formatFieldType (type) {
                 for (var i = 0; i < this.fieldTypeList.length; i++) {
                     if (this.fieldTypeList[i].value === type) {
-                        // return this.$t(`ModelManagement['${this.fieldTypeList[i].label}']`)
                         return this.fieldTypeList[i].label
                     }
                 }
@@ -2049,13 +2001,6 @@
                 this.$refs.baseInfo.clearData()
             } else {
                 this.$refs.baseInfo.getBaseInfo(this.objId)
-            }
-        },
-        created () {
-            if (this.language === 'zh_CN') {
-                this.fieldTypeList = this.fieldTypeListForZh
-            } else {
-                this.fieldTypeList = this.fieldTypeListForEn
             }
         }
     }

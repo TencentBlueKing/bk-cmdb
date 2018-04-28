@@ -239,6 +239,9 @@ const (
 	// BKAsstObjIDField the property obj id field
 	BKAsstObjIDField = "bk_asst_obj_id"
 
+	// BKAsstInstIDField the property inst id field
+	BKAsstInstIDField = "bk_asst_inst_id"
+
 	// BKOptionField the option field
 	BKOptionField = "option"
 
@@ -422,6 +425,8 @@ const DefaultAppName string = "资源池"
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
+const BKMainLine = "mainline"
+
 const (
 
 	// DefaultResModuleFlag the default resource module flag
@@ -580,4 +585,22 @@ const (
 const (
 	// DefaultAppLifeCycleNormal  biz life cycle normal
 	DefaultAppLifeCycleNormal = "2"
+)
+
+// Host OS type enumeration value
+const (
+	HostOSTypeEnumLinux   = "1"
+	HostOSTypeEnumWindows = "2"
+)
+
+// integer const
+const (
+	MaxUint64 = ^uint64(0)
+	MinUint64 = 0
+	MaxInt64  = int64(MaxUint64 >> 1)
+	MinInt64  = -MaxInt64 - 1
+	MaxUint   = ^uint(0)
+	MinUint   = 0
+	MaxInt    = int(MaxUint >> 1)
+	MinInt    = -MaxInt - 1
 )

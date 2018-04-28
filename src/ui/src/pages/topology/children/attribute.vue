@@ -281,7 +281,7 @@
                         if (option.hasOwnProperty('max')) {
                             rules['max_value'] = option.max
                         }
-                    } else if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    } else if ((bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') && option !== null) {
                         rules['regex'] = option
                     }
                 }
