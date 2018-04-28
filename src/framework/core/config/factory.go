@@ -15,13 +15,58 @@ package config
 import (
 	"bufio"
 	"bytes"
-	"configcenter/src/common/blog"
+	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/options"
+	"errors"
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 const separator = "."
+
+// Init init config
+func Init(opt *option.Options) error {
+	if "" != opt.Config {
+		if err := ParseFromFile(opt.Config); err != nil {
+			return err
+		}
+	}
+	if "" != opt.Regdiscv {
+		cc := NewConfCenter(opt.Regdiscv)
+		dataCh := make(chan []byte)
+		errCh := make(chan error)
+		go func() {
+			defer cc.Stop()
+			err := cc.Start()
+			log.Errorf("configure center module start failed!. err:%s", err.Error())
+			errCh <- err
+		}()
+
+		go func() {
+			var data []byte
+			for {
+				data = cc.GetConfigureCxt()
+				if len(data) <= 0 {
+					log.Warningf("faile to get config from center, we will retry after 2 seconds")
+					time.Sleep(time.Second * 2)
+					continue
+				}
+				dataCh <- data
+			}
+		}()
+		select {
+		case data := <-dataCh:
+			if err := ParseFromBytes(data); err != nil {
+				return err
+			}
+		case err := <-errCh:
+			return err
+		}
+	}
+	return errors.New("not config source specified")
+}
 
 // ParseFromBytes parse config from data
 func ParseFromBytes(data []byte) error {
@@ -33,7 +78,7 @@ func ParseFromBytes(data []byte) error {
 func ParseFromFile(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
-		blog.Infof("path: %s,config file not exits;", path)
+		log.Infof("path: %s,config file not exits;", path)
 		return err
 	}
 	defer f.Close()
