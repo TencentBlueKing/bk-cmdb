@@ -28,11 +28,11 @@ import (
 )
 
 //GetImportInsts get insts from excel file
-func GetImportInsts(f *xlsx.File, url string, header http.Header, headerRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
+func GetImportInsts(f *xlsx.File, objID, url string, header http.Header, headerRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
-	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, header)
+	fields, err := GetObjFieldIDs(objID, url, header)
 	if nil != err {
-		return nil, errors.New(defLang.Languagef("web_get_object_field", err.Error()))
+		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
 	}
 	if 0 == len(f.Sheets) {
 		blog.Error("the excel file sheets is empty")

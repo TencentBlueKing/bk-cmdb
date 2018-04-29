@@ -11,6 +11,6 @@
     "web_excel_header_field_error": "[未发现字段名(错误)]",
     "web_excel_content_empty": "文件内容不能为空,未找到工作簿",
     "web_excel_sheet_not_found": "文件内容不能为空,工作簿内容不存在",
-    "web_get_object_field": "查询对象属性失败，错误:%s",
+    "web_get_object_fiel_failure": "查询对象属性失败，错误:%s",
     "": ""
 }
