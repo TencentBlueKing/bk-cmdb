@@ -216,84 +216,37 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 }
 
 //GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
-func GetExcelData(sheet *xlsx.Sheet, fields, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
+func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap, isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
-	cols, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
+	var err error
+	nameIndexMap, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
 	if nil != err {
+
 		return nil, err
 	}
-	var errMsg string
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
 	if 0 != firstRow {
 		index = firstRow
 	}
 	rowCnt := len(sheet.Rows)
-	maxCellLen := len(cols) //每行处理最大字段个数
 	for ; index < rowCnt; index++ {
-		isEmpty := true
-		host := make(map[string]interface{})
+
 		row := sheet.Rows[index]
-		for celIDnex, cell := range row.Cells {
-			if celIDnex >= maxCellLen { //当前行数字段，比对象属性多时候，忽略
-				break
-			}
-
-			switch cell.Type() {
-			case xlsx.CellTypeString:
-				if "" == cell.String() {
-					continue
-				}
-				isEmpty = false
-				host[cols[celIDnex]] = cell.String()
-			case xlsx.CellTypeStringFormula:
-				if "" == cell.String() {
-					continue
-				}
-				isEmpty = false
-				host[cols[celIDnex]] = cell.String()
-			case xlsx.CellTypeNumeric:
-
-				cellValue, err := cell.Int()
-				if nil != err {
-					blog.Errorf("%d row %s column get content error:%s", index+1, cols[celIDnex], err.Error())
-					continue
-				}
-				if 0 == cellValue {
-					continue
-				}
-				isEmpty = false
-				host[cols[celIDnex]] = cellValue
-			case xlsx.CellTypeBool:
-				cellValue := cell.Bool()
-				isEmpty = false
-				host[cols[celIDnex]] = cellValue
-			case xlsx.CellTypeDate:
-				cellValue, err := cell.GetTime(true)
-				if nil != err {
-					blog.Errorf("%d row %s column get content error:%s", index+1, cols[celIDnex], err.Error())
-					continue
-				}
-				isEmpty = false
-				host[cols[celIDnex]] = cellValue
-			default:
-				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, (index + 1), (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-				blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
-			}
+		host, err := getDataFromByExcelRow(row, index, fields, defFields, nameIndexMap, defLang)
+		if nil != err {
+			err = fmt.Errorf("%s;%s", err.Error())
+			continue
 		}
-		for k, v := range defFields {
-			host[k] = v
-		}
-
-		//内容不为空，加入返回数据中
-		if false == isEmpty {
-			hosts[index+1] = host
-		} else {
+		if 0 == len(host) {
 			hosts[index+1] = nil
+		} else {
+			hosts[index+1] = host
 		}
 	}
-	if "" != errMsg {
-		return nil, errors.New(errMsg)
+	if nil != err {
+
+		return nil, err
 	}
 
 	return hosts, nil
@@ -312,40 +265,30 @@ func getFilterFields(objID string) []string {
 }
 
 // checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) ([]string, error) {
+func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 
 	//rowLen := len(sheet.Rows[headerRow-1].Cells)
-	var cells []string
 	var errCells []string
+	ret := make(map[int]string)
 	if headerRow > len(sheet.Rows) {
-		return nil, errors.New(defLang.Language("web_excel_not_data"))
+		return ret, errors.New(defLang.Language("web_excel_not_data"))
 	}
-	nameCells := sheet.Rows[0].Cells
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
-		cells = append(cells, strName)
-		//是否坚持头部的字段存
-		if !isCheckHeader {
-			continue
+
+		field, ok := fields[strName]
+
+		if true == ok {
+			field.ExcelColIndex = index
+			fields[strName] = field
 		}
-		_, ok := fields[strName]
-
-		if !ok || "" != strName {
-
-			cnName := nameCells[index].Value
-			if ok {
-				errCells = append(errCells, cnName)
-			} else {
-				errCells = append(errCells, strName)
-			}
-
-		}
+		ret[index] = strName
 	}
 	if 0 != len(errCells) {
 		//web_import_field_not_found
-		return nil, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
+		return ret, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
 	}
-	return cells, nil
+	return ret, nil
 
 }
 
@@ -415,5 +358,87 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 			}
 		}
 	}
+
+}
+
+func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (map[string]interface{}, error) {
+	host := make(map[string]interface{})
+	errMsg := ""
+	for celIDnex, cell := range row.Cells {
+		fieldName, ok := nameIndexMap[celIDnex]
+		if false == ok {
+			continue
+		}
+		if "" == strings.Trim(fieldName, "") {
+			continue
+		}
+		if "" == cell.Value {
+			continue
+		}
+		switch cell.Type() {
+		case xlsx.CellTypeString:
+			host[fieldName] = cell.String()
+		case xlsx.CellTypeStringFormula:
+			host[fieldName] = cell.String()
+		case xlsx.CellTypeNumeric:
+
+			cellValue, err := cell.Int()
+			if nil != err {
+				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				continue
+			}
+
+			host[fieldName] = cellValue
+		case xlsx.CellTypeBool:
+			cellValue := cell.Bool()
+			host[fieldName] = cellValue
+		case xlsx.CellTypeDate:
+			cellValue, err := cell.GetTime(true)
+			if nil != err {
+				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				continue
+			}
+			host[fieldName] = cellValue
+		default:
+			errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			continue
+		}
+		field, ok := fields[fieldName]
+
+		if true == ok {
+			switch field.PropertyType {
+			case common.FieldTypeBool:
+
+				switch cell.Value {
+				case fieldTypeBoolFalse:
+					host[fieldName] = false
+				case fieldTypeBoolTrue:
+					host[fieldName] = true
+				}
+
+			case common.FiledTypeEnum:
+				option, optionOk := field.Option.([]interface{})
+
+				if optionOk {
+					host[fieldName] = getEnumIDByName(cell.Value, option)
+				}
+
+			}
+		}
+	}
+	if "" != errMsg {
+		return nil, errors.New(errMsg)
+	}
+	if 0 == len(host) {
+		return host, nil
+	}
+	for k, v := range defFields {
+		host[k] = v
+	}
+
+	return host, nil
 
 }
