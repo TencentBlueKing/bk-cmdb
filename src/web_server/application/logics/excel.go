@@ -23,13 +23,13 @@ import (
 	"strings"
 
 	lang "configcenter/src/common/language"
-	simplejson "github.com/bitly/go-simplejson"
+	//simplejson "github.com/bitly/go-simplejson"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
 )
 
 var (
-	headerRow int = common.HostAddMethodExcelIndexOffset
+	headerRow = common.HostAddMethodExcelIndexOffset
 )
 
 // BuildExcelFromData product excel from data
@@ -72,7 +72,6 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 			}
 			isEmpty = true
 			sheet.Cell(rowIndex, index).SetValue(val)
-			fmt.Println(rowIndex, index)
 
 		}
 		if false == isEmpty {
@@ -85,45 +84,28 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 
 // BuildExcelFromData product excel from data
 func BuildHostExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
-	if 0 == len(filter) {
-		filter = getFilterFields(objID)
-	} else {
-		filter = append(filter, getFilterFields(objID)...)
-	}
 
 	productExcelHealer(fields, filter, sheet, defLang)
-	indexID := getFieldsIDIndexMap(fields)
-	fmt.Println("\n\n ======================== \n\n")
-
-	fmt.Println(data)
-	var xlsRow *xlsx.Row
+	//indexID := getFieldsIDIndexMap(fields)
 	rowIndex := common.HostAddMethodExcelIndexOffset
-
 	for _, row := range data {
-		rowMap, ok := row.(map[string]interface{})
+		hostData, ok := row.(map[string]interface{})
 		if false == ok {
 			msg := fmt.Sprintf("data format error:%v", row)
 			blog.Errorf(msg)
 			return errors.New(msg)
 		}
-		isEmpty := true
-		for id, val := range rowMap {
-			// row unequal nil, pre row not used
-			if nil == xlsRow {
-				//row = sheet.AddRow()
-			}
-			index, ok := indexID[id]
-			if false == ok {
-				continue
-			}
-			isEmpty = true
-			sheet.Cell(rowIndex, index).SetValue(val)
-			fmt.Println(rowIndex, index)
 
+		rowMap, ok := hostData["host"].(map[string]interface{})
+		if false == ok {
+			msg := fmt.Sprintf("data format error:%v", row)
+			blog.Errorf(msg)
+			return errors.New(msg)
 		}
-		if false == isEmpty {
-			rowIndex += 1
-		}
+
+		setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
+		rowIndex++
+
 	}
 
 	return nil
@@ -156,16 +138,17 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 // ProductExcelHealer Excel文件头部，
 func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 
-	rowName := sheet.AddRow()
-	rowType := sheet.AddRow()
-	rowEnName := sheet.AddRow()
+	type excelHeader struct {
+		first  string
+		second string
+		third  string
+	}
 
-	styleCell := getCellStyle("C6EFCE", "000000")
-	index := 0
+	styleCell := getHeaderCellGeneralStyle()
 
 	for _, field := range fields {
+		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18
-
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
 		if true == skip {
 			//不需要用户输入的类型continue
@@ -179,21 +162,15 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		if util.Contains(filter, field.ID) {
 			continue
 		}
-		cellName := rowName.AddCell()
+		cellName := sheet.Cell(0, index)
 		cellName.Value = field.Name + isRequire
+		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
 
-		if true == field.IsRequire {
-			cellName.SetStyle(getCellStyle("92D050", "ff0000"))
-		} else {
-			cellName.SetStyle(getCellStyle("92D050", "000000"))
-
-		}
-
-		cellType := rowType.AddCell()
+		cellType := sheet.Cell(1, index)
 		cellType.Value = fieldTypeName
 		cellType.SetStyle(styleCell)
 
-		cellEnName := rowEnName.AddCell()
+		cellEnName := sheet.Cell(2, index)
 		cellEnName.Value = field.ID
 		cellEnName.SetStyle(styleCell)
 
@@ -202,54 +179,27 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 		case common.FiledTypeEnum:
 			option := field.Option
-			var optionArr []interface{}
-			var enumVals []string
-			switch option.(type) {
-			case string:
-				js, err := simplejson.NewJson([]byte(option.(string)))
-				if nil != err {
-					blog.Errorf("get inst fields error, property:%v", field)
-				} else {
-					optionArr, _ = js.Array()
-				}
-			default:
-				optionArr, _ = option.([]interface{})
-			}
+			optionArr, ok := option.([]interface{})
 
-			if nil != optionArr {
-				for _, o := range optionArr {
-					oMap, ok := o.(map[string]interface{})
-					if false == ok {
-						continue
-					}
-					/*id, ok := oMap["id"].(string)
-					if ok {
-						enumVals = append(enumVals, id)
-						continue
-					}*/
-					name, ok := oMap["name"].(string)
-
-					if ok {
-						enumVals = append(enumVals, name)
-						continue
-					}
-				}
+			if ok {
+				enumVals := getEnumNames(optionArr)
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 				dd.SetDropList(enumVals)
-				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-
+				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
 			}
-
-		case common.FieldTypeBool:
-			sheet.Col(index).SetType(xlsx.CellTypeBool)
-		default:
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 
+		case common.FieldTypeBool:
+			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+			dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse})
+			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
+			sheet.Col(index).SetType(xlsx.CellTypeString)
+		default:
+			sheet.Col(index).SetType(xlsx.CellTypeString)
 		}
 
-		index += 1 //xlsx column index start from 1
-
 	}
+
 }
 
 func AddDownExcelHttpHeader(c *gin.Context, name string) {
@@ -391,38 +341,79 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields common.KvMap, isCheckHeader bool
 
 		}
 	}
-	if 0 == len(errCells) {
-		return cells, nil
-	} else {
+	if 0 != len(errCells) {
 		//web_import_field_not_found
 		return nil, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
 	}
+	return cells, nil
 
 }
 
-// getCellStyle get cell style from fgColor and fontcolor
-func getCellStyle(fgColor, fontColor string) *xlsx.Style {
-	style := xlsx.NewStyle()
-	style.Fill = *xlsx.DefaultFill()
-	style.Font = *xlsx.DefaultFont()
-	style.ApplyFill = true
-	style.ApplyFont = true
+// setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
+// mapHeaderIndex:Correspondence between head and field
+// fields each field description,  field type, isrequire, validate role
+func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) {
+	for id, val := range rowMap {
+		proptery, ok := fields[id]
+		if false == ok {
+			continue
+		}
+		cell := sheet.Cell(rowIndex, proptery.ExcelColIndex)
+		//cell.NumFmt = "@"
 
-	style.Fill.FgColor = fgColor
-	style.Fill.PatternType = "solid"
+		switch proptery.PropertyType {
+		case common.FieldTypeMultiAsst:
+			arrVal, ok := val.([]interface{})
+			if true == ok {
+				vals := getAssociateNames(arrVal)
+				cell.SetString(strings.Join(vals, "\n"))
+			}
 
-	style.Font.Color = fontColor
+		case common.FiledTypeSingleAsst:
+			arrVal, ok := val.([]interface{})
+			if true == ok {
+				vals := getAssociateNames(arrVal)
+				cell.SetString(strings.Join(vals, "\n"))
+			}
 
-	return style
-}
+		case common.FiledTypeEnum:
+			var cellVal string
+			arrVal, ok := proptery.Option.([]interface{})
+			strEnumID, enumIDOk := val.(string)
+			if true == ok || true == enumIDOk {
+				cellVal = getEnumNameByID(strEnumID, arrVal)
+				cell.SetString(cellVal)
+			}
 
-// getFieldsIDIndexMap get field property index
-func getFieldsIDIndexMap(fields map[string]Property) map[string]int {
-	index := 0
-	IDNameMap := make(map[string]int)
-	for id, _ := range fields {
-		IDNameMap[id] = index
-		index += 1
+		case common.FieldTypeBool:
+			bl, ok := val.(bool)
+			if ok {
+				if bl {
+					cell.SetValue(fieldTypeBoolTrue)
+				} else {
+					cell.SetValue(fieldTypeBoolFalse)
+				}
+
+			}
+
+		case common.FiledTypeInt:
+			intVal, err := util.GetInt64ByInterface(val)
+			if nil == err {
+				cell.SetInt64(intVal)
+			}
+
+		default:
+			switch val.(type) {
+			case string:
+				strVal := val.(string)
+				if "" != strVal {
+					cell.SetString(val.(string))
+				}
+
+			default:
+				cell.SetValue(val)
+			}
+		}
 	}
-	return IDNameMap
+
 }
