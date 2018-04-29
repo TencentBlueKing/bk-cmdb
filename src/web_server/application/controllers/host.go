@@ -82,6 +82,7 @@ func ImportHost(c *gin.Context) {
 	}
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	hosts, err := logics.GetImportHosts(f, apiSite, c.Request.Header, defLang)
+
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -98,10 +99,10 @@ func ImportHost(c *gin.Context) {
 	params["host_info"] = hosts
 	params["bk_supplier_id"] = common.BKDefaultSupplierID
 
-	blog.Info("add host url: %v", url)
-	blog.Info("add host content: %v", params)
+	blog.Infof("add host url: %v", url)
+	blog.Infof("add host content: %v", params)
 	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.Info("add host result: %v", reply)
+	blog.Infof("add host result: %v", reply)
 
 	if nil != err {
 		c.String(http.StatusOK, err.Error())

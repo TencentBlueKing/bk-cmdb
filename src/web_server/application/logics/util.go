@@ -68,6 +68,24 @@ func getEnumNameByID(id string, items []interface{}) string {
 	return name
 }
 
+// getEnumIDByName get enum name from option
+func getEnumIDByName(name string, items []interface{}) string {
+	id := name
+	for _, valRow := range items {
+		mapVal, ok := valRow.(map[string]interface{})
+		if ok {
+			enumName, ok := mapVal["name"].(string)
+			if true == ok {
+				if enumName == name {
+					id = mapVal["id"].(string)
+				}
+			}
+		}
+	}
+
+	return id
+}
+
 // getEnumNames get enum name from option
 func getEnumNames(items []interface{}) []string {
 	var names []string
