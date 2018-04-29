@@ -112,12 +112,20 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 	if 0 == len(f.Sheets) {
 		return nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
+	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, header)
+	if nil != err {
+		return nil, errors.New(defLang.Languagef("web_get_object_field", err.Error()))
+	}
+
 	sheet := f.Sheets[0]
 	if nil == sheet {
 		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
+	if nil == sheet {
+		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
+	}
 
-	return GetExcelData(sheet, nil, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0, defLang)
+	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0, defLang)
 }
 
 //httpRequest do http request
