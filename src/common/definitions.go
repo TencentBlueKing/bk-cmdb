@@ -112,6 +112,9 @@ const (
 
 	// BKDBNE the db operator
 	BKDBNE = "$ne"
+
+	// BKDBSortFieldSep the db sort field split char
+	BKDBSortFieldSep = ","
 )
 
 const (
@@ -490,6 +493,19 @@ const (
 
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
+
+	// ExcelHeaderFirstRowColor cell bg color
+	ExcelHeaderFirstRowColor = "92D050"
+	// ExcelHeaderFirstRowFontColor  font color
+	ExcelHeaderFirstRowFontColor = "000000"
+	// ExcelHeaderFirstRowRequireFontColor require font color
+	ExcelHeaderFirstRowRequireFontColor = "FF0000"
+	// ExcelHeaderOtherRowColor cell bg color
+	ExcelHeaderOtherRowColor = "C6EFCE"
+	// ExcelHeaderOtherRowFontColor font color
+	ExcelHeaderOtherRowFontColor = "000000"
+	// ExcelCellDefaultBorderColor black color
+	ExcelCellDefaultBorderColor = "D4D4D4"
 )
 
 // table names
