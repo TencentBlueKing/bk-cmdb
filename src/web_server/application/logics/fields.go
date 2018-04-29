@@ -53,6 +53,7 @@ func GetObjFieldIDs(objID, url string, header http.Header) (map[string]Property,
 	if nil != err {
 		return nil, err
 	}
+
 	ret := make(map[string]Property)
 	index := 0
 
@@ -71,7 +72,7 @@ func GetObjFieldIDs(objID, url string, header http.Header) (map[string]Property,
 
 func getObjectGroup(objID, url string, header http.Header) ([]PropertyGroup, error) {
 	///api/v3/objectatt/group/property/owner/0/object/host
-	url = fmt.Sprintf("%s/api/%s/objectatt/group/property/owner/%s/object/host", url, webCommon.API_VERSION, util.GetActionOnwerIDByHTTPHeader(header))
+	url = fmt.Sprintf("%s/api/%s/objectatt/group/property/owner/%s/object/%s", url, webCommon.API_VERSION, util.GetActionOnwerIDByHTTPHeader(header), objID)
 	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
 	result, err := httpRequest(url, conds, header)
 	if nil != err {

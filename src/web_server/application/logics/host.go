@@ -114,7 +114,7 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 	}
 	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, header)
 	if nil != err {
-		return nil, errors.New(defLang.Languagef("web_get_object_field", err.Error()))
+		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
 	}
 
 	sheet := f.Sheets[0]

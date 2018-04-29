@@ -41,44 +41,23 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 	}
 
 	productExcelHealer(fields, filter, sheet, defLang)
-	indexID := getFieldsIDIndexMap(fields)
+	//indexID := getFieldsIDIndexMap(fields)
 
-	var xlsRow *xlsx.Row
 	rowIndex := common.HostAddMethodExcelIndexOffset
 
 	for _, row := range data {
-		hostData, ok := row.(map[string]interface{})
+		rowMap, ok := row.(map[string]interface{})
+
 		if false == ok {
 			msg := fmt.Sprintf("data format error:%v", row)
 			blog.Errorf(msg)
 			return errors.New(msg)
 		}
 
-		rowMap, ok := hostData["host"].(map[string]interface{})
-		if false == ok {
-			msg := fmt.Sprintf("data format error:%v", row)
-			blog.Errorf(msg)
-			return errors.New(msg)
-		}
-		isEmpty := true
-		for id, val := range rowMap {
-			// row unequal nil, pre row not used
-			if nil == xlsRow {
-				//row = sheet.AddRow()
-			}
-			index, ok := indexID[id]
-			if false == ok {
-				continue
-			}
-			isEmpty = true
-			sheet.Cell(rowIndex, index).SetValue(val)
+		setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
+		rowIndex++
 
-		}
-		if false == isEmpty {
-			rowIndex += 1
-		}
 	}
-
 	return nil
 }
 
