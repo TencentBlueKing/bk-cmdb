@@ -134,56 +134,13 @@ func ExportHost(c *gin.Context) {
 	}
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
-	//var row *xlsx.Row
-	//var cell *xlsx.Cell
 
 	file = xlsx.NewFile()
 	sheet, err = file.AddSheet("host")
 
-	/*if err != nil {
-		blog.Error(err.Error())
-		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg)
-		return
-	}
-	row = sheet.AddRow()
-	kArray := make([]string, 0)
-
-	for i, k := range kvMap {
-		cell = row.AddCell()
-		cell.Value = k
-		kArray = append(kArray, i)
-	}
-	kLength := len(kArray)
-	for _, j := range hostInfo {
-		hostData := j.(map[string]interface{})
-		hostcell := hostData["host"].(map[string]interface{})
-		row = sheet.AddRow()
-		for i := 0; i != kLength; i++ {
-			cell = row.AddCell()
-			kName := kArray[i]
-
-			n, ok := hostcell[kName]
-			if ok {
-				if nil == n {
-					cell.Value = ""
-					continue
-				}
-				objtype := reflect.TypeOf(n)
-				switch objtype.Kind() {
-				case reflect.String:
-					cell.Value = reflect.ValueOf(n).String()
-				default:
-					cell.Value = ""
-				}
-			} else {
-				cell.Value = ""
-			}
-		}
-	}*/
 	objID := common.BKInnerObjIDHost
 	fields, err := logics.GetObjFieldIDs(objID, apiSite, c.Request.Header)
-	err = logics.BuildExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
+	err = logics.BuildHostExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -202,7 +159,6 @@ func ExportHost(c *gin.Context) {
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportHost save file error:%s", err.Error())
-		fmt.Printf(err.Error())
 	}
 	logics.AddDownExcelHttpHeader(c, "host.xlsx")
 	c.File(dirFileName)
