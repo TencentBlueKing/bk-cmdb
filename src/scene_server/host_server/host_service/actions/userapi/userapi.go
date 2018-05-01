@@ -88,7 +88,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	params["create_user"] = util.GetActionUser(req)
 	code, reply, err := client.Create(params)
 	if nil != err {
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_Host_Get_FAIL, err.Error(), nil, resp)
+		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrHostGetFail, err.Error(), nil, resp)
 		return
 	}
 	if code != http.StatusOK {
@@ -98,7 +98,6 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 	u.ResponseSuccess(reply.Data, resp)
 	return
-
 }
 
 //Update update user api content
@@ -290,13 +289,13 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 
 	err = json.Unmarshal([]byte(cond), &input)
 	if nil != err {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err.Error(), resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, err.Error(), resp)
 		return
 	}
 
 	input.AppID, _ = util.GetIntByInterface(data[common.BKAppIDField])
 	if fmt.Sprintf("%d", input.AppID) != appID {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, "请输入正确的业务ID", resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, "请输入正确的业务ID", resp)
 		return
 	}
 
@@ -305,7 +304,7 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 
 	retData, err := logics.HostSearch(req, input, u.CC.HostCtrl(), u.CC.ObjCtrl())
 	if nil != err {
-		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err.Error(), resp)
+		userAPI.ResponseFailed(common.CCErrHostGetFail, err.Error(), resp)
 		return
 	}
 
