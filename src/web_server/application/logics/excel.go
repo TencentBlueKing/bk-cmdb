@@ -61,9 +61,14 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 	return nil
 }
 
-// BuildExcelFromData product excel from data
+// BuildHostExcelFromData product excel from data
 func BuildHostExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
+	extFieldsTopoID := "cc_ext_field_topo"
 
+	extFields := map[string]string{
+		extFieldsTopoID: defLang.Language("web_ext_field_topo"),
+	}
+	fields = addExtFields(fields, extFields)
 	productExcelHealer(fields, filter, sheet, defLang)
 	//indexID := getFieldsIDIndexMap(fields)
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -75,11 +80,16 @@ func BuildHostExcelFromData(objID string, fields map[string]Property, filter []s
 			return errors.New(msg)
 		}
 
-		rowMap, ok := hostData["host"].(map[string]interface{})
+		rowMap, ok := hostData[common.BKInnerObjIDHost].(map[string]interface{})
 		if false == ok {
 			msg := fmt.Sprintf("data format error:%v", row)
 			blog.Errorf(msg)
 			return errors.New(msg)
+		}
+		moduleMap, ok := hostData[common.BKInnerObjIDModule].([]interface{})
+		if ok {
+			topo := util.GetStrValsFromArrMapInterfaceByKey(moduleMap, "TopModuleName")
+			rowMap[extFieldsTopoID] = strings.Join(topo, "\n")
 		}
 
 		setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)

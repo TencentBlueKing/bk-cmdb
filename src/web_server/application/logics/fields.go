@@ -34,6 +34,7 @@ type Property struct {
 	Group         string
 	Index         int
 	ExcelColIndex int
+	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
 }
 
 // PropertyGroup property group
@@ -166,8 +167,7 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	case common.FieldTypeMultiAsst:
 	case common.FieldTypeBool:
 	case common.FieldTypeTimeZone:
-	default:
-		name = "not found field type"
+
 	}
 	if "" == name {
 		name = propertyType
