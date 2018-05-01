@@ -12,5 +12,6 @@
     "web_excel_content_empty": "The contents of the file cannot be empty, no workbook was found",
     "web_excel_sheet_not_found": "The content of the file cannot be empty, the workbook content does not exist",
     "web_get_object_fiel_failure": "Query fields fail, error:%s",
+    "web_ext_field_topo":"business topology",
     "": ""
 }
