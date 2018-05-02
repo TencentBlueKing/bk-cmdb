@@ -166,6 +166,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		switch field.PropertyType {
 		case common.FiledTypeInt:
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+			fmt.Println(index, cellEnName, cellName, cellType, index, field.ExcelColIndex, field.Name)
 		case common.FiledTypeEnum:
 			option := field.Option
 			optionArr, ok := option.([]interface{})
