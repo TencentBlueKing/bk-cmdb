@@ -125,7 +125,7 @@ func (cli *moduleAction) CreateModule(req *restful.Request, resp *restful.Respon
 		input[common.BKSetIDField] = setID
 		input[common.BKAppIDField] = appID
 		// check
-		valid := validator.NewValidMapWithKeyFileds(tmpID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr}, forward, defErr)
+		valid := validator.NewValidMapWithKeyFields(tmpID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr}, forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Error("failed to valide, error is %s", err.Error())
@@ -339,7 +339,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 
 		data[common.BKAppIDField] = appID
 		data[common.BKSetIDField] = setID
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr, common.BKModuleNameField}, forward, defErr)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr, common.BKModuleNameField}, forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, moduleID)
 
 		if nil != err {
