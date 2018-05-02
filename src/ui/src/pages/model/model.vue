@@ -97,7 +97,7 @@
                             </div>
                         </transition>
                         <img src="../../common/images/no_model_prompting.png" alt="">
-                        <p v-if="isCreateShow">{{$t('ModelManagement["此分类下无已启动模型"]')}}</p>
+                        <p v-if="isCreateShow">{{$t('ModelManagement["此分类下无已启用模型"]')}}</p>
                         <p v-else>{{$t('ModelManagement["此分类下无模型"]')}}</p>
                         <bk-button type="primary" class="create-btn" @click="showAddModel">{{$t('Common["立即创建"]')}}</bk-button>
                     </div>

@@ -470,7 +470,7 @@
                             }
                             this.$axios.put(`/object/attr/${ele['id']}`, params).then((res) => {
                                 if (res.result) {
-                                    this.$alertMsg(this.$t('ModelManagement["删除成功"]'), 'success')
+                                    this.$alertMsg(this.$t('Common["删除成功"]'), 'success')
                                     this.getAttr()
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
