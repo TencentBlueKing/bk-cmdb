@@ -11,19 +11,3 @@
  */
 
 package metric
-
-import (
-	"configcenter/src/common/metric"
-	"configcenter/src/framework/core/config"
-)
-
-func Metric(srvConf config.Config) {
-	conf := metric.Config{}
-	metric.NewMetricController(conf, HealthMetric)
-}
-
-// HealthMetric check netservice is health
-func HealthMetric() metric.HealthMeta {
-	meta := metric.HealthMeta{IsHealthy: true}
-	return meta
-}
