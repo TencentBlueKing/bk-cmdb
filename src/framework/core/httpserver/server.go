@@ -10,20 +10,32 @@
  * limitations under the License.
  */
 
-package metric
+package httpserver
 
 import (
-	"configcenter/src/common/metric"
-	"configcenter/src/framework/core/config"
+	"net/http"
 )
 
-func Metric(srvConf config.Config) {
-	conf := metric.Config{}
-	metric.NewMetricController(conf, HealthMetric)
+type HttpServer struct {
+	listen string
+	mux    *http.ServeMux
 }
 
-// HealthMetric check netservice is health
-func HealthMetric() metric.HealthMeta {
-	meta := metric.HealthMeta{IsHealthy: true}
-	return meta
+func NewHttpServer(listen string) Server {
+	mux := http.NewServeMux()
+	return &HttpServer{
+		listen: listen,
+		mux:    mux,
+	}
+}
+
+func (s *HttpServer) RegisterActions(actions ...Action) {
+
+}
+
+func (s *HttpServer) ListenAndServe() {
+
+}
+func (s *HttpServer) ListenAndServeTLS() {
+
 }
