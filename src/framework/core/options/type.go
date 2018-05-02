@@ -18,4 +18,5 @@ import ()
 type Options struct {
 	Config   string
 	Regdiscv string
+	Addrport string
 }
