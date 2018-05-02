@@ -13,10 +13,12 @@
 package mgoclient
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage"
 	"errors"
 	"fmt"
+	"strings"
 
 	// "log"
 	// "os"
@@ -169,7 +171,8 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 		query = query.Select(fieldmap)
 	}
 	if "" != sort {
-		query = query.Sort(sort)
+		arrSort := strings.Split(sort, common.BKDBSortFieldSep)
+		query = query.Sort(arrSort...)
 	}
 
 	if 0 < start {

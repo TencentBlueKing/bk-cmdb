@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -54,8 +54,8 @@ func GetObjFieldIDs(objID, url string, header http.Header) (common.KvMap, error)
 	return ret, nil
 }
 
-// AutoInputV3Filed fields required to automatically populate the current object v3
-func AutoInputV3Filed(params common.KvMap, objId, url string, header http.Header) (common.KvMap, error) {
+// AutoInputV3Field fields required to automatically populate the current object v3
+func AutoInputV3Field(params common.KvMap, objId, url string, header http.Header) (common.KvMap, error) {
 	appFields, err := GetObjFieldIDs(objId, url+"/topo/v1/objectattr/search", header)
 	if nil != err {
 		blog.Error("CreateApp error:%s", err.Error())
@@ -68,7 +68,7 @@ func AutoInputV3Filed(params common.KvMap, objId, url string, header http.Header
 		_, ok := params[fieldId]
 		if !ok {
 			strType, _ := mapItem["type"].(string)
-			if common.FiledTypeLongChar == strType || common.FiledTypeSingleChar == strType {
+			if common.FieldTypeLongChar == strType || common.FieldTypeSingleChar == strType {
 				params[fieldId] = ""
 			} else {
 				params[fieldId] = nil

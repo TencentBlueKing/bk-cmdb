@@ -26,7 +26,9 @@ type Condition interface {
 	SetStart(start int)
 	GetStart() int
 	SetLimit(limit int)
+	GetLimit() int
 	SetSort(sort string)
+	GetSort() string
 	Field(fieldName string) Field
 	ToMapStr() types.MapStr
 }

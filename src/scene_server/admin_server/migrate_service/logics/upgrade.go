@@ -39,7 +39,7 @@ func upgradeGlobalization(db dbStorage.DI) error {
 	}
 
 	attdes := []metadata.ObjectAttDes{}
-	err := db.GetMutilByCondition(common.BKTableNameObjAttDes, nil, map[string]interface{}{common.BKPropertyTypeField: common.FiledTypeEnum}, &attdes, "", 0, 0)
+	err := db.GetMutilByCondition(common.BKTableNameObjAttDes, nil, map[string]interface{}{common.BKPropertyTypeField: common.FieldTypeEnum}, &attdes, "", 0, 0)
 	if err != nil {
 		blog.Errorf("upgradeGlobalization get attdes error: %v", err)
 		return err
