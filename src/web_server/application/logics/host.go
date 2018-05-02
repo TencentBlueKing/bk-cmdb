@@ -31,7 +31,7 @@ import (
 )
 
 //GetHostData get host data from excel
-func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header, kvMap map[string]string) ([]interface{}, error) {
+func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header) ([]interface{}, error) {
 	hostInfo := make([]interface{}, 0)
 	sHostCond := make(map[string]interface{})
 	appID, _ := strconv.Atoi(appIDStr)
@@ -67,8 +67,8 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header, kvMap 
 	}
 	url := apiAddr + fmt.Sprintf("/api/%s/hosts/search", webCommon.API_VERSION)
 	result, _ := httpRequest(url, sHostCond, header)
-	blog.Info("search host  url:%s", url)
-	blog.Info("search host  return:%s", result)
+	blog.Infof("search host  url:%s", url)
+	blog.Infof("search host  return:%s", result)
 	js, _ := simplejson.NewJson([]byte(result))
 	hostData, _ := js.Map()
 	hostResult := hostData["result"].(bool)
@@ -82,27 +82,6 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header, kvMap 
 		return hostInfo, errors.New("no host")
 	}
 
-	url = apiAddr + fmt.Sprintf("/api/%s/object/attr/search", webCommon.API_VERSION)
-	attrCond := make(map[string]interface{})
-	attrCond[common.BKObjIDField] = common.BKInnerObjIDHost
-	attrCond[common.BKOwnerIDField] = "0"
-	result, _ = httpRequest(url, attrCond, header)
-	blog.Info("get host attr  url:%s", url)
-	blog.Info("get host attr return:%s", result)
-	js, _ = simplejson.NewJson([]byte(result))
-	hostAttr, _ := js.Map()
-	attrData := hostAttr["data"].([]interface{})
-	for _, j := range attrData {
-		cell := j.(map[string]interface{})
-		key := cell[common.BKPropertyIDField].(string)
-		value, ok := cell[common.BKPropertyNameField].(string)
-		if ok {
-			kvMap[key] = value
-		} else {
-			kvMap[key] = ""
-		}
-
-	}
 	return hostInfo, nil
 }
 
