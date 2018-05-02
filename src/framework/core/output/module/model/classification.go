@@ -40,9 +40,7 @@ func (cli *classification) ToMapStr() types.MapStr {
 func (cli *classification) Save() error {
 
 	// construct the search condition
-	cond := common.CreateCondition()
-
-	cond.Field(ClassificationID).Eq(cli.ClassificationID)
+	cond := common.CreateCondition().Field(ClassificationID).Eq(cli.ClassificationID)
 
 	// search all classifications by condition
 	dataItems, err := v3.GetClient().SearchClassifications(cond)
@@ -85,9 +83,16 @@ func (cli *classification) SetID(id string) {
 func (cli *classification) SetName(name string) {
 	cli.ClassificationName = name
 }
+func (cli *classification) GetName() string {
+	return cli.ClassificationName
+}
 
 func (cli *classification) SetIcon(iconName string) {
 	cli.ClassificationIcon = iconName
+}
+
+func (cli *classification) GetIcon() string {
+	return cli.ClassificationIcon
 }
 
 func (cli *classification) CreateModel() Model {
@@ -98,11 +103,10 @@ func (cli *classification) CreateModel() Model {
 }
 
 func (cli *classification) FindModelsLikeName(modelName string) (Iterator, error) {
-	// TODO: 按照名字正则查找，返回已经包含一定数量的Model数据的迭代器。
-	return nil, nil
+	cond := common.CreateCondition().Field(ObjectName).Like(modelName)
+	return newModelIterator(cond)
 }
 
-func (cli *classification) FindModelsByCondition(condition *common.Condition) (Iterator, error) {
-	// TODO: 按照条件查找，返回一定数量的Model
-	return nil, nil
+func (cli *classification) FindModelsByCondition(cond common.Condition) (Iterator, error) {
+	return newModelIterator(cond)
 }

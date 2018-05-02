@@ -14,6 +14,8 @@ package model
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/types"
 )
 
 var _ Group = (*group)(nil)
@@ -28,7 +30,51 @@ type group struct {
 	IsPre      bool   `field:"ispre"`
 }
 
+func (cli *group) ToMapStr() types.MapStr {
+	return types.MapStr{
+		GroupID:         cli.GroupID,
+		GroupName:       cli.GroupName,
+		GroupIndex:      0,
+		ObjectID:        cli.ObjectID,
+		SupplierAccount: cli.OwnerID,
+		IsDefault:       cli.IsDefault,
+		IsPre:           cli.IsPre,
+	}
+}
+
 func (cli *group) Save() error {
+
+	// construct the search condition
+	cond := common.CreateCondition().Field(GroupID).Eq(cli.GroupID).Field(ObjectID).Eq(cli.ObjectID)
+
+	// search all group by condition
+	dataItems, err := v3.GetClient().SearchGroups(cond)
+	if nil != err {
+		return err
+	}
+
+	// create a new object
+	if 0 == len(dataItems) {
+		if _, err = v3.GetClient().CreateGroup(cli.ToMapStr()); nil != err {
+			return err
+		}
+		return nil
+	}
+
+	// update the exists one
+	for _, item := range dataItems {
+
+		item.Set(GroupName, cli.GroupName)
+		item.Set(GroupIndex, 0)
+		item.Set(IsDefault, cli.IsDefault)
+
+		cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(GroupID).Eq(cli.GroupID)
+		if err = v3.GetClient().UpdateGroup(item, cond); nil != err {
+			return err
+		}
+	}
+
+	// success
 	return nil
 }
 
@@ -43,6 +89,10 @@ func (cli *group) GetID() string {
 
 func (cli *group) SetName(name string) {
 	cli.GroupName = name
+}
+
+func (cli *group) GetName() string {
+	return cli.GroupName
 }
 
 func (cli *group) SetIndex(idx int) {
@@ -68,21 +118,22 @@ func (cli *group) SetNonDefault() {
 	cli.IsDefault = false
 }
 
-func (cli *group) Default() bool {
+func (cli *group) GetDefault() bool {
 	return cli.IsDefault
 }
 
 func (cli *group) CreateAttribute() Attribute {
-	attr := &attribute{}
+	attr := &attribute{
+		PropertyGroup: cli.GroupID,
+	}
 	return attr
 }
 
 func (cli *group) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
-	// TODO: 按照名字正则查找
-	return nil, nil
+	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
+	return newAttributeIterator(cond)
 }
 
-func (cli *group) FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error) {
-	// TODO: 按照条件查找
-	return nil, nil
+func (cli *group) FindAttributesByCondition(cond common.Condition) (AttributeIterator, error) {
+	return newAttributeIterator(cond)
 }

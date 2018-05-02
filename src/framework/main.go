@@ -42,7 +42,7 @@ func main() {
 	util.InitFlags()
 
 	if err := config.Init(opt); err != nil {
-		panic(err)
+		//panic(err)
 	}
 
 	// config.Get()
