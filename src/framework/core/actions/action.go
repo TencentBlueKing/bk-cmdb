@@ -10,13 +10,4 @@
  * limitations under the License.
  */
 
-package metric
-
-import (
-	"configcenter/src/framework/core/httpserver"
-)
-
-// Metric interface
-type Metric interface {
-	Actions() []httpserver.Action
-}
+package actions

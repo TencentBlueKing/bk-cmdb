@@ -16,6 +16,7 @@ import ()
 
 // Options is the params
 type Options struct {
+	AppName  string
 	Config   string
 	Regdiscv string
 	Addrport string

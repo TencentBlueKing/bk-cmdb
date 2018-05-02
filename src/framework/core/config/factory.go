@@ -16,7 +16,7 @@ import (
 	"bufio"
 	"bytes"
 	"configcenter/src/framework/core/log"
-	"configcenter/src/framework/core/options"
+	"configcenter/src/framework/core/option"
 	"errors"
 	"io"
 	"os"
@@ -29,9 +29,7 @@ const separator = "."
 // Init init config
 func Init(opt *option.Options) error {
 	if "" != opt.Config {
-		if err := ParseFromFile(opt.Config); err != nil {
-			return err
-		}
+		return ParseFromFile(opt.Config)
 	}
 	if "" != opt.Regdiscv {
 		cc := NewConfCenter(opt.Regdiscv)
