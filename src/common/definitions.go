@@ -440,29 +440,29 @@ const (
 )
 const (
 
-	// FiledTypeSingleChar the single char filed type
-	FiledTypeSingleChar string = "singlechar"
+	// FieldTypeSingleChar the single char filed type
+	FieldTypeSingleChar string = "singlechar"
 
-	// FiledTypeLongChar the long char field type
-	FiledTypeLongChar string = "longchar"
+	// FieldTypeLongChar the long char field type
+	FieldTypeLongChar string = "longchar"
 
-	// FiledTypeInt the int field type
-	FiledTypeInt string = "int"
+	// FieldTypeInt the int field type
+	FieldTypeInt string = "int"
 
-	// FiledTypeEnum the enum field type
-	FiledTypeEnum string = "enum"
+	// FieldTypeEnum the enum field type
+	FieldTypeEnum string = "enum"
 
-	// FiledTypeDate the date field type
-	FiledTypeDate string = "date"
+	// FieldTypeDate the date field type
+	FieldTypeDate string = "date"
 
-	// FiledTypeTime the time field type
-	FiledTypeTime string = "time"
+	// FieldTypeTime the time field type
+	FieldTypeTime string = "time"
 
-	// FiledTypeUser the user field type
-	FiledTypeUser string = "objuser"
+	// FieldTypeUser the user field type
+	FieldTypeUser string = "objuser"
 
-	// FiledTypeSingleAsst the single association
-	FiledTypeSingleAsst string = "singleasst"
+	// FieldTypeSingleAsst the single association
+	FieldTypeSingleAsst string = "singleasst"
 
 	// FieldTypeMultiAsst the multi association
 	FieldTypeMultiAsst string = "multiasst"
@@ -473,11 +473,11 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
-	// FiledTypeSingleLenChar the single char length limit
-	FiledTypeSingleLenChar int = 48
+	// FieldTypeSingleLenChar the single char length limit
+	FieldTypeSingleLenChar int = 48
 
-	// FiledTypeLongLenChar the long char length limit
-	FiledTypeLongLenChar int = 512
+	// FieldTypeLongLenChar the long char length limit
+	FieldTypeLongLenChar int = 512
 )
 
 const (

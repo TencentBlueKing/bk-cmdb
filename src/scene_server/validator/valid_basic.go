@@ -67,8 +67,8 @@ func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err 
 	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 }
 
-// NewValidMapWithKeyFileds returns new NewValidMap
-func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
+// NewValidMapWithKeyFields returns new NewValidMap
+func NewValidMapWithKeyFields(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
 	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 
 	for _, item := range keyFileds {
@@ -91,7 +91,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
 
 	for key := range valid.KeyFileds {
-		// set the key filed
+		// set the key field
 		keyDataArr = append(keyDataArr, key)
 	}
 
@@ -100,7 +100,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
-			// ignore the key filed
+			// ignore the key field
 			continue
 		}
 
@@ -115,7 +115,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		fieldType := rule[common.BKPropertyTypeField].(string)
 		option := rule[common.BKOptionField]
 		switch fieldType {
-		case common.FiledTypeSingleChar:
+		case common.FieldTypeSingleChar:
 			if nil == val {
 				blog.Error("params in need")
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -133,7 +133,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 					err = nil
 				}
 			}
-		case common.FiledTypeLongChar:
+		case common.FieldTypeLongChar:
 			if nil == val {
 				blog.Error("params in need")
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -151,13 +151,13 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 					err = nil
 				}
 			}
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			result, err = valid.validInt(val, key, option)
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			result, err = valid.validEnum(val, key, option)
-		case common.FiledTypeDate:
+		case common.FieldTypeDate:
 			result, err = valid.validDate(val, key)
-		case common.FiledTypeTime:
+		case common.FieldTypeTime:
 			result, err = valid.validTime(val, key)
 		case common.FieldTypeTimeZone:
 			result, err = valid.validTimeZone(val, key)
@@ -376,9 +376,9 @@ func (valid *ValidMap) validChar(val interface{}, key string) (bool, error) {
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 	value := reflect.ValueOf(val).String()
-	if len(value) > common.FiledTypeSingleLenChar {
-		blog.Errorf("params over length %d", common.FiledTypeSingleLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FiledTypeSingleLenChar)
+	if len(value) > common.FieldTypeSingleLenChar {
+		blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
+		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(value) {
@@ -396,8 +396,8 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 	}
 	value := reflect.ValueOf(val).String()
 	if len(value) > 512 {
-		blog.Errorf("params over length %d", common.FiledTypeLongLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FiledTypeLongLenChar)
+		blog.Errorf("params over length %d", common.FieldTypeLongLenChar)
+		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeLongLenChar)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(value) {
@@ -518,7 +518,7 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 		fieldType := rule[common.BKPropertyTypeField].(string)
 		option := rule[common.BKOptionField]
 		switch fieldType {
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			if nil != val {
 				valStr, ok := val.(string)
 				if false == ok {

@@ -241,7 +241,7 @@ func (cli *objectAttAction) SelectObjectAttByID(req *restful.Request, resp *rest
 		// translate language
 		for index := range result {
 			result[index].PropertyName = commondata.TranslatePropertyName(defLang, &result[index])
-			if result[index].PropertyType == common.FiledTypeEnum {
+			if result[index].PropertyType == common.FieldTypeEnum {
 				result[index].Option = commondata.TranslateEnumName(defLang, &result[index], result[index].Option)
 			}
 		}
@@ -291,7 +291,7 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 		// translate language
 		for index := range results {
 			results[index].PropertyName = commondata.TranslatePropertyName(defLang, &results[index])
-			if results[index].PropertyType == common.FiledTypeEnum {
+			if results[index].PropertyType == common.FieldTypeEnum {
 				results[index].Option = commondata.TranslateEnumName(defLang, &results[index], results[index].Option)
 			}
 		}
