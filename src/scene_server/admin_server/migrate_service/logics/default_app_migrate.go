@@ -183,7 +183,7 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 			ret[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			ret[fieldName] = nil
-		case common.FiledTypeBool:
+		case common.FieldTypeBool:
 			ret[fieldName] = false
 		default:
 			ret[fieldName] = nil

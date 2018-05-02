@@ -161,7 +161,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			result, err = valid.validTime(val, key)
 		case common.FieldTypeTimeZone:
 			result, err = valid.validTimeZone(val, key)
-		case common.FiledTypeBool:
+		case common.FieldTypeBool:
 			result, err = valid.validBool(val, key)
 		default:
 			continue
