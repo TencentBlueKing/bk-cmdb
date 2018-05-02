@@ -87,7 +87,7 @@
                     <bk-select class="userapi-new-select"
                         ref="propertySelector"
                         @on-selected="addUserProperties">
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                            <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -345,6 +345,15 @@
                         property.disabled = false
                     })
                 }
+            },
+            filterProperty (properties) {
+                return properties.filter(property => {
+                    let {
+                        bk_isapi: bkIsapi,
+                        bk_property_type: bkPropertyType
+                    } = property
+                    return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
+                })
             },
             setUserProperties (detail) {
                 let properties = []
