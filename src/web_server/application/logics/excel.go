@@ -164,10 +164,10 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		cellEnName.SetStyle(styleCell)
 
 		switch field.PropertyType {
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 			fmt.Println(index, cellEnName, cellName, cellType, index, field.ExcelColIndex, field.Name)
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			option := field.Option
 			optionArr, ok := option.([]interface{})
 
@@ -302,14 +302,14 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 				cell.SetString(strings.Join(vals, "\n"))
 			}
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 			arrVal, ok := val.([]interface{})
 			if true == ok {
 				vals := getAssociateNames(arrVal)
 				cell.SetString(strings.Join(vals, "\n"))
 			}
 
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			var cellVal string
 			arrVal, ok := proptery.Option.([]interface{})
 			strEnumID, enumIDOk := val.(string)
@@ -329,7 +329,7 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 
 			}
 
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			intVal, err := util.GetInt64ByInterface(val)
 			if nil == err {
 				cell.SetInt64(intVal)
@@ -409,7 +409,7 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 					host[fieldName] = true
 				}
 
-			case common.FiledTypeEnum:
+			case common.FieldTypeEnum:
 				option, optionOk := field.Option.([]interface{})
 
 				if optionOk {
