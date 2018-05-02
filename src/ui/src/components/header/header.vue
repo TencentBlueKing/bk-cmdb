@@ -73,6 +73,7 @@
 <script type="text/javascript">
     import bus from '@/eventbus/bus'
     import Cookies from 'js-cookie'
+    import {mapGetters} from 'vuex'
     export default {
         data () {
             return {
@@ -89,6 +90,9 @@
                 isShowQuickSearch: false           // 搜索内容的展示
             }
         },
+        computed: {
+            ...mapGetters(['quickSearchParams'])
+        },
         watch: {
             searchText (searchText) {
                 this.$store.commit('setQuickSearchParams', {
@@ -101,6 +105,9 @@
                     text: this.searchText,
                     type: searchTarget.id
                 })
+            },
+            quickSearchParams (quickSearchParams) {
+                this.searchText = quickSearchParams.text
             }
         },
         methods: {
