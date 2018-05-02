@@ -117,7 +117,6 @@ func ExportHost(c *gin.Context) {
 	cc := api.NewAPIResource()
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
-	kvMap := make(map[string]string)
 
 	logics.SetProxyHeader(c)
 
@@ -126,7 +125,7 @@ func ExportHost(c *gin.Context) {
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	hostInfo, err := logics.GetHostData(appIDStr, hostIDStr, apiSite, c.Request.Header, kvMap)
+	hostInfo, err := logics.GetHostData(appIDStr, hostIDStr, apiSite, c.Request.Header)
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
