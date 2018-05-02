@@ -26,6 +26,7 @@ import (
 	"os"
 	//"reflect"
 	lang "configcenter/src/common/language"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
 	"time"
@@ -178,7 +179,18 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 		case bool:
 			cell.SetBool(t)
 		default:
-			cell.SetValue(t)
+			switch key {
+			case common.BKOptionField:
+				bOptions, err := json.Marshal(t)
+				if nil == err {
+					blog.Errorf("option format error:%v", t)
+					cell.SetValue(err.Error())
+				} else {
+					cell.SetString(string(bOptions))
+				}
+			default:
+				cell.SetValue(t)
+			}
 		}
 	}
 
