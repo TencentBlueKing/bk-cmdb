@@ -52,8 +52,6 @@ type HostModuleConfigLog struct {
 	auditCtrl string
 	hostInfos []interface{}
 	instID    []int
-	prefix    string
-	suffix    string
 	desc      string
 }
 
@@ -272,6 +270,9 @@ func (h *HostModuleConfigLog) getInnerIP() []interface{} {
 }
 
 func (h *HostModuleConfigLog) getModules(moduleIds []int) ([]interface{}, error) {
+	if 0 == len(moduleIds) {
+		return nil, nil
+	}
 
 	var dat commondata.ObjQueryInput
 
@@ -374,11 +375,11 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 	}
 	moduels, err := h.getModules(moduleIDs)
 	if nil != err {
-		return errors.New(fmt.Sprintf("HostModuleConfigLog get module error:%s", err.Error()))
+		return fmt.Errorf("HostModuleConfigLog get module error:%s", err.Error())
 	}
 	sets, err := h.getSets(setIDs)
 	if nil != err {
-		return errors.New(fmt.Sprintf("HostModuleConfigLog get set error:%s", err.Error()))
+		return fmt.Errorf("HostModuleConfigLog get set error:%s", err.Error())
 	}
 
 	setMap := make(map[int]metadata.Ref, 0)
@@ -393,8 +394,8 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 	type ModuleRef struct {
 		metadata.Ref
 		Set     []interface{} `json:"set"`
-		appID   interface{}   `json:"omitempty"`
-		ownerID string        `json:"omitempty"`
+		appID   interface{}
+		ownerID string
 	}
 	moduleMap := make(map[int]ModuleRef, 0)
 	for _, module := range moduels {
@@ -409,12 +410,12 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 		moduleRef.ownerID = moduleInfo[common.BKOwnerIDField].(string)
 		moduleMap[mID] = moduleRef
 	}
-	module_ref_name := "module"
-	set_ref_name := "set"
+	moduleReName := "module"
+	setRefName := "set"
 	headers := []metadata.Header{
-		metadata.Header{PropertyID: module_ref_name, PropertyName: "模块"},
-		metadata.Header{PropertyID: set_ref_name, PropertyName: "集群"},
-		metadata.Header{PropertyID: common.BKAppIDField, PropertyName: "业务ID"},
+		metadata.Header{PropertyID: moduleReName, PropertyName: "module"},
+		metadata.Header{PropertyID: setRefName, PropertyName: "app"},
+		metadata.Header{PropertyID: common.BKAppIDField, PropertyName: "business ID"},
 	}
 	logs := []auditoplog.AuditLogExt{}
 
@@ -442,8 +443,8 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 		}
 
 		log.Content = metadata.Content{
-			PreData: common.KvMap{module_ref_name: preModule, common.BKAppIDField: preApp},
-			CurData: common.KvMap{module_ref_name: curModule, common.BKAppIDField: curApp},
+			PreData: common.KvMap{moduleReName: preModule, common.BKAppIDField: preApp},
+			CurData: common.KvMap{moduleReName: curModule, common.BKAppIDField: curApp},
 			Headers: headers,
 		}
 		logs = append(logs, log)
@@ -453,7 +454,7 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 		h.desc = "host module change"
 	}
 	opClient := auditlog.NewClient(h.auditCtrl)
-	_, err = opClient.AuditHostsLog(logs, h.prefix+h.desc+h.suffix, h.ownerID, appID, user, auditoplog.AuditOpTypeModify)
+	_, err = opClient.AuditHostsLog(logs, h.desc, h.ownerID, appID, user, auditoplog.AuditOpTypeModify)
 
 	return err
 }

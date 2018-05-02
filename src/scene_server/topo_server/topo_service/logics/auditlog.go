@@ -27,7 +27,7 @@ func TranslateOpLanguage(data interface{}, defLang language.DefaultCCLanguageIf)
 		return data
 	}
 
-	info, ok := mapData["info"].([]map[string]interface{})
+	info, ok := mapData["info"].([]interface{})
 
 	if false == ok {
 		return data
@@ -37,15 +37,20 @@ func TranslateOpLanguage(data interface{}, defLang language.DefaultCCLanguageIf)
 		return data
 	}
 	for index, row := range info {
-		opDesc, ok := row[common.BKOpDescField].(string)
+		mapRow, ok := row.(map[string]interface{})
+		if false == ok {
+			continue
+		}
+		opDesc, ok := mapRow[common.BKOpDescField].(string)
 		if false == ok {
 			continue
 		}
 		newDesc := defLang.Language("auditlog_" + opDesc)
 		if "" == newDesc {
-			return opDesc
+			continue
 		}
-		info[index][common.BKOpDescField] = opDesc
+		mapRow[common.BKOpDescField] = newDesc
+		info[index] = mapRow
 	}
 
 	mapData["info"] = info
