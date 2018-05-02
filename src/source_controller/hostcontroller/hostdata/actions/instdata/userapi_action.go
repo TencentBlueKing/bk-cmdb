@@ -151,7 +151,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	if ok {
 		dupParams := make(map[string]interface{})
 		dupParams["name"] = newName
-		params[common.BKAppIDField] = appID
+		dupParams[common.BKAppIDField] = appID
 
 		rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
 		if nil != err {
@@ -159,7 +159,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 			userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
 			return
 		}
-		if 1 != rowCount {
+		if 1 < rowCount {
 			blog.Info("host user api  name duplicatie , params:%v", dupParams)
 			userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
 			return
