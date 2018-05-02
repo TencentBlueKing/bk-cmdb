@@ -547,10 +547,10 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 		proxyNew[common.BKCloudIDField] = platIdInt
 		proxyNew[common.BKHostInnerIPField] = proxy["InnerIP"]
 		proxyNew[common.BKHostOuterIPField] = proxy["OuterIP"]
-		proxyNew, err := logics.AutoInputV3Filed(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
+		proxyNew, err := logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
 
 		if err != nil {
-			blog.Error("AutoInputV3Filed error:%v", err)
+			blog.Error("AutoInputV3Field error:%v", err)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 			return
 		}
