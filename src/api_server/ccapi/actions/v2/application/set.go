@@ -237,11 +237,11 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 		}
 	}
 	delete(reqParam, "ChnName")
-	reqParam, err = logics.AutoInputV3Filed(reqParam, common.BKInnerObjIDSet, set.CC.TopoAPI(), req.Request.Header)
+	reqParam, err = logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, set.CC.TopoAPI(), req.Request.Header)
 	blog.Debug("add set reqParam:%v", reqParam)
 
 	if err != nil {
-		blog.Error("AutoInputV3Filed error:%v", err)
+		blog.Error("AutoInputV3Field error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 
 		return

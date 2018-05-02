@@ -47,6 +47,6 @@ func (m *migrateObjInstAsst) createTable(ownerID string, metaData dbStorage.DI, 
 }
 
 func init() {
-	m := &migrateObjAsst{tableName: "cc_InstAsst "}
+	m := &migrateObjAsst{tableName: "cc_InstAsst"}
 	migrateregister.RegisterMigrateAction(m.createTable, migrateregister.MigrateTypeCreateTable)
 }

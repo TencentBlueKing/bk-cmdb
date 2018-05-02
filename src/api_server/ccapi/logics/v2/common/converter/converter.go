@@ -312,7 +312,7 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 		itemMap := item.(map[string]interface{})
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField, common.BKCloudIDField})
 		if nil != err {
-			blog.Errorf("ResToV2ForHostList error:%s", resDataInfoV3, err.Error())
+			blog.Errorf("ResToV2ForHostList resDataInfoV3 %v, error:%s", resDataInfoV3, err.Error())
 			return nil, err
 		}
 
@@ -322,6 +322,14 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			OSType = ""
 		}
 		OSType = strings.ToLower(OSType)
+		switch OSType {
+		case common.HostOSTypeEnumLinux:
+			OSType = "linux"
+		case common.HostOSTypeEnumWindows:
+			OSType = "windows"
+		default:
+			OSType = ""
+		}
 		setName, ok := itemMap[common.BKSetNameField].(string)
 		if false == ok {
 			blog.Error("assign error itemMap.SetName is not string, itemMap:%v", itemMap)
@@ -637,7 +645,8 @@ func GeneralV2Data(data interface{}) interface{} {
 				} else {
 					mapItem[key] = ""
 				}
-			} else if common.BKProtocol == key {
+			} else if common.BKProtocol == key || "Protocol" == key {
+				//v2 api erturn use protocol name
 				protocal, ok := val.(string)
 				if false == ok {
 					protocal = ""
@@ -651,6 +660,7 @@ func GeneralV2Data(data interface{}) interface{} {
 						protocal = ""
 					}
 				}
+				mapItem[key] = protocal
 			} else {
 				mapItem[key] = GeneralV2Data(val)
 			}
@@ -779,6 +789,14 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 		}
 	}
 
+	intAtuotimeGap, err := util.GetIntByInterface(itemMap["auto_time_gap"])
+	atuotimeGap := ""
+	if nil != err {
+		atuotimeGap = ""
+	} else {
+		atuotimeGap = fmt.Sprintf("%d", intAtuotimeGap)
+	}
+
 	convFields := []string{common.BKWorkPath, common.BKFuncIDField, common.BKFuncName,
 		common.BKBindIP, common.BKUser, "start_cmd", "stop_cmd", common.BKProcessNameField, common.BKPort,
 		common.BKProtocol, "pid_file", "restart_cmd", "face_stop_cmd", "auto_start", "timeout", "priority", "proc_num"}
@@ -786,7 +804,7 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 
 	ret = map[string]interface{}{
 		"WorkPath":    itemMap[common.BKWorkPath],
-		"AutoTimeGap": "0",
+		"AutoTimeGap": atuotimeGap,
 		"LastTime":    updateTime,
 		"StartCmd":    itemMap["start_cmd"],
 		"FuncID":      itemMap[common.BKFuncIDField],
@@ -1102,12 +1120,15 @@ func getFieldsMap(objType string) map[string]string {
 		"kill_cmd":         "KillCmd",
 		common.BKProcField: "Process",
 		common.BKProtocol:  "Protocol",
-		"priority":         "priority",
+		"priority":         "Seq",
 		"seq":              "Seq",
 		common.BKPort:      "Port",
 		"restart_cmd":      "ReStartCmd",
 		"auto_start":       "AutoStart",
 		"pid_file":         "PidFile",
+		"face_stop_cmd":    "KillCmd",
+		"timeout":          "OpTimeout",
+		"auto_time_gap":    "AutoTimeGap",
 	}
 	return fieldsMap
 }

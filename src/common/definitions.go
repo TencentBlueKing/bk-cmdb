@@ -112,6 +112,9 @@ const (
 
 	// BKDBNE the db operator
 	BKDBNE = "$ne"
+
+	// BKDBSortFieldSep the db sort field split char
+	BKDBSortFieldSep = ","
 )
 
 const (
@@ -437,29 +440,29 @@ const (
 )
 const (
 
-	// FiledTypeSingleChar the single char filed type
-	FiledTypeSingleChar string = "singlechar"
+	// FieldTypeSingleChar the single char filed type
+	FieldTypeSingleChar string = "singlechar"
 
-	// FiledTypeLongChar the long char field type
-	FiledTypeLongChar string = "longchar"
+	// FieldTypeLongChar the long char field type
+	FieldTypeLongChar string = "longchar"
 
-	// FiledTypeInt the int field type
-	FiledTypeInt string = "int"
+	// FieldTypeInt the int field type
+	FieldTypeInt string = "int"
 
-	// FiledTypeEnum the enum field type
-	FiledTypeEnum string = "enum"
+	// FieldTypeEnum the enum field type
+	FieldTypeEnum string = "enum"
 
-	// FiledTypeDate the date field type
-	FiledTypeDate string = "date"
+	// FieldTypeDate the date field type
+	FieldTypeDate string = "date"
 
-	// FiledTypeTime the time field type
-	FiledTypeTime string = "time"
+	// FieldTypeTime the time field type
+	FieldTypeTime string = "time"
 
-	// FiledTypeUser the user field type
-	FiledTypeUser string = "objuser"
+	// FieldTypeUser the user field type
+	FieldTypeUser string = "objuser"
 
-	// FiledTypeSingleAsst the single association
-	FiledTypeSingleAsst string = "singleasst"
+	// FieldTypeSingleAsst the single association
+	FieldTypeSingleAsst string = "singleasst"
 
 	// FieldTypeMultiAsst the multi association
 	FieldTypeMultiAsst string = "multiasst"
@@ -467,47 +470,14 @@ const (
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
-	// FiledTypeBool the bool type
-	FiledTypeBool string = "bool"
+	// FieldTypeBool the bool type
+	FieldTypeBool string = "bool"
 
-	// FiledTypeSingleCharName the single char data type name
-	FiledTypeSingleCharName string = "短字符"
+	// FieldTypeSingleLenChar the single char length limit
+	FieldTypeSingleLenChar int = 48
 
-	// FiledTypeLongCharName the long char data type name
-	FiledTypeLongCharName string = "长字符"
-
-	// FiledTypeIntName the int data type name
-	FiledTypeIntName string = "数字"
-
-	// FiledTypeEnumName the enum data type name
-	FiledTypeEnumName string = "枚举"
-
-	// FiledTypeDateName the date data type name
-	FiledTypeDateName string = "日期"
-
-	// FiledTypeTimeName the time data type name
-	FiledTypeTimeName string = "时间"
-
-	// FiledTypeUserName the user data type name
-	FiledTypeUserName string = "用户"
-
-	// FiledTypeSingleAsstName the single association data type name
-	FiledTypeSingleAsstName string = "单关联"
-
-	// FiledTypeMultiAsstName the multi association data type nme
-	FiledTypeMultiAsstName string = "多关联"
-
-	// FiledTypeTimeZoneName the time zone data type name
-	FiledTypeTimeZoneName string = "时区"
-
-	// FiledTypeBoolName the bool data type name
-	FiledTypeBoolName string = "布尔"
-
-	// FiledTypeSingleLenChar the single char length limit
-	FiledTypeSingleLenChar int = 48
-
-	// FiledTypeLongLenChar the long char length limit
-	FiledTypeLongLenChar int = 512
+	// FieldTypeLongLenChar the long char length limit
+	FieldTypeLongLenChar int = 512
 )
 
 const (
@@ -523,6 +493,19 @@ const (
 
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
+
+	// ExcelHeaderFirstRowColor cell bg color
+	ExcelHeaderFirstRowColor = "92D050"
+	// ExcelHeaderFirstRowFontColor  font color
+	ExcelHeaderFirstRowFontColor = "000000"
+	// ExcelHeaderFirstRowRequireFontColor require font color
+	ExcelHeaderFirstRowRequireFontColor = "FF0000"
+	// ExcelHeaderOtherRowColor cell bg color
+	ExcelHeaderOtherRowColor = "C6EFCE"
+	// ExcelHeaderOtherRowFontColor font color
+	ExcelHeaderOtherRowFontColor = "000000"
+	// ExcelCellDefaultBorderColor black color
+	ExcelCellDefaultBorderColor = "D4D4D4"
 )
 
 // table names
@@ -618,4 +601,22 @@ const (
 const (
 	// DefaultAppLifeCycleNormal  biz life cycle normal
 	DefaultAppLifeCycleNormal = "2"
+)
+
+// Host OS type enumeration value
+const (
+	HostOSTypeEnumLinux   = "1"
+	HostOSTypeEnumWindows = "2"
+)
+
+// integer const
+const (
+	MaxUint64 = ^uint64(0)
+	MinUint64 = 0
+	MaxInt64  = int64(MaxUint64 >> 1)
+	MinInt64  = -MaxInt64 - 1
+	MaxUint   = ^uint(0)
+	MinUint   = 0
+	MaxInt    = int(MaxUint >> 1)
+	MinInt    = -MaxInt - 1
 )

@@ -1277,7 +1277,7 @@ func updateHostMain(req *restful.Request, hostCondition, data map[string]interfa
 
 	language := util.GetActionLanguage(req)
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr}, forward, errIf.CreateDefaultCCErrorIf(language))
+	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr}, forward, errIf.CreateDefaultCCErrorIf(language))
 	ok, validErr := valid.ValidMap(data, common.ValidUpdate, hostIDArr[0])
 	if false == ok && nil != validErr {
 		blog.Error("updateHostMain error: %v", validErr)

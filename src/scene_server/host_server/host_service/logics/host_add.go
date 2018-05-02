@@ -107,7 +107,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		}
 		blog.Infof("no validate fields %v", notExistFields)
 
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
 
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, ok := hostMap[key]
