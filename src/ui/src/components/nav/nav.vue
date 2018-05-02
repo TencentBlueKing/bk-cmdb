@@ -458,7 +458,9 @@
                 }
                 &:hover{
                     .nav-name{
+                        position: absolute;
                         background:#2f3c5d;
+                        width: 150px;
                     }
                 }
             }
