@@ -82,7 +82,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
-	valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
+	valid := validator.NewValidMapWithKeyFields(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
 	user := util.GetActionUser(req)
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
@@ -108,9 +108,9 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 				propertyID := j.PropertyID
 				fieldType := j.PropertyType
 				switch fieldType {
-				case common.FiledTypeSingleChar:
+				case common.FieldTypeSingleChar:
 					targetInput[propertyID] = ""
-				case common.FiledTypeLongChar:
+				case common.FieldTypeLongChar:
 					targetInput[propertyID] = ""
 				default:
 					targetInput[propertyID] = nil
@@ -744,7 +744,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 
 		switch item.PropertyType {
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
 			asst["bk_object_att_id"] = item.PropertyID
