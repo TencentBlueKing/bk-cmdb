@@ -20,7 +20,7 @@
                             <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" @click="importSlider.isShow = true">
+                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.create && unauthorized.update">
                         <i class="icon-cc-import"></i>
                         <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
