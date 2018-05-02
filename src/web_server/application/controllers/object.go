@@ -53,6 +53,7 @@ var sortFields = []string{
 // ImportObject import object attribute
 func ImportObject(c *gin.Context) {
 	logics.SetProxyHeader(c)
+	objID := c.Param(common.BKObjIDField)
 
 	cc := api.NewAPIResource()
 	language := logics.GetLanugaeByHTTPRequest(c)
@@ -87,7 +88,9 @@ func ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, err := logics.GetImportInsts(f, "", c.Request.Header, 3, defLang)
+	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+
+	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, defLang)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {
@@ -101,10 +104,9 @@ func ImportObject(c *gin.Context) {
 
 	blog.Debug("the object file content:%+v", attrItems)
 
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := fmt.Sprintf("%s/api/%s/object/batch", apiSite, webCommon.API_VERSION)
 	blog.Debug("batch insert insts, the url is %s", url)
-	objID := c.Param(common.BKObjIDField)
+
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,

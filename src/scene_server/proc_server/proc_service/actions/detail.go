@@ -189,7 +189,7 @@ func (cli *procAction) getObjectAsst(forward *sourceAPI.ForwardParam, objID, own
 
 		switch item.PropertyType {
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
 			asst["bk_object_att_id"] = item.PropertyID
