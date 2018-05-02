@@ -536,7 +536,7 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 	param[common.BKOperatorField] = formData.Get("Operator")
 	blog.Debug("AddApp v3 param data1: %v", param)
 	//填充v3版本需要的参数
-	param, err = logics.AutoInputV3Filed(param, common.BKInnerObjIDApp, app.CC.TopoAPI(), req.Request.Header)
+	param, err = logics.AutoInputV3Field(param, common.BKInnerObjIDApp, app.CC.TopoAPI(), req.Request.Header)
 
 	paramJson, err := json.Marshal(param)
 	blog.Debug("AddApp v3 param data: %v", param)
@@ -677,7 +677,7 @@ func (cli *appAction) EditApp(req *restful.Request, resp *restful.Response) {
 	}
 	blog.Error("edit_app param:%v", param)
 
-	//param, err = logics.AutoInputV3Filed(param, common.BKInnerObjIDApp, app.CC.TopoAPI(), req.Request.Header)
+	//param, err = logics.AutoInputV3Field(param, common.BKInnerObjIDApp, app.CC.TopoAPI(), req.Request.Header)
 
 	paramJson, err := json.Marshal(param)
 	blog.Debug("edit app http body data: %v", formData)
