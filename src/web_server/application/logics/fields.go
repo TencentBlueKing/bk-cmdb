@@ -156,14 +156,14 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	var skip bool
 	name := defLang.Language("field_type_" + propertyType)
 	switch propertyType {
-	case common.FiledTypeSingleChar:
-	case common.FiledTypeLongChar:
-	case common.FiledTypeInt:
-	case common.FiledTypeEnum:
-	case common.FiledTypeDate:
-	case common.FiledTypeTime:
-	case common.FiledTypeUser:
-	case common.FiledTypeSingleAsst:
+	case common.FieldTypeSingleChar:
+	case common.FieldTypeLongChar:
+	case common.FieldTypeInt:
+	case common.FieldTypeEnum:
+	case common.FieldTypeDate:
+	case common.FieldTypeTime:
+	case common.FieldTypeUser:
+	case common.FieldTypeSingleAsst:
 	case common.FieldTypeMultiAsst:
 	case common.FieldTypeBool:
 	case common.FieldTypeTimeZone:
