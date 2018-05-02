@@ -19,36 +19,36 @@ import (
 	//"fmt"
 )
 
-var _ Iterator = (*iterator)(nil)
+var _ AttributeIterator = (*attributeIterator)(nil)
 
-type iterator struct {
+type attributeIterator struct {
 	cond   common.Condition
 	buffer []types.MapStr
 	bufIdx int
 }
 
-func newModelIterator(cond common.Condition) (Iterator, error) {
+func newAttributeIterator(cond common.Condition) (AttributeIterator, error) {
 
-	objIterator := &iterator{
+	attrIterator := &attributeIterator{
 		cond:   cond,
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchObjects(cond)
+	items, err := v3.GetClient().SearchObjectAttributes(cond)
 	if nil != err {
 		return nil, err
 	}
 
-	objIterator.buffer = items
-	objIterator.bufIdx = 0
-	if 0 == len(objIterator.buffer) {
+	attrIterator.buffer = items
+	attrIterator.bufIdx = 0
+	if 0 == len(attrIterator.buffer) {
 		return nil, nil
 	}
 
-	return objIterator, nil
+	return attrIterator, nil
 }
 
-func (cli *iterator) Next() (Model, error) {
+func (cli *attributeIterator) Next() (Attribute, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 		cli.bufIdx = 0
@@ -57,7 +57,7 @@ func (cli *iterator) Next() (Model, error) {
 
 	tmpItem := cli.buffer[cli.bufIdx]
 	cli.bufIdx++
-	returnItem := &model{}
+	returnItem := &attribute{}
 	common.SetValueToStructByTags(returnItem, tmpItem)
 
 	return returnItem, nil

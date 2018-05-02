@@ -28,8 +28,8 @@ const (
 	PropertyIndex = "bk_property_index"
 	// Unit the unit for a object
 	Unit = "unit"
-	// PlaceHoler the placeholder for the property
-	PlaceHoler = "placeholder"
+	// PlaceHolder the placeholder for the property
+	PlaceHolder = "placeholder"
 	// IsEditable the editable for the property
 	IsEditable = "editable"
 	// IsRequired  mark the property status which must be set
@@ -99,17 +99,18 @@ type Group interface {
 	SetID(id string)
 	GetID() string
 	SetName(name string)
+	GetName() string
 	SetIndex(idx int)
 	GetIndex() int
 	SetSupplierAccount(ownerID string)
 	GetSupplierAccount() string
 	SetDefault()
 	SetNonDefault()
-	Default() bool
+	GetDefault() bool
 
 	CreateAttribute() Attribute
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
-	FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error)
+	FindAttributesByCondition(cond common.Condition) (AttributeIterator, error)
 }
 
 // ClassificationIterator the classification iterator
@@ -122,13 +123,15 @@ type Classification interface {
 	types.Saver
 
 	SetID(id string)
-	SetName(name string)
-	SetIcon(iconName string)
 	GetID() string
+	SetName(name string)
+	GetName() string
+	SetIcon(iconName string)
+	GetIcon() string
 
 	CreateModel() Model
 	FindModelsLikeName(modelName string) (Iterator, error)
-	FindModelsByCondition(condition *common.Condition) (Iterator, error)
+	FindModelsByCondition(cond common.Condition) (Iterator, error)
 }
 
 // Iterator the model iterator
@@ -165,10 +168,10 @@ type Model interface {
 	CreateGroup() Group
 
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
-	FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error)
+	FindAttributesByCondition(cond common.Condition) (AttributeIterator, error)
 
 	FindGroupsLikeName(groupName string) (GroupIterator, error)
-	FindGroupsByCondition(condition *common.Condition) (GroupIterator, error)
+	FindGroupsByCondition(cond common.Condition) (GroupIterator, error)
 }
 
 // AttributeIterator the attribute iterator
@@ -181,15 +184,19 @@ type Attribute interface {
 	types.Saver
 
 	SetID(id string)
+	GetID() string
 	SetName(name string)
+	GetName() string
 	SetUnit(unit string)
-	SetPlaceholer(placeHoler string)
+	GetUnit() string
+	SetPlaceholder(placeHolder string)
+	GetPlaceholder() string
 	SetEditable()
 	SetNonEditable()
-	Editable() bool
+	GetEditable() bool
 	SetRequired()
 	SetNonRequired()
-	Required() bool
+	GetRequired() bool
 	SetKey(isKey bool)
 	SetOption(option string)
 	SetDescrition(des string)

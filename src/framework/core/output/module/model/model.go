@@ -14,7 +14,8 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	"fmt"
+	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/types"
 )
 
 var _ Model = (*model)(nil)
@@ -34,13 +35,70 @@ type model struct {
 	Modifier    string `field:"modifier"`
 }
 
+func (cli *model) ToMapStr() types.MapStr {
+	return types.MapStr{
+		SupplierAccount:  cli.OwnerID,
+		ObjectID:         cli.ObjectID,
+		ObjectIcon:       cli.ObjIcon,
+		ClassificationID: cli.ObjCls,
+		ObjectName:       cli.ObjectName,
+		IsPre:            cli.IsPre,
+		IsPaused:         cli.IsPaused,
+		Position:         cli.Position,
+		Description:      cli.Description,
+		Creator:          cli.Creator,
+		Modifier:         cli.Modifier,
+	}
+}
+
 func (cli *model) Save() error {
-	fmt.Println("test model")
+
+	// construct the search condition
+	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(ObjectName).Eq(cli.ObjectName)
+
+	// search all objects by condition
+	dataItems, err := v3.GetClient().SearchObjects(cond)
+	if nil != err {
+		return err
+	}
+
+	// create a new object
+	if 0 == len(dataItems) {
+		if _, err = v3.GetClient().CreateObject(cli.ToMapStr()); nil != err {
+			return err
+		}
+		return nil
+	}
+
+	// update the exists one
+	for _, item := range dataItems {
+
+		item.Set(ObjectIcon, cli.ObjIcon)
+		item.Set(ClassificationID, cli.ObjCls)
+		item.Set(ObjectName, cli.ObjectName)
+		item.Set(IsPre, cli.IsPre)
+		item.Set(IsPaused, cli.IsPaused)
+		item.Set(Position, cli.Position)
+		item.Set(Description, cli.Description)
+		item.Set(Modifier, cli.Modifier)
+
+		cond := common.CreateCondition()
+		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+		if err = v3.GetClient().UpdateObject(item, cond); nil != err {
+			return err
+		}
+	}
+
+	// success
 	return nil
 }
 
 func (cli *model) CreateAttribute() Attribute {
-	attr := &attribute{}
+	attr := &attribute{
+		ObjectID: cli.ObjectID,
+		OwnerID:  cli.OwnerID,
+		Creator:  cli.Creator,
+	}
 	return attr
 }
 
@@ -121,23 +179,24 @@ func (cli *model) GetModifier() string {
 	return cli.Modifier
 }
 func (cli *model) CreateGroup() Group {
-	g := &group{}
+	g := &group{
+		OwnerID:  cli.OwnerID,
+		ObjectID: cli.ObjectID,
+	}
 	return g
 }
 
 func (cli *model) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
-	// TODO:按照名字正则查找
-	return nil, nil
+	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
+	return newAttributeIterator(cond)
 }
-func (cli *model) FindAttributesByCondition(condition *common.Condition) (AttributeIterator, error) {
-	// TODO:按照条件查找
-	return nil, nil
+func (cli *model) FindAttributesByCondition(cond common.Condition) (AttributeIterator, error) {
+	return newAttributeIterator(cond)
 }
 func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
-	// TODO:按照名字正则查找
-	return nil, nil
+	cond := common.CreateCondition().Field(GroupName).Like(groupName)
+	return newGroupIterator(cond)
 }
-func (cli *model) FindGroupsByCondition(condition *common.Condition) (GroupIterator, error) {
-	// TODO:按照条件查找
-	return nil, nil
+func (cli *model) FindGroupsByCondition(cond common.Condition) (GroupIterator, error) {
+	return newGroupIterator(cond)
 }

@@ -12,6 +12,12 @@
 
 package model
 
+import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/types"
+)
+
 // check the interface
 var _ Attribute = (*attribute)(nil)
 
@@ -38,36 +44,127 @@ type attribute struct {
 	Creator       string `field:"creator"`
 }
 
+func (cli *attribute) ToMapStr() types.MapStr {
+	return types.MapStr{
+		SupplierAccount: cli.OwnerID,
+		ObjectID:        cli.ObjectID,
+		PropertyID:      cli.PropertyID,
+		PropertyName:    cli.PropertyName,
+		PropertyGroup:   cli.PropertyGroup,
+		PropertyIndex:   cli.PropertyIndex,
+		Unit:            cli.Unit,
+		PlaceHolder:     cli.Placeholder,
+		IsEditable:      cli.IsEditable,
+		IsPre:           cli.IsPre,
+		IsRequired:      cli.IsRequired,
+		IsReadOnly:      cli.IsReadOnly,
+		IsOnly:          cli.IsOnly,
+		IsSystem:        cli.IsSystem,
+		IsApi:           cli.IsAPI,
+		PropertyType:    cli.PropertyType,
+		Option:          cli.Option,
+		Description:     cli.Description,
+		Creator:         cli.Creator,
+	}
+}
+
 func (cli *attribute) Save() error {
+
+	// construct the search condition
+	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID).Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+
+	// search all objects by condition
+	dataItems, err := v3.GetClient().SearchObjectAttributes(cond)
+	if nil != err {
+		return err
+	}
+
+	// create a new object
+	if 0 == len(dataItems) {
+		if _, err = v3.GetClient().CreateObjectAttribute(cli.ToMapStr()); nil != err {
+			return err
+		}
+		return nil
+	}
+
+	// update the exists one
+	for _, item := range dataItems {
+
+		item.Set(PropertyName, cli.PropertyName)
+		item.Set(PropertyGroup, cli.PropertyGroup)
+		item.Set(PropertyIndex, cli.PropertyIndex)
+		item.Set(Unit, cli.Unit)
+		item.Set(PlaceHolder, cli.Placeholder)
+		item.Set(IsEditable, cli.IsEditable)
+		item.Set(IsRequired, cli.IsRequired)
+		item.Set(IsReadOnly, cli.IsReadOnly)
+		item.Set(IsOnly, cli.IsOnly)
+		item.Set(IsApi, cli.IsAPI)
+		item.Set(PropertyType, cli.PropertyType)
+		item.Set(Option, cli.Option)
+		item.Set(Description, cli.Description)
+
+		cond := common.CreateCondition()
+		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID)
+		if err = v3.GetClient().UpdateObjectAttribute(item, cond); nil != err {
+			return err
+		}
+	}
+
+	// success
 	return nil
+}
+
+func (cli *attribute) SetObjectID(objectID string) {
+	cli.ObjectID = objectID
+}
+
+func (cli *attribute) GetObjectID() string {
+	return cli.ObjectID
 }
 
 func (cli *attribute) SetID(id string) {
 	cli.PropertyID = id
 }
 
+func (cli *attribute) GetID() string {
+	return cli.PropertyID
+}
+
 func (cli *attribute) SetName(name string) {
 	cli.PropertyName = name
+}
+
+func (cli *attribute) GetName() string {
+	return cli.PropertyName
 }
 
 func (cli *attribute) SetUnit(unit string) {
 	cli.Unit = unit
 }
 
-func (cli *attribute) SetPlaceholer(placeHoler string) {
-	cli.Placeholder = placeHoler
+func (cli *attribute) GetUnit() string {
+	return cli.Unit
+}
+
+func (cli *attribute) SetPlaceholder(placeHolder string) {
+	cli.Placeholder = placeHolder
+}
+
+func (cli *attribute) GetPlaceholder() string {
+	return cli.Placeholder
 }
 
 func (cli *attribute) SetEditable() {
 	cli.IsEditable = true
 }
 
-func (cli *attribute) SetNonEditable() {
-	cli.IsEditable = false
+func (cli *attribute) GetEditable() bool {
+	return cli.IsEditable
 }
 
-func (cli *attribute) Editable() bool {
-	return cli.IsEditable
+func (cli *attribute) SetNonEditable() {
+	cli.IsEditable = false
 }
 
 func (cli *attribute) SetRequired() {
@@ -78,18 +175,29 @@ func (cli *attribute) SetNonRequired() {
 	cli.IsRequired = false
 }
 
-func (cli *attribute) Required() bool {
+func (cli *attribute) GetRequired() bool {
 	return cli.IsRequired
 }
 
 func (cli *attribute) SetKey(isKey bool) {
 	cli.IsOnly = isKey
 }
+func (cli *attribute) GetKey() bool {
+	return cli.IsOnly
+}
 
 func (cli *attribute) SetOption(option string) {
 	cli.Option = option
 }
 
+func (cli *attribute) GetOption() string {
+	return cli.Option
+}
+
 func (cli *attribute) SetDescrition(des string) {
 	cli.Description = des
+}
+
+func (cli *attribute) GetDescription() string {
+	return cli.Description
 }
