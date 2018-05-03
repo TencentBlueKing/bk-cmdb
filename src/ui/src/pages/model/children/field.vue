@@ -1497,6 +1497,20 @@
                 }
                 this.fieldList[index].option = option
             },
+            formatAttrOption (data) {
+                data.map(item => {
+                    switch (item['bk_property_type']) {
+                        case 'int':
+                            if (item.option === null) {
+                                item.option = {
+                                    min: '',
+                                    max: ''
+                                }
+                            }
+                            break
+                    }
+                })
+            },
             /*
                 获取字段配置
             */
@@ -1509,6 +1523,7 @@
                 this.isLoading = true
                 this.$axios.post('object/attr/search', params).then(res => {
                     if (res.result) {
+                        this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
                             this.fieldList[i]['isShow'] = false
                         }
