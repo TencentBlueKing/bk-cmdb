@@ -24,6 +24,7 @@ import (
 	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 
 	"github.com/emicklei/go-restful"
@@ -46,151 +47,151 @@ func init() {
 
 // GetPlat: 获取所有子网
 func (cli *platAction) GetPlat(req *restful.Request, resp *restful.Response) {
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	searchParams := make(map[string]interface{})
-	searchParams["condition"] = nil
-	searchParams["fields"] = ""
-	searchParams["start"] = 0
-	searchParams["limit"] = 0
-	searchParams["sort"] = ""
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		searchParams := make(map[string]interface{})
+		searchParams["condition"] = nil
+		searchParams["fields"] = ""
+		searchParams["start"] = 0
+		searchParams["limit"] = 0
+		searchParams["sort"] = ""
 
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat/search"
-	inputJson, _ := json.Marshal(searchParams)
-	res, err := httpcli.ReqHttp(req, sURL, common.HTTPSelectPost, []byte(inputJson))
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat/search"
+		inputJson, _ := json.Marshal(searchParams)
+		res, err := httpcli.ReqHttp(req, sURL, common.HTTPSelectPost, []byte(inputJson))
 
-	if nil != err {
-		blog.Error("GetPlat error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PLAT_FAIL, common.CC_Err_Comm_GET_PLAT_FAIL_STR, resp)
-		return
-	}
+		if nil != err {
+			blog.Error("GetPlat error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatQueryFailed)
 
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error information is %v", jserr)
-		cli.ResponseFailed(common.CC_Err_Comm_GET_PLAT_FAIL, common.CC_Err_Comm_GET_PLAT_FAIL_STR, resp)
-	}
+		}
+
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
+			return http.StatusOK, &rst, nil
+		} else {
+			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatQueryFailed)
+		}
+		return http.StatusOK, &rst, nil
+
+	}, resp)
 }
 
 // DelPlat: 删除子网
 func (cli *platAction) DelPlat(req *restful.Request, resp *restful.Response) {
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	platID, convErr := strconv.Atoi(req.PathParameter(common.BKCloudIDField))
-	if nil != convErr {
-		blog.Error("the platID is invalid, error info is %s", convErr.Error())
-		cli.ResponseFailed(common.CC_Err_Comm_DELETE_PLAT_FAIL, common.CC_Err_Comm_DELETE_PLAT_FAIL_STR, resp)
-		return
-	}
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		platID, convErr := strconv.Atoi(req.PathParameter(common.BKCloudIDField))
+		if nil != convErr {
+			blog.Error("the platID is invalid, error info is %s", convErr.Error())
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatDeleteFailed)
+		}
 
-	url := host.CC.HostCtrl() + "/host/v1/hosts/search"
-	searchParams := map[string]interface{}{
-		"fields": common.BKHostIDField,
-		"condition": map[string]interface{}{
-			common.BKCloudIDField: platID,
-		},
-	}
-	inputJson, _ := json.Marshal(searchParams)
+		url := host.CC.HostCtrl() + "/host/v1/hosts/search"
+		searchParams := map[string]interface{}{
+			"fields": common.BKHostIDField,
+			"condition": map[string]interface{}{
+				common.BKCloudIDField: platID,
+			},
+		}
+		inputJson, _ := json.Marshal(searchParams)
 
-	hostInfo, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(inputJson))
-	if nil != err {
-		blog.Error("search host error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_DELETE_PLAT_FAIL, common.CC_Err_Comm_DELETE_PLAT_FAIL_STR, resp)
-		return
-	}
+		hostInfo, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(inputJson))
+		if nil != err {
+			blog.Error("search host error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatDeleteFailed)
+		}
 
-	hostResMap := make(map[string]interface{})
-	err = json.Unmarshal([]byte(hostInfo), &hostResMap)
-	if nil != err {
-		blog.Error("search host error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_DELETE_PLAT_FAIL, common.CC_Err_Comm_DELETE_PLAT_FAIL_STR, resp)
-		return
-	}
+		hostResMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(hostInfo), &hostResMap)
+		if nil != err {
+			blog.Error("search host error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatDeleteFailed)
+		}
 
-	hostResDataMap := hostResMap["data"].(map[string]interface{})
-	hostCount := hostResDataMap["count"].(float64)
+		hostResDataMap := hostResMap["data"].(map[string]interface{})
+		hostCount := hostResDataMap["count"].(float64)
 
-	if hostCount > 0 {
-		blog.Error("plat [%d] has host data, can not delete", platID)
-		cli.ResponseFailed(common.CC_Err_Comm_HOST_IN_PLAT_FAIL, common.CC_Err_Comm_HOST_IN_PLAT_FAIL_STR, resp)
-		return
-	}
+		if hostCount > 0 {
+			blog.Error("plat [%d] has host data, can not delete", platID)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHostInPlatFailed)
 
-	param := make(map[string]interface{})
-	param[common.BKCloudIDField] = platID
+		}
 
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
-	paramJson, _ := json.Marshal(param)
-	res, err := httpcli.ReqHttp(req, sURL, common.HTTPDelete, []byte(paramJson))
+		param := make(map[string]interface{})
+		param[common.BKCloudIDField] = platID
 
-	if nil != err {
-		blog.Error("DelPlat error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_DELETE_PLAT_FAIL, common.CC_Err_Comm_DELETE_PLAT_FAIL_STR, resp)
-		return
-	}
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
+		paramJson, _ := json.Marshal(param)
+		res, err := httpcli.ReqHttp(req, sURL, common.HTTPDelete, []byte(paramJson))
 
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error information is %v", jserr)
-		cli.ResponseFailed(common.CC_Err_Comm_DELETE_PLAT_FAIL, common.CC_Err_Comm_DELETE_PLAT_FAIL_STR, resp)
-	}
+		if nil != err {
+			blog.Error("DelPlat error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatDeleteFailed)
+		}
+
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
+			return http.StatusOK, &rst, nil
+		} else {
+			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatDeleteFailed)
+		}
+	}, resp)
 }
 
 // CreatePlat: 添加子网
 func (cli *platAction) CreatePlat(req *restful.Request, resp *restful.Response) {
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Error("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
 
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("Unmarshal json failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		input := make(map[string]interface{})
+		err = json.Unmarshal(value, &input)
+		if nil != err {
+			blog.Error("Unmarshal json failed, error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
 
-	//param := make(map[string]interface{})
-	//param["PlatName"] = input["PlatName"]
+		//param := make(map[string]interface{})
+		//param["PlatName"] = input["PlatName"]
 
-	input[common.BKOwnerIDField] = common.BKDefaultOwnerID
+		input[common.BKOwnerIDField] = common.BKDefaultOwnerID
 
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
-	language := util.GetActionLanguage(req)
-	valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), forward, cli.CC.Error.CreateDefaultCCErrorIf(language))
-	ok, validErr := valid.ValidMap(input, common.ValidCreate, 0)
-	if false == ok {
-		blog.Error("CreatePlat error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_CREATE_PLAT_FAIL, validErr.Error(), resp)
-		return
-	}
-	inputJson, _ := json.Marshal(input)
-	res, err := httpcli.ReqHttp(req, sURL, common.HTTPCreate, []byte(inputJson))
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
+		language := util.GetActionLanguage(req)
+		valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), forward, cli.CC.Error.CreateDefaultCCErrorIf(language))
+		ok, validErr := valid.ValidMap(input, common.ValidCreate, 0)
+		if false == ok || nil != validErr {
+			blog.Error("CreatePlat error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatCreateFailed)
 
-	if nil != err {
-		blog.Error("CreatePlat error: %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_CREATE_PLAT_FAIL, common.CC_Err_Comm_CREATE_PLAT_FAIL_STR, resp)
-		return
-	}
+		}
+		inputJson, _ := json.Marshal(input)
+		res, err := httpcli.ReqHttp(req, sURL, common.HTTPCreate, []byte(inputJson))
 
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error information is %v", jserr)
-		cli.ResponseFailed(common.CC_Err_Comm_CREATE_PLAT_FAIL, common.CC_Err_Comm_CREATE_PLAT_FAIL_STR, resp)
-	}
+		if nil != err {
+			blog.Error("CreatePlat error: %v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoPlatCreateFailed)
+		}
 
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
+			return http.StatusOK, &rst, nil
+		} else {
+			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+	}, resp)
 }

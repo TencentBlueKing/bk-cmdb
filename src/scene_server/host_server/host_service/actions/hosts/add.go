@@ -21,8 +21,9 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 func init() {
@@ -30,7 +31,7 @@ func init() {
 
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/addhost", Params: nil, Handler: hostModuleConfig.AddHost})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: hostModuleConfig.AddHostFromAgent})
-
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/addhostfromapi", Params: nil, Handler: hostModuleConfig.AddHostFromAPI})
 }
 
 // AddHost add host
@@ -51,11 +52,11 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		if nil == data.HostInfo {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
+			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
 		}
 		//get default biz
 		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl(), defLang)
@@ -88,6 +89,27 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			retData["update_error"] = updateErrRow
 
 			return http.StatusInternalServerError, retData, defErr.Error(common.CCErrHostCreateFail)
+		}
+	}, resp)
+}
+
+// AddHostFromAPI add host
+func (m *hostModuleConfigAction) AddHostFromAPI(req *restful.Request, resp *restful.Response) {
+
+	language := util.GetActionLanguage(req)
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
+
+	m.CallResponseEx(func() (int, interface{}, error) {
+		value, _ := ioutil.ReadAll(req.Request.Body)
+
+		err := logics.AddHostV22(m.CC, req, value, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
+		retData := make(map[string]interface{})
+		if nil == err {
+			retData["success"] = "add host to module success"
+			return http.StatusOK, retData, nil
+		} else {
+			retData["error"] = err
+			return http.StatusInternalServerError, retData, defErr.Errorf(common.CCErrHostAddRelationFail)
 		}
 	}, resp)
 }

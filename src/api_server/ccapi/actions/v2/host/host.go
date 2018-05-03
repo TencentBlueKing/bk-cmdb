@@ -69,7 +69,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/cloneHostProperty", Params: nil, Handler: host.CloneHostProperty, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/delHostInApp", Params: nil, Handler: host.DelHostInApp, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/getgitServerIp", Params: nil, Handler: host.GetGitServerIp, FilterHandler: nil, Version: v2.APIVersion})
-
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/addhost", Params: nil, Handler: host.AddHost, FilterHandler: nil, Version: v2.APIVersion})
 	// set cc api interface
 	host.CreateAction()
 }
@@ -694,6 +694,67 @@ func (cli *hostAction) EnterIP(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	converter.RespSuccessV2("", resp)
+}
+
+func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
+	blog.Debug("AddHostToModule start!")
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Errorf("AddHostToModule error:%v", err)
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+	formData := req.Request.Form
+	ipArr := strings.Split(formData["ip"][0], ",")
+	platIDInt, _ := strconv.Atoi(formData["platId"][0])
+	param := make(map[string]interface{})
+	param[common.BKIPListField] = ipArr
+	param[common.BKCloudIDField] = platIDInt
+
+	paramJSON, _ := json.Marshal(param)
+	//根据ip获取主机信息
+	url := fmt.Sprintf("%s/host/v1/gethostlistbyip", cli.CC.HostAPI())
+	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJSON))
+	if nil != err {
+		blog.Error("AddHostToModule url:%s, params:%s, error:%s ", url, string(paramJSON), err.Error())
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrHostGetFail).Error(), resp)
+		return
+	}
+
+	moduleName := formData.Get("moduleName")
+	appName := formData.Get("appName")
+	setName := formData.Get("setName")
+	param[common.BKModuleNameField] = moduleName
+	param[common.BKAppNameField] = appName
+	param[common.BKSetNameField] = setName
+	param["host_info"] = rspV3
+	paramJSON, _ = json.Marshal(param)
+
+	url = fmt.Sprintf("%s/host/v1/host/addhostfromapi", cli.CC.HostAPI())
+	blog.Infof("http request for add module url:%s, params:%s", url, string(paramJSON))
+	rspV3, err = httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJSON))
+	blog.Infof("http request for add module url:%s, reply:%s", url, rspV3)
+	if err != nil {
+		blog.Error("add host url:%s, params:%s, error:%s", url, string(paramJSON), err.Error())
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrHostAddRelationFail).Error(), resp)
+		return
+	}
+	js, err := simplejson.NewJson([]byte(rspV3))
+	if err != nil {
+		blog.Error("simplejson error:%s , reply:%s", err.Error(), rspV3)
+		converter.RespFailV2(common.CCErrCommJSONMarshalFailed, defErr.Error(common.CCErrCommJSONMarshalFailed).Error(), resp)
+		return
+	}
+	result, err := js.Get("result").Bool()
+	if !result {
+		converter.RespFailV2(common.CCErrAddHostToModule, defErr.Error(common.CCErrAddHostToModule).Error(), resp)
+		return
+	}
+	resData, err := js.Map()
+	converter.RespSuccessV2(resData["data"], resp)
+	return
+
 }
 
 //getIPAndProxxyByCompany   get proxy by  commpay

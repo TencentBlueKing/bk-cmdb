@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package host
 
 import (
@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"fmt"
+	"io"
 
 	httpcli "configcenter/src/common/http/httpclient"
 
@@ -37,8 +38,16 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 
 	reply, err := httpcli.ReqForward(req, url, common.HTTPCreate)
 	if nil != err {
-		cli.CC.CreateAPIRspStr(common.CC_Err_Comm_http_DO, err.Error())
+		rsp, rsperr := cli.CC.CreateAPIRspStr(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		if nil != rsperr {
+			blog.Error("create response failed, error information is %v", rsperr)
+		} else {
+			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
+			io.WriteString(resp, rsp)
+		}
+		return
 	}
+
 	resp.Write([]byte(reply))
 }
 
@@ -50,7 +59,14 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 
 	reply, err := httpcli.ReqForward(req, url, common.HTTPSelectGet)
 	if nil != err {
-		cli.CC.CreateAPIRspStr(common.CC_Err_Comm_http_DO, err.Error())
+		rsp, rsperr := cli.CC.CreateAPIRspStr(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		if nil != rsperr {
+			blog.Error("create response failed, error information is %v", rsperr)
+		} else {
+			// TODO: 暂时不设置 resp.WriteHeader(httpcode)
+			io.WriteString(resp, rsp)
+		}
+		return
 	}
 	resp.Write([]byte(reply))
 }
