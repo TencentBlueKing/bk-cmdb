@@ -96,7 +96,7 @@
                 'bkSupplierAccount',
                 'usercustom'
             ]),
-            shownList: function () {
+            shownList () {
                 let list = []
                 this.localForSelectionList.map(val => {
                     if (val['bk_property_name'].indexOf(this.searchText) !== -1) {
@@ -107,9 +107,11 @@
             }
         },
         watch: {
-            isShow (val) {
-                if (val) {
+            isShow (isShow) {
+                if (isShow) {
                     this.getUserAttr()
+                } else {
+                    this.searchText = ''
                 }
             }
         },
