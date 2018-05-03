@@ -21,10 +21,16 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// CreateObject create a new model object
-func (cli *Client) CreateObject(data types.MapStr) (int, error) {
+// CreateSet create a new Set
+func (cli *Client) CreateSet(data types.MapStr) (int, error) {
+	appID := data.String(BusinessID)
+	if 0 == len(appID) {
+		return 0, errors.New("the business id is not set")
+	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object", cli.GetAddress())
+	data.Remove(BusinessID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s", cli.GetAddress(), appID)
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -44,16 +50,25 @@ func (cli *Client) CreateObject(data types.MapStr) (int, error) {
 	return int(id), nil
 }
 
-// DeleteObject delete a object by condition
-func (cli *Client) DeleteObject(cond common.Condition) error {
-
+// DeleteSet delete a set by condition
+func (cli *Client) DeleteSet(cond common.Condition) error {
 	data := cond.ToMapStr()
-	id, err := data.Int("id")
-	if nil != err {
-		return err
+
+	appID := data.String(BusinessID)
+	if 0 == len(appID) {
+		return errors.New("the business id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	data.Remove(BusinessID)
+
+	setID := data.String(SetID)
+	if 0 == len(appID) {
+		return errors.New("the set id is not set")
+	}
+
+	data.Remove(SetID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.GetAddress(), appID, setID)
 
 	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -70,16 +85,26 @@ func (cli *Client) DeleteObject(cond common.Condition) error {
 	return nil
 }
 
-// UpdateObject update a object by condition
-func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error {
+// UpdateSet update a set by condition
+func (cli *Client) UpdateSet(data types.MapStr, cond common.Condition) error {
 
-	dataCond := cond.ToMapStr()
-	id, err := dataCond.Int("id")
-	if nil != err {
-		return err
+	condData := cond.ToMapStr()
+
+	appID := condData.String(BusinessID)
+	if 0 == len(appID) {
+		return errors.New("the business id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	condData.Remove(BusinessID)
+
+	setID := condData.String(SetID)
+	if 0 == len(appID) {
+		return errors.New("the set id is not set")
+	}
+
+	condData.Remove(SetID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.GetAddress(), appID, setID)
 
 	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -95,12 +120,18 @@ func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error 
 	return nil
 }
 
-// SearchObjects search some objects by condition
-func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
-
+// SearchSets search some sets by condition
+func (cli *Client) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects", cli.GetAddress())
+	appID := data.String(BusinessID)
+	if 0 == len(appID) {
+		return nil, errors.New("the business id is not set")
+	}
+
+	data.Remove(BusinessID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/set/search/%s/%s", cli.GetAddress(), cli.supplierAccount, appID)
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -122,34 +153,4 @@ func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
 	return resultMap, err
-}
-
-// SearchObjectTopo search object topo by condition
-func (cli *Client) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) {
-
-	data := cond.ToMapStr()
-
-	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", cli.GetAddress())
-
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
-	if nil != err {
-		return nil, err
-	}
-
-	gs := gjson.ParseBytes(rst)
-
-	// check result
-	if !gs.Get("result").Bool() {
-		return nil, errors.New(gs.Get("bk_error_msg").String())
-	}
-
-	dataStr := gs.Get("data").String()
-	if 0 == len(dataStr) {
-		return nil, errors.New("data is empty")
-	}
-
-	resultMap := make([]types.MapStr, 0)
-	err = json.Unmarshal([]byte(dataStr), &resultMap)
-	return resultMap, err
-
 }

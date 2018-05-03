@@ -13,6 +13,12 @@
 package v3
 
 const (
+	// BusinessID the business id
+	BusinessID = "bk_biz_id"
+	// SetID the set id
+	SetID = "bk_set_id"
+	// ModuleID the module id
+	ModuleID = "bk_module_id"
 	// ObjectID the object identifier name
 	ObjectID = "bk_obj_id"
 	// CommonInstID the common inst id
