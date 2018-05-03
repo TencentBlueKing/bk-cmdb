@@ -29,6 +29,8 @@ func (cli *Client) CreateCommonInst(data types.MapStr) (int, error) {
 		return 0, errors.New("the object id is not set")
 	}
 
+	data.Remove(ObjectID)
+
 	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s", cli.GetAddress(), cli.supplierAccount, objID)
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
@@ -126,8 +128,8 @@ func (cli *Client) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 
 	// convert to the condition
 	condInner := types.MapStr{
-		"fields": []string{},
-
+		"fields":    []string{},
+		"condition": condData,
 		"page": types.MapStr{
 			"start": cond.GetStart(),
 			"limit": 10,
@@ -135,7 +137,7 @@ func (cli *Client) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 		},
 	}
 
-	fmt.Println("inner cond:", string(condInner.ToJSON()))
+	//fmt.Println("inner cond:", string(condInner.ToJSON()))
 
 	rst, err := cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {

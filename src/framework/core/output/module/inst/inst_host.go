@@ -17,6 +17,8 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+var _ Inst = (*host)(nil)
+
 type host struct {
 	target model.Model
 	datas  types.MapStr
