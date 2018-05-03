@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 	//"fmt"
 )
@@ -34,7 +34,7 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchClassifications(cond)
+	items, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
 	if nil != err {
 		return nil, err
 	}

@@ -21,12 +21,32 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// CreateObject create a new model object
-func (cli *Client) CreateObject(data types.MapStr) (int, error) {
+type AttributeGetter interface {
+	Attribute() AttributeInterface
+}
+type AttributeInterface interface {
+	CreateObjectAttribute(data types.MapStr) (int, error)
+	DeleteObjectAttribute(cond common.Condition) error
+	UpdateObjectAttribute(data types.MapStr, cond common.Condition) error
+	SearchObjectAttributes(cond common.Condition) ([]types.MapStr, error)
+}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object", cli.GetAddress())
+type Attribute struct {
+	cli *Client
+}
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+func newAttribute(cli *Client) *Attribute {
+	return &Attribute{
+		cli: cli,
+	}
+}
+
+// CreateObjectAttribute create a new model object attribute
+func (m *Attribute) CreateObjectAttribute(data types.MapStr) (int, error) {
+
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr", m.cli.GetAddress())
+
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -44,8 +64,8 @@ func (cli *Client) CreateObject(data types.MapStr) (int, error) {
 	return int(id), nil
 }
 
-// DeleteObject delete a object by condition
-func (cli *Client) DeleteObject(cond common.Condition) error {
+// DeleteObjectAttribute delete a object attribute by condition
+func (m *Attribute) DeleteObjectAttribute(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	id, err := data.Int("id")
@@ -53,9 +73,9 @@ func (cli *Client) DeleteObject(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -70,8 +90,8 @@ func (cli *Client) DeleteObject(cond common.Condition) error {
 	return nil
 }
 
-// UpdateObject update a object by condition
-func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error {
+// UpdateObjectAttribute update a object attribute by condition
+func (m *Attribute) UpdateObjectAttribute(data types.MapStr, cond common.Condition) error {
 
 	dataCond := cond.ToMapStr()
 	id, err := dataCond.Int("id")
@@ -79,9 +99,9 @@ func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error 
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -95,14 +115,14 @@ func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error 
 	return nil
 }
 
-// SearchObjects search some objects by condition
-func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
+// SearchObjectAttributes search some object attributes by condition
+func (m *Attribute) SearchObjectAttributes(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/search", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}
@@ -122,34 +142,4 @@ func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
 	return resultMap, err
-}
-
-// SearchObjectTopo search object topo by condition
-func (cli *Client) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) {
-
-	data := cond.ToMapStr()
-
-	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", cli.GetAddress())
-
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
-	if nil != err {
-		return nil, err
-	}
-
-	gs := gjson.ParseBytes(rst)
-
-	// check result
-	if !gs.Get("result").Bool() {
-		return nil, errors.New(gs.Get("bk_error_msg").String())
-	}
-
-	dataStr := gs.Get("data").String()
-	if 0 == len(dataStr) {
-		return nil, errors.New("data is empty")
-	}
-
-	resultMap := make([]types.MapStr, 0)
-	err = json.Unmarshal([]byte(dataStr), &resultMap)
-	return resultMap, err
-
 }
