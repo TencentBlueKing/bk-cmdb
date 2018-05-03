@@ -15,10 +15,11 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 func createHost(target model.Model) (Inst, error) {
-	return &inst{target: target}, nil
+	return &host{target: target, datas: types.MapStr{}}, nil
 }
 
 // findHostsLikeName find all insts by inst name
