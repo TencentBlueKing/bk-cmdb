@@ -559,10 +559,11 @@
             border-radius: 15px;
             font-weight: normal;
             text-align: left;
-            // font-size: 0;
+            font-size: 0;
             .bk-icon{
                 font-weight: normal;
                 vertical-align: middle;
+                font-size: 14px;
             }
         }
         .vis-del{
