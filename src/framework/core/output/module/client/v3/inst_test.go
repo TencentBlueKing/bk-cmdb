@@ -14,7 +14,8 @@ package v3_test
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/output/module/client"
 	//"configcenter/src/framework/core/types"
 	"fmt"
 	"testing"
@@ -22,13 +23,10 @@ import (
 
 func TestSearchInst(t *testing.T) {
 
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("bk_obj_id").Eq("test1")
-	dataMap, err := cli.SearchInst(cond)
+	dataMap, err := cli.CCV3().CommonInst().SearchInst(cond)
 
 	if nil != err {
 		t.Errorf("failed to search, error info is %s", err.Error())

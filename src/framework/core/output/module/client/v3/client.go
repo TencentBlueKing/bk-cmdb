@@ -38,14 +38,16 @@ type Client struct {
 }
 
 func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
-	var client = &Client{}
-	client.httpCli = httpclient.NewHttpClient()
-	client.httpCli.SetHeader("Content-Type", "application/json")
-	client.httpCli.SetHeader("Accept", "application/json")
+	var c = &Client{}
+	c.httpCli = httpclient.NewHttpClient()
+	c.httpCli.SetHeader("Content-Type", "application/json")
+	c.httpCli.SetHeader("Accept", "application/json")
 
-	client.supplierAccount = conf.Get("supplierAccount")
-	client.user = conf.Get("user")
-	return client
+	c.disc = disc
+	c.supplierAccount = conf.Get("supplierAccount")
+	c.user = conf.Get("user")
+	c.address = conf.Get("ccaddress")
+	return c
 }
 
 func (cli *Client) Host() HostInterface {
@@ -65,6 +67,11 @@ func (cli *Client) CommonInst() CommonInstInterface {
 }
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
+}
+
+// SetAddress set a new address
+func (cli *Client) SetAddress(address string) {
+	cli.address = address
 }
 
 // SetSupplierAccount set a new supplieraccount

@@ -2,7 +2,8 @@ package v3_test
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/client/v3"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 	"fmt"
 	"testing"
@@ -10,12 +11,9 @@ import (
 
 func TestCreateObject(t *testing.T) {
 
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	id, err := cli.CreateObject(types.MapStr{
+	id, err := cli.CCV3().Model().CreateObject(types.MapStr{
 		"bk_supplier_account":  "0",
 		"bk_obj_id":            common.UUID(),
 		"bk_classification_id": "bk_biz_topo",
@@ -30,14 +28,10 @@ func TestCreateObject(t *testing.T) {
 }
 
 func TestDeleteObject(t *testing.T) {
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
-
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 	cond := common.CreateCondition().Field("id").Eq(16)
 
-	err := cli.DeleteObject(cond)
+	err := cli.CCV3().Model().DeleteObject(cond)
 
 	if nil != err {
 		t.Errorf("failed to delete, error info is %s", err.Error())
@@ -47,14 +41,11 @@ func TestDeleteObject(t *testing.T) {
 }
 
 func TestUpdateObject(t *testing.T) {
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("id").Eq(16)
 
-	err := cli.UpdateObject(types.MapStr{"bk_obj_name": "test_update"}, cond)
+	err := cli.CCV3().Model().UpdateObject(types.MapStr{"bk_obj_name": "test_update"}, cond)
 
 	if nil != err {
 		t.Errorf("failed to update, error info is %s", err.Error())
@@ -63,14 +54,11 @@ func TestUpdateObject(t *testing.T) {
 	t.Log("success")
 }
 func TestSearchObject(t *testing.T) {
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("bk_obj_id").Like("host")
 
-	dataMap, err := cli.SearchObjects(cond)
+	dataMap, err := cli.CCV3().Model().SearchObjects(cond)
 
 	if nil != err {
 		t.Errorf("failed to search, error info is %s", err.Error())

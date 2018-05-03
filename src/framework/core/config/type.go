@@ -16,5 +16,5 @@ package config
 type Config map[string]string
 
 func (c Config) Get(key string) string {
-	return c["key"]
+	return c[key]
 }

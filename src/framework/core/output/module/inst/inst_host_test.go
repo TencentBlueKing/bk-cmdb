@@ -14,19 +14,17 @@ package inst_test
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/output/module/v3"
 	//"configcenter/src/framework/core/types"
 	"testing"
 )
 
 func TestHostManager(t *testing.T) {
 
-	cli := v3.GetV3Client()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	clsItem, err := model.FindClassificationsByCondition(common.CreateCondition().Field("bk_classification_id").Eq("bk_host_manage"))
 	if nil != err {
