@@ -12,10 +12,10 @@
     <div class="userapi-wrapper" id="userapiWrapper">
         <div class="userapi-group">
             <div class="userapi-input clearfix">
-                <label class="userapi-input-name fl">{{$t("CustomQuery['名称']")}}</label>
+                <label class="userapi-input-name fl">{{$t("CustomQuery['查询名称']")}}</label>
                 <input type="text" class="bk-form-input userapi-input-text fl" maxlength="15" 
                     v-model.trim="name">
-                <v-validate class="validate-message" v-validate="'required|max:15'" :name="$t('CustomQuery[\'名称\']')" :value="name"></v-validate>
+                <v-validate class="validate-message" v-validate="'required|max:15'" :name="$t('CustomQuery[\'查询名称\']')" :value="name"></v-validate>
             </div>
         </div>
         <div class="userapi-group">
