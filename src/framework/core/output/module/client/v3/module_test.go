@@ -11,3 +11,29 @@
  */
 
 package v3_test
+
+import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/output/module/client"
+	//"configcenter/src/framework/core/types"
+	"fmt"
+	"testing"
+)
+
+func TestSearchModule(t *testing.T) {
+
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+
+	cond := common.CreateCondition().Field("bk_module_name").Like("gse").Field("bk_biz_id").Eq(2).Field("bk_set_id").Eq(5)
+	cond.SetLimit(10)
+	dataMap, err := cli.CCV3().Module().SearchModules(cond)
+
+	if nil != err {
+		t.Errorf("failed to search, error info is %s", err.Error())
+	}
+
+	for _, item := range dataMap {
+		fmt.Println("item:", item.String("bk_module_name"))
+	}
+}
