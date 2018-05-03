@@ -43,14 +43,14 @@ func (cli *classification) Save() error {
 	cond := common.CreateCondition().Field(ClassificationID).Eq(cli.ClassificationID)
 
 	// search all classifications by condition
-	dataItems, err := v3.GetClient().SearchClassifications(cond)
+	dataItems, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
 	if nil != err {
 		return err
 	}
 
 	// create a new classification
 	if 0 == len(dataItems) {
-		if _, err = v3.GetClient().CreateClassification(cli.ToMapStr()); nil != err {
+		if _, err = client.GetClient().CCV3().Classification().CreateClassification(cli.ToMapStr()); nil != err {
 			return err
 		}
 		return nil
@@ -63,7 +63,7 @@ func (cli *classification) Save() error {
 		item.Set(ClassificationType, cli.ClassificationType)
 		cond := common.CreateCondition()
 		cond.Field(ClassificationID).Eq(cli.ClassificationID)
-		if err = v3.GetClient().UpdateClassification(item, cond); nil != err {
+		if err = client.GetClient().CCV3().Classification().UpdateClassification(item, cond); nil != err {
 			return err
 		}
 	}

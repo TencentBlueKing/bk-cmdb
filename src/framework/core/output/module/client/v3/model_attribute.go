@@ -9,12 +9,32 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+type AttributeGetter interface {
+	Attribute() AttributeInterface
+}
+type AttributeInterface interface {
+	CreateObjectAttribute(data types.MapStr) (int, error)
+	DeleteObjectAttribute(cond common.Condition) error
+	UpdateObjectAttribute(data types.MapStr, cond common.Condition) error
+	SearchObjectAttributes(cond common.Condition) ([]types.MapStr, error)
+}
+
+type Attribute struct {
+	cli *Client
+}
+
+func newAttribute(cli *Client) *Attribute {
+	return &Attribute{
+		cli: cli,
+	}
+}
+
 // CreateObjectAttribute create a new model object attribute
-func (cli *Client) CreateObjectAttribute(data types.MapStr) (int, error) {
+func (m *Attribute) CreateObjectAttribute(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -33,7 +53,7 @@ func (cli *Client) CreateObjectAttribute(data types.MapStr) (int, error) {
 }
 
 // DeleteObjectAttribute delete a object attribute by condition
-func (cli *Client) DeleteObjectAttribute(cond common.Condition) error {
+func (m *Attribute) DeleteObjectAttribute(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	id, err := data.Int("id")
@@ -41,9 +61,9 @@ func (cli *Client) DeleteObjectAttribute(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -59,7 +79,7 @@ func (cli *Client) DeleteObjectAttribute(cond common.Condition) error {
 }
 
 // UpdateObjectAttribute update a object attribute by condition
-func (cli *Client) UpdateObjectAttribute(data types.MapStr, cond common.Condition) error {
+func (m *Attribute) UpdateObjectAttribute(data types.MapStr, cond common.Condition) error {
 
 	dataCond := cond.ToMapStr()
 	id, err := dataCond.Int("id")
@@ -67,9 +87,9 @@ func (cli *Client) UpdateObjectAttribute(data types.MapStr, cond common.Conditio
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -84,13 +104,13 @@ func (cli *Client) UpdateObjectAttribute(data types.MapStr, cond common.Conditio
 }
 
 // SearchObjectAttributes search some object attributes by condition
-func (cli *Client) SearchObjectAttributes(cond common.Condition) ([]types.MapStr, error) {
+func (m *Attribute) SearchObjectAttributes(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/attr/search", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/object/attr/search", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}

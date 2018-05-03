@@ -13,7 +13,6 @@
 package v3
 
 import (
-	"configcenter/src/common/http/httpclient"
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/types"
 	"encoding/json"
@@ -34,10 +33,10 @@ type HostInterface interface {
 
 // Host define
 type Host struct {
-	cli *httpclient.HttpClient
+	cli *Client
 }
 
-func newHost(cli *httpclient.HttpClient) *Host {
+func newHost(cli *Client) *Host {
 	return &Host{
 		cli: cli,
 	}
@@ -56,7 +55,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	rst, err := h.cli.POST("targetURL", nil, data.ToJSON())
+	rst, err := h.cli.httpCli.POST("targetURL", nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}

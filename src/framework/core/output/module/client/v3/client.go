@@ -21,6 +21,11 @@ import (
 
 type CCV3Interface interface {
 	HostGetter
+	ModelGetter
+	ClassificationGetter
+	AttributeGetter
+	CommonInstGetter
+	GroupGetter
 }
 
 // Client the http client
@@ -44,7 +49,22 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 }
 
 func (cli *Client) Host() HostInterface {
-	return newHost(cli.httpCli)
+	return newHost(cli)
+}
+func (cli *Client) Model() ModelInterface {
+	return newModel(cli)
+}
+func (cli *Client) Classification() ClassificationInterface {
+	return newClassification(cli)
+}
+func (cli *Client) Attribute() AttributeInterface {
+	return newAttribute(cli)
+}
+func (cli *Client) CommonInst() CommonInstInterface {
+	return newCommonInst(cli)
+}
+func (cli *Client) Group() GroupInterface {
+	return newGroup(cli)
 }
 
 // SetSupplierAccount set a new supplieraccount

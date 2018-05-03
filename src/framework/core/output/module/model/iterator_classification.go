@@ -34,7 +34,7 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchClassifications(cond)
+	items, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
 	if nil != err {
 		return nil, err
 	}
