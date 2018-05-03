@@ -103,6 +103,8 @@ func ImportObject(c *gin.Context) {
 		return
 	}
 
+	logics.ConvAttrOption(attrItems)
+
 	blog.Debug("the object file content:%+v", attrItems)
 
 	url := fmt.Sprintf("%s/api/%s/object/batch", apiSite, webCommon.API_VERSION)
@@ -182,9 +184,9 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 			switch key {
 			case common.BKOptionField:
 				bOptions, err := json.Marshal(t)
-				if nil == err {
+				if nil != err {
 					blog.Errorf("option format error:%v", t)
-					cell.SetValue(err.Error())
+					cell.SetValue("error info:" + err.Error())
 				} else {
 					cell.SetString(string(bOptions))
 				}

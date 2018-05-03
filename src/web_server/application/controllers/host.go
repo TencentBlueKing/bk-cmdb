@@ -139,7 +139,7 @@ func ExportHost(c *gin.Context) {
 	sheet, err = file.AddSheet("host")
 
 	objID := common.BKInnerObjIDHost
-	fields, err := logics.GetObjFieldIDs(objID, apiSite, c.Request.Header)
+	fields, err := logics.GetObjFieldIDs(objID, apiSite, nil, c.Request.Header)
 	err = logics.BuildHostExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
