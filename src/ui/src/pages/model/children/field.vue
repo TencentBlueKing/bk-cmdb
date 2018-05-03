@@ -144,13 +144,13 @@
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
                                             </div>
                                         </div>
                                     </div>
@@ -644,13 +644,13 @@
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="newFieldInfo.option.min">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min">
                                         </div>
                                     </div>
                                     <div class="from-common-item  mt20 tr">
                                         <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="newFieldInfo.option.max">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max">
                                         </div>
                                     </div>
                                 </div>

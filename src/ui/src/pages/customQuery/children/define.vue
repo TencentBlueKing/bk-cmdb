@@ -12,10 +12,10 @@
     <div class="userapi-wrapper" id="userapiWrapper">
         <div class="userapi-group">
             <div class="userapi-input clearfix">
-                <label class="userapi-input-name fl">{{$t("CustomQuery['名称']")}}</label>
+                <label class="userapi-input-name fl">{{$t("CustomQuery['查询名称']")}}</label>
                 <input type="text" class="bk-form-input userapi-input-text fl" maxlength="15" 
                     v-model.trim="name">
-                <v-validate class="validate-message" v-validate="'required|max:15'" :name="$t('CustomQuery[\'名称\']')" :value="name"></v-validate>
+                <v-validate class="validate-message" v-validate="'required|max:15'" :name="$t('CustomQuery[\'查询名称\']')" :value="name"></v-validate>
             </div>
         </div>
         <div class="userapi-group">
@@ -36,13 +36,26 @@
         </div>
         <div class="userapi-group">
             <ul class="userapi-list">
-                <li class="userapi-item clearfix" v-for="(property, index) in userProperties">
+                <li class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
                     <label class="userapi-name fl">{{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
                             :range-separator="'-'"
                             :quickSelect="false"
-                            :init-date="Array.isArray(property.value) ? property.value.join(' - ') : property.value"
+                            :timer="true"
+                            :start-date="property.value.split(' - ')[0]"
+                            :end-date="property.value.split(' - ')[1]"
+                            :init-date="property.value"
+                            @change="setUserPropertyTime(...arguments, index)">
+                        </bk-daterangepicker>
+                    </span>
+                    <span v-else-if="property.bkPropertyType === 'date'">
+                        <bk-daterangepicker class="userapi-date fl"
+                            :range-separator="'-'"
+                            :quickSelect="false"
+                            :start-date="property.value.split(' - ')[0]"
+                            :end-date="property.value.split(' - ')[1]"
+                            :init-date="property.value"
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
                     </span>
@@ -87,7 +100,7 @@
                     <bk-select class="userapi-new-select"
                         ref="propertySelector"
                         @on-selected="addUserProperties">
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                            <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -161,7 +174,7 @@
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_cloud_id',
-                        'bk_property_name': this.$t("Hosts['云区域ID']"),
+                        'bk_property_name': this.$t("Hosts['云区域']"),
                         'disabled': true
                     }]
                 },
@@ -216,15 +229,22 @@
                 }
                 this.userProperties.forEach((property, index) => {
                     if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
+                        let value = property['value'].split(' - ')
                         paramsMap[property.bkObjId]['condition'].push({
                             field: property.bkPropertyId,
-                            operator: '$gte',
-                            value: property['value'][0]
+                            operator: value[0] === value[1] ? '$eq' : '$gte',
+                            value: value[0]
                         })
                         paramsMap[property.bkObjId]['condition'].push({
                             field: property.bkPropertyId,
-                            operator: '$lte',
-                            value: property['value'][1]
+                            operator: value[0] === value[1] ? '$eq' : '$lte',
+                            value: value[1]
+                        })
+                    } else if (property.bkPropertyType === 'bool' && ['true', 'false'].includes(property.value)) {
+                        paramsMap[property.bkObjId]['condition'].push({
+                            field: property.bkPropertyId,
+                            operator: property.operator,
+                            value: property.value === 'true'
                         })
                     } else {
                         paramsMap[property.bkObjId]['condition'].push({
@@ -306,7 +326,6 @@
                     this.$emit('cancel')
                     this.$alertMsg(this.$t("Common['删除成功']"), 'success')
                 } catch (e) {
-                    console.error(e)
                     this.$alertMsg(e.data['bk_error_msg'])
                 }
             },
@@ -346,6 +365,15 @@
                     })
                 }
             },
+            filterProperty (properties) {
+                return properties.filter(property => {
+                    let {
+                        bk_isapi: bkIsapi,
+                        bk_property_type: bkPropertyType
+                    } = property
+                    return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
+                })
+            },
             setUserProperties (detail) {
                 let properties = []
                 let info = JSON.parse(detail['info'])
@@ -353,14 +381,19 @@
                     condition['condition'].forEach(property => {
                         let originalProperty = this.getOriginalProperty(property.field, condition['bk_obj_id'])
                         if (originalProperty) {
-                            properties.push({
-                                'bkObjId': originalProperty['bk_obj_id'],
-                                'bkPropertyType': originalProperty['bk_property_type'],
-                                'bkPropertyName': originalProperty['bk_property_name'],
-                                'bkPropertyId': originalProperty['bk_property_id'],
-                                'operator': property.operator,
-                                'value': property.value
-                            })
+                            if (['time', 'date'].includes(originalProperty['bk_property_type']) && properties.some(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])) {
+                                let repeatProperty = properties.find(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])
+                                repeatProperty.value = [repeatProperty.value, property.value].join(' - ')
+                            } else {
+                                properties.push({
+                                    'bkObjId': originalProperty['bk_obj_id'],
+                                    'bkPropertyType': originalProperty['bk_property_type'],
+                                    'bkPropertyName': originalProperty['bk_property_name'],
+                                    'bkPropertyId': originalProperty['bk_property_id'],
+                                    'operator': property.operator,
+                                    'value': property.value
+                                })
+                            }
                             originalProperty.disabled = true
                         }
                     })
@@ -392,13 +425,7 @@
                 this.toggleUserAPISelector(false)
             },
             setUserPropertyTime (oldTime, newTime, index) {
-                this.userProperties[index]['value'] = newTime.split(' - ').map((time, index) => {
-                    if (index === 0) {
-                        return time + ' 00:00:00'
-                    } else {
-                        return time + ' 23:59:59'
-                    }
-                })
+                this.userProperties[index]['value'] = newTime
             },
             /* 通过选择的propertyId, 查找其对应的对象，以获得更多信息 */
             getOriginalProperty (bkPropertyId, bkObjId) {
@@ -525,7 +552,7 @@
             }
             .userapi-text{
                 position: relative;
-                width: 359px;
+                width: 369px;
                 height: 32px;
                 padding: 0 8px;
                 margin: 0 5px 0 -1px;
@@ -553,13 +580,13 @@
         }
     }
     .userapi-new{
-        width: 460px;
+        width: 470px;
         margin: 20px 0 0 120px;
         font-size: 14px;
         // color: #6b7baa;
         position: relative;
         .userapi-new-btn{
-            width: 460px;
+            width: 470px;
             height: 42px;
             background-color: #ffffff;
             border-radius: 2px;
@@ -574,7 +601,7 @@
         position: absolute;
         top: 100%;
         left: 0;
-        width: 460px;
+        width: 470px;
         margin-top: 3px;
         background-color: #ffffff;
         box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
@@ -592,7 +619,7 @@
             padding-right: 15px;
         }
         .userapi-input-text{
-            width: 460px;
+            width: 470px;
             height: 32px;
             // border-radius: 2px;
             // // border: solid 1px #bec6de;
@@ -655,7 +682,7 @@
             margin: 6px auto 0;
         }
         &.userapi-content-selector{
-            width: 460px;
+            width: 470px;
             margin: 0 5px;
             .bk-select-input{
                 height: 32px;
@@ -685,7 +712,7 @@
         }
     }
     .bk-date.userapi-date{
-        width: 460px;
+        width: 470px !important;
         margin: 0 5px;
         height: 32px;
         line-height: 32px;
@@ -701,7 +728,7 @@
         }
     }
     .bk-select.userapi-enum{
-        width: 460px;
+        width: 470px;
         margin: 0 5px;
         height: 32px;
         line-height: 32px;
