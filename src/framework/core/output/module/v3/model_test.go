@@ -68,7 +68,7 @@ func TestSearchObject(t *testing.T) {
 	cli.SetUser("build_user")
 	cli.SetAddress("http://test.apiserver:8080")
 
-	cond := common.CreateCondition().Field("bk_obj_name").Like("test")
+	cond := common.CreateCondition().Field("bk_obj_id").Like("host")
 
 	dataMap, err := cli.SearchObjects(cond)
 
