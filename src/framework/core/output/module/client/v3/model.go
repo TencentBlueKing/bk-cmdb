@@ -14,6 +14,7 @@ package v3
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/types"
 	"encoding/json"
 	"errors"
@@ -75,7 +76,7 @@ func (m *Model) DeleteObject(cond common.Condition) error {
 	}
 
 	targetURL := fmt.Sprintf("%s/api/v3/object/%d", m.cli.GetAddress(), id)
-
+	log.Infof("targetURL %s", targetURL)
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err

@@ -23,7 +23,7 @@ import (
 
 func TestCreateClassification(t *testing.T) {
 
-	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	id, err := cli.CCV3().Classification().CreateClassification(types.MapStr{
 		"bk_classification_id":   common.UUID(),
@@ -38,7 +38,11 @@ func TestCreateClassification(t *testing.T) {
 }
 
 func TestDeleteClassification(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("id").Eq(9)
 
@@ -52,7 +56,11 @@ func TestDeleteClassification(t *testing.T) {
 }
 
 func TestUpdateClassification(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("id").Eq(10)
 
@@ -65,7 +73,11 @@ func TestUpdateClassification(t *testing.T) {
 	t.Log("success")
 }
 func TestSearchClassification(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("bk_classification_name").Like("test_")
 
@@ -82,7 +94,11 @@ func TestSearchClassification(t *testing.T) {
 }
 
 func TestSearchClassificationWithObjects(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("bk_classification_name").Like("业务")
 

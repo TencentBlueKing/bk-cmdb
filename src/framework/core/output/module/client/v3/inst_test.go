@@ -23,7 +23,7 @@ import (
 
 func TestSearchInst(t *testing.T) {
 
-	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("bk_obj_id").Eq("test1")
 	dataMap, err := cli.CCV3().CommonInst().SearchInst(cond)
