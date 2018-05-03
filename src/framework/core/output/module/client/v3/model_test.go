@@ -2,7 +2,7 @@ package v3_test
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/client/v3"
 	"configcenter/src/framework/core/types"
 	"fmt"
 	"testing"
@@ -81,5 +81,3 @@ func TestSearchObject(t *testing.T) {
 	}
 
 }
-
-

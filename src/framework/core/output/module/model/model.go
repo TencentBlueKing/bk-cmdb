@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 )
 
