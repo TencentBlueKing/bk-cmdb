@@ -210,3 +210,29 @@ func (cli *MapStr) MapStrArray(key string) ([]MapStr, error) {
 	}
 
 }
+
+// ForEach for each the every item
+func (cli *MapStr) ForEach(callItem func(key string, val interface{})) {
+
+	for key, val := range *cli {
+		callItem(key, val)
+	}
+
+}
+
+// Remove delete the item by the key and return the deleted one
+func (cli *MapStr) Remove(key string) interface{} {
+
+	if val, ok := (*cli)[key]; ok {
+		delete((*cli), key)
+		return val
+	}
+
+	return nil
+}
+
+// Exists check the key exists
+func (cli *MapStr) Exists(key string) bool {
+	_, ok := (*cli)[key]
+	return ok
+}

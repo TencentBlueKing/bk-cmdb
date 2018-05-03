@@ -17,6 +17,8 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+var _ Inst = (*proc)(nil)
+
 type proc struct {
 	target model.Model
 	datas  types.MapStr

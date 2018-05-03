@@ -13,9 +13,13 @@
 package inst
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/output/module/v3"
 	"configcenter/src/framework/core/types"
+	"errors"
+	//"fmt"
 )
 
 var _ Inst = (*inst)(nil)
@@ -78,13 +82,89 @@ func (cli *inst) GetChildren() ([]Topo, error) {
 
 func (cli *inst) SetValue(key string, value interface{}) error {
 
-	// TODO:需要根据model 的定义对输入的key 及value 进行校验
+	// TODO:需要增加对输入的key 的校验
 
-	cli.datas[key] = value
+	cli.datas.Set(key, value)
 
 	return nil
 }
 
 func (cli *inst) Save() error {
+
+	// get the attributes
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return err
+	}
+
+	// construct the condition which is used to check the if it is exists
+	cond := common.CreateCondition()
+
+	// extract the object id
+	objID := cli.datas.String(model.ObjectID)
+	if 0 == len(objID) {
+		return errors.New("the key field(" + model.ObjectID + ") is not set")
+	}
+	cond.Field(model.ObjectID).Eq(objID)
+
+	// extract the required id
+	for _, attrItem := range attrs {
+		if attrItem.GetRequired() {
+
+			attrVal := cli.datas.String(attrItem.GetID())
+			if 0 == len(attrVal) {
+				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			}
+
+			cond.Field(attrItem.GetID()).Eq(attrVal)
+		}
+	}
+
+	// fmt.Println("cond:", cond.ToMapStr())
+
+	// search by condition
+	existItems, err := v3.GetClient().SearchInst(cond)
+	if nil != err {
+		return err
+	}
+
+	// fmt.Println("the exists:", existItems)
+
+	// create a new
+	if 0 == len(existItems) {
+		_, err = v3.GetClient().CreateCommonInst(cli.datas)
+		return err
+	}
+
+	// update the exists
+	for _, existItem := range existItems {
+
+		cli.datas.ForEach(func(key string, val interface{}) {
+			existItem.Set(key, val)
+		})
+
+		instID, err := existItem.Int(InstID)
+		if nil != err {
+			return err
+		}
+		updateCond := common.CreateCondition().Field(InstID).Eq(instID).Field(model.ObjectID).Eq(objID)
+
+		// clear the invalid field
+		existItem.ForEach(func(key string, val interface{}) {
+			for _, attrItem := range attrs {
+				if attrItem.GetID() == key {
+					return
+				}
+			}
+			existItem.Remove(key)
+		})
+		//fmt.Println("the new:", existItem)
+		err = v3.GetClient().UpdateCommonInst(existItem, updateCond)
+		if nil != err {
+			return err
+		}
+
+	}
+
 	return nil
 }
