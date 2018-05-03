@@ -2,6 +2,7 @@ package client
 
 import (
 	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/discovery"
 	"configcenter/src/framework/core/output/module/client/v3"
 )
 
@@ -22,11 +23,11 @@ func (c *Clientset) CCV3() v3.CCV3Interface {
 	return c.ccv3
 }
 
-func NewForConfig(c config.Config) (*Clientset, error) {
+func NewForConfig(c config.Config, disc discovery.DiscoverInterface) *Clientset {
 	var cs Clientset
 	cs.ccv3 = v3.New(c, nil)
 	client = &cs
-	return &cs, nil
+	return &cs
 }
 
 var client *Clientset

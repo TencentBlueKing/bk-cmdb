@@ -45,6 +45,7 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 
 	client.supplierAccount = conf.Get("supplierAccount")
 	client.user = conf.Get("user")
+	client.address = conf.Get("ccaddress")
 	return client
 }
 
@@ -65,6 +66,11 @@ func (cli *Client) CommonInst() CommonInstInterface {
 }
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
+}
+
+// SetAddress set a new address
+func (cli *Client) SetAddress(address string) {
+	cli.address = address
 }
 
 // SetSupplierAccount set a new supplieraccount
