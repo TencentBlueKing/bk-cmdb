@@ -181,14 +181,15 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			return tmpItem, tmpErr
 		}
 	}
-
 	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
-		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
+		tmpItem.Option = jsTmp
+
+		/*if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			tmpItem.Option = tmp
 		} else {
 			blog.Error("can not parse the option, error info is %s", tmpErr.Error())
 			return tmpItem, tmpErr
-		}
+		}*/
 	}
 
 	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_type"); ok {

@@ -44,7 +44,7 @@ type PropertyGroup struct {
 }
 
 // GetObjFieldIDs get object fields
-func GetObjFieldIDs(objID, url string, header http.Header) (map[string]Property, error) {
+func GetObjFieldIDs(objID, url string, filterFields []string, header http.Header) (map[string]Property, error) {
 
 	fields, err := getObjFieldIDs(objID, url, header)
 	if nil != err {
@@ -61,6 +61,9 @@ func GetObjFieldIDs(objID, url string, header http.Header) (map[string]Property,
 	for _, group := range groups {
 		for _, field := range fields {
 			if field.Group == group.Name {
+				if util.InStrArr(filterFields, field.ID) {
+					continue
+				}
 				field.ExcelColIndex = index
 				ret[field.ID] = field
 				index++

@@ -415,9 +415,9 @@ func (cli *setAction) UpdateSetServiceStatus(req *restful.Request, resp *restful
 	// service status  combin 0：关闭，1：开启，默认为1
 	switch reqData[common.BKSetStatusField] {
 	case "0":
-		reqData[common.BKSetStatusField] = "1" //"关闭"
+		reqData[common.BKSetStatusField] = "2" //"关闭"
 	case "1":
-		reqData[common.BKSetStatusField] = "2" //"开放"
+		reqData[common.BKSetStatusField] = "1" //"开放"
 
 	}
 
@@ -608,14 +608,48 @@ func (cli *moduleAction) GetModulesByProperty(req *restful.Request, resp *restfu
 // GetAllSets 获取所有set徐行
 func (cli *setAction) Getsetproperty(req *restful.Request, resp *restful.Response) {
 	resDataV2 := common.KvMap{
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "体验",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "3",
+		        "name" : "正式",
+		        "type" : "text",
+		        "is_default" : true
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "测试",
+		        "type" : "text",
+		        "is_default" : false
+		    }
+		]*/
 		"SetEnviType": []common.KvMap{
-			common.KvMap{"Property": "1", "value": "测试"},
-			common.KvMap{"Property": "2", "value": "体验"},
-			common.KvMap{"Property": "3", "value": "正式"},
+			common.KvMap{"Property": "1", "value": "1"},
+			common.KvMap{"Property": "2", "value": "2"},
+			common.KvMap{"Property": "3", "value": "3"},
 		},
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "关闭",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "开放",
+		        "type" : "text",
+		        "is_default" : true
+		    }
+		]*/
 		"SetServiceStatus": []common.KvMap{
-			common.KvMap{"Property": "0", "value": "关闭"},
-			common.KvMap{"Property": "1", "value": "开放"},
+			common.KvMap{"Property": "0", "value": "2"},
+			common.KvMap{"Property": "1", "value": "1"},
 		},
 	}
 
@@ -628,19 +662,20 @@ func getSetService(formData url.Values) string {
 		formStatus = formData["ServiceStatus"][0]
 	}
 	//服务状态，包含0：关闭，1：开启，默认为1
-	strStatus := "开放"
+	strStatus := "1"
 	if "0" == formStatus {
-		strStatus = "关闭"
+		strStatus = "2"
 	}
 	return strStatus
 }
 
 func getAddSetService(v string) string {
 	formStatus := v
+
 	//服务状态，包含0：关闭，1：开启，默认为1
-	strStatus := "开放"
+	strStatus := "1"
 	if "0" == formStatus {
-		strStatus = "关闭"
+		strStatus = "2"
 	}
 	return strStatus
 }
@@ -650,12 +685,12 @@ func getAddSetEnv(v string) string {
 	formEnv := v
 
 	//env 1：测试 2：体验 3：正式，默认为3
-	strEnv := "正式"
+	strEnv := "3"
 	switch formEnv {
 	case "1":
-		strEnv = "测试"
+		strEnv = "1"
 	case "2":
-		strEnv = "体验"
+		strEnv = "2"
 	}
 	return strEnv
 }
@@ -668,12 +703,12 @@ func getSetServiceAndEnv(formData url.Values) (string, string) {
 		formEnv = formData["SetEnviType"][0]
 	}
 	//env 1：测试 2：体验 3：正式，默认为3
-	strEnv := "正式"
+	strEnv := "3"
 	switch formEnv {
 	case "1":
-		strEnv = "测试"
+		strEnv = "1"
 	case "2":
-		strEnv = "体验"
+		strEnv = "1"
 	}
 	strStatus := getSetService(formData)
 	return strStatus, strEnv
