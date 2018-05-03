@@ -29,7 +29,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"reflect"
 	"time"
 )
 
@@ -76,7 +75,6 @@ func ImportHost(c *gin.Context) {
 	}
 	defer os.Remove(filePath) //del file
 	f, err := xlsx.OpenFile(filePath)
-	fmt.Println(err)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -84,6 +82,7 @@ func ImportHost(c *gin.Context) {
 	}
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	hosts, err := logics.GetImportHosts(f, apiSite, c.Request.Header, defLang)
+
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -100,10 +99,10 @@ func ImportHost(c *gin.Context) {
 	params["host_info"] = hosts
 	params["bk_supplier_id"] = common.BKDefaultSupplierID
 
-	blog.Info("add host url: %v", url)
-	blog.Info("add host content: %v", params)
+	blog.Infof("add host url: %v", url)
+	blog.Infof("add host content: %v", params)
 	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.Info("add host result: %v", reply)
+	blog.Infof("add host result: %v", reply)
 
 	if nil != err {
 		c.String(http.StatusOK, err.Error())
@@ -118,16 +117,15 @@ func ExportHost(c *gin.Context) {
 	cc := api.NewAPIResource()
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
-	kvMap := make(map[string]string)
 
 	logics.SetProxyHeader(c)
 
 	language := logics.GetLanugaeByHTTPRequest(c)
-	//defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	hostInfo, err := logics.GetHostData(appIDStr, hostIDStr, apiSite, c.Request.Header, kvMap)
+	hostInfo, err := logics.GetHostData(appIDStr, hostIDStr, apiSite, c.Request.Header)
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
@@ -136,51 +134,18 @@ func ExportHost(c *gin.Context) {
 	}
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
-	var row *xlsx.Row
-	var cell *xlsx.Cell
 
 	file = xlsx.NewFile()
 	sheet, err = file.AddSheet("host")
-	if err != nil {
-		blog.Error(err.Error())
-		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg)
+
+	objID := common.BKInnerObjIDHost
+	fields, err := logics.GetObjFieldIDs(objID, apiSite, nil, c.Request.Header)
+	err = logics.BuildHostExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
+	if nil != err {
+		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		c.Writer.Write([]byte(reply))
 		return
-	}
-	row = sheet.AddRow()
-	kArray := make([]string, 0)
-
-	for i, k := range kvMap {
-		cell = row.AddCell()
-		cell.Value = k
-		kArray = append(kArray, i)
-	}
-	kLength := len(kArray)
-	for _, j := range hostInfo {
-		hostData := j.(map[string]interface{})
-		hostcell := hostData["host"].(map[string]interface{})
-		row = sheet.AddRow()
-		for i := 0; i != kLength; i++ {
-			cell = row.AddCell()
-			kName := kArray[i]
-
-			n, ok := hostcell[kName]
-			if ok {
-				if nil == n {
-					cell.Value = ""
-					continue
-				}
-				objtype := reflect.TypeOf(n)
-				switch objtype.Kind() {
-				case reflect.String:
-					cell.Value = reflect.ValueOf(n).String()
-				default:
-					cell.Value = ""
-				}
-			} else {
-				cell.Value = ""
-			}
-		}
 	}
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
@@ -194,7 +159,6 @@ func ExportHost(c *gin.Context) {
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportHost save file error:%s", err.Error())
-		fmt.Printf(err.Error())
 	}
 	logics.AddDownExcelHttpHeader(c, "host.xlsx")
 	c.File(dirFileName)
@@ -209,7 +173,6 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 	cc := api.NewAPIResource()
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	url := apiSite + fmt.Sprintf("/api/%s/object/attr/search", webCommon.API_VERSION)
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
 	_, err := os.Stat(dir)
@@ -221,7 +184,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = logics.BuildExcelTemplate(url, objID, file, c.Request.Header, defLang)
+	err = logics.BuildExcelTemplate(apiSite, objID, file, c.Request.Header, defLang)
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

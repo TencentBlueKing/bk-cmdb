@@ -201,7 +201,8 @@
                 transitionName: transitionName,
                 BkDate: bkDate,
                 selectedValue: this.initDate || '',
-                showDatePanel: false
+                showDatePanel: false,
+                isSetTimer: false
             }
         },
         methods: {
@@ -332,6 +333,11 @@
                 }
                 this.BkDate.currentTime = {...defaultTime}
                 this.showDate()
+                this.isSetTimer = true
+                if (this.selectedValue !== this.initDate) {
+                    this.$emit('change', this.selectedValue, this.initDate)
+                }
+                this.$emit('date-selected', this.selectedValue)
             },
 
             // 判断日期是否可选
@@ -359,6 +365,7 @@
 
             close () {
                 this.showDatePanel = false
+                this.isSetTimer = false
             }
 
         },
@@ -405,7 +412,7 @@
                 this.showDate()
                 this.$emit('date-selected', this.selectedValue)
                 // 是否关闭日期选择
-                if (this.autoClose) {
+                if (this.autoClose && !this.isSetTimer) {
                     this.close()
                 }
             }

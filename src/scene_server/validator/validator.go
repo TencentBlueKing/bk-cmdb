@@ -74,7 +74,7 @@ func (valid *ValRule) GetObjAttrByID(forward *api.ForwardParam, objID string) er
 		if isOnly {
 			valid.IsOnlyArr = append(valid.IsOnlyArr, propertyID)
 		}
-		if propertyType != common.FiledTypeEnum {
+		if propertyType != common.FieldTypeEnum {
 			valid.NoEnumFiledArr = append(valid.NoEnumFiledArr, propertyID)
 		}
 		valid.AllFiledArr = append(valid.AllFiledArr, propertyID)

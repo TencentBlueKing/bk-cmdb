@@ -100,7 +100,7 @@ func (cli *objAttLogic) CreateTopoModel(forward *api.ForwardParam, obj api.ObjAt
 	objasst["bk_asst_obj_id"] = obj.AssociationID
 	obj.Editable = true
 	obj.PropertyID = common.BKChildStr
-	obj.PropertyType = common.FiledTypeSingleChar
+	obj.PropertyType = common.FieldTypeSingleChar
 	objasst["bk_object_att_id"] = obj.PropertyID
 
 	// to create object association	, failed return
@@ -115,7 +115,7 @@ func (cli *objAttLogic) CreateTopoModel(forward *api.ForwardParam, obj api.ObjAt
 	objAtt.ObjectID = obj.ObjectID
 	objAtt.OwnerID = obj.OwnerID
 	objAtt.PropertyID = common.BKInstParentStr
-	objAtt.PropertyType = common.FiledTypeInt
+	objAtt.PropertyType = common.FieldTypeInt
 	objAtt.IsSystem = true
 	objAtt.IsOnly = true
 	objAtt.IsRequired = true
