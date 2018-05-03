@@ -46,9 +46,9 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	c.httpCli.SetHeader("Accept", "application/json")
 
 	c.disc = disc
-	c.supplierAccount = conf.Get("supplierAccount")
-	c.user = conf.Get("user")
-	c.address = conf.Get("ccaddress")
+	c.SetSupplierAccount(conf.Get("supplierAccount"))
+	c.SetUser(conf.Get("user"))
+	c.SetAddress(conf.Get("ccaddress"))
 	return c
 }
 
@@ -76,11 +76,6 @@ func (cli *Client) Module() ModuleInterface {
 
 func (cli *Client) Set() SetInterface {
 	return newSet(cli)
-}
-
-// SetAddress set a new address
-func (cli *Client) SetAddress(address string) {
-	cli.address = address
 }
 
 // SetAddress set a new address

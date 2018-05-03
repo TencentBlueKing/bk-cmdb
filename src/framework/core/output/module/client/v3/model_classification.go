@@ -107,7 +107,7 @@ func (m *Classification) SearchClassifications(cond common.Condition) ([]types.M
 
 	// check result
 	if !gs.Get("result").Bool() {
-		return nil, errors.New(gs.Get("bk_error_msg").String())
+		return nil, errors.New(gs.Get("message").String())
 	}
 
 	dataStr := gs.Get("data").String()
@@ -117,6 +117,7 @@ func (m *Classification) SearchClassifications(cond common.Condition) ([]types.M
 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
+
 	return resultMap, err
 }
 
