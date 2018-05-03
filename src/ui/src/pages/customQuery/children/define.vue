@@ -161,7 +161,7 @@
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_cloud_id',
-                        'bk_property_name': this.$t("Hosts['云区域ID']"),
+                        'bk_property_name': this.$t("Hosts['云区域']"),
                         'disabled': true
                     }]
                 },

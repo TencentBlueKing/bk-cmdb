@@ -61,7 +61,7 @@
                         name: this.$t("Hosts['模块']")
                     }, {
                         id: 'bk_cloud_id',
-                        name: this.$t("Hosts['云区域ID']")
+                        name: this.$t("Hosts['云区域']")
                     }],
                     list: [],
                     pagination: {
