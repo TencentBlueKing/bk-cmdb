@@ -55,7 +55,7 @@ func (cli *model) Attributes() ([]Attribute, error) {
 
 	cond := common.CreateCondition().Field(ObjectID).Like(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
 
-	dataMap, err := v3.GetClient().SearchObjectAttributes(cond)
+	dataMap, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
 
 	if nil != err {
 		return nil, err
@@ -79,14 +79,14 @@ func (cli *model) Save() error {
 	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(ObjectName).Eq(cli.ObjectName)
 
 	// search all objects by condition
-	dataItems, err := v3.GetClient().SearchObjects(cond)
+	dataItems, err := client.GetClient().CCV3().Model().SearchObjects(cond)
 	if nil != err {
 		return err
 	}
 
 	// create a new object
 	if 0 == len(dataItems) {
-		if _, err = v3.GetClient().CreateObject(cli.ToMapStr()); nil != err {
+		if _, err = client.GetClient().CCV3().Model().CreateObject(cli.ToMapStr()); nil != err {
 			return err
 		}
 		return nil
@@ -106,7 +106,7 @@ func (cli *model) Save() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
-		if err = v3.GetClient().UpdateObject(item, cond); nil != err {
+		if err = client.GetClient().CCV3().Model().UpdateObject(item, cond); nil != err {
 			return err
 		}
 	}

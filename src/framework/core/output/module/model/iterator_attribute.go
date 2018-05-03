@@ -34,7 +34,7 @@ func newAttributeIterator(cond common.Condition) (AttributeIterator, error) {
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchObjectAttributes(cond)
+	items, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
 	if nil != err {
 		return nil, err
 	}

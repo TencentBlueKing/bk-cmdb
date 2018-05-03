@@ -9,12 +9,33 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+type ModelGetter interface {
+	Model() ModelInterface
+}
+type ModelInterface interface {
+	CreateObject(data types.MapStr) (int, error)
+	DeleteObject(cond common.Condition) error
+	UpdateObject(data types.MapStr, cond common.Condition) error
+	SearchObjects(cond common.Condition) ([]types.MapStr, error)
+	SearchObjectTopo(cond common.Condition) ([]types.MapStr, error)
+}
+
+type Model struct {
+	cli *Client
+}
+
+func newModel(cli *Client) *Model {
+	return &Model{
+		cli: cli,
+	}
+}
+
 // CreateObject create a new model object
-func (cli *Client) CreateObject(data types.MapStr) (int, error) {
+func (m *Model) CreateObject(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/object", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -33,7 +54,7 @@ func (cli *Client) CreateObject(data types.MapStr) (int, error) {
 }
 
 // DeleteObject delete a object by condition
-func (cli *Client) DeleteObject(cond common.Condition) error {
+func (m *Model) DeleteObject(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	id, err := data.Int("id")
@@ -41,9 +62,9 @@ func (cli *Client) DeleteObject(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -59,7 +80,7 @@ func (cli *Client) DeleteObject(cond common.Condition) error {
 }
 
 // UpdateObject update a object by condition
-func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error {
+func (m *Model) UpdateObject(data types.MapStr, cond common.Condition) error {
 
 	dataCond := cond.ToMapStr()
 	id, err := dataCond.Int("id")
@@ -67,9 +88,9 @@ func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error 
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/object/%d", m.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -84,13 +105,13 @@ func (cli *Client) UpdateObject(data types.MapStr, cond common.Condition) error 
 }
 
 // SearchObjects search some objects by condition
-func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
+func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/objects", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}
@@ -113,13 +134,13 @@ func (cli *Client) SearchObjects(cond common.Condition) ([]types.MapStr, error) 
 }
 
 // SearchObjectTopo search object topo by condition
-func (cli *Client) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) {
+func (m *Model) SearchObjectTopo(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/objects/topo", m.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}

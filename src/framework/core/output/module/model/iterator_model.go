@@ -34,7 +34,7 @@ func newModelIterator(cond common.Condition) (Iterator, error) {
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchObjects(cond)
+	items, err := client.GetClient().CCV3().Model().SearchObjects(cond)
 	if nil != err {
 		return nil, err
 	}

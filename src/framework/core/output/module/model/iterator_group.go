@@ -33,7 +33,7 @@ func newGroupIterator(cond common.Condition) (GroupIterator, error) {
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchGroups(cond)
+	items, err := client.GetClient().CCV3().Group().SearchGroups(cond)
 	if nil != err {
 		return nil, err
 	}

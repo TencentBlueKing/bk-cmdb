@@ -74,14 +74,14 @@ func (cli *attribute) Save() error {
 	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID).Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
-	dataItems, err := v3.GetClient().SearchObjectAttributes(cond)
+	dataItems, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
 	if nil != err {
 		return err
 	}
 
 	// create a new object
 	if 0 == len(dataItems) {
-		if _, err = v3.GetClient().CreateObjectAttribute(cli.ToMapStr()); nil != err {
+		if _, err = client.GetClient().CCV3().Attribute().CreateObjectAttribute(cli.ToMapStr()); nil != err {
 			return err
 		}
 		return nil
@@ -106,7 +106,7 @@ func (cli *attribute) Save() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID)
-		if err = v3.GetClient().UpdateObjectAttribute(item, cond); nil != err {
+		if err = client.GetClient().CCV3().Attribute().UpdateObjectAttribute(item, cond); nil != err {
 			return err
 		}
 	}

@@ -22,7 +22,7 @@ import (
 
 func TestSearchClassification(t *testing.T) {
 
-	cli := v3.GetV3Client()
+	cli := client.GetClient().CCV3()
 	cli.SetSupplierAccount("0")
 	cli.SetUser("build_user")
 	cli.SetAddress("http://test.apiserver:8080")
