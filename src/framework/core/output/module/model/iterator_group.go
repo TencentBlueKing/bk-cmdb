@@ -47,6 +47,23 @@ func newGroupIterator(cond common.Condition) (GroupIterator, error) {
 	return grpIterator, nil
 }
 
+func (cli *groupIterator) ForEach(itemCallback func(item Group)) error {
+
+	for {
+
+		item, err := cli.Next()
+		if nil != err {
+			return err
+		}
+
+		if nil == item {
+			return nil
+		}
+
+		itemCallback(item)
+	}
+
+}
 func (cli *groupIterator) Next() (Group, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

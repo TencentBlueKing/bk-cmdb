@@ -48,6 +48,24 @@ func newModelIterator(cond common.Condition) (Iterator, error) {
 	return objIterator, nil
 }
 
+func (cli *iterator) ForEach(itemCallback func(item Model)) error {
+
+	for {
+
+		item, err := cli.Next()
+		if nil != err {
+			return err
+		}
+
+		if nil == item {
+			return nil
+		}
+
+		itemCallback(item)
+	}
+
+}
+
 func (cli *iterator) Next() (Model, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

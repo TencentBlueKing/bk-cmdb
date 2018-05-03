@@ -48,6 +48,24 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 	return clsIterator, nil
 }
 
+func (cli *classificationIterator) ForEach(itemCallback func(item Classification)) error {
+
+	for {
+
+		item, err := cli.Next()
+		if nil != err {
+			return err
+		}
+
+		if nil == item {
+			return nil
+		}
+
+		itemCallback(item)
+	}
+
+}
+
 func (cli *classificationIterator) Next() (Classification, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

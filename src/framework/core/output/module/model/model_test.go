@@ -34,27 +34,25 @@ func TestSearchModel(t *testing.T) {
 		t.Logf("the classifications:%+v", item)
 
 		modelIterator, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("host"))
-		for {
 
-			item, err := modelIterator.Next()
-			if nil != err {
-				t.Errorf("failed to get model, %s", err.Error())
-				break
-			}
+		if nil != err {
+			t.Errorf("failed to search model, %s", err.Error())
+			break
+		}
 
-			if nil == item {
-				t.Log("no model")
-				break
-			}
+		if nil == modelIterator {
+			break
+		}
 
-			t.Logf("the model:%+v", item.GetName())
+		modelIterator.ForEach(func(modelItem model.Model) {
 
-			attrs, _ := item.Attributes()
+			t.Logf("the model:%+v", modelItem.GetName())
+
+			attrs, _ := modelItem.Attributes()
 			for _, attr := range attrs {
 				t.Logf("the attribute:%+v", attr.GetName())
 			}
-
-		}
+		})
 
 	}
 }
