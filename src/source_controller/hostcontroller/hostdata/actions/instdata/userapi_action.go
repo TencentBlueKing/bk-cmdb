@@ -92,7 +92,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	xidDevice := xid.New()
 
 	params[common.BKAppIDField] = appID
-	params["id"] = xidDevice.String()
+	params[common.BKFieldID] = xidDevice.String()
 	params[common.CreateTimeField] = time.Now()
 	params["modify_user"] = ""
 	params[common.LastTimeField] = ""
@@ -132,7 +132,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	data[common.LastTimeField] = time.Now()
 
 	params := make(map[string]interface{})
-	params["id"] = ID
+	params[common.BKFieldID] = ID
 	params[common.BKAppIDField] = appID
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
@@ -152,6 +152,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 		dupParams := make(map[string]interface{})
 		dupParams["name"] = newName
 		dupParams[common.BKAppIDField] = appID
+		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
 
 		rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
 		if nil != err {
@@ -159,7 +160,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 			userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
 			return
 		}
-		if 1 < rowCount {
+		if 0 < rowCount {
 			blog.Info("host user api  name duplicatie , params:%v", dupParams)
 			userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
 			return
