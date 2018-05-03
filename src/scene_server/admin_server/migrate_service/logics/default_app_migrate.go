@@ -151,13 +151,13 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 		fieldType, _ := mapField["bk_property_type"].(string)
 		option, _ := mapField["option"].(string)
 		switch fieldType {
-		case common.FiledTypeSingleChar:
+		case common.FieldTypeSingleChar:
 			ret[fieldName] = ""
-		case common.FiledTypeLongChar:
+		case common.FieldTypeLongChar:
 			ret[fieldName] = ""
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			ret[fieldName] = nil
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			enumOptions := validator.ParseEnumOption(option)
 			v := ""
 			if len(enumOptions) > 0 {
@@ -173,17 +173,17 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 				}
 			}
 			ret[fieldName] = v
-		case common.FiledTypeDate:
+		case common.FieldTypeDate:
 			ret[fieldName] = ""
-		case common.FiledTypeTime:
+		case common.FieldTypeTime:
 			ret[fieldName] = ""
-		case common.FiledTypeUser:
+		case common.FieldTypeUser:
 			ret[fieldName] = ""
 		case common.FieldTypeMultiAsst:
 			ret[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			ret[fieldName] = nil
-		case common.FiledTypeBool:
+		case common.FieldTypeBool:
 			ret[fieldName] = false
 		default:
 			ret[fieldName] = nil
