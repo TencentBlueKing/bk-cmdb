@@ -146,8 +146,17 @@ func (cli *Set) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 	}
 
 	targetURL := fmt.Sprintf("%s/api/v3/set/search/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID)
-
-	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	// convert to the condition
+	condInner := types.MapStr{
+		"fields":    []string{},
+		"condition": data,
+		"page": types.MapStr{
+			"start": cond.GetStart(),
+			"limit": cond.GetLimit(),
+			"sort":  cond.GetSort(),
+		},
+	}
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err
 	}

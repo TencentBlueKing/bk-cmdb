@@ -175,18 +175,25 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 		return nil, errors.New("the business id is not set")
 	}
 
-	data.Remove(BusinessID)
-
 	setID := data.String(SetID)
 	if 0 == len(appID) {
 		return nil, errors.New("the set id is not set")
 	}
 
-	data.Remove(SetID)
+	// convert to the condition
+	condInner := types.MapStr{
+		"fields":    []string{},
+		"condition": data,
+		"page": types.MapStr{
+			"start": cond.GetStart(),
+			"limit": cond.GetLimit(),
+			"sort":  cond.GetSort(),
+		},
+	}
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID, setID)
-
-	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	//fmt.Println(targetURL)
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err
 	}
@@ -195,10 +202,11 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 
 	// check result
 	if !gs.Get("result").Bool() {
+		//fmt.Println("the result:", string(rst))
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
-	dataStr := gs.Get("data").String()
+	dataStr := gs.Get("data.info").String()
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}

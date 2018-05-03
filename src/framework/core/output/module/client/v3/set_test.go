@@ -14,7 +14,8 @@ package v3_test
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/output/module/client"
 	//"configcenter/src/framework/core/types"
 	"fmt"
 	"testing"
@@ -22,10 +23,11 @@ import (
 
 func TestSearchSet(t *testing.T) {
 
-	cli := cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	cond := common.CreateCondition().Field("bk_set_name").Like("作业").Field("bk_biz_id").Eq(2)
-	dataMap, err := cli.SearchSets(cond)
+	cond := common.CreateCondition().Field("bk_set_name").Like("平台").Field("bk_biz_id").Eq(2)
+	cond.SetLimit(10)
+	dataMap, err := cli.CCV3().Set().SearchSets(cond)
 
 	if nil != err {
 		t.Errorf("failed to search, error info is %s", err.Error())
