@@ -20,6 +20,8 @@ import (
 )
 
 type CCV3Interface interface {
+	ModuleGetter
+	SetGetter
 	HostGetter
 	ModelGetter
 	ClassificationGetter
@@ -66,6 +68,13 @@ func (cli *Client) CommonInst() CommonInstInterface {
 }
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
+}
+func (cli *Client) Module() ModuleInterface {
+	return newModule(cli)
+}
+
+func (cli *Client) Set() SetInterface {
+	return newSet(cli)
 }
 
 // SetAddress set a new address

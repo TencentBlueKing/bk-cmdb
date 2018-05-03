@@ -21,8 +21,32 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ModuleGetter the module getter interface
+type ModuleGetter interface {
+	Module() ModuleInterface
+}
+
+// ModuleInterface the module interface
+type ModuleInterface interface {
+	CreateModule(data types.MapStr) (int, error)
+	DeleteModule(cond common.Condition) error
+	UpdateModule(data types.MapStr, cond common.Condition) error
+	SearchModules(cond common.Condition) ([]types.MapStr, error)
+}
+
+func newModule(cli *Client) *Module {
+	return &Module{
+		cli: cli,
+	}
+}
+
+// Module the module interface implement
+type Module struct {
+	cli *Client
+}
+
 // CreateModule create a new module object
-func (cli *Client) CreateModule(data types.MapStr) (int, error) {
+func (cli *Module) CreateModule(data types.MapStr) (int, error) {
 
 	appID := data.String(BusinessID)
 	if 0 == len(appID) {
@@ -38,9 +62,9 @@ func (cli *Client) CreateModule(data types.MapStr) (int, error) {
 
 	data.Remove(SetID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s", cli.GetAddress(), appID, setID)
+	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s", cli.cli.GetAddress(), appID, setID)
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -59,7 +83,7 @@ func (cli *Client) CreateModule(data types.MapStr) (int, error) {
 }
 
 // DeleteModule delete a module by condition
-func (cli *Client) DeleteModule(cond common.Condition) error {
+func (cli *Module) DeleteModule(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	moduleID := data.String(ModuleID)
@@ -83,9 +107,9 @@ func (cli *Client) DeleteModule(cond common.Condition) error {
 
 	data.Remove(SetID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s/%s", cli.GetAddress(), appID, setID, moduleID)
+	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s/%s", cli.cli.GetAddress(), appID, setID, moduleID)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := cli.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -101,7 +125,7 @@ func (cli *Client) DeleteModule(cond common.Condition) error {
 }
 
 // UpdateModule update a module by condition
-func (cli *Client) UpdateModule(data types.MapStr, cond common.Condition) error {
+func (cli *Module) UpdateModule(data types.MapStr, cond common.Condition) error {
 
 	condData := cond.ToMapStr()
 	moduleID := condData.String(ModuleID)
@@ -125,9 +149,9 @@ func (cli *Client) UpdateModule(data types.MapStr, cond common.Condition) error 
 
 	condData.Remove(SetID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s/%s", cli.GetAddress(), appID, setID, moduleID)
+	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s/%s", cli.cli.GetAddress(), appID, setID, moduleID)
 
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -142,7 +166,7 @@ func (cli *Client) UpdateModule(data types.MapStr, cond common.Condition) error 
 }
 
 // SearchModules search some modules by condition
-func (cli *Client) SearchModules(cond common.Condition) ([]types.MapStr, error) {
+func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
@@ -160,9 +184,9 @@ func (cli *Client) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 
 	data.Remove(SetID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.GetAddress(), cli.supplierAccount, appID, setID)
+	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID, setID)
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}
