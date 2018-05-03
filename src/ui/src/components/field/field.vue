@@ -23,7 +23,7 @@
                         </bk-select>
                     </div>
                     <div class="search-field">
-                        <input type="text" placeholder="搜索属性" v-model.trim="object.filter">
+                        <input type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="object.filter">
                     </div>
                 </div>
 
@@ -37,7 +37,7 @@
             <div class="right-list">
                 <div class="title">
                     <div class="search-wrapper">
-                        已显示属性
+                        {{$t('Inst[\'已显示属性\']')}}
                     </div>
                 </div>
                 <draggable class="content-right" v-model="shownList" :options="{animation: 150}">
@@ -48,11 +48,11 @@
             </div>
         </div>
         <div class="bk-form-item bk-form-action content-button">
-            <bk-button class="btn" type="primary" title="应用" @click="apply">
-                应用
+            <bk-button class="btn" type="primary" @click="apply">
+                {{$t('Inst[\'应用\']')}}
             </bk-button>
-            <bk-button class="vice-btn btn reinstate cancel" type="default" title="取消" @click="cancel">
-                取消
+            <bk-button class="vice-btn btn reinstate cancel" type="default" @click="cancel">
+                {{$t('Common[\'取消\']')}}
             </bk-button>
         </div>
     </div>
@@ -163,7 +163,7 @@
             },
             removeItem (index) {
                 if (this.shownList.length <= this.minField) {
-                    this.$alertMsg(`至少选择${this.minField}个字段`)
+                    this.$alertMsg(this.$t('Common[\'至少选择N个字段\']', {N: this.minField}))
                 } else {
                     this.shownList.splice(index, 1)
                 }

@@ -1,46 +1,50 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	lang "configcenter/src/common/language"
 	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"errors"
 	"fmt"
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/tealeg/xlsx"
 	"net/http"
 	"strconv"
 	"strings"
-
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/tealeg/xlsx"
 )
 
 //GetImportInsts get insts from excel file
-func GetImportInsts(f *xlsx.File, url string, header http.Header, headerRow int) (map[int]map[string]interface{}, error) {
+func GetImportInsts(f *xlsx.File, objID, url string, header http.Header, headerRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
+	fields, err := GetObjFieldIDs(objID, url, header)
+	if nil != err {
+		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
+	}
 	if 0 == len(f.Sheets) {
 		blog.Error("the excel file sheets is empty")
-		return nil, errors.New("文件内容不能为空")
+		return nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 	sheet := f.Sheets[0]
 	if nil == sheet {
 		blog.Error("the excel fiel sheet is nil")
-		return nil, errors.New("文件内容不能为空")
+		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, nil, common.KvMap{"import_from": common.HostAddMethodExcel}, false, headerRow)
+	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, false, headerRow, defLang)
 }
 
 //GetInstData get inst data

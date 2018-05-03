@@ -36,11 +36,11 @@
                     'objuser': '$regex,$eq,$ne'
                 },
                 operatorMap: {
-                    '$nin': '不包含',
-                    '$in': '包含',
-                    '$regex': '包含',
-                    '$eq': '等于',
-                    '$ne': '不等于'
+                    '$nin': this.$t("Common['不包含']"),
+                    '$in': this.$t("Common['包含']"),
+                    '$regex': this.$t("Common['包含']"),
+                    '$eq': this.$t("Common['等于']"),
+                    '$ne': this.$t("Common['不等于']")
                 }
             }
         },

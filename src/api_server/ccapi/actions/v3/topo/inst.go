@@ -39,6 +39,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByObject, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo, FilterHandler: nil, Version: v3.APIVersion})
 
@@ -175,6 +176,23 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 	cli.CallResponse(
 		senceCLI.ReForwardSelectInstByAssociation(func(url, method string) (string, error) {
+			return httpclient.ReqForward(req, url, method)
+		}, ownerID, objID),
+		resp)
+
+}
+
+func (cli *instAction) SelectInstsByObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("select insts by object")
+
+	ownerID := req.PathParameter("owner_id")
+	objID := req.PathParameter("obj_id")
+
+	senceCLI := api.NewClient(inst.CC.TopoAPI())
+	senceCLI.SetAddress(cli.CC.TopoAPI()) // TODO: need to be removed
+
+	cli.CallResponse(
+		senceCLI.ReForwardSelectInstByObject(func(url, method string) (string, error) {
 			return httpclient.ReqForward(req, url, method)
 		}, ownerID, objID),
 		resp)

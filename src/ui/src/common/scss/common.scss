@@ -326,7 +326,7 @@ body{
             white-space: break-word;
             white-space: nowrap;
         }
-        .sideslider > .content{
+        .sideslider > .slide-content{
             height: calc(100% - 60px);
             .bk-tab2{
                 height: 100%;
@@ -567,6 +567,9 @@ body{
         }
     }
 }
+body[lang="en"]{
+    font-family: 'Calibri'
+}
 .tooltip {
   display: block !important;
   z-index: 10000;
@@ -722,4 +725,7 @@ body{
 .is-danger{
     color: #ff5656;
     font-size: 12px;
+}
+.bk-date .date-dropdown-panel{
+    z-index: 1111;
 }
