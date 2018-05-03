@@ -1,29 +1,30 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
@@ -63,7 +64,7 @@ func (cli *moduleAction) CreateModule(req *restful.Request, resp *restful.Respon
 	language := util.GetActionLanguage(req)
 	// get the error by language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
+	forward := &api.ForwardParam{Header: req.Request.Header}
 	user := util.GetActionUser(req)
 
 	// logics
@@ -124,7 +125,7 @@ func (cli *moduleAction) CreateModule(req *restful.Request, resp *restful.Respon
 		input[common.BKSetIDField] = setID
 		input[common.BKAppIDField] = appID
 		// check
-		valid := validator.NewValidMapWithKeyFileds(tmpID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr}, defErr)
+		valid := validator.NewValidMapWithKeyFields(tmpID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr}, forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Error("failed to valide, error is %s", err.Error())
@@ -159,7 +160,7 @@ func (cli *moduleAction) CreateModule(req *restful.Request, resp *restful.Respon
 			if ownerID == "" {
 				blog.Errorf("owner id not found")
 			}
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDModule)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDModule)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(attErr)
 			}
@@ -194,7 +195,7 @@ func (cli *moduleAction) DeleteModule(req *restful.Request, resp *restful.Respon
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		appID, convErr := strconv.Atoi(req.PathParameter("app_id"))
 		if nil != convErr {
 			blog.Error("the appid is invalid, error info is %s", convErr.Error())
@@ -263,7 +264,7 @@ func (cli *moduleAction) DeleteModule(req *restful.Request, resp *restful.Respon
 		{
 			// save change log
 			instID := gjson.Get(moduleRes, "data.bk_module_id").Int()
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDModule)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDModule)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleDeleteFailed)
 			}
@@ -292,6 +293,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		appID, convErr := strconv.Atoi(req.PathParameter("app_id"))
 		if nil != convErr {
 			blog.Error("the appid is invalid, error info is %s", convErr.Error())
@@ -337,7 +339,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 
 		data[common.BKAppIDField] = appID
 		data[common.BKSetIDField] = setID
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr, common.BKModuleNameField}, defErr)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDModule, cli.CC.ObjCtrl(), []string{common.BKOwnerIDField, common.BKInstParentStr, common.BKModuleNameField}, forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, moduleID)
 
 		if nil != err {
@@ -375,7 +377,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 		{
 			// save change log
 			instID := moduleID
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDModule)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDModule)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleCreateFailed)
 			}

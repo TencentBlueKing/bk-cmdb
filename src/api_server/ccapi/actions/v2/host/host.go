@@ -547,10 +547,10 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 		proxyNew[common.BKCloudIDField] = platIdInt
 		proxyNew[common.BKHostInnerIPField] = proxy["InnerIP"]
 		proxyNew[common.BKHostOuterIPField] = proxy["OuterIP"]
-		proxyNew, err := logics.AutoInputV3Filed(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
+		proxyNew, err := logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
 
 		if err != nil {
-			blog.Error("AutoInputV3Filed error:%v", err)
+			blog.Error("AutoInputV3Field error:%v", err)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 			return
 		}
@@ -663,13 +663,17 @@ func (cli *hostAction) EnterIP(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(common.CCErrAPIServerV2OSTypeErr, defErr.Error(common.CCErrAPIServerV2OSTypeErr).Error(), resp)
 		return
 	}
+	osType = "1"
+	if "windows" == osType {
+		osType = "2"
+	}
 	input := make(common.KvMap)
 	input["ips"] = ipArr
 	input[common.BKHostNameField] = hostNameArr
 	input[common.BKModuleNameField] = moduleName
 	input[common.BKSetNameField] = setName
 	input[common.BKAppNameField] = appName
-	input[common.BKOSTypeField] = strings.Title(osType)
+	input[common.BKOSTypeField] = osType
 	input[common.BKOwnerIDField] = common.BKDefaultOwnerID
 
 	paramJson, _ := json.Marshal(input)

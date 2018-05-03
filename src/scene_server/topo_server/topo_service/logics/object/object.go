@@ -52,7 +52,7 @@ func (cli *objLogic) SetManager(mgr manager.Manager) error {
 	return nil
 }
 
-func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
+func (cli *objLogic) CreateObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) (int, error) {
 
 	// unmarshal json
 	var obj sencapi.ObjectDes
@@ -93,7 +93,7 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 	checkClsCond["bk_classification_id"] = obj.ClassificationID
 	checkClsCondVal, _ := json.Marshal(checkClsCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObjectCls(checkClsCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObjectCls(forward, checkClsCondVal); nil != err {
 
 	} else if 0 == len(items) {
 		blog.Error("bk_classification_id[%s] is invalid", obj.ClassificationID)
@@ -106,7 +106,7 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 	checkObjIDCond[common.BKOwnerIDField] = obj.OwnerID
 	checkObjIDCondVal, _ := json.Marshal(checkObjIDCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObject(checkObjIDCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObject(forward, checkObjIDCondVal); nil != err {
 		blog.Error("select failed, error:%s", err.Error())
 		return 0, err
 	} else if 0 != len(items) {
@@ -120,7 +120,7 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 	checkObjNameCond[common.BKOwnerIDField] = obj.OwnerID
 	checkObjNameCondVal, _ := json.Marshal(checkObjNameCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObject(checkObjNameCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObject(forward, checkObjNameCondVal); nil != err {
 		blog.Error("select failed, error:%s", err.Error())
 		return 0, err
 	} else if 0 != len(items) {
@@ -138,7 +138,7 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 		"bk_group_id":         "default",
 	}
 	defaultGroupStr, _ := json.Marshal(defaultGroup)
-	_, defErr := cli.mgr.CreateObjectGroup(defaultGroupStr, errProxy)
+	_, defErr := cli.mgr.CreateObjectGroup(forward, defaultGroupStr, errProxy)
 
 	// create default the instname
 	var objAtt api.ObjAttDes
@@ -158,7 +158,7 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 	}
 
 	objAtt.PropertyIndex = -1
-	objAtt.PropertyType = common.FiledTypeSingleChar
+	objAtt.PropertyType = common.FieldTypeSingleChar
 	switch obj.ObjID {
 	case common.BKInnerObjIDApp:
 		objAtt.PropertyID = common.BKAppNameField
@@ -177,21 +177,21 @@ func (cli *objLogic) CreateObject(params []byte, errProxy errors.DefaultCCErrorI
 	// create the default object attribute
 	objAttVal, _ := json.Marshal(objAtt)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if _, objAttErr := cli.objcli.CreateMetaObjectAtt(objAttVal); nil != objAttErr {
+	if _, objAttErr := cli.objcli.CreateMetaObjectAtt(forward, objAttVal); nil != objAttErr {
 		blog.Error(" failed to create the default properid , error info is %s", objAttErr.Error())
 	}
 
 	// 执行创建动作
-	return cli.objcli.CreateMetaObject(params)
+	return cli.objcli.CreateMetaObject(forward, params)
 }
 
-func (cli *objLogic) SelectObject(params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error) {
+func (cli *objLogic) SelectObject(forward *api.ForwardParam, params []byte, errProxy errors.DefaultCCErrorIf) ([]api.ObjDes, error) {
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.SearchMetaObject(params)
+	return cli.objcli.SearchMetaObject(forward, params)
 }
 
-func (cli *objLogic) UpdateObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objLogic) UpdateObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	if id <= 0 {
 		blog.Error("id is invalid, %d", id)
 		return fmt.Errorf("id[%d] is invalid", id)
@@ -216,7 +216,7 @@ func (cli *objLogic) UpdateObject(id int, params []byte, errProxy errors.Default
 	checkIDCond["id"] = id
 	checkIDCondVal, _ := json.Marshal(checkIDCond)
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	if items, err := cli.objcli.SearchMetaObject(checkIDCondVal); nil != err {
+	if items, err := cli.objcli.SearchMetaObject(forward, checkIDCondVal); nil != err {
 		blog.Error("select failed, error:%s", err.Error())
 		return err
 	} else if 0 == len(items) {
@@ -235,7 +235,7 @@ func (cli *objLogic) UpdateObject(id int, params []byte, errProxy errors.Default
 		checkObjNameCond["bk_obj_name"] = name
 		checkObjNameCondVal, _ := json.Marshal(checkObjNameCond)
 		cli.objcli.SetAddress(cli.cfg.Get(cli))
-		if items, err := cli.objcli.SearchMetaObject(checkObjNameCondVal); nil != err {
+		if items, err := cli.objcli.SearchMetaObject(forward, checkObjNameCondVal); nil != err {
 			blog.Error("select failed, error:%s", err.Error())
 			return err
 		} else if 0 != len(items) {
@@ -248,10 +248,10 @@ func (cli *objLogic) UpdateObject(id int, params []byte, errProxy errors.Default
 		}
 	}
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	return cli.objcli.UpdateMetaObject(id, params)
+	return cli.objcli.UpdateMetaObject(forward, id, params)
 }
 
-func (cli *objLogic) DeleteObject(id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
+func (cli *objLogic) DeleteObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error {
 	if id < 0 {
 		blog.Error("attrid is invalid, %d", id)
 		return fmt.Errorf("attrid is invalid, %d", id)
@@ -267,7 +267,7 @@ func (cli *objLogic) DeleteObject(id int, params []byte, errProxy errors.Default
 		return fmt.Errorf("there are no delete conditions available")
 	}
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
-	items, err := cli.objcli.SearchMetaObject(params)
+	items, err := cli.objcli.SearchMetaObject(forward, params)
 	if nil != err {
 		blog.Error("check the target failed, error:%s ", err.Error())
 		return err
@@ -302,7 +302,7 @@ func (cli *objLogic) DeleteObject(id int, params []byte, errProxy errors.Default
 		att[common.BKOwnerIDField] = tmpItem.OwnerID
 		att[common.BKObjIDField] = tmpItem.ObjectID
 		attData, _ := json.Marshal(att)
-		if err := cli.objcli.DeleteMetaObjectAtt(0, attData); nil != err {
+		if err := cli.objcli.DeleteMetaObjectAtt(forward, 0, attData); nil != err {
 			blog.Error("failed to delete the object att, error is %s", err.Error())
 			return err
 		}
@@ -312,34 +312,34 @@ func (cli *objLogic) DeleteObject(id int, params []byte, errProxy errors.Default
 		asst[common.BKOwnerIDField] = tmpItem.OwnerID
 		asst[common.BKObjIDField] = tmpItem.ObjectID
 		asstData, _ := json.Marshal(asst)
-		if err := cli.objcli.DeleteMetaObjectAsst(0, asstData); nil != err {
+		if err := cli.objcli.DeleteMetaObjectAsst(forward, 0, asstData); nil != err {
 			blog.Error("failed to delete the object asst")
 			return err
 		}
 
 		// delete group
-		grp, grpErr := cli.mgr.SelectPropertyGroupByObjectID(tmpItem.OwnerID, tmpItem.ObjectID, []byte("{}"), errProxy)
+		grp, grpErr := cli.mgr.SelectPropertyGroupByObjectID(forward, tmpItem.OwnerID, tmpItem.ObjectID, []byte("{}"), errProxy)
 		if nil != grpErr {
 			blog.Error("failed to search group with object, error info is %s", grpErr.Error())
 			return grpErr
 		}
 		for _, grpItem := range grp {
-			if delErr := cli.mgr.DeleteObjectGroup(grpItem.ID, errProxy); nil != delErr {
+			if delErr := cli.mgr.DeleteObjectGroup(forward, grpItem.ID, errProxy); nil != delErr {
 				blog.Error("failed to delete the group[%d], error info is %s", grpItem.ID, delErr.Error())
 				return delErr
 			}
 		}
 	}
 
-	return cli.objcli.DeleteMetaObject(id, params)
+	return cli.objcli.DeleteMetaObject(forward, id, params)
 }
 
-func (cli *objLogic) setAddress(address string) {
+func (cli *objLogic) setAddress(forward *api.ForwardParam, address string) {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	cli.objcli.SetAddress(address)
 }
 
-func (cli *objLogic) existInst(objID, ownerID string, errProxy errors.DefaultCCErrorIf) (bool, error) {
+func (cli *objLogic) existInst(forward *api.ForwardParam, objID, ownerID string, errProxy errors.DefaultCCErrorIf) (bool, error) {
 
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	searchCond := make(map[string]interface{})

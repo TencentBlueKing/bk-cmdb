@@ -15,7 +15,7 @@
             @click="filterToggle">
         </a>
         <bk-tab class="filter-tab" :active-name="tab.active" @tab-changed="tabChanged" v-show="isOpen">
-            <bk-tabpanel name="screening" title="筛选" ref="screeningTabpanel">
+            <bk-tabpanel name="screening" :title="$t('HostResourcePool[\'筛选\']')" ref="screeningTabpanel">
                 <v-screening ref="screening" 
                     :queryColumns="queryColumns"
                     :queryColumnData="queryColumnData"
@@ -26,26 +26,26 @@
                     @filterChange="filterChange">
                 </v-screening>
             </bk-tabpanel>
-            <bk-tabpanel name="collect" title="收藏" :show="isShowCollect">
+            <bk-tabpanel name="collect" :title="$t('Hosts[\'收藏\']')" :show="isShowCollect">
                 <v-collect :favoriteList="tab.favorite.list" @delete="getFavoriteList" @apply="applyCollect"></v-collect>
             </bk-tabpanel>
-            <bk-tabpanel name="history" title="历史" :show="isShowHistory">
+            <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" :show="isShowHistory">
                 <v-history :isShow="tab.active === 'history'" @apply="applyHistory"></v-history>
             </bk-tabpanel>
             <template slot="setting">
                 <div class="filter-operate" v-show="tab.active === 'screening'">
-                    <i class="icon-cc icon-cc-broom" @click="emptiedField" v-tooltip="'清空'"></i>
-                    <i class="icon-cc icon-cc-collection" :class="{'collecting': tab.screening.isCollecting}" @click.stop="showCollectBox" v-tooltip="'收藏'" v-if="isShowCollect"></i>
-                    <i class="icon-cc icon-cc-funnel" @click="showField" v-tooltip="'设置筛选项'"></i>
+                    <i class="icon-cc icon-cc-broom" @click="emptiedField" v-tooltip="$t('HostResourcePool[\'清空\']')"></i>
+                    <i class="icon-cc icon-cc-collection" :class="{'collecting': tab.screening.isCollecting}" @click.stop="showCollectBox" v-tooltip="$t('Hosts[\'收藏\']')" v-if="isShowCollect"></i>
+                    <i class="icon-cc icon-cc-funnel" @click="showField" v-tooltip="$t('HostResourcePool[\'设置筛选项\']')"></i>
                 </div>
                 <div class="collect-box" v-if="isShowCollect" v-show="tab.screening.isCollecting" @click.stop v-click-outside="hideCollectBox">
-                    <div class="title tl">收藏此查询</div>
+                    <div class="title tl">{{$t('Hosts[\'收藏此查询\']')}}</div>
                     <form id="validate-form">
                         <div class="input-box tl">
-                            <input type="text" placeholder="请填写名称" v-model.trim="tab.screening.collectName"
-                            data-vv-name="名称"
+                            <input type="text" :placeholder="$t('Hosts[\'请填写名称\']')" v-model.trim="tab.screening.collectName"
+                            :data-vv-name="$t('Hosts[\'名称\']')"
                             v-validate="'required|name'">
-                            <span v-show="errors.has('名称')" class="help is-danger">{{ errors.first('名称') }}</span>
+                            <span v-show="errors.has($t('Hosts[\'名称\']'))" class="help is-danger">{{ errors.first($t('Hosts[\'名称\']')) }}</span>
                         </div>
                     </form>
                     <div class="collect-list">
@@ -61,16 +61,16 @@
                                 v-model="tab.screening.default" 
                                 :true-value="1" 
                                 :false-value="2">
-                            <span class="acquiescence vm pl5">默认</span>
+                            <span class="acquiescence vm pl5">{{$t('Hosts[\'默认\']')}}</span>
                         </label>
                         <div class="btn-wrapper">
-                            <bk-button class="mr10 main-btn" title="确认"
+                            <bk-button class="mr10 main-btn"
                                 :disabled="!tab.screening.collectName"
                                 @click="makeSureCollect">
-                                确认
+                                {{$t('Hosts[\'确认\']')}}
                             </bk-button>
-                            <bk-button class="cancel-btn vice-btn"  title="取消" @click="hideCollectBox">
-                                取消
+                            <bk-button class="cancel-btn vice-btn" @click="hideCollectBox">
+                                {{$t('Common[\'取消\']')}}
                             </bk-button>
                         </div>
                     </div>
@@ -188,7 +188,7 @@
                     if (res) {
                         this.$axios.post('hosts/favorites', this.getCollectParams()).then(res => {
                             if (res.result) {
-                                this.$alertMsg('收藏成功', 'success')
+                                this.$alertMsg(this.$t('Common[\'收藏成功\']'), 'success')
                                 this.hideCollectBox()
                                 this.updateFavoriteCount(res.data.id)
                             } else {

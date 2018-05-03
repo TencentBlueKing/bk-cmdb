@@ -15,27 +15,27 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/language"
 	hostParse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/host_service/instapi"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
-
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
+	"strings"
 )
 
 // HostSearch search host by mutiple condition
 func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
-	var hostCond, appCond, setCond, moduleCond, objectCond hostParse.SearchCondition
+	var hostCond, appCond, setCond, moduleCond, mainlineCond hostParse.SearchCondition
+	objectCondMap := make(map[string][]interface{}, 0)
 	appIDArr := make([]int, 0)
 	setIDArr := make([]int, 0)
 	moduleIDArr := make([]int, 0)
 	hostIDArr := make([]int, 0)
+	instAsstHostIDArr := make([]int, 0)
 	objSetIDArr := make([]int, 0)
 	disAppIDArr := make([]int, 0)
 	disSetIDArr := make([]int, 0)
@@ -68,8 +68,10 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 			moduleCond = object
 		} else if object.ObjectID == common.BKInnerObjIDApp {
 			appCond = object
+		} else if object.ObjectID == common.BKINnerObjIDObject {
+			mainlineCond = object
 		} else {
-			objectCond = object
+			objectCondMap[object.ObjectID] = object.Condition
 		}
 	}
 
@@ -84,12 +86,12 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	if len(appCond.Condition) > 0 {
 		appIDArr, _ = GetAppIDByCond(req, objCtrl, appCond.Condition)
 	}
-	//search object by cond
-	if len(objectCond.Condition) > 0 {
-		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, objectCond.Condition)
+	//search mainline object by cond
+	if len(mainlineCond.Condition) > 0 {
+		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, mainlineCond.Condition)
 	}
 	//search set by appcond
-	if len(setCond.Condition) > 0 || len(objectCond.Condition) > 0 {
+	if len(setCond.Condition) > 0 || len(mainlineCond.Condition) > 0 {
 		if len(appCond.Condition) > 0 {
 			cond := make(map[string]interface{})
 			cond["field"] = common.BKAppIDField
@@ -97,7 +99,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 			cond["value"] = appIDArr
 			setCond.Condition = append(setCond.Condition, cond)
 		}
-		if len(objectCond.Condition) > 0 {
+		if len(mainlineCond.Condition) > 0 {
 			cond := make(map[string]interface{})
 			cond["field"] = common.BKSetIDField
 			cond["operator"] = common.BKDBIN
@@ -107,6 +109,14 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 		setIDArr, _ = GetSetIDByCond(req, objCtrl, setCond.Condition)
 	}
 
+	//search host id by object
+	if len(objectCondMap) > 0 {
+		for objID, objCond := range objectCondMap {
+			instIDArr := GetObjectInstByCond(req, objID, objCtrl, objCond)
+			instAsstHostIDArr = GetHostIDByInstID(req, objID, objCtrl, instIDArr)
+		}
+
+	}
 	if len(moduleCond.Condition) > 0 {
 		if len(setCond.Condition) > 0 {
 			cond := make(map[string]interface{})
@@ -134,6 +144,9 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	}
 	if len(moduleCond.Condition) > 0 {
 		moduleHostConfig[common.BKModuleIDField] = moduleIDArr
+	}
+	if len(objectCondMap) > 0 {
+		moduleHostConfig[common.BKHostIDField] = instAsstHostIDArr
 	}
 	hostIDArr, _ = GetHostIDByCond(req, hostCtrl, moduleHostConfig)
 
@@ -322,7 +335,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	return result, err
 }
 
-func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}) ([]interface{}, error) {
+func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]interface{}, defLang language.DefaultCCLanguageIf) ([]interface{}, error) {
 	hostURL = hostURL + "/host/v1/hosts/search"
 	getParams := make(map[string]interface{})
 	getParams["fields"] = nil
@@ -335,7 +348,9 @@ func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]i
 	isSucess, message, iRetData := GetHttpResult(req, hostURL, common.HTTPSelectPost, getParams)
 	blog.Info("get host info by conds return:%v", iRetData)
 	if !isSucess {
-		return nil, errors.New("获取主机信息失败;" + message)
+		msg := defLang.Languagef("host_search_fail_with_errmsg", message)
+		blog.Error(msg)
+		return nil, errors.New(msg)
 	}
 	if nil == iRetData {
 		return nil, nil
@@ -346,30 +361,4 @@ func GetHostInfoByConds(req *restful.Request, hostURL string, conds map[string]i
 		return nil, nil
 	}
 	return data.([]interface{}), nil
-}
-
-//IsExistHostIDInApp  is host exsit in app
-func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int) (bool, error) {
-	conds := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID}
-	url := CC.HostCtrl() + "/host/v1/meta/hosts/modules/search"
-	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPSelectPost, conds)
-	blog.Info("IsExistHostIDInApp request url:%s, params:{appid:%d, hostid:%d}", url, appID, hostID)
-	blog.Info("IsExistHostIDInApp res:%v,%s, %v", isSucess, errmsg, data)
-	if !isSucess {
-		return false, errors.New("获取主机关系失败;" + errmsg)
-	}
-	//数据为空
-	if nil == data {
-		return false, nil
-	}
-	ids, ok := data.([]interface{})
-	if !ok {
-		return false, errors.New(fmt.Sprintf("获取主机关系返回值格式错误;%v", data))
-	}
-
-	if len(ids) > 0 {
-		return true, nil
-	}
-	return false, nil
-
 }
