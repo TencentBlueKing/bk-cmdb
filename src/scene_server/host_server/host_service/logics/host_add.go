@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-//AddHost, return error info
+//AddHost return error info
 func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	user := scenecommon.GetUserFromHeader(req)

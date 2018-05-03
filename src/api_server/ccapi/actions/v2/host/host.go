@@ -69,7 +69,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/cloneHostProperty", Params: nil, Handler: host.CloneHostProperty, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/delHostInApp", Params: nil, Handler: host.DelHostInApp, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/getgitServerIp", Params: nil, Handler: host.GetGitServerIp, FilterHandler: nil, Version: v2.APIVersion})
-
 	// set cc api interface
 	host.CreateAction()
 }

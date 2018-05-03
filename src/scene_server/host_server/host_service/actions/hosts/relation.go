@@ -188,7 +188,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		fields := fmt.Sprintf("%s,%s", common.BKOwnerIDField, common.BKAppNameField)
 		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl(), defLang)
 		if err != nil {
-			m.ResponseFailed(common.CC_Err_Comm_APP_QUERY_FAIL, err.Error(), resp)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
 		}
 		ownerID := appinfo[common.BKOwnerIDField].(string)
 		if "" == ownerID {
@@ -207,6 +207,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		}
 		if appID == data.ApplicationID {
 			return http.StatusOK, nil, nil
+
 		}
 		user := util.GetActionUser(req)
 
@@ -220,10 +221,10 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 
 		if nil != err {
 			blog.Errorf("ownerid %s default appid %d idle moduleID not found", ownerID, appID)
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrTopoMulueIDNotfoundFailed)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMulueIDNotfoundFailed)
 		}
 		if 0 == ownerModuleID {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrTopoMulueIDNotfoundFailed)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMulueIDNotfoundFailed)
 		}
 
 		//current app empty set
@@ -233,7 +234,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		mConds[common.BKAppIDField] = data.ApplicationID
 		moduleID, err := logics.GetSingleModuleID(req, mConds, m.CC.ObjCtrl())
 		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrTopoMulueIDNotfoundFailed)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMulueIDNotfoundFailed)
 		}
 		assignModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/assign"
 		params := make(map[string]interface{})
@@ -400,7 +401,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			isSuccess, errMsg, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, moduleHostConfigParams)
 			if !isSuccess {
 				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
-				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
 			addModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"

@@ -22,9 +22,10 @@ import (
 	"configcenter/src/scene_server/host_server/host_service/instapi"
 	"encoding/json"
 	"errors"
+	"strings"
+
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
-	"strings"
 )
 
 // HostSearch search host by mutiple condition
@@ -171,8 +172,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
 	blog.Info("Get Host By Cond return :%s", string(reply))
 	if err != nil {
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return nil, errors.New(common.CC_Err_Comm_Host_Get_FAIL_STR)
+		return nil, errors.New("Get Host Failed")
 	}
 
 	js, err := simplejson.NewJson([]byte(reply))
@@ -181,8 +181,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	hostData := output["data"]
 	hostResult, ok := hostData.(map[string]interface{})
 	if false == ok {
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return nil, errors.New(common.CC_Err_Comm_Host_Get_FAIL_STR)
+		return nil, errors.New("Get Host Failed")
 	}
 
 	// deal the host

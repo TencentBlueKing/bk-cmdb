@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
@@ -50,72 +51,73 @@ func init() {
 
 // UpdateMultiSet 更新一个或多个Set，更新多个Set时候名称无效
 func (cli *setAction) UpdateMultiSet(req *restful.Request, resp *restful.Response) {
-	blog.Debug("UpdateMultiSet start!")
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	appID, err := strconv.Atoi(req.PathParameter("appid"))
-	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+	m.CallResponseEx(func() (int, interface{}, error) {
+		blog.Debug("UpdateMultiSet start!")
 
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
+		appID, err := strconv.Atoi(req.PathParameter("appid"))
+		if nil != err {
+			blog.Errorf("convert appid to int error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	blog.Debug("UpdateMultiSet http body data: %s", value)
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Errorf("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		}
 
-	setIDArr := input[common.BKSetIDField]
+		blog.Debug("UpdateMultiSet http body data: %s", value)
 
-	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appID
-	condition[common.BKSetIDField] = map[string]interface{}{
-		"$in": setIDArr,
-	}
+		input := make(map[string]interface{})
+		err = json.Unmarshal(value, &input)
+		if nil != err {
+			blog.Errorf("unmarshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	param := make(map[string]interface{})
-	param["condition"] = condition
-	param["data"] = input["data"]
+		setIDArr := input[common.BKSetIDField]
 
-	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/set"
+		condition := make(map[string]interface{})
+		condition[common.BKAppIDField] = appID
+		condition[common.BKSetIDField] = map[string]interface{}{
+			"$in": setIDArr,
+		}
 
-	paramJson, err := json.Marshal(param)
-	if nil != err {
-		blog.Error("Marshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		param := make(map[string]interface{})
+		param["condition"] = condition
+		param["data"] = input["data"]
 
-	res, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(paramJson))
-	blog.Error("uUrl:%v", uURL)
-	blog.Error("res:%v", res)
+		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/set"
 
-	if nil != err {
-		blog.Error("request ctrl error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Set_Update_FAIL, common.CC_Err_Comm_Set_Update_FAIL_STR, resp)
-		return
-	}
+		paramJson, err := json.Marshal(param)
+		if nil != err {
+			blog.Errorf("Marshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
 
-	// deal result
-	var rst api.BKAPIRsp
-	if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
-		cli.Response(&rst, resp)
-		return
-	} else {
-		blog.Error("unmarshal the json failed, error: %v", jserr)
-	}
-	return
+		}
+
+		res, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(paramJson))
+		blog.Errorf("uUrl:%v", uURL)
+		blog.Errorf("res:%v", res)
+
+		if nil != err {
+			blog.Errorf("request ctrl error:%v", err)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetUpdateFailed)
+
+		}
+
+		// deal result
+		var rst api.BKAPIRsp
+		if jserr := json.Unmarshal([]byte(res), &rst); nil == jserr {
+			return http.StatusOK, &rst, nil
+		} else {
+			blog.Errorf("unmarshal the json failed, error: %v", jserr)
+		}
+		return http.StatusOK, nil, nil
+	}, resp)
 }
 
 // DeleteMultiSet 删除一个或多个Set
@@ -123,7 +125,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	blog.Debug("DeleteMultiSet start !")
 	appID, err := strconv.Atoi(req.PathParameter("appid"))
 	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
+		blog.Errorf("convert appid to int error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -132,7 +134,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
+		blog.Errorf("read request body failed, error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
 		return
 	}
@@ -143,7 +145,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	err = json.Unmarshal(value, &input)
 
 	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
+		blog.Errorf("unmarshal json error:%v", err)
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -152,7 +154,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	setIDStrArr := strings.Split(setIDStr.(string), ",")
 	hostIDArr := make([]int, 0)
 	moduleIDArr := make([]int, 0)
-	blog.Error("setIdArr:%v", setIDStrArr)
+	blog.Errorf("setIdArr:%v", setIDStrArr)
 	setIDArr, err := util.SliceStrToInt(setIDStrArr)
 	//判断集群下是否有主机
 	rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{
@@ -161,7 +163,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	})
 
 	if nil != rstErr {
-		blog.Error("failed to check set wether it has hosts, error info is %s", rstErr.Error())
+		blog.Errorf("failed to check set wether it has hosts, error info is %s", rstErr.Error())
 		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 		return
 	}
@@ -204,7 +206,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 	}
 	err = deleteObj(req, paramModule, "module", cli.CC.ObjCtrl())
 	if nil != err {
-		blog.Error("delete module error %v", err)
+		blog.Errorf("delete module error %v", err)
 		return
 	}
 
@@ -217,7 +219,7 @@ func (cli *setAction) DeleteMultiSet(req *restful.Request, resp *restful.Respons
 
 	err = deleteObj(req, paramSet, "set", cli.CC.ObjCtrl())
 	if nil != err {
-		blog.Error("delete set error %v", err)
+		blog.Errorf("delete set error %v", err)
 		return
 	}
 	// deal result
@@ -234,7 +236,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 	blog.Debug("inputJson%v", string(inputJson))
 
 	if nil != err {
-		blog.Error("Marshal json error:%v", err)
+		blog.Errorf("Marshal json error:%v", err)
 		return err
 	}
 
@@ -242,7 +244,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 	blog.Debug("del res:%v", res)
 
 	if nil != err {
-		blog.Error("request ctrl error:%v", err)
+		blog.Errorf("request ctrl error:%v", err)
 		return err
 	}
 	if "" != res {
@@ -256,7 +258,7 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 			}
 
 		} else {
-			blog.Error("unmarshal the json failed, error information is %v", jserr)
+			blog.Errorf("unmarshal the json failed, error information is %v", jserr)
 			return jserr
 		}
 	} else {
@@ -267,74 +269,72 @@ func deleteObj(req *restful.Request, param map[string]interface{}, objType, objC
 
 // DeleteSetHost 删除set下所有主机，只是在cc_HostModuleConfig删除对应的关系，其他的操作没有
 func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response) {
-	blog.Debug("DeleteSetHost start !")
-	appID, err := strconv.Atoi(req.PathParameter("appid"))
-	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		blog.Debug("DeleteSetHost start !")
+		appID, err := strconv.Atoi(req.PathParameter("appid"))
+		if nil != err {
+			blog.Errorf("convert appid to int error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	blog.Debug("DeleteSetHost appid: %s", appID)
+		blog.Debug("DeleteSetHost appid: %s", appID)
 
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			blog.Errorf("read request body failed, error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
 
-	blog.Debug("DeleteSetHost http body data: %s", value)
+		blog.Debug("DeleteSetHost http body data: %s", value)
 
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
+		input := make(map[string]interface{})
+		err = json.Unmarshal(value, &input)
+		if nil != err {
+			blog.Errorf("unmarshal json error:%v", err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+		}
 
-	setIDArr := input[common.BKSetIDField]
+		setIDArr := input[common.BKSetIDField]
 
-	param := make(map[string]interface{})
-	param[common.BKAppIDField] = appID
-	param[common.BKSetIDField] = map[string]interface{}{
-		"$in": setIDArr,
-	}
+		param := make(map[string]interface{})
+		param[common.BKAppIDField] = appID
+		param[common.BKSetIDField] = map[string]interface{}{
+			"$in": setIDArr,
+		}
 
-	uUrl := cli.CC.ObjCtrl() + "/object/v1/openapi/set/delhost"
-	blog.Debug("uUrl%v", uUrl)
-	inputJson, err := json.Marshal(param)
-	blog.Debug("inputJson%v", string(inputJson))
+		uUrl := cli.CC.ObjCtrl() + "/object/v1/openapi/set/delhost"
+		blog.Debug("uUrl%v", uUrl)
+		inputJson, err := json.Marshal(param)
+		blog.Debug("inputJson%v", string(inputJson))
 
-	if nil != err {
-		blog.Error("Marshal json error:%v", err)
-		return
-	}
+		if nil != err {
+			blog.Errorf("Marshal json error:%v", err)
+			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
+		}
 
-	res, err := httpcli.ReqHttp(req, uUrl, common.HTTPDelete, []byte(inputJson))
-	blog.Debug("del res:%v", res)
-	if nil != err {
-		blog.Error("request ctrl error:%v", err)
-		return
-	}
-	blog.Debug("res:%v", res)
-	//err = delSetConfigHost(param)
-	var rst api.BKAPIRsp
-	if "not found" == fmt.Sprintf("%v", err) {
-		cli.Response(&rst, resp)
-		return
-	}
-	if nil != err {
-		blog.Error("delSetConfigHost error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Set_Delete_FAIL, common.CC_Err_Comm_Set_Delete_FAIL, resp)
-		return
-	}
+		res, err := httpcli.ReqHttp(req, uUrl, common.HTTPDelete, []byte(inputJson))
+		blog.Debug("del res:%v", res)
+		if nil != err {
+			blog.Errorf("request ctrl error:%v", err)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 
-	// deal result
+		}
+		blog.Debug("res:%v", res)
+		//err = delSetConfigHost(param)
+		var rst api.BKAPIRsp
+		if "not found" == fmt.Sprintf("%v", err) {
+			return http.StatusOK, &rst, nil
+		}
+		if nil != err {
+			blog.Errorf("delSetConfigHost error:%v", err)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
+		}
 
-	cli.Response(&rst, resp)
+		// deal result
 
+		return http.StatusOK, &rst, nil
+	}, resp)
 }
 
 //helper
@@ -342,7 +342,7 @@ func delSetConfigHost(params map[string]interface{}) error {
 	blog.Debug("params:%v", params)
 	err := set.CC.InstCli.DelByCondition("cc_ModuleHostConfig", params)
 	if err != nil {
-		blog.Error("fail to delSetConfigHost: %v", err)
+		blog.Errorf("fail to delSetConfigHost: %v", err)
 		return err
 	}
 	return nil
@@ -388,13 +388,13 @@ func getModuleByCond(req *restful.Request, objCtrl string, cond interface{}) ([]
 	sURL := objCtrl + "/object/v1/insts/module/search"
 	inputJson, err := json.Marshal(searchParams)
 	if nil != err {
-		blog.Error("inputJson :%v", err)
+		blog.Errorf("inputJson :%v", err)
 
 	}
 	moduleRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJson))
 	blog.Debug("moduleRes:%v", moduleRes)
 	if nil != err {
-		blog.Error("get module :%v", err)
+		blog.Errorf("get module :%v", err)
 	}
 	js, _ := simplejson.NewJson([]byte(moduleRes))
 	moduleMap, _ := js.Map()
