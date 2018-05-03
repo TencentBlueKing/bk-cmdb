@@ -114,7 +114,7 @@ condition 参数说明：
 |test_obj|string|是|无|此处仅为示例数据，需要被设置为模型的标识符，在页面上配置的英文名|the engilish name, the object indentifier|
 |field|string|是|无|取值为模型的字段名|the field name of a object|
 |operator|string|是|无|取值为：$regex $eq $ne|the available value: $regex $eq $ne|
-|value|string|是|无|field配置的模型字段名所对应的值|the value of the filed|
+|value|string|是|无|field配置的模型字段名所对应的值|the value of the field|
 
 fields 参数说明：
 

@@ -121,7 +121,7 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 
 		input[common.BKAppIDField] = appID
 		// check
-		valid := validator.NewValidMapWithKeyFileds(tmpID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField}, forward, defErr)
+		valid := validator.NewValidMapWithKeyFields(tmpID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField}, forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Error("failed to valid the input data, error info is %s", err.Error())
@@ -330,7 +330,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 			blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
 		}
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField, common.BKSetNameField}, forward, defErr)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField, common.BKSetNameField}, forward, defErr)
 		_, err := valid.ValidMap(data, common.ValidUpdate, setID)
 		if nil != err {
 			blog.Error("failed to valid the input data, error info is %s", err.Error())
