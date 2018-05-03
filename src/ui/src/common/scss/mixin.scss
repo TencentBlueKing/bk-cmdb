@@ -17,7 +17,7 @@
 @mixin scrollbar { // 页面滚动条
     &::-webkit-scrollbar {
         width: 6px;
-        height: 5px;
+        height: 6px;
         &-thumb {
             border-radius: 20px;
             background: #a5a5a5;
