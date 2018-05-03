@@ -23,7 +23,7 @@ import (
 
 func TestCreateObject(t *testing.T) {
 
-	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	id, err := cli.CCV3().Model().CreateObject(types.MapStr{
 		"bk_supplier_account":  "0",
@@ -40,8 +40,12 @@ func TestCreateObject(t *testing.T) {
 }
 
 func TestDeleteObject(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
 
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 	cond := common.CreateCondition().Field("id").Eq(16)
 
 	err := cli.CCV3().Model().DeleteObject(cond)
@@ -54,7 +58,11 @@ func TestDeleteObject(t *testing.T) {
 }
 
 func TestUpdateObject(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("id").Eq(16)
 
@@ -67,7 +75,11 @@ func TestUpdateObject(t *testing.T) {
 	t.Log("success")
 }
 func TestSearchObject(t *testing.T) {
+<<<<<<< HEAD
 	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
+=======
+	cli := client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+>>>>>>> 90919e71ebdcf2031702950b1adc66ac64aacd3b
 
 	cond := common.CreateCondition().Field("bk_obj_id").Like("host")
 
