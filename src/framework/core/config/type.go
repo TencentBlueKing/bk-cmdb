@@ -14,3 +14,7 @@ package config
 
 // Config define config type
 type Config map[string]string
+
+func (c Config) Get(key string) string {
+	return c["key"]
+}

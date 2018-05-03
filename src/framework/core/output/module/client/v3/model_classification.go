@@ -24,7 +24,7 @@ import (
 // CreateClassification create a new classification
 func (cli *Client) CreateClassification(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification", cli.address)
+	targetURL := fmt.Sprintf("%s/api/v3/object/classification", cli.GetAddress())
 
 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
