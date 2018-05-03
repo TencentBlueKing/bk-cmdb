@@ -51,6 +51,28 @@ func (cli *model) ToMapStr() types.MapStr {
 	}
 }
 
+func (cli *model) Attributes() ([]Attribute, error) {
+
+	cond := common.CreateCondition().Field(ObjectID).Like(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+
+	dataMap, err := v3.GetClient().SearchObjectAttributes(cond)
+
+	if nil != err {
+		return nil, err
+	}
+
+	attrs := make([]Attribute, 0)
+
+	for _, item := range dataMap {
+		tmpItem := &attribute{}
+		common.SetValueToStructByTags(tmpItem, item)
+		attrs = append(attrs, tmpItem)
+	}
+
+	return attrs, nil
+
+}
+
 func (cli *model) Save() error {
 
 	// construct the search condition

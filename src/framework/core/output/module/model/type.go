@@ -167,6 +167,8 @@ type Model interface {
 	CreateAttribute() Attribute
 	CreateGroup() Group
 
+	Attributes() ([]Attribute, error)
+
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
 	FindAttributesByCondition(cond common.Condition) (AttributeIterator, error)
 
