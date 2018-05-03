@@ -50,17 +50,41 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header) ([]int
 		sHostCond[common.BKAppIDField] = -1
 		sHostCond["ip"] = make(map[string]interface{})
 		condArr := make([]interface{}, 0)
+
+		//host condition
 		condition := make(map[string]interface{})
 		hostCondArr := make([]interface{}, 0)
 		hostCond := make(map[string]interface{})
 		hostCond["field"] = common.BKHostIDField
-		hostCond["operator"] = "$in"
+		hostCond["operator"] = common.BKDBIN
 		hostCond["value"] = iHostIDArr
 		hostCondArr = append(hostCondArr, hostCond)
-		condition[common.BKObjIDField] = "host"
+		condition[common.BKObjIDField] = common.BKInnerObjIDHost
 		condition["fields"] = make([]string, 0)
 		condition["condition"] = hostCondArr
 		condArr = append(condArr, condition)
+
+		//biz conditon
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDApp
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		//set conditon
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDSet
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		//module condition
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDModule
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
 		sHostCond["condition"] = condArr
 		sHostCond["page"] = make(map[string]interface{})
 
