@@ -1,12 +1,11 @@
 <template>
-    <div  v-click-outside="handleClickOutside"
+    <div  v-click-outside="memberInputReset"
         :data-placeholder="$t(`Common['${placeholder}']`)"
         :class="['member-selector', {'active': focus, 'placeholder': !focus && !localSelected.length, 'disabled': disabled}]">
         <div class="member-wrapper">
             <div ref="memberContainer" :class="['member-container', {'active': focus , 'ellipsis': showEllipsis}]" @click="handleSelectorClick(localSelected.length)">
                 <span ref="memberSelected" class="member-selected" 
                     v-for="(selectedMember, index) in localSelected"
-                    v-if="multiple || (!multiple && !focus)"
                     :title="selectedMember"
                     @click.stop="handleSelectorClick(index, $event)">
                     <span class="member-input-emitter before" @click.stop="locateInputPosition(index)"></span>
@@ -55,7 +54,11 @@
                 type: Boolean,
                 default: false
             },
-            multiple: {
+            multiple: { // 保留配置，单选多选配置, 尚未实现单选
+                type: Boolean,
+                default: true
+            },
+            visible: {
                 type: Boolean,
                 default: true
             }
@@ -88,7 +91,6 @@
         watch: {
             selected (selected) {
                 this.setLocalSelected()
-                this.checkLocalSelected()
             },
             localSelected (localSelected) {
                 let localSelectedStr = localSelected.join(',')
@@ -128,7 +130,6 @@
                 this.updateMemberListPosition()
             },
             members (members) {
-                this.checkLocalSelected()
                 this.setFilterMember()
             },
             active (active) {
@@ -141,7 +142,6 @@
                 this.getMemberList()
             }
             this.setLocalSelected()
-            this.checkLocalSelected()
             this.setFilterMember()
         },
         methods: {
@@ -158,11 +158,6 @@
                     this.localSelected = []
                 }
             },
-            checkLocalSelected () {
-                if (!this.exclude) {
-                    this.localSelected = this.localSelected.filter(selected => this.members.find(({english_name: englishName}) => englishName === selected))
-                }
-            },
             /* 根据当前输入筛选人员列表 */
             setFilterMember () {
                 let filterVal = this.memberInputText.toLowerCase()
@@ -170,7 +165,7 @@
                 this.filterMembers = this.members.filter(member => {
                     let enInclude = member['english_name'].toLowerCase().indexOf(filterVal) !== -1
                     let cnInclude = member['chinese_name'].toLowerCase().indexOf(filterVal) !== -1
-                    let isSelected = this.multiple ? this.localSelected.includes(member['english_name']) : false
+                    let isSelected = this.localSelected.includes(member['english_name'])
                     return (enInclude || cnInclude) && !isSelected
                 })
             },
@@ -295,18 +290,10 @@
             handleConfirm (event) {
                 event.preventDefault()
                 let memberInputText = this.memberInputText.trim()
-                if (this.multiple) {
-                    if (this.selectedIndex !== null) {
-                        this.localSelected.splice(this.inputIndex, 0, this.filterMembers[this.selectedIndex]['english_name'])
-                    } else if (this.exclude && memberInputText.length) { // 允许选择不在人员列表中的人，以当前输入添加
-                        this.localSelected.splice(this.inputIndex, 0, memberInputText)
-                    }
-                } else {
-                    if (this.selectedIndex !== null) {
-                        this.localSelected = [this.filterMembers[this.selectedIndex]['english_name']]
-                    } else if (this.exclude && memberInputText.length) {
-                        this.localSelected = [memberInputText]
-                    }
+                if (this.selectedIndex !== null) {
+                    this.localSelected.splice(this.inputIndex, 0, this.filterMembers[this.selectedIndex]['english_name'])
+                } else if (this.exclude && memberInputText.length) { // 允许选择不在人员列表中的人，以当前输入添加
+                    this.localSelected.splice(this.inputIndex, 0, memberInputText)
                 }
                 this.selectedIndex = null
                 this.inputIndex = null
@@ -350,12 +337,6 @@
                     }
                 }
             },
-            handleClickOutside () {
-                if (this.focus && !this.multiple) {
-                    this.localSelected = []
-                }
-                this.memberInputReset()
-            },
             /* 光标获取焦点 */
             memberInputFocus () {
                 this.memberInputReset()
@@ -375,12 +356,8 @@
             },
             /* 从过滤出来的人员列表中选中指定人员 */
             handleMemberItemClick (member) {
-                if (this.multiple) {
-                    if (!this.localSelected.some(selected => selected === member['english_name'])) {
-                        this.localSelected.push(member['english_name'])
-                    }
-                } else {
-                    this.localSelected = [member['english_name']]
+                if (!this.localSelected.some(selected => selected === member['english_name'])) {
+                    this.localSelected.push(member['english_name'])
                 }
                 this.memberInputReset()
             },
