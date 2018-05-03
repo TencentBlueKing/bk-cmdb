@@ -52,12 +52,12 @@ res=conf/errors
 		"redis.maxIDleConns":   "1000",
 		"errors.res":           "conf/errors",
 	}
-	conf, err := ParseFromBytes(data)
+	err := ParseFromBytes(data)
 	assert.NoError(t, err)
-	assert.Equal(t, expect, conf)
+	assert.Equal(t, expect, Get())
 }
 func TestParseFromFile(t *testing.T) {
-	conf, err := ParseFromFile(`testdata/server.conf`)
+	err := ParseFromFile(`testdata/server.conf`)
 	expect := Config{
 		"mongodb.host":         "127.0.0.1",
 		"mongodb.usr":          "user",
@@ -75,5 +75,5 @@ func TestParseFromFile(t *testing.T) {
 		"errors.res":           "conf/errors",
 	}
 	assert.NoError(t, err)
-	assert.Equal(t, expect, conf)
+	assert.Equal(t, expect, Get())
 }

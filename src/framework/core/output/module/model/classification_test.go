@@ -14,7 +14,9 @@ package model_test
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/config"
 	"configcenter/src/framework/core/output/module/client"
+	"configcenter/src/framework/core/output/module/client/v3"
 	"configcenter/src/framework/core/output/module/model"
 	//"configcenter/src/framework/core/types"
 	"testing"
@@ -22,10 +24,7 @@ import (
 
 func TestSearchClassification(t *testing.T) {
 
-	cli := client.GetClient().CCV3()
-	cli.SetSupplierAccount("0")
-	cli.SetUser("build_user")
-	cli.SetAddress("http://test.apiserver:8080")
+	client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "http://test.apiserver:8080": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("id").Gt(1)
 
@@ -52,7 +51,7 @@ func TestSearchClassification(t *testing.T) {
 
 func TestSearchClassificationByName(t *testing.T) {
 
-	cli := v3.GetV3Client()
+	cli := client.GetClient().CCV3().(*v3.Client)
 	cli.SetSupplierAccount("0")
 	cli.SetUser("build_user")
 	cli.SetAddress("http://test.apiserver:8080")
