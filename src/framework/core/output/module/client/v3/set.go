@@ -21,18 +21,40 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// SetGetter the set getter interface
+type SetGetter interface {
+	Set() SetInterface
+}
+
+// SetInterface the set interface
+type SetInterface interface {
+	CreateSet(data types.MapStr) (int, error)
+	DeleteSet(cond common.Condition) error
+	UpdateSet(data types.MapStr, cond common.Condition) error
+	SearchSets(cond common.Condition) ([]types.MapStr, error)
+}
+
+func newSet(cli *Client) *Set {
+	return &Set{
+		cli: cli,
+	}
+}
+
+// Set the set interface implement
+type Set struct {
+	cli *Client
+}
+
 // CreateSet create a new Set
-func (cli *Client) CreateSet(data types.MapStr) (int, error) {
+func (cli *Set) CreateSet(data types.MapStr) (int, error) {
 	appID := data.String(BusinessID)
 	if 0 == len(appID) {
 		return 0, errors.New("the business id is not set")
 	}
 
-	data.Remove(BusinessID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s", cli.cli.GetAddress(), appID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/set/%s", cli.GetAddress(), appID)
-
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -51,7 +73,7 @@ func (cli *Client) CreateSet(data types.MapStr) (int, error) {
 }
 
 // DeleteSet delete a set by condition
-func (cli *Client) DeleteSet(cond common.Condition) error {
+func (cli *Set) DeleteSet(cond common.Condition) error {
 	data := cond.ToMapStr()
 
 	appID := data.String(BusinessID)
@@ -59,18 +81,14 @@ func (cli *Client) DeleteSet(cond common.Condition) error {
 		return errors.New("the business id is not set")
 	}
 
-	data.Remove(BusinessID)
-
 	setID := data.String(SetID)
 	if 0 == len(appID) {
 		return errors.New("the set id is not set")
 	}
 
-	data.Remove(SetID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.cli.GetAddress(), appID, setID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.GetAddress(), appID, setID)
-
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := cli.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -86,7 +104,7 @@ func (cli *Client) DeleteSet(cond common.Condition) error {
 }
 
 // UpdateSet update a set by condition
-func (cli *Client) UpdateSet(data types.MapStr, cond common.Condition) error {
+func (cli *Set) UpdateSet(data types.MapStr, cond common.Condition) error {
 
 	condData := cond.ToMapStr()
 
@@ -102,11 +120,9 @@ func (cli *Client) UpdateSet(data types.MapStr, cond common.Condition) error {
 		return errors.New("the set id is not set")
 	}
 
-	condData.Remove(SetID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.cli.GetAddress(), appID, setID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.GetAddress(), appID, setID)
-
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -121,7 +137,7 @@ func (cli *Client) UpdateSet(data types.MapStr, cond common.Condition) error {
 }
 
 // SearchSets search some sets by condition
-func (cli *Client) SearchSets(cond common.Condition) ([]types.MapStr, error) {
+func (cli *Set) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 	data := cond.ToMapStr()
 
 	appID := data.String(BusinessID)
@@ -129,11 +145,9 @@ func (cli *Client) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("the business id is not set")
 	}
 
-	data.Remove(BusinessID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/search/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/set/search/%s/%s", cli.GetAddress(), cli.supplierAccount, appID)
-
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return nil, err
 	}
@@ -145,10 +159,12 @@ func (cli *Client) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
-	dataStr := gs.Get("data").String()
+	dataStr := gs.Get("data.info").String()
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
+
+	//fmt.Println("data:", dataStr)
 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
