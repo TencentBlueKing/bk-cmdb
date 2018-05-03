@@ -58,10 +58,6 @@
             multiple: {
                 type: Boolean,
                 default: true
-            },
-            visible: {
-                type: Boolean,
-                default: true
             }
         },
         data () {
@@ -92,6 +88,7 @@
         watch: {
             selected (selected) {
                 this.setLocalSelected()
+                this.checkLocalSelected()
             },
             localSelected (localSelected) {
                 let localSelectedStr = localSelected.join(',')
@@ -131,6 +128,7 @@
                 this.updateMemberListPosition()
             },
             members (members) {
+                this.checkLocalSelected()
                 this.setFilterMember()
             },
             active (active) {
@@ -143,6 +141,7 @@
                 this.getMemberList()
             }
             this.setLocalSelected()
+            this.checkLocalSelected()
             this.setFilterMember()
         },
         methods: {
@@ -157,6 +156,11 @@
                     this.localSelected = [...selected]
                 } else if (selected === undefined && localSelected.length) {
                     this.localSelected = []
+                }
+            },
+            checkLocalSelected () {
+                if (!this.exclude) {
+                    this.localSelected = this.localSelected.filter(selected => this.members.find(({english_name: englishName}) => englishName === selected))
                 }
             },
             /* 根据当前输入筛选人员列表 */
