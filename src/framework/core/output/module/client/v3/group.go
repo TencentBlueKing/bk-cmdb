@@ -21,12 +21,32 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+type GroupGetter interface {
+	Group() GroupInterface
+}
+type GroupInterface interface {
+	CreateGroup(data types.MapStr) (int, error)
+	DeleteGroup(cond common.Condition) error
+	UpdateGroup(data types.MapStr, cond common.Condition) error
+	SearchGroups(cond common.Condition) ([]types.MapStr, error)
+}
+
+type Group struct {
+	cli *Client
+}
+
+func newGroup(cli *Client) *Group {
+	return &Group{
+		cli: cli,
+	}
+}
+
 // CreateGroup create a group
-func (cli *Client) CreateGroup(data types.MapStr) (int, error) {
+func (g *Group) CreateGroup(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/new", cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/new", g.cli.GetAddress())
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := g.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -45,7 +65,7 @@ func (cli *Client) CreateGroup(data types.MapStr) (int, error) {
 }
 
 // DeleteGroup delete a group by condition
-func (cli *Client) DeleteGroup(cond common.Condition) error {
+func (g *Group) DeleteGroup(cond common.Condition) error {
 
 	data := cond.ToMapStr()
 	id, err := data.Int("id")
@@ -53,9 +73,9 @@ func (cli *Client) DeleteGroup(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/groupid/%d", cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/groupid/%d", g.cli.GetAddress(), id)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := g.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -71,12 +91,12 @@ func (cli *Client) DeleteGroup(cond common.Condition) error {
 }
 
 // UpdateGroup update a group by condition
-func (cli *Client) UpdateGroup(data types.MapStr, cond common.Condition) error {
+func (g *Group) UpdateGroup(data types.MapStr, cond common.Condition) error {
 
 	return nil
 }
 
 // SearchGroups search some group by condition
-func (cli *Client) SearchGroups(cond common.Condition) ([]types.MapStr, error) {
+func (g *Group) SearchGroups(cond common.Condition) ([]types.MapStr, error) {
 	return nil, nil
 }

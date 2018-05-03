@@ -15,39 +15,56 @@ package v3
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/discovery"
 )
+
+type CCV3Interface interface {
+	HostGetter
+	ModelGetter
+	ClassificationGetter
+	AttributeGetter
+	CommonInstGetter
+	GroupGetter
+}
 
 // Client the http client
 type Client struct {
 	httpCli         *httpclient.HttpClient
+	disc            discovery.DiscoverInterface
 	address         string
 	supplierAccount string
 	user            string
 }
 
-var client = &Client{}
-
-func init() {
-
+func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
+	var client = &Client{}
 	client.httpCli = httpclient.NewHttpClient()
 	client.httpCli.SetHeader("Content-Type", "application/json")
 	client.httpCli.SetHeader("Accept", "application/json")
-}
 
-// GetClient get the client instance
-func GetClient() *Client {
+	client.supplierAccount = conf.Get("supplierAccount")
+	client.user = conf.Get("user")
 	return client
 }
 
-// GetV3Client get the v3 client
-func GetV3Client() *Client {
-
-	return client
+func (cli *Client) Host() HostInterface {
+	return newHost(cli)
 }
-
-// SetAddress set a new address
-func (cli *Client) SetAddress(address string) {
-	cli.address = address
+func (cli *Client) Model() ModelInterface {
+	return newModel(cli)
+}
+func (cli *Client) Classification() ClassificationInterface {
+	return newClassification(cli)
+}
+func (cli *Client) Attribute() AttributeInterface {
+	return newAttribute(cli)
+}
+func (cli *Client) CommonInst() CommonInstInterface {
+	return newCommonInst(cli)
+}
+func (cli *Client) Group() GroupInterface {
+	return newGroup(cli)
 }
 
 // SetSupplierAccount set a new supplieraccount
@@ -74,5 +91,8 @@ func (cli *Client) GetSupplierAccount() string {
 
 // GetAddress get the address
 func (cli *Client) GetAddress() string {
+	if cli.disc != nil {
+		return cli.disc.OutPut()
+	}
 	return cli.address
 }

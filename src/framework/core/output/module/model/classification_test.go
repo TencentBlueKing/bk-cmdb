@@ -14,15 +14,15 @@ package model_test
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/output/module/v3"
 	//"configcenter/src/framework/core/types"
 	"testing"
 )
 
 func TestSearchClassification(t *testing.T) {
 
-	cli := v3.GetV3Client()
+	cli := client.GetClient().CCV3()
 	cli.SetSupplierAccount("0")
 	cli.SetUser("build_user")
 	cli.SetAddress("http://test.apiserver:8080")

@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 	//"fmt"
 )
@@ -33,7 +33,7 @@ func newGroupIterator(cond common.Condition) (GroupIterator, error) {
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := v3.GetClient().SearchGroups(cond)
+	items, err := client.GetClient().CCV3().Group().SearchGroups(cond)
 	if nil != err {
 		return nil, err
 	}

@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/v3"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 )
 
@@ -48,14 +48,14 @@ func (cli *group) Save() error {
 	cond := common.CreateCondition().Field(GroupID).Eq(cli.GroupID).Field(ObjectID).Eq(cli.ObjectID)
 
 	// search all group by condition
-	dataItems, err := v3.GetClient().SearchGroups(cond)
+	dataItems, err := client.GetClient().CCV3().Group().SearchGroups(cond)
 	if nil != err {
 		return err
 	}
 
 	// create a new object
 	if 0 == len(dataItems) {
-		if _, err = v3.GetClient().CreateGroup(cli.ToMapStr()); nil != err {
+		if _, err = client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr()); nil != err {
 			return err
 		}
 		return nil
@@ -69,7 +69,7 @@ func (cli *group) Save() error {
 		item.Set(IsDefault, cli.IsDefault)
 
 		cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(GroupID).Eq(cli.GroupID)
-		if err = v3.GetClient().UpdateGroup(item, cond); nil != err {
+		if err = client.GetClient().CCV3().Group().UpdateGroup(item, cond); nil != err {
 			return err
 		}
 	}

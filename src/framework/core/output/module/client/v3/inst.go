@@ -21,8 +21,28 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+type CommonInstGetter interface {
+	CommonInst() CommonInstInterface
+}
+type CommonInstInterface interface {
+	CreateCommonInst(data types.MapStr) (int, error)
+	DeleteCommonInst(cond common.Condition) error
+	UpdateCommonInst(data types.MapStr, cond common.Condition) error
+	SearchInst(cond common.Condition) ([]types.MapStr, error)
+}
+
+type CommonInst struct {
+	cli *Client
+}
+
+func newCommonInst(cli *Client) *CommonInst {
+	return &CommonInst{
+		cli: cli,
+	}
+}
+
 // CreateCommonInst create a common inst instance
-func (cli *Client) CreateCommonInst(data types.MapStr) (int, error) {
+func (m *CommonInst) CreateCommonInst(data types.MapStr) (int, error) {
 
 	objID := data.String(ObjectID)
 	if 0 == len(objID) {
@@ -31,9 +51,9 @@ func (cli *Client) CreateCommonInst(data types.MapStr) (int, error) {
 
 	data.Remove(ObjectID)
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s", cli.GetAddress(), cli.supplierAccount, objID)
+	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID)
 
-	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
 	}
@@ -53,7 +73,7 @@ func (cli *Client) CreateCommonInst(data types.MapStr) (int, error) {
 }
 
 // DeleteCommonInst delete a common inst instance
-func (cli *Client) DeleteCommonInst(cond common.Condition) error {
+func (m *CommonInst) DeleteCommonInst(cond common.Condition) error {
 
 	condData := cond.ToMapStr()
 	instID, err := condData.Int(CommonInstID)
@@ -66,9 +86,9 @@ func (cli *Client) DeleteCommonInst(cond common.Condition) error {
 		return errors.New("the object id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", cli.GetAddress(), cli.supplierAccount, objID, instID)
+	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID, instID)
 
-	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
+	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
 		return err
 	}
@@ -84,7 +104,7 @@ func (cli *Client) DeleteCommonInst(cond common.Condition) error {
 }
 
 // UpdateCommonInst update a common inst instance
-func (cli *Client) UpdateCommonInst(data types.MapStr, cond common.Condition) error {
+func (m *CommonInst) UpdateCommonInst(data types.MapStr, cond common.Condition) error {
 
 	condData := cond.ToMapStr()
 	instID, err := condData.Int(CommonInstID)
@@ -97,9 +117,9 @@ func (cli *Client) UpdateCommonInst(data types.MapStr, cond common.Condition) er
 		return errors.New("the object id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", cli.GetAddress(), cli.supplierAccount, objID, instID)
+	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID, instID)
 
-	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
 	}
@@ -115,7 +135,7 @@ func (cli *Client) UpdateCommonInst(data types.MapStr, cond common.Condition) er
 }
 
 // SearchInst search all inst by condition
-func (cli *Client) SearchInst(cond common.Condition) ([]types.MapStr, error) {
+func (m *CommonInst) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 
 	condData := cond.ToMapStr()
 
@@ -124,7 +144,7 @@ func (cli *Client) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("the object id is not set")
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/inst/search/owner/%s/object/%s", cli.GetAddress(), cli.supplierAccount, objID)
+	targetURL := fmt.Sprintf("%s/api/v3/inst/search/owner/%s/object/%s", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID)
 
 	// convert to the condition
 	condInner := types.MapStr{
@@ -139,7 +159,7 @@ func (cli *Client) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 
 	//fmt.Println("inner cond:", string(condInner.ToJSON()))
 
-	rst, err := cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
+	rst, err := m.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err
 	}
