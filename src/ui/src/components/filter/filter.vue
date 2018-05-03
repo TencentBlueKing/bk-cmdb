@@ -27,7 +27,7 @@
                 </v-screening>
             </bk-tabpanel>
             <bk-tabpanel name="collect" :title="$t('Hosts[\'收藏\']')" :show="isShowCollect">
-                <v-collect :favoriteList="tab.favorite.list" @delete="getFavoriteList" @apply="applyCollect"></v-collect>
+                <v-collect :favoriteList="tab.favorite.list" @delete="getFavoriteList" @update="updateFavoriteList" @apply="applyCollect"></v-collect>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" :show="isShowHistory">
                 <v-history :isShow="tab.active === 'history'" @apply="applyHistory"></v-history>
@@ -215,6 +215,12 @@
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
+            },
+            updateFavoriteList (updateItem) {
+                let originItem = this.tab.favorite.list.find(({id}) => id === updateItem.id)
+                if (originItem) {
+                    Object.assign(originItem, updateItem)
+                }
             },
             getCollectParams () {
                 let filter = this.tab.screening.filter

@@ -55,7 +55,7 @@
                         <!-- 判断输入类型 -->
                         <div class="operation-value">
                             <template v-if="column['bk_property_type'] === 'int'">
-                                <input type="number" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
+                                <input type="text" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'objuser'">
                                 <v-member-selector class="screening-group-item-value"

@@ -39,6 +39,15 @@ func InArray(obj interface{}, target interface{}) bool {
 	return false
 }
 
+func InStrArr(arr []string, key string) bool {
+	for _, a := range arr {
+		if key == a {
+			return true
+		}
+	}
+	return false
+}
+
 func ArrayUnique(a interface{}) (ret []interface{}) {
 	va := reflect.ValueOf(a)
 	for i := 0; i < va.Len(); i++ {
@@ -55,6 +64,17 @@ func StrArrayUnique(a []string) (ret []string) {
 	length := len(a)
 	for i := 0; i < length; i++ {
 		if !Contains(ret, a[i]) {
+			ret = append(ret, a[i])
+		}
+	}
+	return ret
+}
+
+//IntArrayUnique get unique int array
+func IntArrayUnique(a []int) (ret []int) {
+	length := len(a)
+	for i := 0; i < length; i++ {
+		if !ContainsInt(ret, a[i]) {
 			ret = append(ret, a[i])
 		}
 	}
@@ -109,7 +129,7 @@ func GetActionOnwerID(req *restful.Request) string {
 	return ownerID
 }
 
-// GetActionOnwerID returns owner_uin and user form hender
+// GetActionOnwerIDAndUser returns owner_uin and user form hender
 func GetActionOnwerIDAndUser(req *restful.Request) (string, string) {
 	user := GetActionUser(req)
 	ownerID := GetActionOnwerID(req)
@@ -117,11 +137,17 @@ func GetActionOnwerIDAndUser(req *restful.Request) (string, string) {
 	return ownerID, user
 }
 
-//  GetActionLanguageByHTTPHeader return language from http header
+// GetActionLanguageByHTTPHeader return language from http header
 func GetActionLanguageByHTTPHeader(header http.Header) string {
 	language := header.Get(common.BKHTTPLanguage)
 	if "" == language {
 		return "zh-cn"
 	}
 	return language
+}
+
+// GetActionOnwerIDByHTTPHeader return owner from http header
+func GetActionOnwerIDByHTTPHeader(header http.Header) string {
+	ownerID := header.Get(common.BKHTTPOwnerID)
+	return ownerID
 }

@@ -61,7 +61,7 @@
                         name: this.$t("Hosts['模块']")
                     }, {
                         id: 'bk_cloud_id',
-                        name: this.$t("Hosts['云区域ID']")
+                        name: this.$t("Hosts['云区域']")
                     }],
                     list: [],
                     pagination: {
@@ -197,6 +197,9 @@
     }
 </style>
 <style lang="scss">
+    .userapi-preview .preview-table{
+        min-height: auto !important;
+    }
     .userapi-preview .preview-table .table-scrollbar{
         max-height: 250px !important;
     }

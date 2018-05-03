@@ -20,7 +20,7 @@
                             <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" @click="importSlider.isShow = true">
+                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.create && unauthorized.update">
                         <i class="icon-cc-import"></i>
                         <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
@@ -46,9 +46,21 @@
                         </bk-select-option>
                     </bk-select>
                 </div>
-                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" placeholder="$t('Common[\'快速查询\']" v-model.number="filter.value" @keyup.enter="doFilter">
-                <input v-else type="text" class="bk-form-input search-text" placeholder="" v-model.trim="filter.value" @keyup.enter="doFilter">
-                <i class="bk-icon icon-search" @click="doFilter"></i>
+                <template v-if="filter.type === 'enum'">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                        <bk-select-option v-for="option in getEnumOptions()"
+                            :key="option.id"
+                            :value="option.id"
+                            :label="option.name">
+                        </bk-select-option>
+                    </bk-select>
+                </template>
+                <template v-else>
+                    <input v-if="filter.type === 'int'" type="text" class="bk-form-input search-text int" 
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
+                    <input v-else type="text" class="bk-form-input search-text" :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
+                    <i class="bk-icon icon-search" @click="doFilter"></i>
+                </template>
             </div>
         </div>
         <div class="table-contain">
@@ -250,7 +262,7 @@
                 } else {
                     config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
                 }
-                if (this.filter.selected && this.filter.value) {
+                if (this.filter.selected && this.filter.value !== '') {
                     if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                         config.params.condition[this.filter.selected] = this.filter.value === 'true'
                     } else {
@@ -313,6 +325,9 @@
                 if (!isShow) {
                     this.closeObjectSlider()
                 }
+            },
+            'filter.selected' () {
+                this.filter.value = ''
             }
         },
         methods: {
@@ -411,11 +426,22 @@
                                     }
                                 }
                                 if (val['bk_property_type'] !== 'singleasst' || val['bk_property_type'] !== 'multiasst') {
-                                    filterList.push({
-                                        id: val['bk_property_id'],
-                                        name: val['bk_property_name'],
-                                        type: val['bk_property_type']
+                                    let property = res.data.find(({bk_property_id: bkPropertyId}) => {
+                                        return bkPropertyId === val['bk_property_id']
                                     })
+                                    if (property) {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: property['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    } else {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: val['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    }
                                 }
                             })
                         } else { // 没有时则显示前六
@@ -632,6 +658,14 @@
                 if (obj) {
                     return obj.name
                 }
+            },
+            getEnumOptions () {
+                let selectedPropertyId = this.filter.selected
+                let property = this.attr.formFields.find(({bk_property_id: bkPropertyId}) => bkPropertyId === selectedPropertyId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
             }
         },
         mounted () {
@@ -888,6 +922,9 @@
             &:focus{
                 z-index: 2;
             }
+        }
+        .search-options{
+            width: 320px;
         }
         .icon-search{
             position: absolute;

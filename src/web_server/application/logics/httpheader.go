@@ -31,6 +31,12 @@ func SetProxyHeader(c *gin.Context) {
 }
 
 func GetLanugaeByHTTPRequest(c *gin.Context) string {
+
+	cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
+	if "" != cookieLanuage && nil == err {
+		return cookieLanuage
+	}
+
 	session := sessions.Default(c)
 	language := session.Get(common.BKSessionLanugageKey)
 	if nil == language {

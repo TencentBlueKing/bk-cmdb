@@ -89,7 +89,11 @@ let vm = new Vue({
     i18n: new VueI18n({
         locale: language,
         messages: i18nConfig,
-        fallbackLocal: 'zh_CN'
+        fallbackLocale: 'zh_CN',
+        missing: function (locale, path) {
+            let parsedPath = vm.$i18n._path.parsePath(path)
+            return parsedPath[parsedPath.length - 1]
+        }
     }),
     store,
     components: { App },
