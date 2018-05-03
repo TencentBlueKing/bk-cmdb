@@ -84,6 +84,9 @@ var router = new Router({
             setBkBizId: true
         }
     }, {
+        path: '/table',
+        component: () => import('@/pages/test/test')
+    }, {
         path: '*',
         redirect: '/404'
     }]
