@@ -414,11 +414,22 @@
                                     }
                                 }
                                 if (val['bk_property_type'] !== 'singleasst' || val['bk_property_type'] !== 'multiasst') {
-                                    filterList.push({
-                                        id: val['bk_property_id'],
-                                        name: val['bk_property_name'],
-                                        type: val['bk_property_type']
+                                    let property = res.data.find(({bk_property_id: bkPropertyId}) => {
+                                        return bkPropertyId === val['bk_property_id']
                                     })
+                                    if (property) {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: property['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    } else {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: val['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    }
                                 }
                             })
                         } else { // 没有时则显示前六
