@@ -1,20 +1,24 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
+	"errors"
 )
 
 var _ Inst = (*set)(nil)
@@ -39,14 +43,18 @@ func (cli *set) GetAssociationModels() ([]model.Model, error) {
 }
 
 func (cli *set) GetInstID() int {
-	return 0
+	id, err := cli.datas.Int(SetID)
+	if nil != err {
+		log.Errorf("failed to get the inst id, %s", err.Error())
+	}
+	return id
 }
 func (cli *set) GetInstName() string {
-	return ""
+	return cli.datas.String(SetName)
 }
 
 func (cli *set) GetValues() (types.MapStr, error) {
-	return nil, nil
+	return cli.datas, nil
 }
 
 func (cli *set) GetAssociationsByModleID(modleID string) ([]Inst, error) {
@@ -75,11 +83,79 @@ func (cli *set) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
 
-	cli.datas[key] = value
+	cli.datas.Set(key, value)
 
 	return nil
 }
 
 func (cli *set) Save() error {
+	// get the attributes
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return err
+	}
+
+	// construct the condition which is used to check the if it is exists
+	cond := common.CreateCondition()
+
+	// extract the required id
+	for _, attrItem := range attrs {
+		if attrItem.GetRequired() {
+
+			attrVal := cli.datas.String(attrItem.GetID())
+			if 0 == len(attrVal) {
+				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			}
+
+			cond.Field(attrItem.GetID()).Eq(attrVal)
+		}
+	}
+
+	// fmt.Println("cond:", cond.ToMapStr())
+
+	// search by condition
+	existItems, err := client.GetClient().CCV3().Set().SearchSets(cond)
+	if nil != err {
+		return err
+	}
+
+	// fmt.Println("the exists:", existItems)
+
+	// create a new
+	if 0 == len(existItems) {
+		_, err = client.GetClient().CCV3().Set().CreateSet(cli.datas)
+		return err
+	}
+
+	// update the exists
+	for _, existItem := range existItems {
+
+		cli.datas.ForEach(func(key string, val interface{}) {
+			existItem.Set(key, val)
+		})
+
+		instID, err := existItem.Int(SetID)
+		if nil != err {
+			return err
+		}
+		updateCond := common.CreateCondition().Field(SetID).Eq(instID)
+
+		// clear the invalid field
+		existItem.ForEach(func(key string, val interface{}) {
+			for _, attrItem := range attrs {
+				if attrItem.GetID() == key {
+					return
+				}
+			}
+			existItem.Remove(key)
+		})
+		//fmt.Println("the new:", existItem)
+		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
+		if nil != err {
+			return err
+		}
+
+	}
+
 	return nil
 }
