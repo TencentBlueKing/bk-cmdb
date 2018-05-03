@@ -194,6 +194,9 @@
     }
 </style>
 <style lang="scss">
+    .userapi-preview .preview-table{
+        min-height: auto !important;
+    }
     .userapi-preview .preview-table .table-scrollbar{
         max-height: 250px !important;
     }
