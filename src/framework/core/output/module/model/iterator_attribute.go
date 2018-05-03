@@ -48,6 +48,23 @@ func newAttributeIterator(cond common.Condition) (AttributeIterator, error) {
 	return attrIterator, nil
 }
 
+func (cli *attributeIterator) ForEach(itemCallback func(item Attribute)) error {
+
+	for {
+
+		item, err := cli.Next()
+		if nil != err {
+			return err
+		}
+
+		if nil == item {
+			return nil
+		}
+		itemCallback(item)
+	}
+
+}
+
 func (cli *attributeIterator) Next() (Attribute, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
