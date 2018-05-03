@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
