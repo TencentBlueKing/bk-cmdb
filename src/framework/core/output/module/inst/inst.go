@@ -15,8 +15,8 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/output/module/v3"
 	"configcenter/src/framework/core/types"
 	"errors"
 	//"fmt"
@@ -123,7 +123,7 @@ func (cli *inst) Save() error {
 	// fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
-	existItems, err := v3.GetClient().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
 	if nil != err {
 		return err
 	}
@@ -132,7 +132,7 @@ func (cli *inst) Save() error {
 
 	// create a new
 	if 0 == len(existItems) {
-		_, err = v3.GetClient().CreateCommonInst(cli.datas)
+		_, err = client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
 		return err
 	}
 
@@ -159,7 +159,7 @@ func (cli *inst) Save() error {
 			existItem.Remove(key)
 		})
 		//fmt.Println("the new:", existItem)
-		err = v3.GetClient().UpdateCommonInst(existItem, updateCond)
+		err = client.GetClient().CCV3().CommonInst().UpdateCommonInst(existItem, updateCond)
 		if nil != err {
 			return err
 		}
