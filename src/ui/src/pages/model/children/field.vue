@@ -23,7 +23,7 @@
         @cancel="cancel">
         </v-base-info>
         <div class="tab-content model-field-content pb20" v-show="type==='change'">
-            <div class="add-field">
+            <div class="add-field clearfix">
                 <bk-button type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="addField" v-if="!isReadOnly">
                     {{$t('ModelManagement["新增字段"]')}}
                 </bk-button>
@@ -197,6 +197,26 @@
                                             <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
                                             <div class="from-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
+                                            </div>
+                                        </div>
+                                        <div class="from-common-item from-common-item2 pl30">
+                                            <div class="from-selcet-wrapper mr30">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
+                                            </div>
+                                            <div class="from-selcet-wrapper mr30">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
+                                            </div>
+                                            <div class="from-selcet-wrapper">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isonly']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
@@ -1477,6 +1497,20 @@
                 }
                 this.fieldList[index].option = option
             },
+            formatAttrOption (data) {
+                data.map(item => {
+                    switch (item['bk_property_type']) {
+                        case 'int':
+                            if (item.option === null) {
+                                item.option = {
+                                    min: '',
+                                    max: ''
+                                }
+                            }
+                            break
+                    }
+                })
+            },
             /*
                 获取字段配置
             */
@@ -1489,6 +1523,7 @@
                 this.isLoading = true
                 this.$axios.post('object/attr/search', params).then(res => {
                     if (res.result) {
+                        this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
                             this.fieldList[i]['isShow'] = false
                         }
@@ -1565,6 +1600,7 @@
                 清空新增字段内容
             */
             resetNewField () {
+                $('#validate-form-new').parsley().reset()
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 this.newFieldInfo.propertyType = 'bool'
@@ -1789,7 +1825,7 @@
                 // 只有关联类型才添加以下三个参数
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
                     if (option !== 'undefined') {
-                        params['bk_asst_obj_id'] = JSON.parse(option).value
+                        params['bk_asst_obj_id'] = option.value
                     }
                     params['bk_property_id'] = item['bk_property_id']
                     params['bk_obj_id'] = this.objId

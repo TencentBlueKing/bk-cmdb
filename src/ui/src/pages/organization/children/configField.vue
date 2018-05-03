@@ -96,7 +96,7 @@
                 'bkSupplierAccount',
                 'usercustom'
             ]),
-            shownList: function () {
+            shownList () {
                 let list = []
                 this.localForSelectionList.map(val => {
                     if (val['bk_property_name'].indexOf(this.searchText) !== -1) {
@@ -107,9 +107,11 @@
             }
         },
         watch: {
-            isShow (val) {
-                if (val) {
+            isShow (isShow) {
+                if (isShow) {
                     this.getUserAttr()
+                } else {
+                    this.searchText = ''
                 }
             }
         },
@@ -168,7 +170,16 @@
                     })
                 }
                 if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
-                    this.localHasSelectionList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
+                    let selectedList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
+                    selectedList.map(list => {
+                        let property = this.attrList.find(attr => {
+                            return attr['bk_property_id'] === list['bk_property_id']
+                        })
+                        if (property) {
+                            list['bk_property_name'] = property['bk_property_name']
+                        }
+                    })
+                    this.localHasSelectionList = selectedList
                 } else {
                     this.localHasSelectionList = []
                 }
