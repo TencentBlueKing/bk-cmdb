@@ -174,7 +174,7 @@
                     name: this.$t('OperationAudit["操作账号"]')
                 }, {
                     id: 'op_target',
-                    name: this.$t('OperationAudit["操作对象"]')
+                    name: this.$t('OperationAudit["对象"]')
                 }, {
                     id: 'op_desc',
                     name: this.$t('OperationAudit["描述"]')
@@ -187,7 +187,7 @@
                     name: 'IP'
                 }, {
                     id: 'op_type_name',
-                    name: this.$t('OperationAudit["操作类型"]'),
+                    name: this.$t('OperationAudit["类型"]'),
                     sortKey: 'op_type'
                 }, {
                     id: 'op_time',
@@ -273,7 +273,7 @@
                     name: this.$t('OperationAudit["操作账号"]')
                 }, {
                     id: 'op_target',
-                    name: this.$t('OperationAudit["操作对象"]')
+                    name: this.$t('OperationAudit["对象"]')
                 }, {
                     id: 'op_desc',
                     name: this.$t('OperationAudit["描述"]')
@@ -286,7 +286,7 @@
                     name: 'IP'
                 }, {
                     id: 'op_type_name',
-                    name: this.$t('OperationAudit["操作类型"]'),
+                    name: this.$t('OperationAudit["类型"]'),
                     sortKey: 'op_type'
                 }, {
                     id: 'op_time',
