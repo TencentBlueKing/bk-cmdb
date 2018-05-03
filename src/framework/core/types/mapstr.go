@@ -116,7 +116,7 @@ func (cli *MapStr) String(key string) string {
 		return ""
 	default:
 		return fmt.Sprintf("%v", t)
-	case map[string]interface{}, []interface{}, interface{}:
+	case map[string]interface{}, []interface{}:
 		rest, _ := json.Marshal(t)
 		return string(rest)
 	case json.Number:
