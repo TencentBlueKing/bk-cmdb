@@ -258,7 +258,7 @@
                 } else {
                     config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
                 }
-                if (this.filter.selected && this.filter.value) {
+                if (this.filter.selected && this.filter.value !== '') {
                     if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                         config.params.condition[this.filter.selected] = this.filter.value === 'true'
                     } else {
