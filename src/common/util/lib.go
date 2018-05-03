@@ -39,6 +39,15 @@ func InArray(obj interface{}, target interface{}) bool {
 	return false
 }
 
+func InStrArr(arr []string, key string) bool {
+	for _, a := range arr {
+		if key == a {
+			return true
+		}
+	}
+	return false
+}
+
 func ArrayUnique(a interface{}) (ret []interface{}) {
 	va := reflect.ValueOf(a)
 	for i := 0; i < va.Len(); i++ {

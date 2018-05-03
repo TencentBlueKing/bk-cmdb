@@ -102,7 +102,8 @@ func BuildHostExcelFromData(objID string, fields map[string]Property, filter []s
 
 //BuildExcelTemplate  return httpcode, error
 func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf) error {
-	fields, err := GetObjFieldIDs(objID, url, header)
+	filterFields := getFilterFields(objID)
+	fields, err := GetObjFieldIDs(objID, url, filterFields, header)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return err
@@ -115,7 +116,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 		blog.Errorf("get %s fields error:", objID, err.Error())
 		return err
 	}
-	productExcelHealer(fields, getFilterFields(objID), sheet, defLang)
+	productExcelHealer(fields, filterFields, sheet, defLang)
 	err = file.Save(filename)
 	if nil != err {
 		return err
@@ -166,7 +167,6 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		switch field.PropertyType {
 		case common.FieldTypeInt:
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-			fmt.Println(index, cellEnName, cellName, cellType, index, field.ExcelColIndex, field.Name)
 		case common.FieldTypeEnum:
 			option := field.Option
 			optionArr, ok := option.([]interface{})
