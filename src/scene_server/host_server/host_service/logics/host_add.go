@@ -25,7 +25,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
+	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 
 	"time"
@@ -290,4 +292,178 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, IP, osTy
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 	return nil
 
+}
+
+// AddHostV22 add host
+func AddHostV22(CC *api.APIResource, req *restful.Request, bodyData []byte, hostAddr, ObjAddr, auditAddr string) error {
+	type inputStruct struct {
+		Ips        []string `json:"ip_list"`
+		ModuleName string   `json:"bk_module_name"`
+		SetName    string   `json:"bk_set_name"`
+		AppName    string   `json:"bk_biz_name"`
+		BKCloudID  int      `json:"bk_cloud_id"`
+		HostInfo   string   `json:"host_info"`
+	}
+	var data inputStruct
+	error := json.Unmarshal([]byte(bodyData), &data)
+	js, err := simplejson.NewJson([]byte(data.HostInfo))
+	if nil != err {
+
+	}
+	hostsMap, error := js.Map()
+	if nil != error {
+		blog.Error(" api fail to unmarshal json, error information is %s, msg:%s", error.Error(), string(bodyData))
+		return errors.New("api fail to unmarshal json")
+	}
+
+	blog.Errorf("zzzz =%v", hostsMap)
+	hostData := reflect.ValueOf(hostsMap["data"])
+	input := make(common.KvMap)
+	input["ips"] = data.Ips
+	input[common.BKModuleNameField] = data.ModuleName
+	input[common.BKSetNameField] = data.SetName
+	input[common.BKAppNameField] = data.AppName
+	input[common.BKOwnerIDField] = common.BKDefaultOwnerID
+	blog.Errorf("hostdata:%v", hostData)
+	//hostdata存在 说明在业务或者在资源池
+	if hostData.Len() > 0 {
+		blog.Errorf("hostdata 信息存在,%v", hostData)
+		var appID, moduleID, setID, hostID int
+		var osType, hostname, selfModuleName string
+		for _, item := range hostsMap["data"].([]interface{}) {
+			blog.Error("item:%v", item)
+			newAppID := item.(map[string]interface{})[common.BKAppIDField]
+			newModuleID := item.(map[string]interface{})[common.BKModuleIDField]
+			newSetID := item.(map[string]interface{})[common.BKSetIDField]
+			appID, _ = util.GetIntByInterface(newAppID)
+			moduleID, _ = util.GetIntByInterface(newModuleID)
+			setID, _ = util.GetIntByInterface(newSetID)
+			osType = item.(map[string]interface{})[common.BKOSNameField].(string)
+			hostname = item.(map[string]interface{})[common.BKHostNameField].(string)
+			newhostID := item.(map[string]interface{})[common.BKHostIDField]
+			hostID, _ = util.GetIntByInterface(newhostID)
+			selfModuleName = item.(map[string]interface{})[common.BKModuleNameField].(string)
+		}
+		blog.Errorf("hostname:%s,ostype:%s,appid:%d,setid:%d,muduleid:%d,modulename:%s", hostname, osType, appID, setID, moduleID, data.ModuleName)
+		error := addHostToModule(CC, req, appID, hostID, moduleID, data.AppName, data.SetName, data.ModuleName, selfModuleName, hostAddr, ObjAddr, auditAddr)
+		if nil != error {
+			blog.Error("add host error, params:%v, error:%s", input, error)
+			return errors.New("add host error")
+		}
+		return nil
+	} else {
+		//ip+platid主机不在当前供应商下 添加
+		// hostdata没有找到 添加ip到资源池
+		blog.Error("ip host not found")
+		// paramJSON, _ := json.Marshal(input)
+		delModulesURL := hostAddr + "/host/v1/host/add/module"
+		isSuccess, errMsg, _ := GetHttpResult(req, delModulesURL, common.HTTPSelectPost, input)
+		if !isSuccess {
+			blog.Error("remove hosthostconfig error, params:%v, error:%s", input, errMsg)
+			return errors.New("remove hosthostconfig error")
+		}
+
+	}
+	return nil
+}
+
+// addHostToModule add host to module
+func addHostToModule(CC *api.APIResource, req *restful.Request, appID, hostID, moduleID int, appName, setName, moduleName, selfModuleName string, hostAddr, ObjAddr, auditAddr string) error {
+	//默认业务与主机业务一致 说明主机存在资源池
+	language := util.GetActionLanguage(req)
+	langHandle := CC.Lang.CreateDefaultCCLanguageIf(language)
+	errHandle := CC.Error.CreateDefaultCCErrorIf(language)
+
+	//get default app
+	ownerAppID, err := GetDefaultAppID(req, common.BKDefaultOwnerID, common.BKAppIDField, ObjAddr, langHandle)
+	blog.Errorf("ownerAppID===%d", ownerAppID)
+	if err != nil {
+		blog.Infof("ownerid %s 资源池未找到", ownerAppID)
+		return errors.New("not found resource pool")
+	}
+	if 0 == ownerAppID {
+		blog.Infof("ownerid %s 资源池未找到", ownerAppID)
+		return errors.New("not found resource pool")
+	}
+	introAppID, _, moduleID, err := GetTopoIDByName(req, common.BKDefaultOwnerID, appName, setName, moduleName, ObjAddr, errHandle)
+	if nil != err {
+		blog.Error("get app  topology id by name error:%s, msg: applicationName:%s, setName:%s, moduleName:%s", err.Error(), appName, setName, moduleName)
+		return errors.New("search appliaction module not foud ")
+	}
+	blog.Errorf("--->>> appid:%s,==moduleid:%s,dataid:%s", introAppID, moduleID, appID)
+	//如果为0 说明输入的不存在 返回成功
+	if 0 == introAppID || 0 == moduleID {
+		return nil
+	}
+	user := scenecommon.GetUserFromHeader(req)
+	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
+	if 0 != ownerAppID && appID == ownerAppID {
+		blog.Errorf("default app 一致")
+		params := make(map[string]interface{})
+		params[common.BKAppIDField] = appID
+		params[common.BKHostIDField] = hostID
+		delModulesURL := hostAddr + "/host/v1/meta/hosts/defaultmodules"
+		isSuccess, _, _ := GetHttpResult(req, delModulesURL, common.HTTPDelete, params)
+		if !isSuccess {
+			blog.Error("remove modulehostconfig error, params:%v, error:%v", params, err)
+			return errors.New("remove modulehostconfig error")
+		}
+		logClient.SetDesc("remove host from module")
+		host := []int{hostID}
+		logClient.SetHostID(host)
+		logClient.SaveLog(fmt.Sprintf("%d", appID), user)
+		blog.Errorf("remove ok")
+
+		moduleHostConfigParams := make(map[string]interface{})
+		moduleHostConfigParams[common.BKAppIDField] = introAppID
+		moduleHostConfigParams[common.BKHostIDField] = hostID
+		moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+		addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+
+		isSuccess, errMsg, _ := GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
+		if !isSuccess {
+			blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+			return errors.New("add hosthostconfig error")
+		}
+		logClient.SetDesc("add host to module")
+		logClient.SetHostID(host)
+		logClient.SaveLog(fmt.Sprintf("%d", appID), user)
+		return nil
+	} else {
+		if introAppID == appID { //传入的ID和所在的业务ID一致
+			// IsExistHostIDInApp 判断主机是否在传入的业务中
+			blog.Errorf("is exist host in app")
+			moduleHostConfigParams := make(map[string]interface{})
+			moduleHostConfigParams[common.BKAppIDField] = appID
+			moduleHostConfigParams[common.BKHostIDField] = hostID
+			//如果主机在空闲机 删除
+			if selfModuleName == common.DefaultResModuleName {
+				delModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+				isSuccess, errMsg, _ := GetHttpResult(req, delModulesURL, common.HTTPDelete, moduleHostConfigParams)
+				if !isSuccess {
+					blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+					return errors.New("remove hosthostconfig error")
+				}
+			}
+
+			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+			addModulesURL := hostAddr + "/host/v1/meta/hosts/modules"
+
+			isSuccess, errMsg, _ := GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
+			if !isSuccess {
+				blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+				return errors.New("add hosthostconfig error")
+			}
+			blog.Info("add host to module suceess")
+			logClient.SetDesc("add host to module")
+			host := []int{hostID}
+			logClient.SetHostID(host)
+			logClient.SaveLog(fmt.Sprintf("%d", appID), user)
+			return nil
+		}
+		blog.Errorf("host in other app")
+		//说明主机在其他业务中 返回失败
+		return errors.New("host in other app")
+	}
+	return nil
 }
