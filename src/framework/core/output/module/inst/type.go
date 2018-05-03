@@ -23,8 +23,21 @@ type FieldName string
 const (
 	// InstID the common inst id
 	InstID = "bk_inst_id"
+
 	// InstName the common inst name
 	InstName = "bk_inst_name"
+
+	// SetID the set id
+	SetID = "bk_set_id"
+
+	// SetName the set name
+	SetName = "bk_set_name"
+
+	// ModuleID the module id
+	ModuleID = "bk_module_id"
+
+	// ModuleName the module name
+	ModuleName = "bk_module_name"
 )
 
 // Topo the inst topo structure
