@@ -16,7 +16,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	"fmt"
 )
 
 var _ ClassificationIterator = (*classificationIterator)(nil)
@@ -36,6 +36,7 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 
 	items, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
 	if nil != err {
+		fmt.Println("err:", err.Error(), items)
 		return nil, err
 	}
 
