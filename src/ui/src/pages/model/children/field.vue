@@ -1600,6 +1600,7 @@
                 清空新增字段内容
             */
             resetNewField () {
+                $('#validate-form-new').parsley().reset()
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 this.newFieldInfo.propertyType = 'bool'
