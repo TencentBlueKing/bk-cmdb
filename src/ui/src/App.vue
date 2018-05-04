@@ -71,7 +71,7 @@
         color:$primaryColor;
         cursor: pointer;
         transition: left .5s;
-        z-index: 1001;
+        z-index: 1201;
         &.close{
             left: 80px;
             transform: rotate(180deg);
