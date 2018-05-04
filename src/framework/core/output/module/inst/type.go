@@ -21,6 +21,8 @@ import (
 type FieldName string
 
 const (
+	// BusinessID the business id
+	BusinessID = "bk_biz_id"
 	// InstID the common inst id
 	InstID = "bk_inst_id"
 

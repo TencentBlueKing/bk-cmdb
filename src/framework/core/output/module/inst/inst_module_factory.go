@@ -19,7 +19,7 @@ import (
 )
 
 func createModule(target model.Model) (Inst, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+	return &module{target: target, datas: types.MapStr{}}, nil
 }
 
 // findModulesLikeName find all insts by inst name

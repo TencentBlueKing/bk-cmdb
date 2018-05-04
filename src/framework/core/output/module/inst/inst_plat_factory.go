@@ -19,7 +19,7 @@ import (
 )
 
 func createPlat(target model.Model) (Inst, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+	return &plat{target: target, datas: types.MapStr{}}, nil
 }
 
 // findPlatsLikeName find all insts by inst name

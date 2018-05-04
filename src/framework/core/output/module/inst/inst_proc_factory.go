@@ -19,7 +19,7 @@ import (
 )
 
 func createProc(target model.Model) (Inst, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+	return &proc{target: target, datas: types.MapStr{}}, nil
 }
 
 // findProcsLikeName find all insts by inst name

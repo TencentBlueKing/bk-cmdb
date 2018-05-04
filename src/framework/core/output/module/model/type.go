@@ -204,6 +204,9 @@ type Attribute interface {
 	SetNonRequired()
 	GetRequired() bool
 	SetKey(isKey bool)
+	GetKey() bool
 	SetOption(option string)
+	GetOption() string
 	SetDescrition(des string)
+	GetDescription() string
 }

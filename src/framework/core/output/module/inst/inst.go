@@ -19,7 +19,6 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"errors"
-	//"fmt"
 )
 
 var _ Inst = (*inst)(nil)
@@ -90,7 +89,6 @@ func (cli *inst) SetValue(key string, value interface{}) error {
 }
 
 func (cli *inst) Save() error {
-
 	// get the attributes
 	attrs, err := cli.target.Attributes()
 	if nil != err {
@@ -109,7 +107,7 @@ func (cli *inst) Save() error {
 
 	// extract the required id
 	for _, attrItem := range attrs {
-		if attrItem.GetRequired() {
+		if attrItem.GetKey() {
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
