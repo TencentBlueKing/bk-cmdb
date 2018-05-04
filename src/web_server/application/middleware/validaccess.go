@@ -268,12 +268,18 @@ func validSysConfigPrivi(sysPrivi interface{}, config string) bool {
 func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) bool {
 
 	var mPrivi map[string][]string
+	var objName string
 	err := json.Unmarshal([]byte(modelPrivi), &mPrivi)
 	if nil != err {
 		blog.Error("get model privilege json error")
 		return false
 	}
-	objName := pathArr[len(pathArr)-1]
+	if method == common.HTTPCreate {
+		objName = pathArr[len(pathArr)-1]
+	} else {
+		objName = pathArr[len(pathArr)-2]
+	}
+
 	priviArr, ok := mPrivi[objName]
 	if false == ok {
 		blog.Error("get object privilege  error")
