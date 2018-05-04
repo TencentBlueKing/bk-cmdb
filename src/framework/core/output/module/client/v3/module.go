@@ -53,14 +53,12 @@ func (cli *Module) CreateModule(data types.MapStr) (int, error) {
 		return 0, errors.New("the business id is not set")
 	}
 
-	data.Remove(BusinessID)
-
 	setID := data.String(SetID)
 	if 0 == len(appID) {
 		return 0, errors.New("the set id is not set")
 	}
 
-	data.Remove(SetID)
+	data.Set(SupplierAccount, cli.cli.GetSupplierAccount())
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/%s/%s", cli.cli.GetAddress(), appID, setID)
 
@@ -101,7 +99,7 @@ func (cli *Module) DeleteModule(cond common.Condition) error {
 	data.Remove(BusinessID)
 
 	setID := data.String(SetID)
-	if 0 == len(appID) {
+	if 0 == len(setID) {
 		return errors.New("the set id is not set")
 	}
 
@@ -143,7 +141,7 @@ func (cli *Module) UpdateModule(data types.MapStr, cond common.Condition) error 
 	condData.Remove(BusinessID)
 
 	setID := condData.String(SetID)
-	if 0 == len(appID) {
+	if 0 == len(setID) {
 		return errors.New("the set id is not set")
 	}
 
@@ -176,7 +174,7 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 	}
 
 	setID := data.String(SetID)
-	if 0 == len(appID) {
+	if 0 == len(setID) {
 		return nil, errors.New("the set id is not set")
 	}
 

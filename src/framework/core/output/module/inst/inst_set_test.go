@@ -68,7 +68,7 @@ func TestInstSetManager(t *testing.T) {
 			commonInst.SetValue("bk_parent_id", 2)
 			commonInst.SetValue("bk_set_desc", "only test")
 			commonInst.SetValue("description", "test")
-			commonInst.SetValue("bk_capacity", 10)
+			commonInst.SetValue("bk_capacity", 15)
 
 			// save inst info
 			err = commonInst.Save()
