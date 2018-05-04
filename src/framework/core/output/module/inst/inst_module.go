@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"errors"
+	"fmt"
 )
 
 var _ Inst = (*module)(nil)
@@ -83,12 +84,15 @@ func (cli *module) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
 
-	cli.datas[key] = value
+	cli.datas.Set(key, value)
 
 	return nil
 }
 
 func (cli *module) Save() error {
+
+	businessID := cli.datas.String(BusinessID)
+	setID := cli.datas.String(SetID)
 
 	// get the attributes
 	attrs, err := cli.target.Attributes()
@@ -97,11 +101,11 @@ func (cli *module) Save() error {
 	}
 
 	// construct the condition which is used to check the if it is exists
-	cond := common.CreateCondition()
+	cond := common.CreateCondition().Field(BusinessID).Eq(businessID).Field(SetID).Eq(setID)
 
 	// extract the required id
 	for _, attrItem := range attrs {
-		if attrItem.GetRequired() {
+		if attrItem.GetKey() {
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
@@ -112,7 +116,7 @@ func (cli *module) Save() error {
 		}
 	}
 
-	// fmt.Println("cond:", cond.ToMapStr())
+	fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
 	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
@@ -120,7 +124,7 @@ func (cli *module) Save() error {
 		return err
 	}
 
-	// fmt.Println("the exists:", existItems)
+	//fmt.Println("the exists:", existItems)
 
 	// create a new
 	if 0 == len(existItems) {
@@ -139,7 +143,7 @@ func (cli *module) Save() error {
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(ModuleID).Eq(instID)
+		updateCond := common.CreateCondition().Field(ModuleID).Eq(instID).Field(BusinessID).Eq(businessID).Field(SetID).Eq(setID)
 
 		// clear the invalid field
 		existItem.ForEach(func(key string, val interface{}) {
