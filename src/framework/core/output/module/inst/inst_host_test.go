@@ -18,6 +18,7 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"github.com/stretchr/testify/assert"
 	//"configcenter/src/framework/core/types"
 	"testing"
 )
@@ -55,27 +56,28 @@ func TestHostManager(t *testing.T) {
 
 			// create host
 			hostInst, err := inst.CreateInst(modelItem)
-			if nil != err {
-				t.Errorf("failed to create host ")
-				return
-			}
+			assert.NoError(t, err, "failed to create host")
 
 			// Only test
 			t.Logf("model name:%s", hostInst.GetModel().GetName())
 
 			// set host value
-			err = hostInst.SetValue("test", "test")
-			if nil != err {
-				t.Errorf("failed to set value, %s", err.Error())
-				return
-			}
+			err = hostInst.SetValue("bk_host_innerip", "192.168.100.1")
+			assert.NoError(t, err, "failed to set value")
 
 			// save host info
 			err = hostInst.Save()
+			assert.NoError(t, err, "failed to save")
 
-			if nil != err {
-				t.Errorf("failed to save ,%s", err.Error())
-			}
+			cond := common.CreateCondition().Field("bk_host_innerip").Eq("192.168.100.1")
+			hostiter, err := inst.FindInstsByCondition(modelItem, cond)
+			assert.NoError(t, err, "failed to FindInstsByCondition")
+			hostiter.ForEach(func(item inst.Inst) error {
+				val, err := item.GetValues()
+				assert.NoError(t, err, "failed to item.GetValues")
+				t.Logf("host ip %#v", val)
+				return nil
+			})
 
 		})
 

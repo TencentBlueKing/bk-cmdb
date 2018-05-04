@@ -13,6 +13,7 @@
 package types
 
 import (
+	"configcenter/src/framework/core/log"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,10 @@ func (cli MapStr) Merge(second MapStr) {
 
 // ToJSON convert to json string
 func (cli MapStr) ToJSON() []byte {
-	js, _ := json.Marshal(cli)
+	js, err := json.Marshal(cli)
+	if err != nil {
+		log.Errorf("to json error %v", err)
+	}
 	return js
 }
 

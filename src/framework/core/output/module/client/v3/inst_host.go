@@ -15,6 +15,7 @@ package v3
 import (
 	cccommon "configcenter/src/common"
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 
 	"configcenter/src/framework/core/types"
 	"encoding/json"
@@ -122,8 +123,44 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()
 
+	conditions := []map[string]interface{}{}
+	for key, val := range data {
+		var operator string
+		var value interface{}
+		switch v := val.(type) {
+		case types.MapStr:
+			for k, vv := range v {
+				operator = k
+				value = vv
+			}
+		default:
+			operator = cccommon.BKDBEQ
+			value = val
+			log.Infof("val: %#v", val)
+		}
+		condition := map[string]interface{}{
+			"field":    key,
+			"operator": operator,
+			"value":    value,
+		}
+
+		conditions = append(conditions, condition)
+	}
+
+	kkkkk := map[string]interface{}{}
+
+	kkkkk["condition"] = "aaa"
+
+	out, err := json.Marshal(kkkkk)
+	if err != nil {
+		log.Errorf("json error: %v", err)
+	}
+
+	log.Infof("search host param:>%#v<", kkkkk)
+	log.Infof("search host param:>%s<", out)
+
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
-	rst, err := h.cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, out)
 	if nil != err {
 		return nil, err
 	}
