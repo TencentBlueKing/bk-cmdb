@@ -21,33 +21,33 @@ import (
 )
 
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
-func (cli *MapStr) Merge(second MapStr) {
+func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
-		(*cli)[key] = val
+		cli[key] = val
 	}
 }
 
 // ToJSON convert to json string
-func (cli *MapStr) ToJSON() []byte {
+func (cli MapStr) ToJSON() []byte {
 	js, _ := json.Marshal(cli)
 	return js
 }
 
 // Set set a new value for the key, the old value will be replaced
-func (cli *MapStr) Set(key string, value interface{}) {
-	(*cli)[key] = value
+func (cli MapStr) Set(key string, value interface{}) {
+	cli[key] = value
 }
 
 // Reset  reset the mapstr into the init state
-func (cli *MapStr) Reset() {
-	for key := range *cli {
-		delete(*cli, key)
+func (cli MapStr) Reset() {
+	for key := range cli {
+		delete(cli, key)
 	}
 }
 
 // Bool get the value as bool
-func (cli *MapStr) Bool(key string) bool {
-	switch t := (*cli)[key].(type) {
+func (cli MapStr) Bool(key string) bool {
+	switch t := cli[key].(type) {
 	case nil:
 		return false
 	default:
@@ -58,9 +58,9 @@ func (cli *MapStr) Bool(key string) bool {
 }
 
 // Int return the value by the key
-func (cli *MapStr) Int(key string) (int, error) {
+func (cli MapStr) Int(key string) (int, error) {
 
-	switch t := (*cli)[key].(type) {
+	switch t := cli[key].(type) {
 	default:
 		return 0, errors.New("invalid num")
 	case nil:
@@ -86,8 +86,8 @@ func (cli *MapStr) Int(key string) (int, error) {
 }
 
 // Float get the value as float64
-func (cli *MapStr) Float(key string) (float64, error) {
-	switch t := (*cli)[key].(type) {
+func (cli MapStr) Float(key string) (float64, error) {
+	switch t := cli[key].(type) {
 	default:
 		return 0, errors.New("invalid num")
 	case nil:
@@ -110,8 +110,8 @@ func (cli *MapStr) Float(key string) (float64, error) {
 }
 
 // String get the value as string
-func (cli *MapStr) String(key string) string {
-	switch t := (*cli)[key].(type) {
+func (cli MapStr) String(key string) string {
+	switch t := cli[key].(type) {
 	case nil:
 		return ""
 	default:
@@ -127,8 +127,8 @@ func (cli *MapStr) String(key string) string {
 }
 
 // Time get the value as time.Time
-func (cli *MapStr) Time(key string) (*time.Time, error) {
-	switch t := (*cli)[key].(type) {
+func (cli MapStr) Time(key string) (*time.Time, error) {
+	switch t := cli[key].(type) {
 	default:
 		return nil, errors.New("invalid time value")
 	case nil:
@@ -171,9 +171,9 @@ func (cli *MapStr) Time(key string) (*time.Time, error) {
 }
 
 // MapStr get the MapStr object
-func (cli *MapStr) MapStr(key string) (MapStr, error) {
+func (cli MapStr) MapStr(key string) (MapStr, error) {
 
-	switch t := (*cli)[key].(type) {
+	switch t := cli[key].(type) {
 	default:
 		return nil, errors.New("the data is not a map[string]interface{} type")
 	case nil:
@@ -185,9 +185,9 @@ func (cli *MapStr) MapStr(key string) (MapStr, error) {
 }
 
 // MapStrArray get the MapStr object array
-func (cli *MapStr) MapStrArray(key string) ([]MapStr, error) {
+func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 
-	switch t := (*cli)[key].(type) {
+	switch t := cli[key].(type) {
 	default:
 		return nil, errors.New("the data is not a map[string]interface{} type")
 	case nil:
@@ -212,19 +212,19 @@ func (cli *MapStr) MapStrArray(key string) ([]MapStr, error) {
 }
 
 // ForEach for each the every item
-func (cli *MapStr) ForEach(callItem func(key string, val interface{})) {
+func (cli MapStr) ForEach(callItem func(key string, val interface{})) {
 
-	for key, val := range *cli {
+	for key, val := range cli {
 		callItem(key, val)
 	}
 
 }
 
 // Remove delete the item by the key and return the deleted one
-func (cli *MapStr) Remove(key string) interface{} {
+func (cli MapStr) Remove(key string) interface{} {
 
-	if val, ok := (*cli)[key]; ok {
-		delete((*cli), key)
+	if val, ok := cli[key]; ok {
+		delete(cli, key)
 		return val
 	}
 
@@ -232,7 +232,7 @@ func (cli *MapStr) Remove(key string) interface{} {
 }
 
 // Exists check the key exists
-func (cli *MapStr) Exists(key string) bool {
-	_, ok := (*cli)[key]
+func (cli MapStr) Exists(key string) bool {
+	_, ok := cli[key]
 	return ok
 }
