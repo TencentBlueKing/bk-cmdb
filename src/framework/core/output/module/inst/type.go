@@ -51,6 +51,7 @@ type Topo interface {
 // Iterator the iterator interface for the Inst
 type Iterator interface {
 	Next() (Inst, error)
+	ForEach(callbackItem func(item Inst)) error
 }
 
 // Inst the inst interface
