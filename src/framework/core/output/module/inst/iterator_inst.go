@@ -80,7 +80,7 @@ func (cli *iteratorInst) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInst) ForEach(callbackItem func(item Inst)) error {
+func (cli *iteratorInst) ForEach(callbackItem func(item Inst) error) error {
 	for {
 
 		item, err := cli.Next()

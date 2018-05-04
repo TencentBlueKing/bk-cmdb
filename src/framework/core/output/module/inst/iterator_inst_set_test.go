@@ -58,8 +58,9 @@ func TestInstSetFind(t *testing.T) {
 				t.Errorf("failed to find inst, %s", err.Error())
 			}
 
-			err = iter.ForEach(func(item inst.Inst) {
+			err = iter.ForEach(func(item inst.Inst) error {
 				t.Logf("inst:%+v", item.GetInstName())
+				return nil
 			})
 			if nil != err {
 				t.Errorf("for each err:%s", err.Error())

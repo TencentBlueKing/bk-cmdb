@@ -37,7 +37,7 @@ func newIteratorInstModule(target model.Model, cond common.Condition) (Iterator,
 
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
-	
+
 	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
 	if nil != err {
 		return nil, err
@@ -79,7 +79,7 @@ func (cli *iteratorInstModule) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInstModule) ForEach(callbackItem func(item Inst)) error {
+func (cli *iteratorInstModule) ForEach(callbackItem func(item Inst) error) error {
 	for {
 
 		item, err := cli.Next()
