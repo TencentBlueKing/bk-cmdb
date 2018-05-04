@@ -14,6 +14,7 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 )
 
@@ -31,7 +32,7 @@ func newHostIterator(cond common.Condition) (*hostIterator, error) {
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := client.GetClient().CCV3().Group().SearchGroups(cond)
+	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func newHostIterator(cond common.Condition) (*hostIterator, error) {
 	return grpIterator, nil
 }
 
-func (cli *hostIterator) ForEach(itemCallback func(item Inst)) error {
+func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) error {
 
 	for {
 
@@ -58,11 +59,14 @@ func (cli *hostIterator) ForEach(itemCallback func(item Inst)) error {
 			return nil
 		}
 
-		itemCallback(item)
+		err = itemCallback(item)
+		if nil != err {
+			return err
+		}
 	}
 
 }
-func (cli *hostIterator) Next() (host, error) {
+func (cli *hostIterator) Next() (Inst, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 		cli.bufIdx = 0

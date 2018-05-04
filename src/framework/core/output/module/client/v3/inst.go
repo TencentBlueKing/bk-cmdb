@@ -157,7 +157,7 @@ func (m *CommonInst) SearchInst(cond common.Condition) ([]types.MapStr, error) {
 		},
 	}
 
-	//fmt.Println("inner cond:", string(condInner.ToJSON()))
+	fmt.Println("inner cond:", string(condInner.ToJSON()))
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {

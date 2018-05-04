@@ -18,7 +18,6 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-
 )
 
 type iteratorInst struct {

@@ -43,6 +43,10 @@ const (
 
 	// DefaultLimit the limit num
 	DefaultLimit = 1000
+	// HostIDField the host id field
+	HostIDField = "bk_host_id"
+	// HostNameField the host name field
+	HostNameField = "bk_host_name"
 )
 
 // Topo the inst topo structure
@@ -54,7 +58,7 @@ type Topo interface {
 // Iterator the iterator interface for the Inst
 type Iterator interface {
 	Next() (Inst, error)
-	ForEach(callbackItem func(item Inst)) error
+	ForEach(callbackItem func(item Inst) error) error
 }
 
 // Inst the inst interface

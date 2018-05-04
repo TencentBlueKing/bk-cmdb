@@ -23,13 +23,12 @@ func createHost(target model.Model) (Inst, error) {
 }
 
 // findHostsLikeName find all insts by inst name
-func findHostsLikeName(target model.Model, businessName string) (Iterator, error) {
-	// TODO:按照名字读取特定模型的实例集合，实例名字要模糊匹配
-	return nil, nil
+func findHostsLikeName(target model.Model, hostname string) (Iterator, error) {
+	cond := common.CreateCondition().Field(HostNameField).Like(hostname)
+	return newHostIterator(cond)
 }
 
 // findHostsByCondition find all insts by condition
 func findHostsByCondition(target model.Model, condition common.Condition) (Iterator, error) {
-	// TODO:按照条件读取所有实例
-	return nil, nil
+	return newHostIterator(condition)
 }
