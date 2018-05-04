@@ -21,15 +21,13 @@ func TestSearchHost(t *testing.T) {
 func TestDeleteHost(t *testing.T) {
 	cli := v3.New(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	cond := common.CreateCondition().Field("bk_host_id").Eq("1")
-	err := cli.Host().DeleteHost(cond)
+	err := cli.Host().DeleteHostBatch("1")
 	assert.NoError(t, err)
 }
 func TestUpdateHost(t *testing.T) {
 	cli := v3.New(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	cond := common.CreateCondition().Field("bk_host_id").Eq("5")
 	data := types.MapStr{"bk_host_name": "test_update"}
-	err := cli.Host().UpdateHost(data, cond)
+	err := cli.Host().UpdateHostBatch(data, "5")
 	assert.NoError(t, err)
 }
