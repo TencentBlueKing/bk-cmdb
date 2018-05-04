@@ -15,21 +15,24 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
+	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 )
 
 var _ Iterator = (*hostIterator)(nil)
 
 type hostIterator struct {
-	cond   common.Condition
-	buffer []types.MapStr
-	bufIdx int
+	targetModel model.Model
+	cond        common.Condition
+	buffer      []types.MapStr
+	bufIdx      int
 }
 
-func newHostIterator(cond common.Condition) (*hostIterator, error) {
+func newHostIterator(target model.Model, cond common.Condition) (*hostIterator, error) {
 	grpIterator := &hostIterator{
-		cond:   cond,
-		buffer: make([]types.MapStr, 0),
+		targetModel: target,
+		cond:        cond,
+		buffer:      make([]types.MapStr, 0),
 	}
 
 	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
@@ -46,37 +49,52 @@ func newHostIterator(cond common.Condition) (*hostIterator, error) {
 	return grpIterator, nil
 }
 
-func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) error {
-
+func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) (err error) {
+	var item Inst
 	for {
 
-		item, err := cli.Next()
+		item, err = cli.Next()
 		if nil != err {
-			return err
+			break
 		}
 
 		if nil == item {
-			return nil
+			break
 		}
 
 		err = itemCallback(item)
 		if nil != err {
-			return err
+			break
 		}
 	}
-
+	cli.bufIdx = 0
+	return err
 }
-func (cli *hostIterator) Next() (Inst, error) {
 
+func (cli *hostIterator) Next() (Inst, error) {
 	if len(cli.buffer) == cli.bufIdx {
-		cli.bufIdx = 0
-		return nil, nil
+
+		cli.cond.SetStart(cli.bufIdx)
+
+		existItems, err := client.GetClient().CCV3().Module().SearchModules(cli.cond)
+		if nil != err {
+			return nil, err
+		}
+
+		if 0 == len(existItems) {
+			cli.bufIdx = 0
+			return nil, nil
+		}
+
+		cli.buffer = append(cli.buffer, existItems...)
 	}
 
 	tmpItem := cli.buffer[cli.bufIdx]
 	cli.bufIdx++
-	returnItem := &host{}
-	common.SetValueToStructByTags(returnItem, tmpItem)
 
+	returnItem := &host{
+		target: cli.targetModel,
+		datas:  tmpItem,
+	}
 	return returnItem, nil
 }
