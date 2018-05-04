@@ -13,7 +13,7 @@
 package errors
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 )
 
 type ErrorsInterface interface {

@@ -18,19 +18,19 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-
+	//"fmt"
 )
 
-type iteratorInst struct {
+type iteratorInstSet struct {
 	targetModel model.Model
 	cond        common.Condition
 	buffer      []types.MapStr
 	bufIdx      int
 }
 
-func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error) {
+func newIteratorInstSet(target model.Model, cond common.Condition) (Iterator, error) {
 
-	iter := &iteratorInst{
+	iter := &iteratorInstSet{
 		targetModel: target,
 		cond:        cond,
 		buffer:      make([]types.MapStr, 0),
@@ -38,12 +38,12 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
-	iter.cond.Field(model.ObjectID).Eq(target.GetID())
 
-	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3().Set().SearchSets(iter.cond)
 	if nil != err {
 		return nil, err
 	}
+	//fmt.Println("set next", existItems, iter.cond.ToMapStr())
 
 	iter.buffer = append(iter.buffer, existItems...)
 
@@ -51,13 +51,13 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 
 }
 
-func (cli *iteratorInst) Next() (Inst, error) {
+func (cli *iteratorInstSet) Next() (Inst, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cli.cond)
+		existItems, err := client.GetClient().CCV3().Set().SearchSets(cli.cond)
 		if nil != err {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func (cli *iteratorInst) Next() (Inst, error) {
 	tmpItem := cli.buffer[cli.bufIdx]
 	cli.bufIdx++
 
-	returnItem := &inst{
+	returnItem := &set{
 		target: cli.targetModel,
 		datas:  tmpItem,
 	}
@@ -81,7 +81,7 @@ func (cli *iteratorInst) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInst) ForEach(callbackItem func(item Inst)) error {
+func (cli *iteratorInstSet) ForEach(callbackItem func(item Inst)) error {
 	for {
 
 		item, err := cli.Next()
