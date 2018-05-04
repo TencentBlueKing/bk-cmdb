@@ -124,6 +124,14 @@
                             :isMultipleUpdate="sideslider.attribute.form.isMultipleUpdate"
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
+                            <div slot="list" class="attribute-group">
+                                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                                <ul class="attribute-list clearfix">
+                                    <li class="attribute-item fl" v-for="item in sideslider.hostRelation">
+                                        <span class="attribute-item-value">{{item}}</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </v-attribute>
                     </bk-tabpanel>
                     <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="!sideslider.attribute.form.isMultipleUpdate">
@@ -192,6 +200,7 @@
     import vRouter from './children/router'
     import bus from '@/eventbus/bus'
     import Clipboard from 'clipboard'
+    import { getHostRelation } from '@/utils/util'
     export default {
         props: {
             outerParams: {
@@ -306,7 +315,8 @@
                         type: 'displayColumns',
                         isShowExclude: true,
                         minField: 1
-                    }
+                    },
+                    hostRelation: []
                 },
                 transfer: {
                     isShow: false
@@ -425,6 +435,9 @@
             }
         },
         methods: {
+            getHostRelation (data) {
+                return getHostRelation(data)
+            },
             getClipText (item) {
                 let text = []
                 this.selectedList.map(selected => {
@@ -784,6 +797,8 @@
                 })
             },
             showHostAttribute (item, index) {
+                // this.$set(this.sideslider, 'hostRelation', getHostRelation(item))
+                this.sideslider.hostRelation = getHostRelation(item)
                 let bkHostId = item['host']['bk_host_id']
                 let attribute = this.sideslider.attribute
                 this.sideslider.width = 800
