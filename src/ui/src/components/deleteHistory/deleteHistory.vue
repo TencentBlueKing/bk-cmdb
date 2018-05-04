@@ -135,7 +135,7 @@
                         return time + ' 23:59:59'
                     }
                 })
-                if (this.opTime.length === 2) {
+                if (this.opTime.length === 2 && this.isShow) {
                     this.getTableList()
                 }
             },
