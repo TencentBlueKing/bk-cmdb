@@ -20,30 +20,144 @@ import (
 // CreateBusiness create a new Business object
 func CreateBusiness(supplierAccount string) (inst.Inst, error) {
 
-	// TODO:需要根据supplierAccount 获取业务模型
-	return mgr.OutputerMgr.CreateInst(nil)
+	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_organization")
+	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		cond = CreateCondition().Field(model.ObjectID).Eq("biz").
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(cond)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return mgr.OutputerMgr.CreateInst(targetModel)
 }
 
 // CreateSet create a new set object
-func CreateSet() (inst.Inst, error) {
-	// TODO:需要根据supplierAccount 获取集群模型定义
-	return mgr.OutputerMgr.CreateInst(nil)
+func CreateSet(supplierAccount string) (inst.Inst, error) {
+
+	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
+	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		cond = CreateCondition().Field(model.ObjectID).Eq("set").
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(cond)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return mgr.OutputerMgr.CreateInst(targetModel)
 }
 
 // CreateModule create a new module object
-func CreateModule() (inst.Inst, error) {
-	// TODO:需要根据supplierAccount 获取模块的定义
-	return mgr.OutputerMgr.CreateInst(nil)
+func CreateModule(supplierAccount string) (inst.Inst, error) {
+
+	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
+	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		cond = CreateCondition().Field(model.ObjectID).Eq("module").
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(cond)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return mgr.OutputerMgr.CreateInst(targetModel)
 }
 
 // CreateHost create a new host object
-func CreateHost() (inst.Inst, error) {
-	// TODO:需要根据supplierAccount 获取模块的定义
-	return mgr.OutputerMgr.CreateInst(nil)
+func CreateHost(supplierAccount string) (inst.Inst, error) {
+
+	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_host_manage")
+	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		cond = CreateCondition().Field(model.ObjectID).Eq("host").
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(cond)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return mgr.OutputerMgr.CreateInst(targetModel)
 }
 
 // CreateCommonInst create a common inst object
 func CreateCommonInst(target model.Model) (inst.Inst, error) {
-	// TODO:根据model 创建普通实例
-	return mgr.OutputerMgr.CreateInst(nil)
+	return mgr.OutputerMgr.CreateInst(target)
 }

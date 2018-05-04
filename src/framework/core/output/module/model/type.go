@@ -90,7 +90,7 @@ const (
 // GroupIterator the group iterator
 type GroupIterator interface {
 	Next() (Group, error)
-	ForEach(itemCallback func(item Group)) error
+	ForEach(itemCallback func(item Group) error) error
 }
 
 // Group the interface declaration for model maintence
@@ -117,7 +117,7 @@ type Group interface {
 // ClassificationIterator the classification iterator
 type ClassificationIterator interface {
 	Next() (Classification, error)
-	ForEach(itemCallback func(item Classification)) error
+	ForEach(itemCallback func(item Classification) error) error
 }
 
 // Classification the interface declaration for model classification
@@ -139,7 +139,7 @@ type Classification interface {
 // Iterator the model iterator
 type Iterator interface {
 	Next() (Model, error)
-	ForEach(itemCallback func(item Model)) error
+	ForEach(itemCallback func(item Model) error) error
 }
 
 // Model the interface declaration for model maintence
@@ -182,7 +182,7 @@ type Model interface {
 // AttributeIterator the attribute iterator
 type AttributeIterator interface {
 	Next() (Attribute, error)
-	ForEach(itemCallback func(item Attribute)) error
+	ForEach(itemCallback func(item Attribute)error) error
 }
 
 // Attribute the interface declaration for model attribute maintence

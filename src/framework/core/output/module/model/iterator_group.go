@@ -47,7 +47,7 @@ func newGroupIterator(cond common.Condition) (GroupIterator, error) {
 	return grpIterator, nil
 }
 
-func (cli *groupIterator) ForEach(itemCallback func(item Group)) error {
+func (cli *groupIterator) ForEach(itemCallback func(item Group) error) error {
 
 	for {
 
@@ -60,7 +60,10 @@ func (cli *groupIterator) ForEach(itemCallback func(item Group)) error {
 			return nil
 		}
 
-		itemCallback(item)
+		err = itemCallback(item)
+		if nil != err {
+			return err
+		}
 	}
 
 }

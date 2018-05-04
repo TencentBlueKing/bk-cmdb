@@ -20,6 +20,7 @@ import (
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
+	"configcenter/src/framework/core/output/module/client"
 	"fmt"
 	"github.com/spf13/pflag"
 
@@ -44,8 +45,10 @@ func main() {
 
 	if err := config.Init(opt); err != nil {
 		log.Errorf("init config error: %v", err)
-		return
+		//return
 	}
+
+	client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
 	// init the framework
 	if err := common.SavePid(); nil != err {

@@ -16,7 +16,7 @@ import (
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/types"
 	"fmt"
-	"time"
+	//"time"
 )
 
 func init() {
@@ -26,8 +26,8 @@ func init() {
 		return nil
 	})
 
-	// api.RegisterInputer(target, sender, nil)
-	api.RegisterTimingInputer(target, sender, time.Second*5, nil)
+	api.RegisterInputer(target, sender, nil)
+	//api.RegisterTimingInputer(target, sender, time.Second*5, nil)
 }
 
 var target = &myInputer{}
@@ -44,12 +44,21 @@ func (cli *myInputer) Name() string {
 // Run the input should not be blocked
 func (cli *myInputer) Run() interface{} {
 
-	//host, _ := api.CreateHost()
-	//host.Save()
-	return types.MapStr{
-		"test": "outputer",
-		"hoid": "",
+	set, err := api.CreateSet("0")
+	if nil != err {
+		fmt.Println("err:", err.Error())
 	}
+	set.SetValue("bk_set_desc", "setdesc")
+	set.SetValue("description", "descrip")
+	set.SetValue("bk_capacity", 15)
+	set.SetValue("bk_parent_id", 2)
+	set.SetValue("bk_biz_id", 2)
+	set.SetValue("bk_set_name", "test_demo")
+	err = set.Save()
+	if nil != err {
+		fmt.Println("err:", err)
+	}
+	return nil
 
 }
 
