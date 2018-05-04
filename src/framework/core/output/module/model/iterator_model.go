@@ -48,7 +48,7 @@ func newModelIterator(cond common.Condition) (Iterator, error) {
 	return objIterator, nil
 }
 
-func (cli *iterator) ForEach(itemCallback func(item Model)) error {
+func (cli *iterator) ForEach(itemCallback func(item Model) error) error {
 
 	for {
 
@@ -61,7 +61,11 @@ func (cli *iterator) ForEach(itemCallback func(item Model)) error {
 			return nil
 		}
 
-		itemCallback(item)
+		err = itemCallback(item)
+		if nil != err {
+			return err
+		}
+
 	}
 
 }

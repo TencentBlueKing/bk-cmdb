@@ -48,7 +48,7 @@ func newAttributeIterator(cond common.Condition) (AttributeIterator, error) {
 	return attrIterator, nil
 }
 
-func (cli *attributeIterator) ForEach(itemCallback func(item Attribute)) error {
+func (cli *attributeIterator) ForEach(itemCallback func(item Attribute) error) error {
 
 	for {
 
@@ -60,7 +60,10 @@ func (cli *attributeIterator) ForEach(itemCallback func(item Attribute)) error {
 		if nil == item {
 			return nil
 		}
-		itemCallback(item)
+		err = itemCallback(item)
+		if nil != err {
+			return err
+		}
 	}
 
 }

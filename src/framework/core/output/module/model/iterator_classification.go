@@ -49,7 +49,7 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 	return clsIterator, nil
 }
 
-func (cli *classificationIterator) ForEach(itemCallback func(item Classification)) error {
+func (cli *classificationIterator) ForEach(itemCallback func(item Classification) error) error {
 
 	for {
 
@@ -62,7 +62,10 @@ func (cli *classificationIterator) ForEach(itemCallback func(item Classification
 			return nil
 		}
 
-		itemCallback(item)
+		err = itemCallback(item)
+		if nil != err {
+			return err
+		}
 	}
 
 }

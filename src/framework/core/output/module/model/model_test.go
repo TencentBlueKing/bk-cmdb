@@ -42,7 +42,7 @@ func TestSearchModel(t *testing.T) {
 			break
 		}
 
-		modelIterator.ForEach(func(modelItem model.Model) {
+		modelIterator.ForEach(func(modelItem model.Model) error {
 
 			t.Logf("the model:%+v", modelItem.GetName())
 
@@ -50,6 +50,8 @@ func TestSearchModel(t *testing.T) {
 			for _, attr := range attrs {
 				t.Logf("the attribute:%+v", attr.GetName())
 			}
+
+			return nil
 		})
 
 	}
