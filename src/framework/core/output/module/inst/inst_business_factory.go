@@ -15,10 +15,11 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 func createBusiness(target model.Model) (Inst, error) {
-	return &inst{target: target}, nil
+	return &inst{target: target, datas: types.MapStr{}}, nil
 }
 
 // findBusinessLikeName find all insts by inst name
