@@ -293,6 +293,8 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		}
 	}
 
+	osbit := val.Get("data.system.info.systemtype").String()
+
 	return map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
@@ -305,6 +307,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		"bk_host_name":  hostname,
 		"bk_outer_mac":  OuterMAC,
 		"bk_mac":        InnerMAC,
+		"bk_os_bit":     osbit,
 	}
 }
 func getIPS(val *gjson.Result) (ips []string) {
