@@ -75,7 +75,7 @@ func TestHostManager(t *testing.T) {
 			hostiter.ForEach(func(item inst.Inst) error {
 				val, err := item.GetValues()
 				require.NoError(t, err, "failed to item.GetValues")
-				t.Logf("host ip %#v", val)
+				t.Logf("host ip %#v", val.String("bk_host_innerip"))
 				return nil
 			})
 

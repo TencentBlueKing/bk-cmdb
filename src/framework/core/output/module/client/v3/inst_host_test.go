@@ -12,8 +12,9 @@ import (
 func TestSearchHost(t *testing.T) {
 	cli := v3.New(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	cond := common.CreateCondition()
+	cond := common.CreateCondition().Field("bk_host_innerip").In([]string{"192.168.100.1"})
 	rets, err := cli.Host().SearchHost(cond)
+	t.Logf("search host result: %v", rets)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, rets)
 }

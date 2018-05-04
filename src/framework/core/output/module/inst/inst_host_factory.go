@@ -25,10 +25,10 @@ func createHost(target model.Model) (Inst, error) {
 // findHostsLikeName find all insts by inst name
 func findHostsLikeName(target model.Model, hostname string) (Iterator, error) {
 	cond := common.CreateCondition().Field(HostNameField).Like(hostname)
-	return newHostIterator(cond)
+	return newHostIterator(target, cond)
 }
 
 // findHostsByCondition find all insts by condition
 func findHostsByCondition(target model.Model, condition common.Condition) (Iterator, error) {
-	return newHostIterator(condition)
+	return newHostIterator(target, condition)
 }

@@ -136,7 +136,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		default:
 			operator = cccommon.BKDBEQ
 			value = val
-			log.Infof("val: %#v", val)
+			fmt.Printf("val: %#v\n", val)
 		}
 		condition := map[string]interface{}{
 			"field":    key,
@@ -147,17 +147,21 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		conditions = append(conditions, condition)
 	}
 
-	kkkkk := map[string]interface{}{}
+	params := map[string]interface{}{}
 
-	kkkkk["condition"] = "aaa"
+	params["condition"] = []map[string]interface{}{
+		map[string]interface{}{
+			"bk_obj_id": "host",
+			"condition": conditions,
+		},
+	}
 
-	out, err := json.Marshal(kkkkk)
+	out, err := json.Marshal(params)
 	if err != nil {
 		log.Errorf("json error: %v", err)
 	}
 
-	log.Infof("search host param:>%#v<", kkkkk)
-	log.Infof("search host param:>%s<", out)
+	fmt.Printf("search host param:%s\n", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)
@@ -172,7 +176,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
-	dataStr := gs.Get("data.info").String()
+	dataStr := gs.Get("data.info.#.host").String()
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
