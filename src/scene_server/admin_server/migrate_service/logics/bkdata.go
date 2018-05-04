@@ -28,22 +28,48 @@ import (
 	restful "github.com/emicklei/go-restful"
 )
 
-var prc2port = []string{"job_java:java:8008,8443", "cmdb_nginx:nginx:8029", "php-fpm:php-fpm:8009", "uwsgi:uwsgi:8000,8001,8003,8004",
+var prc2port = []string{"job_java:java:8008,8443", "uwsgi:uwsgi:8000,8001,8003,8004",
 	"paas_agent:paas_agent:4245", "common_mysql:mysqld:3306", "common_redis:redis-server:6379", "redis_cluster:redis-server:16379,6379",
 	"zk_java:java:2181", "kafka_java:java:9092", "es_java:java:9300,10004", "beam.smp:beam.smp:15672,5672,25672",
 	"common_nginx:nginx:80", "beanstalkd:beanstalkd:6380", "influxdb:influxdb:5620,5621", "etcd:etcd:2379,2380", "dataapi_py:python:10011", "databus_java:java:10021", "monitor_py:python:10043",
 	"fta_py:python:13031,13021,13041", "gse_data:gse_data:58625", "gse_dba:gse_dba:58859",
 	"gse_api:gse_api:59313,50002", "gse_task:gse_task:48668,48669,48671,48329", "gse_transit:gse_transit:58625", "gse_proc:gse_proc:52023,52025",
 	"gse_btsvr:gse_btsvr:10020,58930,58925", "gse_ops:gse_ops:58725,58726", "gse_alarm:gse_alarm:53425", "gse_agent:gse_agent:60020,34334,36510",
-	"license_server:license_server:443", "consul:consul:8301,8300,8302,8500,53", "cc_service:cc_service:8019"}
+	"license_server:license_server:443", "consul:consul:8301,8300,8302,8500,53",
+	"cc_migrate:cmdb_adminserver:32004",
+	"cc_apiserver:cmdb_apiserver:33031",
+	"cc_auditcontroller:cmdb_auditcontroller:31004",
+	"cc_datacollection:cmdb_datacollection:32006",
+	"cc_eventserver:cmdb_eventserver:32005",
+	"cc_hostcontroller:cmdb_hostcontroller:31002",
+	"cc_host:cmdb_hostserver:32001",
+	"cc_objectcontroller:cmdb_objectcontroller:31001",
+	"cc_proccontroller:cmdb_proccontroller:31003",
+	"cc_proc:cmdb_procserver:32003",
+	"cc_topo:cmdb_toposerver:32002",
+	"cc_webserver:cmdb_webserver:33083"}
 
 var setModuleKv = map[string]map[string]string{"作业平台": {"job": "job_java"},
-	"配置平台":   {"cmdb": "cmdb_nginx,php-fpm", "cc_service": "cc_service"},
+	"配置平台": {
+		"cc_migrate":          "cmdb_adminserver",
+		"cc_apiserver":        "cmdb_apiserver",
+		"cc_auditcontroller":  "cmdb_auditcontroller",
+		"cc_datacollection":   "cmdb_datacollection",
+		"cc_eventserver":      "cmdb_eventserver",
+		"cc_hostcontroller":   "cmdb_hostcontroller",
+		"cc_host":             "cmdb_hostserver",
+		"cc_objectcontroller": "cmdb_objectcontroller",
+		"cc_proccontroller":   "cmdb_proccontroller",
+		"cc_proc":             "cmdb_procserver",
+		"cc_topo":             "cmdb_toposerver",
+		"cc_webserver":        "cmdb_webserver"},
 	"管控平台":   {"gse_api": "gse_api", "gse_data": "gse_data", "gse_dba": "gse_dba", "gse_task": "gse_task", "gse_transit": "gse_transit", "gse_proc": "gse_proc", "gse_btsvr": "gse_btsvr", "gse_ops": "gse_ops", "gse_opts": "", "gse_alarm": "gse_alarm", "gse_agent": "gse_agent", "license": "license_server"},
 	"故障自愈":   {"fta": "fta_py"},
 	"数据服务模块": {"dataapi": "dataapi_py", "databus": "databus_java", "monitor": "monitor_py"},
 	"公共组件": {"mysql": "common_mysql", "redis": "common_redis", "redis_cluster": "redis_cluster", "zookeeper": "zk_java", "kafka": "kafka_java", "elasticsearch": "es_java",
-		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul"}}
+		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul"},
+	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi"},
+}
 
 var appID int = 0
 var ownerID string = common.BKDefaultOwnerID
