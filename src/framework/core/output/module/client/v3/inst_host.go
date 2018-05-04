@@ -13,10 +13,13 @@
 package v3
 
 import (
+	cccommon "configcenter/src/common"
 	"configcenter/src/framework/common"
+
 	"configcenter/src/framework/core/types"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/tidwall/gjson"
 )
 
@@ -25,10 +28,14 @@ type HostGetter interface {
 }
 
 type HostInterface interface {
+	// SearchHost search host by condition,
 	SearchHost(cond common.Condition) ([]types.MapStr, error)
-	CreateHost(data types.MapStr) (int, error)
-	UpdateHost(data types.MapStr, cond common.Condition) error
-	DeleteHost(cond common.Condition) error
+	// CreateHostBatch create host
+	CreateHostBatch(data ...types.MapStr) ([]int, error)
+	// update update host by hostID, hostID could be separated by a comma
+	UpdateHostBatch(data types.MapStr, hostID string) error
+	// DeleteHost delete host by hostID, hostID could be separated by a comma
+	DeleteHostBatch(hostID string) error
 }
 
 // Host define
@@ -41,21 +48,18 @@ func newHost(cli *Client) *Host {
 		cli: cli,
 	}
 }
-func (h *Host) CreateHost(data types.MapStr) (int, error) {
-	return 0, nil
-}
-func (h *Host) UpdateHost(data types.MapStr, cond common.Condition) error {
-	return nil
-}
-func (h *Host) DeleteHost(cond common.Condition) error {
-	return nil
-}
-
-func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
-
-	data := cond.ToMapStr()
-
-	rst, err := h.cli.httpCli.POST("targetURL", nil, data.ToJSON())
+func (h *Host) CreateHostBatch(data ...types.MapStr) ([]int, error) {
+	infos := map[int]map[string]interface{}{}
+	for index := range data {
+		data[index].Set("import_from", "3")
+		infos[index] = data[index]
+	}
+	param := types.MapStr{
+		"bk_supplier_id": cccommon.BKDefaultSupplierID,
+		"host_info":      infos,
+	}
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/add", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, param.ToJSON())
 	if nil != err {
 		return nil, err
 	}
@@ -67,7 +71,71 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
-	dataStr := gs.Get("data").String()
+	ids := []int{}
+	gs.Get("data.success").ForEach(func(key, value gjson.Result) bool {
+		ids = append(ids, int(value.Int()))
+		return true
+	})
+
+	return ids, nil
+}
+
+func (h *Host) UpdateHostBatch(data types.MapStr, hostID string) error {
+
+	data.Set("bk_host_id", hostID)
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/batch", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+func (h *Host) DeleteHostBatch(hostID string) error {
+	data := common.CreateCondition().Field("bk_host_id").Eq(hostID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/batch", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.DELETE(targetURL, nil, data.ToMapStr().ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
+
+	data := cond.ToMapStr()
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	if nil != err {
+		return nil, err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return nil, errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	dataStr := gs.Get("data.info").String()
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
@@ -76,136 +144,3 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
 	return resultMap, err
 }
-
-// // SearchClassificationWithObjects search some classification with objects
-// func (cli *Client) SearchClassificationWithObjects(cond common.Condition) ([]types.MapStr, error) {
-
-// 	data := cond.ToMapStr()
-
-// 	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%s/objects", cli.GetAddress(), cli.GetSupplierAccount())
-
-// 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
-// 	if nil != err {
-// 		return nil, err
-// 	}
-
-// 	gs := gjson.ParseBytes(rst)
-
-// 	// check result
-// 	if !gs.Get("result").Bool() {
-// 		return nil, errors.New(gs.Get("bk_error_msg").String())
-// 	}
-
-// 	dataStr := gs.Get("data").String()
-// 	if 0 == len(dataStr) {
-// 		return nil, errors.New("data is empty")
-// 	}
-
-// 	resultMap := make([]types.MapStr, 0)
-// 	err = json.Unmarshal([]byte(dataStr), &resultMap)
-// 	return resultMap, err
-// }
-
-// // CreateClassification create a new classification
-// func (cli *Client) CreateClassification(data types.MapStr) (int, error) {
-
-// 	targetURL := fmt.Sprintf("%s/api/v3/object/classification", cli.address)
-
-// 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
-// 	if nil != err {
-// 		return 0, err
-// 	}
-
-// 	gs := gjson.ParseBytes(rst)
-
-// 	// check result
-// 	if !gs.Get("result").Bool() {
-// 		return 0, errors.New(gs.Get("bk_error_msg").String())
-// 	}
-
-// 	// parse id
-// 	id := gs.Get("data.id").Int()
-
-// 	return int(id), nil
-// }
-
-// // DeleteClassification delete some classification by condition
-// func (cli *Client) DeleteClassification(cond common.Condition) error {
-
-// 	data := cond.ToMapStr()
-// 	id, err := data.Int("id")
-// 	if nil != err {
-// 		return err
-// 	}
-
-// 	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", cli.GetAddress(), id)
-
-// 	rst, err := cli.httpCli.DELETE(targetURL, nil, nil)
-// 	if nil != err {
-// 		return err
-// 	}
-
-// 	gs := gjson.ParseBytes(rst)
-
-// 	// check result
-// 	if !gs.Get("result").Bool() {
-// 		return errors.New(gs.Get("bk_error_msg").String())
-// 	}
-
-// 	return nil
-// }
-
-// // SearchClassifications search some classification by condition
-// func (cli *Client) SearchClassifications(cond common.Condition) ([]types.MapStr, error) {
-
-// 	data := cond.ToMapStr()
-
-// 	targetURL := fmt.Sprintf("%s/api/v3/object/classifications", cli.GetAddress())
-
-// 	rst, err := cli.httpCli.POST(targetURL, nil, data.ToJSON())
-// 	if nil != err {
-// 		return nil, err
-// 	}
-
-// 	gs := gjson.ParseBytes(rst)
-
-// 	// check result
-// 	if !gs.Get("result").Bool() {
-// 		return nil, errors.New(gs.Get("bk_error_msg").String())
-// 	}
-
-// 	dataStr := gs.Get("data").String()
-// 	if 0 == len(dataStr) {
-// 		return nil, errors.New("data is empty")
-// 	}
-
-// 	resultMap := make([]types.MapStr, 0)
-// 	err = json.Unmarshal([]byte(dataStr), &resultMap)
-// 	return resultMap, err
-// }
-
-// // UpdateClassification update the classification by condition
-// func (cli *Client) UpdateClassification(data types.MapStr, cond common.Condition) error {
-
-// 	dataCond := cond.ToMapStr()
-// 	id, err := dataCond.Int("id")
-// 	if nil != err {
-// 		return err
-// 	}
-
-// 	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", cli.GetAddress(), id)
-
-// 	rst, err := cli.httpCli.PUT(targetURL, nil, data.ToJSON())
-// 	if nil != err {
-// 		return err
-// 	}
-
-// 	gs := gjson.ParseBytes(rst)
-
-// 	// check result
-// 	if !gs.Get("result").Bool() {
-// 		return errors.New(gs.Get("bk_error_msg").String())
-// 	}
-
-// 	return nil
-// }
