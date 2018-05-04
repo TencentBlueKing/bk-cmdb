@@ -66,9 +66,9 @@
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'enum'">
                                 <bk-select class="screening-group-item-value" :selected.sync="localQueryColumnData[column['bk_property_id']]['value']">
-                                    <bk-select-option v-for="(option, index) in JSON.parse(column['bk_option'])"
+                                    <bk-select-option v-for="(option, index) in column['bk_option']"
                                         :key="index"
-                                        :value="option.name"
+                                        :value="option.id"
                                         :label="option.name">
                                     </bk-select-option>
                                 </bk-select>
