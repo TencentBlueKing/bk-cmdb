@@ -127,7 +127,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 
 		if 0 == appID || nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		//get internal set
@@ -138,7 +138,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
 		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		// get language
@@ -160,7 +160,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 			} else if 0 < len(errRow) {
 				errString = errRow[0]
 			}
-			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, errString)
+			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errString)
 
 		}
 	}, resp)
