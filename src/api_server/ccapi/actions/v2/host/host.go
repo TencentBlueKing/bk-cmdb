@@ -911,8 +911,8 @@ func (cli *hostAction) UpdateCustomProperty(req *restful.Request, resp *restful.
 		return
 	}
 	if "" == hostId {
-		blog.Errorf("UpdateCustomProperty error platId empty")
-		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platId").Error(), resp)
+		blog.Errorf("UpdateCustomProperty error host empty")
+		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostID").Error(), resp)
 		return
 	}
 	param := make(common.KvMap)
