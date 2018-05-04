@@ -19,7 +19,7 @@ import (
 )
 
 func createSet(target model.Model) (Inst, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+	return &set{target: target, datas: types.MapStr{}}, nil
 }
 
 // findSetsLikeName find all insts by inst name

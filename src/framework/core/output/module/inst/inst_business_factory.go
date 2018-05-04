@@ -19,7 +19,7 @@ import (
 )
 
 func createBusiness(target model.Model) (Inst, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+	return &business{target: target, datas: types.MapStr{}}, nil
 }
 
 // findBusinessLikeName find all insts by inst name

@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"errors"
+	//"fmt"
 )
 
 var _ Inst = (*set)(nil)
@@ -89,6 +90,9 @@ func (cli *set) SetValue(key string, value interface{}) error {
 }
 
 func (cli *set) Save() error {
+
+	businessID := cli.datas.String(BusinessID)
+
 	// get the attributes
 	attrs, err := cli.target.Attributes()
 	if nil != err {
@@ -96,22 +100,20 @@ func (cli *set) Save() error {
 	}
 
 	// construct the condition which is used to check the if it is exists
-	cond := common.CreateCondition()
+	cond := common.CreateCondition().Field(BusinessID).Eq(businessID)
 
 	// extract the required id
 	for _, attrItem := range attrs {
-		if attrItem.GetRequired() {
-
-			attrVal := cli.datas.String(attrItem.GetID())
-			if 0 == len(attrVal) {
+		if attrItem.GetKey() {
+			if !cli.datas.Exists(attrItem.GetID()) {
 				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
 			}
-
+			attrVal := cli.datas.String(attrItem.GetID())
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
 
-	// fmt.Println("cond:", cond.ToMapStr())
+	//fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
 	existItems, err := client.GetClient().CCV3().Set().SearchSets(cond)
@@ -119,7 +121,7 @@ func (cli *set) Save() error {
 		return err
 	}
 
-	// fmt.Println("the exists:", existItems)
+	//fmt.Println("the exists:", existItems)
 
 	// create a new
 	if 0 == len(existItems) {
@@ -138,7 +140,7 @@ func (cli *set) Save() error {
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(SetID).Eq(instID)
+		updateCond := common.CreateCondition().Field(SetID).Eq(instID).Field(BusinessID).Eq(businessID)
 
 		// clear the invalid field
 		existItem.ForEach(func(key string, val interface{}) {

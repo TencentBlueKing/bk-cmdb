@@ -51,7 +51,7 @@ func (cli *Set) CreateSet(data types.MapStr) (int, error) {
 	if 0 == len(appID) {
 		return 0, errors.New("the business id is not set")
 	}
-
+	data.Set(SupplierAccount, cli.cli.GetSupplierAccount())
 	targetURL := fmt.Sprintf("%s/api/v3/set/%s", cli.cli.GetAddress(), appID)
 
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
