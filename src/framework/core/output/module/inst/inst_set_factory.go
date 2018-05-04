@@ -23,13 +23,12 @@ func createSet(target model.Model) (Inst, error) {
 }
 
 // findSetsLikeName find all insts by inst name
-func findSetsLikeName(target model.Model, businessName string) (Iterator, error) {
-	// TODO:按照名字读取特定模型的实例集合，实例名字要模糊匹配
-	return &iterator{}, nil
+func findSetsLikeName(target model.Model, setName string) (Iterator, error) {
+	cond := common.CreateCondition().Field(SetName).Like(setName)
+	return newIteratorInstSet(target, cond)
 }
 
 // findSetsByCondition find all insts by condition
-func findSetsByCondition(target model.Model, condition common.Condition) (Iterator, error) {
-	// TODO:按照条件读取所有实例
-	return &iterator{}, nil
+func findSetsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
+	return newIteratorInstSet(target, cond)
 }

@@ -23,13 +23,12 @@ func createModule(target model.Model) (Inst, error) {
 }
 
 // findModulesLikeName find all insts by inst name
-func findModulesLikeName(target model.Model, businessName string) (Iterator, error) {
-	// TODO:按照名字读取特定模型的实例集合，实例名字要模糊匹配
-	return &iterator{}, nil
+func findModulesLikeName(target model.Model, moduleName string) (Iterator, error) {
+	cond := common.CreateCondition().Field(ModuleName).Like(moduleName)
+	return newIteratorInstModule(target, cond)
 }
 
 // findModulesByCondition find all insts by condition
-func findModulesByCondition(target model.Model, condition common.Condition) (Iterator, error) {
-	// TODO:按照条件读取所有实例
-	return &iterator{}, nil
+func findModulesByCondition(target model.Model, cond common.Condition) (Iterator, error) {
+	return newIteratorInstModule(target, cond)
 }

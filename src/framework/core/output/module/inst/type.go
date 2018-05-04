@@ -40,6 +40,9 @@ const (
 
 	// ModuleName the module name
 	ModuleName = "bk_module_name"
+
+	// DefaultLimit the limit num
+	DefaultLimit = 1000
 )
 
 // Topo the inst topo structure

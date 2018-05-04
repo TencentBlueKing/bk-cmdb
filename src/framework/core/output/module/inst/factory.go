@@ -44,7 +44,7 @@ func CreateInst(target model.Model) (Inst, error) {
 
 // FindInstsLikeName find all insts by inst name
 func FindInstsLikeName(target model.Model, instName string) (Iterator, error) {
-	// TODO:按照名字读取特定模型的实例集合，实例名字要模糊匹配
+
 	switch target.GetID() {
 	case mtypes.BKInnerObjIDBusiness:
 		return findBusinessLikeName(target, instName)
@@ -59,32 +59,31 @@ func FindInstsLikeName(target model.Model, instName string) (Iterator, error) {
 	case mtypes.BKInnerObjIDSet:
 		return findSetsLikeName(target, instName)
 	default:
-		// TODO:需要实现普通实例的查找逻辑
-		return &iterator{}, nil
+		cond := common.CreateCondition().Field(InstName).Like(instName)
+		return newIteratorInst(target, cond)
 
 	}
 
 }
 
 // FindInstsByCondition find all insts by condition
-func FindInstsByCondition(target model.Model, condition common.Condition) (Iterator, error) {
+func FindInstsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
 	// TODO:按照条件读取所有实例
 	switch target.GetID() {
 	case mtypes.BKInnerObjIDBusiness:
-		return findBusinessByCondition(target, condition)
+		return findBusinessByCondition(target, cond)
 	case mtypes.BKInnerObjIDHost:
-		return findHostsByCondition(target, condition)
+		return findHostsByCondition(target, cond)
 	case mtypes.BKInnerObjIDModule:
-		return findModulesByCondition(target, condition)
+		return findModulesByCondition(target, cond)
 	case mtypes.BKInnerObjIDPlat:
-		return findPlatsByCondition(target, condition)
+		return findPlatsByCondition(target, cond)
 	case mtypes.BKInnerObjIDProc:
-		return findProcsByCondition(target, condition)
+		return findProcsByCondition(target, cond)
 	case mtypes.BKInnerObjIDSet:
-		return findSetsByCondition(target, condition)
+		return findSetsByCondition(target, cond)
 	default:
-		// TODO:需要实现普通实例查找逻辑
-		return &iterator{}, nil
+		return newIteratorInst(target, cond)
 
 	}
 
