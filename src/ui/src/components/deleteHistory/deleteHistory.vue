@@ -170,33 +170,35 @@
             initTableList (list) {
                 list.forEach((item, index) => {
                     this.tableHeader.map((list, hIndex) => {
-                        if (hIndex === 0) {
-                            if (this.objId === 'host') {
-                                item['id'] = item.content['pre_data']['bk_host_id']
-                            } else if (this.objId === 'biz') {
-                                item['id'] = item.content['pre_data']['bk_biz_id']
-                            } else {
-                                item['id'] = item.content['pre_data']['bk_inst_id']
-                            }
-                        } else if (hIndex === (this.tableHeader.length - 1)) {
-                            item['op_time'] = this.$formatTime(moment(item['op_time']))
-                        } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
-                            let name = []
-                            if (item.content['pre_data'].hasOwnProperty(list.id)) {
-                                if (item.content['pre_data'][list.id]) {
-                                    item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
-                                        name.push(bkInstName)
-                                    })
+                        if (item.content['pre_data'] !== null) {    // 如果该字段为null则不展示该行
+                            if (hIndex === 0) {
+                                if (this.objId === 'host') {
+                                    item['id'] = item.content['pre_data']['bk_host_id']
+                                } else if (this.objId === 'biz') {
+                                    item['id'] = item.content['pre_data']['bk_biz_id']
                                 } else {
-                                    name.push('')
+                                    item['id'] = item.content['pre_data']['bk_inst_id']
                                 }
+                            } else if (hIndex === (this.tableHeader.length - 1)) {
+                                item['op_time'] = this.$formatTime(moment(item['op_time']))
+                            } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
+                                let name = []
+                                if (item.content['pre_data'].hasOwnProperty(list.id)) {
+                                    if (item.content['pre_data'][list.id]) {
+                                        item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
+                                            name.push(bkInstName)
+                                        })
+                                    } else {
+                                        name.push('')
+                                    }
+                                }
+                                item[list.id] = name.join(',')
+                            } else if (list.property['bk_property_type'] === 'enum') {
+                                let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
+                                item[list.id] = option ? option.name : ''
+                            } else {
+                                item[list.id] = item.content['pre_data'][list.id]
                             }
-                            item[list.id] = name.join(',')
-                        } else if (list.property['bk_property_type'] === 'enum') {
-                            let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
-                            item[list.id] = option ? option.name : ''
-                        } else {
-                            item[list.id] = item.content['pre_data'][list.id]
                         }
                     })
                 })
