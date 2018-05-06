@@ -18,7 +18,7 @@ import (
 )
 
 // CreateBusiness create a new Business object
-func CreateBusiness(supplierAccount string) (inst.Inst, error) {
+func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 
 	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_organization")
 	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
@@ -48,12 +48,12 @@ func CreateBusiness(supplierAccount string) (inst.Inst, error) {
 	if nil != err {
 		return nil, err
 	}
-
-	return mgr.OutputerMgr.CreateInst(targetModel)
+	businessInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	return &BusinessWrapper{business: businessInst}, err
 }
 
 // CreateSet create a new set object
-func CreateSet(supplierAccount string) (inst.Inst, error) {
+func CreateSet(supplierAccount string) (*SetWrapper, error) {
 
 	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
 	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
@@ -84,11 +84,13 @@ func CreateSet(supplierAccount string) (inst.Inst, error) {
 		return nil, err
 	}
 
-	return mgr.OutputerMgr.CreateInst(targetModel)
+	setInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+
+	return &SetWrapper{set: setInst}, err
 }
 
 // CreateModule create a new module object
-func CreateModule(supplierAccount string) (inst.Inst, error) {
+func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 
 	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
 	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
@@ -118,12 +120,12 @@ func CreateModule(supplierAccount string) (inst.Inst, error) {
 	if nil != err {
 		return nil, err
 	}
-
-	return mgr.OutputerMgr.CreateInst(targetModel)
+	moduleInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	return &ModuleWrapper{module: moduleInst}, err
 }
 
 // CreateHost create a new host object
-func CreateHost(supplierAccount string) (inst.Inst, error) {
+func CreateHost(supplierAccount string) (*HostWrapper, error) {
 
 	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_host_manage")
 	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
@@ -154,7 +156,8 @@ func CreateHost(supplierAccount string) (inst.Inst, error) {
 		return nil, err
 	}
 
-	return mgr.OutputerMgr.CreateInst(targetModel)
+	hostInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	return &HostWrapper{host: hostInst}, err
 }
 
 // CreateCommonInst create a common inst object
