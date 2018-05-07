@@ -24,6 +24,7 @@ type CCV3Interface interface {
 	SetGetter
 	HostGetter
 	ModelGetter
+	BusinessGetter
 	ClassificationGetter
 	AttributeGetter
 	CommonInstGetter
@@ -70,10 +71,12 @@ func (cli *Client) CommonInst() CommonInstInterface {
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
 }
+func (cli *Client) Business() BusinessInterface {
+	return newBusiness(cli)
+}
 func (cli *Client) Module() ModuleInterface {
 	return newModule(cli)
 }
-
 func (cli *Client) Set() SetInterface {
 	return newSet(cli)
 }

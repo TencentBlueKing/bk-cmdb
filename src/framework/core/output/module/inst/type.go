@@ -23,6 +23,8 @@ type FieldName string
 const (
 	// BusinessID the business id
 	BusinessID = "bk_biz_id"
+	// BusinessID the business id
+	BusinessNameField = "bk_biz_name"
 	// InstID the common inst id
 	InstID = "bk_inst_id"
 
