@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3
 
 import (
@@ -45,15 +45,14 @@ func newGroup(cli *Client) *Group {
 // CreateGroup create a group
 func (g *Group) CreateGroup(data types.MapStr) (int, error) {
 	data.Set("bk_supplier_account", g.cli.GetSupplierAccount())
-	if !data.Exists("bk_group_id") {
-		data.Set("bk_group_id", common.UUID())
-	}
 	if !data.Exists("bk_group_name") {
 		return 0, errors.New("bk_group_name must set")
 	}
 	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/new", g.cli.GetAddress())
 
-	rst, err := g.cli.httpCli.POST(targetURL, nil, data.ToJSON())
+	out := data.ToJSON()
+	log.Infof("create group %s", out)
+	rst, err := g.cli.httpCli.POST(targetURL, nil, out)
 	if nil != err {
 		return 0, err
 	}
@@ -106,6 +105,7 @@ func (g *Group) UpdateGroup(data types.MapStr, cond common.Condition) error {
 		"data":      data,
 	}
 
+	log.Infof("update group by %s to %s", cond.ToMapStr().ToJSON(), data.ToJSON())
 	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/update", g.cli.GetAddress())
 	rst, err := g.cli.httpCli.PUT(targetURL, nil, param.ToJSON())
 	if nil != err {

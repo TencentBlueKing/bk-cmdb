@@ -225,9 +225,9 @@ func (cli *model) FindAttributesByCondition(cond common.Condition) (AttributeIte
 	return newAttributeIterator(cond)
 }
 func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
-	cond := common.CreateCondition().Field(GroupName).Like(groupName)
+	cond := common.CreateCondition().Field(GroupName).Like(groupName).Field(ObjectID).Eq(cli.GetID())
 	return newGroupIterator(cond)
 }
 func (cli *model) FindGroupsByCondition(cond common.Condition) (GroupIterator, error) {
-	return newGroupIterator(cond)
+	return newGroupIterator(cond.Field(ObjectID).Eq(cli.GetID()))
 }
