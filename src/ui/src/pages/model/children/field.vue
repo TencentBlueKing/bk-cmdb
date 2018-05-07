@@ -1117,6 +1117,50 @@
                                         </div>
                                     </div>
                                 </div>
+                                <!-- 表格 -->
+                                <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'list'">
+                                    <h3>{{$t('ModelManagement["选项"]')}}</h3>
+                                    <div class="clearfix">
+                                        <div class="from-common-item mr0">
+                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="from-common-content interior-width-control">
+                                                <div class="select-content tc">
+                                                    <bk-select
+                                                        :selected.sync="newFieldInfo.propertyType"
+                                                        @on-selected="fieldTypeChange">
+                                                        <bk-select-option
+                                                            v-for="(option, index) of fieldTypeList"
+                                                            :key="index"
+                                                            :value="option.value"
+                                                            :label="option.label">
+                                                        </bk-select-option>
+                                                    </bk-select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ul class="list-wrapper clearfix">
+                                        <li class="list-item">
+                                            <div>列名称</div>
+                                            <div>列描述</div>
+                                            <div>操作</div>
+                                        </li>
+                                        <li class="list-item" v-for="(item, index) in newFieldInfo.option">
+                                            <div>
+                                                <span class="list-view" @click="item.isEditName = true" v-if="!item.isEditName">{{item['list_header_name']}}</span>
+                                                <input type="text" v-focus @blur="item.isEditName = false" v-else v-model="item['list_header_name']">
+                                            </div>
+                                            <div>
+                                                <span class="list-view" @click="item.isEditDesc = true" v-if="!item.isEditDesc">{{item['list_header_description']}}</span>
+                                                <input type="text" v-focus @blur="item.isEditDesc = false" v-else v-model="item['list_header_description']">
+                                            </div>
+                                            <div>
+                                                <span @click="addTableList(index)">新增</span>
+                                                <span @click="deleteTableList(index)" v-if="index">刪除</span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
                             </form>
                             <!-- 保存取消按钮 -->
                             <div class="button-wraper">
@@ -1264,6 +1308,10 @@
                     {
                         value: 'bool',
                         label: 'bool'
+                    },
+                    {
+                        value: 'list',
+                        label: this.$t('ModelManagement["表格"]')
                     }
                 ],
                 fieldList: [],          // 字段配置列表
@@ -1324,6 +1372,16 @@
             }
         },
         methods: {
+            addTableList (index) {
+                if (this.isAddFieldShow) {
+                    this.newFieldInfo.option.splice(index + 1, 0, {
+                        list_header_name: index,
+                        list_header_description: '',
+                        isEditDesc: false,
+                        isEditName: false
+                    })
+                }
+            },
             isCloseConfirmShow () {
                 // 校验字段
                 if (this.isAddFieldShow) {
@@ -1777,6 +1835,14 @@
                             label: '',
                             value: ''
                         }
+                        break
+                    case 'list':
+                        this.newFieldInfo.option = [{
+                            list_header_name: 'default',
+                            list_header_description: '默认列',
+                            isEditName: false,
+                            isEditDesc: false
+                        }]
                 }
             },
             /*
@@ -2013,6 +2079,13 @@
                     }
                     this.forceValidate(type)
                 })
+            }
+        },
+        directives: {
+            focus: {
+                inserted: function (el) {
+                    el.focus()
+                }
             }
         },
         mounted () {
@@ -2509,6 +2582,35 @@
                            cursor:pointer;
                         }
                     }
+                }
+            }
+        }
+    }
+    .list-wrapper{
+        margin: 20px 0 0 69px;
+        border-top: 1px solid $fnMainColor;
+        border-left: 1px solid $fnMainColor;
+        .list-item{
+            font-size: 0;
+            line-height: 30px;
+            display: flex;
+            &:first-child{
+                font-weight: bold;
+            }
+            div{
+                text-align: center;
+                font-size: 14px;
+                border-right: 1px solid $fnMainColor;
+                border-bottom: 1px solid $fnMainColor;
+                &:not(:last-child) {
+                    flex: 2;
+                }
+                &:last-child{
+                    flex: 1;
+                }
+                .list-view{
+                    display: inline-block;
+                    width: 100%;
                 }
             }
         }
