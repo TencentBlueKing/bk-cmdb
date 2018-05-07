@@ -18,7 +18,11 @@ import (
 
 // CreateClassification create a new Classification instance
 func CreateClassification(name string) Classification {
-	return &classification{ClassificationName: name}
+	return &classification{
+		ClassificationID:   "cls_" + common.UUID(),
+		ClassificationName: name,
+		ClassificationIcon: classificationIconDefault,
+	}
 }
 
 // FindClassificationsLikeName find a array of the classification by the name
