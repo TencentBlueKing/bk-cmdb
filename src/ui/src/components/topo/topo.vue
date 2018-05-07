@@ -296,7 +296,7 @@
                             svgColor = svgForOther
                         }
                         // 没有图标的话就设置一个默认图标
-                        if (!node.hasOwnProperty('bk_obj_icon')) {
+                        if (!node.hasOwnProperty('bk_obj_icon') || node['bk_obj_icon'] === '') {
                             node['bk_obj_icon'] = 'icon-cc-business'
                         }
                         
