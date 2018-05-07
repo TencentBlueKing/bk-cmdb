@@ -7,7 +7,7 @@
 [(English Documents Available)](readme_en.md)
 
 **提示**: `master` 分支在开发过程中可能处于 *不稳定或者不可用状态* 。
-请通过 [releases](https://github.com/tencent/bk-cmdb/releases) 而非 `master` 去获取稳定的二进制文件。
+请通过[releases](https://github.com/tencent/bk-cmdb/releases) 而非 `master` 去获取稳定的二进制文件。
 
 蓝鲸配置平台（蓝鲸CMDB）是一个基于运维场景设计的企业配置管理服务。
 
