@@ -61,6 +61,7 @@ func (cli *classification) Save() error {
 		item.Set(ClassificationName, cli.ClassificationName)
 		item.Set(ClassificationIcon, cli.ClassificationIcon)
 		item.Set(ClassificationType, cli.ClassificationType)
+		item.Remove(ClassificationID)
 
 		id, err := item.Int("id")
 		if nil != err {
@@ -103,8 +104,9 @@ func (cli *classification) GetIcon() string {
 
 func (cli *classification) CreateModel() Model {
 	m := &model{}
+	m.SetID("obj_" + common.UUID())
 	m.SetClassification(cli.ClassificationID)
-	m.SetIcon(cli.ClassificationIcon)
+	m.SetIcon(objectIconDefault)
 	return m
 }
 

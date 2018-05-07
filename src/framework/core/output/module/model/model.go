@@ -104,6 +104,8 @@ func (cli *model) Save() error {
 		item.Set(Description, cli.Description)
 		item.Set(Modifier, cli.Modifier)
 
+		item.Remove(ObjectID)
+
 		id, err := item.Int("id")
 		if nil != err {
 			return err

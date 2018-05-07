@@ -62,6 +62,8 @@ func (cli *manager) subExecuteInputer(inputer *wrapInputer) {
 // executeInputer start the Inputer
 func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 
+	inputer.SetStatus(RunningStatus)
+
 	log.Infof("the Inputer(%s) will to run", inputer.Name())
 	// non timing inputer
 	if !inputer.isTiming {
@@ -70,11 +72,11 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 		log.Infof("the Inputer(%s) normal exit", inputer.Name())
 		return
 	}
+	log.Infof("the Inputer(%s) is timing runing", inputer.Name())
+	tick := time.NewTicker(inputer.frequency)
 
-	// timing inputer
 	for {
-		tick := time.NewTicker(inputer.frequency)
-
+		//fmt.Println("tick:", tick)
 		select {
 		case <-ctx.Done():
 			inputer.SetStatus(StoppedStatus)

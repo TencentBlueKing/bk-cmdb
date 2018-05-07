@@ -125,6 +125,12 @@ const (
 	FieldTypeBool FieldDataType = "bool"
 )
 
+// default
+const (
+	classificationIconDefault = "icon-cc-default-class"
+	objectIconDefault         = "icon-cc-business"
+)
+
 // GroupIterator the group iterator
 type GroupIterator interface {
 	Next() (Group, error)
