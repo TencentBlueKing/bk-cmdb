@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestInstSetManager(t *testing.T) {
+func TestInstBusinessManager(t *testing.T) {
 
 	client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
@@ -38,7 +38,7 @@ func TestInstSetManager(t *testing.T) {
 
 	clsItem.ForEach(func(item model.Classification) error {
 
-		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("set"))
+		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("module"))
 		if nil != err {
 			t.Errorf("failed to search classification, %s", err.Error())
 			return nil
@@ -63,12 +63,12 @@ func TestInstSetManager(t *testing.T) {
 			t.Logf("model name:%s %s", commonInst.GetModel().GetName(), commonInst.GetModel().GetID())
 
 			// set inst value
-			commonInst.SetValue("bk_set_name", "test_set_1")
+			commonInst.SetValue("bk_module_name", "test_module_3")
 			commonInst.SetValue("bk_biz_id", 2)
-			commonInst.SetValue("bk_parent_id", 2)
-			commonInst.SetValue("bk_set_desc", "only test")
-			commonInst.SetValue("description", "test")
-			commonInst.SetValue("bk_capacity", 15)
+			commonInst.SetValue("bk_set_id", 10)
+			commonInst.SetValue("bk_parent_id", 10)
+			commonInst.SetValue("operator", "test")
+			commonInst.SetValue("bk_bak_operator", "bak_test")
 
 			// save inst info
 			err = commonInst.Save()
@@ -77,9 +77,9 @@ func TestInstSetManager(t *testing.T) {
 				t.Errorf("failed to save ,%s", err.Error())
 			}
 			return nil
-
 		})
 		return nil
+
 	})
 
 }

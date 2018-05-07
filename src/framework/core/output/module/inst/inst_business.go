@@ -13,8 +13,10 @@
 package inst
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/errors"
 	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 )
@@ -87,5 +89,67 @@ func (cli *business) SetValue(key string, value interface{}) error {
 }
 
 func (cli *business) Save() error {
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return err
+	}
+
+	cond := common.CreateCondition()
+	for _, attrItem := range attrs {
+		if attrItem.GetKey() {
+
+			attrVal := cli.datas.String(attrItem.GetID())
+			if 0 == len(attrVal) {
+				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			}
+
+			cond.Field(attrItem.GetID()).Eq(attrVal)
+		}
+	}
+
+	// search by condition
+	existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	if nil != err {
+		return err
+	}
+
+	// create a new
+	if 0 == len(existItems) {
+		bizID, err := client.GetClient().CCV3().Business().CreateBusiness(cli.datas)
+		if err == nil {
+			cli.datas.Set(BusinessID, bizID)
+			return nil
+		}
+		return err
+	}
+
+	// update the exists
+	for _, existItem := range existItems {
+
+		cli.datas.ForEach(func(key string, val interface{}) {
+			existItem.Set(key, val)
+		})
+
+		instID, err := existItem.Int(BusinessID)
+		if nil != err {
+			return err
+		}
+		// clear the invalid field
+		existItem.ForEach(func(key string, val interface{}) {
+			for _, attrItem := range attrs {
+				if attrItem.GetID() == key {
+					return
+				}
+			}
+			existItem.Remove(key)
+		})
+		//fmt.Println("the new:", existItem)
+		err = client.GetClient().CCV3().Business().UpdateBusiness(existItem, instID)
+		if nil != err {
+			return err
+		}
+
+	}
+
 	return nil
 }
