@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
@@ -21,6 +21,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"io/ioutil"
 	"strconv"
@@ -143,7 +144,7 @@ func (cli *platAction) DelPlat(req *restful.Request, resp *restful.Response) {
 
 // CreatePlat: 添加子网
 func (cli *platAction) CreatePlat(req *restful.Request, resp *restful.Response) {
-
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
 		blog.Error("read request body failed, error:%v", err)
@@ -166,7 +167,7 @@ func (cli *platAction) CreatePlat(req *restful.Request, resp *restful.Response) 
 
 	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/plat"
 	language := util.GetActionLanguage(req)
-	valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), cli.CC.Error.CreateDefaultCCErrorIf(language))
+	valid := validator.NewValidMap(input[common.BKOwnerIDField].(string), common.BKInnerObjIDPlat, cli.CC.ObjCtrl(), forward, cli.CC.Error.CreateDefaultCCErrorIf(language))
 	ok, validErr := valid.ValidMap(input, common.ValidCreate, 0)
 	if false == ok {
 		blog.Error("CreatePlat error: %v", err)

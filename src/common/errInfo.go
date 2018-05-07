@@ -322,7 +322,7 @@ const (
 	CCErrProcDeleteProcessFaile      = 1108007
 	CCErrProcCreateProcessFaile      = 1108008
 
-	// auditlog 11009XXX
+	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
 	CCErrAuditTakeSnapshotFaile = 1109001
 
@@ -356,6 +356,17 @@ const (
 	CCErrHostMoveResourcePoolFail = 1110027
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
+	CCErrAddHostToModuleFailStr   = 1110030
+
+	//web  1111XXX
+	CCErrWebFileNoFound      = 1111001
+	CCErrWebFileSaveFail     = 1111002
+	CCErrWebOpenFileFail     = 1111003
+	CCErrWebFileContentEmpty = 1111004
+	CCErrWebFileContentFail  = 1111005
+	CCErrWebGetHostFail      = 1111006
+	CCErrWebCreateEXCELFail  = 1111007
+	CCErrWebGetObjectFail    = 1111008
 
 	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
 	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"

@@ -9,7 +9,7 @@
  */
 
 <template lang="html">
-   <div class="host-resource-wrapper">
+   <div class="host-resource-wrapper clearfix">
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -17,19 +17,24 @@
                         <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
                         <button class="bk-button" :disabled="!table.chooseId.length">
                             <i class="icon-cc-derivation"></i>
-                            <span>导出</span>
+                            <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" @click="importSlider.isShow = true">
+                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.create && unauthorized.update">
                         <i class="icon-cc-import"></i>
-                        <span>导入</span>
+                        <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
                 </template>
-                <button class="bk-button bk-primary bk-button-componey create-btn" title="立即创建" @click="openObjectSlider('create')" :disabled="unauthorized.create">立即创建</button>
+                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.create">{{$t("Inst['立即创建']")}}</button>
             </div>
-            <button class="bk-button setting fr" @click="settingSlider.isShow = true">
-                <i class="icon-cc-setting"></i>
-            </button>
+            <div class="fr btn-group">
+                <button class="bk-button setting" @click="filing.isShow = true" :title="$t('Common[\'查看删除历史\']')">
+                    <i class="icon-cc-history"></i>
+                </button>
+                <button class="bk-button setting" @click="settingSlider.isShow = true">
+                    <i class="icon-cc-setting"></i>
+                </button>
+            </div>
             <div class="quick-search fr">
                 <div class="fl left-select">
                     <bk-select :selected.sync="filter.selected" ref="filterSelector" @on-selected="setFilterType">
@@ -41,9 +46,21 @@
                         </bk-select-option>
                     </bk-select>
                 </div>
-                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" placeholder="快速查询" v-model.number="filter.value" @keyup.enter="setTablePage(1)">
-                <input v-else type="text" class="bk-form-input search-text" placeholder="快速查询" v-model.trim="filter.value" @keyup.enter="setTablePage(1)">
-                <i class="bk-icon icon-search" @click="setTablePage(1)"></i>
+                <template v-if="filter.type === 'enum'">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                        <bk-select-option v-for="option in getEnumOptions()"
+                            :key="option.id"
+                            :value="option.id"
+                            :label="option.name">
+                        </bk-select-option>
+                    </bk-select>
+                </template>
+                <template v-else>
+                    <input v-if="filter.type === 'int'" type="text" class="bk-form-input search-text int" 
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
+                    <input v-else type="text" class="bk-form-input search-text" :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
+                    <i class="bk-icon icon-search" @click="doFilter"></i>
+                </template>
             </div>
         </div>
         <div class="table-contain">
@@ -59,8 +76,9 @@
                 @handlePageSizeChange="setTableSize"
                 @handleTableAllCheck="getAllObjectId">
                     <template v-for="({property,id,name}, index) in table.header" :slot="id" slot-scope="{ item }" 
-                    v-if="property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== ''">
-                        <td>{{getAssociateCell(item[id])}}</td>
+                    v-if="(property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== '') || property['bk_property_type'] === 'enum'">
+                        <td v-if="property['bk_property_type'] === 'enum'">{{getEnumCell(item[id], property)}}</td>
+                        <td v-else>{{getAssociateCell(item[id])}}</td>
                     </template>
             </v-object-table>
             <v-sideslider
@@ -70,7 +88,7 @@
                 @closeSlider="closeObjectSlider">
                 <div class="slide-content" slot="content">
                     <bk-tab :active-name="tab.activeName" style="border: none;" @tab-changed="tabChanged">
-                        <bk-tabpanel name="attr" title="属性">
+                        <bk-tabpanel name="attr" :title="$t('Common[\'属性\']')">
                             <v-object-attr 
                                 :formFields="attr.formFields" 
                                 :formValues="attr.formValues" 
@@ -82,7 +100,7 @@
                                 @delete="confirmDelete">
                             </v-object-attr>
                         </bk-tabpanel>
-                        <bk-tabpanel name="relevance" title="关联" :show="attr.type==='update'">
+                        <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attr.type==='update'">
                             <template v-if="objId!=='biz'">
                                 <v-relevance :isShow="tab.activeName==='relevance'" style="padding: 30px 0;"
                                     :objId="objId"
@@ -96,14 +114,14 @@
                                 ></v-relevance>
                             </template>
                         </bk-tabpanel>
-                        <bk-tabpanel name="history" title="变更记录" :show="attr.type==='update'">
+                        <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
                             <v-history :active="tab.activeName === 'history'" :type="objId" :instId="objId === 'biz' ? attr.formValues['bk_biz_id'] : attr.formValues['bk_inst_id']"></v-history>
                         </bk-tabpanel>
                     </bk-tab>
                 </div>
             </v-sideslider>
         </div>
-        <v-sideslider :isShow.sync="importSlider.isShow" :hasQuickClose="true" :title="{icon: 'icon-cc-derivation',text: `导入${objName}`}" @closeSlider="closeImportSlider">
+        <v-sideslider :isShow.sync="importSlider.isShow" :hasQuickClose="true" :title="{icon: 'icon-cc-derivation',text: `${$t('ModelManagement[\'导入\']')} ${objName}`}" @closeSlider="closeImportSlider">
             <v-import v-if="importSlider.isShow" slot="content" 
                 :templateUrl="templateUrl" 
                 :importUrl="importUrl" 
@@ -120,6 +138,11 @@
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
+        <v-delete-history
+            :isShow.sync="filing.isShow"
+            :objId="objId"
+            :objTableHeader="table.header"
+        ></v-delete-history>
    </div>
 </template>
 
@@ -133,6 +156,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
+    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
     export default {
         mixins: [Authority],
         data () {
@@ -159,6 +183,9 @@
                     defaultSort: '-bk_biz_id',
                     sort: ''
                 },
+                filing: {
+                    isShow: false
+                },
                 // 侧滑状态
                 slider: {
                     isShow: false,
@@ -173,7 +200,7 @@
                 settingSlider: {
                     isShow: false,
                     title: {
-                        text: '编辑'
+                        text: this.$t("Common['编辑']")
                     }
                 },
                 // 属性展示界面状态
@@ -231,8 +258,8 @@
                 } else {
                     config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
                 }
-                if (this.filter.selected && this.filter.value) {
-                    if (this.filter.type === 'bool') {
+                if (this.filter.selected && this.filter.value !== '') {
+                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                         config.params.condition[this.filter.selected] = this.filter.value === 'true'
                     } else {
                         config.params.condition[this.filter.selected] = this.filter.value
@@ -265,6 +292,7 @@
                 // 页码调整到第一页
                 this.table.pagination.current = 1
                 this.filter.value = ''
+                this.table.chooseId = []
                 // 初始化表格
                 this.initTable()
             },
@@ -288,6 +316,9 @@
                         }
                     })
                 }
+            },
+            'filter.selected' () {
+                this.filter.value = ''
             }
         },
         methods: {
@@ -383,11 +414,22 @@
                                     }
                                 }
                                 if (val['bk_property_type'] !== 'singleasst' || val['bk_property_type'] !== 'multiasst') {
-                                    filterList.push({
-                                        id: val['bk_property_id'],
-                                        name: val['bk_property_name'],
-                                        type: val['bk_property_type']
+                                    let property = res.data.find(({bk_property_id: bkPropertyId}) => {
+                                        return bkPropertyId === val['bk_property_id']
                                     })
+                                    if (property) {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: property['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    } else {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: val['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    }
                                 }
                             })
                         } else { // 没有时则显示前六
@@ -462,7 +504,7 @@
                     return data
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg('您没有当前模型的权限')
+                        this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
                 })
             },
@@ -500,6 +542,10 @@
                 this.table.pagination.current = page
                 this.getTableList()
             },
+            doFilter () {
+                this.table.chooseId = []
+                this.setTablePage(1)
+            },
             // 保存新增/修改的属性
             saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {
                 if (this.attr.type === 'update') {
@@ -510,7 +556,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg('修改成功', 'success')
+                            this.$alertMsg(this.$t("Common['修改成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -521,7 +567,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg('创建成功', 'success')
+                            this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -535,7 +581,7 @@
                     bk_biz_name: bizName
                 } = data
                 this.$bkInfo({
-                    title: `确认要删除${this.objId === 'biz' ? bizName : instName}吗`,
+                    title: this.$t("Common['确认要删除']", {name: this.objId === 'biz' ? bizName : instName}),
                     confirmFn: () => {
                         this.deleteObject(data)
                     }
@@ -565,10 +611,10 @@
                 this.attr.type = type
                 if (type === 'create') {
                     this.slider.title.icon = 'icon-cc-create-business'
-                    this.slider.title.text = `创建${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['创建']")} ${this.objName}`
                 } else {
                     this.slider.title.icon = 'icon-cc-edit'
-                    this.slider.title.text = `编辑${this.objName}`
+                    this.slider.title.text = `${this.$t("Common['编辑']")} ${this.objName}`
                 }
                 this.slider.isShow = true
             },
@@ -592,6 +638,22 @@
                     })
                 }
                 return label.join(',')
+            },
+            getEnumCell (data, property) {
+                let obj = property.option.find(({id}) => {
+                    return id === data
+                })
+                if (obj) {
+                    return obj.name
+                }
+            },
+            getEnumOptions () {
+                let selectedPropertyId = this.filter.selected
+                let property = this.attr.formFields.find(({bk_property_id: bkPropertyId}) => bkPropertyId === selectedPropertyId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
             }
         },
         mounted () {
@@ -611,7 +673,8 @@
             vHistory,
             vImport,
             vSideslider,
-            vConfigField
+            vConfigField,
+            vDeleteHistory
         }
     }
 </script>
@@ -688,6 +751,7 @@
         }
         .icon-cc-derivation,
         .icon-cc-import,
+        .icon-cc-history,
         .icon-cc-setting{
             font-size: 16px;
             position: relative;
@@ -847,6 +911,9 @@
                 z-index: 2;
             }
         }
+        .search-options{
+            width: 320px;
+        }
         .icon-search{
             position: absolute;
             right: 10px;
@@ -858,10 +925,8 @@
 </style>
 
 <style media="screen" lang="scss">
-    .bk-date .date-dropdown-panel{
-        z-index: 999;
-    }
     .host-resource-wrapper{
+        position: relative;
         .errorInfo-wrapper{
             input[name="date-select"]{
                 border: 1px solid #ff3737;

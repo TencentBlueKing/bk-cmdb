@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -117,8 +118,8 @@ func (cli *procAction) getProcDetail(req *restful.Request, ownerID string, appID
 		return nil, err
 	}
 	procAttrArr := gProcAttr["data"].([]interface{})
-
-	rstmap, errorno := cli.getObjectAsst(common.BKInnerObjIDProc, ownerID)
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	rstmap, errorno := cli.getObjectAsst(forward, common.BKInnerObjIDProc, ownerID)
 	if common.CCSuccess != errorno {
 		return nil, fmt.Errorf("get object asst faile")
 	}
@@ -163,7 +164,7 @@ type instNameAsst struct {
 }
 
 // getObjectAsst read association objectid the return key is engilish property name, value is the objectid
-func (cli *procAction) getObjectAsst(objID, ownerID string) (map[string]string, int) {
+func (cli *procAction) getObjectAsst(forward *sourceAPI.ForwardParam, objID, ownerID string) (map[string]string, int) {
 
 	rstmap := map[string]string{}
 
@@ -177,7 +178,7 @@ func (cli *procAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 		blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 		return nil, common.CCErrCommJSONMarshalFailed
 	}
-	rests, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+	rests, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 	if nil != restErr {
 		blog.Error("failed to read the object att, error is %s ", restErr.Error())
 		return nil, common.CCErrTopoInstSelectFailed
@@ -188,7 +189,7 @@ func (cli *procAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 
 		switch item.PropertyType {
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
 			asst["bk_object_att_id"] = item.PropertyID
@@ -201,7 +202,7 @@ func (cli *procAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -223,7 +224,7 @@ func (cli *procAction) getObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed

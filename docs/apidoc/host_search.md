@@ -96,27 +96,118 @@ page 参数说明：
 * output
 ```
 {
-  "result": true, 
-  "bk_error_code": 0, 
-  "message": "", 
-  "data": {"info":[
-    {
-      "biz": { }, 
-      "host": {
-        "bk_host_name": "test1"
-      }, 
-      "module": { }, 
-      "set": { }
-    }, 
-    {
-      "biz": { }, 
-      "host": {
-        "bk_host_name": "test1"
-      }, 
-      "module": { }, 
-      "set": { }
+    "result": true,
+    "bk_error_code": 0,
+    "bk_error_msg": "success",
+    "data": {
+        "count": 2,
+        "info": [
+            {
+                "biz": [
+                    {
+                        "bk_biz_developer": "",
+                        "bk_biz_id": 2,
+                        "bk_biz_maintainer": "admin",
+                        "bk_biz_name": "蓝鲸",
+                        "bk_biz_productor": "",
+                        "bk_biz_tester": "",
+                        "bk_supplier_account": "0",
+                        "bk_supplier_id": 0,
+                        "create_time": "2018-04-25T11:16:59.326+08:00",
+                        "default": 0,
+                        "last_time": "2018-04-28T10:12:21.077+08:00",
+                        "life_cycle": "1",
+                        "operator": "",
+                        "xxx": "1"
+                    }
+                ],
+                "host": {
+                    "bk_asset_id": "",
+                    "bk_bak_operator": null,
+                    "bk_cloud_id": [
+                        {
+                            "id": "0",
+                            "bk_obj_id": "plat",
+                            "bk_obj_icon": "",
+                            "bk_inst_id": 0,
+                            "bk_obj_name": "",
+                            "bk_inst_name": "default area"
+                        }
+                    ],
+                    "bk_comment": "",
+                    "bk_cpu": null,
+                    "bk_cpu_mhz": null,
+                    "bk_cpu_module": "",
+                    "bk_disk": null,
+                    "bk_host_id": 2,
+                    "bk_host_innerip": "10.20.30.45",
+                    "bk_host_name": "",
+                    "bk_host_outerip": "",
+                    "bk_mac": "",
+                    "bk_mem": null,
+                    "bk_os_bit": "",
+                    "bk_os_name": "",
+                    "bk_os_type": null,
+                    "bk_os_version": "",
+                    "bk_outer_mac": "",
+                    "bk_service_term": null,
+                    "bk_sla": null,
+                    "bk_sn": "",
+                    "create_time": "2018-04-25T11:42:06.531+08:00",
+                    "import_from": "1",
+                    "last_time": "2018-04-26T16:46:19.553+08:00",
+                    "mast": [
+                        {
+                            "id": "3",
+                            "bk_obj_id": "test1",
+                            "bk_obj_icon": "",
+                            "bk_inst_id": 3,
+                            "bk_obj_name": "",
+                            "bk_inst_name": "a3"
+                        }
+                    ],
+                    "operator": null,
+                    "single": [
+                        {
+                            "id": "5",
+                            "bk_obj_id": "lhmtest",
+                            "bk_obj_icon": "",
+                            "bk_inst_id": 5,
+                            "bk_obj_name": "",
+                            "bk_inst_name": "234"
+                        }
+                    ]
+                },
+                "module": [
+                    {
+                        "TopModuleName": "蓝鲸##空闲机池##空闲机",
+                        "bk_biz_id": 2,
+                        "bk_module_id": 3,
+                        "bk_module_name": "空闲机",
+                        "bk_parent_id": 2,
+                        "bk_set_id": 2,
+                        "bk_supplier_account": "0",
+                        "create_time": "2018-04-25T11:16:59.34+08:00",
+                        "default": 1,
+                        "last_time": "2018-04-25T11:16:59.34+08:00"
+                    }
+                ],
+                "set": [
+                    {
+                        "TopSetName": "蓝鲸##空闲机池",
+                        "bk_biz_id": 2,
+                        "bk_parent_id": 2,
+                        "bk_set_id": 2,
+                        "bk_set_name": "空闲机池",
+                        "bk_supplier_account": "0",
+                        "create_time": "2018-04-25T11:16:59.337+08:00",
+                        "default": 1,
+                        "last_time": "2018-04-25T11:16:59.337+08:00"
+                    }
+                ]
+            }
+        ]
     }
-  ],"count":2}
 }
 ```
 
@@ -140,9 +231,9 @@ info 字段说明:
 
 | 名称  | 类型  | 说明 |Description|
 |---|---|---|---| 
-| biz | object | 主机所属的业务信息 |host biz info|
-| set| object | 主机所属的集群信息 |host set info|
-| module| object | 主机所属的模块信息 |host module info|
+| biz | object array | 主机所属的业务信息 |host biz info|
+| set| object array| 主机所属的集群信息 |host set info|
+| module| object array| 主机所属的模块信息 |host module info|
 | host| object | 主机自身属性|host attr info|
 
 ###  获取主机详情

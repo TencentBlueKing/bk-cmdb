@@ -1,20 +1,20 @@
 <template>
     <div>
         <input class="bk-form-input selected-host" type="text" readonly :value="localSelected.join(',')" @click="isSelectBoxShow = !isSelectBoxShow">
+        <i class="bk-icon icon-close bk-selector-icon clear-icon" @click.stop="clear" v-show="localSelected.length"></i>
         <div class="selectbox-wrapper" v-show="isSelectBoxShow" @click.self="handleCancel">
             <div class="selectbox-box">
                 <div class="top-box">
-                    <p class="content-title">变更关联</p>
+                    <p class="content-title">{{$t("Hosts['变更关联']")}}</p>
                     <div class="content-box">
                         <template>
                             <div class="operation-group clearfix">
-                                <bk-button type="primary" :disabled="!ready" @click.stop="setCurrentPage(1)">刷新查询</bk-button>
+                                <bk-button type="primary" :disabled="!ready" @click.stop="setCurrentPage(1)">
+                                    {{$t("Common['刷新查询']")}}
+                                </bk-button>
                                 <div class="fr">
                                     <bk-button type="default" class="btn-small" @click.stop="resetFilterParams">
-                                        <i class="icon icon-cc-clear"></i>清空
-                                    </bk-button>
-                                    <bk-button type="default" class="btn-small" hidden>
-                                        <i class="icon icon-cc-setting"></i>列表
+                                        <i class="icon icon-cc-clear"></i>{{$t("Hosts['清空']")}}
                                     </bk-button>
                                 </div>
                             </div>
@@ -56,8 +56,8 @@
                 </div>
                 <div class="bottom-box">
                     <div class="btn-group">
-                        <bk-button type="primary" class="btn" @click="handleConfirm">确认</bk-button>
-                        <bk-button type="default" class="btn" @click="handleCancel">取消</bk-button>
+                        <bk-button type="primary" class="btn" @click="handleConfirm">{{$t("Common['确认']")}}</bk-button>
+                        <bk-button type="default" class="btn" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
                     </div>
                 </div>
             </div>
@@ -99,19 +99,19 @@
                 },
                 attribute: [{
                     'bk_obj_id': 'host',
-                    'bk_obj_name': '主机',
+                    'bk_obj_name': this.$t("Hosts['主机']"),
                     'properties': []
                 }, {
                     'bk_obj_id': 'module',
-                    'bk_obj_name': '模块',
+                    'bk_obj_name': this.$t("Hosts['模块']"),
                     'properties': []
                 }, {
                     'bk_obj_id': 'set',
-                    'bk_obj_name': '集群',
+                    'bk_obj_name': this.$t("Hosts['集群']"),
                     'properties': []
                 }, {
                     'bk_obj_id': 'biz',
-                    'bk_obj_name': '业务',
+                    'bk_obj_name': this.$t("Common['业务']"),
                     'properties': []
                 }],
                 filter: {
@@ -170,7 +170,8 @@
         methods: {
             initLocalSelected () {
                 if (Array.isArray(this.selected)) {
-                    this.localSelected = this.selected.map(({bk_inst_name: bkInstName}) => bkInstName)
+                    let availableSelected = this.selected.filter(({id}) => id !== '')
+                    this.localSelected = availableSelected.map(({bk_inst_name: bkInstName}) => bkInstName)
                 }
             },
             initChoosed () {
@@ -242,13 +243,13 @@
             setQueryColumns () {
                 this.filter.queryColumns = [{
                     bk_property_id: 'bk_host_name',
-                    bk_property_name: '主机名称',
+                    bk_property_name: this.$t("Hosts['主机名称']"),
                     bk_property_type: 'singlechar',
                     bk_obj_id: 'host'
                 }, {
                     bk_option: '[{"name":"Linux", "type":"text"},{"name":"Windows", "type":"text"}]',
                     bk_property_id: 'bk_os_type',
-                    bk_property_name: '操作系统类型',
+                    bk_property_name: this.$t("Hosts['操作系统类型']"),
                     bk_property_type: 'enum',
                     bk_obj_id: 'host'
                 }]
@@ -313,8 +314,14 @@
                 })
             },
             getTableList () {
+                let params = this.$deepClone(this.filter.params)
+                params.page = {
+                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                    limit: this.table.pagination.size,
+                    sort: this.table.sort
+                }
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.filter.params).then(res => {
+                this.$axios.post('hosts/search', params).then(res => {
                     this.table.isLoading = false
                     if (res.result) {
                         this.table.pagination.count = res.data.count
@@ -340,6 +347,9 @@
                         }
                     })
                     value = tempValue.join(',')
+                } else if (property['bk_property_type'] === 'enum' && Array.isArray(property.option)) {
+                    let option = property.option.find(({id}) => id === value)
+                    value = option ? option.name : ''
                 }
                 return value
             },
@@ -359,7 +369,10 @@
             handleConfirm () {
                 this.isSelectBoxShow = false
                 this.setLocalSelected()
-                this.$emit('update:selected', this.table.chooseId.join(','))
+                let availableId = this.table.chooseId.filter(id => {
+                    return !!this.table.allHost.find(({bk_host_id: bkHostId}) => bkHostId === id)
+                })
+                this.$emit('update:selected', availableId.join(','))
             },
             setLocalSelected () {
                 let selectedHost = this.table.allHost.filter(({bk_host_id: bkHostId}) => this.table.chooseId.indexOf(bkHostId) !== -1)
@@ -367,6 +380,11 @@
             },
             handleCancel () {
                 this.isSelectBoxShow = false
+                this.initLocalSelected()
+            },
+            clear () {
+                this.table.chooseId = []
+                this.handleConfirm()
             }
         },
         components: {

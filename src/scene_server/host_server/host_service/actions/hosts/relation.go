@@ -64,6 +64,7 @@ func (m *hostModuleConfigAction) HostModuleRelation(req *restful.Request, resp *
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data moduleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
@@ -88,7 +89,7 @@ func (m *hostModuleConfigAction) HostModuleRelation(req *restful.Request, resp *
 		}
 
 		for _, hostID := range data.HostID {
-			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID)
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
@@ -96,7 +97,7 @@ func (m *hostModuleConfigAction) HostModuleRelation(req *restful.Request, resp *
 			}
 			if false == bl {
 				blog.Error("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
-				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, hostID)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, fmt.Sprintf("%d", hostID))
 			}
 
 			params := make(map[string]interface{})
@@ -174,6 +175,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data defaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
@@ -184,7 +186,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		conds := make(map[string]interface{}, 1)
 		conds[common.BKAppIDField] = data.ApplicationID
 		fields := fmt.Sprintf("%s,%s", common.BKOwnerIDField, common.BKAppNameField)
-		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl())
+		appinfo, err := logics.GetAppInfo(req, fields, conds, m.CC.ObjCtrl(), defLang)
 		if err != nil {
 			m.ResponseFailed(common.CC_Err_Comm_APP_QUERY_FAIL, err.Error(), resp)
 		}
@@ -195,7 +197,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 		}
 
 		//get default app
-		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl())
+		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 		blog.Infof("ownerid %s default appid %d", ownerID, appID)
 		if err != nil {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
@@ -246,7 +248,7 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostEditRelationPoolFail)
 		}
 		logClient, err := logics.NewHostModuleConfigLog(req, nil, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
-		logClient.SetDesc(fmt.Sprintf("分配主机到业务[%s]", appinfo[common.BKAppNameField].(string)))
+		logClient.SetDesc("distribution host to app")
 		logClient.SetHostID(data.HostID)
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
@@ -259,16 +261,19 @@ func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *res
 func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, resp *restful.Response) {
 
 	type inputStruct struct {
-		Ips        []string `json:"ips"`
-		HostName   []string `json:"bk_host_name"`
-		ModuleName string   `json:"bk_module_name"`
-		SetName    string   `json:"bk_set_name"`
-		AppName    string   `json:"bk_biz_name"`
-		OsType     string   `json:"bk_os_type"`
-		OwnerID    string   `json:"bk_supplier_account"`
+		Ips         []string `json:"ips"`
+		HostName    []string `json:"bk_host_name"`
+		ModuleName  string   `json:"bk_module_name"`
+		SetName     string   `json:"bk_set_name"`
+		AppName     string   `json:"bk_biz_name"`
+		OsType      string   `json:"bk_os_type"`
+		OwnerID     string   `json:"bk_supplier_account"`
+		PlatID      int64    `json:"bk_cloud_id"`
+		IsIncrement bool     `json:"is_increment"`
 	}
 	language := util.GetActionLanguage(req)
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		value, _ := ioutil.ReadAll(req.Request.Body)
@@ -282,20 +287,19 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 		appID, _, moduleID, err := logics.GetTopoIDByName(req, data.OwnerID, data.AppName, data.SetName, data.ModuleName, m.CC.ObjCtrl(), defErr)
 		if nil != err {
 			blog.Error("get app  topology id by name error:%s, msg: applicationName:%s, setName:%s, moduleName:%s", err.Error(), data.AppName, data.SetName, data.ModuleName)
-			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, "search appliaction module not foud ")
+			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, "search appliaction module not foud ")
 		}
 
-		var strHostName string
 		if 0 == appID || 0 == moduleID {
 			//get default app
-			ownerAppID, err := logics.GetDefaultAppID(req, data.OwnerID, common.BKAppIDField, m.CC.ObjCtrl())
+			ownerAppID, err := logics.GetDefaultAppID(req, data.OwnerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 			if err != nil {
 				blog.Infof("ownerid %s 资源池未找到", ownerAppID)
-				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, "search "+common.DefaultAppName+" not foud ")
+				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, "search "+defLang.Language("inst_biz_default")+" not foud ")
 			}
 			if 0 == ownerAppID {
 				blog.Infof("ownerid %s 资源池未找到", ownerAppID)
-				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, common.DefaultAppName+" not foud ")
+				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, defLang.Language("inst_biz_default")+" not foud ")
 			}
 
 			//get idle module
@@ -306,7 +310,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 			ownerModuleID, err := logics.GetSingleModuleID(req, mConds, m.CC.ObjCtrl())
 			if nil != err {
 				blog.Infof("ownerid %s 资源池业务空闲机未找到", ownerAppID)
-				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, common.DefaultResModuleName+" not foud ")
+				return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, defLang.Language("inst_module_idle")+" not foud ")
 			}
 			appID = ownerAppID
 			moduleID = ownerModuleID
@@ -317,14 +321,17 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 		}
 		var errmsg []string
 		for index, ip := range data.Ips {
+			host := make(map[string]interface{})
 			if index < len(data.HostName) {
-				strHostName = data.HostName[index]
-			} else {
-				strHostName = ""
+				host[common.BKHostNameField] = data.HostName[index]
 			}
+			if "" != data.OsType {
+				host[common.BKOSTypeField] = data.OsType
+			}
+			host[common.BKCloudIDField] = data.PlatID
 
 			//dispatch to app
-			err := logics.EnterIP(req, data.OwnerID, appID, moduleID, ip, data.OsType, strHostName, data.AppName, data.SetName, data.ModuleName, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+			err := logics.EnterIP(req, data.OwnerID, appID, moduleID, ip, data.PlatID, host, data.IsIncrement, m.CC)
 			if nil != err {
 				blog.Errorf("%s add host error: %s", ip, err.Error())
 				errmsg = append(errmsg, fmt.Sprintf("%s add host error: %s", ip, err.Error()))
@@ -333,7 +340,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 		if 0 == len(errmsg) {
 			return http.StatusOK, nil, nil
 		} else {
-			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, strings.Join(errmsg, ","))
+			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, strings.Join(errmsg, ","))
 		}
 	}, resp)
 
@@ -344,6 +351,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data defaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 		err = json.Unmarshal([]byte(value), &data)
@@ -353,12 +361,15 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		}
 
 		conds := make(map[string]interface{})
+		moduleNameLogKey := "idle"
 		if common.DefaultResModuleName == moduleName {
-			//idle module
+			//空闲机
+			moduleNameLogKey = "idle"
 			conds[common.BKDefaultField] = common.DefaultResModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultResModuleName
 		} else {
-			//fault module
+			//故障机器
+			moduleNameLogKey = "falult"
 			conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultFaultModuleName
 		}
@@ -366,7 +377,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		conds[common.BKAppIDField] = data.ApplicationID
 		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
 		if nil != err {
-			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, conds[common.BKModuleNameField].(string)+" not foud ")
+			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")
 
 		}
 		moduleHostConfigParams := make(map[string]interface{})
@@ -378,14 +389,14 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		}
 
 		for _, hostID := range data.HostID {
-			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID)
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 			}
 			if false == bl {
 				blog.Error("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
-				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, hostID)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, fmt.Sprintf("%d", hostID))
 			}
 
 			moduleHostConfigParams[common.BKHostIDField] = hostID
@@ -401,11 +412,11 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			isSuccess, errMsg, _ = logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
 			if !isSuccess {
 				blog.Error("add hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
-				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, errMsg)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
 			}
 		}
 		user := util.GetActionUser(req)
-		logClient.SetDesc("转移主机到" + moduleName)
+		logClient.SetDesc("host to " + moduleNameLogKey + " module")
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
 		return http.StatusOK, nil, nil

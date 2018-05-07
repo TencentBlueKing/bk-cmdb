@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package validator
 
 import (
@@ -44,7 +44,7 @@ type MetaRst struct {
 func NewValRule(ownerID, objCtrl string) *ValRule {
 	return &ValRule{ownerID: ownerID, objCtrl: objCtrl}
 }
-func (valid *ValRule) GetObjAttrByID(objID string) error {
+func (valid *ValRule) GetObjAttrByID(forward *api.ForwardParam, objID string) error {
 	fieldRule := make(map[string]map[string]interface{})
 	data := make(map[string]interface{})
 	valid.PropertyKv = make(map[string]string)
@@ -52,7 +52,8 @@ func (valid *ValRule) GetObjAttrByID(objID string) error {
 	data[common.BKObjIDField] = objID
 	info, _ := json.Marshal(data)
 	client := api.NewClient(valid.objCtrl)
-	result, _ := client.SearchMetaObjectAttExceptInnerFiled([]byte(info))
+
+	result, _ := client.SearchMetaObjectAttExceptInnerFiled(forward, []byte(info))
 	blog.Infof("valid result:%+v selector:%s", result, info)
 	for _, j := range result {
 		cell := make(map[string]interface{})
@@ -73,7 +74,7 @@ func (valid *ValRule) GetObjAttrByID(objID string) error {
 		if isOnly {
 			valid.IsOnlyArr = append(valid.IsOnlyArr, propertyID)
 		}
-		if propertyType != common.FiledTypeEnum {
+		if propertyType != common.FieldTypeEnum {
 			valid.NoEnumFiledArr = append(valid.NoEnumFiledArr, propertyID)
 		}
 		valid.AllFiledArr = append(valid.AllFiledArr, propertyID)

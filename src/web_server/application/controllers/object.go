@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package controllers
 
 import (
@@ -18,19 +18,18 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/types"
-
 	"configcenter/src/web_server/application/logics"
-
 	webCommon "configcenter/src/web_server/common"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
 	//"reflect"
-	"time"
-
+	lang "configcenter/src/common/language"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
+	"time"
 )
 
 func init() {
@@ -52,41 +51,19 @@ var sortFields = []string{
 	"isonly",
 }
 
-var fieldType = map[string]string{
-	"bk_property_id":   "文本",
-	"bk_property_name": "文本",
-	"bk_property_type": "文本",
-	"option":           "文本",
-	"unit":             "文本",
-	"description":      "文本",
-	"placeholder":      "文本",
-	"editable":         "布尔",
-	"isrequired":       "布尔",
-	"isreadonly":       "布尔",
-	"isonly":           "布尔",
-}
-
-var fields = map[string]string{
-	"bk_property_id":   "英文名(必填)",
-	"bk_property_name": "中文名(必填)",
-	"bk_property_type": "数据类型(必填)",
-	"option":           "数据配置",
-	"unit":             "单位",
-	"description":      "描述",
-	"placeholder":      "提示",
-	"editable":         "是否可编辑",
-	"isrequired":       "是否必填",
-	"isreadonly":       "是否只读",
-	"isonly":           "是否唯一",
-}
-
 // ImportObject import object attribute
 func ImportObject(c *gin.Context) {
 	logics.SetProxyHeader(c)
+	objID := c.Param(common.BKObjIDField)
+
+	cc := api.NewAPIResource()
+	language := logics.GetLanugaeByHTTPRequest(c)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
 	file, err := c.FormFile("file")
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_UPLOAD_FILE, "未找到上传文件", nil)
+		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -100,32 +77,39 @@ func ImportObject(c *gin.Context) {
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_UPLOAD_FILE, fmt.Sprintf("保存文件失败;error:%s", err.Error()), nil)
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	defer os.Remove(filePath) //delete file
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
-		msg := getReturnStr(CODE_ERROR_OPEN_FILE, fmt.Sprintf("保存上传文件;error:%s", err.Error()), nil)
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	attrItems, err := logics.GetImportInsts(f, "", c.Request.Header, 3)
+	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+
+	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, defLang)
 	if 0 == len(attrItems) {
-		msg := getReturnStr(CODE_ERROR_OPEN_FILE, "文件内容不能为空", nil)
+		msg := ""
+		if nil != err {
+			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
+		} else {
+			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, "").Error(), nil)
+		}
 		c.String(http.StatusOK, string(msg))
 		return
 	}
+
+	logics.ConvAttrOption(attrItems)
 
 	blog.Debug("the object file content:%+v", attrItems)
 
-	cc := api.NewAPIResource()
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := fmt.Sprintf("%s/api/%s/object/batch", apiSite, webCommon.API_VERSION)
 	blog.Debug("batch insert insts, the url is %s", url)
-	objID := c.Param(common.BKObjIDField)
+
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
@@ -153,7 +137,8 @@ func setExcelSubTitle(row *xlsx.Row) *xlsx.Row {
 	return row
 }
 
-func setExcelTitle(row *xlsx.Row) *xlsx.Row {
+func setExcelTitle(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+	fields := logics.GetPropertyFieldDesc(defLang)
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fields[key]
@@ -162,11 +147,12 @@ func setExcelTitle(row *xlsx.Row) *xlsx.Row {
 	return row
 }
 
-func setExcelTitleType(row *xlsx.Row) *xlsx.Row {
+func setExcelTitleType(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
+	fieldType := logics.GetPropertyFieldType(defLang)
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fieldType[key]
-		blog.Debug("key:%s value:%v", key, fields[key])
+		blog.Debug("key:%s value:%v", key, fieldType[key])
 	}
 	return row
 }
@@ -195,7 +181,18 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 		case bool:
 			cell.SetBool(t)
 		default:
-			cell.SetValue(t)
+			switch key {
+			case common.BKOptionField:
+				bOptions, err := json.Marshal(t)
+				if nil != err {
+					blog.Errorf("option format error:%v", t)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bOptions))
+				}
+			default:
+				cell.SetValue(t)
+			}
 		}
 	}
 
@@ -213,11 +210,16 @@ func ExportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
+	language := logics.GetLanugaeByHTTPRequest(c)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
 	// get the all attribute of the object
 	arrItems, err := logics.GetObjectData(ownerID, objID, apiSite, c.Request.Header)
 	if nil != err {
 		blog.Error(err.Error())
-		c.String(http.StatusBadGateway, "获取实例数据失败, %s", err.Error())
+		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
+		c.String(http.StatusBadGateway, msg)
 		return
 	}
 
@@ -233,13 +235,14 @@ func ExportObject(c *gin.Context) {
 
 	if err != nil {
 		blog.Error(err.Error())
-		c.String(http.StatusBadGateway, "创建EXCEL文件失败，%s", err.Error())
+		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
+		c.String(http.StatusBadGateway, msg, nil)
 		return
 	}
 
 	// set the title
-	setExcelTitle(sheet.AddRow())
-	setExcelTitleType(sheet.AddRow())
+	setExcelTitle(sheet.AddRow(), defLang)
+	setExcelTitleType(sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
 
 	// add the value

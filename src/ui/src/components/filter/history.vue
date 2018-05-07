@@ -126,7 +126,7 @@
                     // 构造的数据结构跟收藏列表类似
                     this.$emit('apply', {info: JSON.stringify(info), query_params: JSON.stringify(queryParams)})
                 } else {
-                    this.$alertMsg('该查询条件对应的业务不存在')
+                    this.$alertMsg(this.$t('Common[\'该查询条件对应的业务不存在\']'))
                 }
             }
         }

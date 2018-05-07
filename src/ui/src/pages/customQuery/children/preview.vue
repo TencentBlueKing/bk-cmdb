@@ -11,7 +11,7 @@
 <template>
     <div class="userapi-preview-wrapper" v-show="isPreviewShow" v-click-outside="closePreview">
         <div class="userapi-preview">
-            <h3 class="preview-title">测试</h3>
+            <h3 class="preview-title">{{$t("CustomQuery['测试']")}}</h3>
             <v-table class="preview-table"
                 :sortable="false"
                 :tableHeader="table.header"
@@ -23,7 +23,7 @@
                 @handlePageSizeChange="setCurrentSize">
             </v-table>
             <div class="preview-btn-group">
-                <bk-button type="primary" class="preview-btn-confirm" @click="closePreview">确认</bk-button>
+                <bk-button type="primary" class="preview-btn-confirm" @click="closePreview">{{$t("Common['确认']")}}</bk-button>
             </div>
         </div>
     </div>
@@ -49,19 +49,19 @@
                 table: {
                     header: [{
                         id: 'bk_host_innerip',
-                        name: '内网IP'
+                        name: this.$t("Common['内网IP']")
                     }, {
                         id: 'bk_biz_name',
-                        name: '业务'
+                        name: this.$t("Common['业务']")
                     }, {
                         id: 'bk_set_name',
-                        name: '集群'
+                        name: this.$t("Hosts['集群']")
                     }, {
                         id: 'bk_module_name',
-                        name: '模块'
+                        name: this.$t("Hosts['模块']")
                     }, {
                         id: 'bk_cloud_id',
-                        name: '云区域ID'
+                        name: this.$t("Hosts['云区域']")
                     }],
                     list: [],
                     pagination: {
@@ -194,6 +194,9 @@
     }
 </style>
 <style lang="scss">
+    .userapi-preview .preview-table{
+        min-height: auto !important;
+    }
     .userapi-preview .preview-table .table-scrollbar{
         max-height: 250px !important;
     }

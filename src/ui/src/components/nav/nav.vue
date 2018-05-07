@@ -11,7 +11,7 @@
 <template lang="html">
     <div class=" nav-wrapper bk-sidebar nav-contain" id="bk-sidebar" :class="{'slide-close':isClose,'slide-open':!isClose}">
         <div class="slide-switch" @click="backToIndex">
-            <i class="nav-title-img" :class="$t('message.logo')"></i><i class="icon-cc-triangle-slider" ></i>
+            <i class="nav-title-img" :class="$t('Common.logo')"></i><i class="icon-cc-triangle-slider" ></i>
         </div>
         <div class="nav-list">
             <ul>
@@ -24,8 +24,8 @@
                                 <i :class="navigation[navType]['icon']"></i>
                             </span>
                             <span class="nav-name text-hd"
-                                :title="navigation[navType]['international'] ? $t(navigation[navType]['international']) : navigation[navType]['name']">
-                                   {{navigation[navType]['international'] ? $t(navigation[navType]['international']) : navigation[navType]['name']}} 
+                                :title="navigation[navType]['i18n'] ? $t(navigation[navType]['i18n']) : navigation[navType]['name']">
+                                   {{navigation[navType]['i18n'] ? $t(navigation[navType]['i18n']) : navigation[navType]['name']}} 
                             </span>
                             <span class="angle-box">
                                 <i class="bk-icon icon-angle-down angle"></i>
@@ -40,8 +40,8 @@
                                 v-if="subNav.authorized && !subNav.isPaused"
                                 :key="subNavIndex"
                                 :to="subNav.path"
-                                :title="subNav.international ? $t(subNav.international) : subNav.name">
-                                {{subNav.international ? $t(subNav.international) : subNav.name}} 
+                                :title="subNav.i18n ? $t(subNav.i18n) : subNav.name">
+                                {{subNav.i18n ? $t(subNav.i18n) : subNav.name}} 
                             </router-link>
                         </div>
                     </li>
@@ -262,7 +262,7 @@
         top:0;
         left:0;
         bottom:0;
-        z-index:1200;
+        z-index:1201;
         .slide-switch{
             transition: all .5s;
             padding:0 10px;
@@ -327,9 +327,11 @@
                background: #424c6b;
             }
             .icon-box {
-                line-height: 45px;
-                .bk-icon{
+                line-height: 48px;
+                .bk-icon,[class*="icon-cc"]{
                     font-size:16px;
+                    display: inline-block;
+                    vertical-align: baseline;
                 }
             }
             .bk-icon{
@@ -384,7 +386,7 @@
             overflow: hidden;
             li{
                 >a .icon-box{
-                    vertical-align: text-bottom;
+                    vertical-align: middle;
                     padding:0 4px 0 38px;
                 }
                 >a .angle-box{
@@ -456,7 +458,9 @@
                 }
                 &:hover{
                     .nav-name{
+                        position: absolute;
                         background:#2f3c5d;
+                        width: 150px;
                     }
                 }
             }
@@ -514,11 +518,17 @@
             border-left:none;
         }
         .nav-list .nav-name{
+            display: inline-block;
+            vertical-align: middle;
             height: 48px;
+            line-height: 48px;
             border-bottom: none;
             font-size:14px;
             font-weight:bold;
             transition: unset !important;
+            width: 120px;
+            padding-left: 10px;
+            position: initial;
         }
     }
     .text-hd{
@@ -528,5 +538,14 @@
         white-space: nowrap;
         -o-text-overflow: ellipsis;
         overflow: hidden;
+    }
+</style>
+<style lang="scss" scoped>
+    body[lang="en"]{
+        .nav-list{
+            .bk-icon,[class*="icon-cc"]{
+                vertical-align: 1px;
+            }
+        }
     }
 </style>
