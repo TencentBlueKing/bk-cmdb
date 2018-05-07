@@ -80,22 +80,24 @@ func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 }
 
 // FindBusinessLikeName find all insts by the name
-func FindBusinessLikeName(supplierAccount, businessName string) (inst.Iterator, error) {
+func FindBusinessLikeName(supplierAccount, businessName string) (*BusinessIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
 
-	return mgr.OutputerMgr.FindInstsLikeName(targetModel, businessName)
+	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, businessName)
+	return &BusinessIteratorWrapper{business: iter}, err
 }
 
 // FindBusinessByCondition find all insts by the condition
-func FindBusinessByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+func FindBusinessByCondition(supplierAccount string, cond common.Condition) (*BusinessIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
-	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	return &BusinessIteratorWrapper{business: iter}, err
 }
 
 // CreateSet create a new set object
@@ -112,22 +114,24 @@ func CreateSet(supplierAccount string) (*SetWrapper, error) {
 }
 
 // FindSetLikeName find all insts by the name
-func FindSetLikeName(supplierAccount, setName string) (inst.Iterator, error) {
+func FindSetLikeName(supplierAccount, setName string) (*SetIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
 
-	return mgr.OutputerMgr.FindInstsLikeName(targetModel, setName)
+	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, setName)
+	return &SetIteratorWrapper{set: iter}, err
 }
 
 // FindSetByCondition find all insts by the condition
-func FindSetByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+func FindSetByCondition(supplierAccount string, cond common.Condition) (*SetIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
-	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	return &SetIteratorWrapper{set: iter}, err
 }
 
 // CreateModule create a new module object
@@ -143,22 +147,24 @@ func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 }
 
 // FindModuleLikeName find all insts by the name
-func FindModuleLikeName(supplierAccount, moduleName string) (inst.Iterator, error) {
+func FindModuleLikeName(supplierAccount, moduleName string) (*ModuleIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
 
-	return mgr.OutputerMgr.FindInstsLikeName(targetModel, moduleName)
+	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, moduleName)
+	return &ModuleIteratorWrapper{module: iter}, err
 }
 
 // FindModuleByCondition find all insts by the condition
-func FindModuleByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+func FindModuleByCondition(supplierAccount string, cond common.Condition) (*ModuleIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
-	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	return &ModuleIteratorWrapper{module: iter}, err
 }
 
 // CreateHost create a new host object
@@ -173,21 +179,23 @@ func CreateHost(supplierAccount string) (*HostWrapper, error) {
 }
 
 // FindHostLikeName find all insts by the name
-func FindHostLikeName(supplierAccount, hostName string) (inst.Iterator, error) {
+func FindHostLikeName(supplierAccount, hostName string) (*HostIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}
-	return mgr.OutputerMgr.FindInstsLikeName(targetModel, hostName)
+	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, hostName)
+	return &HostIteratorWrapper{host: iter}, err
 }
 
 // FindHostByCondition find all insts by the condition
-func FindHostByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+func FindHostByCondition(supplierAccount string, cond common.Condition) (*HostIteratorWrapper, error) {
 	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}
-	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	return &HostIteratorWrapper{host: iter}, err
 }
 
 // CreateCommonInst create a common inst object
