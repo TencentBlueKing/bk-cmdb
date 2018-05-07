@@ -14,8 +14,9 @@ package v3
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/types"
-	//"encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
@@ -43,8 +44,14 @@ func newGroup(cli *Client) *Group {
 
 // CreateGroup create a group
 func (g *Group) CreateGroup(data types.MapStr) (int, error) {
-
-	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/new", g.cli.GetAddress())
+	data.Set("bk_supplier_account", g.cli.GetSupplierAccount())
+	if !data.Exists("bk_group_id") {
+		data.Set("bk_group_id", common.UUID())
+	}
+	if !data.Exists("bk_group_name") {
+		return 0, errors.New("bk_group_name must set")
+	}
+	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/new", g.cli.GetAddress())
 
 	rst, err := g.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -73,7 +80,7 @@ func (g *Group) DeleteGroup(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/objectattr/group/groupid/%d", g.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/groupid/%d", g.cli.GetAddress(), id)
 
 	rst, err := g.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -92,11 +99,59 @@ func (g *Group) DeleteGroup(cond common.Condition) error {
 
 // UpdateGroup update a group by condition
 func (g *Group) UpdateGroup(data types.MapStr, cond common.Condition) error {
+	data.Set("bk_supplier_account", g.cli.GetSupplierAccount())
+
+	param := types.MapStr{
+		"condition": cond.ToMapStr(),
+		"data":      data,
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/update", g.cli.GetAddress())
+	rst, err := g.cli.httpCli.PUT(targetURL, nil, param.ToJSON())
+	if nil != err {
+		log.Errorf("post error %v", err)
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		log.Errorf("post error %s", rst)
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
 
 	return nil
 }
 
 // SearchGroups search some group by condition
 func (g *Group) SearchGroups(cond common.Condition) ([]types.MapStr, error) {
-	return nil, nil
+	objid := cond.ToMapStr().String(ObjectID)
+
+	if len(objid) <= 0 {
+		return nil, errors.New("bk_obj_id must set")
+	}
+
+	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/property/owner/%s/object/%s", g.cli.GetAddress(), g.cli.GetSupplierAccount(), objid)
+	rst, err := g.cli.httpCli.POST(targetURL, nil, cond.ToMapStr().ToJSON())
+	if nil != err {
+		return nil, err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		log.Errorf("falied to search group %s", rst)
+		return nil, errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	dataStr := gs.Get("data").String()
+	if 0 == len(dataStr) {
+		return nil, errors.New("data is empty")
+	}
+
+	resultMap := make([]types.MapStr, 0)
+	err = json.Unmarshal([]byte(dataStr), &resultMap)
+	return resultMap, err
 }
