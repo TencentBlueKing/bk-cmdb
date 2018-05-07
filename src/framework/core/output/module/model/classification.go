@@ -61,8 +61,14 @@ func (cli *classification) Save() error {
 		item.Set(ClassificationName, cli.ClassificationName)
 		item.Set(ClassificationIcon, cli.ClassificationIcon)
 		item.Set(ClassificationType, cli.ClassificationType)
+
+		id, err := item.Int("id")
+		if nil != err {
+			return err
+		}
+
 		cond := common.CreateCondition()
-		cond.Field(ClassificationID).Eq(cli.ClassificationID)
+		cond.Field(ClassificationID).Eq(cli.ClassificationID).Field("id").Eq(id)
 		if err = client.GetClient().CCV3().Classification().UpdateClassification(item, cond); nil != err {
 			return err
 		}

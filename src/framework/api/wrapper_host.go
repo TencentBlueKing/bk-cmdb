@@ -14,11 +14,17 @@ package api
 
 import (
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // HostWrapper the host wrapper
 type HostWrapper struct {
 	host inst.Inst
+}
+
+// GetModel get the model for the host
+func (cli *HostWrapper) GetModel() model.Model {
+	return cli.host.GetModel()
 }
 
 // SetValue set the key value
