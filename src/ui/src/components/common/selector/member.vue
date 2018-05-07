@@ -149,14 +149,18 @@
             /* 设置本地存储数据 */
             setLocalSelected () {
                 let selected = this.selected
-                let localSelected = this.localSelected
+                let localSelected = [...this.localSelected]
                 if (typeof selected === 'string' && localSelected.join(',') !== selected) {
-                    this.localSelected = !selected ? [] : selected.split(',')
+                    localSelected = !selected ? [] : selected.split(',')
                 } else if (Array.isArray(selected) && selected.join(',') !== localSelected.join(',')) {
-                    this.localSelected = [...selected]
+                    localSelected = [...selected]
                 } else if (selected === undefined && localSelected.length) {
-                    this.localSelected = []
+                    localSelected = []
                 }
+                if (!this.exclude) {
+                    localSelected = localSelected.filter(selected => this.members.some(({english_name: englishName}) => englishName === selected))
+                }
+                this.localSelected = localSelected
             },
             /* 根据当前输入筛选人员列表 */
             setFilterMember () {
