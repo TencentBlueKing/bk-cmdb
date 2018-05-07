@@ -14,46 +14,51 @@ package example
 
 import (
 	"configcenter/src/framework/api"
-	"configcenter/src/framework/core/types"
 	"fmt"
-	//"time"
+	"time"
 )
 
 func init() {
 
-	_, sender, _ := api.CreateCustomOutputer("example_output", func(data types.MapStr) error {
-		fmt.Println("outputer:", data)
-		return nil
-	})
-
-	api.RegisterInputer(target, sender, nil)
-	//api.RegisterTimingInputer(target, sender, time.Second*5, nil)
+	// api.RegisterInputer(host, nil)
+	api.RegisterTimingInputer(host, time.Second*5, nil)
 }
 
-var target = &myInputer{}
+var host = &hostInputer{}
 
-type myInputer struct {
+type hostInputer struct {
 }
 
-// Description the Inputer description.
+// Name the Inputer name.
 // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
-func (cli *myInputer) Name() string {
-	return "name_myinputer"
+func (cli *hostInputer) Name() string {
+	return "host_inputer"
 }
 
 // Run the input should not be blocked
-func (cli *myInputer) Run() interface{} {
+func (cli *hostInputer) Run() interface{} {
 
-	set, err := api.CreateSet("0")
+	host, err := api.CreateHost("0")
 	if nil != err {
 		fmt.Println("err:", err.Error())
 	}
-	set.SetDescription("setdesc")
-	set.SetCapacity(20)
-	set.SetBussinessID(2)
-	set.SetName("test_demo")
 
-	err = set.Save()
+	host.SetInnerIP("192.168.1.1")
+	host.SetOsBit("64")
+	host.SetOsName("os-test")
+	host.SetOsType(api.HostOSTypeLinux)
+	host.SetSLA(api.HostSLALevel1)
+	host.SetAssetID("host2122")
+	host.SetMac("1d2-3d-d-d")
+	host.SetOperator("test_user")
+	host.SetBakOperator("test_bak_user")
+	host.SetCPU(5)
+	host.SetCPUMhz(12)
+	host.SetDisk(3456)
+	host.SetMem(12334)
+	host.SetCPUModule("cpu-xxx")
+
+	err = host.Save()
 	if nil != err {
 		fmt.Println("err:", err)
 	}
@@ -61,6 +66,6 @@ func (cli *myInputer) Run() interface{} {
 
 }
 
-func (cli *myInputer) Stop() error {
+func (cli *hostInputer) Stop() error {
 	return nil
 }
