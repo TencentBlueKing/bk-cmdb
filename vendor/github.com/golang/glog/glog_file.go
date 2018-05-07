@@ -22,20 +22,21 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
-	"io/ioutil"
-	"regexp"
-	"sort"
 )
 
 // MaxSize is the maximum size of a log file in bytes.
-var maxSizeFlag = flag.Uint64("log_max_size", 1800, "Max size (MB) per file.")
+var maxSizeFlag = flag.Uint64("log_max_size", 500, "Max size (MB) per file.")
 var maxSize uint64 = 0
+
 func MaxSize() uint64 {
 	if maxSize == 0 {
 		maxSize = *maxSizeFlag * 1024 * 1024
@@ -44,29 +45,30 @@ func MaxSize() uint64 {
 }
 
 // MaxNum is the maximum of log files for one thread.
-var maxNumFlag = flag.Int("log_max_num", 10, "Max num of file. The oldest will be removed if there is a extra file created.")
+var maxNumFlag = flag.Int("log_max_num", 6, "Max num of file. The oldest will be removed if there is a extra file created.")
+
 func MaxNum() int {
 	return *maxNumFlag
 }
 
 // fileInfo contains log filename and its timestamp.
 type fileInfo struct {
-	name 		string
-	timestamp 	string
+	name      string
+	timestamp string
 }
 
 // fileInfoList implements Interface interface in sort. For
 // sorting a list of fileInfo
 type fileInfoList []fileInfo
 
-func (b fileInfoList) Len() int {return len(b)}
-func (b fileInfoList) Swap(i, j int) {b[i], b[j] = b[j], b[i]}
-func (b fileInfoList) Less(i, j int) bool {return b[i].timestamp < b[j].timestamp}
+func (b fileInfoList) Len() int           { return len(b) }
+func (b fileInfoList) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b fileInfoList) Less(i, j int) bool { return b[i].timestamp < b[j].timestamp }
 
 // fileBlock is a block of chain in logKeeper.
 type fileBlock struct {
 	fileInfo
-	next 		*fileBlock
+	next *fileBlock
 }
 
 // logKeeper maintains a chain of each level log file. Its head
@@ -75,11 +77,11 @@ type fileBlock struct {
 // the oldest. At first it load from logDir and take existing files
 // into the chain. And remove the part over MaxNum().
 type logKeeper struct {
-	dir 		string
-	onceLoad 	sync.Once
-	head 		map[string]*fileBlock
-	tail 		map[string]*fileBlock
-	total		map[string]int
+	dir      string
+	onceLoad sync.Once
+	head     map[string]*fileBlock
+	tail     map[string]*fileBlock
+	total    map[string]int
 }
 
 func (lk *logKeeper) add(tag string, newBlock *fileBlock) (ok bool) {
@@ -105,7 +107,7 @@ func (lk *logKeeper) add(tag string, newBlock *fileBlock) (ok bool) {
 
 func (lk *logKeeper) remove(tag string) (ok bool) {
 	block, ok := lk.head[tag]
-	if !ok || lk.total[tag]==0 {
+	if !ok || lk.total[tag] == 0 {
 		return
 	}
 	lk.removeFile(block.name)
@@ -115,7 +117,7 @@ func (lk *logKeeper) remove(tag string) (ok bool) {
 	return
 }
 
-func (lk *logKeeper) removeFile(name string) (error) {
+func (lk *logKeeper) removeFile(name string) error {
 	return os.Remove(filepath.Join(lk.dir, name))
 }
 
@@ -150,7 +152,7 @@ func (lk *logKeeper) load() {
 			if i < MaxNum() {
 				fb := &fileBlock{
 					fileInfo: fileInfo{name: block.name, timestamp: block.timestamp},
-					next: nil,
+					next:     nil,
 				}
 				if i == 0 {
 					lk.head[tag] = fb
@@ -244,7 +246,7 @@ func logName(tag string, t time.Time) (name, link string) {
 }
 
 // logNameReg returns a regexp object for match log file name.
-func logNameReg() (*regexp.Regexp) {
+func logNameReg() *regexp.Regexp {
 	reg, _ := regexp.Compile(fmt.Sprintf(`^%s\..+\..+\.log.(%s)\.(\d{8}-\d{6})\.\d+$`,
 		program,
 		strings.Join(severityName, "|")))

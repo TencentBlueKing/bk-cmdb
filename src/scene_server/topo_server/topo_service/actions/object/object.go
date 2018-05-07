@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package object
 
 import (
@@ -181,14 +181,15 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			return tmpItem, tmpErr
 		}
 	}
-
 	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
-		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
+		tmpItem.Option = jsTmp
+
+		/*if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			tmpItem.Option = tmp
 		} else {
 			blog.Error("can not parse the option, error info is %s", tmpErr.Error())
 			return tmpItem, tmpErr
-		}
+		}*/
 	}
 
 	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_type"); ok {
@@ -251,7 +252,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		js, jsErr := simplejson.NewFromReader(req.Request.Body)
 		if nil != jsErr {
 			blog.Error("unmarshal the json, error info is %s", jsErr.Error())
@@ -277,7 +278,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 			condition[common.BKObjIDField] = objID
 
 			conditionVal, _ := json.Marshal(condition)
-			if items, err := cli.mgr.SelectObject(conditionVal, defErr); nil != err {
+			if items, err := cli.mgr.SelectObject(forward, conditionVal, defErr); nil != err {
 				blog.Error("failed to search, the error info is :%s", err.Error())
 				subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
 				result[objID] = subResult
@@ -325,7 +326,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 				conditionAtt["bk_property_id"] = propertyID
 
 				conditionAttVal, _ := json.Marshal(conditionAtt)
-				if items, err := cli.mgr.SelectObjectAtt(conditionAttVal, defErr); nil != err {
+				if items, err := cli.mgr.SelectObjectAtt(forward, conditionAttVal, defErr); nil != err {
 					blog.Error("failed to search the object attribute, the condition is %+v, error info is %s", conditionAtt, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -362,7 +363,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 						itemVal, _ := json.Marshal(item)
 						blog.Debug("the new attribute:%s", string(itemVal))
-						if updateErr := cli.mgr.UpdateObjectAtt(item.ID, itemVal, defErr); nil != updateErr {
+						if updateErr := cli.mgr.UpdateObjectAtt(forward, item.ID, itemVal, defErr); nil != updateErr {
 							blog.Error("failed to update the object attribute, error info is %s", updateErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
@@ -399,7 +400,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						continue
 					}
 
-					if _, insertErr := cli.mgr.CreateObjectAtt(*item, defErr); nil != insertErr {
+					if _, insertErr := cli.mgr.CreateObjectAtt(forward, *item, defErr); nil != insertErr {
 						blog.Error("failed to create the object attribute, error info is %s", insertErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
@@ -514,7 +515,8 @@ func (cli *objectAction) SearchObjectBatch(req *restful.Request, resp *restful.R
 					conditionAttr[common.BKOwnerIDField] = ownerID
 					conditionAttr[common.BKObjIDField] = objID
 					conditionAttrVal, _ := json.Marshal(conditionAttr)
-					attrItems, attrErr := cli.mgr.SelectObjectAtt(conditionAttrVal, defErr)
+					forward := &api.ForwardParam{Header: req.Request.Header}
+					attrItems, attrErr := cli.mgr.SelectObjectAtt(forward, conditionAttrVal, defErr)
 					if nil != attrErr {
 						blog.Error("failed to search the attribute of the object(%s) ownerID(%s), error info is %s", objID, ownerID, attrErr.Error())
 						if failed, ok := result["failed"]; ok {
@@ -576,7 +578,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		// read body
 		val, err := ioutil.ReadAll(req.Request.Body)
 		if err != nil {
@@ -584,7 +586,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		id, idErr := cli.mgr.CreateObject(val, defErr)
+		id, idErr := cli.mgr.CreateObject(forward, val, defErr)
 		if nil == idErr {
 			return http.StatusOK, map[string]int{"id": id}, nil
 		}
@@ -603,13 +605,14 @@ func (cli *objectAction) SelectObjectTopo(req *restful.Request, resp *restful.Re
 
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	isFrom := func(fromObjID, toObjID, ownerID string) (bool, error) {
 		search := map[string]interface{}{}
 		search[common.BKOwnerIDField] = ownerID
 		search[common.BKObjIDField] = fromObjID
 
-		asstRst, asstErr := cli.mgr.SelectObjectAsst(search, defErr)
+		asstRst, asstErr := cli.mgr.SelectObjectAsst(forward, search, defErr)
 		if nil != asstErr {
 			blog.Error("failed to search object topo, error info is %s", asstErr.Error())
 			return false, asstErr
@@ -634,7 +637,7 @@ func (cli *objectAction) SelectObjectTopo(req *restful.Request, resp *restful.Re
 		}
 
 		// search
-		rst, rstErr := cli.mgr.SelectObject(val, defErr)
+		rst, rstErr := cli.mgr.SelectObject(forward, val, defErr)
 		if nil != rstErr {
 			blog.Error("failed to select the object, error info is %s", rstErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectSelectFailed)
@@ -646,7 +649,7 @@ func (cli *objectAction) SelectObjectTopo(req *restful.Request, resp *restful.Re
 			search[common.BKOwnerIDField] = rstItem.OwnerID
 			search[common.BKObjIDField] = rstItem.ObjectID
 
-			asstRst, asstErr := cli.mgr.SelectObjectAsst(search, defErr)
+			asstRst, asstErr := cli.mgr.SelectObjectAsst(forward, search, defErr)
 			if nil != asstErr {
 				blog.Error("failed to search object topo, error info is %s", asstErr.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectSelectFailed)
@@ -661,7 +664,7 @@ func (cli *objectAction) SelectObjectTopo(req *restful.Request, resp *restful.Re
 				condition[common.BKObjIDField] = asstItem.AsstObjID
 				condition[common.BKOwnerIDField] = asstItem.OwnerID
 				conditionStr, _ := json.Marshal(condition)
-				objItems, objErr := cli.mgr.SelectObject(conditionStr, defErr)
+				objItems, objErr := cli.mgr.SelectObject(forward, conditionStr, defErr)
 				if nil != objErr {
 					blog.Error("failed to search object topo, error info is %s", objErr.Error())
 					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoObjectSelectFailed)
@@ -711,6 +714,7 @@ func (cli *objectAction) SelectObjectWithParams(req *restful.Request, resp *rest
 
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -723,7 +727,7 @@ func (cli *objectAction) SelectObjectWithParams(req *restful.Request, resp *rest
 		}
 
 		// search
-		rst, rstErr := cli.mgr.SelectObject(val, defErr)
+		rst, rstErr := cli.mgr.SelectObject(forward, val, defErr)
 		if nil == rstErr {
 			return http.StatusOK, rst, nil
 		}
@@ -744,6 +748,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -763,7 +768,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 		}
 
 		// execute
-		updateErr := cli.mgr.UpdateObject(id, val, defErr)
+		updateErr := cli.mgr.UpdateObject(forward, id, val, defErr)
 		if nil == updateErr {
 			return http.StatusOK, nil, nil
 		}
@@ -783,6 +788,7 @@ func (cli *objectAction) DeleteObject(req *restful.Request, resp *restful.Respon
 
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -802,7 +808,7 @@ func (cli *objectAction) DeleteObject(req *restful.Request, resp *restful.Respon
 		}
 
 		// logics
-		delErr := cli.mgr.DeleteObject(id, val, defErr)
+		delErr := cli.mgr.DeleteObject(forward, id, val, defErr)
 		if nil == delErr {
 			return http.StatusOK, nil, nil
 		}

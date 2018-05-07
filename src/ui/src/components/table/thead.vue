@@ -303,6 +303,18 @@
         }
     }
 </style>
+<style lang="scss" scoped>
+    body[lang="en"] {
+        .sort-box{
+            .sort-angle.ascing{
+                top: -2px;
+            }
+            .sort-angle.descing{
+                bottom: -3px;
+            }
+        }
+    }
+</style>
 <style lang="scss">
     i.col-resize-proxy{
         visibility: hidden;

@@ -12,15 +12,15 @@
     <div class="userapi-wrapper" id="userapiWrapper">
         <div class="userapi-group">
             <div class="userapi-input clearfix">
-                <label class="userapi-input-name fl">名称</label>
+                <label class="userapi-input-name fl">{{$t("CustomQuery['查询名称']")}}</label>
                 <input type="text" class="bk-form-input userapi-input-text fl" maxlength="15" 
                     v-model.trim="name">
-                <v-validate class="validate-message" v-validate="'required|max:15'" name="名称" :value="name"></v-validate>
+                <v-validate class="validate-message" v-validate="'required|max:15'" :name="$t('CustomQuery[\'查询名称\']')" :value="name"></v-validate>
             </div>
         </div>
         <div class="userapi-group">
             <div class="userapi-input clearfix">
-                <label class="userapi-input-name fl">查询内容</label>
+                <label class="userapi-input-name fl">{{$t("CustomQuery['查询内容']")}}</label>
                 <bk-select class="fl userapi-content-selector"
                     :selected.sync="attribute.selected"
                     :filterable="true"
@@ -36,15 +36,37 @@
         </div>
         <div class="userapi-group">
             <ul class="userapi-list">
-                <li class="userapi-item clearfix" v-for="(property, index) in userProperties">
+                <li class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
                     <label class="userapi-name fl">{{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
                             :range-separator="'-'"
                             :quickSelect="false"
-                            :init-date="Array.isArray(property.value) ? property.value.join(' - ') : property.value"
+                            :timer="true"
+                            :start-date="property.value.split(' - ')[0]"
+                            :end-date="property.value.split(' - ')[1]"
+                            :init-date="property.value"
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
+                    </span>
+                    <span v-else-if="property.bkPropertyType === 'date'">
+                        <bk-daterangepicker class="userapi-date fl"
+                            :range-separator="'-'"
+                            :quickSelect="false"
+                            :start-date="property.value.split(' - ')[0]"
+                            :end-date="property.value.split(' - ')[1]"
+                            :init-date="property.value"
+                            @change="setUserPropertyTime(...arguments, index)">
+                        </bk-daterangepicker>
+                    </span>
+                    <span v-else-if="property.bkPropertyType === 'enum'">
+                        <bk-select :selected.sync="property.value" class="userapi-enum fl">
+                            <bk-select-option v-for="option in getEnumOptions(property)"
+                                :key="option.id"
+                                :value="option.id"
+                                :label="option.name">
+                            </bk-select-option>
+                        </bk-select>
                     </span>
                     <span v-else>
                         <v-operator 
@@ -65,7 +87,7 @@
                 </li>
             </ul>
             <div class="userapi-new" v-click-outside="clickOutside">
-                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">新增条件</button>
+                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增条件']")}}</button>
                 <div class="userapi-new-selector-wrapper" v-show="isPropertiesShow">
                     <bk-select class="userapi-new-selector" 
                         :selected.sync="selectedObjId">
@@ -78,7 +100,7 @@
                     <bk-select class="userapi-new-select"
                         ref="propertySelector"
                         @on-selected="addUserProperties">
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                            <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -89,10 +111,18 @@
             </div>
         </div>
         <div class="userapi-btn-group">
-            <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">预览</bk-button>
-            <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">保存</bk-button>
-            <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">取消</bk-button>
-            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm">删除</bk-button>
+            <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                {{$t("CustomQuery['预览']")}}
+            </bk-button>
+            <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
+                {{$t("Common['保存']")}}
+            </bk-button>
+            <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">
+                {{$t("Common['取消']")}}
+            </bk-button>
+            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm">
+                {{$t("Common['删除']")}}
+            </bk-button>
         </div>
         <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams"></v-preview>
     </div>
@@ -128,23 +158,23 @@
                     selected: '',
                     default: [{
                         'bk_property_id': 'bk_host_innerip',
-                        'bk_property_name': '内网IP',
+                        'bk_property_name': this.$t("Common['内网IP']"),
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_biz_name',
-                        'bk_property_name': '业务',
+                        'bk_property_name': this.$t("Common['业务']"),
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_set_name',
-                        'bk_property_name': '集群',
+                        'bk_property_name': this.$t("Hosts['集群']"),
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_module_name',
-                        'bk_property_name': '模块',
+                        'bk_property_name': this.$t("Hosts['模块']"),
                         'disabled': true
                     }, {
                         'bk_property_id': 'bk_cloud_id',
-                        'bk_property_name': '云区域ID',
+                        'bk_property_name': this.$t("Hosts['云区域']"),
                         'disabled': true
                     }]
                 },
@@ -154,23 +184,24 @@
                 object: {
                     'host': {
                         id: 'host',
-                        name: '主机',
+                        name: this.$t("Hosts['主机']"),
                         properties: []
                     },
                     'set': {
                         id: 'set',
-                        name: '集群',
+                        name: this.$t("Hosts['集群']"),
                         properties: []
                     },
                     'module': {
                         id: 'module',
-                        name: '模块',
+                        name: this.$t("Hosts['模块']"),
                         properties: []
                     }
                 },
                 selectedObjId: 'host',
                 operatorMap: {
-                    'time': '$in'
+                    'time': '$in',
+                    'enum': '$eq'
                 }
             }
         },
@@ -198,15 +229,22 @@
                 }
                 this.userProperties.forEach((property, index) => {
                     if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
+                        let value = property['value'].split(' - ')
                         paramsMap[property.bkObjId]['condition'].push({
                             field: property.bkPropertyId,
-                            operator: '$gte',
-                            value: property['value'][0]
+                            operator: value[0] === value[1] ? '$eq' : '$gte',
+                            value: value[0]
                         })
                         paramsMap[property.bkObjId]['condition'].push({
                             field: property.bkPropertyId,
-                            operator: '$lte',
-                            value: property['value'][1]
+                            operator: value[0] === value[1] ? '$eq' : '$lte',
+                            value: value[1]
+                        })
+                    } else if (property.bkPropertyType === 'bool' && ['true', 'false'].includes(property.value)) {
+                        paramsMap[property.bkObjId]['condition'].push({
+                            field: property.bkPropertyId,
+                            operator: property.operator,
+                            value: property.value === 'true'
                         })
                     } else {
                         paramsMap[property.bkObjId]['condition'].push({
@@ -272,7 +310,7 @@
             deleteUserAPIConfirm () {
                 var self = this
                 this.$bkInfo({
-                    title: `确认要删除 ${self.apiParams.name}？`,
+                    title: this.$t("CustomQuery['确认要删除']", {name: self.apiParams.name}),
                     confirmFn () {
                         self.deleteUserAPI()
                     }
@@ -286,9 +324,8 @@
                     await this.$axios.delete(`userapi/${this.bkBizId}/${this.id}`)
                     this.$emit('delete')
                     this.$emit('cancel')
-                    this.$alertMsg('删除成功', 'success')
+                    this.$alertMsg(this.$t("Common['删除成功']"), 'success')
                 } catch (e) {
-                    console.error(e)
                     this.$alertMsg(e.data['bk_error_msg'])
                 }
             },
@@ -328,6 +365,15 @@
                     })
                 }
             },
+            filterProperty (properties) {
+                return properties.filter(property => {
+                    let {
+                        bk_isapi: bkIsapi,
+                        bk_property_type: bkPropertyType
+                    } = property
+                    return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
+                })
+            },
             setUserProperties (detail) {
                 let properties = []
                 let info = JSON.parse(detail['info'])
@@ -335,14 +381,19 @@
                     condition['condition'].forEach(property => {
                         let originalProperty = this.getOriginalProperty(property.field, condition['bk_obj_id'])
                         if (originalProperty) {
-                            properties.push({
-                                'bkObjId': originalProperty['bk_obj_id'],
-                                'bkPropertyType': originalProperty['bk_property_type'],
-                                'bkPropertyName': originalProperty['bk_property_name'],
-                                'bkPropertyId': originalProperty['bk_property_id'],
-                                'operator': property.operator,
-                                'value': property.value
-                            })
+                            if (['time', 'date'].includes(originalProperty['bk_property_type']) && properties.some(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])) {
+                                let repeatProperty = properties.find(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])
+                                repeatProperty.value = [repeatProperty.value, property.value].join(' - ')
+                            } else {
+                                properties.push({
+                                    'bkObjId': originalProperty['bk_obj_id'],
+                                    'bkPropertyType': originalProperty['bk_property_type'],
+                                    'bkPropertyName': originalProperty['bk_property_name'],
+                                    'bkPropertyId': originalProperty['bk_property_id'],
+                                    'operator': property.operator,
+                                    'value': property.value
+                                })
+                            }
                             originalProperty.disabled = true
                         }
                     })
@@ -374,13 +425,7 @@
                 this.toggleUserAPISelector(false)
             },
             setUserPropertyTime (oldTime, newTime, index) {
-                this.userProperties[index]['value'] = newTime.split(' - ').map((time, index) => {
-                    if (index === 0) {
-                        return time + ' 00:00:00'
-                    } else {
-                        return time + ' 23:59:59'
-                    }
-                })
+                this.userProperties[index]['value'] = newTime
             },
             /* 通过选择的propertyId, 查找其对应的对象，以获得更多信息 */
             getOriginalProperty (bkPropertyId, bkObjId) {
@@ -398,6 +443,13 @@
                     }
                 }
                 return property
+            },
+            getEnumOptions (userProperty) {
+                let property = this.getOriginalProperty(userProperty.bkPropertyId, userProperty.bkObjId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
             },
             /* 删除自定义条件时，恢复下拉列表中对应的项为可点击状态 */
             deleteUserProperty (userProperty, index) {
@@ -434,7 +486,7 @@
                         if (this.type === 'create') {
                             this.$axios.post('userapi', params).then(res => {
                                 if (res.result) {
-                                    this.$alertMsg('保存成功', 'success')
+                                    this.$alertMsg(this.$t("Common['保存成功']"), 'success')
                                     this.$emit('create', res.data)
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
@@ -445,7 +497,7 @@
                             .then(res => {
                                 if (res.result) {
                                     this.$emit('update', res.data)
-                                    this.$alertMsg('修改成功', 'success')
+                                    this.$alertMsg(this.$t("Common['修改成功']"), 'success')
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
                                 }
@@ -491,15 +543,16 @@
         color: #737987;
         .userapi-item{
             margin-top: 20px;
+            position: relative;
             .userapi-name{
-                width: 105px;
+                width: 115px;
                 line-height: 32px;
                 padding-right: 15px;
                 text-align: right;
             }
             .userapi-text{
                 position: relative;
-                width: 359px;
+                width: 369px;
                 height: 32px;
                 padding: 0 8px;
                 margin: 0 5px 0 -1px;
@@ -527,13 +580,13 @@
         }
     }
     .userapi-new{
-        width: 460px;
-        margin: 20px 0 0 110px;
+        width: 470px;
+        margin: 20px 0 0 120px;
         font-size: 14px;
         // color: #6b7baa;
         position: relative;
         .userapi-new-btn{
-            width: 460px;
+            width: 470px;
             height: 42px;
             background-color: #ffffff;
             border-radius: 2px;
@@ -548,7 +601,7 @@
         position: absolute;
         top: 100%;
         left: 0;
-        width: 460px;
+        width: 470px;
         margin-top: 3px;
         background-color: #ffffff;
         box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
@@ -560,13 +613,13 @@
         margin-top: 26px;
         position: relative;
         .userapi-input-name{
-            width: 105px;
+            width: 115px;
             line-height: 32px;
             text-align: right;
             padding-right: 15px;
         }
         .userapi-input-text{
-            width: 460px;
+            width: 470px;
             height: 32px;
             // border-radius: 2px;
             // // border: solid 1px #bec6de;
@@ -575,20 +628,22 @@
         }
     }
     .userapi-btn-group{
-        margin: 40px 0 0 110px;
+        margin: 40px 0 0 120px;
         font-size: 0;
         .userapi-btn{
             width: 110px;
             height: 34px;
             margin: 0 10px 0 0;
             font-size: 14px;
-            letter-spacing: 4px;
+            // letter-spacing: 4px;
         }
     }
     .validate-message{
         position: absolute;
         top: 100%;
-        left: 110px;
+        left: 120px;
+        height: 16px;
+        line-height: 16px;
     }
 </style>
 <style lang="scss">
@@ -627,7 +682,7 @@
             margin: 6px auto 0;
         }
         &.userapi-content-selector{
-            width: 460px;
+            width: 470px;
             margin: 0 5px;
             .bk-select-input{
                 height: 32px;
@@ -657,7 +712,7 @@
         }
     }
     .bk-date.userapi-date{
-        width: 460px;
+        width: 470px !important;
         margin: 0 5px;
         height: 32px;
         line-height: 32px;
@@ -670,6 +725,26 @@
             height: 32px;
             line-height: 32px;
             border-radius: 2px;
+        }
+    }
+    .bk-select.userapi-enum{
+        width: 470px;
+        margin: 0 5px;
+        height: 32px;
+        line-height: 32px;
+        .bk-select-input{
+            height: 32px;
+            line-height: 32px;
+        }
+    }
+    .userapi-item.form-validate-error{
+        .bk-selector-wrapper{
+            .bk-selector-input{
+                border-color: #ff5656;
+            }
+        }
+        .userapi-text{
+            border-color: #ff5656;
         }
     }
 </style>

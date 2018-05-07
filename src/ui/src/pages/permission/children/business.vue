@@ -11,7 +11,7 @@
 <template>
     <div class="business-wrapper">
         <div class="selector-wrapper clearfix">
-            <h2 class="selector-title fl">业务角色</h2>
+            <h2 class="selector-title fl">{{$t('Permission["业务角色"]')}}</h2>
             <div class="selector-container clearfix">
                 <bk-select class="role-selector fl" :selected.sync="selectedBusinessRole">
                     <bk-select-option v-for="(role, index) in businessRoles"
@@ -20,24 +20,24 @@
                         :label="role['bk_property_name']"
                     ></bk-select-option>
                 </bk-select>
-                <router-link class="fl" :to="{path:'model', query: {'bk_classification_id': 'bk_organization'}}" v-show="false"><i class="icon-cc-derivation"></i>角色配置</router-link>
+                <!-- <router-link class="fl" :to="{path:'model', query: {'bk_classification_id': 'bk_organization'}}" v-show="false"><i class="icon-cc-derivation"></i>{{$t('Permission["角色配置"]')}}</router-link> -->
             </div>
         </div>
         <div class="authority-wrapper clearfix">
-            <h2 class="authority-title fl">功能选择</h2>
+            <h2 class="authority-title fl">{{$t('Permission["功能选择"]')}}</h2>
             <div class="checkbox-container clearfix">
                 <span v-for="authority in authorities.list" class="checkbox-span fl">
                     <label class="bk-form-checkbox bk-checkbox-small authority-checkbox"
                         :class="{'disabled': isMaintainers}"
                         :for="'business-authority-' + authority.id"
-                        :title="authority.name"
+                        :title="$t(authority.name)"
                         @click="updateAuthorities">
                         <input type="checkbox" 
                             :value="authority.id" 
                             :id="'business-authority-' + authority.id" 
                             :disabled="isMaintainers"
                             v-model="authorities.selected">
-                        {{authority.name}}
+                        {{$t(authority.name)}}
                     </label>
                 </span>
             </div>
@@ -63,19 +63,19 @@
                 authorities: {
                     list: [{
                         id: 'hostupdate',
-                        name: '主机编辑'
+                        name: 'Permission["主机编辑"]'
                     }, {
                         id: 'hosttrans',
-                        name: '主机转移'
+                        name: 'Permission["主机转移"]'
                     }, {
                         id: 'topoupdate',
-                        name: '拓扑编辑'
+                        name: 'Permission["拓扑编辑"]'
                     }, {
                         id: 'customapi',
-                        name: '自定义查询'
+                        name: 'Permission["自定义查询"]'
                     }, {
                         id: 'proconfig',
-                        name: '进程管理'
+                        name: 'Permission["进程管理"]'
                     }],
                     selected: []
                 }

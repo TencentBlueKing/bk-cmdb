@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/migrate_service/data"
+	"configcenter/src/scene_server/validator"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,11 +53,12 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 
 	if data.Distribution == common.RevisionEnterprise {
 		params[common.BKTimeZoneField] = "Asia/Shanghai"
-		params[common.BKLanguageField] = "中文"
+		params[common.BKLanguageField] = "1" //中文
 	} else {
 		delete(params, common.BKTimeZoneField)
 		delete(params, common.BKLanguageField)
 	}
+	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(params)
 	url := cc.TopoAPI() + "/topo/v1/app/default/" + ownerID
@@ -149,31 +151,39 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 		fieldType, _ := mapField["bk_property_type"].(string)
 		option, _ := mapField["option"].(string)
 		switch fieldType {
-		case common.FiledTypeSingleChar:
+		case common.FieldTypeSingleChar:
 			ret[fieldName] = ""
-		case common.FiledTypeLongChar:
+		case common.FieldTypeLongChar:
 			ret[fieldName] = ""
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			ret[fieldName] = nil
-		case common.FiledTypeEnum:
-			var enumOption []EnumOptionType
-			json.Unmarshal([]byte(option), &enumOption)
+		case common.FieldTypeEnum:
+			enumOptions := validator.ParseEnumOption(option)
 			v := ""
-			if len(enumOption) > 0 {
-				v = enumOption[0].Name
+			if len(enumOptions) > 0 {
+				var defaultOption *validator.EnumVal
+				for _, k := range enumOptions {
+					if k.IsDefault {
+						defaultOption = &k
+						break
+					}
+				}
+				if nil != defaultOption {
+					v = defaultOption.ID
+				}
 			}
 			ret[fieldName] = v
-		case common.FiledTypeDate:
+		case common.FieldTypeDate:
 			ret[fieldName] = ""
-		case common.FiledTypeTime:
+		case common.FieldTypeTime:
 			ret[fieldName] = ""
-		case common.FiledTypeUser:
+		case common.FieldTypeUser:
 			ret[fieldName] = ""
 		case common.FieldTypeMultiAsst:
 			ret[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			ret[fieldName] = nil
-		case common.FiledTypeBool:
+		case common.FieldTypeBool:
 			ret[fieldName] = false
 		default:
 			ret[fieldName] = nil

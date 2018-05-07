@@ -57,31 +57,31 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 }
 
 //GetObjectFields get object fields
-func GetObjectFields(ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
+func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
 	data := make(map[string]interface{})
 	data[common.BKOwnerIDField] = ownerID
 	data[common.BKObjIDField] = objID
 	info, _ := json.Marshal(data)
 	client := sourceAPI.NewClient(ObjAddr)
-	result, _ := client.SearchMetaObjectAtt([]byte(info))
+	result, _ := client.SearchMetaObjectAtt(forward, []byte(info))
 	fields := make(map[string]map[string]interface{})
 	for _, j := range result {
 		propertyID := j.PropertyID
 		fieldType := j.PropertyType
 		switch fieldType {
-		case common.FiledTypeSingleChar:
+		case common.FieldTypeSingleChar:
 			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FiledTypeLongChar:
+		case common.FieldTypeLongChar:
 			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired} //""
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired} //0
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FiledTypeDate:
+		case common.FieldTypeDate:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FiledTypeTime:
+		case common.FieldTypeTime:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FiledTypeUser:
+		case common.FieldTypeUser:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
 		default:
 			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}

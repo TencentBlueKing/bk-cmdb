@@ -15,7 +15,7 @@
             <i class="icon icon-cc-edit"></i>
         </button>
         <bk-button type="primary" class="bk-button vis-button vis-create" v-if="addModelAvailable && curClassify && modelNodes.length" @click="createModel">
-            <span class="vis-button-text">新增</span>
+            <span class="vis-button-text">{{$t('ModelManagement["新增"]')}}</span>
         </bk-button>
         <button class="bk-button vis-button vis-enable" v-if="addModelAvailable" @click="isShowDisableList = true">
             <i class="bk-icon icon-minus-circle-shape"></i>
@@ -24,7 +24,7 @@
         <transition name="topo-disable-list">
             <div class="topo-disable" v-show="isShowDisableList">
                 <label class="disable-title">
-                    <span>已禁用模型</span>
+                    <span>{{$t('ModelManagement["已禁用模型"]')}}</span>
                     <i class="bk-icon icon-arrows-right" @click="isShowDisableList = false"></i>
                 </label>
                 <ul class="disable-list" ref="disableList">
@@ -34,7 +34,7 @@
                 </ul>
             </div>
         </transition>
-        <bk-button type="danger" class="bk-button vis-button vis-del" title="删除" v-if="!isInnerType" @click="deleteClass">
+        <bk-button type="danger" class="bk-button vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClass">
             <i class="icon icon-cc-del"></i>
         </bk-button>
     </div>
@@ -387,7 +387,7 @@
                     if (res.result) {
                         this.$set(this.modelNodes[index], 'position', params['position'])
                     } else {
-                        this.$alertMsg('更新位置信息失败')
+                        this.$alertMsg(this.$t('["更新位置信息失败"]'))
                     }
                 })
             },
@@ -411,13 +411,13 @@
 
                 // 设置按钮title
                 let visBtnSetting = [{
-                    'title': '放大',
+                    'title': this.$t('ModelManagement["放大"]'),
                     'icon': 'icon-plus'
                 }, {
-                    'title': '缩小',
+                    'title': this.$t('ModelManagement["缩小"]'),
                     'icon': 'icon-minus'
                 }, {
-                    'title': '还原',
+                    'title': this.$t('ModelManagement["还原"]'),
                     'icon': 'icon-full-screen'
                 }]
                 document.querySelectorAll('.vis-zoomIn,.vis-zoomOut,.vis-zoomExtends').forEach((visBtn, index) => {
@@ -559,10 +559,11 @@
             border-radius: 15px;
             font-weight: normal;
             text-align: left;
-            // font-size: 0;
+            font-size: 0;
             .bk-icon{
                 font-weight: normal;
                 vertical-align: middle;
+                font-size: 14px;
             }
         }
         .vis-del{

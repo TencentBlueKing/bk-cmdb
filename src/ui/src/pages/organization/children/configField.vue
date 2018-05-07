@@ -14,10 +14,10 @@
             <div class="left-list search-wrapper-hidden">
                 <div class="search-wrapper">
                     <div class="the-host">
-                        隐藏属性
+                        {{$t("Inst['隐藏属性']")}}
                     </div>
                     <div class="search-field">
-                        <input type="text" name="" value="" placeholder="搜索属性" v-model.trim="searchText">
+                        <input type="text" name="" value="" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="searchText">
                     </div>
                 </div>
                 <ul class="list-wrapper">
@@ -32,7 +32,7 @@
             <div class="right-list pr20">
                 <div class="title">
                     <div class="search-wrapper">
-                        已显示属性
+                        {{$t("Inst['已显示属性']")}}
                     </div>
                 </div>
                 <div :class="['model-content', {'content-left-hidden' : isShow}]" >
@@ -47,11 +47,11 @@
             </div>
         </div>
         <div class="bk-form-item bk-form-action content-button">
-            <bk-button class="btn apply" type="primary" title="应用" @click="apply">
-                应用
+            <bk-button class="btn apply" type="primary" @click="apply">
+                {{$t("Inst['应用']")}}
             </bk-button>
-            <bk-button class="btn reinstate cancel" type="default" title="取消" @click="cancel">
-                取消
+            <bk-button class="btn reinstate cancel" type="default" @click="cancel">
+                {{$t("Common['取消']")}}
             </bk-button>
         </div>
     </div>
@@ -96,7 +96,7 @@
                 'bkSupplierAccount',
                 'usercustom'
             ]),
-            shownList: function () {
+            shownList () {
                 let list = []
                 this.localForSelectionList.map(val => {
                     if (val['bk_property_name'].indexOf(this.searchText) !== -1) {
@@ -107,9 +107,11 @@
             }
         },
         watch: {
-            isShow (val) {
-                if (val) {
+            isShow (isShow) {
+                if (isShow) {
                     this.getUserAttr()
+                } else {
+                    this.searchText = ''
                 }
             }
         },
@@ -139,7 +141,7 @@
             */
             async apply () {
                 if (this.localHasSelectionList.length === 0) {
-                    this.$alertMsg('请至少选择一项', 'primary')
+                    this.$alertMsg(this.$t("Inst['请至少选择一项']"), 'primary')
                     return
                 }
                 let params = {}
@@ -168,7 +170,16 @@
                     })
                 }
                 if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
-                    this.localHasSelectionList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
+                    let selectedList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
+                    selectedList.map(list => {
+                        let property = this.attrList.find(attr => {
+                            return attr['bk_property_id'] === list['bk_property_id']
+                        })
+                        if (property) {
+                            list['bk_property_name'] = property['bk_property_name']
+                        }
+                    })
+                    this.localHasSelectionList = selectedList
                 } else {
                     this.localHasSelectionList = []
                 }

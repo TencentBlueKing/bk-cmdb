@@ -1,5 +1,5 @@
 <template>
-    <div class="bk-date" @click="openDater" v-clickoutside="close" :style="bkDateWidthObj">
+    <div class="bk-date" @click="openDater" v-click-outside="close" :style="bkDateWidthObj">
         <input type="text" name="date-select" readonly="true" :disabled="disabled" :placeholder="placeholder?placeholder:t('datepicker.selectDate')" v-model="selectedDateView">
         <transition :name="transitionName">
             <div :style="panelStyle" :class="['date-dropdown-panel', 'daterange-dropdown-panel', {'has-sidebar': quickSelect || isShowConfirm}]" v-if="showDatePanel">
