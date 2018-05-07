@@ -18,6 +18,39 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 )
 
+func getModel(supplierAccount, classificationID, objID string) (model.Model, error) {
+	condInner := CreateCondition().Field(model.ClassificationID).Eq(classificationID)
+	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(condInner)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		condInner = CreateCondition().Field(model.ObjectID).Eq(objID).
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(condInner)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return targetModel, err
+}
+
 // CreateClassification create a new classification
 func CreateClassification(name string) model.Classification {
 	return mgr.OutputerMgr.CreateClassification(name)
@@ -36,31 +69,7 @@ func FindClassificationsByCondition(condition common.Condition) (model.Classific
 // CreateBusiness create a new Business object
 func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 
-	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_organization")
-	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
-	if nil != err {
-		return nil, err
-	}
-	var targetModel model.Model
-	err = clsIter.ForEach(func(item model.Classification) error {
-
-		cond = CreateCondition().Field(model.ObjectID).Eq("biz").
-			Field(model.SupplierAccount).Eq(supplierAccount).
-			Field(model.ClassificationID).Eq(item.GetID())
-
-		modelIter, err := item.FindModelsByCondition(cond)
-		if nil != err {
-			return err
-		}
-
-		err = modelIter.ForEach(func(modelItem model.Model) error {
-			targetModel = modelItem
-			return nil
-		})
-
-		return nil
-	})
-
+	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
@@ -70,34 +79,29 @@ func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 	return wrapper, err
 }
 
-// CreateSet create a new set object
-func CreateSet(supplierAccount string) (*SetWrapper, error) {
-
-	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
-	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+// FindBusinessLikeName find all insts by the name
+func FindBusinessLikeName(supplierAccount, businessName string) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
-	var targetModel model.Model
-	err = clsIter.ForEach(func(item model.Classification) error {
 
-		cond = CreateCondition().Field(model.ObjectID).Eq("set").
-			Field(model.SupplierAccount).Eq(supplierAccount).
-			Field(model.ClassificationID).Eq(item.GetID())
+	return mgr.OutputerMgr.FindInstsLikeName(targetModel, businessName)
+}
 
-		modelIter, err := item.FindModelsByCondition(cond)
-		if nil != err {
-			return err
-		}
+// FindBusinessByCondition find all insts by the condition
+func FindBusinessByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
+	if nil != err {
+		return nil, err
+	}
+	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+}
 
-		err = modelIter.ForEach(func(modelItem model.Model) error {
-			targetModel = modelItem
-			return nil
-		})
+// CreateSet create a new set object
+func CreateSet(supplierAccount string) (*SetWrapper, error) {
 
-		return nil
-	})
-
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
@@ -107,69 +111,59 @@ func CreateSet(supplierAccount string) (*SetWrapper, error) {
 	return &SetWrapper{set: setInst}, err
 }
 
+// FindSetLikeName find all insts by the name
+func FindSetLikeName(supplierAccount, setName string) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
+	if nil != err {
+		return nil, err
+	}
+
+	return mgr.OutputerMgr.FindInstsLikeName(targetModel, setName)
+}
+
+// FindSetByCondition find all insts by the condition
+func FindSetByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
+	if nil != err {
+		return nil, err
+	}
+	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+}
+
 // CreateModule create a new module object
 func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 
-	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_biz_topo")
-	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
-	var targetModel model.Model
-	err = clsIter.ForEach(func(item model.Classification) error {
 
-		cond = CreateCondition().Field(model.ObjectID).Eq("module").
-			Field(model.SupplierAccount).Eq(supplierAccount).
-			Field(model.ClassificationID).Eq(item.GetID())
-
-		modelIter, err := item.FindModelsByCondition(cond)
-		if nil != err {
-			return err
-		}
-
-		err = modelIter.ForEach(func(modelItem model.Model) error {
-			targetModel = modelItem
-			return nil
-		})
-
-		return nil
-	})
-
-	if nil != err {
-		return nil, err
-	}
 	moduleInst, err := mgr.OutputerMgr.CreateInst(targetModel)
 	return &ModuleWrapper{module: moduleInst}, err
 }
 
-// CreateHost create a new host object
-func CreateHost(supplierAccount string) (*HostWrapper, error) {
-
-	cond := CreateCondition().Field(model.ClassificationID).Eq("bk_host_manage")
-	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(cond)
+// FindModuleLikeName find all insts by the name
+func FindModuleLikeName(supplierAccount, moduleName string) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
-	var targetModel model.Model
-	err = clsIter.ForEach(func(item model.Classification) error {
 
-		cond = CreateCondition().Field(model.ObjectID).Eq("host").
-			Field(model.SupplierAccount).Eq(supplierAccount).
-			Field(model.ClassificationID).Eq(item.GetID())
+	return mgr.OutputerMgr.FindInstsLikeName(targetModel, moduleName)
+}
 
-		modelIter, err := item.FindModelsByCondition(cond)
-		if nil != err {
-			return err
-		}
+// FindModuleByCondition find all insts by the condition
+func FindModuleByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
+	if nil != err {
+		return nil, err
+	}
+	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+}
 
-		err = modelIter.ForEach(func(modelItem model.Model) error {
-			targetModel = modelItem
-			return nil
-		})
-
-		return nil
-	})
-
+// CreateHost create a new host object
+func CreateHost(supplierAccount string) (*HostWrapper, error) {
+	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}
@@ -178,7 +172,35 @@ func CreateHost(supplierAccount string) (*HostWrapper, error) {
 	return &HostWrapper{host: hostInst}, err
 }
 
+// FindHostLikeName find all insts by the name
+func FindHostLikeName(supplierAccount, hostName string) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
+	if nil != err {
+		return nil, err
+	}
+	return mgr.OutputerMgr.FindInstsLikeName(targetModel, hostName)
+}
+
+// FindHostByCondition find all insts by the condition
+func FindHostByCondition(supplierAccount string, cond common.Condition) (inst.Iterator, error) {
+	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
+	if nil != err {
+		return nil, err
+	}
+	return mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+}
+
 // CreateCommonInst create a common inst object
 func CreateCommonInst(target model.Model) (inst.Inst, error) {
 	return mgr.OutputerMgr.CreateInst(target)
+}
+
+// FindInstsLikeName find all insts by the name
+func FindInstsLikeName(target model.Model, instName string) (inst.Iterator, error) {
+	return mgr.OutputerMgr.FindInstsLikeName(target, instName)
+}
+
+// FindInstsByCondition find all insts by the condition
+func FindInstsByCondition(target model.Model, cond common.Condition) (inst.Iterator, error) {
+	return mgr.OutputerMgr.FindInstsByCondition(target, cond)
 }

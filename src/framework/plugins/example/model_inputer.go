@@ -51,7 +51,7 @@ func (cli *modelInputer) Run() interface{} {
 	// create a  model
 	clsModel := clsMgr.CreateModel()
 	clsModel.SetID("test_demo_cls_model_id")
-	clsModel.SetName("test_demo_cls_model_name")
+	clsModel.SetName("test_demo_cls_model_name_d")
 	clsModel.SetSupplierAccount("0")
 	clsModel.SetCreator("test_user")
 	clsModel.SetDescription("test_desc")

@@ -72,7 +72,7 @@ func (cli *hostInputer) Run() interface{} {
 	}
 
 	// set the custom field
-	host.SetValue("host_field_id", "test_custom")
+	host.SetValue("host_field_id", "test_custom_d")
 
 	// save the host
 	err = host.Save()
