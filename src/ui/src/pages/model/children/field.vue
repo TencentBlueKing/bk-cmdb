@@ -387,7 +387,7 @@
                                             <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
@@ -442,10 +442,10 @@
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content selcet-width-control">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
