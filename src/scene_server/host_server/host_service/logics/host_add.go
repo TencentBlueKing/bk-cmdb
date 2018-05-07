@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	restful "github.com/emicklei/go-restful"
 
 	"time"
@@ -140,7 +141,11 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
 
 		} else {
-			host[common.BKCloudIDField] = iSubArea
+			_, ok := host[common.BKCloudIDField]
+			if false == ok {
+				host[common.BKCloudIDField] = iSubArea
+			}
+
 			host[common.CreateTimeField] = ts
 			//补充未填写字段的默认值
 			for key, val := range defaultFields {
