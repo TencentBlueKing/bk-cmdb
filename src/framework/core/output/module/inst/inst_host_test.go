@@ -38,21 +38,21 @@ func TestHostManager(t *testing.T) {
 		return
 	}
 
-	clsItem.ForEach(func(item model.Classification) {
+	clsItem.ForEach(func(item model.Classification) error {
 
 		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("host"))
 		if nil != err {
 			t.Errorf("failed to search classification, %s", err.Error())
-			return
+			return nil
 		}
 
 		if nil == modelIter {
 			t.Log("not found the model")
-			return
+			return nil
 		}
 
 		// deal host model
-		modelIter.ForEach(func(modelItem model.Model) {
+		modelIter.ForEach(func(modelItem model.Model) error {
 
 			// create host
 			hostInst, err := inst.CreateInst(modelItem)
@@ -78,9 +78,9 @@ func TestHostManager(t *testing.T) {
 				t.Logf("host ip %#v", val.String("bk_host_innerip"))
 				return nil
 			})
-
+			return nil
 		})
-
+		return nil
 	})
 
 }
