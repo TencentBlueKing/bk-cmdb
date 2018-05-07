@@ -25,7 +25,7 @@ func TestInstBusinessManager(t *testing.T) {
 
 	client.NewForConfig(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
 
-	clsItem, err := model.FindClassificationsByCondition(common.CreateCondition().Field("bk_classification_id").Eq("bk_biz_topo"))
+	clsItem, err := model.FindClassificationsByCondition(common.CreateCondition().Field("bk_classification_id").Eq("bk_organization"))
 	if nil != err {
 		t.Errorf("failed to find classifications, %s", err.Error())
 		return
@@ -38,7 +38,7 @@ func TestInstBusinessManager(t *testing.T) {
 
 	clsItem.ForEach(func(item model.Classification) error {
 
-		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("module"))
+		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("biz"))
 		if nil != err {
 			t.Errorf("failed to search classification, %s", err.Error())
 			return nil
@@ -63,12 +63,8 @@ func TestInstBusinessManager(t *testing.T) {
 			t.Logf("model name:%s %s", commonInst.GetModel().GetName(), commonInst.GetModel().GetID())
 
 			// set inst value
-			commonInst.SetValue("bk_module_name", "test_module_3")
-			commonInst.SetValue("bk_biz_id", 2)
-			commonInst.SetValue("bk_set_id", 10)
-			commonInst.SetValue("bk_parent_id", 10)
-			commonInst.SetValue("operator", "test")
-			commonInst.SetValue("bk_bak_operator", "bak_test")
+			commonInst.SetValue("bk_biz_name", "testBiz2")
+			commonInst.SetValue("bk_biz_maintainer", "build_user2")
 
 			// save inst info
 			err = commonInst.Save()
