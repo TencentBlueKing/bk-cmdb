@@ -545,6 +545,20 @@
                 if (property) {
                     let bkObjId = property['bk_obj_id']
                     let value = item[bkObjId][property['bk_property_id']]
+                    if (property['bk_property_id'] === 'bk_module_name') {
+                        let moduleName = []
+                        item.module.map(({bk_module_name: bkModuleName}) => {
+                            moduleName.push(bkModuleName)
+                        })
+                        return moduleName.join(',')
+                    }
+                    if (property['bk_property_id'] === 'bk_set_name') {
+                        let setName = []
+                        item.set.map(({bk_set_name: bksetName}) => {
+                            setName.push(bksetName)
+                        })
+                        return setName.join(',')
+                    }
                     if (property['bk_asst_obj_id'] && Array.isArray(value)) {
                         let tempValue = []
                         value.map(({bk_inst_name: bkInstName}) => {
