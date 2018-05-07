@@ -64,7 +64,6 @@ const (
 	fieldMac          = "bk_mac"
 	fieldProvinceName = "bk_provinceName"
 	fieldSN           = "bk_sn"
-	fieldSingle       = "single"
 	fieldCPUModule    = "bk_cpu_module"
 	fieldHostName     = "bk_host_name"
 	fieldISPName      = "bk_isp_name"
@@ -74,5 +73,18 @@ const (
 	fieldMem          = "bk_mem"
 	fieldOsName       = "bk_os_name"
 	fieldOsVersion    = "bk_os_version"
-	fieldMast         = "mast"
+	fieldImportFrom   = "import_from"
+	fieldHostOperator = "operator"
+)
+
+// Enum definition
+const (
+	HostSLALevel1       = "1"
+	HostSLALevel2       = "2"
+	HostSLALevel3       = "3"
+	HostOSTypeLinux     = "1"
+	HostOSTypeWindows   = "2"
+	HostImportFromExcel = "1"
+	HostImportFromAgent = "2"
+	HostImportFromAPI   = "3"
 )

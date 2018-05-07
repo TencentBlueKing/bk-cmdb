@@ -28,6 +28,9 @@ func (cli *HostWrapper) SetValue(key string, val interface{}) error {
 
 // Save save the data
 func (cli *HostWrapper) Save() error {
+	if err := cli.host.SetValue(fieldImportFrom, HostImportFromAPI); nil != err {
+		return err
+	}
 	return cli.host.Save()
 }
 
@@ -58,7 +61,7 @@ func (cli *HostWrapper) SetInnerIP(innerIP string) error {
 
 // SetOperator set the operator for the host
 func (cli *HostWrapper) SetOperator(operator string) error {
-	return cli.host.SetValue(fieldOperator, operator)
+	return cli.host.SetValue(fieldHostOperator, operator)
 }
 
 // SetStateName set the state name for the host
@@ -66,8 +69,8 @@ func (cli *HostWrapper) SetStateName(stateName string) error {
 	return cli.host.SetValue(fieldStateName, stateName)
 }
 
-// SetCPU set the cpu information for the host
-func (cli *HostWrapper) SetCPU(cpu string) error {
+// SetCPU set the cpu core num  for the host
+func (cli *HostWrapper) SetCPU(cpu int64) error {
 	return cli.host.SetValue(fieldCPU, cpu)
 }
 
@@ -106,11 +109,6 @@ func (cli *HostWrapper) SetSN(sn string) error {
 	return cli.host.SetValue(fieldSN, sn)
 }
 
-// SetSingle set the single for the host
-func (cli *HostWrapper) SetSingle(single string) error {
-	return cli.host.SetValue(fieldSingle, single)
-}
-
 // SetCPUModule set the cpu module for the host
 func (cli *HostWrapper) SetCPUModule(cpuModule string) error {
 	return cli.host.SetValue(fieldCPUModule, cpuModule)
@@ -127,7 +125,7 @@ func (cli *HostWrapper) SetISPName(ispName string) error {
 }
 
 // SetServiceTerm set the service term for the host
-func (cli *HostWrapper) SetServiceTerm(serviceTerm string) error {
+func (cli *HostWrapper) SetServiceTerm(serviceTerm int64) error {
 	return cli.host.SetValue(fieldServiceTerm, serviceTerm)
 }
 
@@ -137,8 +135,13 @@ func (cli *HostWrapper) SetComment(comment string) error {
 }
 
 // SetMem set the mem for the host
-func (cli *HostWrapper) SetMem(mem float64) error {
+func (cli *HostWrapper) SetMem(mem int64) error {
 	return cli.host.SetValue(fieldMem, mem)
+}
+
+// SetDisk set the capacity of the disk for the host
+func (cli *HostWrapper) SetDisk(disk int64) error {
+	return cli.host.SetValue(fieldDisk, disk)
 }
 
 // SetOsName set the os name for the host
@@ -149,9 +152,4 @@ func (cli *HostWrapper) SetOsName(osName string) error {
 // SetOsVersion set the os version for the host
 func (cli *HostWrapper) SetOsVersion(osVersion string) error {
 	return cli.host.SetValue(fieldOsVersion, osVersion)
-}
-
-// SetMast set the mast for the host
-func (cli *HostWrapper) SetMast(mast string) error {
-	return cli.host.SetValue(fieldMast, mast)
 }

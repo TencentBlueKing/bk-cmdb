@@ -15,6 +15,7 @@ package main
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/config"
 	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/log"
@@ -42,6 +43,10 @@ func main() {
 	opt := &option.Options{AppName: APPNAME}
 	opt.AddFlags(pflag.CommandLine)
 	util.InitFlags()
+	api.Init()
+	defer func() {
+		api.UnInit()
+	}()
 
 	if err := config.Init(opt); err != nil {
 		log.Errorf("init config error: %v", err)
