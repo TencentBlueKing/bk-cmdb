@@ -15,13 +15,13 @@ package example
 import (
 	"configcenter/src/framework/api"
 	"fmt"
-	"time"
+	//"time"
 )
 
 func init() {
 
-	// api.RegisterInputer(host, nil)
-	api.RegisterTimingInputer(host, time.Second*5, nil)
+	api.RegisterInputer(business, nil)
+	//api.RegisterTimingInputer(business, time.Second*5, nil)
 }
 
 var business = &businessInputer{}
@@ -45,6 +45,13 @@ func (cli *businessInputer) Run() interface{} {
 	}
 
 	business.SetName("demo_business")
+	business.SetMaintainer("test_user")
+	business.SetDeveloper("test_developer")
+	business.SetOperator("test_operator")
+	business.SetProductor("test_productor")
+	business.SetLifeCycle(api.BusinessLifeCycleOnLine)
+	business.SetTester("test_tester")
+
 	err = business.Save()
 	if nil != err {
 		fmt.Println("failed to save the business:", err)
