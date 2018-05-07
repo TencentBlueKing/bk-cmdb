@@ -68,7 +68,7 @@ func (cli MapStr) Int(key string) (int, error) {
 	default:
 		return 0, errors.New("invalid num")
 	case nil:
-		return 0, errors.New("invalid key, not found value")
+		return 0, errors.New("invalid key(" + key + "), not found value")
 	case int:
 		return t, nil
 	case int16:

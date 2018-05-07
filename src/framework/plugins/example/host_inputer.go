@@ -14,6 +14,7 @@ package example
 
 import (
 	"configcenter/src/framework/api"
+	"configcenter/src/framework/core/output/module/model"
 	"fmt"
 	"time"
 )
@@ -43,6 +44,7 @@ func (cli *hostInputer) Run() interface{} {
 		fmt.Println("err:", err.Error())
 	}
 
+	// set the inner field
 	host.SetInnerIP("192.168.1.1")
 	host.SetOsBit("64")
 	host.SetOsName("os-test")
@@ -58,6 +60,21 @@ func (cli *hostInputer) Run() interface{} {
 	host.SetMem(12334)
 	host.SetCPUModule("cpu-xxx")
 
+	// create a new field
+	hostModel := host.GetModel()
+	hostAttr := hostModel.CreateAttribute()
+	hostAttr.SetID("host_field_id")
+	hostAttr.SetName("host_field_id(test)")
+	hostAttr.SetType(model.FieldTypeLongChar)
+	err = hostAttr.Save()
+	if nil != err {
+		fmt.Println("err attr:", err)
+	}
+
+	// set the custom field
+	host.SetValue("host_field_id", "test_custom")
+
+	// save the host
 	err = host.Save()
 	if nil != err {
 		fmt.Println("err:", err)

@@ -104,8 +104,13 @@ func (cli *model) Save() error {
 		item.Set(Description, cli.Description)
 		item.Set(Modifier, cli.Modifier)
 
+		id, err := item.Int("id")
+		if nil != err {
+			return err
+		}
+
 		cond := common.CreateCondition()
-		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field("id").Eq(id)
 		if err = client.GetClient().CCV3().Model().UpdateObject(item, cond); nil != err {
 			return err
 		}
@@ -117,9 +122,10 @@ func (cli *model) Save() error {
 
 func (cli *model) CreateAttribute() Attribute {
 	attr := &attribute{
-		ObjectID: cli.ObjectID,
-		OwnerID:  cli.OwnerID,
-		Creator:  cli.Creator,
+		ObjectID:      cli.ObjectID,
+		OwnerID:       cli.OwnerID,
+		Creator:       cli.Creator,
+		PropertyGroup: "default",
 	}
 	return attr
 }

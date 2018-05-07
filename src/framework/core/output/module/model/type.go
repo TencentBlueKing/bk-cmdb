@@ -87,6 +87,44 @@ const (
 	ClassificationIcon = "bk_classification_icon"
 )
 
+// FieldDataType type definition
+type FieldDataType string
+
+const (
+	// FieldTypeSingleChar the single char filed type
+	FieldTypeSingleChar FieldDataType = "singlechar"
+
+	// FieldTypeLongChar the long char field type
+	FieldTypeLongChar FieldDataType = "longchar"
+
+	// FieldTypeInt the int field type
+	FieldTypeInt FieldDataType = "int"
+
+	// FieldTypeEnum the enum field type
+	FieldTypeEnum FieldDataType = "enum"
+
+	// FieldTypeDate the date field type
+	FieldTypeDate FieldDataType = "date"
+
+	// FieldTypeTime the time field type
+	FieldTypeTime FieldDataType = "time"
+
+	// FieldTypeUser the user field type
+	FieldTypeUser FieldDataType = "objuser"
+
+	// FieldTypeSingleAsst the single association
+	FieldTypeSingleAsst FieldDataType = "singleasst"
+
+	// FieldTypeMultiAsst the multi association
+	FieldTypeMultiAsst FieldDataType = "multiasst"
+
+	// FieldTypeTimeZone the timezone field type
+	FieldTypeTimeZone FieldDataType = "timezone"
+
+	// FieldTypeBool the bool type
+	FieldTypeBool FieldDataType = "bool"
+)
+
 // GroupIterator the group iterator
 type GroupIterator interface {
 	Next() (Group, error)
@@ -182,7 +220,7 @@ type Model interface {
 // AttributeIterator the attribute iterator
 type AttributeIterator interface {
 	Next() (Attribute, error)
-	ForEach(itemCallback func(item Attribute)error) error
+	ForEach(itemCallback func(item Attribute) error) error
 }
 
 // Attribute the interface declaration for model attribute maintence
@@ -209,4 +247,7 @@ type Attribute interface {
 	GetOption() string
 	SetDescrition(des string)
 	GetDescription() string
+
+	SetType(dataType FieldDataType)
+	GetType() FieldDataType
 }

@@ -104,8 +104,13 @@ func (cli *attribute) Save() error {
 		item.Set(Option, cli.Option)
 		item.Set(Description, cli.Description)
 
+		id, err := item.Int("id")
+		if nil != err {
+			return err
+		}
+
 		cond := common.CreateCondition()
-		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID)
+		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID).Field("id").Eq(id)
 		if err = client.GetClient().CCV3().Attribute().UpdateObjectAttribute(item, cond); nil != err {
 			return err
 		}
@@ -200,4 +205,11 @@ func (cli *attribute) SetDescrition(des string) {
 
 func (cli *attribute) GetDescription() string {
 	return cli.Description
+}
+
+func (cli *attribute) SetType(dataType FieldDataType) {
+	cli.PropertyType = string(dataType)
+}
+func (cli *attribute) GetType() FieldDataType {
+	return FieldDataType(cli.PropertyType)
 }
