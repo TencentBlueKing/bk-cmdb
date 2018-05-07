@@ -48,12 +48,11 @@ func (cli *myInputer) Run() interface{} {
 	if nil != err {
 		fmt.Println("err:", err.Error())
 	}
-	set.SetValue("bk_set_desc", "setdesc")
-	set.SetValue("description", "descrip")
-	set.SetValue("bk_capacity", 15)
-	set.SetValue("bk_parent_id", 2)
-	set.SetValue("bk_biz_id", 2)
-	set.SetValue("bk_set_name", "test_demo")
+	set.SetDescription("setdesc")
+	set.SetCapacity(20)
+	set.SetBussinessID(2)
+	set.SetName("test_demo")
+
 	err = set.Save()
 	if nil != err {
 		fmt.Println("err:", err)

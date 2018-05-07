@@ -52,7 +52,10 @@ func (cli *SetWrapper) SetCapacity(capacity int64) error {
 }
 
 // SetBussinessID set the business id of the set
-func (cli *SetWrapper) SetBussinessID(businessID string) error {
+func (cli *SetWrapper) SetBussinessID(businessID int64) error {
+	if err := cli.SetParent(businessID); nil != err {
+		return err
+	}
 	return cli.set.SetValue(fieldBusinessID, businessID)
 }
 
