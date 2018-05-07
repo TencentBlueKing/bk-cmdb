@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/errors"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -351,6 +352,9 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Errorf("create app valid eror:%s, data:%v", err.Error(), string(value))
+			if _, ok := err.(errors.CCErrorCoder); ok {
+				return http.StatusInternalServerError, nil, err
+			}
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
 		}
 

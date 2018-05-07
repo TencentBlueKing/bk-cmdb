@@ -13,12 +13,13 @@
 package v3
 
 import (
+	cccommon "configcenter/src/common"
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 
+	"configcenter/src/framework/core/errors"
 	"configcenter/src/framework/core/types"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
 )
@@ -61,7 +62,10 @@ func (h *Business) CreateBusiness(data types.MapStr) (int, error) {
 
 	// check result
 	if !gs.Get("result").Bool() {
-		return 0, errors.New(gs.Get("bk_error_msg").String())
+		if gs.Get(cccommon.HTTPBKAPIErrorCode).Int() == cccommon.CCErrCommDuplicateItem {
+			return 0, errors.ErrDuplicateDataExisted
+		}
+		return 0, errors.New(gs.Get(cccommon.HTTPBKAPIErrorMessage).String())
 	}
 
 	id := gs.Get("data.bk_biz_id").Int()

@@ -35,21 +35,21 @@ func TestInstFind(t *testing.T) {
 		return
 	}
 
-	clsItem.ForEach(func(item model.Classification) {
+	clsItem.ForEach(func(item model.Classification) error {
 
 		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("test1"))
 		if nil != err {
 			t.Errorf("failed to search classification, %s", err.Error())
-			return
+			return nil
 		}
 
 		if nil == modelIter {
 			t.Log("not found the model")
-			return
+			return nil
 		}
 
 		// search common inst model
-		modelIter.ForEach(func(modelItem model.Model) {
+		modelIter.ForEach(func(modelItem model.Model) error {
 			iter, err := inst.FindInstsLikeName(modelItem, "test")
 			if nil != err {
 				t.Errorf("failed to find inst, %s", err.Error())
@@ -59,7 +59,9 @@ func TestInstFind(t *testing.T) {
 				t.Logf("inst:%+v", item.GetInstName())
 				return nil
 			})
+			return nil
 		})
+		return nil
 	})
 
 }

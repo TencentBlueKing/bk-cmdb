@@ -36,27 +36,27 @@ func TestInstManager(t *testing.T) {
 		return
 	}
 
-	clsItem.ForEach(func(item model.Classification) {
+	clsItem.ForEach(func(item model.Classification) error {
 
 		modelIter, err := item.FindModelsByCondition(common.CreateCondition().Field("bk_obj_id").Eq("test1"))
 		if nil != err {
 			t.Errorf("failed to search classification, %s", err.Error())
-			return
+			return nil
 		}
 
 		if nil == modelIter {
 			t.Log("not found the model")
-			return
+			return nil
 		}
 
 		// deal common inst model
-		modelIter.ForEach(func(modelItem model.Model) {
+		modelIter.ForEach(func(modelItem model.Model) error {
 
 			// create a common inst
 			commonInst, err := inst.CreateInst(modelItem)
 			if nil != err {
 				t.Errorf("failed to create inst ")
-				return
+				return nil
 			}
 
 			// Only test
@@ -66,14 +66,14 @@ func TestInstManager(t *testing.T) {
 			err = commonInst.SetValue("bk_obj_id", "test1")
 			if nil != err {
 				t.Errorf("failed to set value, %s", err.Error())
-				return
+				return nil
 			}
 
 			// set inst value
 			err = commonInst.SetValue("bk_inst_name", "test_self_1")
 			if nil != err {
 				t.Errorf("failed to set value, %s", err.Error())
-				return
+				return nil
 			}
 
 			// save inst info
@@ -83,8 +83,10 @@ func TestInstManager(t *testing.T) {
 				t.Errorf("failed to save ,%s", err.Error())
 			}
 
-		})
+			return nil
 
+		})
+		return nil
 	})
 
 }
