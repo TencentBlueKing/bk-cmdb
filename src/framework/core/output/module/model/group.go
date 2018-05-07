@@ -1,19 +1,20 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 )
@@ -34,7 +35,7 @@ func (cli *group) ToMapStr() types.MapStr {
 	return types.MapStr{
 		GroupID:         cli.GroupID,
 		GroupName:       cli.GroupName,
-		GroupIndex:      0,
+		GroupIndex:      cli.GroupIndex,
 		ObjectID:        cli.ObjectID,
 		SupplierAccount: cli.OwnerID,
 		IsDefault:       cli.IsDefault,
@@ -45,7 +46,8 @@ func (cli *group) ToMapStr() types.MapStr {
 func (cli *group) Save() error {
 
 	// construct the search condition
-	cond := common.CreateCondition().Field(GroupID).Eq(cli.GroupID).Field(ObjectID).Eq(cli.ObjectID)
+	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID)
+	// .Field(GroupID).Eq(cli.GroupID).
 
 	// search all group by condition
 	dataItems, err := client.GetClient().CCV3().Group().SearchGroups(cond)
@@ -53,28 +55,54 @@ func (cli *group) Save() error {
 		return err
 	}
 
-	// create a new object
-	if 0 == len(dataItems) {
-		if _, err = client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr()); nil != err {
-			return err
-		}
-		return nil
-	}
+	log.Infof("search group return %v", dataItems)
 
-	// update the exists one
+	var updateitem types.MapStr
+	lastIndex := 1
+	var updateBy string
 	for _, item := range dataItems {
-
-		item.Set(GroupName, cli.GroupName)
-		item.Set(GroupIndex, 0)
-		item.Set(IsDefault, cli.IsDefault)
-
-		cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(GroupID).Eq(cli.GroupID)
-		if err = client.GetClient().CCV3().Group().UpdateGroup(item, cond); nil != err {
-			return err
+		index, err := item.Int(GroupIndex)
+		if err != nil {
+			log.Errorf("get bk_group_index error %v ", err)
+		}
+		if index > lastIndex {
+			lastIndex = index + 1
+		}
+		if cli.GetName() == item.String(GroupName) {
+			updateBy = GroupName
+			updateitem = item
+		}
+		if cli.GetID() == item.String(GroupID) {
+			updateBy = GroupID
+			updateitem = item
 		}
 	}
+	if len(cli.GetID()) <= 0 {
+		cli.SetID(common.UUID())
+	}
 
-	// success
+	if cli.GetIndex() <= 0 {
+		cli.SetIndex(lastIndex)
+	}
+
+	if nil != updateitem {
+		// update exists one
+		updateitem.Set(GroupName, cli.GetName())
+		updateitem.Set(GroupIndex, cli.GetIndex())
+		updateitem.Set(GroupID, cli.GetID())
+		cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID)
+		if updateBy == GroupID {
+			cond = cond.Field(GroupID).Eq(cli.GroupID)
+		} else {
+			cond = cond.Field(GroupName).Eq(cli.GroupName)
+		}
+		return client.GetClient().CCV3().Group().UpdateGroup(updateitem, cond)
+	}
+
+	// create a new obj ect
+	if _, err := client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr()); nil != err {
+		return err
+	}
 	return nil
 }
 
