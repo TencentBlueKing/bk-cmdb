@@ -54,7 +54,7 @@
                 type: Boolean,
                 default: false
             },
-            multiple: { // 保留配置，单选多选配置, 尚未实现单选
+            multiple: {
                 type: Boolean,
                 default: true
             },
@@ -244,6 +244,11 @@
             /* 移动模拟输入元素的DOM位置并获取焦点 */
             locateInputPosition (index) {
                 if (!this.disabled) {
+                    if (!this.multiple) {
+                        index = 0
+                        this.inputIndex = 0
+                        this.localSelected = []
+                    }
                     let $memberInput = this.$refs.memberInput
                     let $memberSelected = this.$refs.memberSelected
                     if (index !== this.inputIndex) {
@@ -293,11 +298,17 @@
             /* 按下回车确认输入，添加人员 */
             handleConfirm (event) {
                 event.preventDefault()
-                let memberInputText = this.memberInputText.trim()
-                if (this.selectedIndex !== null) {
-                    this.localSelected.splice(this.inputIndex, 0, this.filterMembers[this.selectedIndex]['english_name'])
-                } else if (this.exclude && memberInputText.length) { // 允许选择不在人员列表中的人，以当前输入添加
-                    this.localSelected.splice(this.inputIndex, 0, memberInputText)
+                let memberInputText = this.memberInputText
+                if (memberInputText.length) {
+                    let member = this.exclude ? {'english_name': memberInputText} : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
+                    if (this.exclude) {
+                        this.localSelected.splice(this.inputIndex, 0, memberInputText)
+                    } else {
+                        const member = this.selectedIndex !== null ? this.filterMembers[this.selectedIndex] : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
+                        if (member) {
+                            this.localSelected.splice(this.inputIndex, 0, member['english_name'])
+                        }
+                    }
                 }
                 this.selectedIndex = null
                 this.inputIndex = null
