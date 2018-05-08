@@ -15,5 +15,9 @@
     "host_resource_module_get_fail": "获取资源池模块信息失败,错误信息:%s",
     "host_move_to_resource": "转移主机到资源池失败，错误信息:%s",
     "host_search_module_fail_with_errmsg": "获取主机关系失败,错误信息:%s",
+    "host_ip_not_exist": "%s 主机IP在系统中不存在",
+    "host_str_del_for_resource_pool": "%s 主机从资源池中清除失败",
+    "host_str_belong_module": "%s 主机已经存在于当前模块中",
+    "host_str_add_module_relation_fail": "%s 主机添加到模块失败",
     "": ""
 }

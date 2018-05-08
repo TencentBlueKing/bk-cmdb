@@ -95,7 +95,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			hostList, err := logics.GetHostInfoByConds(req, m.CC.HostCtrl(), hostCond, defLang)
 			if nil != err || 0 == len(hostList) {
 				blog.Error("get host info error, params:%v, error:%v", hostCond, err)
-				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
+				errMsg = append(errMsg, defLang.Languagef("host_ip_not_exist", hostInfo.IP)) //fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
 				continue
 
 			}
@@ -105,13 +105,13 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			hostMap, ok := hostData.(map[string]interface{})
 			if false == ok {
 				blog.Error("host not exsit, params:%v, error:%v", hostCond, err.Error())
-				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
+				errMsg = append(errMsg, defLang.Languagef("host_ip_not_exist", hostInfo.IP))
 				continue
 			}
 			hostID, err := util.GetIntByInterface(hostMap[common.BKHostIDField])
 			if nil != err {
 				blog.Error("host not exsit, params:%v, error:%v", hostCond, err.Error())
-				errMsg = append(errMsg, fmt.Sprintf("%s 主机IP在系统中不存在", hostInfo.IP))
+				errMsg = append(errMsg, defLang.Languagef("host_ip_not_exist", hostInfo.IP))
 				continue
 			}
 			moduleHostCond := common.KvMap{
@@ -120,7 +120,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			moduleHostConfig, err := logics.GetConfigByCond(req, m.CC.HostCtrl(), moduleHostCond)
 			if nil != err {
 				blog.Error("get module host config error, params:%v, error:%v", moduleHostCond, err.Error())
-				errMsg = append(errMsg, fmt.Sprintf("%s 获取主机模块关系失败", hostInfo.IP))
+				errMsg = append(errMsg, defLang.Languagef("topo_str_query_module_fail", hostInfo.IP)) //fmt.Sprintf("%s 获取主机模块关系失败", hostInfo.IP))
 				continue
 			}
 			//if host belong to resource, remove from it first
@@ -135,14 +135,14 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 					isSuccess, _, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, params)
 					if !isSuccess {
 						blog.Error("remove modulehostconfig error, params:%v, error:%s", params, errMsg)
-						errMsg = append(errMsg, fmt.Sprintf("%s 主机从资源池中清除失败", hostInfo.IP))
+						errMsg = append(errMsg, defLang.Languagef("host_str_del_for_resource_pool", hostInfo.IP)) // fmt.Sprintf("%s 主机从资源池中清除失败", hostInfo.IP))
 						continue
 					}
 				}
 
 				if mh[common.BKModuleIDField] == data.ModuleID {
 					blog.Error("host exist in module, params:%v, error:%v", moduleHostCond, err)
-					errMsg = append(errMsg, fmt.Sprintf("%s 主机已经存在于当前模块中", hostInfo.IP))
+					errMsg = append(errMsg, defLang.Languagef("host_str_belong_module", hostInfo.IP)) //fmt.Sprintf("%s 主机已经存在于当前模块中", hostInfo.IP))
 					continue
 				}
 			}
@@ -156,7 +156,7 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 			isSuccess, errMsgStr, _ := logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, params)
 			if !isSuccess {
 				blog.Error("add modulehostconfig error, params:%v, error:%s", params, errMsgStr)
-				errMsg = append(errMsg, fmt.Sprintf("%s 主机添加到模块失败", hostInfo.IP))
+				errMsg = append(errMsg, defLang.Languagef("host_str_add_module_relation_fail", hostInfo.IP)) // fmt.Sprintf("%s 主机添加到模块失败", hostInfo.IP))
 
 			}
 			hostIDArr = append(hostIDArr, hostID)
