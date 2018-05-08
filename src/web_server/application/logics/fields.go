@@ -25,16 +25,19 @@ import (
 
 // Property object fields
 type Property struct {
-	ID            string
-	Name          string
-	PropertyType  string
-	Option        interface{}
-	IsPre         bool
-	IsRequire     bool
-	Group         string
-	Index         int
-	ExcelColIndex int
-	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
+	ID                     string
+	Name                   string
+	PropertyType           string
+	Option                 interface{}
+	IsPre                  bool
+	IsRequire              bool
+	Group                  string
+	Index                  int
+	ExcelColIndex          int
+	NotObjPropery          bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
+	AsstObjPrimaryProperty []Property
+	IsOnly                 bool
+	AsstObjID              string
 }
 
 // PropertyGroup property group
@@ -63,6 +66,17 @@ func GetObjFieldIDs(objID, url string, filterFields []string, header http.Header
 			if field.Group == group.Name {
 				if util.InStrArr(filterFields, field.ID) {
 					continue
+				}
+				switch field.PropertyType {
+				case common.FieldTypeSingleAsst:
+					fallthrough
+				case common.FieldTypeMultiAsst:
+
+					field.AsstObjPrimaryProperty, err = getAsstObjectPrimaryFieldByObjID(field.AsstObjID, url, header)
+					if nil != err {
+						blog.Errorf("get associate object fields error: error:%s", err.Error())
+						return nil, fmt.Errorf("get associate object fields error: error:%s", err.Error())
+					}
 				}
 				field.ExcelColIndex = index
 				ret[field.ID] = field
@@ -102,7 +116,29 @@ func getObjectGroup(objID, url string, header http.Header) ([]PropertyGroup, err
 
 }
 
+func getAsstObjectPrimaryFieldByObjID(objID string, url string, header http.Header) ([]Property, error) {
+
+	fields, err := getObjFieldIDsBySort(objID, url, common.BKPropertyIDField, header)
+	if nil != err {
+		return nil, err
+	}
+	var ret []Property
+	for _, field := range fields {
+		if true == field.IsOnly {
+			ret = append(ret, field)
+		}
+	}
+	return ret, nil
+
+}
+
 func getObjFieldIDs(objID, url string, header http.Header) ([]Property, error) {
+	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
+	return getObjFieldIDsBySort(objID, url, sort, header)
+
+}
+
+func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Property, error) {
 	url = fmt.Sprintf("%s/api/%s/object/attr/search", url, webCommon.API_VERSION)
 	conds := common.KvMap{
 		common.BKObjIDField:   objID,
@@ -110,7 +146,7 @@ func getObjFieldIDs(objID, url string, header http.Header) ([]Property, error) {
 		"page": common.KvMap{
 			"start": 0,
 			"limit": common.BKNoLimit,
-			"sort":  fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField),
+			"sort":  sort,
 		},
 	}
 	result, err := httpRequest(url, conds, header)
@@ -130,6 +166,10 @@ func getObjFieldIDs(objID, url string, header http.Header) ([]Property, error) {
 	for _, field := range fields {
 		mapField, _ := field.(map[string]interface{})
 
+		fieldIsOnly, ok := mapField[common.BKIsOnly].(bool)
+		if false == ok {
+			return nil, fmt.Errorf("%s not foud", common.BKIsOnly)
+		}
 		fieldName, _ := mapField[common.BKPropertyNameField].(string)
 		fieldID, _ := mapField[common.BKPropertyIDField].(string)
 		fieldType, _ := mapField[common.BKPropertyTypeField].(string)
@@ -138,6 +178,7 @@ func getObjFieldIDs(objID, url string, header http.Header) ([]Property, error) {
 		fieldIsPre, _ := mapField[common.BKIsPre].(bool)
 		fieldGroup, _ := mapField["bk_property_group_name"].(string)
 		fieldIndex, _ := util.GetIntByInterface(mapField["bk_property_index"])
+		fieldAsstObjID, _ := mapField[common.BKAsstObjIDField].(string)
 
 		ret = append(ret, Property{
 			ID:           fieldID,
@@ -148,6 +189,8 @@ func getObjFieldIDs(objID, url string, header http.Header) ([]Property, error) {
 			Option:       fieldIsOption,
 			Group:        fieldGroup,
 			Index:        fieldIndex,
+			IsOnly:       fieldIsOnly,
+			AsstObjID:    fieldAsstObjID,
 		})
 	}
 
