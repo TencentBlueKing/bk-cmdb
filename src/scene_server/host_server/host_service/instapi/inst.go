@@ -29,12 +29,13 @@ import (
 
 // instNameAsst  association inst name
 type instNameAsst struct {
-	ID         string `json:"id"`
-	ObjID      string `json:"bk_obj_id"`
-	ObjIcon    string `json:"bk_obj_icon"`
-	ObjectID   int    `json:"bk_inst_id"`
-	ObjectName string `json:"bk_obj_name"`
-	Name       string `json:"bk_inst_name"`
+	ID         string                 `json:"id"`
+	ObjID      string                 `json:"bk_obj_id"`
+	ObjIcon    string                 `json:"bk_obj_icon"`
+	ObjectID   int                    `json:"bk_inst_id"`
+	ObjectName string                 `json:"bk_obj_name"`
+	Name       string                 `json:"bk_inst_name"`
+	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 
 // Inst public inst
@@ -134,6 +135,16 @@ func (cli *instHelper) GetObjectAsst(forward *api.ForwardParam, objID, ownerID s
 
 //getInstDetail get inst detail
 func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, IDs, page, false)
+}
+
+//getInstDetail get inst detail
+func (cli *instHelper) getInstAsstDetail(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, IDs, page, true)
+}
+
+// getRawInstAsst get inst detail
+func (cli *instHelper) getRawInstAsst(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}, isDetail bool) ([]instNameAsst, int, int) {
 
 	tmpIDs := []int{}
 	for _, ID := range IDs {
@@ -272,6 +283,9 @@ func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, 
 						if dataItemValStr, convOk := dataItemVal.(string); convOk {
 							inst.Name = dataItemValStr
 							inst.ObjID = objID
+							if true == isDetail {
+								inst.InstInfo = dataItem
+							}
 						}
 
 						// delete exsit ID
@@ -315,8 +329,18 @@ func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, 
 	return rstName, cnt, common.CCSuccess
 }
 
-//GetInstDetailsSub get inst detail sub
+//GetInstDetailsSub get inst detail sub without assocate object detaill
 func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getInstDetailsSub(req, objID, ownerID, input, page, false)
+}
+
+//GetInstDetailsSub get inst detail sub with assocate object detaill
+func (cli *instHelper) GetInstAsstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getInstDetailsSub(req, objID, ownerID, input, page, true)
+}
+
+//getInstDetailsSub get inst detail sub
+func (cli *instHelper) getInstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}, isDetail bool) (map[string]interface{}, int) {
 
 	// get objID asst model and field
 	rstmap, errorno := cli.GetObjectAsst(&api.ForwardParam{Header: req.Request.Header}, objID, ownerID)
@@ -340,7 +364,13 @@ func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID st
 
 						keyItemStr := fmt.Sprintf("%v", keyItem)
 						blog.Debug("keyitemstr:%s", keyItemStr)
-						retData, _, retErr := cli.getInstAsst(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						var retData []instNameAsst
+						var retErr int
+						if true == isDetail {
+							retData, _, retErr = cli.getInstAsstDetail(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						} else {
+							retData, _, retErr = cli.getInstAsst(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						}
 						if common.CCSuccess != retErr {
 							blog.Error("failed to get inst details")
 						}
