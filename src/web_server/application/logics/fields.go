@@ -18,7 +18,6 @@ import (
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
 	"fmt"
 	simplejson "github.com/bitly/go-simplejson"
 	"net/http"
@@ -38,6 +37,7 @@ type Property struct {
 	NotObjPropery          bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
 	AsstObjPrimaryProperty []Property
 	IsOnly                 bool
+	AsstObjID              string
 }
 
 // PropertyGroup property group
@@ -72,7 +72,7 @@ func GetObjFieldIDs(objID, url string, filterFields []string, header http.Header
 					fallthrough
 				case common.FieldTypeMultiAsst:
 
-					field.AsstObjPrimaryProperty, err = getAsstObjectPrimaryFieldByOption(field.Option, url, header)
+					field.AsstObjPrimaryProperty, err = getAsstObjectPrimaryFieldByObjID(field.AsstObjID, url, header)
 					if nil != err {
 						blog.Errorf("get associate object fields error: error:%s", err.Error())
 						return nil, fmt.Errorf("get associate object fields error: error:%s", err.Error())
@@ -116,21 +116,8 @@ func getObjectGroup(objID, url string, header http.Header) ([]PropertyGroup, err
 
 }
 
-func getAsstObjectPrimaryFieldByOption(option interface{}, url string, header http.Header) ([]Property, error) {
-	switch v := option.(type) {
-	case string:
-		json.Unmarshal([]byte(v), &option)
-	}
-	mapOption, ok := option.(map[string]interface{})
-	if false == ok {
-		blog.Errorf("option is not find associate object id, error:%v", option)
-		return nil, fmt.Errorf("option is not find associate object id")
-	}
-	objID, ok := mapOption["value"].(string)
-	if false == ok {
-		blog.Errorf("option is not find associate object id, error:%v", option)
-		return nil, fmt.Errorf("option is not find associate object id")
-	}
+func getAsstObjectPrimaryFieldByObjID(objID string, url string, header http.Header) ([]Property, error) {
+
 	fields, err := getObjFieldIDsBySort(objID, url, common.BKPropertyIDField, header)
 	if nil != err {
 		return nil, err
@@ -191,6 +178,7 @@ func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Proper
 		fieldIsPre, _ := mapField[common.BKIsPre].(bool)
 		fieldGroup, _ := mapField["bk_property_group_name"].(string)
 		fieldIndex, _ := util.GetIntByInterface(mapField["bk_property_index"])
+		fieldAsstObjID, _ := mapField[common.BKAsstObjIDField].(string)
 
 		ret = append(ret, Property{
 			ID:           fieldID,
@@ -202,6 +190,7 @@ func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Proper
 			Group:        fieldGroup,
 			Index:        fieldIndex,
 			IsOnly:       fieldIsOnly,
+			AsstObjID:    fieldAsstObjID,
 		})
 	}
 
