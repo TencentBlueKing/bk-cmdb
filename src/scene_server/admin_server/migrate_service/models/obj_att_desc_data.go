@@ -57,14 +57,14 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 
 func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
 
-	dataRows := data.AppRow()
-	dataRows = append(dataRows, data.SetRow()...)
-	dataRows = append(dataRows, data.ModuleRow()...)
-	dataRows = append(dataRows, data.HostRow()...)
-	dataRows = append(dataRows, data.ProcRow()...)
-	dataRows = append(dataRows, data.PlatRow()...)
+	predataRows := data.AppRow()
+	predataRows = append(predataRows, data.SetRow()...)
+	predataRows = append(predataRows, data.ModuleRow()...)
+	predataRows = append(predataRows, data.HostRow()...)
+	predataRows = append(predataRows, data.ProcRow()...)
+	predataRows = append(predataRows, data.PlatRow()...)
 
-	dataRows = append(dataRows, data.SwitchRow()...)
+	dataRows := data.SwitchRow()
 	dataRows = append(dataRows, data.RouterRow()...)
 	dataRows = append(dataRows, data.LoadBalanceRow()...)
 	dataRows = append(dataRows, data.FirewallRow()...)
@@ -74,7 +74,7 @@ func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
 
 	t := new(time.Time)
 	*t = time.Now()
-	for _, r := range dataRows {
+	for _, r := range predataRows {
 		r.OwnerID = ownerID
 		r.IsPre = true
 		if false != r.Editable {
@@ -85,11 +85,21 @@ func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
 		r.Creator = common.CCSystemOperatorUserName
 		r.LastTime = r.CreateTime
 		r.Description = ""
-
+	}
+	for _, r := range dataRows {
+		r.OwnerID = ownerID
+		r.IsPre = false
+		if false != r.Editable {
+			r.Editable = true
+		}
+		r.IsReadOnly = false
+		r.CreateTime = t
+		r.Creator = common.CCSystemOperatorUserName
+		r.LastTime = r.CreateTime
+		r.Description = ""
 	}
 
-	return dataRows
-
+	return append(predataRows, dataRows...)
 }
 
 func AlterObjAttrDesTable(tableName string, metaCli dbStorage.DI) error {
