@@ -347,6 +347,18 @@
         },
         mounted () {
             this.selected.length ? this.setSelected(this.selected) : ''
+        },
+        beforeDestroy () {
+            console.log('destroy')
+            this.open = false,
+            this.curValue = this.multiple ? [] : '',
+            this.curLabel = this.multiple ? [] : '',
+            this.model = '',
+            this.localOptions = [],
+            this.localOptionsLoaded = false,
+            this.filter = '',
+            this.create = true,
+            this.isEmptyMark = true
         }
     }
 </script>
