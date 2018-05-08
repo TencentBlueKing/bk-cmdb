@@ -39,8 +39,8 @@ func TestGroup(t *testing.T) {
 	require.NotEmpty(t, rets)
 	require.Equal(t, "updated", rets[0]["bk_group_name"], "unexpected value")
 
-	cond.Field("id").Eq(id)
-	err = cli.Group().DeleteGroup(cond)
-	require.NoError(t, err, "delete error")
+	// cond.Field("id").Eq(id)
+	// err = cli.Group().DeleteGroup(cond)
+	// require.NoError(t, err, "delete error")
 
 }
