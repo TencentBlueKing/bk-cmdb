@@ -56,6 +56,7 @@ func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
 
 // LoadLanguageResourceFromDir  load language resource from file
 func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
+	blog.Infof("loading language from %s\n", dir)
 	// read all language file from dir
 	var langMap = map[string]LanguageMap{}
 	walkerr := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -75,22 +76,21 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 		language := items[len(items)-2 : len(items)-1]
 
 		// analysis language package file
-		fmt.Printf("loading language from %s\n", path)
 		data, rerr := ioutil.ReadFile(path)
 		if nil != rerr {
-			return rerr
+			return fmt.Errorf("read language file %v, error: %v", path, rerr)
 		}
 
 		res := LanguageMap{}
 		jsErr := json.Unmarshal(data, &res)
 		if nil != jsErr {
-			return jsErr
+			return fmt.Errorf("unmarshal language file %v, error: %v", path, jsErr)
 		}
 
 		// will not check language validity, subject to language package file
 		for key, val := range res {
 			if _, ok := langMap[language[0]][key]; ok && key != "" {
-				fmt.Printf("the error code[%s] repeated\n", key)
+				fmt.Printf("the language code[%s] repeated\n", key)
 			}
 
 			if nil == langMap[language[0]] {
@@ -98,10 +98,10 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 			}
 			langMap[language[0]][key] = val
 		}
-		blog.Infof("%v", langMap)
 		return nil
 
 	})
+	blog.Infof("loaded language from dir %v", langMap)
 
 	if walkerr != nil {
 		return nil, walkerr
