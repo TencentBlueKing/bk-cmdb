@@ -349,7 +349,6 @@
             this.selected.length ? this.setSelected(this.selected) : ''
         },
         beforeDestroy () {
-            console.log('destroy')
             this.open = false,
             this.curValue = this.multiple ? [] : '',
             this.curLabel = this.multiple ? [] : '',
