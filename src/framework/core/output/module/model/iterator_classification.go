@@ -17,6 +17,7 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
 	"fmt"
+	"io"
 )
 
 var _ ClassificationIterator = (*classificationIterator)(nil)
@@ -55,6 +56,9 @@ func (cli *classificationIterator) ForEach(itemCallback func(item Classification
 
 		item, err := cli.Next()
 		if nil != err {
+			if io.EOF == err{
+				return nil
+			}
 			return err
 		}
 
@@ -74,7 +78,7 @@ func (cli *classificationIterator) Next() (Classification, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 		cli.bufIdx = 0
-		return nil, nil
+		return nil, io.EOF
 	}
 
 	tmpItem := cli.buffer[cli.bufIdx]

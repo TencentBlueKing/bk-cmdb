@@ -25,13 +25,15 @@ type ModuleIteratorWrapper struct {
 func (cli *ModuleIteratorWrapper) Next() (*ModuleWrapper, error) {
 
 	module, err := cli.module.Next()
+
 	return &ModuleWrapper{module: module}, err
+
 }
 
 // ForEach the foreach function
-func (cli *ModuleIteratorWrapper) ForEach(callback func(module *ModuleWrapper) error) {
+func (cli *ModuleIteratorWrapper) ForEach(callback func(module *ModuleWrapper) error) error {
 
-	cli.module.ForEach(func(item inst.Inst) error {
+	return cli.module.ForEach(func(item inst.Inst) error {
 		return callback(&ModuleWrapper{module: item})
 	})
 }

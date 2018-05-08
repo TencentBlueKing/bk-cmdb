@@ -26,13 +26,15 @@ type BusinessIteratorWrapper struct {
 func (cli *BusinessIteratorWrapper) Next() (*BusinessWrapper, error) {
 
 	busi, err := cli.business.Next()
+
 	return &BusinessWrapper{business: busi}, err
+
 }
 
 // ForEach the foreach function
-func (cli *BusinessIteratorWrapper) ForEach(callback func(business *BusinessWrapper) error) {
+func (cli *BusinessIteratorWrapper) ForEach(callback func(business *BusinessWrapper) error) error {
 
-	cli.business.ForEach(func(item inst.Inst) error {
+	return cli.business.ForEach(func(item inst.Inst) error {
 		return callback(&BusinessWrapper{business: item})
 	})
 }

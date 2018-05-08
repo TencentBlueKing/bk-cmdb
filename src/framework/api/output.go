@@ -18,7 +18,8 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 )
 
-func getModel(supplierAccount, classificationID, objID string) (model.Model, error) {
+// GetModel get the model
+func GetModel(supplierAccount, classificationID, objID string) (model.Model, error) {
 	condInner := CreateCondition().Field(model.ClassificationID).Eq(classificationID)
 	clsIter, err := mgr.OutputerMgr.FindClassificationsByCondition(condInner)
 	if nil != err {
@@ -69,7 +70,7 @@ func FindClassificationsByCondition(condition common.Condition) (model.Classific
 // CreateBusiness create a new Business object
 func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 
-	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
+	targetModel, err := GetModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
@@ -81,7 +82,7 @@ func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 
 // FindBusinessLikeName find all insts by the name
 func FindBusinessLikeName(supplierAccount, businessName string) (*BusinessIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
+	targetModel, err := GetModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func FindBusinessLikeName(supplierAccount, businessName string) (*BusinessIterat
 
 // FindBusinessByCondition find all insts by the condition
 func FindBusinessByCondition(supplierAccount string, cond common.Condition) (*BusinessIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_organization", "biz")
+	targetModel, err := GetModel(supplierAccount, "bk_organization", "biz")
 	if nil != err {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func FindBusinessByCondition(supplierAccount string, cond common.Condition) (*Bu
 // CreateSet create a new set object
 func CreateSet(supplierAccount string) (*SetWrapper, error) {
 
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func CreateSet(supplierAccount string) (*SetWrapper, error) {
 
 // FindSetLikeName find all insts by the name
 func FindSetLikeName(supplierAccount, setName string) (*SetIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
@@ -126,7 +127,7 @@ func FindSetLikeName(supplierAccount, setName string) (*SetIteratorWrapper, erro
 
 // FindSetByCondition find all insts by the condition
 func FindSetByCondition(supplierAccount string, cond common.Condition) (*SetIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "set")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "set")
 	if nil != err {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func FindSetByCondition(supplierAccount string, cond common.Condition) (*SetIter
 // CreateModule create a new module object
 func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 
 // FindModuleLikeName find all insts by the name
 func FindModuleLikeName(supplierAccount, moduleName string) (*ModuleIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func FindModuleLikeName(supplierAccount, moduleName string) (*ModuleIteratorWrap
 
 // FindModuleByCondition find all insts by the condition
 func FindModuleByCondition(supplierAccount string, cond common.Condition) (*ModuleIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_biz_topo", "module")
+	targetModel, err := GetModel(supplierAccount, "bk_biz_topo", "module")
 	if nil != err {
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func FindModuleByCondition(supplierAccount string, cond common.Condition) (*Modu
 
 // CreateHost create a new host object
 func CreateHost(supplierAccount string) (*HostWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
+	targetModel, err := GetModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}
@@ -180,7 +181,7 @@ func CreateHost(supplierAccount string) (*HostWrapper, error) {
 
 // FindHostLikeName find all insts by the name
 func FindHostLikeName(supplierAccount, hostName string) (*HostIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
+	targetModel, err := GetModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}
@@ -190,7 +191,7 @@ func FindHostLikeName(supplierAccount, hostName string) (*HostIteratorWrapper, e
 
 // FindHostByCondition find all insts by the condition
 func FindHostByCondition(supplierAccount string, cond common.Condition) (*HostIteratorWrapper, error) {
-	targetModel, err := getModel(supplierAccount, "bk_host_manage", "host")
+	targetModel, err := GetModel(supplierAccount, "bk_host_manage", "host")
 	if nil != err {
 		return nil, err
 	}

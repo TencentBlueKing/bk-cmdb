@@ -18,6 +18,7 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
+	"io"
 )
 
 type iteratorInstBusiness struct {
@@ -62,7 +63,7 @@ func (cli *iteratorInstBusiness) Next() (Inst, error) {
 
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
-			return nil, nil
+			return nil, io.EOF
 		}
 
 		cli.buffer = append(cli.buffer, existItems...)
@@ -84,6 +85,9 @@ func (cli *iteratorInstBusiness) ForEach(callbackItem func(item Inst) error) err
 
 		item, err := cli.Next()
 		if nil != err {
+			if io.EOF == err {
+				return nil
+			}
 			return err
 		}
 

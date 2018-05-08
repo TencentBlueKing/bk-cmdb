@@ -16,6 +16,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
+	"io"
 	//"fmt"
 )
 
@@ -53,6 +54,9 @@ func (cli *groupIterator) ForEach(itemCallback func(item Group) error) error {
 
 		item, err := cli.Next()
 		if nil != err {
+            if io.EOF == err{
+				return nil
+			}
 			return err
 		}
 
@@ -71,7 +75,7 @@ func (cli *groupIterator) Next() (Group, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 		cli.bufIdx = 0
-		return nil, nil
+		return nil, io.EOF
 	}
 
 	tmpItem := cli.buffer[cli.bufIdx]

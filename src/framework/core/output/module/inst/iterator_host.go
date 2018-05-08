@@ -17,6 +17,7 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
+	"io"
 )
 
 var _ Iterator = (*hostIterator)(nil)
@@ -55,6 +56,9 @@ func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) (err error)
 
 		item, err = cli.Next()
 		if nil != err {
+			if io.EOF == err{
+				err = nil
+			}
 			break
 		}
 
@@ -83,7 +87,7 @@ func (cli *hostIterator) Next() (Inst, error) {
 
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
-			return nil, nil
+			return nil, io.EOF
 		}
 
 		cli.buffer = append(cli.buffer, existItems...)
