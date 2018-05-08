@@ -418,6 +418,7 @@
             overflow: hidden;
             background-color: #fff;
             max-height: 114px;
+            line-height: 24px;
             @include scrollbar;
             &.active{
                 overflow-y: auto;
