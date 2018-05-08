@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -83,7 +82,42 @@ func (cli *objattAction) CreateObjectAtt(req *restful.Request, resp *restful.Res
 		}
 
 		blog.Debug("create %s", string(val))
-
+		// check list header name
+		if obj.PropertyType == common.FieldTypeList {
+			errCode := common.CCErrTopoObjectAttributeCreateFailed
+			headerList, ok := obj.Option.([]interface{})
+			if !ok {
+				return http.StatusInternalServerError, nil, defErr.Error(errCode)
+			}
+			repeatData := make(map[int]string, 0)
+			checkData := make(map[string]int, 0)
+			for index, header := range headerList {
+				headerMap := header.(map[string]interface{})
+				headerName, ok:= headerMap["list_header_name"].(string)
+				if !ok {
+					return http.StatusInternalServerError, nil, defErr.Error(errCode)
+				}
+				if "" == headerName {
+					return http.StatusInternalServerError, nil, defErr.Error(errCode)
+				}
+				if _, ok := checkData[headerName]; !ok {
+					checkData[headerName] = index
+				}else {
+					for index, header := range headerList {
+						headerMap := header.(map[string]interface{})
+						if headerMap["list_header_name"] == headerName {
+							if _,ok := repeatData[index]; !ok {
+								repeatData[index] = headerMap["list_header_name"].(string)
+							}
+						}
+					}
+					errCode = common.CCErrTopoObjectAttrCreateTypeListName
+				}
+			}
+			if len(repeatData) > 0 {
+				return http.StatusInternalServerError, repeatData, defErr.Error(errCode)
+			}
+		}
 		// deal data
 		result, ctrErr := cli.mgr.CreateObjectAtt(forward, obj, defErr)
 		if nil == ctrErr {
@@ -148,6 +182,45 @@ func (cli *objattAction) UpdateObjectAtt(req *restful.Request, resp *restful.Res
 		if nil != attrIDErr {
 			blog.Error("attrid(%s) is invalid, error info is %s", req.PathParameter("id"), attrIDErr.Error())
 			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsNeedInt, "id")
+		}
+
+		// check list header name
+		obj := make(map[string]interface{})
+		json.Unmarshal(val, &obj)
+		if obj["bk_property_type"] == common.FieldTypeList {
+			errCode := common.CCErrTopoObjectAttributeUpdateFailed
+			headerList, ok := obj["option"].([]interface{})
+			if !ok {
+				return http.StatusInternalServerError, nil, defErr.Error(errCode)
+			}
+			repeatData := make(map[int]string, 0)
+			checkData := make(map[string]int, 0)
+			for index, header := range headerList {
+				headerMap := header.(map[string]interface{})
+				headerName, ok:= headerMap["list_header_name"].(string)
+				if !ok {
+					return http.StatusInternalServerError, nil, defErr.Error(errCode)
+				}
+				if "" == headerName {
+					return http.StatusInternalServerError, nil, defErr.Error(errCode)
+				}
+				if _, ok := checkData[headerName]; !ok {
+					checkData[headerName] = index
+				}else {
+					for index, header := range headerList {
+						headerMap := header.(map[string]interface{})
+						if headerMap["list_header_name"] == headerName {
+							if _,ok := repeatData[index]; !ok {
+								repeatData[index] = headerMap["list_header_name"].(string)
+							}
+						}
+					}
+					errCode = common.CCErrTopoObjectAttrCreateTypeListName
+				}
+			}
+			if len(repeatData) > 0 {
+				return http.StatusInternalServerError, repeatData, defErr.Error(errCode)
+			}
 		}
 
 		// deal data

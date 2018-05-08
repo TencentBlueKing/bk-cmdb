@@ -473,6 +473,9 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
+	// FieldTypeList the list type
+	FieldTypeList string = "list"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 48
 

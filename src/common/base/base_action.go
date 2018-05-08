@@ -123,7 +123,7 @@ func (cli *BaseAction) Response(rst *api.APIRsp, resp *restful.Response) {
 	if rst.Result {
 		cli.ResponseSuccess(rst.Data, resp)
 	} else {
-		cli.ResponseFailed(rst.Code, rst.Message, resp)
+		cli.ResponseFailedWithData(rst.Code, rst.Message, rst.Data,resp)
 	}
 }
 
