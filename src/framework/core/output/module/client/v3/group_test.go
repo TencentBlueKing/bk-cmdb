@@ -10,7 +10,7 @@ import (
 )
 
 func TestSearchGroup(t *testing.T) {
-	cli := v3.New(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+	cli := v3.New(config.Config{"core.supplierAccount": "0", "core.user": "build_user", "core.ccaddress": "http://test.apiserver:8080"}, nil)
 
 	cond := common.CreateCondition().Field("bk_obj_id").Eq("biz")
 	rets, err := cli.Group().SearchGroups(cond)
@@ -20,7 +20,7 @@ func TestSearchGroup(t *testing.T) {
 }
 
 func TestGroup(t *testing.T) {
-	cli := v3.New(config.Config{"supplierAccount": "0", "user": "build_user", "ccaddress": "http://test.apiserver:8080"}, nil)
+	cli := v3.New(config.Config{"core.supplierAccount": "0", "core.user": "build_user", "core.ccaddress": "http://test.apiserver:8080"}, nil)
 
 	data := types.MapStr{"bk_group_id": "d1tupdbszpo1", "bk_group_name": "group1", "bk_group_index": 5, "bk_obj_id": "host", "bk_supplier_account": "0"}
 	id, err := cli.Group().CreateGroup(data)
