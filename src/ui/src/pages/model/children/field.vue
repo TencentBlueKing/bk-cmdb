@@ -1698,7 +1698,7 @@
                         this.curIndex = index
                         // 处理单关联和多关联两种特殊情况
                         if (this.fieldList[i]['bk_property_type'] === 'singleasst' || this.fieldList[i]['bk_property_type'] === 'multiasst') {
-                            this.curModelType = this.fieldList[i].option.label
+                            this.curModelType = this.fieldList[i]['bk_asst_obj_id']
                         }
                     } else {
                         this.fieldList[i].isShow = false
@@ -1794,7 +1794,7 @@
             */
             checkParams () {
                 if (this.newFieldInfo.propertyType === 'singleasst' || this.newFieldInfo.propertyType === 'multiasst') {
-                    if (this.newFieldInfo.option.value === '') {
+                    if (this.newFieldInfo['bk_asst_obj_id'] === '') {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1814,7 +1814,7 @@
             */
             checkChangeParams (item, index) {
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
-                    if (!item.option.value) {
+                    if (!item['bk_asst_obj_id']) {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1853,7 +1853,7 @@
                     editable: this.newFieldInfo.editable,
                     placeholder: this.newFieldInfo.placeholder,
                     unit: this.newFieldInfo.unit,
-                    bk_asst_obj_id: this.newFieldInfo.option.value
+                    bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
                 this.$axios.post('object/attr', params).then(res => {
                     if (res.result) {
@@ -1903,19 +1903,6 @@
                             list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
-                        // this.newFieldInfo.option = [{name: '', is_default: 0}]
-                        break
-                    case 'singleasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
-                        break
-                    case 'multiasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
                         break
                     case 'list':
                         this.newFieldInfo.option = [{
@@ -1924,6 +1911,10 @@
                             isEditName: false,
                             isEditDesc: false
                         }]
+                        break
+                    case 'singleasst':
+                    case 'multiasst':
+                        this.newFieldInfo.option = ''
                 }
             },
             /*
@@ -2121,7 +2112,8 @@
             },
             modelSelected (item) {
                 this.isSelectErrorShow = false
-                this.newFieldInfo.option = item
+                this.newFieldInfo['bk_asst_obj_id'] = item.value
+                // this.newFieldInfo.option = item
             },
             /*
                 页面初始化
