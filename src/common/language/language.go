@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -130,23 +131,19 @@ func (cli *ccLanguageHelper) getLanguageKey(language string) LanguageMap {
 // getLanguageStr get errors string interface
 func (cli *ccLanguageHelper) getLanguageStr(codemgr LanguageMap, key string) string {
 
-	reset := false
-RESET:
 	errstr, errOk := codemgr[key]
 	if !errOk {
 		// when the specified language not found, find it from default language package
-		if !reset {
-			reset = true
-			codemgr = cli.getLanguageKey(defaultLanguage)
-			if nil != codemgr {
-				goto RESET
-			}
+		codemgr = cli.getLanguageKey(defaultLanguage)
+		if nil != codemgr {
+			errstr = codemgr[key]
 		}
-		return ""
 	}
 
 	return errstr
 }
+
+var replayHolderReg = regexp.MustCompile(`\[(.*?)\]`)
 
 // errorStr 错误码转换成错误信息，此方法适合不需要动态填充参数的错误信息
 func (cli *ccLanguageHelper) languageStr(language, key string) string {
@@ -158,6 +155,21 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 		return fmt.Sprintf(UnknownTheLanguageStrf, language)
 	}
 
+	ms := replayHolderReg.FindAllString(key, -1)
+	blog.Infof("key %s match %v", key, ms)
+	if len(ms) > 0 {
+		fmt.Printf("ms: %s\n", ms)
+		key = replayHolderReg.ReplaceAllString(key, "[]")
+		fmt.Printf("key: {%s}\n", key)
+		text := cli.getLanguageStr(codemgr, key)
+		if text != "" {
+			mm := []interface{}{}
+			for _, s := range ms {
+				mm = append(mm, strings.TrimSuffix(strings.TrimPrefix(s, "["), "]"))
+			}
+			return fmt.Sprintf(text, mm...)
+		}
+	}
 	// find error string from language language package
 	return cli.getLanguageStr(codemgr, key)
 }
