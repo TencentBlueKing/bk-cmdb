@@ -1,6 +1,20 @@
 <template>
     <div class="test-wrapper">
-        <v-table v-bind="table"></v-table>
+        <v-table
+            :header="table.header"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :loading="table.loading"
+            :rowBorder="true"
+            :colBorder="true"
+            :maxHeight="300"
+            :height="500">
+            <div slot="b" slot-scope="{ item }">{{item.b}}</div>
+        </v-table>
+        <button @click="addHeader">添加表头</button>
+        <button @click="removeHeader">删除表头</button>
+        <button @click="addList">添加数据</button>
+        <button @click="removeList">删除数据</button>
     </div>
 </template>
 <script>
@@ -9,6 +23,8 @@
         data () {
             return {
                 table: {
+                    checked: [1, 2, 3],
+                    loading: false,
                     header: [{
                         id: 'z',
                         type: 'checkbox',
@@ -48,22 +64,36 @@
                         z: 5,
                         a: 'A-5',
                         b: 'B-5'
-                    }, {
-                        z: 6,
-                        a: 'A-6',
-                        b: 'B-6'
-                    }, {
-                        z: 7,
-                        a: 'A-7',
-                        b: 'B-7'
-                    }, {
-                        z: 8,
-                        a: 'A-8',
-                        b: 'B-8'
-                    }]
-                    // header: [],
-                    // list: []
-                }
+                    }],
+                    pagination: {
+                        current: 1,
+                        count: 123,
+                        size: 10
+                    }
+                },
+                seed: 1
+            }
+        },
+        methods: {
+            addHeader () {
+                this.table.header.push({
+                    id: this.seed,
+                    name: `动态新增${this.seed}`
+                })
+                this.seed++
+            },
+            removeHeader () {
+                this.table.header.pop()
+            },
+            addList () {
+                this.table.list.push({
+                    z: 8,
+                    a: 'A-8',
+                    b: 'B-8'
+                })
+            },
+            removeList () {
+                this.table.list.pop()
             }
         },
         components: {
