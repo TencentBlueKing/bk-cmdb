@@ -522,6 +522,40 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- 表格 -->
+                                    <div class="mt20 mr20 clearfix" v-show="item['bk_property_type'] === 'list'">
+                                        <h3>{{$t('ModelManagement["选项"]')}}</h3>
+                                        <div class="clearfix">
+                                            <div class="from-common-item disabled">
+                                                <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                                <div class="from-common-content interior-width-control">
+                                                    <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ul class="list-wrapper clearfix">
+                                            <li class="list-item">
+                                                <div>{{$t('ModelManagement["列名称"]')}}</div>
+                                                <div>{{$t('ModelManagement["列描述"]')}}</div>
+                                                <div>{{$t('ModelManagement["操作"]')}}</div>
+                                            </li>
+                                            <li class="list-item" v-for="(opt, index) in item.option">
+                                                <i v-show="opt.errorMsg" v-tooltip="opt.errorMsg" class="icon icon-cc-attribute"></i>
+                                                <div class="list-row">
+                                                    <span class="list-view" @click="listViewEdit(opt, 'isEditName', true)" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
+                                                    <input type="text" v-focus @blur="listViewEdit(opt, 'isEditName', false)" v-else v-model="opt['list_header_name']">
+                                                </div>
+                                                <div class="list-row">
+                                                    <span class="list-view" @click="listViewEdit(opt, 'isEditDesc', true)" v-if="!opt.isEditDesc">{{opt['list_header_describe']}}</span>
+                                                    <input type="text" v-focus @blur="listViewEdit(opt, 'isEditDesc', false)" v-else v-model="opt['list_header_describe']">
+                                                </div>
+                                                <div>
+                                                    <span class="add" @click="addTableList(index, item.option)">{{$t('Common["新增"]')}}</span>
+                                                    <span class="delete" @click="deleteTableList(index, item.option)" v-if="index">{{$t('Common["删除"]')}}</span>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
                                     <div class="submit-btn" v-if="!isReadOnly">
                                         <a class="save-btn main-btn mr10" @click="saveFieldChange(item, index)">
                                             {{$t('Common["保存"]')}}
@@ -1141,22 +1175,23 @@
                                     </div>
                                     <ul class="list-wrapper clearfix">
                                         <li class="list-item">
-                                            <div>列名称</div>
-                                            <div>列描述</div>
-                                            <div>操作</div>
+                                            <div>{{$t('ModelManagement["列名称"]')}}</div>
+                                            <div>{{$t('ModelManagement["列描述"]')}}</div>
+                                            <div>{{$t('ModelManagement["操作"]')}}</div>
                                         </li>
-                                        <li class="list-item" v-for="(item, index) in newFieldInfo.option">
-                                            <div>
-                                                <span class="list-view" @click="item.isEditName = true" v-if="!item.isEditName">{{item['list_header_name']}}</span>
-                                                <input type="text" v-focus @blur="item.isEditName = false" v-else v-model="item['list_header_name']">
+                                        <li class="list-item" v-for="(opt, index) in newFieldInfo.option">
+                                            <i v-show="opt.errorMsg" v-tooltip="opt.errorMsg" class="icon icon-cc-attribute"></i>
+                                            <div class="list-row">
+                                                <span class="list-view" @click="opt.isEditName = true" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
+                                                <input type="text" v-focus @blur="opt.isEditName = false" v-else v-model="opt['list_header_name']">
+                                            </div>
+                                            <div class="list-row">
+                                                <span class="list-view" @click="opt.isEditDesc = true" v-if="!opt.isEditDesc">{{opt['list_header_describe']}}</span>
+                                                <input type="text" v-focus @blur="opt.isEditDesc = false" v-else v-model="opt['list_header_describe']">
                                             </div>
                                             <div>
-                                                <span class="list-view" @click="item.isEditDesc = true" v-if="!item.isEditDesc">{{item['list_header_description']}}</span>
-                                                <input type="text" v-focus @blur="item.isEditDesc = false" v-else v-model="item['list_header_description']">
-                                            </div>
-                                            <div>
-                                                <span @click="addTableList(index)">新增</span>
-                                                <span @click="deleteTableList(index)" v-if="index">刪除</span>
+                                                <span class="add" @click="addTableList(index)">{{$t('Common["新增"]')}}</span>
+                                                <span class="delete" @click="deleteTableList(index)" v-if="index">{{$t('Common["刪除"]')}}</span>
                                             </div>
                                         </li>
                                     </ul>
@@ -1372,15 +1407,35 @@
             }
         },
         methods: {
-            addTableList (index) {
-                if (this.isAddFieldShow) {
+            addTableList (index, option) {
+                if (this.isAddFieldShow) { // 新增
                     this.newFieldInfo.option.splice(index + 1, 0, {
-                        list_header_name: index,
-                        list_header_description: '',
+                        list_header_name: '',
+                        list_header_describe: '',
                         isEditDesc: false,
-                        isEditName: false
+                        isEditName: false,
+                        errorMsg: ''
+                    })
+                } else {
+                    option.splice(index + 1, 0, {
+                        list_header_name: '',
+                        list_header_describe: '',
+                        isEditDesc: false,
+                        isEditName: false,
+                        errorMsg: ''
                     })
                 }
+            },
+            deleteTableList (index, option) {
+                if (this.isAddFieldShow) {
+                    this.newFieldInfo.option.splice(index, 1)
+                } else {
+                    option.splice(index, 1)
+                }
+            },
+            listViewEdit (opt, view, isEdit) {
+                this.$set(opt, view, isEdit)
+                this.$forceUpdate()
             },
             isCloseConfirmShow () {
                 // 校验字段
@@ -1490,6 +1545,15 @@
                         })
                         opt = option.list
                         break
+                    case 'list':
+                        opt = []
+                        option.map(item => {
+                            opt.push({
+                                list_header_name: item['list_header_name'],
+                                list_header_describe: item['list_header_describe']
+                            })
+                        })
+                        break
                     case 'longchar':
                     case 'singlechar':
                     case 'singleasst':
@@ -1528,6 +1592,16 @@
                                 list: opt,
                                 defaultIndex: defaultIndex
                             }
+                        }
+                        break
+                    case 'list':
+                        if (item['Option'] !== 'undefined') {
+                            let opt = this.$deepClone(item['Option'])
+                            opt.map(item => {
+                                item['isEditName'] = false
+                                item['isEditDesc'] = false
+                            })
+                            option = opt
                         }
                         break
                     case 'longchar':
@@ -1765,7 +1839,7 @@
                     return
                 }
                 let params = {
-                    creator: 'user',
+                    creator: window.userName,
                     isonly: this.newFieldInfo['isonly'],
                     isreadonly: false,
                     isrequired: this.newFieldInfo.isRequired,
@@ -1779,8 +1853,7 @@
                     editable: this.newFieldInfo.editable,
                     placeholder: this.newFieldInfo.placeholder,
                     unit: this.newFieldInfo.unit,
-                    bk_asst_obj_id: this.newFieldInfo.option.value,
-                    bk_asst_forward: ''
+                    bk_asst_obj_id: this.newFieldInfo.option.value
                 }
                 this.$axios.post('object/attr', params).then(res => {
                     if (res.result) {
@@ -1788,6 +1861,14 @@
                         this.closeAddFieldBox()
                         this.$emit('newField') // 更新字段分栏列表
                     } else {
+                        if (this.newFieldInfo.propertyType === 'list') {
+                            this.newFieldInfo.option.map(opt => {
+                                opt.errorMsg = ''
+                            })
+                            for (let key in res.data) {
+                                this.$set(this.newFieldInfo.option[key], 'errorMsg', res.data[key])
+                            }
+                        }
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
@@ -1839,7 +1920,7 @@
                     case 'list':
                         this.newFieldInfo.option = [{
                             list_header_name: 'default',
-                            list_header_description: '默认列',
+                            list_header_describe: '默认列',
                             isEditName: false,
                             isEditDesc: false
                         }]
@@ -1886,6 +1967,15 @@
                         this.getModelField()
                         this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
                     } else {
+                        if (item['bk_property_type'] === 'list') {
+                            item.option.map(opt => {
+                                opt.errorMsg = ''
+                                // this.$set(opt, 'errorMsg', '')
+                            })
+                            for (let key in res.data) {
+                                this.$set(item.option[key], 'errorMsg', res.data[key])
+                            }
+                        }
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
@@ -2591,26 +2681,52 @@
         border-top: 1px solid $fnMainColor;
         border-left: 1px solid $fnMainColor;
         .list-item{
+            position: relative;
             font-size: 0;
             line-height: 30px;
             display: flex;
             &:first-child{
                 font-weight: bold;
             }
+            .icon{
+                position: absolute;
+                font-size: 16px;
+                left: -25px;
+                top: 7px;
+                color: #ffb400;
+            }
             div{
                 text-align: center;
                 font-size: 14px;
                 border-right: 1px solid $fnMainColor;
                 border-bottom: 1px solid $fnMainColor;
+                text-overflow: ellipsis;
+                overflow: hidden;
                 &:not(:last-child) {
                     flex: 2;
                 }
                 &:last-child{
                     flex: 1;
                 }
+                .add{
+                    cursor: pointer;
+                    &:hover{
+                        color: #3c96ff;
+                    }
+                }
+                .delete{
+                    cursor: pointer;
+                    &:hover{
+                        color: #ff3737;
+                    }
+                }
                 .list-view{
+                    cursor: pointer;
                     display: inline-block;
+                    padding: 0 10px;
                     width: 100%;
+                    height: 30px;
+                    vertical-align: bottom;
                 }
             }
         }
