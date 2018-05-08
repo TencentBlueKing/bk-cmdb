@@ -47,12 +47,16 @@ func (cli *hostAction) HostSearch(req *restful.Request, resp *restful.Response) 
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		value, err := ioutil.ReadAll(req.Request.Body)
+		if err != nil {
+			blog.Error("get  http body value %v error:%s", string(value), err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+
 		var data hostParse.HostCommonSearch
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			blog.Error("get unmarshall json value %v error:%s", string(value), err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
 		reply, err := logics.HostSearch(req, data, false, cli.CC.HostCtrl(), cli.CC.ObjCtrl())
@@ -71,12 +75,16 @@ func (cli *hostAction) HostSearchWithAsstDetail(req *restful.Request, resp *rest
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		value, err := ioutil.ReadAll(req.Request.Body)
+		if err != nil {
+			blog.Error("get  http body value %v error:%s", string(value), err)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+
 		var data hostParse.HostCommonSearch
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			blog.Error("get unmarshall json value %v error:%s", string(value), err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
 		reply, err := logics.HostSearch(req, data, true, cli.CC.HostCtrl(), cli.CC.ObjCtrl())
