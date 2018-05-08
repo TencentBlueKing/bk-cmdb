@@ -26,13 +26,15 @@ type HostIteratorWrapper struct {
 func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 
 	host, err := cli.host.Next()
+
 	return &HostWrapper{host: host}, err
+
 }
 
 // ForEach the foreach function
-func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) {
+func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) error {
 
-	cli.host.ForEach(func(item inst.Inst) error {
+	return cli.host.ForEach(func(item inst.Inst) error {
 		return callback(&HostWrapper{host: item})
 	})
 }

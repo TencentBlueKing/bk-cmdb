@@ -25,13 +25,15 @@ type SetIteratorWrapper struct {
 func (cli *SetIteratorWrapper) Next() (*SetWrapper, error) {
 
 	set, err := cli.set.Next()
+
 	return &SetWrapper{set: set}, err
+
 }
 
 // ForEach the foreach function
-func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) {
+func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) error {
 
-	cli.set.ForEach(func(item inst.Inst) error {
+	return cli.set.ForEach(func(item inst.Inst) error {
 		return callback(&SetWrapper{set: item})
 	})
 }
