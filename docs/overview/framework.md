@@ -76,7 +76,7 @@ type ExceptionFunc func(data interface{}, errMsg error)
 > 方法列表：
 
 ``` golang
-// SetValue 此方法用于对业务的字段进行复制， key 业务字段，val 字段取值。
+// SetValue 此方法用于对业务的字段进行赋值， key 业务字段，val 字段取值。
 // 如果出错会有错误信息返回。
 // 如有新增的自定义字段需要赋值的时候可以采用此方法。
 SetValue(key string, val interface{}) error
@@ -158,6 +158,8 @@ GetOperator() (string, error)
 // Next 迭代读取每一个数据对象
 // 当数据读取到最后一条的时候 error 会返回io.EOF
 Next() (*BusinessWrapper, error)
+
+// ForEach 遍历业务集合
 ForEach(callback func(business *BusinessWrapper) error) error
 ```
 
@@ -209,24 +211,71 @@ ForEach(callback func(business *BusinessWrapper) error) error
 > 方法列表：
 
 ``` golang
+// SetValue 此方法用于对集群的字段进行赋值， key 集群字段，val 字段取值。
+// 如果出错会有错误信息返回。
+// 如有新增的自定义字段需要赋值的时候可以采用此方法。
 SetValue(key string, val interface{}) error
+
+// SetDescription 设置集群的描述信息
+// 如果配置失败会返回错误信息
 SetDescription(intro string) error 
+
+// SetMark 设置集群的备注信息
 SetMark(desc string) error 
+
+// SetEnv 设置集群的环境
+// 取值仅可以是以下枚举：
+//  测试 SetEnvTesting      
+//  体验 SetEnvGuest           
+//  正式 SetEnvNormal             
 SetEnv(env string) error
+
+// GetEnv 获取集群的环境信息
+// 获取失败会返回错误信息
 GetEnv() (string, error)
+
+// SetServiceStatus 设置服务的状态
+// 取值只可以是以下枚举：
+//  开放 SetServiceOpen
+//  关闭 SetServiceClose
 SetServiceStatus(status string) error 
+
+// GetServiceStatus 获取服务状态
 GetServiceStatus() (string, error)
+
+// SetCapacity 设置集群的设计容量
 SetCapacity(capacity int64) error
+
+// GetCapacity 获取集群设计容量
 GetCapacity() (int, error)
-SetBussinessID(businessID int64) error
+
+// SetBusinessID 设置集群所属的业务ID，调用此方法会同步将当前集群的父节点设置为传入的业务。
+SetBusinessID(businessID int64) error
+
+// GetBusiness 获取集群所属的业务ID
 GetBusinessID() (int, error)
+
+// SetSupplierAccount 设置集群所属的开发商ID
 SetSupplierAccount(supplierAccount string) error
+
+// GetSupplierAccount 获取集群所属的开发商ID
 GetSupplierAccount() (string, error) 
-SetID(id string) error 
-GetID() (string, error)
+
+
+// GetID 获取集群的ID
+GetID() (int, error)
+
+// SetParent 设置当前节点的父实例节点，只有在当前集群的父实例不是业务的时候才需要设置此参数。
 SetParent(parentInstID int64) error
+
+// SetName 设置集群的名字
 SetName(name string) error
+
+// GetName 获取集群的名字
 GetName() (string, error) 
+
+// Save 保存集群信息。在保存之前会监测当前集群信息是否已经存在，
+// 如果存在则仅执行更新操作，如果不存在则执行新建操作。
 Save() error
 ```
 
@@ -235,7 +284,11 @@ Save() error
 > 方法列表：
 
 ``` golang
+// Next 迭代读取每一个数据对象
+// 当数据读取完毕后，error 会返回 io.EOF
 Next() (*SetWrapper, error)
+
+// ForEach 对集群的集合进行迭代遍历
 ForEach(callback func(set *SetWrapper) error) error
 ```
 
@@ -288,21 +341,50 @@ ForEach(callback func(set *SetWrapper) error) error
 > 方法列表：
 
 ``` golang
+// SetValue 用于对模块自定义字段的值进行配置
 SetValue(key string, val interface{}) error
+
+// SetOperator 设置主要维护人
 SetOperator(operator string) error
+
+// GetOperator 获取主要维护人
 GetOperator() (string, error) 
+
+// SetBakOperator 设置备份维护人
 SetBakOperator(bakOperator string) error 
+
+// GetBakOperator 获取备份维护人
 GetBakOperator() (string, error)
-SetBussinessID(businessID int64) error
+
+// SetBusinessID 设置业务ID
+SetBusinessID(businessID int64) error
+
+// GetBusinessID 获取业务ID
 GetBusinessID() (int, error)
+
+// SetSupplierAccount 设置开发商ID
 SetSupplierAccount(supplierAccount string) error
+
+// GetSupplierAccount 获取开发商ID
 GetSupplierAccount() (string, error) 
-SetParent(parentInstID int64) error
+
+// SetSetID 设置模块所属的集群
+SetSetID(setID int64) error
+
+// SetName 设置模块的名字
 SetName(name string) error
+
+// GetName 获取模块的名字
 GetName() (string, error)
-SetID(id string) error
-GetID() (string, error) 
+
+// GetID 获取模块的ID
+GetID() (int, error) 
+
+// Save 保存模块的信息。
+// 如果模块信息已经存在，则仅执行更新操作。
+// 如果模块信息不存在，则执行新建操作。
 Save() error
+
 ```
 
 #### 模块迭代器
@@ -310,7 +392,10 @@ Save() error
 > 方法列表：
 
 ``` golang
+// Next 迭代遍历每一个数据对象，如果遍历完集合 error 会返回io.EOF
 Next() (*ModuleWrapper, error)
+
+// ForEach 循环遍历模块集合，并将每个模块传递给回调函数。
 ForEach(callback func(set *ModuleWrapper) error) error
 ```
 
@@ -363,56 +448,153 @@ ForEach(callback func(set *ModuleWrapper) error) error
 > 方法列表：
 
 ``` golang
+// SetValue 为自定义字段进行复制，key 字段名，val 字段的值
 SetValue(key string, val interface{}) error
+
+// GetModel 获取主机所对应的模型定义对象
 GetModel() model.Model 
+
+// SetBakOperator 设置备份维护人
 SetBakOperator(bakOperator string) error
+
+// GetBakOperator 获取备份维护人
 GetBakOperator() (string, error)
+
+// SetOsBit 设置操作系统位数
 SetOsBit(osbit string) error 
+
+// GetOsBit 获取操作系统位数
 GetOsBit() (string, error)
+
+// SetSLA 设置SLA安全级别
+// 取值尽可以为以下枚举值之一：
+//    HostSLALevel1            
+//    HostSLALevel2            
+//    HostSLALevel3            
 SetSLA(sla string) error
+
+// GetSLA 获取SLA安全界别
 GetSLA() (string, error)
+
+// SetCloudID 设置云区域ID
 SetCloudID(cloudID int64) error
+
+// GetCloudID 获取云区域ID
 GetCloudID() (int, error)
+
+// SetInnerIP 设置内网IP
 SetInnerIP(innerIP string) error
+
+// GetInnerIP 获取内网IP
 GetInnerIP() (string, error)
+
+// SetOpeartor 设置主维护人
 SetOperator(operator string) error
+
+// GetOperator 获取主维护人
 GetOperator() (string, error) 
-SetStateName(stateName string) error
-GetStateName() (string, error)
+
+// SetCPU 设置CPU逻辑核心数
 SetCPU(cpu int64) error 
+
+// GetCPU 获取CPU逻辑核心数
 GetCPU() (int, error)
+
+// SetCPUMhz 设置CPU频率
 SetCPUMhz(cpuMhz int64) error
+
+// GetCPUMhz 获取CPU频率
 GetCPUMhz() (int, error)
+
+// SetOSType 获取OS类型
+// 取值仅可以是以下列表之一：
+//    HostOSTypeLinux         
+//    HostOSTypeWindows       
 SetOsType(osType string) error 
+
+// GetOsType 获取操作系统类型
 GetOsType() (string, error)
+
+// SetOuterIP 设置外网IP
 SetOuterIP(outerIP string) error
+
+// GetOuterIP 获取外网IP
 GetOuterIP() (string, error)
+
+// SetAssetID 设置固资编号
 SetAssetID(assetID string) error
+
+// GetAssetID 获取固资编号
 GetAssetID() (string, error) 
-SetMac(mac string) error 
-GetMac() (string, error)
-SetProvinceName(provinceName string) error 
-GetProvinceName() (string, error)
+
+// SetInnerMac 设置内网Mac 地址
+SetInnerMac(mac string) error 
+
+// GetInnerMac 获取内网Mac 地址
+GetInnerMac() (string, error)
+
+// SetOuterMac 设置内网Mac 地址
+SetOuterMac(mac string) error 
+
+// GetOuterMac 获取内网Mac 地址
+GetOuterMac() (string, error)
+
+// SetSN 设备SN
 SetSN(sn string) error
+
+// GetSN 获取设备SN
 GetSN() (string, error)
+
+// SetCPUModule 设置CPU型号
 SetCPUModule(cpuModule string) error
+
+// GetCPUModule 获取CPU型号
 GetCPUModule() (string, error) 
+
+// SetName 设置主机名
 SetName(hostName string) error
+
+// GetName 获取主机名
 GetName() (string, error) 
-SetISPName(ispName string) error
-GetISPName() (string, error) 
+
+// SetServiceTerm 设置质保年限
 SetServiceTerm(serviceTerm int64) error
+
+// GetServiceTerm 获取质保年限
 GetServiceTerm() (int, error)
+
+// SetComment 设置备注
 SetComment(comment string) error
+
+// GetComment 获取备注信息
 GetComment() (string, error)
+
+// SetMem 设置内存容量
 SetMem(mem int64) error
+
+// GetMem 获取内存容量
 GetMem() (int, error) 
+
+// SetDisk 设置磁盘容量
 SetDisk(disk int64) error 
+
+// GetDisk 获取磁盘容量
 GetDisk() (int, error)
+
+// SetOsName 设置啊哦做系统名
 SetOsName(osName string) error
+
+// GetOsName 获取操作系统名
 GetOsName() (string, error)
+
+// SetOsVersion 设置操作系统版本
 SetOsVersion(osVersion string) error 
+// GetOsVersion 获取操作系统版本
 GetOsVersion() (string, error) 
+
+// Save 保存主机信息。
+// 如果主机已经存在，则仅执行更新操作。
+// 如果主机不存在，则仅执行新建操作。
 Save() error
 ```
 
@@ -421,8 +603,11 @@ Save() error
 > 方法列表：
 
 ``` golang
+// Next 迭代获取主机数据对象，如果已经遍历完所有数据，那么error 会返回io.EOF
 Next() (*HostWrapper, error)
-ForEach(callback func(set *HostWrapper) error) error
+
+// ForEach 遍历主机数据对象集合
+ForEach(callback func(host *HostWrapper) error) error
 ```
 
 #### 创建主机对象
@@ -476,24 +661,49 @@ ForEach(callback func(set *HostWrapper) error) error
 > 方法列表：
 
 ``` golang
+
+// GetModel 获取当前实例多对应的模型
 GetModel() model.Model
+
+// IsMainLine 用于判断当前实例是否是主线模型
+// [开发中]当前不可用 
 IsMainLine() bool
+
+// GetAssociationModels 获取当前实例直接关联的所有模型的集合
+// [开发中]当前不可用 
 GetAssociationModels() ([]model.Model, error)
+
+// GetInstID 获取当前实例的实例ID
 GetInstID() int
+
+// GetInstName 获取当前实例的实例名
 GetInstName() string
+
+// SetValue 为实例的字段赋值，key 实例的字段， value 字段的取值
 SetValue(key string, value interface{}) error
+
+// GetValues 获取当前实例的所有字段的及对应的值
 GetValues() (types.MapStr, error)
+
+// GetAssociationsByModleID 获取当前实例关联的某个模型的所有实例的集合
+// [开发中]当前不可用
 GetAssociationsByModleID(modleID string) ([]Inst, error)
+
+// GetAllAssociations 获取当前实例直接关联的所有实例的集合
+// [开发中]当前不可用
 GetAllAssociations() (map[model.Model][]Inst, error)
+
+// SetParent 设置当前实例的父实例
 SetParent(parentInstID int) error
+
+// GetParent 获取当前实例所在拓扑结构中所有的父节点的集合
+// [开发中]当前不可用
 GetParent() ([]Topo, error)
+
+// GetChildren 获取当前实例所在拓扑结构中所有的子节点的结合
+// [开发中]当前不可用
 GetChildren() ([]Topo, error)
 ```
-
-
-
-
-
 
 #### 创建普通对象
 > 方法：CreateCommonInst(target model.Model) (inst.Inst, error)

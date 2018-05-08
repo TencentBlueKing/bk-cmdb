@@ -54,7 +54,6 @@ const (
 	fieldSLA          = "bk_sla"
 	fieldCloudID      = "bk_cloud_id"
 	fieldHostInnerIP  = "bk_host_innerip"
-	fieldStateName    = "bk_state_name"
 	fieldCPU          = "bk_cpu"
 	fieldCPUMhz       = "bk_cpu_mhz"
 	fieldOsType       = "bk_os_type"
@@ -91,4 +90,9 @@ const (
 	BusinessLifeCycleTesting = "1"
 	BusinessLifeCycleOnLine  = "2"
 	BusinessLifeCycleStopped = "3"
+	SetEnvTesting            = "1"
+	SetEnvGuest              = "2"
+	SetEnvNormal             = "3"
+	SetServiceOpen           = "1"
+	SetServiceClose          = "2"
 )

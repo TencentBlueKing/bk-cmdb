@@ -100,8 +100,8 @@ func (cli *SetWrapper) GetCapacity() (int, error) {
 	return vals.Int(fieldCapacity)
 }
 
-// SetBussinessID set the business id of the set
-func (cli *SetWrapper) SetBussinessID(businessID int64) error {
+// SetBusinessID set the business id of the set
+func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 	if err := cli.SetParent(businessID); nil != err {
 		return err
 	}
@@ -131,18 +131,13 @@ func (cli *SetWrapper) GetSupplierAccount() (string, error) {
 	return vals.String(fieldSupplierAccount), nil
 }
 
-// SetID the id of the set
-func (cli *SetWrapper) SetID(id string) error {
-	return cli.set.SetValue(fieldSetID, id)
-}
-
 // GetID get the set id
-func (cli *SetWrapper) GetID() (string, error) {
+func (cli *SetWrapper) GetID() (int, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
-		return "", err
+		return 0, err
 	}
-	return vals.String(fieldSetID), nil
+	return vals.Int(fieldSetID)
 }
 
 // SetParent set the parent id of the set

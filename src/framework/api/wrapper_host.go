@@ -56,6 +56,7 @@ func (cli *HostWrapper) SetValue(key string, val interface{}) error {
 
 // Save save the data
 func (cli *HostWrapper) Save() error {
+
 	if err := cli.host.SetValue(fieldImportFrom, HostImportFromAPI); nil != err {
 		return err
 	}
@@ -146,20 +147,6 @@ func (cli *HostWrapper) GetOperator() (string, error) {
 	return vals.String(fieldHostOperator), nil
 }
 
-// SetStateName set the state name for the host
-func (cli *HostWrapper) SetStateName(stateName string) error {
-	return cli.host.SetValue(fieldStateName, stateName)
-}
-
-// GetStateName get the state name
-func (cli *HostWrapper) GetStateName() (string, error) {
-	vals, err := cli.host.GetValues()
-	if nil != err {
-		return "", err
-	}
-	return vals.String(fieldStateName), nil
-}
-
 // SetCPU set the cpu core num  for the host
 func (cli *HostWrapper) SetCPU(cpu int64) error {
 	return cli.host.SetValue(fieldCPU, cpu)
@@ -230,13 +217,13 @@ func (cli *HostWrapper) GetAssetID() (string, error) {
 	return vals.String(fieldAssetID), nil
 }
 
-// SetMac set the mac for the host
-func (cli *HostWrapper) SetMac(mac string) error {
+// SetInnerMac set the mac for the host
+func (cli *HostWrapper) SetInnerMac(mac string) error {
 	return cli.host.SetValue(fieldMac, mac)
 }
 
-// GetMac get the mac for the host
-func (cli *HostWrapper) GetMac() (string, error) {
+// GetInnerMac get the mac for the host
+func (cli *HostWrapper) GetInnerMac() (string, error) {
 	vals, err := cli.host.GetValues()
 	if nil != err {
 		return "", err
@@ -245,18 +232,19 @@ func (cli *HostWrapper) GetMac() (string, error) {
 	return vals.String(fieldMac), nil
 }
 
-// SetProvinceName set the province name for the host
-func (cli *HostWrapper) SetProvinceName(provinceName string) error {
-	return cli.host.SetValue(fieldProvinceName, provinceName)
+// SetOuterMac set the mac for the host
+func (cli *HostWrapper) SetOuterMac(mac string) error {
+	return cli.host.SetValue(fieldMac, mac)
 }
 
-// GetProvinceName get the province name
-func (cli *HostWrapper) GetProvinceName() (string, error) {
+// GetOuterMac get the mac for the host
+func (cli *HostWrapper) GetOuterMac() (string, error) {
 	vals, err := cli.host.GetValues()
 	if nil != err {
 		return "", err
 	}
-	return vals.String(fieldProvinceName), nil
+
+	return vals.String(fieldMac), nil
 }
 
 // SetSN set the sn for the host
@@ -299,20 +287,6 @@ func (cli *HostWrapper) GetName() (string, error) {
 		return "", err
 	}
 	return vals.String(fieldHostName), nil
-}
-
-// SetISPName set the isp name for the host
-func (cli *HostWrapper) SetISPName(ispName string) error {
-	return cli.host.SetValue(fieldISPName, ispName)
-}
-
-// GetISPName get the isp name for the host
-func (cli *HostWrapper) GetISPName() (string, error) {
-	vals, err := cli.host.GetValues()
-	if nil != err {
-		return "", err
-	}
-	return vals.String(fieldISPName), nil
 }
 
 // SetServiceTerm set the service term for the host

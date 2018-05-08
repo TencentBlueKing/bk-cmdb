@@ -81,8 +81,8 @@ func (cli *ModuleWrapper) GetBakOperator() (string, error) {
 	return vals.String(fieldBakOperator), nil
 }
 
-// SetBussinessID set the business for the module
-func (cli *ModuleWrapper) SetBussinessID(businessID int64) error {
+// SetBusinessID set the business for the module
+func (cli *ModuleWrapper) SetBusinessID(businessID int64) error {
 	return cli.module.SetValue(fieldBusinessID, businessID)
 }
 
@@ -109,12 +109,12 @@ func (cli *ModuleWrapper) GetSupplierAccount() (string, error) {
 	return vals.String(fieldSupplierAccount), nil
 }
 
-// SetParent set the parent inst
-func (cli *ModuleWrapper) SetParent(parentInstID int64) error {
-	if err := cli.module.SetValue(fieldSetID, parentInstID); nil != err {
+// SetSetID set the parent inst
+func (cli *ModuleWrapper) SetSetID(setID int64) error {
+	if err := cli.module.SetValue(fieldSetID, setID); nil != err {
 		return err
 	}
-	return cli.module.SetValue(fieldParentID, parentInstID)
+	return cli.module.SetValue(fieldParentID, setID)
 }
 
 // SetName set the module name
@@ -131,16 +131,11 @@ func (cli *ModuleWrapper) GetName() (string, error) {
 	return vals.String(fieldModuleName), nil
 }
 
-// SetID set the module id
-func (cli *ModuleWrapper) SetID(id string) error {
-	return cli.module.SetValue(fieldModuleID, id)
-}
-
 // GetID get the id for the host
-func (cli *ModuleWrapper) GetID() (string, error) {
+func (cli *ModuleWrapper) GetID() (int, error) {
 	vals, err := cli.module.GetValues()
 	if nil != err {
-		return "", err
+		return 0, err
 	}
-	return vals.String(fieldModuleID), nil
+	return vals.Int(fieldModuleID)
 }
