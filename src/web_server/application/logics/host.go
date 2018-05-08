@@ -89,7 +89,7 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header) ([]int
 		sHostCond["page"] = make(map[string]interface{})
 
 	}
-	url := apiAddr + fmt.Sprintf("/api/%s/hosts/search", webCommon.API_VERSION)
+	url := apiAddr + fmt.Sprintf("/api/%s/hosts/search/asstdetail", webCommon.API_VERSION)
 	result, _ := httpRequest(url, sHostCond, header)
 	blog.Infof("search host  url:%s", url)
 	blog.Infof("search host  return:%s", result)
