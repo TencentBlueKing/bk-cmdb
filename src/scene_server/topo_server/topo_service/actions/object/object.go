@@ -181,16 +181,6 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			return tmpItem, tmpErr
 		}
 	}
-	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
-		tmpItem.Option = jsTmp
-
-		/*if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
-			tmpItem.Option = tmp
-		} else {
-			blog.Error("can not parse the option, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
-		}*/
-	}
 
 	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_type"); ok {
 		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
@@ -203,6 +193,27 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			blog.Error("can not parse the bk_property_type, error info is %s", tmpErr.Error())
 			return tmpItem, tmpErr
 		}
+	}
+
+	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
+		switch tmpItem.PropertyType {
+		case common.FieldTypeEnum:
+			if tmp, tmpErr := jsTmp.Array(); nil == tmpErr {
+				tmpItem.Option = tmp
+			} else {
+				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
+				return tmpItem, tmpErr
+			}
+		default:
+			tmpItem.Option = jsTmp
+		}
+
+		/*if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
+			tmpItem.Option = tmp
+		} else {
+			blog.Error("can not parse the option, error info is %s", tmpErr.Error())
+			return tmpItem, tmpErr
+		}*/
 	}
 
 	return tmpItem, nil
