@@ -303,7 +303,7 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 	input.Page.Start, _ = util.GetIntByInterface(req.PathParameter("start"))
 	input.Page.Limit, _ = util.GetIntByInterface(req.PathParameter("limit"))
 
-	retData, err := logics.HostSearch(req, input, u.CC.HostCtrl(), u.CC.ObjCtrl())
+	retData, err := logics.HostSearch(req, input, false, u.CC.HostCtrl(), u.CC.ObjCtrl())
 	if nil != err {
 		userAPI.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, err.Error(), resp)
 		return

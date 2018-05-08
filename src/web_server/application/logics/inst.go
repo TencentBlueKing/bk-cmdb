@@ -73,7 +73,7 @@ func GetInstData(ownerID, objID, instIDStr, apiAddr string, header http.Header, 
 	sInstCond["page"] = nil
 
 	// read insts
-	url := apiAddr + fmt.Sprintf("/api/%s/inst/search/"+ownerID+"/"+objID, webCommon.API_VERSION)
+	url := apiAddr + fmt.Sprintf("/api/%s/inst/search/owner/%s/object/%s/detail", webCommon.API_VERSION, ownerID, objID)
 	result, _ := httpRequest(url, sInstCond, header)
 	blog.Info("search inst  url:%s", url)
 	blog.Info("search inst  return:%s", result)
