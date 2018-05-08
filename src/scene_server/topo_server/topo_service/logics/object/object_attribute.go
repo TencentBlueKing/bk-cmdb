@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
@@ -187,6 +188,12 @@ func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAt
 	if obj.PropertyID == common.BKChildStr || obj.PropertyID == common.BKParentStr {
 		blog.Error("'%s' is the built-in property", obj.PropertyID)
 		return 0, fmt.Errorf("'%s' is the built-in property", obj.PropertyID)
+	}
+
+	err := util.ValidPropertyOption(obj.PropertyType, obj.Option)
+	if nil != err {
+		blog.Errorf("'%s' %s", obj.PropertyID, err.Error())
+		return 0, fmt.Errorf("'%s' %s", obj.PropertyID, err.Error())
 	}
 
 	// check objid
@@ -421,6 +428,11 @@ func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, v
 	}
 	if fieldValue, ok := obj["option"]; ok {
 		objAtt["option"] = fieldValue
+		err := util.ValidPropertyOption(itemObj.PropertyType, fieldValue)
+		if nil != err {
+			blog.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
+			return fmt.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
+		}
 	}
 	if fieldValue, ok := obj["creator"]; ok {
 		objAtt["creator"] = fieldValue
