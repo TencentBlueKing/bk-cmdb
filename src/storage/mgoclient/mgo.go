@@ -189,11 +189,11 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 }
 
 // GetCntByCondition returns count number filter by condiction
-func (m *MgoCli) GetCntByCondition(cName string, condiction interface{}) (cnt int, err error) {
+func (m *MgoCli) GetCntByCondition(cName string, condition interface{}) (cnt int, err error) {
 	m.session.Refresh()
 	c := m.session.DB(m.dbName).C(cName)
 	count := 0
-	count, err = c.Find(condiction).Count()
+	count, err = c.Find(condition).Count()
 	if err != nil {
 		return count, err
 	}

@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	restful "github.com/emicklei/go-restful"
 
 	"time"
@@ -112,7 +113,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		iHost, ok := hostMap[key]
 		//生产日志
 		if ok {
-			delete(host, common.BKCloudIDField)
+			//delete(host, common.BKCloudIDField)
 			delete(host, "import_from")
 			delete(host, common.CreateTimeField)
 			hostInfo := iHost.(map[string]interface{})
@@ -120,6 +121,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			hostID, _ := util.GetIntByInterface(hostInfo[common.BKHostIDField])
 			_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
 			if nil != err {
+				blog.Error("host valid error %v %v", index, err)
 				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%v", index, err))
 				continue
 			}
@@ -133,6 +135,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			isSuccess, message, _ := GetHttpResult(req, uHostURL, common.HTTPUpdate, input)
 			innerIP := host[common.BKHostInnerIPField].(string)
 			if !isSuccess {
+				blog.Error("host update error %v %v", index, message)
 				updateErrMsg = append(updateErrMsg, langHandle.Languagef("host_import_update_fail", index, innerIP, message))
 				continue
 			}
@@ -140,7 +143,11 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
 
 		} else {
-			host[common.BKCloudIDField] = iSubArea
+			_, ok := host[common.BKCloudIDField]
+			if false == ok {
+				host[common.BKCloudIDField] = iSubArea
+			}
+
 			host[common.CreateTimeField] = ts
 			//补充未填写字段的默认值
 			for key, val := range defaultFields {
