@@ -369,7 +369,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 			conds[common.BKModuleNameField] = common.DefaultResModuleName
 		} else {
 			//故障机器
-			moduleNameLogKey = "falult"
+			moduleNameLogKey = "fault"
 			conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 			conds[common.BKModuleNameField] = common.DefaultFaultModuleName
 		}
