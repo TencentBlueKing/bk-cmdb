@@ -135,7 +135,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 		result := make([]map[string]interface{}, 0)
 		count, err := instdata.GetCntByCondition(objType, condition)
 		if err != nil {
-			blog.Error("get object type:%s,input:%v error:%v", objType, value, err)
+			blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSelectInst)
 		}
 		err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, start, limit)
