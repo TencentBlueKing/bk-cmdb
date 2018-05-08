@@ -28,6 +28,7 @@
 	"1110027": "Failed to transfer host '%s' to resource pool, error:%s",
 	"1110028": "Failed to modify host relationship",
 	"1110029": "Failed to add host to module",
+	"1110030": "Failed to add host to module, error:%s",
 
 	"": ""
 }
