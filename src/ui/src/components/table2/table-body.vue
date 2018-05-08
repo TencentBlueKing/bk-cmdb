@@ -1,10 +1,10 @@
 <template>
-    <table class="cc-table-body">
+    <table :class="['cc-table-body', {'row-border': table.rowBorder, 'col-border': table.colBorder, 'stripe': table.stripe}]">
         <colgroup>
             <col v-for="(width, index) in layout.colgroup" :key="index" :width="getColWidth(width, index)">
         </colgroup>
-        <tbody>
-            <tr v-for="(item, index) in table.list" :key="index">
+        <tbody v-show="table.list.length">
+            <tr v-for="(item, index) in table.list" :key="index" @click="handleRowClick(item)">
                 <template v-for="(head, index) in table.header">
                     <td v-if="head.type === 'checkbox'" class="body-checkbox">
                         <label :for="getCheckboxId(head)" class="bk-form-checkbox bk-checkbox-small">
@@ -12,11 +12,16 @@
                         </label>
                     </td>
                     <td v-else>
-                        <slot :name="head[table.valueKey]" :item="item">
-                            <div>{{item[head[table.valueKey]]}}</div>
-                        </slot>
+                        <td-content :item="item" :head="head" :layout="layout"></td-content>
                     </td>
                 </template>
+            </tr>
+        </tbody>
+        <tbody v-show="!table.list.length">
+            <tr>
+                <td :colspan="table.header.length" align="center">
+                    <data-empty class="data-empty" :layout="layout"></data-empty>
+                </td>
             </tr>
         </tbody>
     </table>
@@ -36,8 +41,8 @@
             }
         },
         created () {
-            this.$slots = this.table.$slots
-            this.$scopedSlots = this.table.$scopedSlots
+            this.$slots = this.layout.table.$slots
+            this.$scopedSlots = this.layout.table.$scopedSlots
         },
         methods: {
             getCheckboxId (head) {
@@ -49,6 +54,38 @@
                     return width - this.table.gutterWidth
                 }
                 return width
+            },
+            handleRowClick (item) {
+                this.table.$emit('handleRowClick', item)
+            }
+        },
+        components: {
+            'td-content': {
+                props: ['head', 'item', 'layout'],
+                render (h) {
+                    const table = this.layout.table
+                    let scopedSlots = table.$scopedSlots[this.head[table.valueKey]]
+                    if (scopedSlots) {
+                        return scopedSlots({item: this.item})
+                    } else {
+                        return h('div', this.item[this.head[table.valueKey]])
+                    }
+                }
+            },
+            'data-empty': {
+                props: ['layout'],
+                render (h) {
+                    const dataEmpty = this.layout.table.$slots['data-empty']
+                    if (dataEmpty) {
+                        return dataEmpty()
+                    } else {
+                        return h('div', this.$t("Common['暂时没有数据']"))
+                    }
+                },
+                mounted () {
+                    const bodyWrapperMaxHeight = parseInt(this.layout.table.$refs.bodyWrapper.style.maxHeight, 10)
+                    this.$el.style.height = bodyWrapperMaxHeight ? bodyWrapperMaxHeight + 'px' : '220px'
+                }
             }
         }
     }
@@ -64,23 +101,40 @@
         tr {
             td {
                 height: 40px;
-                padding: 0 20px;
-                border: 1px solid $tableBorderColor;
-                border-left: none;
-                border-top: none;
+                padding: 0 16px;
+                cursor: pointer;
                 @include ellipsis;
                 &.body-checkbox{
                     padding: 0;
                 }
-                &:last-child{
-                    border-right: none;
-                }
+            }
+        }
+    }
+    .cc-table-body.row-border {
+        tr {
+            td {
+                border-bottom: 1px solid $tableBorderColor;
             }
         }
         tr:last-child{
             td {
                 border-bottom: none;
             }
+        }
+    }
+    .cc-table-body.col-border{
+        tr {
+            td {
+                border-right: 1px solid $tableBorderColor;
+                &:last-child{
+                    border-right: none;
+                }
+            }
+        }
+    }
+    .cc-table-body.stripe {
+        tr:nth-child(2n) {
+            background-color: #f1f7ff;
         }
     }
     .bk-form-checkbox{
@@ -98,6 +152,16 @@
             vertical-align: middle;
         }
         input[type='checkbox'] {
+            display: inline-block;
+            vertical-align: middle;
+        }
+    }
+    .data-empty{
+        font-size: 12px;
+        &:before{
+            content: '';
+            width: 0;
+            height: 100%;
             display: inline-block;
             vertical-align: middle;
         }
