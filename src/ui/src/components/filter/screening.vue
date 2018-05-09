@@ -231,10 +231,16 @@
                                 }]
                             })
                         } else if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
+                            let operator = column.operator
+                            let value = column.value
+                            if (property['bk_property_id'] === 'bk_module_name') {
+                                operator = operator === '$regex' ? '$in' : operator
+                                value = value.replace('，', ',').split(',')
+                            }
                             condition.condition.push({
                                 field: column.field,
-                                operator: column.operator,
-                                value: column.value
+                                operator: operator,
+                                value: value
                             })
                         } else {
                             condition.condition.push({
