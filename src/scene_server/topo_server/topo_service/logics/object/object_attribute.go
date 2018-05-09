@@ -292,6 +292,10 @@ func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAt
 		asstID = id
 	}
 
+	//primary key must be required
+	if true == obj.IsOnly {
+		obj.IsRequired = true
+	}
 	val, _ := json.Marshal(obj)
 	rst, rstErr := cli.objcli.CreateMetaObjectAtt(forward, val)
 	if nil != rstErr && 0 != asstID {
@@ -457,6 +461,11 @@ func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, v
 	}
 	if fieldValue, ok := obj["isonly"]; ok {
 		objAtt["isonly"] = fieldValue
+
+		//primary key is required
+		if true == fieldValue {
+			objAtt["isrequired"] = true
+		}
 	}
 	if fieldValue, ok := obj["bk_property_type"]; ok {
 		objAtt["bk_property_type"] = fieldValue

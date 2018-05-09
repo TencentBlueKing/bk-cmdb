@@ -23,8 +23,12 @@ import (
 func ValidPropertyOption(propertyType string, option interface{}) error {
 	switch propertyType {
 	case common.FieldTypeEnum:
+		if nil == option {
+			return fmt.Errorf(" option is required")
+		}
 		arrOption, ok := option.([]interface{})
 		if false == ok {
+			blog.Errorf(" option %v not enum option", option)
 			return fmt.Errorf(" option %v not enum option", option)
 		}
 		for _, o := range arrOption {
@@ -40,6 +44,14 @@ func ValidPropertyOption(propertyType string, option interface{}) error {
 				return fmt.Errorf(" option %v not enum option, enum option item must id and name", option)
 
 			}
+		}
+	case common.FieldTypeInt:
+		if nil == option {
+			return fmt.Errorf(" option is required")
+		}
+		_, ok := option.(map[string]interface{})
+		if false == ok {
+			return fmt.Errorf(" option %v not int option", option)
 		}
 
 	}

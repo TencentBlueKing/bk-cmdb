@@ -203,7 +203,9 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 				}
 
 			default:
-				cell.SetValue(t)
+				if nil != keyVal {
+					cell.SetValue(t)
+				}
 			}
 		}
 	}
