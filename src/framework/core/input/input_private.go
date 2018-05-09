@@ -15,6 +15,7 @@ package input
 import (
 	"configcenter/src/framework/core/log"
 	"context"
+	"runtime/debug"
 	"time"
 )
 
@@ -34,6 +35,7 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 
 	defer func() {
 		if err := recover(); nil != err {
+			debug.PrintStack()
 			log.Fatalf("recover from err:%v", err)
 		}
 	}()
