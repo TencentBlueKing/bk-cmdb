@@ -91,11 +91,11 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			}
 		}
 
-		if jsTmp, ok := jsObjAttr.CheckGet("ispre"); ok {
+		if jsTmp, ok := jsObjAttr.CheckGet(common.BKIsOnlyField); ok {
 			if tmp, tmpErr := jsTmp.Bool(); nil == tmpErr {
-				tmpItem.IsPre = tmp
+				tmpItem.IsOnly = tmp
 			} else {
-				blog.Error("can not parse the ispre, error info is %s", tmpErr.Error())
+				blog.Error("can not parse the isonly, error info is %s", tmpErr.Error())
 				return tmpItem, tmpErr
 			}
 		}
