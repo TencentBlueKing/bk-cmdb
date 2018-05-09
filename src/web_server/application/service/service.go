@@ -188,6 +188,17 @@ func (ccWeb *CCWebServer) Start() error {
 		ccWeb.httpServ.Static("/static", static)
 		blog.Info(static)
 		ccWeb.httpServ.LoadHTMLFiles(static + "/index.html") //("static/index.html")
+		// MetricServer
+		conf := metric.Config{
+			ModuleName:    types.CC_MODULE_WEBSERVER,
+			ServerAddress: ccWeb.conf.AddrPort,
+		}
+		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
+		for _, metricAction := range metricActions {
+			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
+				metricAction.HandlerFunc(c.Writer, c.Request)
+			})
+		}
 		ccWeb.httpServ.GET("/", func(c *gin.Context) {
 			session := sessions.Default(c)
 			role := session.Get("role")
@@ -241,18 +252,6 @@ func (ccWeb *CCWebServer) Start() error {
 				"agentAppUrl": agentAppUrl,
 			})
 		})
-
-		// MetricServer
-		conf := metric.Config{
-			ModuleName:    types.CC_MODULE_WEBSERVER,
-			ServerAddress: ccWeb.conf.AddrPort,
-		}
-		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
-		for _, metricAction := range metricActions {
-			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
-				metricAction.HandlerFunc(c.Writer, c.Request)
-			})
-		}
 
 		ip, _ := ccWeb.conf.GetAddress()
 		port, _ := ccWeb.conf.GetPort()
