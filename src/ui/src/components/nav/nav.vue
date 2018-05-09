@@ -223,7 +223,7 @@
                 if (this.authority && Object.keys(this.authority).length && this.allClassify.length) {
                     let currentPath = this.$route.path
                     // let currentPath = this.$route.fullPath
-                    if (currentPath !== '/403' && currentPath !== '/404' && currentPath !== '/table') {
+                    if (currentPath !== '/403' && currentPath !== '/404') {
                         let isAuthorized = false
                         for (let navType in this.navigation) {
                             this.navigation[navType]['children'].map(({authorized, path}) => {

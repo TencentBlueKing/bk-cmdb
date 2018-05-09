@@ -92,8 +92,13 @@
                 this.closeSizeSetting()
             },
             setCurrent (current) {
-                this.table.$emit('update:pagination', Object.assign({}, this.pagination, {current}))
-                this.table.$emit('handlePageChange', current)
+                if (current !== this.pagination.current) {
+                    if (!this.table.crossPageCheck) {
+                        this.table.$emit('update:checked', [])
+                    }
+                    this.table.$emit('update:pagination', Object.assign({}, this.pagination, {current}))
+                    this.table.$emit('handlePageChange', current)
+                }
             }
         }
     }

@@ -1,14 +1,17 @@
 <template>
     <table :class="['cc-table-body', {'row-border': table.rowBorder, 'col-border': table.colBorder, 'stripe': table.stripe}]">
         <colgroup>
-            <col v-for="(width, index) in layout.colgroup" :key="index" :width="getColWidth(width, index)">
+            <col v-for="(width, index) in layout.colgroup" :key="index" :width="width">
         </colgroup>
         <tbody v-show="table.list.length">
-            <tr v-for="(item, index) in table.list" :key="index" @click="handleRowClick(item)">
-                <template v-for="(head, index) in table.header">
-                    <td v-if="head.type === 'checkbox'" class="body-checkbox">
-                        <label :for="getCheckboxId(head)" class="bk-form-checkbox bk-checkbox-small">
-                            <input type="checkbox" :id="getCheckboxId(head)">
+            <tr v-for="(item, rowIndex) in table.list" :key="rowIndex" @click="handleRowClick(item, rowIndex)">
+                <template v-for="(head, colIndex) in table.header">
+                    <td v-if="head.type === 'checkbox'" class="body-checkbox" @click.stop :key="colIndex">
+                        <label :for="getCheckboxId(head, rowIndex)" class="bk-form-checkbox bk-checkbox-small">
+                            <input type="checkbox"
+                                :id="getCheckboxId(head, rowIndex)"
+                                :checked="checked.indexOf(item[head[table.valueKey]]) !== -1"
+                                @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
                     <td v-else>
@@ -17,9 +20,9 @@
                 </template>
             </tr>
         </tbody>
-        <tbody v-show="!table.list.length">
+        <tbody v-if="!table.list.length">
             <tr>
-                <td :colspan="table.header.length" align="center">
+                <td :colspan="table.header.length" align="center" :style="{height: emptyHeight}">
                     <data-empty class="data-empty" :layout="layout"></data-empty>
                 </td>
             </tr>
@@ -38,15 +41,18 @@
         computed: {
             table () {
                 return this.layout.table
+            },
+            checked () {
+                return this.table.checked
+            },
+            emptyHeight () {
+                const bodyLayoutMaxHeight = this.layout.table.bodyLayoutMaxHeight
+                return bodyLayoutMaxHeight === 'none' ? '302px' : bodyLayoutMaxHeight
             }
         },
-        created () {
-            this.$slots = this.layout.table.$slots
-            this.$scopedSlots = this.layout.table.$scopedSlots
-        },
         methods: {
-            getCheckboxId (head) {
-                return `table-${this.layout.id}-body-${head[this.table.valueKey]}-checkbox`
+            getCheckboxId (head, rowIndex) {
+                return `table-${this.layout.id}-body-${head[this.table.valueKey]}-checkbox-${rowIndex}`
             },
             getColWidth (width, index) {
                 let total = this.layout.colgroup.length
@@ -55,8 +61,23 @@
                 }
                 return width
             },
-            handleRowClick (item) {
-                this.table.$emit('handleRowClick', item)
+            handleRowCheck (value, rowIndex) {
+                let checked = [...this.checked]
+                const index = checked.indexOf(value)
+                if (this.table.multipleCheck) {
+                    if (index === -1) {
+                        checked.push(value)
+                    } else {
+                        checked.splice(index, 1)
+                    }
+                } else {
+                    checked = index === -1 ? [value] : []
+                }
+                this.table.$emit('update:checked', checked)
+                this.table.$emit('handleRowCheck', value, rowIndex)
+            },
+            handleRowClick (item, rowIndex) {
+                this.table.$emit('handleRowClick', item, rowIndex)
             }
         },
         components: {
@@ -75,16 +96,12 @@
             'data-empty': {
                 props: ['layout'],
                 render (h) {
-                    const dataEmpty = this.layout.table.$slots['data-empty']
-                    if (dataEmpty) {
-                        return dataEmpty()
+                    const dataEmptySlot = this.layout.table.$slots['data-empty']
+                    if (dataEmptySlot) {
+                        return h('div', {}, dataEmptySlot)
                     } else {
-                        return h('div', this.$t("Common['暂时没有数据']"))
+                        return h('div', {}, this.$t("Common['暂时没有数据']"))
                     }
-                },
-                mounted () {
-                    const bodyWrapperMaxHeight = parseInt(this.layout.table.$refs.bodyWrapper.style.maxHeight, 10)
-                    this.$el.style.height = bodyWrapperMaxHeight ? bodyWrapperMaxHeight + 'px' : '220px'
                 }
             }
         }
@@ -158,12 +175,5 @@
     }
     .data-empty{
         font-size: 12px;
-        &:before{
-            content: '';
-            width: 0;
-            height: 100%;
-            display: inline-block;
-            vertical-align: middle;
-        }
     }
 </style>
