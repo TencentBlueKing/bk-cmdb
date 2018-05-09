@@ -58,10 +58,7 @@
             }
         },
         computed: {
-            ...mapGetters([
-                'bkSupplierAccount',
-                'allClassify'
-            ])
+            ...mapGetters(['bkSupplierAccount'])
         },
         watch: {
             isShow (val) {

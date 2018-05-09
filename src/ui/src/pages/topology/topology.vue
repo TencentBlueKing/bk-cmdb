@@ -21,14 +21,14 @@
         <div class="topo-view-ctn">
             <bk-tab :active-name="view.tab.active" @tab-changed="tabChanged" class="topo-view-tab">
                 <bk-tabpanel name="host" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <v-index ref="index"
+                    <v-hosts ref="hosts"
                         :outerParams="searchParams"
                         :isShowRefresh="true"
                         :outerLoading="tree.loading"
                         :isShowCrossImport="attributeBkObjId === 'module'"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
-                    </v-index>
+                    </v-hosts>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')" :show="isShowAttribute">
                     <v-attribute ref="topoAttribute"
@@ -59,7 +59,7 @@
 <script>
     import vApplicationSelector from '@/components/common/selector/application'
     import vTree from '@/components/tree/tree.v2'
-    import vIndex from '@/pages/index/index'
+    import vHosts from '@/pages/hosts/hosts'
     import vAttribute from './children/attribute'
     import vCrossImport from './children/crossImport'
     import { mapGetters } from 'vuex'
@@ -398,7 +398,7 @@
             },
             /* 点击节点，设置查询参数 */
             handleNodeClick (activeNode, activeParentNode) {
-                this.$refs.index.clearChooseId()
+                this.$refs.hosts.clearChooseId()
                 this.tree.activeNode = activeNode
                 this.tree.activeParentNode = activeParentNode
                 this.view.attribute.type = 'update'
@@ -520,9 +520,9 @@
         components: {
             vApplicationSelector,
             vTree,
-            vIndex,
-            vAttribute,
-            vCrossImport
+            vCrossImport,
+            vHosts,
+            vAttribute
         }
     }
 </script>

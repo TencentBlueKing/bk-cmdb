@@ -255,9 +255,9 @@
         computed: {
             ...mapGetters([
                 'bkSupplierAccount',
-                'allClassify',
                 'language'
             ]),
+            ...mapGetters('navigation', ['activeClassifications']),
             /*
                 推送事件已选数量
             */
@@ -443,23 +443,20 @@
                 this.eventPushList = []
                 let subscriptionForm = {}
                 let eventPushList = []
-                this.allClassify.map((classify, index) => {
-                    // 去掉主机管理和业务拓扑
-                    if (classify.hasOwnProperty('bk_objects') && classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_host_manage' && classify['bk_classification_id'] !== 'bk_biz_topo') {
-                        let event = {
-                            name: classify['bk_classification_name'],
-                            isHidden: false,
-                            children: []
-                        }
-                        classify['bk_objects'].map(val => {
-                            event.children.push({
-                                id: val['bk_obj_id'],
-                                name: val['bk_obj_name']
-                            })
-                            subscriptionForm[val['bk_obj_id']] = []
-                        })
-                        eventPushList.push(event)
+                this.activeClassifications.map((classify, index) => {
+                    let event = {
+                        name: classify['bk_classification_name'],
+                        isHidden: false,
+                        children: []
                     }
+                    classify['bk_objects'].map(val => {
+                        event.children.push({
+                            id: val['bk_obj_id'],
+                            name: val['bk_obj_name']
+                        })
+                        subscriptionForm[val['bk_obj_id']] = []
+                    })
+                    eventPushList.push(event)
                 })
                 subscriptionForm['host'] = []
                 subscriptionForm['module'] = []

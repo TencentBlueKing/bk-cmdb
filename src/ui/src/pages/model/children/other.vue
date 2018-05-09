@@ -106,6 +106,7 @@
                 this.$axios.put(`object/${this.id}`, params).then(res => {
                     if (res.result) {
                         this.$emit('closeSideSlider')
+                        this.$store.dispatch('navigation/getClassifications', true)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -121,6 +122,7 @@
                 this.$axios.put(`object/${this.id}`, params).then(res => {
                     if (res.result) {
                         this.$emit('stopModel')
+                        this.$store.dispatch('navigation/getClassifications', true)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -142,6 +144,7 @@
                     this.$axios.delete(`object/${this.id}`).then(res => {
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
+                            this.$store.dispatch('navigation/getClassifications', true)
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }

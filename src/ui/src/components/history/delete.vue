@@ -26,13 +26,8 @@
                 @handlePageTurning="setCurrentPage"
                 @handlePageSizeChange="setCurrentSize"
                 @handleTableSortClick="setCurrentSort"
-<<<<<<< HEAD:src/ui/src/components/history/delete.vue
-                @handleRowClick="showDetails"
-            ></v-table>
-=======
-            >
+                @handleRowClick="showDetails">
             </v-table>
->>>>>>> tencent/master:src/ui/src/components/deleteHistory/deleteHistory.vue
         </div>
         <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
             <v-history-details :details="details.data" slot="content"></v-history-details>
