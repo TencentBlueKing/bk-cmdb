@@ -23,6 +23,7 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
+	"time"
 
 	"configcenter/src/common/blog"
 
@@ -79,6 +80,14 @@ func main() {
 		go func() {
 			rd.Start()
 		}()
+		for {
+			_, err := rd.GetApiServ()
+			if err == nil {
+				break
+			}
+			log.Errorf("there is no api server, will reget it after 2s")
+			time.Sleep(time.Second * 2)
+		}
 		client.NewForConfig(config.Get(), rd)
 	} else {
 		client.NewForConfig(config.Get(), nil)
