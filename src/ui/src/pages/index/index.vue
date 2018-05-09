@@ -4,32 +4,29 @@
         <transition name="fade">
             <div class="classify-container" v-show="display.type === 'classification'">
                 <ul class="classify-list">
-                    <li class="classify-item clearfix" v-for="(classification, index) in authorizedClassifications" :key="index" @click="showModels(classification)">
-                        <div 
-                            :class="['classify-navigator', {navigated: isClassificationNavigated(classification)}]"
-                            @click.stop="toggleClassifyNavVisible(classification)">
-                            <span class="icon-cc-thumbtack"></span>
-                            <span>{{isClassificationNavigated(classification) ? $t("Index['取消导航']") : $t("Index['添加导航']")}}</span>
-                        </div>
-                        <div class="classify-icon fl">
-                            <i :class="classification['bk_classification_icon']"></i>
-                        </div>
-                        <div class="classify-name">
-                            <h2  class="classify-name-text">{{classification['bk_classification_name']}}</h2>
-                            <span class="classify-model-count">
-                                {{$tc("Index['模型数量']",  classification['bk_objects'].length, {count: classification['bk_objects'].length})}}
+                    <li class="classify-item" v-for="(classification, index) in sortedClassifications" :key="index">
+                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isClassificationNavigated(classification)}]" @click.stop="toggleClassifyNavVisible(classification)"></i>
+                        <div class="classify-info-layout" @click="showModels(classification)">
+                            <span class="classify-info">
+                                <i :class="['classify-info-icon', classification['bk_classification_icon']]"></i>
+                                <span class="classify-info-name">{{classification['bk_classification_name']}}</span>
                             </span>
                         </div>
-                        <div class="classify-models">
-                            <router-link exact class="classify-model-link"
-                                v-for="(model, index) in classification['bk_objects']"
-                                v-if="index < 4"
-                                :key="index"
-                                :title="model['bk_obj_name']"
-                                :to="`/organization/${model['bk_obj_id']}`"
-                                 @click.stop>
-                                {{model['bk_obj_name']}}
-                            </router-link>
+                        <div :class="['classify-models-layout', {'has-more': classification['bk_objects'].length > 3}]">
+                            <template v-for="(model, index) in classification['bk_objects']">
+                                <router-link exact class="classify-model-link"
+                                    v-if="index < 5"
+                                    :key="index"
+                                    :title="model['bk_obj_name']"
+                                    :to="`/organization/${model['bk_obj_id']}`"
+                                     @click.stop>
+                                    {{model['bk_obj_name']}}
+                                </router-link>
+                            </template>
+                            <a href="javascript:void(0)" class="classify-model-link more"
+                                v-if="classification['bk_objects'].length > 5"
+                                @click="showModels(classification)">
+                            </a>
                         </div>
                     </li>
                 </ul>
@@ -37,21 +34,20 @@
         </transition>
         <transition name="fade">
             <div class="model-container" v-show="display.type === 'model'">
-                <bk-button class="model-return" type="primary" @click="display.type = 'classification'">{{$t("Index['返回上级']")}}</bk-button>
+                <bk-button class="model-return" @click="display.type = 'classification'">{{$t("Index['返回上级']")}}</bk-button>
                 <div class="model-list">
-                    <router-link exact class="model-item" v-for="(model, index) in displayClassification['bk_objects']"
+                    <router-link exact class="model-item" v-for="(model, index) in sortedDisplayModels"
                         :key="index"
                         :to="`/organization/${model['bk_obj_id']}`">
-                        <div :class="['classify-navigator', {navigated: isModelNavigated(model)}]" @click.prevent.stop="toggleModelNavVisible(model)">
-                            <span class="icon-cc-thumbtack"></span>
-                            <span>{{isModelNavigated(model) ? $t("Index['取消导航']") : $t("Index['添加导航']")}}</span>
+                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isModelNavigated(model)}]" @click.stop="toggleModelNavVisible(model)"></i>
+                        <div class="model-name-layout fl">
+                            <span class="model-name">
+                                <h3 class="model-name-text">{{model['bk_obj_name']}}</h3>
+                                <span class="model-name-id">{{model['bk_obj_id']}}</span>
+                            </span>
                         </div>
-                        <div class="model-icon fl">
-                            <i :class="model['bk_obj_icon']"></i>
-                        </div>
-                        <div class="model-name">
-                            <h3 class="model-name-text">{{model['bk_obj_name']}}</h3>
-                            <span class="model-name-id">{{model['bk_obj_id']}}</span>
+                        <div class="model-icon-layout">
+                            <i :class="['model-icon', model['bk_obj_icon']]"></i>
                         </div>
                     </router-link>
                 </div>
@@ -77,6 +73,18 @@
         computed: {
             ...mapGetters('usercustom', ['usercustom']),
             ...mapGetters('navigation', ['authorizedClassifications']),
+            sortedClassifications () {
+                let sortedClassifications = [...this.authorizedClassifications]
+                return sortedClassifications
+                // 已添加到导航的排到前面
+                /* const navigatedValue = {
+                    true: 1,
+                    false: 0
+                }
+                return sortedClassifications.sort((classificationA, classificationB) => {
+                    return navigatedValue[this.isClassificationNavigated(classificationB)] - navigatedValue[this.isClassificationNavigated(classificationA)]
+                }) */
+            },
             // 用户自定义导航内容
             userCustomNavigation () {
                 return this.usercustom.navigation || {}
@@ -87,6 +95,18 @@
                     return this.authorizedClassifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.display.displayClassificationId)
                 }
                 return {'bk_objects': []}
+            },
+            sortedDisplayModels () {
+                let models = [...this.displayClassification['bk_objects']]
+                return models
+                // 已添加到导航的排到前面
+                /* const navigatedValue = {
+                    true: 1,
+                    false: 0
+                }
+                return models.sort((modelA, modelB) => {
+                    return navigatedValue[this.isModelNavigated(modelB)] - navigatedValue[this.isModelNavigated(modelA)]
+                }) */
             }
         },
         methods: {
@@ -151,22 +171,18 @@
     .index-wrapper{
         height: 100%;
         padding: 20px 0;
-        background-color: #e5eaef;
         overflow: hidden;
+        background: #fff url(../../common/images/index-bg.png) center bottom no-repeat;
     }
-    .classify-navigator{
+    .bk-icon.icon-star-shape{
         position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 12px;
-        color: $textColor;
+        top: 7px;
+        right: 13px;
+        font-size: 16px;
+        color: #5f95de;
         cursor: pointer;
-        .icon-cc-thumbtack{
-            margin: 2px 0;
-            display: inline-block;
-        }
         &.navigated{
-            color: $hoverColor;
+            color: #f5ef90;
         }
     }
     .classify-container{
@@ -180,67 +196,124 @@
     .classify-list{
         font-size: 0;
         margin: 0 auto;
-        max-width: 1600px;
+        width: 1600px;
         .classify-item{
             font-size: 14px;
             position: relative;
             display: inline-block;
             width: 380px;
-            height: 200px;
+            height: 250px;
+            overflow: hidden;
             margin: 0 10px 20px;
             background-color: #fff;
-            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.13);
-            border-radius: 2px;
-            transition: box-shadow .1s linear;
+            transition: box-shadow .2s ease-out;
             &:hover{
-                box-shadow: 0px 8px 12px 0px rgba(17, 28, 62, 0.2);
-                .classify-icon{
-                    color: $hoverColor;
+                box-shadow: 0px 5px 11px 0px rgba(0, 0, 0, 0.2);
+                .classify-info-layout{
+                    height: 155px;
+                }
+                .classify-models-layout{
+                    height: 95px;
+                    &:before{
+                        opacity: 0;
+                    }
+                }
+                .classify-model-link:nth-child(n+4){
+                    opacity: 1;
                 }
             }
-            .classify-icon{
-                width: 140px;
-                height: 140px;
-                line-height: 140px;
-                font-size: 60px;
-                text-align: center;
-                transition: color .1s linear;
+        }
+    }
+    .classify-info-layout {
+        height: 175px;
+        text-align: center;
+        color: #fff;
+        cursor: pointer;
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
+        transition: height .2s ease-out;
+        background-image: linear-gradient(#6ea9f9, #6ea9f9),linear-gradient(10deg, #42c0ff 0%, #3c96ff 100%), linear-gradient(#6ea9f9, #6ea9f9);
+        &:before{
+            content: "";
+            display: inline-block;
+            vertical-align: middle;
+            width: 0;
+            height: 100%;
+        }
+        .classify-info{
+            display: inline-block;
+            vertical-align: middle;
+            .classify-info-icon{
+                display: block;
+                font-size: 48px;
             }
-            .classify-name{
-                height: 140px;
-                overflow: hidden;
-                padding: 50px 10px 0 0;
+            .classify-info-name{
+                display: block;
+                font-size: 20px;
+                margin-top: 6px;
             }
-            .classify-name-text{
-                font-size: 24px;
-                font-weight: normal;
-                color:#333948;
-                margin: 0;
-                @include ellipsis;
+        }
+    }
+    .classify-models-layout{
+        height: 75px;
+        padding: 15px 0;
+        position: relative;
+        font-size: 0;
+        border: solid 1px #c3cdd7;
+        border-top: none;
+        border-bottom-left-radius: 2px;
+        border-bottom-right-radius: 2px;
+        transition: height .2s ease-out;
+        &.has-more:before{
+            content: '';
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            margin-left: -2px;
+            border-radius: 50%;
+            background-color: #c3cdd7;
+            box-shadow: -7px 0 #c3cdd7, 7px 0 #c3cdd7;
+            transition: opacity .2s ease-out;
+            pointer-events: none;
+        }
+        .classify-model-link{
+            display: inline-block;
+            vertical-align: middle;
+            width: 75px;
+            height: 20px;
+            font-size: 14px;
+            line-height: 20px;
+            text-align: center;
+            margin: 6px 25px;
+            padding: 0 6px;
+            color: #3c96ff;
+            border-radius: 10px;
+            transition: all .2s ease-out !important;
+            @include ellipsis;
+            &:hover{
+                background-color: #ebf0f7;
             }
-            .classify-model-count{
-                line-height: 24px;
-                font-size: 14px;
-                color:$textColor;
+            &:nth-child(n+4) {
+                opacity: 0;
             }
-            .classify-models{
-                height: 60px;
-                padding: 0 18px;
-                background-color: #fafbfd;
+            &.more{
+                border-radius: 0;
+                background-color: transparent;
+                position: relative;
                 &:before{
-                    @include verticalHack;
-                }
-            }
-            .classify-model-link{
-                display: inline-block;
-                vertical-align: middle;
-                max-width: 62px;
-                margin: 0 12px;
-                color: $textColor;
-                @include ellipsis;
-                &:hover{
-                    color: $hoverColor;
-                    text-decoration: underline;
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 4px;
+                    height: 4px;
+                    margin: -2px 0 0 -2px;
+                    border-radius: 50%;
+                    background-color: #c3cdd7;
+                    box-shadow: -7px 0 #c3cdd7, 7px 0 #c3cdd7;
+                    pointer-events: none;
                 }
             }
         }
@@ -249,6 +322,7 @@
         position: relative;
         height: calc(100% - 114px);
         .model-return{
+            width: 102px;
             margin: 0 20px 14px;
         }
     }
@@ -261,32 +335,68 @@
         .model-item{
             position: relative;
             display: inline-block;
-            width: 316px;
+            width: 306px;
             height: 130px;
             margin: 0 0 20px 20px;
             font-size: 14px;
-            background-color: #ffffff;
-            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.13);
+            background-color: #f5faff;
             border-radius: 2px;
-            color: $textColor;
-            transition: box-shadow .1s linear !important;
+            border: solid 1px #c6d4e3;
+            transition: box-shadow .2s ease-out !important;
             &:hover{
-                    box-shadow: 0px 8px 12px 0px rgba(17, 28, 62, 0.2);
-            }
-            .model-icon{
-                width: 127px;
-                height: 100%;
-                font-size: 50px;
-                text-align: center;
-                background-color: #fafbfd;
-                &:before{
-                    @include verticalHack;
+                background-color: #ffffff;
+                box-shadow: 0px 5px 11px 0px rgba(0, 0, 0, 0.2);
+                border: solid 1px #499dff;
+                .model-name-text,
+                .model-name-id{
+                    color: #3c96ff;
+                }
+                .model-icon-layout{
+                    .model-icon{
+                        color: #6fb1ff;
+                    }
                 }
             }
-            .model-name{
+            .bk-icon.icon-star-shape{
+                color: #dde4eb;
+                top: 6px;
+                right: 12px;
+                &.navigated{
+                    color: #f9cd6e;
+                }
+            }
+            .model-icon-layout{
                 height: 100%;
                 overflow: hidden;
-                padding: 44px 10px 0 19px;
+                font-size: 80px;
+                text-align: center;
+                &:before{
+                    content: "";
+                    width: 0;
+                    height: 100%;
+                    display: inline-block;
+                    vertical-align: middle;
+                }
+                .model-icon{
+                    color:#c1d9f5;
+                }
+            }
+            .model-name-layout{
+                height: 100%;
+                width: 165px;
+                padding: 0px 0px 0 46px;
+                &:before{
+                    content: "";
+                    width: 0;
+                    height: 100%;
+                    display: inline-block;
+                    vertical-align: middle;
+                }
+                .model-name{
+                    display: inline-block;
+                    vertical-align: middle;
+                    width: 100%;
+                }
             }
             .model-name-text{
                 margin: 0;
@@ -309,39 +419,55 @@
     @media (max-width: 1279px){
         .content-wrapper.fold{
             .index-wrapper{
+                .search-box{
+                    width: 700px;
+                }
                 .classify-list{
-                    width: 820px;
+                    width: 800px;
                 }
             }
         }
     }
     /* 1280 <= screen <= 1679 放三个分类*/
-    @media (min-width: 1280px) and (max-width: 1679px) {
+    @media (min-width: 1280px) and (max-width: 1659px) {
         .content-wrapper.fold{
             .index-wrapper{
                 .classify-list{
-                    width: 1220px;
+                    width: 1200px;
+                }
+            }
+        }
+    }
+    /* 1660 <= screen 放四个分类*/
+    @media (min-width: 1660px) {
+        .content-wrapper.fold{
+            .index-wrapper{
+                .classify-list{
+                    width: 1600px;
                 }
             }
         }
     }
     /* 导航展开时的分类列表宽度 */
-    /* screen <= 1439 放2个分类 */
-    @media (max-width: 1439px) {
+    /* screen <= 1419 放2个分类 */
+    @media (max-width: 1419px) {
         .content-wrapper{
             .index-wrapper{
+                .search-box{
+                    width: 700px;
+                }
                 .classify-list{
-                    width: 820px;
+                    width: 800px;
                 }
             }
         }
     }
     /* 1440 <= screen <= 1839 放三个分类*/
-    @media (min-width: 1440px) and (max-width: 1839px) {
+    @media (min-width: 1420px) and (max-width: 1819px) {
         .content-wrapper{
             .index-wrapper{
                 .classify-list{
-                    width: 1220px;
+                    width: 1200px;
                 }
             }
         }
