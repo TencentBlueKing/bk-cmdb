@@ -84,8 +84,8 @@ func (cc *ConfCenter) Start() error {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-errorResEvent:
-			cc.dealErrorResEvent(confEvn.Data)
+		case errEvn := <-errorResEvent:
+			cc.dealErrorResEvent(errEvn.Data)
 		case langEvn := <-langEvent:
 			cc.dealLanguageResEvent(langEvn.Data)
 		case <-cc.rootCtx.Done():

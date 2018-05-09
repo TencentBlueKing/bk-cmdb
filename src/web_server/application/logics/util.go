@@ -14,7 +14,9 @@ package logics
 
 import (
 	"configcenter/src/common"
+	"fmt"
 	"github.com/tealeg/xlsx"
+	"strings"
 )
 
 const (
@@ -34,15 +36,22 @@ func getFieldsIDIndexMap(fields map[string]Property) map[string]int {
 }
 
 // getAssociateName  get getAssociate object name
-func getAssociateNames(a []interface{}) []string {
+func getAssociatePrimaryKey(a []interface{}, primaryField []Property) []string {
 	vals := []string{}
-
 	for _, valRow := range a {
 		mapVal, ok := valRow.(map[string]interface{})
 		if ok {
-			nameval, ok := mapVal[common.BKInstNameField].(string)
+			instMap, ok := mapVal["inst_info"].(map[string]interface{})
 			if true == ok {
-				vals = append(vals, nameval)
+				var itemVals []string
+				for _, field := range primaryField {
+					val, _ := instMap[field.ID]
+					if nil == val {
+						val = ""
+					}
+					itemVals = append(itemVals, fmt.Sprintf("%v", val))
+				}
+				vals = append(vals, strings.Join(itemVals, common.ExcelAsstPrimaryKeySplitChar))
 			}
 		}
 	}
