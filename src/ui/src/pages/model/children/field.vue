@@ -967,19 +967,6 @@
                                             <span class="select-error" v-if="isSelectErrorShow">{{$t('ModelManagement["请选择关联模型"]')}}</span>
                                         </div>
                                     </div>
-                                    <!-- <div class="from-common-item mt20" style="width: 40%;">
-                                        <label class="from-common-label pl5">关联层级</label>
-                                        <div class="from-selcet-wrapper">
-                                            <label class="bk-form-radio bk-radio-small">
-                                                <input type="radio" name="radio1" value="1" checked="checked" v-model="newFieldInfo.asstForward">
-                                                <i class="bk-radio-text">向上关联</i>
-                                            </label>
-                                            <label class="bk-form-radio bk-radio-small">
-                                                <input type="radio" name="radio1" value="2" checked="checked" v-model="newFieldInfo.asstForward">
-                                                <i class="bk-radio-text">向下关联</i>
-                                            </label>
-                                        </div>
-                                    </div> -->
                                 </div>
                                 <!-- 多关联 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'multiasst'">
@@ -1300,7 +1287,6 @@
                     isonly: false
                 },
                 newFieldInfo: {
-                    asstForward: '2',
                     propertyName: '',       // 字段名称
                     propertyId: '',         // API标识
                     propertyType: 'singlechar',      // 字段类型
@@ -1508,6 +1494,15 @@
                                 }
                             }
                             break
+                        case 'enum':
+                            if (!Array.isArray(item.option) || (Array.isArray(item.option) && !item.option.length)) {
+                                item.option = [{
+                                    id: '',
+                                    name: '',
+                                    is_default: true
+                                }]
+                            }
+                            break
                     }
                 })
             },
@@ -1581,7 +1576,7 @@
                         this.curIndex = index
                         // 处理单关联和多关联两种特殊情况
                         if (this.fieldList[i]['bk_property_type'] === 'singleasst' || this.fieldList[i]['bk_property_type'] === 'multiasst') {
-                            this.curModelType = this.fieldList[i].option.label
+                            this.curModelType = this.fieldList[i]['bk_asst_obj_id']
                         }
                     } else {
                         this.fieldList[i].isShow = false
@@ -1677,7 +1672,7 @@
             */
             checkParams () {
                 if (this.newFieldInfo.propertyType === 'singleasst' || this.newFieldInfo.propertyType === 'multiasst') {
-                    if (this.newFieldInfo.option.value === '') {
+                    if (this.newFieldInfo['bk_asst_obj_id'] === '') {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1697,7 +1692,7 @@
             */
             checkChangeParams (item, index) {
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
-                    if (!item.option.value) {
+                    if (!item['bk_asst_obj_id']) {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1736,8 +1731,7 @@
                     editable: this.newFieldInfo.editable,
                     placeholder: this.newFieldInfo.placeholder,
                     unit: this.newFieldInfo.unit,
-                    bk_asst_obj_id: this.newFieldInfo.option.value,
-                    bk_asst_forward: ''
+                    bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
                 this.$axios.post('object/attr', params).then(res => {
                     if (res.result) {
@@ -1779,20 +1773,10 @@
                             list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
-                        // this.newFieldInfo.option = [{name: '', is_default: 0}]
                         break
                     case 'singleasst':
-                        this.newFieldInfo.asstForward = '2'
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
-                        break
                     case 'multiasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
+                        this.newFieldInfo.option = ''
                 }
             },
             /*
@@ -1980,7 +1964,8 @@
             },
             modelSelected (item) {
                 this.isSelectErrorShow = false
-                this.newFieldInfo.option = item
+                this.newFieldInfo['bk_asst_obj_id'] = item.value
+                // this.newFieldInfo.option = item
             },
             /*
                 页面初始化
