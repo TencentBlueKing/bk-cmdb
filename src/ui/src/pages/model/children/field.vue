@@ -1191,7 +1191,7 @@
                                             </div>
                                             <div>
                                                 <span class="add" @click="addTableList(index)">{{$t('Common["新增"]')}}</span>
-                                                <span class="delete" @click="deleteTableList(index)" v-if="index">{{$t('Common["刪除"]')}}</span>
+                                                <span class="delete" @click="deleteTableList(index)" v-if="index">{{$t('Common["删除"]')}}</span>
                                             </div>
                                         </li>
                                     </ul>
