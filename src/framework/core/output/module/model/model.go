@@ -37,19 +37,7 @@ type model struct {
 }
 
 func (cli *model) ToMapStr() types.MapStr {
-	return types.MapStr{
-		SupplierAccount:  cli.OwnerID,
-		ObjectID:         cli.ObjectID,
-		ObjectIcon:       cli.ObjIcon,
-		ClassificationID: cli.ObjCls,
-		ObjectName:       cli.ObjectName,
-		IsPre:            cli.IsPre,
-		IsPaused:         cli.IsPaused,
-		Position:         cli.Position,
-		Description:      cli.Description,
-		Creator:          cli.Creator,
-		Modifier:         cli.Modifier,
-	}
+	return common.SetValueToMapStrByTags(cli)
 }
 
 func (cli *model) Attributes() ([]Attribute, error) {

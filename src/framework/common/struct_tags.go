@@ -43,6 +43,34 @@ func GetTags(target interface{}) []string {
 
 }
 
+// SetValueToMapStrByTags convert a struct to MapStr by tags
+func SetValueToMapStrByTags(source interface{}) types.MapStr {
+
+	values := types.MapStr{}
+
+	targetType := reflect.TypeOf(source)
+	targetValue := reflect.ValueOf(source)
+	switch targetType.Kind() {
+	case reflect.Ptr:
+		targetType = targetType.Elem()
+		targetValue = targetValue.Elem()
+	}
+
+	numField := targetType.NumField()
+	for i := 0; i < numField; i++ {
+		structField := targetType.Field(i)
+		tag, ok := structField.Tag.Lookup("field")
+		if !ok {
+			continue
+		}
+
+		fieldValue := targetValue.FieldByName(structField.Name)
+		values.Set(tag, fieldValue.Interface())
+	}
+
+	return values
+}
+
 // SetValueToStructByTags set the struct object field value by tags
 func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 
