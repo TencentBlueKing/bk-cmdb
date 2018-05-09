@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package common
 
 import (
@@ -44,13 +44,11 @@ func GetTags(target interface{}) []string {
 }
 
 // SetValueToStructByTags set the struct object field value by tags
-func SetValueToStructByTags(target interface{}, values types.MapStr) {
+func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 
 	targetType := reflect.TypeOf(target)
 	targetValue := reflect.ValueOf(target)
 	switch targetType.Kind() {
-	default:
-		break
 	case reflect.Ptr:
 		targetType = targetType.Elem()
 		targetValue = targetValue.Elem()
@@ -76,46 +74,56 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) {
 
 		switch structField.Type.Kind() {
 		default:
-			break
+			return fmt.Errorf("unsuport the type %v", structField.Type.Kind())
 		case reflect.Bool:
+			fieldValue.SetBool(tagVal.(bool))
+		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 			switch t := tagVal.(type) {
-			case bool:
-				fieldValue.SetBool(t)
 			default:
-				break
-			}
-		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
-			switch t := tagVal.(type) {
+				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
 			case int:
-				fieldValue.SetInt(int64(t))
-			case int64:
-				fieldValue.SetInt(t)
-			case int32:
-				fieldValue.SetInt(int64(t))
-			case int8:
 				fieldValue.SetInt(int64(t))
 			case int16:
 				fieldValue.SetInt(int64(t))
-			default:
-				break
+			case int32:
+				fieldValue.SetInt(int64(t))
+			case int64:
+				fieldValue.SetInt(int64(t))
+			case int8:
+				fieldValue.SetInt(int64(t))
+			case uint:
+				fieldValue.SetInt(int64(t))
+			case uint16:
+				fieldValue.SetInt(int64(t))
+			case uint32:
+				fieldValue.SetInt(int64(t))
+			case uint64:
+				fieldValue.SetInt(int64(t))
+			case uint8:
+				fieldValue.SetInt(int64(t))
 			}
+
 		case reflect.Float32, reflect.Float64:
 			switch t := tagVal.(type) {
 			default:
-				break
-			case float64:
-				fieldValue.SetFloat(t)
+				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
 			case float32:
 				fieldValue.SetFloat(float64(t))
+			case float64:
+				fieldValue.SetFloat(float64(t))
 			}
+
 		case reflect.String:
 			switch t := tagVal.(type) {
+			default:
+				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
 			case string:
 				fieldValue.SetString(t)
-			default:
-				break
 			}
+
 		}
 
 	}
+
+	return nil
 }
