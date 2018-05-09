@@ -177,9 +177,9 @@
         },
         computed: {
             ...mapGetters([
-                'allClassify',
                 'bkSupplierAccount'
             ]),
+            ...mapGetters('navigation', ['activeClassifications']),
             updateParams () {
                 let updateParams = {}
                 for (let config in this.sysConfig) {
@@ -227,7 +227,7 @@
                     this.localRoles.selected = ''
                 }
             },
-            allClassify () {
+            activeClassifications () {
                 // 查询分组权限接口先返回数据
                 // 获取到模型后要做一次初始化
                 if (this.groupAuthorities) {
@@ -283,29 +283,26 @@
             initClassifications () {
                 let classifications = []
                 let authorities = this.groupAuthorities
-                // debugger
-                this.allClassify.forEach((classify) => {
-                    if (classify['bk_objects']) {
-                        let models = []
-                        let classifyId = classify['bk_classification_id']
-                        if (this.hideClassify.indexOf(classifyId) === -1) {
-                            classify['bk_objects'].forEach((model) => {
-                                let selectedAuthorities = []
-                                if (authorities.hasOwnProperty('model_config') &&
-                                    authorities['model_config'].hasOwnProperty(classifyId) &&
-                                    authorities['model_config'][classifyId].hasOwnProperty(model['bk_obj_id'])
-                                ) {
-                                    selectedAuthorities = authorities['model_config'][classifyId][model['bk_obj_id']]
-                                }
-                                models.push(Object.assign({}, model, {selectedAuthorities}))
-                            })
-                            classifications.push({
-                                id: classify['bk_classification_id'],
-                                name: classify['bk_classification_name'],
-                                open: true,
-                                models: models
-                            })
-                        }
+                this.activeClassifications.forEach((classify) => {
+                    let models = []
+                    let classifyId = classify['bk_classification_id']
+                    if (this.hideClassify.indexOf(classifyId) === -1) {
+                        classify['bk_objects'].forEach((model) => {
+                            let selectedAuthorities = []
+                            if (authorities.hasOwnProperty('model_config') &&
+                                authorities['model_config'].hasOwnProperty(classifyId) &&
+                                authorities['model_config'][classifyId].hasOwnProperty(model['bk_obj_id'])
+                            ) {
+                                selectedAuthorities = authorities['model_config'][classifyId][model['bk_obj_id']]
+                            }
+                            models.push(Object.assign({}, model, {selectedAuthorities}))
+                        })
+                        classifications.push({
+                            id: classify['bk_classification_id'],
+                            name: classify['bk_classification_name'],
+                            open: true,
+                            models: models
+                        })
                     }
                 })
                 this.classifications = classifications
