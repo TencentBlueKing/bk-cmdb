@@ -24,7 +24,7 @@
             </div>
             <div class="filter-group user fl">
                 <label>{{$t("HostResourcePool['操作账号']")}}</label>
-                <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active"></v-member-selector>
+                <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active" :multiple="false"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
                 <bk-button type="primary" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>

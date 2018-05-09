@@ -28,12 +28,14 @@ import (
 )
 
 // HostSearch search host by mutiple condition
-func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
-	var hostCond, appCond, setCond, moduleCond, objectCond hostParse.SearchCondition
+func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail bool, hostCtrl, objCtrl string) (interface{}, error) {
+	var hostCond, appCond, setCond, moduleCond, mainlineCond hostParse.SearchCondition
+	objectCondMap := make(map[string][]interface{}, 0)
 	appIDArr := make([]int, 0)
 	setIDArr := make([]int, 0)
 	moduleIDArr := make([]int, 0)
 	hostIDArr := make([]int, 0)
+	instAsstHostIDArr := make([]int, 0)
 	objSetIDArr := make([]int, 0)
 	disAppIDArr := make([]int, 0)
 	disSetIDArr := make([]int, 0)
@@ -66,8 +68,10 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 			moduleCond = object
 		} else if object.ObjectID == common.BKInnerObjIDApp {
 			appCond = object
+		} else if object.ObjectID == common.BKINnerObjIDObject {
+			mainlineCond = object
 		} else {
-			objectCond = object
+			objectCondMap[object.ObjectID] = object.Condition
 		}
 	}
 
@@ -82,12 +86,12 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	if len(appCond.Condition) > 0 {
 		appIDArr, _ = GetAppIDByCond(req, objCtrl, appCond.Condition)
 	}
-	//search object by cond
-	if len(objectCond.Condition) > 0 {
-		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, objectCond.Condition)
+	//search mainline object by cond
+	if len(mainlineCond.Condition) > 0 {
+		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, mainlineCond.Condition)
 	}
 	//search set by appcond
-	if len(setCond.Condition) > 0 || len(objectCond.Condition) > 0 {
+	if len(setCond.Condition) > 0 || len(mainlineCond.Condition) > 0 {
 		if len(appCond.Condition) > 0 {
 			cond := make(map[string]interface{})
 			cond["field"] = common.BKAppIDField
@@ -95,7 +99,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 			cond["value"] = appIDArr
 			setCond.Condition = append(setCond.Condition, cond)
 		}
-		if len(objectCond.Condition) > 0 {
+		if len(mainlineCond.Condition) > 0 {
 			cond := make(map[string]interface{})
 			cond["field"] = common.BKSetIDField
 			cond["operator"] = common.BKDBIN
@@ -105,6 +109,14 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 		setIDArr, _ = GetSetIDByCond(req, objCtrl, setCond.Condition)
 	}
 
+	//search host id by object
+	if len(objectCondMap) > 0 {
+		for objID, objCond := range objectCondMap {
+			instIDArr := GetObjectInstByCond(req, objID, objCtrl, objCond)
+			instAsstHostIDArr = GetHostIDByInstID(req, objID, objCtrl, instIDArr)
+		}
+
+	}
 	if len(moduleCond.Condition) > 0 {
 		if len(setCond.Condition) > 0 {
 			cond := make(map[string]interface{})
@@ -132,6 +144,9 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 	}
 	if len(moduleCond.Condition) > 0 {
 		moduleHostConfig[common.BKModuleIDField] = moduleIDArr
+	}
+	if len(objectCondMap) > 0 {
+		moduleHostConfig[common.BKHostIDField] = instAsstHostIDArr
 	}
 	hostIDArr, _ = GetHostIDByCond(req, hostCtrl, moduleHostConfig)
 
@@ -172,11 +187,20 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 
 	// deal the host
 	instapi.Inst.InitInstHelper(hostCtrl, objCtrl)
-	hostResult, retStrErr := instapi.Inst.GetInstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
-		"start": 0,
-		"limit": common.BKNoLimit,
-		"sort":  "",
-	})
+	var retStrErr int
+	if true == isDetail {
+		hostResult, retStrErr = instapi.Inst.GetInstAsstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  "",
+		})
+	} else {
+		hostResult, retStrErr = instapi.Inst.GetInstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  "",
+		})
+	}
 
 	if common.CCSuccess != retStrErr {
 		blog.Error("failed to replace association object, error code is %d", retStrErr)

@@ -84,8 +84,8 @@ func (cc *ConfCenter) Start() error {
 		select {
 		case confEvn := <-confEvent:
 			cc.dealConfChangeEvent(confEvn.Data)
-		case confEvn := <-errorResEvent:
-			cc.dealErrorResEvent(confEvn.Data)
+		case errEvn := <-errorResEvent:
+			cc.dealErrorResEvent(errEvn.Data)
 		case langEvn := <-langEvent:
 			cc.dealLanguageResEvent(langEvn.Data)
 		case <-cc.rootCtx.Done():
@@ -132,7 +132,7 @@ func (cc *ConfCenter) GetErrorCxt() map[string]errors.ErrorCode {
 }
 
 func (cc *ConfCenter) dealErrorResEvent(data []byte) error {
-	blog.Info("language has changed")
+	blog.Info("error has changed")
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()

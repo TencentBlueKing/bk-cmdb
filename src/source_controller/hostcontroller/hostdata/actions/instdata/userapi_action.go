@@ -1,22 +1,22 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
@@ -92,7 +92,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	xidDevice := xid.New()
 
 	params[common.BKAppIDField] = appID
-	params["id"] = xidDevice.String()
+	params[common.BKFieldID] = xidDevice.String()
 	params[common.CreateTimeField] = time.Now()
 	params["modify_user"] = ""
 	params[common.LastTimeField] = ""
@@ -132,7 +132,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	data[common.LastTimeField] = time.Now()
 
 	params := make(map[string]interface{})
-	params["id"] = ID
+	params[common.BKFieldID] = ID
 	params[common.BKAppIDField] = appID
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
@@ -146,6 +146,27 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommNotFound, defErr.Error(common.CCErrCommNotFound).Error(), resp)
 		return
 	}
+	//edit new not duplicate
+	newName, ok := data["name"]
+	if ok {
+		dupParams := make(map[string]interface{})
+		dupParams["name"] = newName
+		dupParams[common.BKAppIDField] = appID
+		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+
+		rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
+		if nil != err {
+			blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", err.Error(), dupParams)
+			userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+			return
+		}
+		if 0 < rowCount {
+			blog.Info("host user api  name duplicatie , params:%v", dupParams)
+			userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
+			return
+		}
+	}
+
 	//json 中的数字会被转换未doubule， 转换未int64
 	data[common.BKAppIDField] = appID
 	err = u.CC.InstCli.UpdateByCondition(u.tableName, data, params)

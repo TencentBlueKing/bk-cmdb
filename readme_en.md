@@ -1,8 +1,11 @@
-![](docs/resource/img/BKCN.jpg)
+![](docs/resource/img/BKEN.png)
 ---
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE)
 [![Release Version](https://img.shields.io/badge/release-3.0.6-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
+
+**Note**: The `master` branch may be in an *unstable or even broken state* during development.
+Please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
 
 BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database. 
 

@@ -13,7 +13,7 @@
         <i class="bk-icon icon-dedent" :class="{'close': fold}" @click="closeNav"></i>
         <div class="header-right-contain fr">
             <!-- 导航快速搜索 -->
-            <div class="fl clearfix" v-click-outside="resetSearch">
+            <div class="fl clearfix" v-click-outside="resetSearch" hidden>
                 <transition name="quick-search" @afterEnter="quickSearchTextFocus">
                     <div class="quick-search-contain fl"  v-show="isShowQuickSearch">
                         <div class="dropdown-content-ip fl" 
@@ -106,6 +106,9 @@
                     text: this.searchText,
                     type: searchTarget.id
                 })
+            },
+            quickSearchParams (quickSearchParams) {
+                this.searchText = quickSearchParams.text
             }
         },
         methods: {
