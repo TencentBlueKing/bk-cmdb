@@ -267,6 +267,7 @@
         "已经存在未命名分组": "Unnamed grouping already exists",
         "分组长度超出限制": "Group Name Length exceeds limit",
         "系统内置分组不可删除": "System built-in grouping cannot be deleted",
+        "默认字段分组不可删除": "Default field grouping cannot be deleted",
         "该分组中存在必填字段，不可删除": "A required field exists in this group and cannot be deleted",
         "删除分组成功": "Delete Group Successfully",
         "隐藏成功": "Hide Success",
