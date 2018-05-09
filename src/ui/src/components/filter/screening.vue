@@ -44,13 +44,15 @@
             <template v-for="(column, index) in localQueryColumns">
                 <div class="screening-group" v-if="column['bk_property_id'] !== 'bk_host_innerip' && column['bk_property_id'] !== 'bk_host_outerip'">
                     <label class="screening-group-label">{{getColumnLabel(column)}}</label>
-                    <div class="screening-group-item clearfix" :class="`screening-group-item-${column['bk_property_type']}`">
+                    <div class="screening-group-item clearfix">
                         <!-- 时间无条件选择 -->
                         <template v-if="column['bk_property_type'] === 'date' || column['bk_property_type'] === 'time'">
-                            <bk-daterangepicker ref="dateRangePicker" class="screening-group-item screening-group-item-date"
+                            <bk-daterangepicker ref="dateRangePicker" :class="['screening-group-item',`screening-group-item-${column['bk_property_type']}`]"
+                                style="width: 315px;"
                                 :quick-select="false"
                                 :range-separator="'-'"
                                 :align="'right'"
+                                :timer="column['bk_property_type'] === 'time'"
                                 :initDate="localQueryColumnData[column['bk_property_id']]['value'].join(' - ')"
                                 @change="setQueryDate(...arguments, column)">
                             </bk-daterangepicker>
@@ -432,7 +434,8 @@
                 padding: 10px;
                 font-size: 14px;
             }
-            .screening-group-item-date{
+            .screening-group-item-date,
+            .screening-group-item-time{
                 z-index: 1;
             }
             .screening-group-item-operator{
@@ -464,7 +467,8 @@
     }
 </style>
 <style lang="scss">
-.screening-group-item-date{
+.screening-group-item-date,
+.screening-group-item-time{
     .daterange-dropdown-panel{
         min-width: auto;
     }
@@ -476,6 +480,11 @@
             float: none !important;
             margin: 0 auto;
         }
+    }
+}
+.screening-group-item-time{
+    input[name="date-select"]{
+        font-size: 12px;
     }
 }
 </style>
