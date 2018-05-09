@@ -1494,6 +1494,15 @@
                                 }
                             }
                             break
+                        case 'enum':
+                            if (!Array.isArray(item.option) || (Array.isArray(item.option) && !item.option.length)) {
+                                item.option = [{
+                                    id: '',
+                                    name: '',
+                                    is_default: true
+                                }]
+                            }
+                            break
                     }
                 })
             },
