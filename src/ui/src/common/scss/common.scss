@@ -737,3 +737,13 @@ body[lang="en"]{
         }
     }
 }
+.tooltip-danger{
+    .tooltip-inner{
+        color: #ff5656;
+        background: #ffeaea;
+    }
+    .tooltip-arrow{
+        border-color: #ffeaea;
+        color: #ff5656;
+    }
+}

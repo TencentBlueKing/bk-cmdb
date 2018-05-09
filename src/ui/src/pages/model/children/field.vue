@@ -540,7 +540,7 @@
                                                 <div>{{$t('ModelManagement["操作"]')}}</div>
                                             </li>
                                             <li class="list-item" v-for="(opt, index) in item.option">
-                                                <i v-show="opt.errorMsg" v-tooltip="opt.errorMsg" class="icon icon-cc-attribute"></i>
+                                                <i v-show="opt.errorMsg" v-tooltip.left="{content: opt.errorMsg, classes: 'tooltip-danger'}" class="icon icon-cc-attribute"></i>
                                                 <div class="list-row">
                                                     <span class="list-view" @click="listViewEdit(opt, 'isEditName', true)" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
                                                     <input type="text" v-focus @blur="listViewEdit(opt, 'isEditName', false)" v-else v-model="opt['list_header_name']">
@@ -550,8 +550,12 @@
                                                     <input type="text" v-focus @blur="listViewEdit(opt, 'isEditDesc', false)" v-else v-model="opt['list_header_describe']">
                                                 </div>
                                                 <div>
-                                                    <span class="add" @click="addTableList(index, item.option)">{{$t('Common["新增"]')}}</span>
-                                                    <span class="delete" @click="deleteTableList(index, item.option)" v-if="index">{{$t('Common["删除"]')}}</span>
+                                                    <span class="add" @click="addTableList(index, item.option)" :title="$t('Common[\'新增\']')">
+                                                        <i class="bk-icon icon-plus-circle-shape"></i>
+                                                    </span>
+                                                    <span class="delete" @click="deleteTableList(index, item.option)" v-if="index" :title="$t('Common[\'删除\']')">
+                                                        <i class="icon-cc-del"></i>
+                                                    </span>
                                                 </div>
                                             </li>
                                         </ul>
@@ -1180,7 +1184,7 @@
                                             <div>{{$t('ModelManagement["操作"]')}}</div>
                                         </li>
                                         <li class="list-item" v-for="(opt, index) in newFieldInfo.option">
-                                            <i v-show="opt.errorMsg" v-tooltip="opt.errorMsg" class="icon icon-cc-attribute"></i>
+                                            <i v-show="opt.errorMsg" v-tooltip.left="{content: opt.errorMsg, classes: 'tooltip-danger'}" class="icon icon-cc-attribute"></i>
                                             <div class="list-row">
                                                 <span class="list-view" @click="opt.isEditName = true" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
                                                 <input type="text" v-focus @blur="opt.isEditName = false" v-else v-model="opt['list_header_name']">
@@ -1190,8 +1194,12 @@
                                                 <input type="text" v-focus @blur="opt.isEditDesc = false" v-else v-model="opt['list_header_describe']">
                                             </div>
                                             <div>
-                                                <span class="add" @click="addTableList(index)">{{$t('Common["新增"]')}}</span>
-                                                <span class="delete" @click="deleteTableList(index)" v-if="index">{{$t('Common["删除"]')}}</span>
+                                                <span class="add" @click="addTableList(index)" :title="$t('Common[\'新增\']')">
+                                                    <i class="bk-icon icon-plus-circle-shape"></i>
+                                                </span>
+                                                <span class="delete" @click="deleteTableList(index)" v-if="index" :title="$t('Common[\'删除\']')">
+                                                    <i class="icon-cc-del"></i>
+                                                </span>
                                             </div>
                                         </li>
                                     </ul>
@@ -2670,28 +2678,30 @@
     }
     .list-wrapper{
         margin: 20px 0 0 69px;
-        border-top: 1px solid $fnMainColor;
-        border-left: 1px solid $fnMainColor;
+        border-top: 1px solid #dde4eb;
+        border-left: 1px solid #dde4eb;
+        color: #737987;
         .list-item{
             position: relative;
             font-size: 0;
-            line-height: 30px;
+            line-height: 40px;
             display: flex;
             &:first-child{
-                font-weight: bold;
+                background: #fafbfd;
+                color: #333948;
             }
             .icon{
                 position: absolute;
                 font-size: 16px;
                 left: -25px;
-                top: 7px;
-                color: #ffb400;
+                top: 13px;
+                color: #ff5656;
             }
             div{
                 text-align: center;
                 font-size: 14px;
-                border-right: 1px solid $fnMainColor;
-                border-bottom: 1px solid $fnMainColor;
+                border-right: 1px solid #dde4eb;
+                border-bottom: 1px solid #dde4eb;
                 text-overflow: ellipsis;
                 overflow: hidden;
                 &:not(:last-child) {
@@ -2707,17 +2717,21 @@
                     }
                 }
                 .delete{
-                    cursor: pointer;
-                    &:hover{
-                        color: #ff3737;
+                    margin-left: 8px;
+                    .icon-cc-del{
+                        color: #737987;
+                        &:hover{
+                            color: #ff3737;
+                        }
                     }
+                    cursor: pointer;
                 }
                 .list-view{
                     cursor: pointer;
                     display: inline-block;
                     padding: 0 10px;
                     width: 100%;
-                    height: 30px;
+                    height: 40px;
                     vertical-align: bottom;
                 }
             }
