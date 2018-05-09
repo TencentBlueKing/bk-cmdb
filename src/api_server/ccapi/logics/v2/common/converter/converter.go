@@ -877,6 +877,7 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	productPm := ""
 	operator := ""
 	developer := ""
+	tester := ""
 	if nil != itemMap[common.BKMaintainersField] {
 		maintainer, _ = itemMap[common.BKMaintainersField].(string)
 	}
@@ -889,10 +890,14 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	if nil != itemMap[common.BKDeveloperField] {
 		developer, _ = itemMap[common.BKDeveloperField].(string)
 	}
+	if nil != itemMap[common.BKTesterField] {
+		tester, _ = itemMap[common.BKTesterField].(string)
+	}
 	maintainer = strings.Replace(maintainer, ",", ";", -1)
 	productPm = strings.Replace(productPm, ",", ";", -1)
 	operator = strings.Replace(operator, ",", ";", -1)
 	developer = strings.Replace(developer, ",", ";", -1)
+	tester = strings.Replace(tester, ",", ";", -1)
 	lifecycle := ""
 	if nil != itemMap["life_cycle"] {
 		lifecycle, _ = itemMap["life_cycle"].(string)
@@ -926,10 +931,10 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		"LifeCycle":   lifecycle,
 		"Lanuage":     language,
 		"TimeZone":    timeZone,
-
-		"LastTime":   convertToV2Time(itemMap[common.LastTimeField]),
-		"DeptName":   "",
-		"CreateTime": convertToV2Time(itemMap[common.CreateTimeField]),
+		"Tester":      tester,
+		"LastTime":    convertToV2Time(itemMap[common.LastTimeField]),
+		"DeptName":    "",
+		"CreateTime":  convertToV2Time(itemMap[common.CreateTimeField]),
 	}
 	return itemMapV2, nil
 }
