@@ -327,6 +327,11 @@
                 } else if (this.type === 'update') {
                     this.setUpdateInitData()
                 }
+                if (displayType === 'form') {
+                    this.$validator.validateAll().then(() => {
+                        this.errors.clear()
+                    })
+                }
             },
             isMultipleUpdate (isMultipleUpdate) {
                 if (isMultipleUpdate) {

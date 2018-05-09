@@ -272,12 +272,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = "Linux"
+		ostype = bkcommon.HostOSTypeEnumLinux //"Linux"
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = "Windows"
+		ostype = bkcommon.HostOSTypeEnumWindows // "Windows"
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -293,6 +293,8 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		}
 	}
 
+	osbit := val.Get("data.system.info.systemtype").String()
+
 	return map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
@@ -305,6 +307,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		"bk_host_name":  hostname,
 		"bk_outer_mac":  OuterMAC,
 		"bk_mac":        InnerMAC,
+		"bk_os_bit":     osbit,
 	}
 }
 func getIPS(val *gjson.Result) (ips []string) {

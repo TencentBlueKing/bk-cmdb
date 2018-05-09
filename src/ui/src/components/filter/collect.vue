@@ -149,6 +149,7 @@
                 this.$axios.put(`hosts/favorites/${updateItem['id']}`, updateItem).then(res => {
                     if (res.result) {
                         item.edit = false
+                        this.$emit('update', updateItem)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }

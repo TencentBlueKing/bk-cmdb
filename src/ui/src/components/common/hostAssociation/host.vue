@@ -233,10 +233,11 @@
                     name: 'bk_host_id',
                     type: 'checkbox'
                 }].concat(columns.map(column => {
+                    const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                     return {
                         id: column['bk_property_id'],
-                        name: column['bk_property_name'],
-                        property: column
+                        name: property ? property['bk_property_name'] : column['bk_property_name'],
+                        property: property
                     }
                 }))
             },
@@ -314,8 +315,14 @@
                 })
             },
             getTableList () {
+                let params = this.$deepClone(this.filter.params)
+                params.page = {
+                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                    limit: this.table.pagination.size,
+                    sort: this.table.sort
+                }
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.filter.params).then(res => {
+                this.$axios.post('hosts/search', params).then(res => {
                     this.table.isLoading = false
                     if (res.result) {
                         this.table.pagination.count = res.data.count
@@ -341,6 +348,9 @@
                         }
                     })
                     value = tempValue.join(',')
+                } else if (property['bk_property_type'] === 'enum' && Array.isArray(property.option)) {
+                    let option = property.option.find(({id}) => id === value)
+                    value = option ? option.name : ''
                 }
                 return value
             },

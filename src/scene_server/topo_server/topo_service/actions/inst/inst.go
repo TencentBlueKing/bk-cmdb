@@ -58,6 +58,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.DeleteInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}/detail", Params: nil, Handler: inst.SelectInstsAndAsstDetail})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.InstSearch})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst})
@@ -82,7 +83,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
-	valid := validator.NewValidMapWithKeyFileds(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
+	valid := validator.NewValidMapWithKeyFields(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
 	user := util.GetActionUser(req)
 	isUpdate := false
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
@@ -108,9 +109,9 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 				propertyID := j.PropertyID
 				fieldType := j.PropertyType
 				switch fieldType {
-				case common.FiledTypeSingleChar:
+				case common.FieldTypeSingleChar:
 					targetInput[propertyID] = ""
-				case common.FiledTypeLongChar:
+				case common.FieldTypeLongChar:
 					targetInput[propertyID] = ""
 				default:
 					targetInput[propertyID] = nil
@@ -744,7 +745,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 
 		switch item.PropertyType {
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
 			asst["bk_object_att_id"] = item.PropertyID
@@ -797,6 +798,15 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 }
 
 func (cli *instAction) getInstAsst(req *restful.Request, ownerID, objID string, ids []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, ids, page, false)
+}
+
+func (cli *instAction) getInstAsstDetail(req *restful.Request, ownerID, objID string, ids []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, ids, page, true)
+
+}
+
+func (cli *instAction) getRawInstAsst(req *restful.Request, ownerID, objID string, ids []string, page map[string]interface{}, detail bool) ([]instNameAsst, int, int) {
 
 	tmpIDS := []int{}
 	for _, id := range ids {
@@ -935,6 +945,9 @@ func (cli *instAction) getInstAsst(req *restful.Request, ownerID, objID string, 
 						if dataItemValStr, convOk := dataItemVal.(string); convOk {
 							inst.InstName = dataItemValStr
 							inst.ObjID = objID
+							if true == detail {
+								inst.InstInfo = dataItem
+							}
 						}
 
 						// 删除已经存在的ID
@@ -1080,6 +1093,16 @@ func (cli *instAction) getCommonInstTopo(req *restful.Request, objID, ownerID, i
 }
 
 func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getRawInstDetails(req, objID, ownerID, instStr, page, false)
+
+}
+
+func (cli *instAction) getInstDetailsAndAsstDetail(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getRawInstDetails(req, objID, ownerID, instStr, page, true)
+
+}
+
+func (cli *instAction) getRawInstDetails(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}, isDetail bool) (map[string]interface{}, int) {
 	forward := &api.ForwardParam{Header: req.Request.Header}
 	blog.Debug("ownerid(%s) objid(%s)", ownerID, objID)
 	// read object association map
@@ -1117,7 +1140,14 @@ func (cli *instAction) getInstDetails(req *restful.Request, objID, ownerID, inst
 
 							keyItemStr := fmt.Sprintf("%v", keyItem)
 							blog.Debug("keyitemstr:%s", keyItemStr)
-							retData, _, retErr := cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), page)
+							var retData []instNameAsst
+							var retErr int
+							if isDetail {
+								retData, _, retErr = cli.getInstAsstDetail(req, ownerID, val, strings.Split(keyItemStr, ","), page)
+
+							} else {
+								retData, _, retErr = cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), page)
+							}
 							if common.CCSuccess != retErr {
 								blog.Error("failed to get inst details")
 							}
@@ -1386,8 +1416,16 @@ func (cli *instAction) SelectInst(req *restful.Request, resp *restful.Response) 
 
 }
 
-// SelectInsts search insts by condition
+func (cli *instAction) SelectInstsAndAsstDetail(req *restful.Request, resp *restful.Response) {
+	cli.selectInsts(req, resp, true)
+}
+
 func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response) {
+	cli.selectInsts(req, resp, false)
+}
+
+// SelectInsts search insts by condition
+func (cli *instAction) selectInsts(req *restful.Request, resp *restful.Response, asstDetail bool) {
 	blog.Info("select insts")
 
 	// get language
@@ -1461,11 +1499,21 @@ func (cli *instAction) SelectInsts(req *restful.Request, resp *restful.Response)
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstSelectFailed)
 		}
 
-		retStr, retStrErr := cli.getInstDetails(req, objID, ownerID, objRes, map[string]interface{}{
-			"start": 0,
-			"limit": common.BKNoLimit,
-			"sort":  "",
-		})
+		var retStr map[string]interface{}
+		var retStrErr int
+		if true == asstDetail {
+			retStr, retStrErr = cli.getInstDetailsAndAsstDetail(req, objID, ownerID, objRes, map[string]interface{}{
+				"start": 0,
+				"limit": common.BKNoLimit,
+				"sort":  "",
+			})
+		} else {
+			retStr, retStrErr = cli.getInstDetails(req, objID, ownerID, objRes, map[string]interface{}{
+				"start": 0,
+				"limit": common.BKNoLimit,
+				"sort":  "",
+			})
+		}
 
 		if common.CCSuccess != retStrErr {
 			return http.StatusInternalServerError, "", defErr.Error(retStrErr)

@@ -18,7 +18,7 @@ const isName = {
         return '请输入合法的' + field
     },
     validate: value => { // 驗證規則
-        return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
+        return /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
     }
 }
 Validator.extend('name', isName)

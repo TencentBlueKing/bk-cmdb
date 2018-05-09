@@ -142,6 +142,7 @@
                     bk_supplier_account: 0,
                     bk_obj_icon: 'icon-cc-business'
                 },
+                baseInfoCopy: {},
                 baseInfoVerify: {
                     bk_obj_name: true,             // true: 成功 false 失败
                     bk_obj_id: true
@@ -299,23 +300,27 @@
                         })
                     }
                 } else if (this.type === 'change') {
-                    params['bk_ispre'] = this.baseInfo['bk_ispre']
-                    this.$axios.put(`object/${this.baseInfo['id']}`, params).then(res => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
-                            this.$emit('confirm', {
-                                bk_obj_name: this.baseInfo['bk_obj_name'],
-                                bk_obj_id: this.baseInfo['bk_obj_id']
-                            })
-                            this.$store.commit('updateClassify', {
-                                bk_classification_id: this.classificationId,
-                                bk_obj_id: this.baseInfo['bk_obj_id'],
-                                bk_obj_name: this.baseInfo['bk_obj_name']
-                            })
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    if (this.baseInfo['bk_obj_name'] === this.baseInfoCopy['bk_obj_name'] && this.baseInfo['bk_obj_icon'] === this.baseInfoCopy['bk_obj_icon']) {
+                        this.cancel()
+                    } else {
+                        params['bk_ispre'] = this.baseInfo['bk_ispre']
+                        this.$axios.put(`object/${this.baseInfo['id']}`, params).then(res => {
+                            if (res.result) {
+                                this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
+                                this.$emit('confirm', {
+                                    bk_obj_name: this.baseInfo['bk_obj_name'],
+                                    bk_obj_id: this.baseInfo['bk_obj_id']
+                                })
+                                this.$store.commit('updateClassify', {
+                                    bk_classification_id: this.classificationId,
+                                    bk_obj_id: this.baseInfo['bk_obj_id'],
+                                    bk_obj_name: this.baseInfo['bk_obj_name']
+                                })
+                            } else {
+                                this.$alertMsg(res['bk_error_msg'])
+                            }
+                        })
+                    }
                 }
             }
         },

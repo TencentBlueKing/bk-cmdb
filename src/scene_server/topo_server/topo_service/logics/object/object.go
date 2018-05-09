@@ -158,7 +158,7 @@ func (cli *objLogic) CreateObject(forward *api.ForwardParam, params []byte, errP
 	}
 
 	objAtt.PropertyIndex = -1
-	objAtt.PropertyType = common.FiledTypeSingleChar
+	objAtt.PropertyType = common.FieldTypeSingleChar
 	switch obj.ObjID {
 	case common.BKInnerObjIDApp:
 		objAtt.PropertyID = common.BKAppNameField

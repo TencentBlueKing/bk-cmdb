@@ -4,6 +4,9 @@
 [![Release Version](https://img.shields.io/badge/release-3.0.6-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 
+**Note**: The `master` branch may be in an *unstable or even broken state* during development.
+Please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
+
 BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database. 
 
 The version 3.0 is a complete new change compare to version 2.0. It provide user complete new way of self define model management. Users can not only can easily expand the built-in model attributes, but also can add models and associations at any time according to different enterprise requirements, and incorporate networks, middleware, and virtual resources into the bk-cmdb. It also adds more new features that meet the needs of the certain requirement. For example: machine data snapshots, automatic data discovery, active push of change events, more granular rights management, and expandable service topology, etc. 
