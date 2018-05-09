@@ -162,7 +162,7 @@ func (r *RegDiscover) registerItself() error {
 		return err
 	}
 
-	path := types.CC_SERV_BASEPATH + "/" + r.moduleName + "/" + r.ip
+	path := types.CC_SERV_BASEPATH + "/framework/" + r.moduleName + "/" + r.ip
 
 	return r.rd.RegisterAndWatchService(path, data)
 }
