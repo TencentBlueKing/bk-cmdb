@@ -69,6 +69,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/cloneHostProperty", Params: nil, Handler: host.CloneHostProperty, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "host/delHostInApp", Params: nil, Handler: host.DelHostInApp, FilterHandler: nil, Version: v2.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/getgitServerIp", Params: nil, Handler: host.GetGitServerIp, FilterHandler: nil, Version: v2.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/addhost", Params: nil, Handler: host.AddHost, FilterHandler: nil, Version: v2.APIVersion})
 
 	// set cc api interface
 	host.CreateAction()
@@ -547,10 +548,10 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 		proxyNew[common.BKCloudIDField] = platIdInt
 		proxyNew[common.BKHostInnerIPField] = proxy["InnerIP"]
 		proxyNew[common.BKHostOuterIPField] = proxy["OuterIP"]
-		proxyNew, err := logics.AutoInputV3Filed(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
+		proxyNew, err := logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
 
 		if err != nil {
-			blog.Error("AutoInputV3Filed error:%v", err)
+			blog.Error("AutoInputV3Field error:%v", err)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 			return
 		}
@@ -911,8 +912,8 @@ func (cli *hostAction) UpdateCustomProperty(req *restful.Request, resp *restful.
 		return
 	}
 	if "" == hostId {
-		blog.Errorf("UpdateCustomProperty error platId empty")
-		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platId").Error(), resp)
+		blog.Errorf("UpdateCustomProperty error host empty")
+		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostID").Error(), resp)
 		return
 	}
 	param := make(common.KvMap)

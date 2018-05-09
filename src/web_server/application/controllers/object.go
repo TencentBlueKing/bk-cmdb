@@ -26,6 +26,7 @@ import (
 	"os"
 	//"reflect"
 	lang "configcenter/src/common/language"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
 	"time"
@@ -53,6 +54,7 @@ var sortFields = []string{
 // ImportObject import object attribute
 func ImportObject(c *gin.Context) {
 	logics.SetProxyHeader(c)
+	objID := c.Param(common.BKObjIDField)
 
 	cc := api.NewAPIResource()
 	language := logics.GetLanugaeByHTTPRequest(c)
@@ -87,7 +89,9 @@ func ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, err := logics.GetImportInsts(f, "", c.Request.Header, 3, defLang)
+	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+
+	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, defLang)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {
@@ -99,12 +103,13 @@ func ImportObject(c *gin.Context) {
 		return
 	}
 
+	logics.ConvAttrOption(attrItems)
+
 	blog.Debug("the object file content:%+v", attrItems)
 
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := fmt.Sprintf("%s/api/%s/object/batch", apiSite, webCommon.API_VERSION)
 	blog.Debug("batch insert insts, the url is %s", url)
-	objID := c.Param(common.BKObjIDField)
+
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
@@ -176,7 +181,18 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 		case bool:
 			cell.SetBool(t)
 		default:
-			cell.SetValue(t)
+			switch key {
+			case common.BKOptionField:
+				bOptions, err := json.Marshal(t)
+				if nil != err {
+					blog.Errorf("option format error:%v", t)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bOptions))
+				}
+			default:
+				cell.SetValue(t)
+			}
 		}
 	}
 

@@ -296,10 +296,10 @@
                             svgColor = svgForOther
                         }
                         // 没有图标的话就设置一个默认图标
-                        if (!node.hasOwnProperty('bk_obj_icon')) {
+                        if (!node.hasOwnProperty('bk_obj_icon') || node['bk_obj_icon'] === '') {
                             node['bk_obj_icon'] = 'icon-cc-business'
                         }
-                        
+
                         let img = `./static/svg/${this.getIconByClass(node['bk_obj_icon'])}.svg`
                         let image = new Image()
                         image.onload = () => {
@@ -315,22 +315,21 @@
                                     </div>
                                 </foreignObject>
                             </svg>`
-                            let url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-                            let temp = {
-                                id: node['bk_obj_id'],
-                                size: 55,
-                                physics: false,
-                                image: url,
-                                shape: 'image'
-                            }
-                            if (node.hasOwnProperty('position') && node['position'] !== '') {
-                                let position = JSON.parse(node['position'])
-                                if (position.hasOwnProperty(this.curClassify)) {
-                                    temp.x = position[this.curClassify].x
-                                    temp.y = position[this.curClassify].y
-                                }
-                            }
-                            this.nodes.push(temp)
+                            this.initImage(svg, node)
+                            status++
+                        }
+                        image.onerror = () => {
+                            let svg = `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+                            <circle cx="50" cy="50" r="49" fill="${svgColor.bgColor}"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="35" y="-12" fill="${svgColor.iconColor}" width="35" >
+                                </svg>
+                                <foreignObject x="0" y="58" width="100%" height="100%">
+                                    <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
+                                        <div style="color:${svgColor.color};text-align: center;width: 50px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${node['bk_obj_name']}</div>
+                                    </div>
+                                </foreignObject>
+                            </svg>`
+                            this.initImage(svg, node)
                             status++
                         }
                         image.src = img
@@ -342,6 +341,24 @@
                         this.init()
                     }
                 }, 200)
+            },
+            initImage (svg, node) {
+                let url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+                let temp = {
+                    id: node['bk_obj_id'],
+                    size: 55,
+                    physics: false,
+                    image: url,
+                    shape: 'image'
+                }
+                if (node.hasOwnProperty('position') && node['position'] !== '') {
+                    let position = JSON.parse(node['position'])
+                    if (position.hasOwnProperty(this.curClassify)) {
+                        temp.x = position[this.curClassify].x
+                        temp.y = position[this.curClassify].y
+                    }
+                }
+                this.nodes.push(temp)
             },
             /*
                 获取当前模型item
@@ -559,10 +576,11 @@
             border-radius: 15px;
             font-weight: normal;
             text-align: left;
-            // font-size: 0;
+            font-size: 0;
             .bk-icon{
                 font-weight: normal;
                 vertical-align: middle;
+                font-size: 14px;
             }
         }
         .vis-del{

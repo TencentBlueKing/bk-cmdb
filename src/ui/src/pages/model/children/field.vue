@@ -23,7 +23,7 @@
         @cancel="cancel">
         </v-base-info>
         <div class="tab-content model-field-content pb20" v-show="type==='change'">
-            <div class="add-field">
+            <div class="add-field clearfix">
                 <bk-button type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="addField" v-if="!isReadOnly">
                     {{$t('ModelManagement["新增字段"]')}}
                 </bk-button>
@@ -144,13 +144,13 @@
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
                                             </div>
                                         </div>
                                     </div>
@@ -387,7 +387,7 @@
                                             <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
@@ -429,10 +429,10 @@
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content selcet-width-control">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
@@ -631,13 +631,13 @@
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="newFieldInfo.option.min">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min">
                                         </div>
                                     </div>
                                     <div class="from-common-item  mt20 tr">
                                         <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="newFieldInfo.option.max">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max">
                                         </div>
                                     </div>
                                 </div>
@@ -1200,7 +1200,7 @@
                 }
             },
             language (lang) {
-                if (lang === 'zh_CN') {
+                if (lang === 'zh_cn') {
                     this.fieldTypeList = this.fieldTypeListForZh
                 } else {
                     this.fieldTypeList = this.fieldTypeListForEn
@@ -1220,93 +1220,46 @@
                     }
                 },
                 isLoading: false,           // 是否处于加载列表状态
-                fieldTypeList: [],
-                fieldTypeListForZh: [
+                fieldTypeList: [
                     {
                         value: 'singlechar',
-                        label: '短字符'
+                        label: this.$t('ModelManagement["短字符"]')
                     },
                     {
                         value: 'int',
-                        label: '数字'
+                        label: this.$t('ModelManagement["数字"]')
                     },
                     {
                         value: 'enum',
-                        label: '枚举'
+                        label: this.$t('ModelManagement["枚举"]')
                     },
                     {
                         value: 'date',
-                        label: '日期'
+                        label: this.$t('ModelManagement["日期"]')
                     },
                     {
                         value: 'time',
-                        label: '时间'
+                        label: this.$t('ModelManagement["时间"]')
                     },
                     {
                         value: 'longchar',
-                        label: '长字符'
+                        label: this.$t('ModelManagement["长字符"]')
                     },
                     {
                         value: 'singleasst',
-                        label: '单关联'
+                        label: this.$t('ModelManagement["单关联"]')
                     },
                     {
                         value: 'multiasst',
-                        label: '多关联'
+                        label: this.$t('ModelManagement["多关联"]')
                     },
                     {
                         value: 'objuser',
-                        label: '用户'
+                        label: this.$t('ModelManagement["用户"]')
                     },
                     {
                         value: 'timezone',
-                        label: '时区'
-                    },
-                    {
-                        value: 'bool',
-                        label: 'bool'
-                    }
-                ],
-                fieldTypeListForEn: [
-                    {
-                        value: 'singlechar',
-                        label: 'Short Text'
-                    },
-                    {
-                        value: 'int',
-                        label: 'Number'
-                    },
-                    {
-                        value: 'enum',
-                        label: 'Enumeration'
-                    },
-                    {
-                        value: 'date',
-                        label: 'Date'
-                    },
-                    {
-                        value: 'time',
-                        label: 'Time'
-                    },
-                    {
-                        value: 'longchar',
-                        label: 'Long Text'
-                    },
-                    {
-                        value: 'singleasst',
-                        label: 'Single Association'
-                    },
-                    {
-                        value: 'multiasst',
-                        label: 'Multiple Association'
-                    },
-                    {
-                        value: 'objuser',
-                        label: 'User'
-                    },
-                    {
-                        value: 'timezone',
-                        label: 'Timezone'
+                        label: this.$t('ModelManagement["时区"]')
                     },
                     {
                         value: 'bool',
@@ -1455,7 +1408,6 @@
             formatFieldType (type) {
                 for (var i = 0; i < this.fieldTypeList.length; i++) {
                     if (this.fieldTypeList[i].value === type) {
-                        // return this.$t(`ModelManagement['${this.fieldTypeList[i].label}']`)
                         return this.fieldTypeList[i].label
                     }
                 }
@@ -1527,6 +1479,29 @@
                 }
                 this.fieldList[index].option = option
             },
+            formatAttrOption (data) {
+                data.map(item => {
+                    switch (item['bk_property_type']) {
+                        case 'int':
+                            if (item.option === null) {
+                                item.option = {
+                                    min: '',
+                                    max: ''
+                                }
+                            }
+                            break
+                        case 'enum':
+                            if (!Array.isArray(item.option) || (Array.isArray(item.option) && !item.option.length)) {
+                                item.option = [{
+                                    id: '',
+                                    name: '',
+                                    is_default: true
+                                }]
+                            }
+                            break
+                    }
+                })
+            },
             /*
                 获取字段配置
             */
@@ -1539,6 +1514,7 @@
                 this.isLoading = true
                 this.$axios.post('object/attr/search', params).then(res => {
                     if (res.result) {
+                        this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
                             this.fieldList[i]['isShow'] = false
                         }
@@ -1599,7 +1575,7 @@
                         this.curIndex = index
                         // 处理单关联和多关联两种特殊情况
                         if (this.fieldList[i]['bk_property_type'] === 'singleasst' || this.fieldList[i]['bk_property_type'] === 'multiasst') {
-                            this.curModelType = this.fieldList[i].option.label
+                            this.curModelType = this.fieldList[i]['bk_asst_obj_id']
                         }
                     } else {
                         this.fieldList[i].isShow = false
@@ -1618,6 +1594,7 @@
                 清空新增字段内容
             */
             resetNewField () {
+                $('#validate-form-new').parsley().reset()
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 this.newFieldInfo.propertyType = 'bool'
@@ -1694,7 +1671,7 @@
             */
             checkParams () {
                 if (this.newFieldInfo.propertyType === 'singleasst' || this.newFieldInfo.propertyType === 'multiasst') {
-                    if (this.newFieldInfo.option.value === '') {
+                    if (this.newFieldInfo['bk_asst_obj_id'] === '') {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1714,7 +1691,7 @@
             */
             checkChangeParams (item, index) {
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
-                    if (!item.option.value) {
+                    if (!item['bk_asst_obj_id']) {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1753,8 +1730,7 @@
                     editable: this.newFieldInfo.editable,
                     placeholder: this.newFieldInfo.placeholder,
                     unit: this.newFieldInfo.unit,
-                    bk_asst_obj_id: this.newFieldInfo.option.value,
-                    bk_asst_forward: ''
+                    bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
                 this.$axios.post('object/attr', params).then(res => {
                     if (res.result) {
@@ -1796,7 +1772,6 @@
                             list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
-                        // this.newFieldInfo.option = [{name: '', is_default: 0}]
                         break
                     case 'singleasst':
                         this.newFieldInfo.option = {
@@ -1805,10 +1780,7 @@
                         }
                         break
                     case 'multiasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
+                        this.newFieldInfo.option = ''
                 }
             },
             /*
@@ -1841,7 +1813,6 @@
                 // 只有关联类型才添加以下三个参数
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
                     if (option !== 'undefined') {
-                        // params['bk_asst_obj_id'] = JSON.parse(option).value
                         params['bk_asst_obj_id'] = option.value
                     }
                     params['bk_property_id'] = item['bk_property_id']
@@ -1998,7 +1969,8 @@
             },
             modelSelected (item) {
                 this.isSelectErrorShow = false
-                this.newFieldInfo.option = item
+                this.newFieldInfo['bk_asst_obj_id'] = item.value
+                // this.newFieldInfo.option = item
             },
             /*
                 页面初始化
