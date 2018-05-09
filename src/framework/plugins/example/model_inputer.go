@@ -1,19 +1,20 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package example
 
 import (
 	"configcenter/src/framework/api"
+	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/output/module/model"
 	"fmt"
 	"time"
@@ -21,8 +22,8 @@ import (
 
 func init() {
 
-	// api.RegisterInputer(host, nil)
-	api.RegisterTimingInputer(modelMgr, time.Second*5, nil)
+	// api.RegisterInputer(host)
+	api.RegisterTimingInputer(modelMgr, time.Minute*5)
 }
 
 var modelMgr = &modelInputer{}
@@ -37,7 +38,7 @@ func (cli *modelInputer) Name() string {
 }
 
 // Run the input should not be blocked
-func (cli *modelInputer) Run() interface{} {
+func (cli *modelInputer) Run(ctx input.InputerContext) input.InputerResult {
 
 	// create a  classification
 	clsMgr := api.CreateClassification("test_demo_cls")
