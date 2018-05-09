@@ -8,9 +8,14 @@
             <template v-for="(column, index) in columns">
                 <th v-if="column.type === 'checkbox'" class="header-checkbox">
                     <label :for="getCheckboxId(column)" class="bk-form-checkbox bk-checkbox-small">
-                        <input type="checkbox"
+                        <input type="checkbox" v-if="table.crossPageCheck"
                             :id="getCheckboxId(column)"
                             :disabled="!table.list.length"
+                            @change="handleCheckAll($event, column)">
+                        <input type="checkbox" v-else
+                            :id="getCheckboxId(column)"
+                            :disabled="!table.list.length"
+                            :checked="allChecked"
                             @change="handleCheckAll($event, column)">
                     </label>
                 </th>
@@ -57,6 +62,9 @@
             table () {
                 return this.layout.table
             },
+            allChecked () {
+                return this.table.pagination.count > 0 && this.table.checked.length === this.table.list.length
+            },
             columns () {
                 return this.layout.columns
             }
@@ -72,7 +80,13 @@
                 return `table-${this.layout.id}-${column.id}-checkbox`
             },
             handleCheckAll ($event, column) {
-                this.table.$emit('handleCheckAll', $event.target.checked, column.head)
+                const isChecked = $event.target.checked
+                let checked = []
+                if (isChecked) {
+                    checked = this.table.list.map(item => item[column[this.table.valueKey]])
+                }
+                this.table.$emit('update:checked', checked)
+                this.table.$emit('handleCheckAll', isChecked, column.head)
             },
             handleSort (column, order) {
                 const sortKey = column.sortKey

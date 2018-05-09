@@ -1,14 +1,25 @@
 <template>
-    <div class="cc-table" v-bkloading="{isLoading: loading}" v-show="header.length">
-        <div :class="['table-wrapper', {'has-header': header.length}]">
-            <div ref="headWrapper" class="head-wrapper">
-                <v-thead ref="head" :layout="layout"></v-thead>
+    <div v-bkloading="{isLoading: loading}"
+        :class="['table-wrapper', {
+            'has-header': hasHeader,
+            'has-footer': hasFooter
+        }]"
+        :style="{height: bodyHeight}">
+        <div class="table-layout">
+            <div ref="headLayout" class="head-layout" v-if="hasHeader">
+                <v-thead ref="head"
+                    :layout="layout"
+                    :style="{width: layout.bodyWidth ? layout.bodyWidth + 'px' : ''}">
+                </v-thead>
             </div>
-            <div ref="bodyWrapper" class="body-wrapper">
-                <v-tbody ref="body" :layout="layout"></v-tbody>
+            <div ref="bodyLayout" class="body-layout" :style="{maxHeight: bodyLayoutMaxHeight}">
+                <v-tbody ref="body"
+                    :layout="layout"
+                    :style="{width: bodyWidth}">
+                </v-tbody>
             </div>
         </div>
-        <div class="pagination-wrapper">
+        <div class="pagination-layout" v-if="showFooter && pagination.count > 0">
             <v-pagination :layout="layout"></v-pagination>
         </div>
     </div>
@@ -33,7 +44,7 @@
                     return []
                 },
                 validator (header) {
-                    const checkboxHeader = header.filter(({type}) => type === 'checkbox')
+                    const checkboxHeader = header.filter(({type}, index) => index === 0 && type === 'checkbox')
                     return checkboxHeader.length <= 1
                 }
             },
@@ -55,12 +66,20 @@
                 },
                 validator (pagination) {
                     let necessaryKeys = ['current', 'count', 'size']
-                    let invalid = necessaryKeys.some(key => !pagination.hasOwnProperty(key))
+                    let invalid = necessaryKeys.some(key => typeof pagination[key] !== 'number')
                     if (pagination.hasOwnProperty('sizeSetting') && !Array.isArray(pagination.sizeSetting)) {
                         invalid = true
                     }
                     return !invalid
                 }
+            },
+            showHeader: {
+                type: Boolean,
+                default: true
+            },
+            showFooter: {
+                type: Boolean,
+                default: true
             },
             sortable: {
                 type: Boolean,
@@ -76,6 +95,10 @@
                     return []
                 }
             },
+            crossPageCheck: {
+                type: Boolean,
+                default: true
+            },
             multipleCheck: {
                 type: Boolean,
                 default: true
@@ -90,7 +113,7 @@
             },
             gutterWidth: {
                 type: Number,
-                default: 6
+                default: 8
             },
             rowBorder: {
                 type: Boolean,
@@ -129,82 +152,100 @@
                 throttleLayout: null
             }
         },
+        computed: {
+            bodyWidth () {
+                const { bodyWidth, scrollY } = this.layout
+                return bodyWidth ? bodyWidth - (scrollY ? this.gutterWidth : 0) + 'px' : ''
+            },
+            hasHeader () {
+                return this.showHeader && this.layout.columns.length
+            },
+            hasFooter () {
+                return this.showFooter && this.pagination.count > 0
+            },
+            finalHeight () {
+                const height = parseInt(this.height, 10)
+                const maxHeight = parseInt(this.maxHeight, 10)
+                if (height && maxHeight) {
+                    return Math.min(height, maxHeight)
+                } else if (maxHeight) {
+                    return maxHeight
+                } else if (height) {
+                    return height
+                }
+                return null
+            },
+            bodyHeight () {
+                if (!this.hasHeader && !this.hasFooter && !this.list.length) {
+                    return this.finalHeight ? this.finalHeight + 'px' : '302px'
+                }
+                return 'auto'
+            },
+            bodyLayoutMaxHeight () {
+                const bodyLayout = this.$refs.bodyLayout
+                if (this.finalHeight) {
+                    let minusHeight = 0
+                    minusHeight += this.hasHeader ? 40 : 0
+                    minusHeight += this.hasFooter ? 42 : 0
+                    return this.finalHeight - minusHeight + 'px'
+                }
+                return 'none'
+            }
+        },
         watch: {
             header (header) {
-                this.updateColumns()
+                this.layout.updateColumns()
                 this.throttleLayout()
             },
             list (list) {
                 this.throttleLayout()
             },
             height (height) {
-                this.initHeight()
                 this.throttleLayout()
             },
             maxHeight (maxHeight) {
-                this.initHeight()
                 this.throttleLayout()
             }
         },
         created () {
-            this.updateColumns()
+            this.layout.updateColumns()
         },
         mounted () {
-            this.init()
+            this.bindEvents()
+            this.doLayout()
         },
         beforeDestroy () {
             if (this.throttleLayout) {
                 removeResizeListener(this.$el, this.throttleLayout)
             }
+            this.$emit('update:checked', [])
+            this.$emit('update:pagination', {
+                current: 1,
+                count: 0,
+                size: 10,
+                sizeSetting: [10, 20, 50, 100]
+            })
         },
         methods: {
-            updateColumns () {
-                let columns = []
-                this.header.forEach(head => {
-                    columns.push({
-                        head: head,
-                        id: head[this.valueKey],
-                        name: head[this.labelKey],
-                        attr: head.attr || {},
-                        type: head.type || 'text',
-                        width: head.width || 100,
-                        realWidth: head.width || 100,
-                        flex: !head.width,
-                        sortable: head.hasOwnProperty('sortable') ? head.sortable : true,
-                        sortKey: head.hasOwnProperty('sortKey') ? head.sortKey : head[this.valueKey],
-                        dragging: false
-                    })
-                })
-                this.layout.columns = columns
-            },
-            init () {
-                this.initHeight()
+            bindEvents () {
                 this.initScroll()
                 this.initResize()
             },
-            initHeight () {
-                const height = parseInt(this.height, 10)
-                const maxHeight = parseInt(this.maxHeight, 10)
-                this.$el.style.height = height ? height + 'px' : 'auto'
-                this.$el.style.maxHeight = maxHeight ? maxHeight + 'px' : 'none'
-
-                let referenceHeight = height
-                if (height && maxHeight) {
-                    referenceHeight = Math.min(height, maxHeight)
-                } else if (maxHeight) {
-                    referenceHeight = maxHeight
-                }
-                this.$refs.bodyWrapper.style.maxHeight = referenceHeight ? referenceHeight - 82 + 'px' : 'none'
+            doLayout () {
+                this.$nextTick(() => {
+                    this.layout.checkScrollY()
+                    this.layout.update()
+                })
             },
             initScroll () {
-                let {bodyWrapper, headWrapper} = this.$refs
-                bodyWrapper.addEventListener('scroll', function () {
-                    headWrapper.scrollLeft = this.scrollLeft
+                let {bodyLayout, headLayout} = this.$refs
+                bodyLayout.addEventListener('scroll', function () {
+                    headLayout ? headLayout.scrollLeft = this.scrollLeft : void 0
                 })
             },
             initResize () {
                 this.throttleLayout = throttle(() => {
-                    this.layout.doLayout()
+                    this.doLayout()
                 }, 100)
                 addResizeListener(this.$el, this.throttleLayout)
             }
@@ -219,18 +260,20 @@
 
 <style lang="scss" scoped>
     .table-wrapper{
-        position: relative;
-        overflow: auto;
         border: 1px solid $tableBorderColor;
-        @include scrollbar;
         &.has-header{
             border-top: none;
         }
     }
-    .head-wrapper{
+    .table-layout{
+        position: relative;
+        overflow: auto;
+        @include scrollbar;
+    }
+    .head-layout{
         overflow: hidden;
     }
-    .body-wrapper{
+    .body-layout{
         overflow: auto;
         border-top: none;
         @include scrollbar;
