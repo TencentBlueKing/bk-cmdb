@@ -59,11 +59,11 @@
                     label: 'OperationAudit[\'IP\']',
                     key: 'bk_host_innerip'
                 }, {
-                    label: 'OperationAudit[\'操作类型\']',
+                    label: 'OperationAudit[\'类型\']',
                     key: 'op_type',
                     optionKey: 'opType'
                 }, {
-                    label: 'OperationAudit[\'操作对象\']',
+                    label: 'OperationAudit[\'对象\']',
                     key: 'op_target'
                 }, {
                     label: 'OperationAudit[\'操作时间\']',
