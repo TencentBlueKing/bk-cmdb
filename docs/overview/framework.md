@@ -581,7 +581,7 @@ SetDisk(disk int64) error
 // GetDisk 获取磁盘容量
 GetDisk() (int, error)
 
-// SetOsName 设置啊哦做系统名
+// SetOsName 设置操作系统名
 SetOsName(osName string) error
 
 // GetOsName 获取操作系统名
