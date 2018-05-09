@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/config"
+	"configcenter/src/framework/core/discovery"
 	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/monitor/metric"
@@ -72,8 +73,6 @@ func main() {
 		return
 	}
 
-	client.NewForConfig(config.Get(), nil)
-
 	// init the framework
 	if err := common.SavePid(); nil != err {
 		fmt.Printf("\n can not save the pidfile, error info is %s\n", err.Error())
@@ -87,6 +86,16 @@ func main() {
 	}
 	metricManager := metric.NewManager(opt)
 	server.RegisterActions(metricManager.Actions()...)
+
+	if "" != opt.Regdiscv {
+		rd := discovery.NewRegDiscover(APPNAME, opt.Regdiscv, server.GetAddr(), server.GetPort(), false)
+		go func() {
+			rd.Start()
+		}()
+		client.NewForConfig(config.Get(), rd)
+	} else {
+		client.NewForConfig(config.Get(), nil)
+	}
 
 	httpChan := make(chan error)
 	go func() { httpChan <- server.ListenAndServe() }()
