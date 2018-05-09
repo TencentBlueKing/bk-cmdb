@@ -1,0 +1,16 @@
+{
+	"field_type_singlechar": "short character",
+	"field_type_longchar": "long character",
+	"field_type_int": "number",
+	"field_type_enum": "enumeration",
+	"field_type_date": "date",
+	"field_type_time": "time",
+	"field_type_objuser": "User",
+	"field_type_singleasst": "single association",
+	"field_type_multiasst": "multiple associations",
+	"field_type_timezone": "time zone",
+	"field_type_bool": "boolean",
+	"field_type_bool_true": "Yes",
+	"field_type_bool_false": "No"
+
+}

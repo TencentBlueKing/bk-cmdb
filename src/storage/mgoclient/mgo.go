@@ -13,10 +13,12 @@
 package mgoclient
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage"
 	"errors"
 	"fmt"
+	"strings"
 
 	// "log"
 	// "os"
@@ -169,7 +171,8 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 		query = query.Select(fieldmap)
 	}
 	if "" != sort {
-		query = query.Sort(sort)
+		arrSort := strings.Split(sort, common.BKDBSortFieldSep)
+		query = query.Sort(arrSort...)
 	}
 
 	if 0 < start {
@@ -186,11 +189,11 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 }
 
 // GetCntByCondition returns count number filter by condiction
-func (m *MgoCli) GetCntByCondition(cName string, condiction interface{}) (cnt int, err error) {
+func (m *MgoCli) GetCntByCondition(cName string, condition interface{}) (cnt int, err error) {
 	m.session.Refresh()
 	c := m.session.DB(m.dbName).C(cName)
 	count := 0
-	count, err = c.Find(condiction).Count()
+	count, err = c.Find(condition).Count()
 	if err != nil {
 		return count, err
 	}

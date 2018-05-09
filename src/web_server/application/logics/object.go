@@ -15,13 +15,13 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
 	webCommon "configcenter/src/web_server/common"
+	"encoding/json"
 	_ "errors" //
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"net/http"
-
-	"configcenter/src/common/language"
 )
 
 // GetObjectData get object data
@@ -99,4 +99,32 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 	}
 
 	return fields
+}
+
+func ConvAttrOption(attrItems map[int]map[string]interface{}) {
+	for _, attr := range attrItems {
+		fieldType, ok := attr[common.BKPropertyTypeField].(string)
+		if false == ok {
+			continue
+		}
+		option, ok := attr[common.BKOptionField].(string)
+		if false == ok {
+			continue
+		}
+		if "\"\"" == option {
+			attr[common.BKOptionField] = ""
+			continue
+		}
+
+		switch fieldType {
+		case common.FieldTypeInt:
+			fallthrough
+		case common.FieldTypeEnum:
+			var iOption interface{}
+			err := json.Unmarshal([]byte(option), iOption)
+			if nil == err {
+				attr[common.BKOptionField] = iOption
+			}
+		}
+	}
 }
