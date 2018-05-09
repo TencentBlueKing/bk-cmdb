@@ -56,9 +56,9 @@
             selected: {
                 get () {
                     if (this.$parent.multiple) {
-                        return isInArray(this.$parent.curValue, this.value).result || isInArray(this.$parent.curLabel, this.label).result
+                        return isInArray(this.$parent.curValue, this.value).result
                     } else {
-                        return this.value === this.$parent.curValue || this.label === this.$parent.curLabel
+                        return this.value === this.$parent.curValue
                     }
                 },
                 set () {}
