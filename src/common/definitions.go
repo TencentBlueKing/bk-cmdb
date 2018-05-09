@@ -331,6 +331,9 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
+	// bkIsOnly the isonly field, is primary key
+	BKIsOnly = "isonly"
+
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
@@ -520,6 +523,9 @@ const (
 	ExcelHeaderOtherRowFontColor = "000000"
 	// ExcelCellDefaultBorderColor black color
 	ExcelCellDefaultBorderColor = "D4D4D4"
+
+	// ExcelAsstPrimaryKeySplitChar split char
+	ExcelAsstPrimaryKeySplitChar = "##"
 )
 
 // table names
