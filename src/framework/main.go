@@ -44,6 +44,10 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	opt := &option.Options{AppName: APPNAME}
+	opt.AddFlags(pflag.CommandLine)
+	util.InitFlags()
+
 	blog.InitLogs()
 
 	log.SetLoger(&log.Logger{
@@ -59,23 +63,8 @@ func main() {
 		Errorf: blog.Errorf,
 	})
 
-	opt := &option.Options{AppName: APPNAME}
-	opt.AddFlags(pflag.CommandLine)
-	util.InitFlags()
-	api.Init()
-	defer func() {
-		blog.CloseLogs()
-		api.UnInit()
-	}()
-
 	if err := config.Init(opt); err != nil {
 		log.Errorf("init config error: %v", err)
-		return
-	}
-
-	// init the framework
-	if err := common.SavePid(); nil != err {
-		fmt.Printf("\n can not save the pidfile, error info is %s\n", err.Error())
 		return
 	}
 
@@ -84,8 +73,6 @@ func main() {
 		log.Errorf("NewServer error: %v", err)
 		return
 	}
-	metricManager := metric.NewManager(opt)
-	server.RegisterActions(metricManager.Actions()...)
 
 	if "" != opt.Regdiscv {
 		rd := discovery.NewRegDiscover(APPNAME, opt.Regdiscv, server.GetAddr(), server.GetPort(), false)
@@ -96,6 +83,21 @@ func main() {
 	} else {
 		client.NewForConfig(config.Get(), nil)
 	}
+
+	api.Init()
+	defer func() {
+		blog.CloseLogs()
+		api.UnInit()
+	}()
+
+	// init the framework
+	if err := common.SavePid(); nil != err {
+		fmt.Printf("\n can not save the pidfile, error info is %s\n", err.Error())
+		return
+	}
+
+	metricManager := metric.NewManager(opt)
+	server.RegisterActions(metricManager.Actions()...)
 
 	httpChan := make(chan error)
 	go func() { httpChan <- server.ListenAndServe() }()
