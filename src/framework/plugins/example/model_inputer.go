@@ -23,7 +23,7 @@ import (
 func init() {
 
 	// api.RegisterInputer(host)
-	api.RegisterTimingInputer(modelMgr, time.Minute*5)
+	api.RegisterFrequencyInputer(modelMgr, time.Minute*5)
 }
 
 var modelMgr = &modelInputer{}
@@ -38,7 +38,7 @@ func (cli *modelInputer) Name() string {
 }
 
 // Run the input should not be blocked
-func (cli *modelInputer) Run(ctx input.InputerContext) input.InputerResult {
+func (cli *modelInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
 	// create a  classification
 	clsMgr := api.CreateClassification("test_demo_cls")

@@ -23,7 +23,7 @@ import (
 func init() {
 
 	api.RegisterInputer(businessFind)
-	//api.RegisterTimingInputer(business, time.Minute*5)
+	//api.RegisterFrequencyInputer(business, time.Minute*5)
 }
 
 var businessFind = &businessFindInputer{}
@@ -38,7 +38,7 @@ func (cli *businessFindInputer) Name() string {
 }
 
 // Run the input should not be blocked
-func (cli *businessFindInputer) Run(ctx input.InputerContext) input.InputerResult {
+func (cli *businessFindInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
 	busIterator, err := api.FindBusinessLikeName("0", "蓝鲸")
 	if nil != err {

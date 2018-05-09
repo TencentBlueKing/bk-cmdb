@@ -32,8 +32,8 @@ func RegisterInputer(inputer input.Inputer) {
 	})
 }
 
-// RegisterTimingInputer execute a non-blocking timing inputer, only execute once
-func RegisterTimingInputer(inputer input.Inputer, frequency time.Duration) {
+// RegisterFrequencyInputer execute a non-blocking timing inputer, only execute once
+func RegisterFrequencyInputer(inputer input.Inputer, frequency time.Duration) {
 
 	if frequency < time.Minute*5 {
 		frequency = time.Minute * 5

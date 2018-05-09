@@ -72,8 +72,8 @@ type InputerParams struct {
 }
 
 // InputerResult the inputer result
-type InputerResult interface {
-	Err() error
+type InputerResult struct {
+	Err error
 }
 
 // InputerContext the inputer context
@@ -104,7 +104,7 @@ type Inputer interface {
 	Name() string
 
 	// Run execute the user logics
-	Run(ctx InputerContext) InputerResult
+	Run(ctx InputerContext) *InputerResult
 
 	// Stop stop the run function
 	Stop() error

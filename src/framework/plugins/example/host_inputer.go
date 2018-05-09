@@ -24,7 +24,7 @@ import (
 func init() {
 
 	// api.RegisterInputer(host)
-	api.RegisterTimingInputer(host, time.Minute*5)
+	api.RegisterFrequencyInputer(host, time.Minute*5)
 }
 
 var host = &hostInputer{}
@@ -39,7 +39,7 @@ func (cli *hostInputer) Name() string {
 }
 
 // Run the input should not be blocked
-func (cli *hostInputer) Run(ctx input.InputerContext) input.InputerResult {
+func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
 	host, err := api.CreateHost("0")
 	if nil != err {
