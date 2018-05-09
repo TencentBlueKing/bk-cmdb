@@ -115,6 +115,7 @@
             }
             .nav-item{
                 position: relative;
+                z-index: 1200;
                 &:hover{
                     .nav-classification-name,
                     .nav-classification-model{
@@ -170,6 +171,7 @@
         height: 62px;
         background: transparent center center no-repeat;
         background-size: 173px 31px;
+        cursor: pointer;
         &.en{
             background-image: url(../../common/images/nav_title.png);
         }

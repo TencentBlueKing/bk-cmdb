@@ -195,7 +195,7 @@
         left: 0;
         top: 0;
         width: 100%;
-        z-index: 100;
+        z-index: 1200;
         .header-right-contain{
             .select-trigger-box{
                 top: 0;
