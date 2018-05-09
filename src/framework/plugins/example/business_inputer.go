@@ -23,7 +23,7 @@ import (
 func init() {
 
 	api.RegisterInputer(business)
-	//api.RegisterTimingInputer(business, time.Minute)
+	//api.RegisterFrequencyInputer(business, time.Minute)
 }
 
 var business = &businessInputer{}
@@ -38,7 +38,7 @@ func (cli *businessInputer) Name() string {
 }
 
 // Run the input should not be blocked
-func (cli *businessInputer) Run(ctx input.InputerContext) input.InputerResult {
+func (cli *businessInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
 	business, err := api.CreateBusiness("0")
 	if nil != err {

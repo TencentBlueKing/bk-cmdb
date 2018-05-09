@@ -15,7 +15,6 @@ package input
 import (
 	"configcenter/src/framework/core/log"
 	"context"
-	"reflect"
 	"time"
 )
 
@@ -23,22 +22,11 @@ func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
 
 	inputObj := inputer.Run(nil)
 
-	// inputer 分：事物、定时、常规实现
-	switch t := inputObj.(type) {
-	case nil:
-		// pass
-
-	default:
-		unknown := reflect.TypeOf(t)
-		log.Fatalf("unknown the type:%s", unknown.Kind())
-
-	case InputerResult:
-		// TODO: extension the logic
-		return t.Err()
-
+	if nil == inputObj {
+		return nil
 	}
 
-	return nil
+	return inputObj.Err
 }
 
 // executeInputer start the Inputer

@@ -44,7 +44,7 @@ func (cli *wrapInputer) Name() string {
 	return cli.inputer.Name()
 }
 
-func (cli *wrapInputer) Run(ctx InputerContext) InputerResult {
+func (cli *wrapInputer) Run(ctx InputerContext) *InputerResult {
 	return cli.inputer.Run(ctx)
 }
 
