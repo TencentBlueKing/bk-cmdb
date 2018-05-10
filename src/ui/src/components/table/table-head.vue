@@ -21,16 +21,18 @@
                 </th>
                 <th v-else
                     v-bind="column.attr"
+                    :class="{'sortable': column.sortable}"
                     @mousemove="handleMouseMove($event, column)"
                     @mousedown.left="handleMouseDown($event, column)"
-                    @mouseout="handleMouseOut($event, column)">
-                    <div class="head-label fl">{{column.name}}</div>
-                    <div class="head-sort fl" v-if="table.sortable && column.sortable && column.type !== 'checkbox'">
+                    @mouseout="handleMouseOut($event, column)"
+                    @click="handleSort(column)">
+                    <div class="head-label fl" :title="column.name">{{column.name}}</div>
+                    <div class="head-sort fl" v-if="column.sortable">
                         <i :class="['head-sort-angle', 'ascing', {'active': column.id === sortStore.sort && sortStore.order === 'asc'}]"
-                            @click="handleSort(column, 'asc')">
+                            @click.stop="handleSort(column, 'asc')">
                         </i>
                         <i :class="['head-sort-angle', 'descing', {'active': column.id === sortStore.sort && sortStore.order === 'desc'}]"
-                            @click="handleSort(column, 'desc')">
+                            @click.stop="handleSort(column, 'desc')">
                         </i>
                     </div>
                 </th>
@@ -79,6 +81,13 @@
             getCheckboxId (column) {
                 return `table-${this.layout.id}-${column.id}-checkbox`
             },
+            getSortOrder (column) {
+                const sortKey = column.sortKey
+                if (sortKey === this.sortStore.sort) {
+                    return this.sortStore.order === 'asc' ? 'desc' : 'asc'
+                }
+                return 'desc'
+            },
             handleCheckAll ($event, column) {
                 const isChecked = $event.target.checked
                 let checked = []
@@ -89,6 +98,10 @@
                 this.table.$emit('handleCheckAll', isChecked, column.head)
             },
             handleSort (column, order) {
+                if (column.dragging) return
+                if (!order) {
+                    order = this.getSortOrder(column)
+                }
                 const sortKey = column.sortKey
                 if (order === this.sortStore.order && sortKey === this.sortStore.sort) {
                     this.sortStore.order = null
@@ -114,7 +127,7 @@
                         this.dragStore.column = $column
                     } else {
                         bodyStyle.cursor = 'default'
-                        $column.style.cursor = 'default'
+                        $column.style.cursor = column.sortable ? 'pointer' : 'default'
                         $column.style.borderRight = '1px solid #dde4eb'
                         this.dragStore.column = null
                     }
@@ -206,6 +219,9 @@
                 &.header-gutter{
                     padding: 0;
                 }
+                &.sortable{
+                    cursor: pointer;
+                }
             }
         }
         tr.has-gutter{
@@ -237,6 +253,7 @@
         }
     }
     .head-label{
+        font-size: 14px;
         max-width: calc(100% - 25px);
         @include ellipsis;
     }

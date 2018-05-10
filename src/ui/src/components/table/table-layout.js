@@ -22,9 +22,10 @@ class TableLayout {
     }
 
     update () {
+        const wrapperWidth = this.table.width
         let columns = this.columns
         let bodyMinWidth = 0
-        let bodyWidth = this.table.$refs.bodyLayout.offsetWidth
+        let bodyWidth = wrapperWidth ? wrapperWidth - 2 : this.table.$refs.bodyLayout.offsetWidth
         let flexColumns = columns.filter(({flex, dragging}) => flex && !dragging)
         if (flexColumns.length) { // 存在不固定宽度的列
             columns.forEach(column => {
@@ -103,20 +104,13 @@ class TableLayout {
                     minWidth: 100,
                     realWidth: typeof head.width === 'number' ? head.width : 100,
                     flex: typeof head.width !== 'number',
-                    sortable: head.hasOwnProperty('sortable') ? head.sortable : true,
+                    sortable: table.sortable && (head.hasOwnProperty('sortable') ? head.sortable : true),
                     sortKey: head.hasOwnProperty('sortKey') ? head.sortKey : head[table.valueKey],
                     dragging: false
                 })
             }
         })
         this.columns = columns
-    }
-
-    doLayout () {
-        if (this.columns.length) {
-            this.checkScrollY()
-            this.update()
-        }
     }
 }
 

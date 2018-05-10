@@ -80,26 +80,25 @@
             </div>
             <v-table class="index-table"
                 ref="indexTable"
-                :tableHeader="table.tableHeader"
-                :tableList="table.tableList"
+                :header="table.tableHeader"
+                :list="table.tableList"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :chooseId.sync="table.chooseId"
-                :isLoading="table.isLoading || outerLoading"
-                @handlePageTurning="setTableCurrentPage"
-                @handlePageSizeChange="setTablePageSize"
-                @handleTableSortClick="setTableSort"
-                @handleTableAllCheck="getAllHostID"
+                :checked.sync="table.chooseId"
+                :loading="table.isLoading || outerLoading"
+                :wrapperMinusHeight="150"
+                @handlePageChange="setTableCurrentPage"
+                @handleSizeChange="setTablePageSize"
+                @handleSortChange="setTableSort"
+                @handleCheckAll="getAllHostID"
                 @handleRowClick="showHostAttribute">
                     <template v-for="({id,name, property}, index) in table.tableHeader" :slot="id" slot-scope="{ item }">
-                        <td v-if="id === 'bk_host_id'" style="width: 50px;" class="checkbox-wrapper">
-                            <label class="bk-form-checkbox bk-checkbox-small" @click.stop>
-                                <input type="checkbox" 
-                                    :value="item['host']['bk_host_id']" 
-                                    v-model="table.chooseId">
-                            </label>
-                        </td>
-                        <td v-else>{{getCellValue(property, item)}}</td>
+                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                            <input type="checkbox"
+                                :value="item['host']['bk_host_id']" 
+                                v-model="table.chooseId">
+                        </label>
+                        <template v-else>{{getCellValue(property, item)}}</template>
                     </template>
                 </v-table>
         </div>
@@ -532,7 +531,8 @@
                 this.table.tableHeader = [{
                     id: 'bk_host_id',
                     name: 'bk_host_id',
-                    type: 'checkbox'
+                    type: 'checkbox',
+                    width: 50
                 }].concat(columns.map(column => {
                     const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                     return {
