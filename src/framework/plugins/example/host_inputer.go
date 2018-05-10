@@ -70,6 +70,10 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	hostAttr.SetID("host_field_id")
 	hostAttr.SetName("host_field_id(test)")
 	hostAttr.SetType(model.FieldTypeLongChar)
+	hostAttr.SetOption(map[string]int{
+		"min": 0,
+		"max": 9999,
+	})
 	err = hostAttr.Save()
 	if nil != err {
 		fmt.Println("err attr:", err)
@@ -100,7 +104,7 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 		}
 	}
 
-	fmt.Println("platid:",platID, err)
+	fmt.Println("platid:", platID, err)
 
 	host.SetCloudID(platID)
 
