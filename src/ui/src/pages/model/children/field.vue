@@ -1978,11 +1978,11 @@
                         if (item['bk_property_type'] === 'list') {
                             item.option.map(opt => {
                                 opt.errorMsg = ''
-                                // this.$set(opt, 'errorMsg', '')
                             })
                             for (let key in res.data) {
                                 this.$set(item.option[key], 'errorMsg', res.data[key])
                             }
+                            this.$forceUpdate()
                         }
                         this.$alertMsg(res['bk_error_msg'])
                     }
