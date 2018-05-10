@@ -100,7 +100,8 @@
                     <bk-select class="userapi-new-select"
                         ref="propertySelector"
                         @on-selected="addUserProperties">
-                            <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])"
+                            <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
+                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -214,10 +215,10 @@
             ...mapGetters(['bkSupplierAccount']),
             /* 生成保存自定义API的参数 */
             apiParams () {
-                let paramsMap = {
-                    'set': {'bk_obj_id': 'set', condition: [], fields: []},
-                    'module': {'bk_obj_id': 'module', condition: [], fields: []},
-                    'biz': {
+                let paramsMap = [
+                    {'bk_obj_id': 'set', condition: [], fields: []},
+                    {'bk_obj_id': 'module', condition: [], fields: []},
+                    {
                         'bk_obj_id': 'biz',
                         condition: [{
                             field: 'default', // 该参数表明查询非资源池下的主机
@@ -225,34 +226,46 @@
                             value: 1
                         }],
                         fields: []
-                    },
-                    'host': {
+                    }, {
                         'bk_obj_id': 'host',
                         condition: [],
                         fields: this.attribute.selected ? this.attribute.selected.split(',') : []
                     }
-                }
+                ]
                 this.userProperties.forEach((property, index) => {
-                    if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
+                    let param = paramsMap.find(({bk_obj_id: bkObjId}) => {
+                        return bkObjId === property.bkObjId
+                    })
+                    if (property.bkPropertyType === 'singleasst' || property.bkPropertyType === 'multiasst') {
+                        paramsMap.push({
+                            'bk_obj_id': property.bkAsstObjId,
+                            fields: [],
+                            condition: [{
+                                field: 'bk_inst_name',
+                                operator: property.operator,
+                                value: property.value
+                            }]
+                        })
+                    } else if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
                         let value = property['value'].split(' - ')
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: value[0] === value[1] ? '$eq' : '$gte',
                             value: value[0]
                         })
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: value[0] === value[1] ? '$eq' : '$lte',
                             value: value[1]
                         })
                     } else if (property.bkPropertyType === 'bool' && ['true', 'false'].includes(property.value)) {
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: property.operator,
                             value: property.value === 'true'
                         })
                     } else {
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: property.operator,
                             value: property.value
@@ -262,7 +275,7 @@
                 let params = {
                     'bk_biz_id': this.bkBizId,
                     'info': {
-                        condition: [paramsMap['biz'], paramsMap['set'], paramsMap['module'], paramsMap['host']]
+                        condition: paramsMap
                     },
                     'name': this.name
                 }
@@ -410,6 +423,7 @@
                                     'bkPropertyType': originalProperty['bk_property_type'],
                                     'bkPropertyName': originalProperty['bk_property_name'],
                                     'bkPropertyId': originalProperty['bk_property_id'],
+                                    'bkAsstObjId': originalProperty['bk_asst_obj_id'],
                                     'operator': property.operator,
                                     'value': property.value
                                 })
@@ -434,6 +448,7 @@
                 let {
                     'bk_property_name': bkPropertyName,
                     'bk_property_type': bkPropertyType,
+                    'bk_asst_obj_id': bkAsstObjId,
                     'bk_obj_id': bkObjId
                 } = property
                 property.disabled = true
@@ -442,6 +457,7 @@
                     bkPropertyId,
                     bkPropertyType,
                     bkPropertyName,
+                    bkAsstObjId,
                     operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
                     value: ''
                 })

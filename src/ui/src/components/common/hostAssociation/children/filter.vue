@@ -33,7 +33,7 @@
                     <template v-else>
                         <!-- 判断条件选择 -->
                         <div class="operation-type">
-                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1">
+                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1 || typeOfAsst.indexOf(column['bk_property_type']) !== -1">
                                 <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
                                     <bk-select-option v-for="(operator, index) in operators['char']"
                                         :key="index"
@@ -66,9 +66,9 @@
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'enum'">
                                 <bk-select class="screening-group-item-value" :selected.sync="localQueryColumnData[column['bk_property_id']]['value']">
-                                    <bk-select-option v-for="(option, index) in JSON.parse(column['bk_option'])"
+                                    <bk-select-option v-for="(option, index) in column['bk_option']"
                                         :key="index"
-                                        :value="option.name"
+                                        :value="option.id"
                                         :label="option.name">
                                     </bk-select-option>
                                 </bk-select>
@@ -131,7 +131,8 @@
                     }]
                 },
                 typeOfChar: ['singlechar', 'longchar'],
-                typeOfDate: ['date', 'time']
+                typeOfDate: ['date', 'time'],
+                typeOfAsst: ['singleasst', 'multiasst']
             }
         },
         computed: {
@@ -178,22 +179,36 @@
                     this.attribute.map(({bk_obj_id: bkObjId, properties}) => {
                         properties.map(property => {
                             if (columnPropertyId === property['bk_property_id']) {
-                                filter.condition.map(({bk_obj_id: filterBkObjId, condition}) => {
-                                    if (filterBkObjId === bkObjId) {
-                                        let isEmptyValue = false
-                                        let value = this.localQueryColumnData[columnPropertyId]['value']
-                                        if (value === '' || (Array.isArray(value) && !value.length)) {
-                                            isEmptyValue = true
-                                        }
-                                        if (!isEmptyValue) {
-                                            condition.push({
-                                                field: columnPropertyId,
+                                let value = this.localQueryColumnData[columnPropertyId]['value']
+                                if (this.typeOfAsst.indexOf(property['bk_property_type']) !== -1) {
+                                    if (value) {
+                                        filter.condition.push({
+                                            'bk_obj_id': property['bk_asst_obj_id'],
+                                            fields: [],
+                                            condition: [{
+                                                field: 'bk_inst_name',
                                                 operator: this.localQueryColumnData[columnPropertyId]['operator'],
                                                 value: value
-                                            })
-                                        }
+                                            }]
+                                        })
                                     }
-                                })
+                                } else {
+                                    filter.condition.map(({bk_obj_id: filterBkObjId, condition}) => {
+                                        if (filterBkObjId === bkObjId) {
+                                            let isEmptyValue = false
+                                            if (value === '' || (Array.isArray(value) && !value.length)) {
+                                                isEmptyValue = true
+                                            }
+                                            if (!isEmptyValue) {
+                                                condition.push({
+                                                    field: columnPropertyId,
+                                                    operator: this.localQueryColumnData[columnPropertyId]['operator'],
+                                                    value: value
+                                                })
+                                            }
+                                        }
+                                    })
+                                }
                             }
                         })
                     })
@@ -324,24 +339,19 @@
                 width: 240px;
             }
             .operation-type{
+                position: relative;
                 float: left;
                 width: 65px;
+                &:hover{
+                    z-index: 2;
+                }
             }
             .operation-value{
+                position: relative;
                 float: left;
                 width: 175px;
-            }
-        }
-    }
-</style>
-
-<style lang="scss">
-    .host-filter-list{
-        .screening-group-item{
-            .operation-type{
-                .bk-select-input{
-                    border-right: 0;
-                }
+                margin-left: -1px;
+                z-index: 1;
             }
         }
     }

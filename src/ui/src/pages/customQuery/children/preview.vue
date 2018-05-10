@@ -84,11 +84,14 @@
                 return [...new Set(fields.concat(hostCondition['fields']))]
             },
             previewParams () {
-                let [appCondition, setCondition, moduleCondition, hostCondition] = this.apiParams['info']['condition']
-                let previewHostCondition = Object.assign({}, hostCondition, {fields: this.previewFields})
+                let condition = this.$deepClone(this.apiParams['info']['condition'])
+                let hostCondition = condition.find(({bk_obj_id: bkObjId}) => {
+                    return bkObjId === 'host'
+                })
+                hostCondition['fields'] = this.previewFields
                 let previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
-                    condition: [appCondition, setCondition, moduleCondition, previewHostCondition],
+                    condition: condition,
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.size,
                         limit: this.table.pagination.size
