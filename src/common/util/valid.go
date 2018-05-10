@@ -14,7 +14,6 @@ package util
 
 import (
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
