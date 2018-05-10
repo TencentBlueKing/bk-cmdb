@@ -107,14 +107,21 @@ func (m *CommonInst) DeleteCommonInst(cond common.Condition) error {
 func (m *CommonInst) UpdateCommonInst(data types.MapStr, cond common.Condition) error {
 
 	condData := cond.ToMapStr()
-	instID, err := condData.Int(CommonInstID)
-	if nil != err {
-		return err
-	}
 
 	objID := condData.String(ObjectID)
 	if 0 == len(objID) {
 		return errors.New("the object id is not set")
+	}
+
+	targetInstID := CommonInstID
+	switch objID {
+	case Plat:
+		targetInstID = PlatID
+	}
+
+	instID, err := condData.Int(targetInstID)
+	if nil != err {
+		return err
 	}
 
 	targetURL := fmt.Sprintf("%s/api/v3/inst/%s/%s/%d", m.cli.GetAddress(), m.cli.GetSupplierAccount(), objID, instID)

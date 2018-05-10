@@ -14,9 +14,9 @@ package model
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	//"fmt"
 )
 
 var _ Model = (*model)(nil)
@@ -54,7 +54,11 @@ func (cli *model) Attributes() ([]Attribute, error) {
 
 	for _, item := range dataMap {
 		tmpItem := &attribute{}
-		common.SetValueToStructByTags(tmpItem, item)
+
+		if err := common.SetValueToStructByTags(tmpItem, item); nil != err {
+			log.Errorf("failed to convert, %s", err.Error())
+		}
+
 		attrs = append(attrs, tmpItem)
 	}
 

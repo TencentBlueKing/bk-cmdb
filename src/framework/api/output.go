@@ -16,6 +16,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"io"
 )
 
 // GetModel get the model
@@ -207,7 +208,37 @@ func CreatePlat(supplierAccount string) (*PlatWrapper, error) {
 	}
 
 	platInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	platInst.SetValue(fieldSupplierAccount, supplierAccount)
+	platInst.SetValue(fieldObjectID, plat)
 	return &PlatWrapper{plat: platInst}, err
+}
+
+// GetPlatID get the plat id
+func GetPlatID(supplierAccount, platName string) (int64, error) {
+
+	iter, iterErr := FindPlatLikeName(supplierAccount, platName)
+	if nil != iterErr {
+		return -1, iterErr
+	}
+
+	platID := -1
+	err := iter.ForEach(func(plat *PlatWrapper) error {
+		id, err := plat.GetID()
+		if nil != err {
+			return err
+		}
+		platID = id
+		return nil
+	})
+
+	if nil != err {
+		return -1, err
+	}
+
+	if -1 == platID {
+		return -1, io.EOF
+	}
+	return int64(platID), nil
 }
 
 // FindPlatLikeName find all insts by the name

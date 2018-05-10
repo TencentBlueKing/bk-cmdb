@@ -21,9 +21,13 @@ import (
 type FieldName string
 
 const (
+	// PlatID the plat id
+	PlatID = "bk_cloud_id"
+	// Plat the object id
+	Plat = "plat"
 	// BusinessID the business id
 	BusinessID = "bk_biz_id"
-	// BusinessID the business id
+	// BusinessNameField the business name
 	BusinessNameField = "bk_biz_name"
 	// InstID the common inst id
 	InstID = "bk_inst_id"
@@ -42,9 +46,6 @@ const (
 
 	// ModuleName the module name
 	ModuleName = "bk_module_name"
-
-	// PlatID the pat id
-	PlatID = "bk_cloud_id"
 
 	// PlatName the plat name
 	PlatName = "bk_cloud_name"

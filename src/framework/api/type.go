@@ -12,6 +12,12 @@
 
 package api
 
+// plat
+const (
+	fieldObjectID = "bk_obj_id"
+	plat          = "plat"
+)
+
 // set fields
 const (
 	fieldParentID        = "bk_parent_id"
@@ -26,6 +32,7 @@ const (
 	fieldServiceStatus   = "bk_service_status"
 	fieldSetDesc         = "bk_set_desc"
 	fieldSetEnv          = "bk_set_env"
+	fieldObjID           = "bk_obj_id"
 	fieldDescription     = "description"
 )
 
