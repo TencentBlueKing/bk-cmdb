@@ -19,6 +19,8 @@ import (
 
 	"fmt"
 	"time"
+
+	"io"
 )
 
 func init() {
@@ -71,7 +73,34 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	err = hostAttr.Save()
 	if nil != err {
 		fmt.Println("err attr:", err)
+		return nil
 	}
+
+	// plat
+	platID, err := api.GetPlatID("0", "txcloud0")
+	if io.EOF == err {
+		fmt.Println("eof 1")
+		plat, err := api.CreatePlat("0")
+
+		if nil != err {
+			fmt.Println("err:", err)
+			return nil
+		}
+		plat.SetName("txcloud0")
+		err = plat.Save()
+		if nil != err {
+			fmt.Println("err save:", err)
+			return nil
+		}
+
+		platID, err = api.GetPlatID("0", "txcloud0")
+		if io.EOF == err {
+			fmt.Println("eof 2")
+			return nil
+		}
+	}
+
+	host.SetCloudID(platID)
 
 	// set the custom field
 	host.SetValue("host_field_id", "test_custom_d")

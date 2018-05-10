@@ -13,6 +13,7 @@
 package common
 
 import (
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/types"
 	"fmt"
 	"reflect"
@@ -102,13 +103,13 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 
 		switch structField.Type.Kind() {
 		default:
-			return fmt.Errorf("unsuport the type %v", structField.Type.Kind())
+			log.Errorf("unsuport the type %s %v", structField.Name, structField.Type.Kind())
 		case reflect.Bool:
 			fieldValue.SetBool(tagVal.(bool))
 		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 			switch t := tagVal.(type) {
 			default:
-				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
+				log.Errorf("unsuport the type ,value is %s (%#v)", structField.Name, tagVal)
 			case int:
 				fieldValue.SetInt(int64(t))
 			case int16:
@@ -134,7 +135,7 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 		case reflect.Float32, reflect.Float64:
 			switch t := tagVal.(type) {
 			default:
-				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
+				log.Errorf("unsuport the type ,value is %s (%#v)", structField.Name, tagVal)
 			case float32:
 				fieldValue.SetFloat(float64(t))
 			case float64:
@@ -144,7 +145,7 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 		case reflect.String:
 			switch t := tagVal.(type) {
 			default:
-				return fmt.Errorf("unsuport the type ,value is (%#v)", tagVal)
+				log.Errorf("unsuport the type ,value is %s (%#v)", structField.Name, tagVal)
 			case string:
 				fieldValue.SetString(t)
 			}

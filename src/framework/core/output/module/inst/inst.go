@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -99,14 +99,12 @@ func (cli *inst) Save() error {
 	cond := common.CreateCondition()
 
 	// extract the object id
-	objID := cli.datas.String(model.ObjectID)
-	if 0 == len(objID) {
-		return errors.New("the key field(" + model.ObjectID + ") is not set")
-	}
+	objID := cli.target.GetID()
 	cond.Field(model.ObjectID).Eq(objID)
-
+	log.Infof("attrs:%#v", attrs)
 	// extract the required id
 	for _, attrItem := range attrs {
+		log.Infof("attrs:%#v", attrItem)
 		if attrItem.GetKey() {
 
 			attrVal := cli.datas.String(attrItem.GetID())
@@ -118,7 +116,7 @@ func (cli *inst) Save() error {
 		}
 	}
 
-	// fmt.Println("cond:", cond.ToMapStr())
+	log.Infof("cond:%#v", cond.ToMapStr())
 
 	// search by condition
 	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
@@ -126,12 +124,18 @@ func (cli *inst) Save() error {
 		return err
 	}
 
-	// fmt.Println("the exists:", existItems)
+	log.Infof("the exists:%#v", cli.target.GetID())
 
 	// create a new
 	if 0 == len(existItems) {
 		_, err = client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
 		return err
+	}
+
+	targetInstID := InstID
+	switch cli.target.GetID() {
+	case Plat:
+		targetInstID = PlatID
 	}
 
 	// update the exists
@@ -141,11 +145,12 @@ func (cli *inst) Save() error {
 			existItem.Set(key, val)
 		})
 
-		instID, err := existItem.Int(InstID)
+		instID, err := existItem.Int(targetInstID)
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(InstID).Eq(instID).Field(model.ObjectID).Eq(objID)
+
+		updateCond := common.CreateCondition().Field(targetInstID).Eq(instID).Field(model.ObjectID).Eq(objID)
 
 		// clear the invalid field
 		existItem.ForEach(func(key string, val interface{}) {
@@ -156,7 +161,7 @@ func (cli *inst) Save() error {
 			}
 			existItem.Remove(key)
 		})
-		//fmt.Println("the new:", existItem)
+
 		err = client.GetClient().CCV3().CommonInst().UpdateCommonInst(existItem, updateCond)
 		if nil != err {
 			return err

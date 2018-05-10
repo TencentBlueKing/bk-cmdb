@@ -13,6 +13,10 @@
 package v3
 
 const (
+	// Plat plat name
+	Plat = "plat"
+	// PlatName  plat name
+	PlatID = "bk_cloud_id"
 	// BusinessID the business id
 	BusinessID = "bk_biz_id"
 	// SetID the set id
