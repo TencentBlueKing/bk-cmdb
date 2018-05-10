@@ -45,6 +45,8 @@ func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp 
 	pathParams := req.PathParameters()
 	appID, err := strconv.Atoi(pathParams[common.BKAppIDField])
 
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+
 	value, _ := ioutil.ReadAll(req.Request.Body)
 	bodyData := make([]map[string]interface{}, 0)
 	err = json.Unmarshal([]byte(value), &bodyData)
@@ -105,41 +107,48 @@ func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp 
 		return
 	}
 	blog.Debug("GetProcessPortByApplicationID  hostMap:%v", hostMap)
-	hostMapTemp := make(map[int]map[string]interface{})
-	resData := make([]interface{}, 0)
+
+	hostProcs := make(map[int][]interface{}, 0)
 	for _, moduleHostConfig := range moduleHostConfigs {
-		hostID := moduleHostConfig[common.BKHostIDField]
-		moduleID := moduleHostConfig[common.BKModuleIDField]
-		host, ok := hostMapTemp[hostID]
-		if ok {
-			processes := moduleToProcessesMap[moduleID]
-			hostProcesses := host[common.BKProcField].([]map[string]interface{})
-			for _, process := range processes {
-				processMap, ok := process.(map[string]interface{})
-				if false == ok {
-					blog.Error("assign error process is not map[string]interface{},process:%v", process)
-					continue
-				}
-				hostProcesses = append(hostProcesses, processMap)
-			}
-
-		} else {
-			host, hasHost := hostMap[hostID]
-			processes, hasProc := moduleToProcessesMap[moduleID]
-
-			if !hasHost || !hasProc {
-				continue
-			}
-
-			host[common.BKProcField] = processes
-			host[common.BKAppNameField] = appInfo[common.BKAppNameField]
-			host[common.BKAppIDField] = appID
-			host[common.BKCloudIDField] = host[common.BKCloudIDField]
-			//(host, common.BKCloudIDField)
-			resData = append(resData, host)
-			hostMapTemp[hostID] = host
+		hostID, errHostID := util.GetIntByInterface(moduleHostConfig[common.BKHostIDField])
+		if nil != errHostID {
+			err := defErr.Error(common.CCErrProcSelectBindToMoudleFaile)
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			cli.ResponseFailed(common.CCErrProcSelectBindToMoudleFaile, err.Error(), resp)
+			return
 		}
+
+		moduleID, ok := moduleHostConfig[common.BKModuleIDField]
+		if false == ok {
+			err := defErr.Error(common.CCErrProcSelectBindToMoudleFaile)
+			blog.Error("GetProcessPortByApplicationID error :%v", err)
+			defErr.Error(common.CCErrProcSelectBindToMoudleFaile)
+			cli.ResponseFailed(common.CCErrProcSelectBindToMoudleFaile, err.Error(), resp)
+			return
+		}
+		procs, ok := hostProcs[hostID]
+		if false == ok {
+			procs = make([]interface{}, 0)
+		}
+		processes, ok := moduleToProcessesMap[moduleID]
+		if true == ok {
+			hostProcs[hostID] = append(procs, processes...)
+		}
+
 	}
+
+	resData := make([]interface{}, 0)
+	for hostID, host := range hostMap {
+		processes, ok := hostProcs[hostID]
+		if false == ok {
+			processes = make([]interface{}, 0)
+		}
+		host[common.BKProcField] = processes
+		host[common.BKAppNameField] = appInfo[common.BKAppNameField]
+		host[common.BKAppIDField] = appID
+		resData = append(resData, host)
+	}
+
 	blog.Error("resDta:%v", resData)
 	cli.ResponseSuccess(resData, resp)
 }
