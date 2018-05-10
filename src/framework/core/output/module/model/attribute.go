@@ -81,7 +81,9 @@ func (cli *attribute) Save() error {
 		item.Set(IsOnly, cli.IsOnly)
 		item.Set(IsApi, cli.IsAPI)
 		item.Set(PropertyType, cli.PropertyType)
-		item.Set(Option, cli.Option)
+		if 0 != len(cli.Option) {
+			item.Set(Option, cli.Option)
+		}
 		item.Set(Description, cli.Description)
 
 		id, err := item.Int("id")
