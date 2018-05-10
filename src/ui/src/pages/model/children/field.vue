@@ -1469,7 +1469,7 @@
                         option = item['Option']
                         break
                 }
-                this.fieldList[index].option = option
+                this.fieldList[index].option = this.$deepClone(option)
             },
             formatAttrOption (data) {
                 data.map(item => {
