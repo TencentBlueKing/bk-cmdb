@@ -143,6 +143,12 @@
                         :isNewField="isNewField"
                         ></v-layout>
                     </bk-tabpanel>
+                    <bk-tabpanel name="layout2" :title="'字段分组2'" :show="curModel.type==='change'">
+                        <v-layout2 ref="layout2"
+                        :isShow="curTabName==='layout2'"
+                        :activeModel="curModel"
+                        ></v-layout2>
+                    </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
                         <v-other
                             :parentClassificationId = "curClassify['bk_classification_id']"
@@ -169,6 +175,7 @@
     import vBaseInfo from './children/baseInfo'
     import vField from './children/field'
     import vLayout from './children/layout'
+    import vLayout2 from './children/layout2'
     import vOther from './children/other'
     import vTopo from '@/components/topo/topo'
     import {mapGetters, mapActions} from 'vuex'
@@ -792,6 +799,7 @@
             vBaseInfo,
             vField,
             vLayout,
+            vLayout2,
             vOther,
             vPop
         }
