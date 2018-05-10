@@ -413,7 +413,7 @@
                                         break
                                     }
                                 }
-                                if (val['bk_property_type'] !== 'singleasst' || val['bk_property_type'] !== 'multiasst') {
+                                if (val['bk_property_type'] !== 'singleasst' && val['bk_property_type'] !== 'multiasst') {
                                     let property = res.data.find(({bk_property_id: bkPropertyId}) => {
                                         return bkPropertyId === val['bk_property_id']
                                     })
@@ -421,12 +421,6 @@
                                         filterList.push({
                                             id: val['bk_property_id'],
                                             name: property['bk_property_name'],
-                                            type: val['bk_property_type']
-                                        })
-                                    } else {
-                                        filterList.push({
-                                            id: val['bk_property_id'],
-                                            name: val['bk_property_name'],
                                             type: val['bk_property_type']
                                         })
                                     }
@@ -446,7 +440,7 @@
                                 } else {
                                     headerTail.push(headerObj)
                                 }
-                                if (attr['bk_property_type'] !== 'singleasst' || attr['bk_property_type'] !== 'multiasst') {
+                                if (attr['bk_property_type'] !== 'singleasst' && attr['bk_property_type'] !== 'multiasst') {
                                     filterList.push({
                                         id: attr['bk_property_id'],
                                         name: attr['bk_property_name'],

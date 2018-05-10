@@ -231,7 +231,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	}
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
-
 		row := sheet.Rows[index]
 		host, err := getDataFromByExcelRow(row, index, fields, defFields, nameIndexMap, defLang)
 		if nil != err {
