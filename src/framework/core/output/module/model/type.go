@@ -249,8 +249,8 @@ type Attribute interface {
 	GetRequired() bool
 	SetKey(isKey bool)
 	GetKey() bool
-	SetOption(option string)
-	GetOption() string
+	SetOption(option interface{})
+	GetOption() interface{}
 	SetDescrition(des string)
 	GetDescription() string
 

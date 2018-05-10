@@ -39,7 +39,7 @@ type attribute struct {
 	IsSystem      bool   `field:"bk_issystem"`
 	IsAPI         bool   `field:"bk_isapi"`
 	PropertyType  string `field:"bk_property_type"`
-	Option        string `field:"option"`
+	Option        interface{} `field:"option"`
 	Description   string `field:"description"`
 	Creator       string `field:"creator"`
 }
@@ -81,9 +81,7 @@ func (cli *attribute) Save() error {
 		item.Set(IsOnly, cli.IsOnly)
 		item.Set(IsApi, cli.IsAPI)
 		item.Set(PropertyType, cli.PropertyType)
-		if 0 != len(cli.Option) {
-			item.Set(Option, cli.Option)
-		}
+		item.Set(Option, cli.Option)
 		item.Set(Description, cli.Description)
 
 		id, err := item.Int("id")
@@ -173,11 +171,11 @@ func (cli *attribute) GetKey() bool {
 	return cli.IsOnly
 }
 
-func (cli *attribute) SetOption(option string) {
+func (cli *attribute) SetOption(option interface{}) {
 	cli.Option = option
 }
 
-func (cli *attribute) GetOption() string {
+func (cli *attribute) GetOption() interface{} {
 	return cli.Option
 }
 
