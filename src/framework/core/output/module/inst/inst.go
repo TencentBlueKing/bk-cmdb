@@ -101,10 +101,10 @@ func (cli *inst) Save() error {
 	// extract the object id
 	objID := cli.target.GetID()
 	cond.Field(model.ObjectID).Eq(objID)
-	log.Infof("attrs:%#v", attrs)
+	//log.Infof("attrs:%#v", attrs)
 	// extract the required id
 	for _, attrItem := range attrs {
-		log.Infof("attrs:%#v", attrItem)
+		//log.Infof("attrs:%#v", attrItem)
 		if attrItem.GetKey() {
 
 			attrVal := cli.datas.String(attrItem.GetID())

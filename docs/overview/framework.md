@@ -1,5 +1,6 @@
 # CMDB 3.0 二次开发框架使用指南
 
+**注：处于开发状态，文档内容在正式发布前不保证兼容。**
 
 ## Inputer 接口声明
 
@@ -439,6 +440,81 @@ ForEach(callback func(set *ModuleWrapper) error) error
 >> - ModuleIteratorWrapper： 模块迭代器。
 >> - error: 错误信息。
 
+
+### 云区域管理 API
+
+#### 云区域管理包装器
+
+> 类型：PlatWrapper
+> 方法列表：
+
+``` golang
+// SetValue 设置云区域自定义字段 的值 key 字段名 value 字段值
+SetValue(key string, val interface{}) error
+// SetSupplierAccount 设置云区域所属开发商 
+SetSupplierAccount(supplierAccount string) error
+// GetSupplierAccount 获取云区域开发商
+GetSupplierAccount() (string, error)
+// GetID 获取云区域ID
+GetID() (int, error) 
+// SetName 设置云区域名字
+SetName(name string) error
+
+// GetName 获取云区域名字
+GetName() (string, error) 
+```
+
+#### 云区域迭代器
+> 类型：PlatIteratorWrapper
+> 方法列表：
+
+``` golang
+// Next 迭代遍历每一个数据对象，如果遍历完集合 error 会返回io.EOF
+Next() (*PlatWrapper, error)
+
+// ForEach 循环遍历模块集合，并将每个模块传递给回调函数。
+ForEach(callback func(plat *PlatWrapper) error) error
+```
+
+#### 创建云区域对象
+> 方法：CreatePlat(supplierAccount string) (*PlatWrapper, error) 
+> 
+> 参数：
+> 
+>> - supplierAccount：开发商ID
+>
+> 返回值：
+> 
+>> - PlatWrapper：模块数据对象
+>> - error：异常信息
+
+#### 按照云区域名进行查找
+> 方法：FindPlatLikeName(supplierAccount, moduleName string) (*PlatIteratorWrapper, error) 
+
+> 
+> 参数：
+>> - supplierAccount：开发商ID。
+>
+>> - moduleName：集群名
+>
+> 返回值：
+> 
+>> - PlatIteratorWrapper： 云区域迭代器
+>> - error: 错误信息
+
+#### 按照条件对模块进行搜索
+> 方法：FindPlatByCondition(supplierAccount string, cond common.Condition) (*PlatIteratorWrapper, error)
+
+> 
+> 参数：
+>> - supplierAccount：开发商ID。
+>
+>> - cond：查询条件
+>
+> 返回值：
+> 
+>> - PlatIteratorWrapper： 云区域迭代器。
+>> - error: 错误信息。
 
 ### 主机管理 API
 
