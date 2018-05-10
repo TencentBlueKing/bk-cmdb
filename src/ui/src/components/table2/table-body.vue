@@ -1,0 +1,179 @@
+<template>
+    <table :class="['cc-table-body', {'row-border': table.rowBorder, 'col-border': table.colBorder, 'stripe': table.stripe}]">
+        <colgroup>
+            <col v-for="(width, index) in layout.colgroup" :key="index" :width="width">
+        </colgroup>
+        <tbody v-show="table.list.length">
+            <tr v-for="(item, rowIndex) in table.list" :key="rowIndex" @click="handleRowClick(item, rowIndex)">
+                <template v-for="(head, colIndex) in table.header">
+                    <td v-if="head.type === 'checkbox'" class="body-checkbox" @click.stop :key="colIndex">
+                        <label :for="getCheckboxId(head, rowIndex)" class="bk-form-checkbox bk-checkbox-small">
+                            <input type="checkbox"
+                                :id="getCheckboxId(head, rowIndex)"
+                                :checked="checked.indexOf(item[head[table.valueKey]]) !== -1"
+                                @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
+                        </label>
+                    </td>
+                    <td v-else>
+                        <td-content :item="item" :head="head" :layout="layout"></td-content>
+                    </td>
+                </template>
+            </tr>
+        </tbody>
+        <tbody v-if="!table.list.length">
+            <tr>
+                <td :colspan="table.header.length" align="center" :style="{height: emptyHeight}">
+                    <data-empty class="data-empty" :layout="layout"></data-empty>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</template>
+
+<script>
+    export default {
+        props: {
+            layout: Object
+        },
+        data () {
+            return {}
+        },
+        computed: {
+            table () {
+                return this.layout.table
+            },
+            checked () {
+                return this.table.checked
+            },
+            emptyHeight () {
+                const bodyLayoutMaxHeight = this.layout.table.bodyLayoutMaxHeight
+                return bodyLayoutMaxHeight === 'none' ? '302px' : bodyLayoutMaxHeight
+            }
+        },
+        methods: {
+            getCheckboxId (head, rowIndex) {
+                return `table-${this.layout.id}-body-${head[this.table.valueKey]}-checkbox-${rowIndex}`
+            },
+            getColWidth (width, index) {
+                let total = this.layout.colgroup.length
+                if ((index === total - 1) && this.layout.scrollY) {
+                    return width - this.table.gutterWidth
+                }
+                return width
+            },
+            handleRowCheck (value, rowIndex) {
+                let checked = [...this.checked]
+                const index = checked.indexOf(value)
+                if (this.table.multipleCheck) {
+                    if (index === -1) {
+                        checked.push(value)
+                    } else {
+                        checked.splice(index, 1)
+                    }
+                } else {
+                    checked = index === -1 ? [value] : []
+                }
+                this.table.$emit('update:checked', checked)
+                this.table.$emit('handleRowCheck', value, rowIndex)
+            },
+            handleRowClick (item, rowIndex) {
+                this.table.$emit('handleRowClick', item, rowIndex)
+            }
+        },
+        components: {
+            'td-content': {
+                props: ['head', 'item', 'layout'],
+                render (h) {
+                    const table = this.layout.table
+                    let scopedSlots = table.$scopedSlots[this.head[table.valueKey]]
+                    if (scopedSlots) {
+                        return scopedSlots({item: this.item})
+                    } else {
+                        return h('div', this.item[this.head[table.valueKey]])
+                    }
+                }
+            },
+            'data-empty': {
+                props: ['layout'],
+                render (h) {
+                    const dataEmptySlot = this.layout.table.$slots['data-empty']
+                    if (dataEmptySlot) {
+                        return h('div', {}, dataEmptySlot)
+                    } else {
+                        return h('div', {}, this.$t("Common['暂时没有数据']"))
+                    }
+                }
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .cc-table-body{
+        color: $textColor;
+        text-align: left;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        tr {
+            td {
+                height: 40px;
+                padding: 0 16px;
+                cursor: pointer;
+                @include ellipsis;
+                &.body-checkbox{
+                    padding: 0;
+                }
+            }
+        }
+    }
+    .cc-table-body.row-border {
+        tr {
+            td {
+                border-bottom: 1px solid $tableBorderColor;
+            }
+        }
+        tr:last-child{
+            td {
+                border-bottom: none;
+            }
+        }
+    }
+    .cc-table-body.col-border{
+        tr {
+            td {
+                border-right: 1px solid $tableBorderColor;
+                &:last-child{
+                    border-right: none;
+                }
+            }
+        }
+    }
+    .cc-table-body.stripe {
+        tr:nth-child(2n) {
+            background-color: #f1f7ff;
+        }
+    }
+    .bk-form-checkbox{
+        display: block;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        padding: 0;
+        cursor: pointer;
+        &:before{
+            content: '';
+            width: 0;
+            height: 100%;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        input[type='checkbox'] {
+            display: inline-block;
+            vertical-align: middle;
+        }
+    }
+    .data-empty{
+        font-size: 12px;
+    }
+</style>
