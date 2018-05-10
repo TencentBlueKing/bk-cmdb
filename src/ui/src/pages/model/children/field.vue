@@ -242,12 +242,6 @@
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
-                                            <!-- <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">是否必填</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']">
-                                                </label>
-                                            </div> -->
                                             <div class="from-selcet-wrapper">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
@@ -773,12 +767,6 @@
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
-                                            </label>
-                                        </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
                                             </label>
                                         </div>
                                         <div class="from-selcet-wrapper">
@@ -1777,6 +1765,7 @@
                     case 'singleasst':
                     case 'multiasst':
                         this.newFieldInfo.option = ''
+                        this.newFieldInfo['bk_asst_obj_id'] = ''
                 }
             },
             /*
