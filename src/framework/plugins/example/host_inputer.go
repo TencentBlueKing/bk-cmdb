@@ -77,7 +77,7 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	}
 
 	// plat
-	platID, err := api.GetPlatID("0", "txcloud0")
+	platID, err := api.GetPlatID("0", "txtest")
 	if io.EOF == err {
 		fmt.Println("eof 1")
 		plat, err := api.CreatePlat("0")
@@ -86,19 +86,21 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 			fmt.Println("err:", err)
 			return nil
 		}
-		plat.SetName("txcloud0")
+		plat.SetName("txtest")
 		err = plat.Save()
 		if nil != err {
 			fmt.Println("err save:", err)
 			return nil
 		}
 
-		platID, err = api.GetPlatID("0", "txcloud0")
+		platID, err = api.GetPlatID("0", "txtest")
 		if io.EOF == err {
 			fmt.Println("eof 2")
 			return nil
 		}
 	}
+
+	fmt.Println("platid:",platID, err)
 
 	host.SetCloudID(platID)
 

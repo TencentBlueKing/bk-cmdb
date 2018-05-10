@@ -17,6 +17,7 @@ import (
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
 	"io"
+	"strings"
 )
 
 // GetModel get the model
@@ -216,8 +217,12 @@ func CreatePlat(supplierAccount string) (*PlatWrapper, error) {
 // GetPlatID get the plat id
 func GetPlatID(supplierAccount, platName string) (int64, error) {
 
-	iter, iterErr := FindPlatLikeName(supplierAccount, platName)
+	cond := CreateCondition().Field(fieldSupplierAccount).Eq(supplierAccount).Field(fieldPlatName).In(platName)
+	iter, iterErr := FindPlatByCondition(supplierAccount, cond)
 	if nil != iterErr {
+		if strings.Contains(iterErr.Error(), "empty") {
+			return -1, io.EOF
+		}
 		return -1, iterErr
 	}
 
