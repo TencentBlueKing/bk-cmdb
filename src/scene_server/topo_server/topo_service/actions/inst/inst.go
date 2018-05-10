@@ -30,13 +30,14 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/gjson"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -434,6 +435,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
 		instID, convErr := strconv.Atoi(req.PathParameter("inst_id"))
+		var uURL string
 		if nil != convErr {
 			blog.Error("the instid[%s], must be int value, error info is %s", req.PathParameter("inst_id"), convErr.Error())
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
@@ -511,9 +513,16 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			}
 			ids[delItem.instID] = struct{}{}
 			input := make(map[string]interface{})
-			input[common.BKOwnerIDField] = delItem.ownerID
-			input[common.BKObjIDField] = delItem.objID
-			input[common.BKInstIDField] = delItem.instID
+			switch delItem.objID {
+			case common.BKInnerObjIDPlat:
+				input[common.BKCloudIDField] = delItem.instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+			default:
+				input[common.BKOwnerIDField] = delItem.ownerID
+				input[common.BKObjIDField] = delItem.objID
+				input[common.BKInstIDField] = delItem.instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+			}
 
 			// delete the association
 			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
@@ -526,8 +535,6 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 				blog.Errorf("get inst detail error: %v", retStrErr)
 				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 			}
-
-			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 			inputJSON, jsErr := json.Marshal(input)
 			if nil != jsErr {
@@ -592,7 +599,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		var uURL string
 		ownerID := req.PathParameter("owner_id")
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
@@ -604,11 +611,18 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 		//update object
 		input := make(map[string]interface{})
-
 		condition := make(map[string]interface{})
-		condition[common.BKOwnerIDField] = ownerID
-		condition[common.BKObjIDField] = objID
-		condition[common.BKInstIDField] = instID
+
+		switch objID {
+		case common.BKInnerObjIDPlat:
+			condition[common.BKCloudIDField] = instID
+			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+		default:
+			condition[common.BKOwnerIDField] = ownerID
+			condition[common.BKObjIDField] = objID
+			condition[common.BKInstIDField] = instID
+			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+		}
 
 		value, readErr := ioutil.ReadAll(req.Request.Body)
 		if nil != readErr {
@@ -649,9 +663,6 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
-
-		// update the inst value
-		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 		inputJSON, jsErr := json.Marshal(input)
 		if nil != jsErr {
@@ -1180,6 +1191,8 @@ func (cli *instAction) getInstDeteilByCondition(req *restful.Request, objID stri
 	case common.BKInnerObjIDSet:
 		objType = common.BKInnerObjIDSet
 		condition[common.BKOwnerIDField] = ownerID
+	case common.BKInnerObjIDPlat:
+		objType = common.BKInnerObjIDPlat
 	default:
 		objType = common.BKINnerObjIDObject
 		condition[common.BKOwnerIDField] = ownerID
@@ -1230,6 +1243,8 @@ func (cli *instAction) getInstDetail(req *restful.Request, instID int, objID, ow
 	case common.BKInnerObjIDSet:
 		condition[common.BKSetIDField] = instID
 		condition[common.BKOwnerIDField] = ownerID
+	case common.BKInnerObjIDPlat:
+		condition[common.BKCloudIDField] = instID
 	default:
 		condition[common.BKObjIDField] = objID
 		condition[common.BKInstIDField] = instID
