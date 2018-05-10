@@ -1,7 +1,7 @@
 <template>
-    <div class="table-pagination clearfix" v-show="pagination.count">
+    <div class="table-pagination clearfix">
         <div class="pagination-info fl">
-            <span class="mr20">{{$tc("Common['已选N行']", checked.length, {N: checked.length})}}</span>
+            <span class="mr20" v-if="hasCheckbox">{{$tc("Common['已选N行']", checked.length, {N: checked.length})}}</span>
             <span class="mr20">{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
             <i18n path="Common['每页显示']">
                 <div ref="paginationSize" place="page"
@@ -59,6 +59,9 @@
             },
             sizeSetting () {
                 return this.pagination.sizeSetting || [10, 20, 50, 100]
+            },
+            hasCheckbox () {
+                return this.table.header.filter(({type}) => type === 'checkbox').length
             }
         },
         watch: {
@@ -75,14 +78,18 @@
                 this.isShowSizeSetting = false
             },
             calcSizePosition () {
-                const sizeSettingItemHeight = 32
-                const sizeSettingHeight = this.sizeSetting.length * sizeSettingItemHeight
-                const paginationSizeRect = this.$refs.paginationSize.getBoundingClientRect()
-                const bodyRect = document.body.getBoundingClientRect()
-                if (bodyRect.height - paginationSizeRect.y - paginationSizeRect.height > sizeSettingHeight) {
-                    this.transformOrigin = 'bottom'
+                if (this.pagination.hasOwnProperty('sizeDirection') && this.pagination.sizeDirection !== 'auto') {
+                    this.transformOrigin = this.pagination.sizeDirection
                 } else {
-                    this.transformOrigin = 'top'
+                    const sizeSettingItemHeight = 32
+                    const sizeSettingHeight = this.sizeSetting.length * sizeSettingItemHeight
+                    const paginationSizeRect = this.$refs.paginationSize.getBoundingClientRect()
+                    const bodyRect = document.body.getBoundingClientRect()
+                    if (bodyRect.height - paginationSizeRect.y - paginationSizeRect.height > sizeSettingHeight) {
+                        this.transformOrigin = 'bottom'
+                    } else {
+                        this.transformOrigin = 'top'
+                    }
                 }
                 this.sizeTransitionReady = true
             },
@@ -110,8 +117,6 @@
         line-height: 42px;
         padding: 0 20px;
         background-color: #fafbfd;
-        border: 1px solid $borderColor;
-        border-top: none;
         font-size: 12px;
         color: #c3cdd7;
     }

@@ -14,13 +14,14 @@
             <h3 class="preview-title">{{$t("CustomQuery['测试']")}}</h3>
             <v-table class="preview-table"
                 :sortable="false"
-                :tableHeader="table.header"
-                :tableList="table.list"
+                :header="table.header"
+                :list="table.list"
                 :pagination="table.pagination"
-                :isLoading="table.isLoading"
-                :maxHeight="table.maxHeight"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setCurrentSize">
+                :loading="table.isLoading"
+                :maxHeight="325"
+                :width="515"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setCurrentSize">
             </v-table>
             <div class="preview-btn-group">
                 <bk-button type="primary" class="preview-btn-confirm" @click="closePreview">{{$t("Common['确认']")}}</bk-button>
@@ -69,8 +70,7 @@
                         count: 0,
                         size: 10
                     },
-                    isLoading: false,
-                    maxHeight: 0
+                    isLoading: false
                 }
             }
         },
@@ -184,8 +184,7 @@
             margin: 0 40px 15px;
         }
         .preview-table{
-            padding: 0 40px;
-            margin-top: 6px;
+            margin: 6px 40px 0;
         }
         .preview-btn-group{
             text-align: right;
@@ -197,13 +196,21 @@
     }
 </style>
 <style lang="scss">
-    .userapi-preview .preview-table{
-        min-height: auto !important;
-    }
-    .userapi-preview .preview-table .table-scrollbar{
-        max-height: 250px !important;
-    }
-    .userapi-preview .preview-table .min-height-control{
-        min-height: 250px;
+    .preview-table{
+        .table-pagination{
+            padding: 0 6px !important;
+            .bk-page{
+                height: 26px;
+                margin: 8px 0;
+                ul{
+                    height: 26px;
+                }
+                .page-item{
+                    min-width: 26px;
+                    height: 26px;
+                    line-height: 26px;
+                }
+            }
+        }
     }
 </style>

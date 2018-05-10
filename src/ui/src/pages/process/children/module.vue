@@ -10,17 +10,18 @@
 
 <template lang="html">
     <v-table class="module-table"
-        :tableHeader="table.header"
-        :tableList="table.list"
-        :isLoading="table.isLoading"
-        :maxHeight="table.maxHeight"
+        :header="table.header"
+        :list="table.list"
+        :loading="table.isLoading"
+        :width="754"
+        :wrapperMinusHeight="150"
         :sortable="false">
-        <td slot="is_bind" slot-scope="{ item }">
+        <template slot="is_bind" slot-scope="{ item }">
             <button @click="changeBinding(item)" 
                 :class="item['is_bind'] ? 'main-btn' : 'vice-btn'">
                 {{item['is_bind'] ? $t("ProcessManagement['已绑定']") : $t("ProcessManagement['未绑定']")}}
             </button>
-        </td>
+        </template>
     </v-table>
 </template>
 
@@ -111,7 +112,7 @@
 </script>
 <style lang="scss" scoped>
     .module-table{
-        padding: 20px 0 0 0;
+        margin: 20px 0 0 0;
         .btn{
             width: 52px;
             height: 25px;

@@ -32,14 +32,15 @@
         </div>
         <div class="userAPI-table">
             <v-table ref="userAPITable"
-                :tableHeader="table.header"
-                :tableList="table.list"
+                :header="table.header"
+                :list="table.list"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :isLoading="table.isLoading"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setCurrentSize"
-                @handleTableSortClick="setCurrentSort"
+                :loading="table.isLoading"
+                :wrapperMinusHeight="150"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setCurrentSize"
+                @handleSortChange="setCurrentSort"
                 @handleRowClick="showUserAPIDetails">
             </v-table>
         </div>
