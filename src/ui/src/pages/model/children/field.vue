@@ -242,18 +242,6 @@
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
-                                            <!-- <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">是否必填</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']">
-                                                </label>
-                                            </div> -->
-                                            <div class="from-selcet-wrapper">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isonly']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
                                         </div>
                                         <div class="enum-table" :class="{'disabled':item['ispre'] || isReadOnly}">
                                             <div v-if="item.isShow">
@@ -289,14 +277,6 @@
                                                         <!-- 表单验证错误信息容器 -->
                                                         <div class="form-enum-error" :id="'changeEnumError'+fieldIndex"></div>
                                                     </div>
-                                                    <!-- <button class="bk-icon icon-arrows-up"
-                                                        :disabled="fieldIndex === 0"
-                                                        @click.prevent="enumUp('change',fieldIndex,index)"
-                                                    ></button>
-                                                    <button class="bk-icon icon-arrows-down"
-                                                        :disabled="fieldIndex === item.option.list.length - 1"
-                                                        @click.prevent="enumDown('change',fieldIndex,index)"
-                                                    ></button> -->
                                                     <button class="bk-icon"
                                                         :disabled="item.option.list.length === 1"
                                                         @click.prevent="deleteEnum('change',fieldIndex,index)"
@@ -374,14 +354,6 @@
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
-                                            <div class="from-selcet-wrapper mr30" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                                <div class="from-selcet-wrapper mr30">
-                                                    <label class="bk-form-checkbox bk-checkbox-small">
-                                                        <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                        <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
-                                                    </label>
-                                                </div>
-                                            </div>
                                         </div>
                                         <div class="from-common-item selcet-width-control mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
@@ -419,12 +391,6 @@
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
-                                            <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small ml20">
-                                                    <i class="bk-checkbox-text" style="width:63px;">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
                                         </div>
@@ -512,12 +478,6 @@
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
-                                                </label>
-                                            </div>
-                                            <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
                                         </div>
@@ -800,18 +760,6 @@
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
                                             </label>
                                         </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
-                                            </label>
-                                        </div>
-                                        <div class="from-selcet-wrapper">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否唯一"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo['isonly']">
-                                            </label>
-                                        </div>
                                     </div>
                                     <div v-pre class="clearfix"></div>
                                     <div v-if="newFieldInfo.propertyType === 'enum'">
@@ -846,14 +794,6 @@
                                                 >
                                                 <div class="form-enum-error" :id="'newEnumError'+fieldIndex"></div>
                                             </div>
-                                            <!-- <button class="bk-icon icon-arrows-up"
-                                                :disabled="fieldIndex === 0"
-                                                @click.prevent="enumUp('new',fieldIndex)"
-                                            ></button>
-                                            <button class="bk-icon icon-arrows-down"
-                                                :disabled="fieldIndex === newFieldInfo.option.list.length - 1"
-                                                @click.prevent="enumDown('new',fieldIndex)"
-                                            ></button> -->
                                             <button class="bk-icon"
                                                 :disabled="newFieldInfo.option.list.length === 1"
                                                 @click.prevent="deleteEnum('new',fieldIndex)"
@@ -963,12 +903,6 @@
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
                                             </label>
                                         </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
-                                            </label>
-                                        </div>
                                     </div>
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
@@ -1018,12 +952,6 @@
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
-                                            </label>
-                                        </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
                                             </label>
                                         </div>
                                     </div>
@@ -1145,12 +1073,6 @@
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
-                                            </label>
-                                        </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
                                             </label>
                                         </div>
                                     </div>
