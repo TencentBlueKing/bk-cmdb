@@ -522,6 +522,44 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- 表格 -->
+                                    <div class="mt20 mr20 clearfix" v-show="item['bk_property_type'] === 'list'">
+                                        <h3>{{$t('ModelManagement["选项"]')}}</h3>
+                                        <div class="clearfix">
+                                            <div class="from-common-item disabled">
+                                                <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                                <div class="from-common-content interior-width-control">
+                                                    <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ul class="list-wrapper clearfix">
+                                            <li class="list-item">
+                                                <div>{{$t('ModelManagement["列名称"]')}}</div>
+                                                <div>{{$t('ModelManagement["列描述"]')}}</div>
+                                                <div>{{$t('ModelManagement["操作"]')}}</div>
+                                            </li>
+                                            <li class="list-item" v-for="(opt, index) in item.option">
+                                                <i v-show="opt.errorMsg" v-tooltip.left="{content: opt.errorMsg, classes: 'tooltip-danger'}" class="icon icon-cc-attribute"></i>
+                                                <div class="list-row">
+                                                    <span class="list-view" @click="listViewEdit(opt, 'isEditName', true)" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
+                                                    <input type="text" v-focus @blur="listViewEdit(opt, 'isEditName', false)" v-else v-model="opt['list_header_name']">
+                                                </div>
+                                                <div class="list-row">
+                                                    <span class="list-view" @click="listViewEdit(opt, 'isEditDesc', true)" v-if="!opt.isEditDesc">{{opt['list_header_describe']}}</span>
+                                                    <input type="text" v-focus @blur="listViewEdit(opt, 'isEditDesc', false)" v-else v-model="opt['list_header_describe']">
+                                                </div>
+                                                <div>
+                                                    <span class="add" @click="addTableList(index, item.option)" :title="$t('Common[\'新增\']')">
+                                                        <i class="bk-icon icon-plus-circle-shape"></i>
+                                                    </span>
+                                                    <span class="delete" @click="deleteTableList(index, item.option)" v-if="index" :title="$t('Common[\'删除\']')">
+                                                        <i class="icon-cc-del"></i>
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
                                     <div class="submit-btn" v-if="!isReadOnly">
                                         <a class="save-btn main-btn mr10" @click="saveFieldChange(item, index)">
                                             {{$t('Common["保存"]')}}
@@ -1117,6 +1155,55 @@
                                         </div>
                                     </div>
                                 </div>
+                                <!-- 表格 -->
+                                <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'list'">
+                                    <h3>{{$t('ModelManagement["选项"]')}}</h3>
+                                    <div class="clearfix">
+                                        <div class="from-common-item mr0">
+                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="from-common-content interior-width-control">
+                                                <div class="select-content tc">
+                                                    <bk-select
+                                                        :selected.sync="newFieldInfo.propertyType"
+                                                        @on-selected="fieldTypeChange">
+                                                        <bk-select-option
+                                                            v-for="(option, index) of fieldTypeList"
+                                                            :key="index"
+                                                            :value="option.value"
+                                                            :label="option.label">
+                                                        </bk-select-option>
+                                                    </bk-select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ul class="list-wrapper clearfix">
+                                        <li class="list-item">
+                                            <div>{{$t('ModelManagement["列名称"]')}}</div>
+                                            <div>{{$t('ModelManagement["列描述"]')}}</div>
+                                            <div>{{$t('ModelManagement["操作"]')}}</div>
+                                        </li>
+                                        <li class="list-item" v-for="(opt, index) in newFieldInfo.option">
+                                            <i v-show="opt.errorMsg" v-tooltip.left="{content: opt.errorMsg, classes: 'tooltip-danger'}" class="icon icon-cc-attribute"></i>
+                                            <div class="list-row">
+                                                <span class="list-view" @click="opt.isEditName = true" v-if="!opt.isEditName">{{opt['list_header_name']}}</span>
+                                                <input type="text" v-focus @blur="opt.isEditName = false" v-else v-model="opt['list_header_name']">
+                                            </div>
+                                            <div class="list-row">
+                                                <span class="list-view" @click="opt.isEditDesc = true" v-if="!opt.isEditDesc">{{opt['list_header_describe']}}</span>
+                                                <input type="text" v-focus @blur="opt.isEditDesc = false" v-else v-model="opt['list_header_describe']">
+                                            </div>
+                                            <div>
+                                                <span class="add" @click="addTableList(index)" :title="$t('Common[\'新增\']')">
+                                                    <i class="bk-icon icon-plus-circle-shape"></i>
+                                                </span>
+                                                <span class="delete" @click="deleteTableList(index)" v-if="index" :title="$t('Common[\'删除\']')">
+                                                    <i class="icon-cc-del"></i>
+                                                </span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
                             </form>
                             <!-- 保存取消按钮 -->
                             <div class="button-wraper">
@@ -1264,6 +1351,10 @@
                     {
                         value: 'bool',
                         label: 'bool'
+                    },
+                    {
+                        value: 'list',
+                        label: this.$t('ModelManagement["表格"]')
                     }
                 ],
                 fieldList: [],          // 字段配置列表
@@ -1324,6 +1415,36 @@
             }
         },
         methods: {
+            addTableList (index, option) {
+                if (this.isAddFieldShow) { // 新增
+                    this.newFieldInfo.option.splice(index + 1, 0, {
+                        list_header_name: '',
+                        list_header_describe: '',
+                        isEditDesc: false,
+                        isEditName: false,
+                        errorMsg: ''
+                    })
+                } else {
+                    option.splice(index + 1, 0, {
+                        list_header_name: '',
+                        list_header_describe: '',
+                        isEditDesc: false,
+                        isEditName: false,
+                        errorMsg: ''
+                    })
+                }
+            },
+            deleteTableList (index, option) {
+                if (this.isAddFieldShow) {
+                    this.newFieldInfo.option.splice(index, 1)
+                } else {
+                    option.splice(index, 1)
+                }
+            },
+            listViewEdit (opt, view, isEdit) {
+                this.$set(opt, view, isEdit)
+                this.$forceUpdate()
+            },
             isCloseConfirmShow () {
                 // 校验字段
                 if (this.isAddFieldShow) {
@@ -1432,6 +1553,15 @@
                         })
                         opt = option.list
                         break
+                    case 'list':
+                        opt = []
+                        option.map(item => {
+                            opt.push({
+                                list_header_name: item['list_header_name'],
+                                list_header_describe: item['list_header_describe']
+                            })
+                        })
+                        break
                     case 'longchar':
                     case 'singlechar':
                     case 'singleasst':
@@ -1470,6 +1600,16 @@
                                 list: opt,
                                 defaultIndex: defaultIndex
                             }
+                        }
+                        break
+                    case 'list':
+                        if (item['Option'] !== 'undefined') {
+                            let opt = this.$deepClone(item['Option'])
+                            opt.map(item => {
+                                item['isEditName'] = false
+                                item['isEditDesc'] = false
+                            })
+                            option = opt
                         }
                         break
                     case 'longchar':
@@ -1716,7 +1856,7 @@
                     return
                 }
                 let params = {
-                    creator: 'user',
+                    creator: window.userName,
                     isonly: this.newFieldInfo['isonly'],
                     isreadonly: false,
                     isrequired: this.newFieldInfo.isRequired,
@@ -1738,6 +1878,14 @@
                         this.closeAddFieldBox()
                         this.$emit('newField') // 更新字段分栏列表
                     } else {
+                        if (this.newFieldInfo.propertyType === 'list') {
+                            this.newFieldInfo.option.map(opt => {
+                                opt.errorMsg = ''
+                            })
+                            for (let key in res.data) {
+                                this.$set(this.newFieldInfo.option[key], 'errorMsg', res.data[key])
+                            }
+                        }
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
@@ -1773,12 +1921,15 @@
                             defaultIndex: 0
                         }
                         break
-                    case 'singleasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
+                    case 'list':
+                        this.newFieldInfo.option = [{
+                            list_header_name: 'default',
+                            list_header_describe: '默认列',
+                            isEditName: false,
+                            isEditDesc: false
+                        }]
                         break
+                    case 'singleasst':
                     case 'multiasst':
                         this.newFieldInfo.option = ''
                 }
@@ -1824,6 +1975,15 @@
                         this.getModelField()
                         this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
                     } else {
+                        if (item['bk_property_type'] === 'list') {
+                            item.option.map(opt => {
+                                opt.errorMsg = ''
+                                // this.$set(opt, 'errorMsg', '')
+                            })
+                            for (let key in res.data) {
+                                this.$set(item.option[key], 'errorMsg', res.data[key])
+                            }
+                        }
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
@@ -2020,6 +2180,13 @@
                 })
             }
         },
+        directives: {
+            focus: {
+                inserted: function (el) {
+                    el.focus()
+                }
+            }
+        },
         mounted () {
             this.newFieldInfo.propertyGroup = 'default'
             this.addNoRepeatValidator()
@@ -2027,14 +2194,6 @@
                 this.$refs.baseInfo.clearData()
             } else {
                 this.$refs.baseInfo.getBaseInfo(this.objId)
-            }
-        },
-        created () {
-            this.newFieldInfoCopy = this.$deepClone(this.newFieldInfo)
-            if (this.language === 'zh_CN') {
-                this.fieldTypeList = this.fieldTypeListForZh
-            } else {
-                this.fieldTypeList = this.fieldTypeListForEn
             }
         }
     }
@@ -2522,6 +2681,67 @@
                            cursor:pointer;
                         }
                     }
+                }
+            }
+        }
+    }
+    .list-wrapper{
+        margin: 20px 0 0 69px;
+        border-top: 1px solid #dde4eb;
+        border-left: 1px solid #dde4eb;
+        color: #737987;
+        .list-item{
+            position: relative;
+            font-size: 0;
+            line-height: 40px;
+            display: flex;
+            &:first-child{
+                background: #fafbfd;
+                color: #333948;
+            }
+            .icon{
+                position: absolute;
+                font-size: 16px;
+                left: -25px;
+                top: 13px;
+                color: #ff5656;
+            }
+            div{
+                text-align: center;
+                font-size: 14px;
+                border-right: 1px solid #dde4eb;
+                border-bottom: 1px solid #dde4eb;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                &:not(:last-child) {
+                    flex: 2;
+                }
+                &:last-child{
+                    flex: 1;
+                }
+                .add{
+                    cursor: pointer;
+                    &:hover{
+                        color: #3c96ff;
+                    }
+                }
+                .delete{
+                    margin-left: 8px;
+                    .icon-cc-del{
+                        color: #737987;
+                        &:hover{
+                            color: #ff3737;
+                        }
+                    }
+                    cursor: pointer;
+                }
+                .list-view{
+                    cursor: pointer;
+                    display: inline-block;
+                    padding: 0 10px;
+                    width: 100%;
+                    height: 40px;
+                    vertical-align: bottom;
                 }
             }
         }

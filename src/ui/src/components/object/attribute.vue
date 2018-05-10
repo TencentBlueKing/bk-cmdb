@@ -11,6 +11,7 @@
 <template>
     <div class="attribute-wrapper">
         <template v-if="displayType === 'list'">
+            <slot name="list"></slot>
             <template v-for="propertyGroup in groupOrder" v-if="bkPropertyGroups.hasOwnProperty(propertyGroup)">
                 <div class="attribute-group" v-show="!(propertyGroup === 'none' && isNoneGroupHide)">
                     <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>

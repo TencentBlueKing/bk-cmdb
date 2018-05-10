@@ -25,7 +25,7 @@
                         :outerParams="searchParams"
                         :isShowRefresh="true"
                         :outerLoading="tree.loading"
-                        :isShowCrossImport="attributeBkObjId === 'module'"
+                        :isShowCrossImport="false && attributeBkObjId === 'module'"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
