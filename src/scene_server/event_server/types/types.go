@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package types
 
 import (
@@ -81,14 +81,14 @@ func (e *EventInst) GetType() string {
 	return e.ObjType + e.Action
 }
 
-func (e *EventInst) GetDistInst() *DistInst {
-	ne := *e
+func (e *EventInst) GetDistInst() []DistInst {
 	distinst := DistInst{
-		EventInst: ne,
+		EventInst: *e,
 	}
 	distinst.ID = 0
+	var ds []DistInst
+	var m map[string]interface{}
 	if e.EventType == EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
-		var m map[string]interface{}
 		var ok bool
 
 		if e.Action == "delete" {
@@ -103,8 +103,65 @@ func (e *EventInst) GetDistInst() *DistInst {
 		if m[common.BKObjIDField] != nil {
 			distinst.ObjType = m[common.BKObjIDField].(string)
 		}
+
 	}
-	return &distinst
+	ds = append(ds, distinst)
+
+	// add new dist if event belong to hostidentifier
+	if e.Action == EventActionUpdate && e.EventType == EventTypeInstData {
+		curdata := e.CurData.(map[string]interface{})
+		predata := e.PreData.(map[string]interface{})
+		switch e.ObjType {
+		case common.BKInnerObjIDApp:
+			if checkDifferent(curdata, predata, common.BKAppNameField) {
+
+			}
+		case common.BKInnerObjIDSet:
+			if checkDifferent(curdata, predata, common.BKSetNameField, "bk_service_status", "bk_set_env") {
+
+			}
+		case common.BKInnerObjIDModule:
+			if checkDifferent(curdata, predata, common.BKModuleNameField) {
+
+			}
+		case common.BKInnerObjIDPlat:
+			if checkDifferent(curdata, predata, common.BKCloudNameField) {
+
+			}
+		case common.BKInnerObjIDHost:
+			if checkDifferent(curdata, predata,
+				common.BKHostNameField,
+				common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
+				common.BKOSTypeField, common.BKOSNameField,
+				"bk_mem", "bk_cpu", "bk_disk",
+			) {
+
+			}
+		}
+	}
+	if e.EventType == EventTypeRelation && distinst.ObjType == "moduletransfer" {
+
+	}
+	hostIdentify := DistInst{
+		EventInst: *e,
+	}
+	hostIdentify.PreData = nil
+	hostIdentify.CurData = nil
+	hostIdentify.EventType = EventTypeRelation
+	hostIdentify.ObjType = "hostidentifier"
+
+	ds = append(ds, hostIdentify)
+
+	return ds
+}
+
+func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
+	for _, field := range fields {
+		if curdata[field] != predata[field] {
+			return true
+		}
+	}
+	return false
 }
 
 type EventInstCtx struct {

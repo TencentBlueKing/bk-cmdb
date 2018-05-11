@@ -1,21 +1,21 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package distribution
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
@@ -75,14 +75,6 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		return err
 	}
 
-	// selete members
-	origindist := event.GetDistInst()
-	subscribers := findEventTypeSubscribers(origindist.GetType())
-	if len(subscribers) <= 0 || "nil" == subscribers[0] {
-		blog.Infof("%v no subscriber，continue", origindist.GetType())
-		return SaveEventDone(event)
-	}
-
 	// check previout done
 	previousID := fmt.Sprint(event.ID - 1)
 	priviousRunningkey := types.EventCacheEventRunningPrefix + previousID
@@ -120,23 +112,36 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		}
 		err = SaveEventDone(event)
 	}()
-	// prepare dist event
-	for _, subscriber := range subscribers {
-		var dstbID, subscribeID int64
 
-		distinst := *origindist
-		dstbID, err = nextDistID(subscriber)
-		if err != nil {
-			return err
+	// selete members
+	origindi := event.GetDistInst()
+
+	origindists := []*types.DistInst{origindi}
+
+	for _, origindist := range origindists {
+		subscribers := findEventTypeSubscribers(origindist.GetType())
+		if len(subscribers) <= 0 || "nil" == subscribers[0] {
+			blog.Infof("%v no subscriber，continue", origindist.GetType())
+			return SaveEventDone(event)
 		}
-		subscribeID, err = strconv.ParseInt(subscriber, 10, 64)
-		if err != nil {
-			return err
+		// prepare dist event
+		for _, subscriber := range subscribers {
+			var dstbID, subscribeID int64
+
+			distinst := *origindist
+			dstbID, err = nextDistID(subscriber)
+			if err != nil {
+				return err
+			}
+			subscribeID, err = strconv.ParseInt(subscriber, 10, 64)
+			if err != nil {
+				return err
+			}
+			distinst.DstbID = dstbID
+			distinst.SubscriptionID = subscribeID
+			distByte, _ := json.Marshal(distinst)
+			pushToQueue(types.EventCacheDistQueuePrefix+subscriber, string(distByte))
 		}
-		distinst.DstbID = dstbID
-		distinst.SubscriptionID = subscribeID
-		distByte, _ := json.Marshal(distinst)
-		pushToQueue(types.EventCacheDistQueuePrefix+subscriber, string(distByte))
 	}
 
 	return
