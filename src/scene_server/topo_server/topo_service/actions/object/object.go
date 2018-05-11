@@ -204,6 +204,13 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
 				return tmpItem, tmpErr
 			}
+		case common.FieldTypeInt:
+			if tmp, tmpErr := jsTmp.Map(); nil == tmpErr {
+				tmpItem.Option = tmp
+			} else {
+				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
+				return tmpItem, tmpErr
+			}
 		default:
 			tmpItem.Option = jsTmp
 		}
