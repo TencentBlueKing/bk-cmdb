@@ -19,10 +19,11 @@ import (
 )
 
 type testObj struct {
-	Filed1 string `field:"field_one"`
-	Filed2 bool   `field:"field_two"`
-	Filed3 int    `field:"field_three"`
-	Filed4 int64  `field:"field_four"`
+	Filed1 string      `field:"field_one"`
+	Filed2 bool        `field:"field_two"`
+	Filed3 int         `field:"field_three"`
+	Filed4 int64       `field:"field_four"`
+	Data   interface{} `field:"field_five"`
 }
 
 func TestGetTags(t *testing.T) {
@@ -38,6 +39,9 @@ func TestSetValueByTags(t *testing.T) {
 		"field_two":   true,
 		"field_three": 3,
 		"field_four":  4,
+		"field_five": map[string]interface{}{
+			"filed_t": 0,
+		},
 	}
 	common.SetValueToStructByTags(obj, data)
 	t.Logf("tags:%v", obj)

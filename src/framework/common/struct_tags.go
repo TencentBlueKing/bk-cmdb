@@ -104,6 +104,15 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 		switch structField.Type.Kind() {
 		default:
 			log.Errorf("unsuport the type %s %v", structField.Name, structField.Type.Kind())
+		case reflect.Interface:
+			tmpVal := reflect.ValueOf(tagVal)
+			switch tmpVal.Kind() {
+			case reflect.Ptr:
+				fieldValue.Set(tmpVal.Elem())
+			default:
+				fieldValue.Set(tmpVal)
+			}
+
 		case reflect.Bool:
 			fieldValue.SetBool(tagVal.(bool))
 		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
