@@ -130,7 +130,7 @@
         tr {
             td {
                 height: 40px;
-                padding: 0 16px;
+                padding: 6px 16px;
                 cursor: pointer;
                 @include ellipsis;
                 &.body-checkbox{

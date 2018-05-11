@@ -66,7 +66,7 @@
                             >
                                 <bk-select-option v-for="(operateType, operateTypeIndex) in operateTypeList"
                                     :key="operateTypeIndex"
-                                    :value="operateType.type"
+                                    :value="operateType.value"
                                     :label="$t(operateType.label)"
                                 ></bk-select-option>
                             </bk-select>
@@ -131,21 +131,20 @@
                     'biz': false
                 },
                 operateTypeList: [{
-                    id: '',
-                    type: '',
+                    value: '',
                     label: 'OperationAudit["全部"]'
                 }, {
-                    id: 1,
-                    type: 'add',
+                    value: 1,
                     label: 'Common["新增"]'
                 }, {
-                    id: 2,
-                    type: 'update',
+                    value: 2,
                     label: 'Common["修改"]'
                 }, {
-                    id: 3,
-                    type: 'delete',
+                    value: 3,
                     label: 'Common["删除"]'
+                }, {
+                    value: 100,
+                    label: 'OperationAudit["关系变更"]'
                 }],
                 ranges: {
                     昨天: [moment().subtract(1, 'days'), moment()],
@@ -264,7 +263,7 @@
             operateTypeMap () {
                 let operateTypeMap = {}
                 this.operateTypeList.forEach((operateType, index) => {
-                    operateTypeMap[operateType['id']] = this.$t(operateType['label'])
+                    operateTypeMap[operateType['value']] = this.$t(operateType['label'])
                 })
                 return operateTypeMap
             }
