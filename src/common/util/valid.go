@@ -26,6 +26,7 @@ func ValidPropertyOption(propertyType string, option interface{}) error {
 		if nil == option {
 			return fmt.Errorf(" option is required")
 		}
+
 		arrOption, ok := option.([]interface{})
 		if false == ok {
 			blog.Errorf(" option %v not enum option", option)
@@ -49,6 +50,7 @@ func ValidPropertyOption(propertyType string, option interface{}) error {
 		if nil == option {
 			return fmt.Errorf(" option is required")
 		}
+
 		_, ok := option.(map[string]interface{})
 		if false == ok {
 			return fmt.Errorf(" option %v not int option", option)

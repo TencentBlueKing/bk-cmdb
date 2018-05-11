@@ -124,6 +124,5 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 		if nil == err {
 			attrItems[index][common.BKOptionField] = iOption
 		}
-
 	}
 }
