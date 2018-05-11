@@ -242,12 +242,6 @@
                                                     <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
                                                 </label>
                                             </div>
-                                            <!-- <div class="from-selcet-wrapper mr30">
-                                                <label class="bk-form-checkbox bk-checkbox-small">
-                                                    <i class="bk-checkbox-text mr5">是否必填</i>
-                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']">
-                                                </label>
-                                            </div> -->
                                             <div class="from-selcet-wrapper">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
@@ -644,13 +638,13 @@
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min" @input="inputOptionMin(newFieldInfo)">
                                         </div>
                                     </div>
                                     <div class="from-common-item  mt20 tr">
                                         <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max" @input="inputOptionMax(newFieldInfo)">
                                         </div>
                                     </div>
                                 </div>
@@ -773,12 +767,6 @@
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
                                                 <input type="checkbox" name="checkbox1" v-model="newFieldInfo.editable">
-                                            </label>
-                                        </div>
-                                        <div class="from-selcet-wrapper mr30">
-                                            <label class="bk-form-checkbox bk-checkbox-small">
-                                                <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
-                                                <input type="checkbox" name="checkbox1" v-model="newFieldInfo.isRequired">
                                             </label>
                                         </div>
                                         <div class="from-selcet-wrapper">
@@ -1388,7 +1376,7 @@
                     }
                 } else {
                     item.option.max = event.target.value
-                    this.$set(item.option.max, event.target.value)
+                    this.$set(item.option, 'max', event.target.value)
                 }
             },
             inputOptionMax (item) {
@@ -1481,7 +1469,7 @@
                         option = item['Option']
                         break
                 }
-                this.fieldList[index].option = option
+                this.fieldList[index].option = this.$deepClone(option)
             },
             formatAttrOption (data) {
                 data.map(item => {
@@ -1777,6 +1765,7 @@
                     case 'singleasst':
                     case 'multiasst':
                         this.newFieldInfo.option = ''
+                        this.newFieldInfo['bk_asst_obj_id'] = ''
                 }
             },
             /*
