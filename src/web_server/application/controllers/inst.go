@@ -139,7 +139,7 @@ func ExportInst(c *gin.Context) {
 
 	}
 
-	fields, err := logics.GetObjFieldIDs(objID, apiSite, c.Request.Header)
+	fields, err := logics.GetObjFieldIDs(objID, apiSite, nil, c.Request.Header)
 	err = logics.BuildExcelFromData(objID, fields, nil, instInfo, sheet, defLang)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())

@@ -33,7 +33,7 @@ const TopoSetName = "TopSetName"
 const TopoModuleName = "TopModuleName"
 
 // HostSearch search host by mutiple condition
-func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl, objCtrl string) (interface{}, error) {
+func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail bool, hostCtrl, objCtrl string) (interface{}, error) {
 	var hostCond, appCond, setCond, moduleCond, mainlineCond hostParse.SearchCondition
 	objectCondMap := make(map[string][]interface{}, 0)
 	appIDArr := make([]int, 0)
@@ -204,11 +204,20 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, hostCtrl,
 
 	// deal the host
 	instapi.Inst.InitInstHelper(hostCtrl, objCtrl)
-	hostResult, retStrErr := instapi.Inst.GetInstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
-		"start": 0,
-		"limit": common.BKNoLimit,
-		"sort":  "",
-	})
+	var retStrErr int
+	if true == isDetail {
+		hostResult, retStrErr = instapi.Inst.GetInstAsstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  "",
+		})
+	} else {
+		hostResult, retStrErr = instapi.Inst.GetInstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  "",
+		})
+	}
 
 	if common.CCSuccess != retStrErr {
 		blog.Error("failed to replace association object, error code is %d", retStrErr)

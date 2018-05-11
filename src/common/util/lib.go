@@ -20,6 +20,15 @@ import (
 	restful "github.com/emicklei/go-restful"
 )
 
+func InStrArr(arr []string, key string) bool {
+	for _, a := range arr {
+		if key == a {
+			return true
+		}
+	}
+	return false
+}
+
 // GetActionLanguage returns language form hender
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)

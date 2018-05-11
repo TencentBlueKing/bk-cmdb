@@ -21,8 +21,9 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 func init() {
@@ -58,10 +59,13 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
 		}
 		//get default biz
-		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl(), defLang)
+		var appID = data.ApplicationID
+		if 0 == appID {
+			appID, err = logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 
-		if 0 == appID || nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultAppName)
+			if nil != err {
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultAppName)
+			}
 		}
 
 		//get empty set
@@ -127,7 +131,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 
 		if 0 == appID || nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		//get internal set
@@ -138,7 +142,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
 		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		// get language
@@ -160,7 +164,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 			} else if 0 < len(errRow) {
 				errString = errRow[0]
 			}
-			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, errString)
+			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errString)
 
 		}
 	}, resp)

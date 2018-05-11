@@ -26,6 +26,7 @@ import (
 	"os"
 	//"reflect"
 	lang "configcenter/src/common/language"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
 	"time"
@@ -102,6 +103,8 @@ func ImportObject(c *gin.Context) {
 		return
 	}
 
+	logics.ConvAttrOption(attrItems)
+
 	blog.Debug("the object file content:%+v", attrItems)
 
 	url := fmt.Sprintf("%s/api/%s/object/batch", apiSite, webCommon.API_VERSION)
@@ -118,6 +121,7 @@ func ImportObject(c *gin.Context) {
 
 	reply, err := httpRequest(url, params, c.Request.Header)
 	blog.Debug("return the result:", reply)
+
 	if nil != err {
 		c.String(http.StatusOK, err.Error())
 	} else {
@@ -173,12 +177,36 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 			continue
 		}
 		blog.Debug("key:%s value:%v", key, keyVal)
-
+		if nil == keyVal {
+			cell.SetString("")
+			continue
+		}
 		switch t := keyVal.(type) {
 		case bool:
 			cell.SetBool(t)
+		case string:
+			if "\"\"" == t {
+				cell.SetValue("")
+			} else {
+				cell.SetValue(t)
+			}
 		default:
-			cell.SetValue(t)
+			switch key {
+			case common.BKOptionField:
+
+				bOptions, err := json.Marshal(t)
+				if nil != err {
+					blog.Errorf("option format error:%v", t)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bOptions))
+				}
+
+			default:
+				if nil != keyVal {
+					cell.SetValue(t)
+				}
+			}
 		}
 	}
 

@@ -58,6 +58,13 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 		//		blog.Info("login page:%v", loginPage)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
+
+		switch path1 {
+		case "healthz", "metrics":
+			c.Next()
+			return
+		}
+
 		if isAuthed(c, isMultiOwner, skipLogin, defaultlanguage) {
 			//valid resource acess privilege
 			ok := ValidResAccess(pathArr, c)
@@ -96,8 +103,8 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 			}
 
 		}
-
 	}
+
 }
 
 //isAuthed check user is authed

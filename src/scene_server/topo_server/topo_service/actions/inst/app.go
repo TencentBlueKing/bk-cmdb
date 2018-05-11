@@ -350,6 +350,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
+			blog.Errorf("create app valid eror:%s, data:%v", err.Error(), string(value))
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
 		}
 
