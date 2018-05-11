@@ -10,51 +10,34 @@
  * limitations under the License.
  */
 
-package logics
+package models
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	dbStorage "configcenter/src/storage"
 )
 
-var (
-	tablenames = []string{
-		"cc_ApplicationBase",
-		"cc_History",
-		"cc_HostBase",
-		"cc_HostFavourite",
-		"cc_ModuleBase",
-		"cc_ModuleHostConfig",
-		"cc_ObjectBase",
-		"cc_OperationLog",
-		"cc_PlatBase",
-		"cc_Privilege",
-		"cc_Proc2Module",
-		"cc_Process",
-		"cc_SetBase",
-		"cc_Subscription",
-		"cc_UserAPI",
-		"cc_UserCustom",
-		"cc_UserGroup",
-		"cc_UserGroupPrivilege",
-		"cc_idgenerator",
-		"cc_ObjAsst",
-		"cc_ObjAttDes",
-		"cc_ObjClassification",
-		"cc_ObjDes",
-		"cc_PropertyGroup",
-		"cc_InstAsst",
-		"cc_System",
+func AddSystemData(tableName string, insCli dbStorage.DI) error {
+	blog.Errorf("add data for  %s table ", tableName)
+	data := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue}
+	isExist, err := insCli.GetCntByCondition(tableName, data)
+	if nil != err {
+		blog.Errorf("add data for  %s table error  %s", tableName, err)
+		return err
 	}
-)
-
-func Clear(instData dbStorage.DI) error {
-
-	// clear mongodb
-	for _, tablename := range tablenames {
-		instData.DropTable(tablename)
+	if isExist > 0 {
+		return nil
+	}
+	_, err = insCli.Insert(tableName, data)
+	if nil != err {
+		blog.Errorf("add data for  %s table error  %s", tableName, err)
+		return err
 	}
 
-	// clear redis
+	return nil
 
+	blog.Errorf("add data for  %s table  ", tableName)
 	return nil
 }
