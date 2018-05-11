@@ -13,6 +13,12 @@
 package inst
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
@@ -21,13 +27,6 @@ import (
 	"configcenter/src/scene_server/topo_server/topo_service/logics"
 	auditlogAPI "configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/common/commondata"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-
-	"configcenter/src/common/auditoplog"
-
-	"github.com/emicklei/go-restful"
 )
 
 var audit = &auditAction{}
@@ -75,18 +74,6 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 			dat.Condition = common.KvMap{common.BKOwnerIDField: ownerID}
 		} else {
 			conds := iConds.(map[string]interface{})
-			OpType, ok := conds[common.BKOpTypeField]
-			if ok {
-				strOpType, _ := OpType.(string)
-				switch strOpType {
-				case "add":
-					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeAdd
-				case "update":
-					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeModify
-				case "delete":
-					conds[common.BKOpTypeField] = auditoplog.AuditOpTypeDel
-				}
-			}
 			times, ok := conds[common.BKOpTimeField].([]interface{})
 			if ok {
 				if 2 != len(times) {
