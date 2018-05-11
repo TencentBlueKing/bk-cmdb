@@ -114,9 +114,8 @@ func handleInst(event *types.EventInstCtx) (err error) {
 	}()
 
 	// selete members
-	origindi := event.GetDistInst()
 
-	origindists := []*types.DistInst{origindi}
+	origindists := event.GetDistInst()
 
 	for _, origindist := range origindists {
 		subscribers := findEventTypeSubscribers(origindist.GetType())
@@ -127,8 +126,7 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		// prepare dist event
 		for _, subscriber := range subscribers {
 			var dstbID, subscribeID int64
-
-			distinst := *origindist
+			distinst := origindist
 			dstbID, err = nextDistID(subscriber)
 			if err != nil {
 				return err

@@ -12,4 +12,7 @@ event_server
         1.1.2 成功则启动推送, 失败则下一个
     1.2 无剩余
         1.2.1 算出平均数
-        1.2.2 setnx declare, 重复setnx deal
+        1.2.2 找出大于平均数的进程, setnx stop成功后, 重复setnx deal
+        1.2.3 setnx deal 成功后启动推送
+        1.2.4
+2.
