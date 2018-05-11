@@ -13,5 +13,5 @@
 package plugins
 
 import (
-	_ "configcenter/src/framework/plugins/sync-hosts-qcloud" // load example
+	_ "configcenter/src/framework/plugins/example" // load example
 )
