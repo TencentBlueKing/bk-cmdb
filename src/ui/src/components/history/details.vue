@@ -12,7 +12,8 @@
             <v-table
                 :loading="loadingAttribute"
                 :sortable="false"
-                :width="700"
+                :width="width? width : 700"
+                :height="height ? height : 0"
                 :wrapperMinusHeight="300"
                 :header="tableHeader"
                 :list="tableList"
@@ -37,7 +38,9 @@
             vTable
         },
         props: {
-            details: Object
+            details: Object,
+            height: Number,
+            width: Number
         },
         data () {
             return {
