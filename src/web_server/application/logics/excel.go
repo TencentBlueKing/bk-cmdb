@@ -69,6 +69,7 @@ func BuildHostExcelFromData(objID string, fields map[string]Property, filter []s
 		extFieldsTopoID: defLang.Language("web_ext_field_topo"),
 	}
 	fields = addExtFields(fields, extFields)
+
 	productExcelHealer(fields, filter, sheet, defLang)
 	//indexID := getFieldsIDIndexMap(fields)
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -102,7 +103,8 @@ func BuildHostExcelFromData(objID string, fields map[string]Property, filter []s
 
 //BuildExcelTemplate  return httpcode, error
 func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf) error {
-	fields, err := GetObjFieldIDs(objID, url, header)
+	filterFields := getFilterFields(objID)
+	fields, err := GetObjFieldIDs(objID, url, filterFields, header)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return err
@@ -115,7 +117,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 		blog.Errorf("get %s fields error:", objID, err.Error())
 		return err
 	}
-	productExcelHealer(fields, getFilterFields(objID), sheet, defLang)
+	productExcelHealer(fields, filterFields, sheet, defLang)
 	err = file.Save(filename)
 	if nil != err {
 		return err
@@ -155,8 +157,17 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		cellName.Value = field.Name + isRequire
 		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
 
+		asstPrimaryKey := ""
+		if 0 < len(field.AsstObjPrimaryProperty) {
+			var primaryKeys []string
+			for _, f := range field.AsstObjPrimaryProperty {
+				primaryKeys = append(primaryKeys, f.Name)
+			}
+			asstPrimaryKey = fmt.Sprintf("(%s)", strings.Join(primaryKeys, common.ExcelAsstPrimaryKeySplitChar))
+		}
+
 		cellType := sheet.Cell(1, index)
-		cellType.Value = fieldTypeName
+		cellType.Value = fieldTypeName + asstPrimaryKey
 		cellType.SetStyle(styleCell)
 
 		cellEnName := sheet.Cell(2, index)
@@ -166,7 +177,6 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		switch field.PropertyType {
 		case common.FieldTypeInt:
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-			fmt.Println(index, cellEnName, cellName, cellType, index, field.ExcelColIndex, field.Name)
 		case common.FieldTypeEnum:
 			option := field.Option
 			optionArr, ok := option.([]interface{})
@@ -221,7 +231,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	}
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
-
 		row := sheet.Rows[index]
 		host, err := getDataFromByExcelRow(row, index, fields, defFields, nameIndexMap, defLang)
 		if nil != err {
@@ -241,6 +250,11 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 
 	return hosts, nil
 
+}
+
+//GetFilterFields 不需要展示字段
+func GetFilterFields(objID string) []string {
+	return getFilterFields(objID)
 }
 
 //getFilterFields 不需要展示字段
@@ -287,31 +301,35 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 // fields each field description,  field type, isrequire, validate role
 func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) {
 	for id, val := range rowMap {
-		proptery, ok := fields[id]
+		property, ok := fields[id]
 		if false == ok {
 			continue
 		}
-		cell := sheet.Cell(rowIndex, proptery.ExcelColIndex)
+		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
 		//cell.NumFmt = "@"
 
-		switch proptery.PropertyType {
+		switch property.PropertyType {
 		case common.FieldTypeMultiAsst:
 			arrVal, ok := val.([]interface{})
 			if true == ok {
-				vals := getAssociateNames(arrVal)
+				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
 				cell.SetString(strings.Join(vals, "\n"))
+				style := cell.GetStyle()
+				style.Alignment.WrapText = true
 			}
 
 		case common.FieldTypeSingleAsst:
 			arrVal, ok := val.([]interface{})
 			if true == ok {
-				vals := getAssociateNames(arrVal)
+				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
 				cell.SetString(strings.Join(vals, "\n"))
+				style := cell.GetStyle()
+				style.Alignment.WrapText = true
 			}
 
 		case common.FieldTypeEnum:
 			var cellVal string
-			arrVal, ok := proptery.Option.([]interface{})
+			arrVal, ok := property.Option.([]interface{})
 			strEnumID, enumIDOk := val.(string)
 			if true == ok || true == enumIDOk {
 				cellVal = getEnumNameByID(strEnumID, arrVal)

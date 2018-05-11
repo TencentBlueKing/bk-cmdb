@@ -102,7 +102,7 @@ $activeWarning: $warningActiveColor;
         font-size: 22px;
         .bk-dialog-title {
             margin: 0;
-            word-break: break-all;
+            word-wrap: break-word;
         }
     }
     &-body {

@@ -500,25 +500,24 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(common.CCErrAPIServerV2APPNameLenErr, defErr.Error(common.CCErrAPIServerV2APPNameLenErr).Error(), resp)
 		return
 	}
-	LifeCycle := formData.Get("LifeCycle")
-	lifeMap := map[string]bool{"测试中": true, "已上线": true, "停运": true}
-	if !lifeMap[LifeCycle] {
-		if LifeCycle == "1" {
-			LifeCycle = "测试中"
-		} else if LifeCycle == "2" {
-			LifeCycle = "已上线"
-		} else if LifeCycle == "3" {
-			LifeCycle = "停运"
-		} else {
-			//msg := "生成周期字段值不合法"
-			converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "LifeCycle").Error(), resp)
-			return
-		}
+	lifeCycle := formData.Get("LifeCycle")
+
+	if lifeCycle == "1" || "测试中" == lifeCycle {
+		lifeCycle = "1"
+	} else if lifeCycle == "2" || "已上线" == lifeCycle {
+		lifeCycle = "2"
+	} else if lifeCycle == "3" || "停运" == lifeCycle {
+		lifeCycle = "3"
+	} else {
+		//msg := "生成周期字段值不合法"
+		converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "LifeCycle").Error(), resp)
+		return
 	}
+
 	param := make(common.KvMap)
 	param[common.BKAppNameField] = formData.Get("ApplicationName")
 	param[common.BKMaintainersField] = formData.Get("Maintainers")
-	param[common.BKLanguageField] = 1
+	param[common.BKLanguageField] = "1"
 
 	timeZone := formData.Get("TimeZone")
 	if "" != timeZone {
@@ -528,12 +527,12 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 	}
 
 	//param[common.CreatorField] = formData.Get("Creator")
-	param[common.BKLifeCycleField] = formData.Get("LifeCycle")
-
+	param[common.BKLifeCycleField] = lifeCycle
 	param[common.BKProductPMField] = formData.Get("ProductPm")
 	param[common.BKDeveloperField] = formData.Get("Developer")
 	param[common.BKTesterField] = formData.Get("Tester")
 	param[common.BKOperatorField] = formData.Get("Operator")
+
 	blog.Debug("AddApp v3 param data1: %v", param)
 	//填充v3版本需要的参数
 	param, err = logics.AutoInputV3Field(param, common.BKInnerObjIDApp, app.CC.TopoAPI(), req.Request.Header)
@@ -543,6 +542,7 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 	url := fmt.Sprintf("%s/topo/v1/app/%s", app.CC.TopoAPI(), common.BKDefaultOwnerID)
 	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPCreate, []byte(paramJson))
 
+	blog.Infof("create app url:%s, params:%s", url, paramJson)
 	if nil != err {
 		blog.Errorf("create app url:%s, params:%s, error:%s", url, string(paramJson), err.Error())
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)

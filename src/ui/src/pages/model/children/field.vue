@@ -23,7 +23,7 @@
         @cancel="cancel">
         </v-base-info>
         <div class="tab-content model-field-content pb20" v-show="type==='change'">
-            <div class="add-field">
+            <div class="add-field clearfix">
                 <bk-button type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="addField" v-if="!isReadOnly">
                     {{$t('ModelManagement["新增字段"]')}}
                 </bk-button>
@@ -144,13 +144,13 @@
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
+                                                <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
                                             </div>
                                         </div>
                                     </div>
@@ -197,6 +197,26 @@
                                             <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
                                             <div class="from-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
+                                            </div>
+                                        </div>
+                                        <div class="from-common-item from-common-item2 pl30">
+                                            <div class="from-selcet-wrapper mr30">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['editable']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
+                                            </div>
+                                            <div class="from-selcet-wrapper mr30">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isrequired']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
+                                            </div>
+                                            <div class="from-selcet-wrapper">
+                                                <label class="bk-form-checkbox bk-checkbox-small">
+                                                    <i class="bk-checkbox-text">{{$t('ModelManagement["是否唯一"]')}}</i>
+                                                    <input type="checkbox" name="checkbox1" v-model="curFieldInfo['isonly']" :disabled="item['ispre'] || isReadOnly">
+                                                </label>
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
@@ -367,7 +387,7 @@
                                             <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
@@ -422,10 +442,10 @@
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
                                             <div class="from-common-content selcet-width-control">
                                                 <bk-select
-                                                    :disabled="item['ispre'] || isReadOnly"
+                                                    disabled
                                                     :selected="curModelType"
                                                     @on-selected="modelChange">
                                                     <bk-option-group
@@ -624,13 +644,13 @@
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model="newFieldInfo.option.min">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min">
                                         </div>
                                     </div>
                                     <div class="from-common-item  mt20 tr">
                                         <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="number" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model="newFieldInfo.option.max">
+                                            <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max">
                                         </div>
                                     </div>
                                 </div>
@@ -947,19 +967,6 @@
                                             <span class="select-error" v-if="isSelectErrorShow">{{$t('ModelManagement["请选择关联模型"]')}}</span>
                                         </div>
                                     </div>
-                                    <!-- <div class="from-common-item mt20" style="width: 40%;">
-                                        <label class="from-common-label pl5">关联层级</label>
-                                        <div class="from-selcet-wrapper">
-                                            <label class="bk-form-radio bk-radio-small">
-                                                <input type="radio" name="radio1" value="1" checked="checked" v-model="newFieldInfo.asstForward">
-                                                <i class="bk-radio-text">向上关联</i>
-                                            </label>
-                                            <label class="bk-form-radio bk-radio-small">
-                                                <input type="radio" name="radio1" value="2" checked="checked" v-model="newFieldInfo.asstForward">
-                                                <i class="bk-radio-text">向下关联</i>
-                                            </label>
-                                        </div>
-                                    </div> -->
                                 </div>
                                 <!-- 多关联 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'multiasst'">
@@ -1280,7 +1287,6 @@
                     isonly: false
                 },
                 newFieldInfo: {
-                    asstForward: '2',
                     propertyName: '',       // 字段名称
                     propertyId: '',         // API标识
                     propertyType: 'singlechar',      // 字段类型
@@ -1477,6 +1483,29 @@
                 }
                 this.fieldList[index].option = option
             },
+            formatAttrOption (data) {
+                data.map(item => {
+                    switch (item['bk_property_type']) {
+                        case 'int':
+                            if (item.option === null) {
+                                item.option = {
+                                    min: '',
+                                    max: ''
+                                }
+                            }
+                            break
+                        case 'enum':
+                            if (!Array.isArray(item.option) || (Array.isArray(item.option) && !item.option.length)) {
+                                item.option = [{
+                                    id: '',
+                                    name: '',
+                                    is_default: true
+                                }]
+                            }
+                            break
+                    }
+                })
+            },
             /*
                 获取字段配置
             */
@@ -1489,6 +1518,7 @@
                 this.isLoading = true
                 this.$axios.post('object/attr/search', params).then(res => {
                     if (res.result) {
+                        this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
                             this.fieldList[i]['isShow'] = false
                         }
@@ -1546,7 +1576,7 @@
                         this.curIndex = index
                         // 处理单关联和多关联两种特殊情况
                         if (this.fieldList[i]['bk_property_type'] === 'singleasst' || this.fieldList[i]['bk_property_type'] === 'multiasst') {
-                            this.curModelType = this.fieldList[i].option.label
+                            this.curModelType = this.fieldList[i]['bk_asst_obj_id']
                         }
                     } else {
                         this.fieldList[i].isShow = false
@@ -1565,6 +1595,7 @@
                 清空新增字段内容
             */
             resetNewField () {
+                $('#validate-form-new').parsley().reset()
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 this.newFieldInfo.propertyType = 'bool'
@@ -1641,7 +1672,7 @@
             */
             checkParams () {
                 if (this.newFieldInfo.propertyType === 'singleasst' || this.newFieldInfo.propertyType === 'multiasst') {
-                    if (this.newFieldInfo.option.value === '') {
+                    if (this.newFieldInfo['bk_asst_obj_id'] === '') {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1661,7 +1692,7 @@
             */
             checkChangeParams (item, index) {
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
-                    if (!item.option.value) {
+                    if (!item['bk_asst_obj_id']) {
                         this.isSelectErrorShow = true
                         return false
                     }
@@ -1700,8 +1731,7 @@
                     editable: this.newFieldInfo.editable,
                     placeholder: this.newFieldInfo.placeholder,
                     unit: this.newFieldInfo.unit,
-                    bk_asst_obj_id: this.newFieldInfo.option.value,
-                    bk_asst_forward: ''
+                    bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
                 this.$axios.post('object/attr', params).then(res => {
                     if (res.result) {
@@ -1743,20 +1773,10 @@
                             list: [{id: '', name: ''}],
                             defaultIndex: 0
                         }
-                        // this.newFieldInfo.option = [{name: '', is_default: 0}]
                         break
                     case 'singleasst':
-                        this.newFieldInfo.asstForward = '2'
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
-                        break
                     case 'multiasst':
-                        this.newFieldInfo.option = {
-                            label: '',
-                            value: ''
-                        }
+                        this.newFieldInfo.option = ''
                 }
             },
             /*
@@ -1789,7 +1809,7 @@
                 // 只有关联类型才添加以下三个参数
                 if (item['bk_property_type'] === 'singleasst' || item['bk_property_type'] === 'multiasst') {
                     if (option !== 'undefined') {
-                        params['bk_asst_obj_id'] = JSON.parse(option).value
+                        params['bk_asst_obj_id'] = option.value
                     }
                     params['bk_property_id'] = item['bk_property_id']
                     params['bk_obj_id'] = this.objId
@@ -1944,7 +1964,8 @@
             },
             modelSelected (item) {
                 this.isSelectErrorShow = false
-                this.newFieldInfo.option = item
+                this.newFieldInfo['bk_asst_obj_id'] = item.value
+                // this.newFieldInfo.option = item
             },
             /*
                 页面初始化

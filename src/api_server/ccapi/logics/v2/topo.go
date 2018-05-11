@@ -124,7 +124,6 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 			return nil, common.CCErrCommHTTPDoRequestFailed
 		}
 		moduleName, _ := module[common.BKModuleNameField]
-		fmt.Println("moduleName =====", moduleName, module)
 		if nil == moduleName {
 			moduleName = ""
 		}

@@ -50,22 +50,46 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header) ([]int
 		sHostCond[common.BKAppIDField] = -1
 		sHostCond["ip"] = make(map[string]interface{})
 		condArr := make([]interface{}, 0)
+
+		//host condition
 		condition := make(map[string]interface{})
 		hostCondArr := make([]interface{}, 0)
 		hostCond := make(map[string]interface{})
 		hostCond["field"] = common.BKHostIDField
-		hostCond["operator"] = "$in"
+		hostCond["operator"] = common.BKDBIN
 		hostCond["value"] = iHostIDArr
 		hostCondArr = append(hostCondArr, hostCond)
-		condition[common.BKObjIDField] = "host"
+		condition[common.BKObjIDField] = common.BKInnerObjIDHost
 		condition["fields"] = make([]string, 0)
 		condition["condition"] = hostCondArr
 		condArr = append(condArr, condition)
+
+		//biz conditon
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDApp
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		//set conditon
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDSet
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
+		//module condition
+		condition = make(map[string]interface{})
+		condition[common.BKObjIDField] = common.BKInnerObjIDModule
+		condition["fields"] = make([]interface{}, 0)
+		condition["condition"] = make([]interface{}, 0)
+		condArr = append(condArr, condition)
+
 		sHostCond["condition"] = condArr
 		sHostCond["page"] = make(map[string]interface{})
 
 	}
-	url := apiAddr + fmt.Sprintf("/api/%s/hosts/search", webCommon.API_VERSION)
+	url := apiAddr + fmt.Sprintf("/api/%s/hosts/search/asstdetail", webCommon.API_VERSION)
 	result, _ := httpRequest(url, sHostCond, header)
 	blog.Infof("search host  url:%s", url)
 	blog.Infof("search host  return:%s", result)
@@ -91,7 +115,7 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 	if 0 == len(f.Sheets) {
 		return nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, header)
+	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, nil, header)
 	if nil != err {
 		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
 	}
