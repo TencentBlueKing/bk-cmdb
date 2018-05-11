@@ -217,7 +217,7 @@ func CreatePlat(supplierAccount string) (*PlatWrapper, error) {
 // GetPlatID get the plat id
 func GetPlatID(supplierAccount, platName string) (int64, error) {
 
-	cond := CreateCondition().Field(fieldSupplierAccount).Eq(supplierAccount).Field(fieldPlatName).In(platName)
+	cond := CreateCondition().Field(fieldSupplierAccount).Eq(supplierAccount).Field(fieldPlatName).In([]string{platName})
 	iter, iterErr := FindPlatByCondition(supplierAccount, cond)
 	if nil != iterErr {
 		if strings.Contains(iterErr.Error(), "empty") {
