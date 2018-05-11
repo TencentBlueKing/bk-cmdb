@@ -417,7 +417,6 @@
             }
             .attribute-item-field{
                 width: 460px;
-                height: 36px;
                 line-height: 36px;
                 position: relative;
                 &.list{
