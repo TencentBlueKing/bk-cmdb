@@ -12,11 +12,48 @@
 
 package distribution
 
-func cache() {
+import (
+	"configcenter/src/common"
+)
+
+func (c *HostIdenCache) getCache(by string, id int) HostIdenSlice {
+	switch by {
+	case common.BKInnerObjIDApp:
+		return c.bizCache[id]
+	case common.BKInnerObjIDSet:
+		return c.setCache[id]
+	case common.BKInnerObjIDModule:
+		return c.moduleCache[id]
+	case common.BKInnerObjIDPlat:
+		return c.platCache[id]
+	case common.BKInnerObjIDHost:
+		return HostIdenSlice{c.hostCache[id]: true}
+	}
+	panic("unknow type")
+}
+
+// HostIdenCache cache
+type HostIdenSlice map[*HostIdentifier]bool
+
+type HostIdenCache struct {
+	bizCache    map[int]HostIdenSlice
+	setCache    map[int]HostIdenSlice
+	moduleCache map[int]HostIdenSlice
+	platCache   map[int]HostIdenSlice
+	hostCache   map[int]*HostIdentifier
+}
+
+func (c *HostIdenCache) AddHost(i *HostIdentifier) {
+	c.hostCache[i.HostID] = i
+	c.bizCache[i.BizID][i] = true
+	c.setCache[i.SetID][i] = true
+	c.moduleCache[i.ModuleID][i] = true
+	c.platCache[i.CloudID][i] = true
 }
 
 // HostIdentifier define
 type HostIdentifier struct {
+	cache           *HostIdenCache
 	HostID          int    `json:"bk_host_id"`          // 主机ID(host_id)								数字
 	HostName        string `json:"bk_host_name"`        // 主机名称
 	SupplierID      int    `json:"bk_supplier_id"`      // 开发商ID（bk_supplier_id）				数字
@@ -40,4 +77,46 @@ type HostIdentifier struct {
 	Memory  int    `json:"bk_mem"`          // 内存容量
 	CPU     int    `json:"bk_cpu"`          // CPU逻辑核心数
 	Disk    int    `json:"bk_disk"`         // 磁盘容量
+}
+
+func (i *HostIdentifier) SetBizID(id int) {
+	if id == i.BizID {
+		return
+	}
+	delete(i.cache.bizCache[i.BizID], i)
+	i.BizID = id
+	i.cache.bizCache[id][i] = true
+}
+
+func (i *HostIdentifier) SetSetID(id int) {
+	if id == i.SetID {
+		return
+	}
+	delete(i.cache.setCache[i.SetID], i)
+	i.SetID = id
+	i.cache.setCache[id][i] = true
+}
+
+func (i *HostIdentifier) SetModuleID(id int) {
+	if id == i.ModuleID {
+		return
+	}
+	delete(i.cache.moduleCache[i.ModuleID], i)
+	i.ModuleID = id
+	i.cache.moduleCache[id][i] = true
+}
+
+func (i *HostIdentifier) SetPlatID(id int) {
+	if id == i.CloudID {
+		return
+	}
+	delete(i.cache.platCache[i.CloudID], i)
+	i.CloudID = id
+	i.cache.platCache[id][i] = true
+}
+
+func (i *HostIdentifier) ModuleTransfer(bizID, setID, moduleID int) {
+	i.SetBizID(bizID)
+	i.SetSetID(setID)
+	i.SetModuleID(moduleID)
 }
