@@ -629,3 +629,7 @@ const (
 	MaxInt    = int(MaxUint >> 1)
 	MinInt    = -MaxInt - 1
 )
+
+//flag
+const HostCrossBizField = "HostCrossBiz"
+const HostCrossBizValue = "DC46C001FF725D950B980F14BA5439E8"
