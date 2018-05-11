@@ -91,16 +91,16 @@
                 </div>
                 <div class="table-content">
                     <v-table ref="table"
-                        :tableHeader="tableHeader"
-                        :tableList="tableList"
+                        :header="tableHeader"
+                        :list="tableList"
                         :pagination="pagination"
-                        :isLoading="isLoading"
+                        :loading="isLoading"
                         :defaultSort="defaultSort"
-                        @handlePageTurning="setCurrentPage"
-                        @handlePageSizeChange="setCurrentSize"
-                        @handleTableSortClick="setCurrentSort"
-                        @handleRowClick="showDetails"
-                    >
+                        :wrapperMinusHeight="150"
+                        @handlePageChange="setCurrentPage"
+                        @handleSizeChange="setCurrentSize"
+                        @handleSortChange="setCurrentSort"
+                        @handleRowClick="showDetails">
                     </v-table>
                 </div>
             </div>

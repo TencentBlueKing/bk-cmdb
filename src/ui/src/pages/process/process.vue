@@ -13,19 +13,24 @@
             </div>
         </div>
         <v-table class="process-table" 
-            :tableHeader="table.header"
-            :tableList="table.list"
+            :header="table.header"
+            :list="table.list"
             :defaultSort="table.defaultSort"
             :pagination="table.pagination"
-            :isLoading="table.isLoading"
-            @handlePageTurning="setCurrentPage"
-            @handlePageSizeChange="setCurrentSize"
-            @handleTableSortClick="setCurrentSort"
+            :loading="table.isLoading"
+            :wrapperMinusHeight="150"
+            @handlePageChange="setCurrentPage"
+            @handleSizeChange="setCurrentSize"
+            @handleSortChange="setCurrentSort"
             @handleRowClick="showProcessAttribute">
-            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }" v-if="property['bk_property_type'] === 'enum'">
-                <td>
+            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }">
+                <template v-if="property['bk_property_type'] === 'enum'">
                     {{getEnumCell(item[id], property)}}
-                </td>
+                </template>
+                <template v-else-if="!!property['bk_asst_obj_id']">
+                    {{getAssociateCell(item[id])}}
+                </template>
+                <template v-else>{{item[id]}}</template>
             </template>
         </v-table>
         <v-side-slider
@@ -175,6 +180,18 @@
                 if (obj) {
                     return obj.name
                 }
+            },
+            // 计算关联属性单元格显示的值
+            getAssociateCell (data) {
+                let label = []
+                if (Array.isArray(data)) {
+                    data.map(({bk_inst_name: bkInstName}) => {
+                        if (bkInstName) {
+                            label.push(bkInstName)
+                        }
+                    })
+                }
+                return label.join(',')
             },
             createProcess () {
                 this.slider.title.text = this.$t("ProcessManagement['新增进程']")

@@ -196,12 +196,12 @@
     .classify-list{
         font-size: 0;
         margin: 0 auto;
-        width: 1600px;
+        width: 1372px;
         .classify-item{
             font-size: 14px;
             position: relative;
             display: inline-block;
-            width: 380px;
+            width: 323px;
             height: 250px;
             overflow: hidden;
             margin: 0 10px 20px;
@@ -286,7 +286,7 @@
             font-size: 14px;
             line-height: 20px;
             text-align: center;
-            margin: 6px 25px;
+            margin: 6px 16px;
             padding: 0 6px;
             color: #3c96ff;
             border-radius: 10px;
@@ -415,59 +415,35 @@
 </style>
 <style lang="scss">
     /* 导航栏收起时的分类列表宽度 */
-    /* screen <= 1279 放2个分类 */
-    @media (max-width: 1279px){
+    /* screen <= 1279 放3个分类 */
+    @media (max-width: 1452px){
         .content-wrapper.fold{
             .index-wrapper{
                 .search-box{
                     width: 700px;
                 }
                 .classify-list{
-                    width: 800px;
+                    width: 1029px;
                 }
             }
         }
     }
-    /* 1280 <= screen <= 1679 放三个分类*/
-    @media (min-width: 1280px) and (max-width: 1659px) {
+    @media (min-width: 1453px){
         .content-wrapper.fold{
             .index-wrapper{
                 .classify-list{
-                    width: 1200px;
-                }
-            }
-        }
-    }
-    /* 1660 <= screen 放四个分类*/
-    @media (min-width: 1660px) {
-        .content-wrapper.fold{
-            .index-wrapper{
-                .classify-list{
-                    width: 1600px;
+                    width: 1372px;
                 }
             }
         }
     }
     /* 导航展开时的分类列表宽度 */
     /* screen <= 1419 放2个分类 */
-    @media (max-width: 1419px) {
-        .content-wrapper{
-            .index-wrapper{
-                .search-box{
-                    width: 700px;
-                }
-                .classify-list{
-                    width: 800px;
-                }
-            }
-        }
-    }
-    /* 1440 <= screen <= 1839 放三个分类*/
-    @media (min-width: 1420px) and (max-width: 1819px) {
+    @media (max-width: 1612px) {
         .content-wrapper{
             .index-wrapper{
                 .classify-list{
-                    width: 1200px;
+                    width: 1029px;
                 }
             }
         }
