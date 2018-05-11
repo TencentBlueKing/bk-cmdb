@@ -225,7 +225,7 @@
         }
     }
     .classify-info-layout {
-        height: 175px;
+        height: 165px;
         text-align: center;
         color: #fff;
         cursor: pointer;
@@ -255,7 +255,7 @@
         }
     }
     .classify-models-layout{
-        height: 75px;
+        height: 85px;
         padding: 15px 0;
         position: relative;
         font-size: 0;
@@ -273,8 +273,8 @@
             height: 4px;
             margin-left: -2px;
             border-radius: 50%;
-            background-color: #c3cdd7;
-            box-shadow: -7px 0 #c3cdd7, 7px 0 #c3cdd7;
+            background-color: rgba(195, 205, 215, .4);
+            box-shadow: -7px 0 rgba(195, 205, 215, .4), 7px 0 rgba(195, 205, 215, .4);
             transition: opacity .2s ease-out;
             pointer-events: none;
         }

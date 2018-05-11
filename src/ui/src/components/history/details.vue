@@ -9,39 +9,33 @@
                     </span>
                 </div>
             </div>
-            <div ref="historyCompare" class="history-compare" @scroll="setHeader" v-bkloading="{isLoading: loadingAttribute}">
-                <table ref="compareTableHeader" class="compare-table-header">
-                    <colgroup>
-                        <col v-for="(width, index) in colWidth" :width="width">
-                    </colgroup>
-                    <thead>
-                        <tr class="compare-header-row">
-                            <td ref="propertyCell" class="compare-header-cell"></td>
-                            <td ref="preCell" class="compare-header-cell">{{$t("OperationAudit['变更前']")}}</td>
-                            <td ref="curCell" class="compare-header-cell">{{$t("OperationAudit['变更后']")}}</td>
-                        </tr>
-                    </thead>
-                </table>
-                <table class="compare-table-body">
-                    <colgroup>
-                        <col v-for="(width, index) in colWidth" :width="width">
-                    </colgroup>
-                    <tbody>
-                        <tr :class="['compare-body-row', {changed: isChanged(header)}]" v-for="(header, index) in compareHeader" :key="index">
-                            <td class="compare-body-cell header">{{header['bk_property_name']}}</td>
-                            <td class="compare-body-cell pre">{{getCompareBodyCell(header, 'pre_data')}}</td>
-                            <td class="compare-body-cell cur">{{getCompareBodyCell(header, 'cur_data')}}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <v-table
+                :loading="loadingAttribute"
+                :sortable="false"
+                :width="700"
+                :wrapperMinusHeight="300"
+                :header="tableHeader"
+                :list="tableList"
+                :rowBorder="true"
+                :colBorder="true">
+                <template slot="pre_data" slot-scope="{item}">
+                    <div v-html="item['pre_data']"></div>
+                </template>
+                <template slot="cur_data" slot-scope="{item}">
+                    <div v-html="item['cur_data']"></div>
+                </template>
+            </v-table>
         </template>
     </div>
 </template>
 
 <script>
     import {mapGetters} from 'vuex'
+    import vTable from '@/components/table/table'
     export default {
+        components: {
+            vTable
+        },
         props: {
             details: Object
         },
@@ -89,15 +83,70 @@
                 let opType = {
                     1: this.$t("Common['新增']"),
                     2: this.$t("Common['修改']"),
-                    3: this.$t("Common['删除']")
+                    3: this.$t("Common['删除']"),
+                    100: this.$t('OperationAudit["关系变更"]')
                 }
                 return {
                     biz,
                     opType
                 }
             },
-            compareHeader () {
-                return this.attribute[this.objId] || []
+            tableHeader () {
+                let header = [{
+                    id: 'bk_property_name',
+                    name: '',
+                    width: 130
+                }]
+                const preDataHeader = {
+                    id: 'pre_data',
+                    name: this.$t("OperationAudit['变更前']")
+                }
+                const curDataHeader = {
+                    id: 'cur_data',
+                    name: this.$t("OperationAudit['变更后']")
+                }
+                if (this.details['op_type'] === 1) {
+                    header.push(curDataHeader)
+                } else if (this.details['op_type'] === 2 || this.details['op_type'] === 100) {
+                    header.push(preDataHeader)
+                    header.push(curDataHeader)
+                } else if (this.details['op_type'] === 3) {
+                    header.push(preDataHeader)
+                }
+                return header
+            },
+            tableList () {
+                let list = []
+                const attribute = (this.attribute[this.objId] || []).filter(({bk_isapi: bkIsapi}) => !bkIsapi)
+                if (this.details['op_type'] !== 100) {
+                    attribute.forEach(property => {
+                        list.push({
+                            'bk_property_name': property['bk_property_name'],
+                            'pre_data': this.getCellValue(property, 'pre_data'),
+                            'cur_data': this.getCellValue(property, 'cur_data')
+                        })
+                    })
+                } else {
+                    const content = this.details.content
+                    const preBizId = content['pre_data']['bk_biz_id']
+                    const curBizId = content['cur_data']['bk_biz_id']
+                    const preModule = content['pre_data']['module'] || []
+                    const curModule = content['cur_data']['module'] || []
+                    let pre = []
+                    let cur = []
+                    preModule.forEach(module => {
+                        pre.push(`${this.options.biz[preBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                    })
+                    curModule.forEach(module => {
+                        cur.push(`${this.options.biz[curBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                    })
+                    list.push({
+                        'bk_property_name': this.$t('Hosts["关联关系"]'),
+                        'pre_data': pre.join('<br>'),
+                        'cur_data': cur.join('<br>')
+                    })
+                }
+                return list
             }
         },
         watch: {
@@ -109,45 +158,36 @@
                 } else {
                     this.loadingAttribute = false
                 }
-            },
-            details (details) {
-                if (details) {
-                    this.calcColWidth()
-                }
             }
         },
         methods: {
-            getCompareBodyCell (header, type) {
-                let data = this.details.content[type]
+            getCellValue (property, type) {
+                const data = this.details.content[type]
                 if (data) {
-                    let cellText = data[header['bk_property_id']]
-                    let bkPropertyType = header['bk_property_type']
-                    if (Array.isArray(cellText)) {
-                        cellText = cellText.map(({bk_inst_name: bkInstName}) => {
-                            return bkInstName
-                        }).join(',')
-                    } else if (bkPropertyType === 'enum' && Array.isArray(header['options'])) {
-                        let enumOption = header['option'].find(({id}) => id === cellText)
-                        cellText = enumOption ? enumOption['name'] : ''
+                    const {
+                        bk_property_id: bkPropertyId,
+                        bk_property_type: bkPropertyType,
+                        bk_property_name: bkPropertyName,
+                        option
+                    } = property
+                    let value = data[bkPropertyId]
+                    if (bkPropertyType === 'enum' && Array.isArray(option)) {
+                        const targetOption = option.find(({id}) => id === value)
+                        value = targetOption ? targetOption.name : ''
+                    } else if (bkPropertyType === 'singleasst' || bkPropertyType === 'multiasst') {
+                        let asstVal = [];
+                        (Array.isArray(value) ? value : []).forEach(({bk_inst_name: bkInstName}) => {
+                            if (bkInstName) {
+                                asstVal.push(bkInstName)
+                            }
+                        })
+                        value = asstVal.join(',')
                     } else if (bkPropertyType === 'date' || bkPropertyType === 'time') {
-                        cellText = this.$formatTime(cellText, bkPropertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+                        value = this.$formatTime(value, bkPropertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
                     }
-                    return !cellText ? null : cellText
+                    return value
                 }
                 return null
-            },
-            isChanged (header) {
-                return this.getCompareBodyCell(header, 'pre_data') !== this.getCompareBodyCell(header, 'cur_data')
-            },
-            setHeader () {
-                this.$refs.compareTableHeader.style.top = this.$refs.historyCompare.scrollTop + 'px'
-            },
-            calcColWidth () {
-                this.$nextTick(() => {
-                    this.colWidth[0] = this.$refs.propertyCell.getBoundingClientRect().width
-                    this.colWidth[1] = this.$refs.preCell.getBoundingClientRect().width - 1
-                    this.colWidth[2] = this.$refs.curCell.getBoundingClientRect().width - 1
-                })
             }
         }
     }
@@ -184,46 +224,6 @@
             padding-left: 4px;
             color: #333948;
             width: 220px;
-        }
-    }
-    .history-compare{
-        position: relative;
-        margin-top: 32px;
-        padding-top: 43px;
-        max-height: calc(100% - 136px - 32px);
-        overflow-y: auto;
-        overflow-x: hidden;
-        @include scrollbar;
-    }
-    .compare-table-header{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        .compare-header-row{
-            height: 42px;
-            background-color: #fafbfd;
-            .compare-header-cell{
-                border: 1px solid #dde4eb;
-                padding: 0 20px;
-            }
-        }
-    }
-    .compare-table-body{
-        width: 100%;
-        .compare-body-row{
-            &.changed{
-                .compare-body-cell.pre,
-                .compare-body-cell.cur{
-                    background-color: #e9faf0;
-                }
-            }
-            .compare-body-cell{
-                line-height: 26px;
-                padding: 8px 20px;
-                border: 1px solid #dde4eb;
-                border-top: none;
-            }
         }
     }
 </style>
