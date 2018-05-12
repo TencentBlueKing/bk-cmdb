@@ -456,14 +456,14 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
-		if cli.hasChildInstNameRepeat(asstChildInstItems, asstParentInstItems) {
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat)
-		}
-
 		asstParentInstItems, rstErr := cli.SelectInstTopo(forward, ownerID, asstParentDesItems[0].AsstObjID, 0, 0, 2, req)
 		if nil != rstErr {
 			cli.ResponseFailed(common.CC_Err_Comm_http_DO, rsterr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
+		}
+
+		if cli.hasChildInstNameRepeat(asstChildInstItems, asstParentInstItems) {
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat)
 		}
 
 		// deal data
