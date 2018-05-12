@@ -28,6 +28,7 @@ import (
 	restful "github.com/emicklei/go-restful"
 )
 
+// 进程:功能:port
 var prc2port = []string{"job_java:java:8008,8443", "uwsgi:uwsgi:8000,8001,8003,8004",
 	"paas_agent:paas_agent:4245", "common_mysql:mysqld:3306", "common_redis:redis-server:6379", "redis_cluster:redis-server:16379,6379",
 	"zk_java:java:2181", "kafka_java:java:9092", "es_java:java:9300,10004", "beam.smp:beam.smp:15672,5672,25672",
@@ -49,6 +50,7 @@ var prc2port = []string{"job_java:java:8008,8443", "uwsgi:uwsgi:8000,8001,8003,8
 	"cmdb_toposerver:toposerver:32002",
 	"cmdb_webserver:webserver:33083"}
 
+// 集群:模块:进程
 var setModuleKv = map[string]map[string]string{"作业平台": {"job": "job_java"},
 	"配置平台": {
 		"adminserver":      "cmdb_adminserver",
@@ -68,8 +70,8 @@ var setModuleKv = map[string]map[string]string{"作业平台": {"job": "job_java
 	"故障自愈":   {"fta": "fta_py"},
 	"数据服务模块": {"dataapi": "dataapi_py", "databus": "databus_java", "monitor": "monitor_py"},
 	"公共组件": {"mysql": "common_mysql", "redis": "common_redis", "redis_cluster": "redis_cluster", "zookeeper": "zk_java", "kafka": "kafka_java", "elasticsearch": "es_java",
-		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul"},
-	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi"},
+		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul", "mongodb": "mongodb"},
+	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi", "appo": "paas_agent", "appt": "paas_agent"},
 }
 
 var appID int = 0
