@@ -457,10 +457,22 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			for _, instItem := range child {
 				blog.Debug("the inst child:%v", instItem)
 				// store all child inst
-				if instItem.ObjID == common.BKInnerObjIDModule {
-
+				switch instItem.ObjID {
+				case common.BKInnerObjIDModule:
 					// check wether it can be delete
 					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
+					if nil != rstErr {
+						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+
+					if !rstOk {
+						blog.Error("failed to delete app, because of it has some hosts")
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+				case common.BKInnerObjIDSet:
+					// check wether it can be delete
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKSetIDField: []int{instItem.InstID}})
 					if nil != rstErr {
 						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
 						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
