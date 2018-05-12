@@ -274,6 +274,12 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 				host[key] = val[common.BKDefaultField]
 			}
 		}
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
+		_, err = valid.ValidMap(host, "update", 0)
+
+		if nil != err {
+			return err
+		}
 
 		isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 		if !isSuccess {
