@@ -386,13 +386,16 @@ func (cli *topoAction) hasChildInstNameRepeat(current []manager.TopoInstRst, par
 
 				// find the same inst, update the inst's child
 				if subParentItem.InstID == curItem.InstID {
-					key := fmt.Sprintf("%d_%s", parentItem.InstID, curItem.InstName)
-					if _, ok := tmpItems[key]; ok {
-						blog.Debug("already exists %v, target %s", tmpItems, key)
-						return true
-					}
 
-					tmpItems[key] = nil
+					for _, subCurItem := range curItem.Child {
+						key := fmt.Sprintf("%d_%s", parentItem.InstID, subCurItem.InstName)
+						if _, ok := tmpItems[key]; ok {
+							blog.Debug("already exists %v, target %s", tmpItems, key)
+							return true
+						}
+
+						tmpItems[key] = nil
+					}
 				}
 			}
 		}
