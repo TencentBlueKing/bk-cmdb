@@ -242,13 +242,16 @@
                 }))
             },
             setQueryColumns () {
+                let bkOsType = this.allProperties.find(({bk_property_id: bkPropertyId}) => {
+                    return bkPropertyId === 'bk_os_type'
+                })
                 this.filter.queryColumns = [{
                     bk_property_id: 'bk_host_name',
                     bk_property_name: this.$t("Hosts['主机名称']"),
                     bk_property_type: 'singlechar',
                     bk_obj_id: 'host'
                 }, {
-                    bk_option: '[{"name":"Linux", "type":"text"},{"name":"Windows", "type":"text"}]',
+                    bk_option: bkOsType.option,
                     bk_property_id: 'bk_os_type',
                     bk_property_name: this.$t("Hosts['操作系统类型']"),
                     bk_property_type: 'enum',
