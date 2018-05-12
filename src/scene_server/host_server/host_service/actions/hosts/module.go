@@ -50,6 +50,12 @@ func (m *hostModuleConfigAction) AddHostMutiltAppModuleRelation(req *restful.Req
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 	m.CallResponseEx(func() (int, interface{}, error) {
+		isConfig := logics.GetSystemConfig(req, m.CC.ObjCtrl())
+		if !isConfig {
+			blog.Error("add host to mutiple biz is not allowed")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostNotAllowedToMutiBiz)
+
+		}
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
 			blog.Error("read input body error:%v", err)

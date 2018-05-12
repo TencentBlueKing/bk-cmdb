@@ -240,6 +240,7 @@ const (
 	CCErrTopoUserGroupPrivilegeSelectFailed = 1001046
 	CCErrTopoUserPrivilegeSelectFailed      = 1001047
 	CCErrTopoRolePrivilegeCreateFailed      = 1001048
+	CCErrHostNotAllowedToMutiBiz            = 1001049
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

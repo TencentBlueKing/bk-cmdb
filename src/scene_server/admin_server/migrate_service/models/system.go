@@ -18,7 +18,7 @@ import (
 	dbStorage "configcenter/src/storage"
 )
 
-func AddSystemData(tableName string, insCli dbStorage.DI) error {
+func InitSystemData(tableName string, insCli dbStorage.DI) error {
 	blog.Errorf("add data for  %s table ", tableName)
 	data := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue}
@@ -39,5 +39,21 @@ func AddSystemData(tableName string, insCli dbStorage.DI) error {
 	return nil
 
 	blog.Errorf("add data for  %s table  ", tableName)
+	return nil
+}
+
+func ModifySystemData(tableName, ownerID string, insCli dbStorage.DI) error {
+	blog.Errorf("modify data for  %s table ", tableName)
+	cond := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue}
+	data := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue + ownerID}
+
+	err := insCli.UpdateByCondition(tableName, data, cond)
+	if nil != err {
+		blog.Errorf("modify data for  %s table error  %s", tableName, err)
+		return err
+	}
+
 	return nil
 }
