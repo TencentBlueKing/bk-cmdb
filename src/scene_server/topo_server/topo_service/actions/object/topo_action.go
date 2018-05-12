@@ -372,6 +372,25 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 	}, resp)
 }
 
+// hasChildInstNameRepeat check the deleted inst name wether it is repeated
+func (cli *topoAction) hasChildInstNameRepeat(current []manager.TopoInstRst) bool {
+
+	blog.Debug("check name cur: %+v ", current)
+	tmpItems := map[string]*struct{}{}
+	for _, curItem := range current {
+
+		for _, curChild := range curItem.Child {
+			if _, ok := tmpItems[curChild.InstName]; ok {
+				return true
+			}
+
+			tmpItems[curChild.InstName] = nil
+		}
+	}
+
+	return false
+}
+
 // DeleteModule 删除模型
 func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response) {
 
@@ -402,7 +421,7 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 		asstChildDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(forward, asstSearch, defErr)
 		if nil != asstDesItemsErr {
 			blog.Error("failed to cache the old asst, error info is %s", asstDesItemsErr.Error())
-			cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
+			//cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 		delete(asstSearch, "bk_asst_obj_id")
@@ -410,21 +429,25 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 		asstParentDesItems, asstDesItemsErr := cli.mgr.SelectObjectAsst(forward, asstSearch, defErr)
 		if nil != asstDesItemsErr {
 			blog.Error("failed to cache the old asst, error info is %s", asstDesItemsErr.Error())
-			cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
+			//cli.ResponseFailed(common.CC_Err_Comm_http_DO, asstDesItemsErr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
 		if 0 == len(asstParentDesItems) {
 			blog.Error("not found the parent object,  %s", objID)
-			cli.ResponseFailed(common.CC_Err_Comm_http_DO, "not found the parent object", resp)
+			//cli.ResponseFailed(common.CC_Err_Comm_http_DO, "not found the parent object", resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
 		// to cache the old main inst data, read the parent insts
 		asstChildInstItems, rsterr := cli.SelectInstTopo(forward, ownerID, objID, 0, 0, 2, req)
 		if nil != rsterr {
-			cli.ResponseFailed(common.CC_Err_Comm_http_DO, rsterr.Error(), resp)
+			//cli.ResponseFailed(common.CC_Err_Comm_http_DO, rsterr.Error(), resp)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
+		}
+
+		if cli.hasChildInstNameRepeat(asstChildInstItems) {
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat)
 		}
 
 		asstParentInstItems, rstErr := cli.SelectInstTopo(forward, ownerID, asstParentDesItems[0].AsstObjID, 0, 0, 2, req)
