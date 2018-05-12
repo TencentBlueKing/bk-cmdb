@@ -481,9 +481,19 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		}
 		for _, instItem := range topoInstItems {
 
-			if 0 == strings.Compare(instItem.ObjID, common.BKInnerObjIDHost) {
-				blog.Warn("can not delete the inst which has the 'host' child")
-				return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoInstHasHostChild)
+			if instItem.ObjID == common.BKInnerObjIDModule {
+
+				// check wether it can be delete
+				rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKInnerObjIDModule: []int{instItem.InstID}})
+				if nil != rstErr {
+					blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+				}
+
+				if !rstOk {
+					blog.Error("failed to delete app, because of it has some hosts")
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+				}
 			}
 
 			willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
