@@ -19,40 +19,45 @@ import (
 	dbStorage "configcenter/src/storage"
 )
 
-type migrateSystem struct {
-	tableName string
+type MigrateSystem struct {
+	TableName string
 }
 
 // createTable create table
-func (m *migrateSystem) createTable(ownerID string, metaData dbStorage.DI, instData dbStorage.DI) error {
-	blog.Infof("start create %s table", m.tableName)
+func (m *MigrateSystem) createTable(ownerID string, metaData dbStorage.DI, instData dbStorage.DI) error {
+	blog.Infof("start create %s table", m.TableName)
 
-	isExist, err := instData.HasTable(m.tableName)
+	isExist, err := instData.HasTable(m.TableName)
 	if nil != err {
-		blog.Errorf("create %s table error %v", m.tableName, err)
+		blog.Errorf("create %s table error %v", m.TableName, err)
 		return err
 	}
 	if !isExist {
 		// add instant data table
-		err = instData.CreateTable(m.tableName)
+		err = instData.CreateTable(m.TableName)
 		if nil != err {
-			blog.Errorf("create %s table error %v", m.tableName, err)
+			blog.Errorf("create %s table error %v", m.TableName, err)
 			return err
 		}
 	}
 
-	blog.Infof("end create %s table", m.tableName)
+	blog.Infof("end create %s table", m.TableName)
 
 	return nil
 }
 
-func (m *migrateSystem) addData(ownerID string, metaData dbStorage.DI, instData dbStorage.DI) error {
-	err := models.AddSystemData(m.tableName, instData)
+func (m *MigrateSystem) addData(ownerID string, metaData dbStorage.DI, instData dbStorage.DI) error {
+	err := models.InitSystemData(m.TableName, instData)
+	return err
+}
+
+func (m *MigrateSystem) ModifyData(ownerID string, instData dbStorage.DI) error {
+	err := models.ModifySystemData(m.TableName, ownerID, instData)
 	return err
 }
 
 func init() {
-	m := &migrateSystem{tableName: "cc_System"}
+	m := &MigrateSystem{TableName: "cc_System"}
 	migrateregister.RegisterMigrateAction(m.createTable, migrateregister.MigrateTypeCreateTable)
 	migrateregister.RegisterMigrateAction(m.addData, migrateregister.MigrateTypeAddData)
 }

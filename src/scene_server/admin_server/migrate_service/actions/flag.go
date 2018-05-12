@@ -17,13 +17,11 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
-
-	"configcenter/src/scene_server/admin_server/migrate_service/logics"
+	"configcenter/src/scene_server/admin_server/migrate_service/logics/system"
 
 	"github.com/emicklei/go-restful"
-
-	"configcenter/src/scene_server/admin_server/migrate_service/data"
 )
 
 var flag *flagAction = &flagAction{}
@@ -35,11 +33,11 @@ type flagAction struct {
 func init() {
 	flag.CreateAction()
 
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/migrate/{flag}/{ownerID}", Params: nil, Handler: migrate.migrate})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/migrate/system/hostcrossbiz/{ownerID}", Params: nil, Handler: flag.Set})
 	// create CC object
 }
 
-func (cli *migrateAction) set(req *restful.Request, resp *restful.Response) {
+func (cli *flagAction) Set(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -55,44 +53,16 @@ func (cli *migrateAction) set(req *restful.Request, resp *restful.Response) {
 		ownerID = common.BKDefaultOwnerID
 	}
 
-	data.Distribution = pathParameters["distribution"]
-
-	err := logics.DBMigrate(ownerID)
-	if nil != err {
-		blog.Errorf("db migrate error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.DefaultAppMigrate(req, migrate.CC, ownerID)
+	a := api.GetAPIResource()
+	m := &system.MigrateSystem{TableName: "cc_System"}
+	err := m.ModifyData(ownerID, a.InstCli)
 	if nil != err {
 		blog.Errorf("add default app error: %s", err.Error())
 		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
 		return
 	}
 
-	err = logics.BKAppInit(req, migrate.CC, ownerID)
-	if nil != err {
-		blog.Errorf("add default app errror: %s", err.Error())
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.CreateIndex()
-	if nil != err {
-		blog.Errorf("db create index error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.Upgrade(migrate.CC.InstCli)
-	if nil != err {
-		blog.Errorf("db upgrade error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	cli.ResponseSuccess("migrate success", resp)
+	cli.ResponseSuccess("modify system config success", resp)
 	return
 
 }
