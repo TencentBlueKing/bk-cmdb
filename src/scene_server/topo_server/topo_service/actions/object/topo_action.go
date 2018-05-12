@@ -373,18 +373,28 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 }
 
 // hasChildInstNameRepeat check the deleted inst name wether it is repeated
-func (cli *topoAction) hasChildInstNameRepeat(current []manager.TopoInstRst) bool {
+func (cli *topoAction) hasChildInstNameRepeat(current []manager.TopoInstRst, parent []manager.TopoInstRst) bool {
 
 	blog.Debug("check name cur: %+v ", current)
 	tmpItems := map[string]*struct{}{}
-	for _, curItem := range current {
 
-		for _, curChild := range curItem.Child {
-			if _, ok := tmpItems[curChild.InstName]; ok {
-				return true
+	for _, parentItem := range parent {
+
+		for _, subParentItem := range parentItem.Child {
+
+			for _, curItem := range current {
+
+				// find the same inst, update the inst's child
+				if subParentItem.InstID == curItem.InstID {
+					key := fmt.Sprintf("%d_%s", parentItem.InstID, curItem.InstName)
+					if _, ok := tmpItems[key]; ok {
+						blog.Debug("already exists %v, target %s", tmpItems, key)
+						return true
+					}
+
+					tmpItems[key] = nil
+				}
 			}
-
-			tmpItems[curChild.InstName] = nil
 		}
 	}
 
