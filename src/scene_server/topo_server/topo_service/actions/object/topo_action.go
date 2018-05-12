@@ -456,7 +456,7 @@ func (cli *topoAction) DeleteModel(req *restful.Request, resp *restful.Response)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoMainlineDeleteFailed)
 		}
 
-		if cli.hasChildInstNameRepeat(asstChildInstItems) {
+		if cli.hasChildInstNameRepeat(asstChildInstItems, asstParentInstItems) {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat)
 		}
 
