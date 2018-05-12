@@ -460,7 +460,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 				if instItem.ObjID == common.BKInnerObjIDModule {
 
 					// check wether it can be delete
-					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKInnerObjIDModule: []int{instItem.InstID}})
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
 					if nil != rstErr {
 						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
 						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
