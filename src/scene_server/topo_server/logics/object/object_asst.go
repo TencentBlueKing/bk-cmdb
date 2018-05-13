@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	"configcenter/src/scene_server/topo_server/manager"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
