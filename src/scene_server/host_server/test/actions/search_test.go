@@ -17,17 +17,18 @@ import (
 	"configcenter/src/common"
 	hostParse "configcenter/src/common/paraparse"
 
-	_ "configcenter/src/scene_server/topo_server/topo_service/actions/inst"   // import inst
-	_ "configcenter/src/scene_server/topo_server/topo_service/actions/object" // import object actions
-	_ "configcenter/src/scene_server/topo_server/topo_service/actions/openapi"
-	_ "configcenter/src/scene_server/topo_server/topo_service/actions/privilege"
-	_ "configcenter/src/scene_server/topo_server/topo_service/logics/object"
+	_ "configcenter/src/scene_server/topo_server/actions/inst"   // import inst
+	_ "configcenter/src/scene_server/topo_server/actions/object" // import object actions
+	_ "configcenter/src/scene_server/topo_server/actions/openapi"
+	_ "configcenter/src/scene_server/topo_server/actions/privilege"
+	_ "configcenter/src/scene_server/topo_server/logics/object"
 	"encoding/json"
-	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func testHostSearch(t *testing.T) []string {
