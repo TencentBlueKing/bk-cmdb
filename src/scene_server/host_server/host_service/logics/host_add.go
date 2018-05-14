@@ -13,6 +13,13 @@
 package logics
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"time"
+
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -22,13 +29,6 @@ import (
 	"configcenter/src/scene_server/validator"
 	sourceAuditAPI "configcenter/src/source_controller/api/auditlog"
 	sourceAPI "configcenter/src/source_controller/api/object"
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	restful "github.com/emicklei/go-restful"
-
-	"time"
 )
 
 //AddHost, return error info
@@ -66,7 +66,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	objCli.SetAddress(ObjAddr)
 	asstDes, err := objCli.SearchMetaObjectAsst(&sourceAPI.ForwardParam{Header: req.Request.Header}, searchData)
 	if nil != err {
-		return errors.New("查询主机属性失败"), nil, nil, nil
+		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
 	}
 
 	hostMap := convertHostInfo(allHostList)
@@ -75,7 +75,21 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	var errMsg, succMsg, updateErrMsg []string   //新加错误， 成功，  更新失败
 	iSubArea := common.BKDefaultDirSubArea
 
-	defaultFields := getHostFields(forward, ownerID, ObjAddr)
+	defaultFields, err := getHostFields(forward, ownerID, ObjAddr)
+	if nil != err {
+		return errors.New("get host property failure"), nil, nil, nil
+	}
+
+	assObjectInt := scenecommon.NewAsstObjectInst(req, ownerID, ObjAddr, defaultFields, langHandle)
+	err = assObjectInt.GetObjAsstObjectPrimaryKey()
+	if nil != err {
+		return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error()), nil, nil, nil
+	}
+	rowErr, err := assObjectInt.InitInstFromData(hostInfos)
+	if nil != err {
+		return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
+	}
+
 	ts := time.Now().UTC()
 	//operator log
 	var logConents []auditoplog.AuditLogExt
@@ -92,47 +106,44 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			continue
 		}
 
-		_, ok = host[common.BKCloudIDField]
-		if ok {
-			subArea, err = util.GetIntByInterface(host[common.BKCloudIDField])
-			if nil != err {
-				subArea = iSubArea
-			}
-		}
-
-		notExistFields := []string{} //没有赋值的key，不需要校验
-		for key, value := range defaultFields {
-			_, ok := host[key]
-			if ok {
-				//已经存在，
-				continue
-			}
-			require, _ := util.GetIntByInterface(value["require"])
-			if require == common.BKTrue {
-
-				errMsg = append(errMsg, langHandle.Languagef("host_import_property_need_set", index, key))
-				continue
-			}
-			notExistFields = append(notExistFields, key)
-		}
-		blog.Infof("no validate fields %v", notExistFields)
-
-		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
-
-		key := fmt.Sprintf("%s-%v", innerIP, subArea)
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
+		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, ok := hostMap[key]
+
 		//生产日志
 		if ok {
+			if err, ok := rowErr[index]; true == ok {
+				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				fmt.Println("ok1", fmt.Sprintf("%d行%s", index, err.Error()))
+				continue
+			}
 			//delete(host, common.BKCloudIDField)
 			delete(host, "import_from")
 			delete(host, common.CreateTimeField)
-			hostInfo := iHost.(map[string]interface{})
+			err := assObjectInt.SetObjAsstPropertyVal(host)
+			if nil != err {
+				blog.Error("host assocate property error %d %s", index, err)
+				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
 
-			hostID, _ := util.GetIntByInterface(hostInfo[common.BKHostIDField])
+				continue
+			}
+
+			hostID, _ := util.GetIntByInterface(iHost[common.BKHostIDField])
+			fmt.Println("assObjectInt", hostID)
+
 			_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
 			if nil != err {
 				blog.Error("host valid error %v %v", index, err)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%v", index, err))
+				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				fmt.Println("assObjectInt valid", fmt.Sprintf("%d行%s", index, err.Error()))
+
+				continue
+			}
+			//update host asst attr
+			err = scenecommon.UpdateInstAssociation(ObjAddr, req, hostID, ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
+			if nil != err {
+				blog.Error("update host asst attr error : %v", err)
+				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, innerIP))
 				continue
 			}
 			//prepare the log
@@ -153,6 +164,16 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
 
 		} else {
+			if err, ok := rowErr[index]; true == ok {
+				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				continue
+			}
+			err := assObjectInt.SetObjAsstPropertyVal(host)
+			if nil != err {
+				blog.Error("host assocate property error %v %v", index, err)
+				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				continue
+			}
 			_, ok := host[common.BKCloudIDField]
 			if false == ok {
 				host[common.BKCloudIDField] = iSubArea
@@ -160,16 +181,17 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 			host[common.CreateTimeField] = ts
 			//补充未填写字段的默认值
-			for key, val := range defaultFields {
-				_, ok := host[key]
+			for _, field := range defaultFields {
+				_, ok := host[field.PropertyID]
 				if !ok {
-					host[key] = val["default"]
+
+					host[field.PropertyID] = ""
 				}
 			}
-			_, err := valid.ValidMap(host, common.ValidCreate, 0)
+			_, err = valid.ValidMap(host, common.ValidCreate, 0)
 
 			if nil != err {
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, err))
+				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, err.Error()))
 				continue
 			}
 
@@ -191,7 +213,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			err = scenecommon.CreateInstAssociation(ObjAddr, req, hostAsstData)
 			if nil != err {
 				blog.Error("add host asst attr error : %v", err)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%v", index, innerIP))
+				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, innerIP))
 				continue
 			}
 
@@ -266,12 +288,20 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 		host[common.BKCloudIDField] = cloudID
 		host["import_from"] = common.HostAddMethodAgent
 		forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-		defaultFields := getHostFields(forward, ownerID, ObjAddr)
+		defaultFields, err := getHostFields(forward, ownerID, ObjAddr)
+		if nil != err {
+			blog.Errorf("get host property error; error:%s", err.Error())
+			return errors.New("get host property error")
+		}
 		//补充未填写字段的默认值
-		for key, val := range defaultFields {
-			_, ok := host[key]
+		for _, field := range defaultFields {
+			_, ok := host[field.PropertyID]
 			if !ok {
-				host[key] = val[common.BKDefaultField]
+				if common.FieldTypeLongChar == field.PropertyType || common.FieldTypeSingleChar == field.PropertyType {
+					host[field.PropertyID] = ""
+				} else {
+					host[field.PropertyID] = nil
+				}
 			}
 		}
 

@@ -16,8 +16,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -57,37 +60,64 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 }
 
 //GetObjectFields get object fields
-func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr string) map[string]map[string]interface{} {
+func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr, sort string) ([]sourceAPI.ObjAttDes, error) {
 	data := make(map[string]interface{})
 	data[common.BKOwnerIDField] = ownerID
 	data[common.BKObjIDField] = objID
+	data["page"] = common.KvMap{
+		"start": 0,
+		"limit": common.BKNoLimit,
+		"sort":  sort,
+	}
 	info, _ := json.Marshal(data)
 	client := sourceAPI.NewClient(ObjAddr)
-	result, _ := client.SearchMetaObjectAtt(forward, []byte(info))
-	fields := make(map[string]map[string]interface{})
-	for _, j := range result {
-		propertyID := j.PropertyID
-		fieldType := j.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FieldTypeLongChar:
-			fields[propertyID] = common.KvMap{"default": "", "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired} //""
-		case common.FieldTypeInt:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired} //0
-		case common.FieldTypeEnum:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FieldTypeDate:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FieldTypeTime:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		case common.FieldTypeUser:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
-		default:
-			fields[propertyID] = common.KvMap{"default": nil, "name": j.PropertyName, "type": j.PropertyType, "require": j.IsRequired}
+	atts, err := client.SearchMetaObjectAtt(forward, []byte(info))
+	if nil != err {
+		return nil, err
+	}
+
+	for idx, a := range atts {
+		if !util.IsAssocateProperty(a.PropertyType) {
 			continue
 		}
-
+		// read property group
+		condition := map[string]interface{}{
+			"bk_object_att_id":    a.PropertyID, // tmp.PropertyGroup,
+			common.BKOwnerIDField: a.OwnerID,
+			"bk_obj_id":           a.ObjectID,
+		}
+		objasstval, jserr := json.Marshal(condition)
+		if nil != jserr {
+			blog.Error("mashar json failed, error information is %v", jserr)
+			return nil, jserr
+		}
+		asstMsg, err := client.SearchMetaObjectAsst(forward, objasstval)
+		if nil != err {
+			return nil, err
+		}
+		if 0 < len(asstMsg) {
+			atts[idx].AssociationID = asstMsg[0].AsstObjID // by the rules, only one id
+			atts[idx].AsstForward = asstMsg[0].AsstForward // by the rules, only one id
+		}
 	}
-	return fields
+	return atts, nil
+}
+
+// ConvByPropertytype convert str to property type
+func ConvByPropertytype(fields *sourceAPI.ObjAttDes, val string) (interface{}, error) {
+	switch fields.PropertyType {
+	case common.FieldTypeInt:
+		return util.GetIntByInterface(val)
+	case common.FieldTypeBool:
+		val := strings.ToLower(val)
+		switch val {
+		case "true":
+			return true, nil
+		case "false":
+			return false, nil
+		default:
+			return false, fmt.Errorf("%s not bool", val)
+		}
+	}
+	return val, nil
 }
