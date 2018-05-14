@@ -243,7 +243,7 @@ const (
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
-
+	CCErrTopoObjectAttrCreateTypeListName = 1101082
 	// objectcontroller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
