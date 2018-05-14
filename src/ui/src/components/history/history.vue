@@ -13,7 +13,7 @@
         <div class="history-filter clearfix">
             <div class="filter-group date fl">
                 <label>{{$t("HostResourcePool['时间范围']")}}</label>
-                <bk-daterangepicker class="filter-field"
+                <bk-daterangepicker class="filter-field" ref="dateRangePicker"
                     @change="setFilterDate"
                     :range-separator="'-'"
                     :quick-select="false"
@@ -24,7 +24,7 @@
             </div>
             <div class="filter-group user fl">
                 <label>{{$t("HostResourcePool['操作账号']")}}</label>
-                <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active"></v-member-selector>
+                <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active" :multiple="false"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
                 <bk-button type="primary" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
@@ -32,21 +32,31 @@
         </div>
         <div class="history-table">
             <v-table
-                :isLoading="table.isLoading" 
-                :tableHeader="table.header" 
-                :tableList="table.list" 
+                :loading="table.isLoading" 
+                :header="table.header" 
+                :list="table.list" 
                 :pagination="table.pagination" 
                 :defaultSort="table.defaultSort"
-                @handleTableSortClick="setTableSort"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setPageSize">
+                :wrapperMinusHeight="250"
+                @handleSortChange="setTableSort"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setPageSize"
+                @handleRowClick="showDetails">
             </v-table>
+        </div>
+        <div class="history-details" v-show="details.isShow" v-click-outside="closeDetails">
+            <p class="details-title">
+                <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
+                <i class="bk-icon icon-close" @click="closeDetails"></i>
+            </p>
+            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content"></v-history-details>
         </div>
     </div>
 </template>
 <script>
     import vTable from '@/components/table/table'
     import vMemberSelector from '@/components/common/selector/member'
+    import vHistoryDetails from '@/components/history/details'
     import moment from 'moment'
     export default {
         props: {
@@ -63,6 +73,11 @@
         },
         data () {
             return {
+                details: {
+                    isShow: false,
+                    data: null,
+                    clickoutside: true
+                },
                 filter: {
                     date: [],
                     user: ''
@@ -128,12 +143,30 @@
                 if (active) {
                     this.getHistory()
                 } else {
-                    // this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
+                    let $dateRangePicker = this.$refs.dateRangePicker
+                    $dateRangePicker.selectedDateView = `${this.initDate.start} - ${this.initDate.end}`
+                    $dateRangePicker.selectedDateRange = [this.initDate.start, this.initDate.end]
+                    $dateRangePicker.selectedDateRangeTmp = [this.initDate.start, this.initDate.end]
+                    this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
                     this.filter.user = ''
                 }
             }
         },
         methods: {
+            showDetails (item) {
+                this.details.isShow = true
+                this.details.clickoutside = true
+                this.details.data = item
+                this.$nextTick(() => {
+                    this.details.clickoutside = false
+                })
+            },
+            closeDetails () {
+                if (!this.details.clickoutside) {
+                    this.details.isShow = false
+                    this.details.data = null
+                }
+            },
             getHistory () {
                 this.table.isLoading = true
                 this.$axios.post('audit/search', this.searchParams).then(res => {
@@ -174,12 +207,16 @@
         },
         components: {
             vTable,
-            vMemberSelector
+            vMemberSelector,
+            vHistoryDetails
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .history-wrapper{
+        position: relative;
+    }
     .history-filter{
         padding: 20px 0;
         position: relative;
@@ -206,6 +243,30 @@
             }
             .bk-button{
                 width: 96px;
+            }
+        }
+    }
+    .history-details{
+        position: absolute;
+        top:20px;
+        left: 30px;
+        width: 709px;
+        height: 524px;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 9px 0px rgba(0, 0, 0, 0.4);
+        z-index: 1;
+        .details-title{
+            position: relative;
+            line-height: 26px;
+            color: #333948;
+            padding: 0 40px;
+            font-weight: bold;
+            .icon-close{
+                font-size: 14px;
+                position: absolute;
+                right: 12px;
+                top: 0;
+                cursor: pointer;
             }
         }
     }

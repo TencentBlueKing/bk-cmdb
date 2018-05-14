@@ -54,7 +54,7 @@
                 type: Boolean,
                 default: false
             },
-            multiple: { // 保留配置，单选多选配置, 尚未实现单选
+            multiple: {
                 type: Boolean,
                 default: true
             },
@@ -149,14 +149,18 @@
             /* 设置本地存储数据 */
             setLocalSelected () {
                 let selected = this.selected
-                let localSelected = this.localSelected
+                let localSelected = [...this.localSelected]
                 if (typeof selected === 'string' && localSelected.join(',') !== selected) {
-                    this.localSelected = !selected ? [] : selected.split(',')
+                    localSelected = !selected ? [] : selected.split(',')
                 } else if (Array.isArray(selected) && selected.join(',') !== localSelected.join(',')) {
-                    this.localSelected = [...selected]
+                    localSelected = [...selected]
                 } else if (selected === undefined && localSelected.length) {
-                    this.localSelected = []
+                    localSelected = []
                 }
+                if (!this.exclude) {
+                    localSelected = localSelected.filter(selected => this.members.some(({english_name: englishName}) => englishName === selected))
+                }
+                this.localSelected = localSelected
             },
             /* 根据当前输入筛选人员列表 */
             setFilterMember () {
@@ -240,6 +244,11 @@
             /* 移动模拟输入元素的DOM位置并获取焦点 */
             locateInputPosition (index) {
                 if (!this.disabled) {
+                    if (!this.multiple) {
+                        index = 0
+                        this.inputIndex = 0
+                        this.localSelected = []
+                    }
                     let $memberInput = this.$refs.memberInput
                     let $memberSelected = this.$refs.memberSelected
                     if (index !== this.inputIndex) {
@@ -289,11 +298,17 @@
             /* 按下回车确认输入，添加人员 */
             handleConfirm (event) {
                 event.preventDefault()
-                let memberInputText = this.memberInputText.trim()
-                if (this.selectedIndex !== null) {
-                    this.localSelected.splice(this.inputIndex, 0, this.filterMembers[this.selectedIndex]['english_name'])
-                } else if (this.exclude && memberInputText.length) { // 允许选择不在人员列表中的人，以当前输入添加
-                    this.localSelected.splice(this.inputIndex, 0, memberInputText)
+                let memberInputText = this.memberInputText
+                if (memberInputText.length) {
+                    let member = this.exclude ? {'english_name': memberInputText} : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
+                    if (this.exclude) {
+                        this.localSelected.splice(this.inputIndex, 0, memberInputText)
+                    } else {
+                        const member = this.selectedIndex !== null ? this.filterMembers[this.selectedIndex] : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
+                        if (member) {
+                            this.localSelected.splice(this.inputIndex, 0, member['english_name'])
+                        }
+                    }
                 }
                 this.selectedIndex = null
                 this.inputIndex = null
@@ -403,6 +418,7 @@
             overflow: hidden;
             background-color: #fff;
             max-height: 114px;
+            line-height: 24px;
             @include scrollbar;
             &.active{
                 overflow-y: auto;

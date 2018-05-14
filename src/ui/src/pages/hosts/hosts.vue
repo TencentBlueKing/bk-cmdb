@@ -30,67 +30,85 @@
             </div>
         </slot>
         <div class="table-container">
-            <slot name="btnGroup">
-                <div class="btn-group clearfix">
-                    <button class="bk-button bk-default"
-                        :disabled="!table.chooseId.length" 
-                        @click="multipleUpdate">
-                        <i class="icon-cc-edit"></i>
-                        <span>{{$t("BusinessTopology['修改']")}}</span>
-                    </button>
-                    <button class="bk-button"
-                        :disabled="!table.chooseId.length"
-                        @click="transferHost">
-                        <i class="icon-cc-shift"></i>
-                        <span>{{$t("BusinessTopology['转移']")}}</span>
-                    </button>
-                    <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
-                        <input type="hidden" name="bk_host_id" :value="table.chooseId">
-                        <input type="hidden" name="bk_biz_id" value="-1">
+            <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
+                <bk-dropdown-menu ref="dropdown" class="mr10">
+                    <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
+                        <span>{{$t('Common["复制"]')}}</span>
+                        <i :class="['bk-icon icon-angle-down',{'icon-flip': isDropdownShow}]"></i>
+                    </bk-button>
+                    <ul class="bk-dropdown-list" slot="dropdown-content">
+                        <template v-for="(item, index) in table.tableHeader">
+                            <li v-if="index">
+                                <a href="javascript:;" class="copy" :data-clipboard-text="getClipText(item)">{{item.name}}</a>
+                            </li>
+                        </template>
+                    </ul>
+                </bk-dropdown-menu>
+                <slot name="btnGroup">
+                    <div class="btn-group clearfix">
+                        <button class="bk-button bk-default"
+                            :disabled="!table.chooseId.length" 
+                            @click="multipleUpdate">
+                            <i class="icon-cc-edit"></i>
+                            <span>{{$t("BusinessTopology['修改']")}}</span>
+                        </button>
                         <button class="bk-button"
                             :disabled="!table.chooseId.length"
-                            @click.prevent="exportChoose">
-                            <i class="icon-cc-derivation"></i>
-                            <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                            @click="transferHost">
+                            <i class="icon-cc-shift"></i>
+                            <span>{{$t("BusinessTopology['转移']")}}</span>
                         </button>
-                    </form>
-                    <button class="bk-button button-setting" @click="setTableField">
-                        <i class="icon-cc-setting"></i>
-                    </button>
-                    <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
-                        {{$t("HostResourcePool['刷新查询']")}}
-                    </bk-button>
-                </div>
-            </slot>
+                        <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
+                            <input type="hidden" name="bk_host_id" :value="table.chooseId">
+                            <input type="hidden" name="bk_biz_id" value="-1">
+                            <button class="bk-button"
+                                :disabled="!table.chooseId.length"
+                                @click.prevent="exportChoose">
+                                <i class="icon-cc-derivation"></i>
+                                <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                            </button>
+                        </form>
+                        <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
+                        <button class="bk-button button-setting" @click="setTableField">
+                            <i class="icon-cc-setting"></i>
+                        </button>
+                        <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
+                            {{$t("HostResourcePool['刷新查询']")}}
+                        </bk-button>
+                    </div>
+                </slot>
+            </div>
             <v-table class="index-table"
                 ref="indexTable"
-                :tableHeader="table.tableHeader"
-                :tableList="table.tableList"
+                :header="table.tableHeader"
+                :list="table.tableList"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :chooseId.sync="table.chooseId"
-                :isLoading="table.isLoading || outerLoading"
-                @handlePageTurning="setTableCurrentPage"
-                @handlePageSizeChange="setTablePageSize"
-                @handleTableSortClick="setTableSort"
-                @handleTableAllCheck="getAllHostID"
+                :checked.sync="table.chooseId"
+                :loading="table.isLoading || outerLoading"
+                :wrapperMinusHeight="150"
+                @handlePageChange="setTableCurrentPage"
+                @handleSizeChange="setTablePageSize"
+                @handleSortChange="setTableSort"
+                @handleCheckAll="getAllHostID"
                 @handleRowClick="showHostAttribute">
                     <template v-for="({id,name, property}, index) in table.tableHeader" :slot="id" slot-scope="{ item }">
-                        <td v-if="id === 'bk_host_id'" style="width: 50px;" class="checkbox-wrapper">
-                            <label class="bk-form-checkbox bk-checkbox-small" @click.stop>
-                                <input type="checkbox" 
-                                    :value="item['host']['bk_host_id']" 
-                                    v-model="table.chooseId">
-                            </label>
-                        </td>
-                        <td v-else>{{getCellValue(property, item)}}</td>
+                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                            <input type="checkbox"
+                                :value="item['host']['bk_host_id']" 
+                                v-model="table.chooseId">
+                        </label>
+                        <template v-else>{{getCellValue(property, item)}}</template>
                     </template>
                 </v-table>
         </div>
         <v-sideslider 
             :isShow.sync="sideslider.isShow" 
             :title="sideslider.title"
-            :width="sideslider.width">
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="sideslider.isCloseConfirmShow"
+            :width="sideslider.width"
+            @closeSlider="closeSliderConfirm">
             <div slot="content" class="sideslider-content" :class="`sideslider-content-${sideslider.type}`">
                 <bk-tab class="attribute-tab" style="border:none;"
                     v-show="sideslider.type === 'attribute'"
@@ -106,6 +124,14 @@
                             :isMultipleUpdate="sideslider.attribute.form.isMultipleUpdate"
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
+                            <div slot="list" class="attribute-group">
+                                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                                <ul class="attribute-list clearfix">
+                                    <li class="attribute-item fl" v-for="item in sideslider.hostRelation">
+                                        <span class="attribute-item-value">{{item}}</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </v-attribute>
                     </bk-tabpanel>
                     <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="!sideslider.attribute.form.isMultipleUpdate">
@@ -173,6 +199,8 @@
     import vHost from './children/host'
     import vRouter from './children/router'
     import bus from '@/eventbus/bus'
+    import Clipboard from 'clipboard'
+    import { getHostRelation } from '@/utils/util'
     export default {
         props: {
             outerParams: {
@@ -190,6 +218,10 @@
                         }]
                     }
                 }
+            },
+            isShowCrossImport: {
+                type: Boolean,
+                default: false
             },
             isShowBiz: {
                 type: Boolean,
@@ -214,6 +246,9 @@
         },
         data () {
             return {
+                isDropdownShow: false,
+                selectedList: [],
+                forSelectedList: [],
                 bkBizId: '',
                 table: {
                     tableHeader: [],
@@ -261,6 +296,7 @@
                     type: 'attribute',
                     width: 800,
                     isShow: false,
+                    isCloseConfirmShow: false,
                     title: {
                         text: this.$t('HostResourcePool[\'主机属性\']')
                     },
@@ -283,7 +319,8 @@
                         type: 'displayColumns',
                         isShowExclude: true,
                         minField: 1
-                    }
+                    },
+                    hostRelation: []
                 },
                 transfer: {
                     isShow: false
@@ -327,6 +364,19 @@
             exportUrl () {
                 return `${window.siteUrl}hosts/export`
             },
+            filterAttribute () {
+                let attribute = this.$deepClone(this.attribute)
+                attribute.forEach(attr => {
+                    attr.properties = attr.properties.filter(property => {
+                        let {
+                            bk_isapi: bkIsapi,
+                            bk_property_type: bkPropertyType
+                        } = property
+                        return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
+                    })
+                })
+                return attribute
+            },
             searchParams () {
                 let params = {
                     page: {
@@ -369,7 +419,8 @@
             outerParams () {
                 this.setTableCurrentPage(1)
             },
-            'table.chooseId' (chooseId) {
+            'table.chooseId' (chooseId, oldVal) {
+                this.setSelectedList(chooseId, oldVal)
                 this.$emit('choose', chooseId)
             },
             attrLoaded (attrLoaded) {
@@ -388,6 +439,40 @@
             }
         },
         methods: {
+            getHostRelation (data) {
+                return getHostRelation(data)
+            },
+            getClipText (item) {
+                let text = []
+                this.selectedList.map(selected => {
+                    let value = this.getCellValue(item.property, selected)
+                    if (value) {
+                        text.push(value)
+                    }
+                })
+                return text.join(',')
+            },
+            setSelectedList (newId, oldId) {
+                let diffIdList = newId.concat(oldId).filter(id => !newId.includes(id) || !oldId.includes(id))
+                if (newId.length > oldId.length) {
+                    let list = this.forSelectedList.filter(li => {
+                        return diffIdList.findIndex(id => {
+                            return id === li.host['bk_host_id']
+                        }) !== -1
+                    })
+                    this.selectedList = this.selectedList.concat(list)
+                } else {
+                    let list = this.selectedList.filter(li => {
+                        return diffIdList.findIndex(id => {
+                            return id === li.host['bk_host_id']
+                        }) === -1
+                    })
+                    this.selectedList = list
+                }
+            },
+            closeSliderConfirm () {
+                this.sideslider.isCloseConfirmShow = this.$refs.hostAttribute.isCloseConfirmShow()
+            },
             clearChooseId () {
                 this.table.chooseId = []
             },
@@ -446,12 +531,14 @@
                 this.table.tableHeader = [{
                     id: 'bk_host_id',
                     name: 'bk_host_id',
-                    type: 'checkbox'
+                    type: 'checkbox',
+                    width: 50
                 }].concat(columns.map(column => {
+                    const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                     return {
                         id: column['bk_property_id'],
-                        name: column['bk_property_name'],
-                        property: this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
+                        name: property ? property['bk_property_name'] : column['bk_property_name'],
+                        property: property
                     }
                 }))
             },
@@ -464,6 +551,20 @@
                 if (property) {
                     let bkObjId = property['bk_obj_id']
                     let value = item[bkObjId][property['bk_property_id']]
+                    if (property['bk_property_id'] === 'bk_module_name') {
+                        let moduleName = []
+                        item.module.map(({bk_module_name: bkModuleName}) => {
+                            moduleName.push(bkModuleName)
+                        })
+                        return moduleName.join(',')
+                    }
+                    if (property['bk_property_id'] === 'bk_set_name') {
+                        let setName = []
+                        item.set.map(({bk_set_name: bksetName}) => {
+                            setName.push(bksetName)
+                        })
+                        return setName.join(',')
+                    }
                     if (property['bk_asst_obj_id'] && Array.isArray(value)) {
                         let tempValue = []
                         value.map(({bk_inst_name: bkInstName}) => {
@@ -477,10 +578,13 @@
                     } else if (property['bk_property_type'] === 'time') {
                         value = this.$formatTime(value)
                     } else if (property['bk_property_type'] === 'enum') {
-                        if (value) {
-                            value = property.option.find(({id}) => {
-                                return id === value
-                            })['name']
+                        let option = property.option.find(({id}) => {
+                            return id === value
+                        })
+                        if (option) {
+                            value = option.name
+                        } else {
+                            value = ''
                         }
                     }
                     return value
@@ -558,7 +662,7 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.attribute
+                this.sideslider.fields.fieldOptions = this.filterAttribute
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
             },
@@ -690,6 +794,7 @@
                     if (res.result) {
                         this.table.pagination.count = res.data.count
                         this.table.tableList = res.data.info
+                        this.forSelectedList = this.$deepClone(res.data.info)
                         this.historyParams = {
                             content: JSON.stringify(this.searchParams)
                         }
@@ -712,6 +817,7 @@
                 })
             },
             showHostAttribute (item, index) {
+                this.sideslider.hostRelation = getHostRelation(item)
                 let bkHostId = item['host']['bk_host_id']
                 let attribute = this.sideslider.attribute
                 this.sideslider.width = 800
@@ -772,17 +878,18 @@
                     let allHostId = []
                     let searchParams = JSON.parse(this.historyParams['content'])
                     searchParams.page = {}
-                    searchParams.condition.map(({bk_obj_id: bkObjId, fields}) => {
-                        if (bkObjId === 'host') {
-                            fields.push('bk_host_id')
-                        }
-                    })
+                    // searchParams.condition.map(({bk_obj_id: bkObjId, fields}) => {
+                    //     if (bkObjId === 'host') {
+                    //         fields.push('bk_host_id')
+                    //     }
+                    // })
                     this.table.isLoading = true
                     this.$axios.post('hosts/search/', searchParams).then(res => {
                         if (res.result) {
                             res.data.info.forEach((item, index) => {
                                 allHostId.push(item['host']['bk_host_id'])
                             })
+                            this.forSelectedList = res.data.info
                             this.table.chooseId = allHostId
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
@@ -794,6 +901,9 @@
                 } else {
                     this.table.chooseId = []
                 }
+            },
+            handleCrossImport () {
+                this.$emit('handleCrossImport')
             },
             attributeTabChanged (activeName) {
                 this.sideslider.attribute.active = activeName
@@ -870,6 +980,15 @@
                     this.setTableCurrentPage(1)
                 })
             })
+            this.$nextTick(() => {
+                let clipboard = new Clipboard('.copy')
+                clipboard.on('success', () => {
+                    this.$alertMsg(this.$t('Common["复制成功"]'), 'success')
+                })
+                clipboard.on('error', () => {
+                    this.$alertMsg(this.$t('Common["复制失败"]'))
+                })
+            })
         },
         components: {
             vTable,
@@ -895,7 +1014,14 @@
     padding: 20px;
     height: 100%;
     overflow: hidden;
+    .dropdown-btn{
+        width: 100px;
+        cursor: default;
+    }
     .btn-group{
+        display: inline-block;
+        width: calc(100% - 110px);
+        vertical-align: middle;
         font-size: 0;
         .bk-button{
             font-size: 14px;

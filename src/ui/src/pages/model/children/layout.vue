@@ -303,11 +303,6 @@
                 查询分组信息
             */
             getFieldGroup () {
-                let params = {
-                    page: {
-                        sort: 'bk_property_name'
-                    }
-                }
                 return this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.objId}`, {}).then((res) => {
                     if (res.result) {
                         this.groupFieldList = res.data
@@ -470,7 +465,7 @@
                             }
                             this.$axios.put(`/object/attr/${ele['id']}`, params).then((res) => {
                                 if (res.result) {
-                                    this.$alertMsg(this.$t('ModelManagement["删除成功"]'), 'success')
+                                    this.$alertMsg(this.$t('Common["删除成功"]'), 'success')
                                     this.getAttr()
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])

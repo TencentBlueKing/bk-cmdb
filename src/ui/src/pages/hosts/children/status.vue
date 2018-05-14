@@ -133,7 +133,7 @@
                 let chart3 = echarts.init(this.$refs['chart3'])
                 chart1.setOption({
                     title: {
-                        text: '总CPU使用率',
+                        text: this.$t('Hosts["总CPU使用率"]'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -162,7 +162,7 @@
                 })
                 chart2.setOption({
                     title: {
-                        text: '总内存使用率',
+                        text: this.$t('Hosts["总内存使用率"]'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -191,7 +191,7 @@
                 })
                 chart3.setOption({
                     title: {
-                        text: '磁盘使用情况',
+                        text: this.$t('Hosts["磁盘使用情况"]'),
                         textStyle: {
                             color: '#333948'
                         },

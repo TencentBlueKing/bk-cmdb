@@ -13,7 +13,7 @@
         <i class="bk-icon icon-dedent" :class="{'close': fold}" @click="closeNav"></i>
         <div class="header-right-contain fr">
             <!-- 导航快速搜索 -->
-            <div class="fl clearfix" v-click-outside="resetSearch">
+            <div class="fl clearfix" v-click-outside="resetSearch" hidden>
                 <transition name="quick-search" @afterEnter="quickSearchTextFocus">
                     <div class="quick-search-contain fl"  v-show="isShowQuickSearch">
                         <div class="dropdown-content-ip fl" 
@@ -106,6 +106,9 @@
                     text: this.searchText,
                     type: searchTarget.id
                 })
+            },
+            quickSearchParams (quickSearchParams) {
+                this.searchText = quickSearchParams.text
             }
         },
         methods: {
@@ -192,7 +195,7 @@
         left: 0;
         top: 0;
         width: 100%;
-        z-index: 100;
+        z-index: 1200;
         .header-right-contain{
             .select-trigger-box{
                 top: 0;
@@ -413,6 +416,7 @@
         font-size: 16px;
         color: $textColor;
         margin: 9px 0 0 0;
+        cursor: pointer;
         &.close{
             transform: rotate(180deg);
         }

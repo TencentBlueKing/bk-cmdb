@@ -18,22 +18,29 @@
         </div>
         <div class="table-content">
             <v-table
-                :tableHeader="tableHeader"
-                :tableList="tableList"
+                :header="tableHeader"
+                :list="tableList"
                 :pagination="pagination"
-                :isLoading="isLoading"
+                :loading="isLoading"
                 :sortable="false"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setCurrentSize"
-                @handleTableSortClick="setCurrentSort"
-            ></v-table>
+                :wrapperMinusHeight="150"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setCurrentSize"
+                @handleSortChange="setCurrentSort"
+                @handleRowClick="showDetails">
+            </v-table>
         </div>
+        <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
+            <v-history-details :details="details.data" slot="content"></v-history-details>
+        </v-sideslider>
     </div>
 </template>
 
 <script>
     import moment from 'moment'
     import vTable from '@/components/table/table'
+    import vSideslider from '@/components/slider/sideslider'
+    import vHistoryDetails from '@/components/history/details'
     import {mapGetters} from 'vuex'
     export default {
         props: {
@@ -50,6 +57,10 @@
         },
         data () {
             return {
+                details: {
+                    isShow: false,
+                    data: null
+                },
                 pagination: {
                     current: 1,
                     count: 0,
@@ -134,7 +145,7 @@
                         return time + ' 23:59:59'
                     }
                 })
-                if (this.opTime.length === 2) {
+                if (this.opTime.length === 2 && this.isShow) {
                     this.getTableList()
                 }
             },
@@ -161,7 +172,7 @@
                     this.initTableList(res.data.info)
                     this.pagination.count = res.data.count
                 } catch (e) {
-                    this.$alertMsg(e.data['bk_error_msg'])
+                    this.$alertMsg(e.message || e.statusText || e.data['bk_error_msg'])
                 } finally {
                     this.isLoading = false
                 }
@@ -169,26 +180,35 @@
             initTableList (list) {
                 list.forEach((item, index) => {
                     this.tableHeader.map((list, hIndex) => {
-                        if (hIndex === 0) {
-                            if (this.objId === 'host') {
-                                item['id'] = item.content['pre_data']['bk_host_id']
-                            } else if (this.objId === 'biz') {
-                                item['id'] = item.content['pre_data']['bk_biz_id']
+                        if (item.content['pre_data'] !== null) {    // 如果该字段为null则不展示该行
+                            if (hIndex === 0) {
+                                if (this.objId === 'host') {
+                                    item['id'] = item.content['pre_data']['bk_host_id']
+                                } else if (this.objId === 'biz') {
+                                    item['id'] = item.content['pre_data']['bk_biz_id']
+                                } else {
+                                    item['id'] = item.content['pre_data']['bk_inst_id']
+                                }
+                            } else if (hIndex === (this.tableHeader.length - 1)) {
+                                item['op_time'] = this.$formatTime(moment(item['op_time']))
+                            } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
+                                let name = []
+                                if (item.content['pre_data'].hasOwnProperty(list.id)) {
+                                    if (item.content['pre_data'][list.id]) {
+                                        item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
+                                            name.push(bkInstName)
+                                        })
+                                    } else {
+                                        name.push('')
+                                    }
+                                }
+                                item[list.id] = name.join(',')
+                            } else if (list.property['bk_property_type'] === 'enum') {
+                                let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
+                                item[list.id] = option ? option.name : ''
                             } else {
-                                item['id'] = item.content['pre_data']['bk_inst_id']
+                                item[list.id] = item.content['pre_data'][list.id]
                             }
-                        } else if (hIndex === (this.tableHeader.length - 1)) {
-                            item['op_time'] = this.$formatTime(moment(item['op_time']))
-                        } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
-                            let name = []
-                            if (item.content['pre_data'].hasOwnProperty(list.id)) {
-                                item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
-                                    name.push(bkInstName)
-                                })
-                            }
-                            item[list.id] = name.join(',')
-                        } else {
-                            item[list.id] = item.content['pre_data'][list.id]
                         }
                     })
                 })
@@ -196,6 +216,10 @@
             },
             closeFiling () {
                 this.$emit('update:isShow', false)
+            },
+            showDetails (item) {
+                this.details.data = item
+                this.details.isShow = true
             }
         },
         created () {
@@ -216,7 +240,9 @@
             }
         },
         components: {
-            vTable
+            vTable,
+            vSideslider,
+            vHistoryDetails
         }
     }
 </script>

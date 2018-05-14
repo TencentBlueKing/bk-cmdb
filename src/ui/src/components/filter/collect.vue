@@ -34,7 +34,8 @@
                     <input ref="collectNameInput" class="bk-form-input" type="text"
                         :itemId="item['id']"
                         v-show="item['edit']"
-                        v-model.trim="item['name']" 
+                        v-model.trim="item['name']"
+                        @click.stop
                         @blur="updateCollectName(item)">
                     <i class="icon-cc-edit" @click.stop="editCollectName(item)"></i>
                     <i class="icon-cc-del" @click.stop="item.isShowDeleteConfirm = true"></i>
@@ -148,6 +149,7 @@
                 this.$axios.put(`hosts/favorites/${updateItem['id']}`, updateItem).then(res => {
                     if (res.result) {
                         item.edit = false
+                        this.$emit('update', updateItem)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }

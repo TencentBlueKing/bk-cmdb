@@ -18,8 +18,10 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -29,14 +31,15 @@ import (
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
 
 type IntOption struct {
-	Min string `json:min`
-	Max string `json:max`
+	Min string `bson:"min" json:"min"`
+	Max string `bson:"max" json:"max"`
 }
 
 type EnumVal struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	IsDefault bool   `json:"is_default"`
+	ID        string `bson:"id"           json:"id"`
+	Name      string `bson:"name"         json:"name"`
+	Type      string `bson:"type"         json:"type"`
+	IsDefault bool   `bson:"is_default"   json:"is_default"`
 }
 
 type ValidMap struct {
@@ -48,21 +51,25 @@ type ValidMap struct {
 	KeyFileds    map[string]interface{}
 	PropertyKv   map[string]string
 	ccError      errors.DefaultCCErrorIf
+	forward      *api.ForwardParam
 }
 
+// InstRst define
 type InstRst struct {
-	Result  bool        `json:result`
-	Code    int         `json:code`
-	Message interface{} `json:message`
-	Data    interface{} `json:data`
+	Result  bool        `json:"result"`
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
-func NewValidMap(ownerID, objID, objCtrl string, err errors.DefaultCCErrorIf) *ValidMap {
-	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err}
+// NewValidMap returns new NewValidMap
+func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
+	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 }
 
-func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string, err errors.DefaultCCErrorIf) *ValidMap {
-	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err}
+// NewValidMapWithKeyFields returns new NewValidMap
+func NewValidMapWithKeyFields(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
+	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
 
 	for _, item := range keyFileds {
 		tmp.KeyFileds[item] = item
@@ -70,11 +77,11 @@ func NewValidMapWithKeyFileds(ownerID, objID, objCtrl string, keyFileds []string
 	return tmp
 }
 
-//basic valid
+// ValidMap basic valid
 func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int) (bool, error) {
 	valRule := NewValRule(valid.ownerID, valid.objCtrl)
 
-	valRule.GetObjAttrByID(valid.objID)
+	valRule.GetObjAttrByID(valid.forward, valid.objID)
 	valid.IsRequireArr = valRule.IsRequireArr
 	valid.IsOnlyArr = valRule.IsOnlyArr
 	valid.PropertyKv = valRule.PropertyKv
@@ -84,7 +91,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
 
 	for key := range valid.KeyFileds {
-		// set the key filed
+		// set the key field
 		keyDataArr = append(keyDataArr, key)
 	}
 
@@ -93,7 +100,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
-			// ignore the key filed
+			// ignore the key field
 			continue
 		}
 
@@ -106,17 +113,17 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		}
 
 		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField].(string)
+		option := rule[common.BKOptionField]
 		switch fieldType {
-		case common.FiledTypeSingleChar:
+		case common.FieldTypeSingleChar:
 			if nil == val {
 				blog.Error("params in need")
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			result, err = valid.validChar(val, key)
-			if 0 != len(option) && result && "" != val {
+			if option != nil && result && "" != val {
 				//fmt.Println(option)
-				strReg := regexp.MustCompile(option)
+				strReg := regexp.MustCompile(option.(string))
 				strVal := val.(string)
 				//fmt.Println(strVal)
 				result = strReg.MatchString(strVal)
@@ -126,15 +133,15 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 					err = nil
 				}
 			}
-		case common.FiledTypeLongChar:
+		case common.FieldTypeLongChar:
 			if nil == val {
 				blog.Error("params in need")
 				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 			}
 			result, err = valid.validLongChar(val, key)
-			if 0 != len(option) && result && "" != val {
+			if option != nil && result && "" != val {
 				//fmt.Println(option)
-				strReg := regexp.MustCompile(option)
+				strReg := regexp.MustCompile(option.(string))
 				strVal := val.(string)
 
 				result = strReg.MatchString(strVal)
@@ -144,17 +151,17 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 					err = nil
 				}
 			}
-		case common.FiledTypeInt:
+		case common.FieldTypeInt:
 			result, err = valid.validInt(val, key, option)
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			result, err = valid.validEnum(val, key, option)
-		case common.FiledTypeDate:
+		case common.FieldTypeDate:
 			result, err = valid.validDate(val, key)
-		case common.FiledTypeTime:
+		case common.FieldTypeTime:
 			result, err = valid.validTime(val, key)
 		case common.FieldTypeTimeZone:
 			result, err = valid.validTimeZone(val, key)
-		case common.FiledTypeBool:
+		case common.FieldTypeBool:
 			result, err = valid.validBool(val, key)
 		default:
 			continue
@@ -186,7 +193,6 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return result, err
 	}
 
-	return true, nil
 }
 
 //valid create unique
@@ -277,6 +283,15 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 			searchCond[key] = val
 		}
 	}
+
+	if 1 == len(searchCond) {
+		for key := range searchCond {
+			if key == common.BKAppIDField {
+				return true, nil
+			}
+		}
+	}
+
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
@@ -344,10 +359,11 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 			if instIDci == instID {
 				return true, nil
 			}
+			blog.Error("duplicate data ")
 			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 		}
 	} else {
-		//err := "duplicate data "
+		blog.Error("duplicate data ")
 		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 	}
 	return true, nil
@@ -360,9 +376,9 @@ func (valid *ValidMap) validChar(val interface{}, key string) (bool, error) {
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 	value := reflect.ValueOf(val).String()
-	if len(value) > common.FiledTypeSingleLenChar {
-		blog.Errorf("params over length %d", common.FiledTypeSingleLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FiledTypeSingleLenChar)
+	if len(value) > common.FieldTypeSingleLenChar {
+		blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
+		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(value) {
@@ -380,8 +396,8 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 	}
 	value := reflect.ValueOf(val).String()
 	if len(value) > 512 {
-		blog.Errorf("params over length %d", common.FiledTypeLongLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FiledTypeLongLenChar)
+		blog.Errorf("params over length %d", common.FieldTypeLongLenChar)
+		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeLongLenChar)
 	}
 	isIn := util.InArray(key, valid.IsRequireArr)
 	if isIn && 0 == len(value) {
@@ -392,54 +408,57 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 	return true, nil
 }
 
-//valid int
-func (valid *ValidMap) validInt(val interface{}, key string, option string) (bool, error) {
-	var value int
-	if nil == val {
+func parseIntOption(val interface{}) IntOption {
+	intOption := IntOption{}
+	if nil == val || "" == val {
+		return intOption
+	}
+	switch option := val.(type) {
+	case string:
+		json.Unmarshal([]byte(option), &intOption)
+	case map[string]interface{}:
+		intOption.Min = getString(option["min"])
+		intOption.Max = getString(option["max"])
+	}
+	return intOption
+}
+
+// validInt valid int
+func (valid *ValidMap) validInt(val interface{}, key string, option interface{}) (bool, error) {
+	var value int64
+	if nil == val || "" == val {
 		isIn := util.InArray(key, valid.IsRequireArr)
 		if true == isIn {
-			blog.Error("params  can not be null")
+			blog.Error("params can not be null")
 			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return true, nil
 	}
-	if reflect.TypeOf(val).Kind() == reflect.String {
-		valStr := reflect.ValueOf(val).String()
-		var re error
-		value, re = strconv.Atoi(valStr)
-		if nil != re {
-			blog.Error("params  not int")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
-		}
-	}
-	var intObjOption IntOption
-	if reflect.TypeOf(val).Kind() == reflect.Int {
-		value2 := reflect.ValueOf(val).Int()
-		value = int(value2)
 
+	// validate type
+	value, err := strconv.ParseInt(fmt.Sprint(val), 10, 64)
+	if err != nil {
+		blog.Error("params not int")
+		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
-	if 0 == value {
-		value, _ = util.GetIntByInterface(val)
-	}
-	if 0 == len(option) {
+
+	// validate by option
+	if nil == option || "" == option {
 		return true, nil
 	}
-	err := json.Unmarshal([]byte(option), &intObjOption)
-	if nil != err {
-		return true, nil
-	}
+	intObjOption := parseIntOption(option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return true, nil
 	}
 
-	maxValue, err := strconv.Atoi(intObjOption.Max)
+	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
 	if err != nil {
-		return true, nil
+		maxValue = common.MaxInt64
 	}
-	minValue, err := strconv.Atoi(intObjOption.Min)
+	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
 	if err != nil {
-		return true, nil
+		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {
 		blog.Error("params  not valid")
@@ -489,7 +508,7 @@ func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
 }
 
 //valid enum
-func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *ValRule) error {
+func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *ValRule) {
 
 	for key, val := range valData {
 		rule, ok := valRule.FieldRule[key]
@@ -497,26 +516,21 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 			continue
 		}
 		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField].(string)
+		option := rule[common.BKOptionField]
 		switch fieldType {
-		case common.FiledTypeEnum:
+		case common.FieldTypeEnum:
 			if nil != val {
 				valStr, ok := val.(string)
 				if false == ok {
-					return nil
+					return
 				}
 				if "" != valStr {
-					return nil
+					continue
 				}
 			}
 
-			var enumOption []EnumVal
-			var defaultOption *EnumVal = nil
-			re := json.Unmarshal([]byte(option), &enumOption)
-			if nil != re {
-				blog.Error("params  not valid")
-				return valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
-			}
+			enumOption := ParseEnumOption(option)
+			var defaultOption *EnumVal
 
 			for _, k := range enumOption {
 				if k.IsDefault {
@@ -525,51 +539,76 @@ func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *V
 				}
 			}
 			if nil != defaultOption {
-				valData[key] = defaultOption.Name
+				valData[key] = defaultOption.ID
 			}
 
 		}
 
 	}
 
-	return nil
+	return
 }
 
-//valid enum
-func (valid *ValidMap) validEnum(val interface{}, key string, option string) (bool, error) {
-	valStr, ok := val.(string)
-	if false == ok {
+// ParseEnumOption convert val to []EnumVal
+func ParseEnumOption(val interface{}) []EnumVal {
+	enumOptions := []EnumVal{}
+	if nil == val || "" == val {
+		return enumOptions
+	}
+	switch options := val.(type) {
+	case string:
+		json.Unmarshal([]byte(options), &enumOptions)
+	case []interface{}:
+		for _, optionVal := range options {
+			if option, ok := optionVal.(map[string]interface{}); ok {
+				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				enumOptions = append(enumOptions, enumOption)
+			} else if option, ok := optionVal.(bson.M); ok {
+				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				enumOptions = append(enumOptions, enumOption)
+			}
+		}
+	}
+	return enumOptions
+}
+
+// validEnum valid enum
+func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}) (bool, error) {
+	// validate require
+	if nil == val || "" == val {
+		if util.InArray(key, valid.IsRequireArr) {
+			blog.Error("params %s can not be empty", key)
+			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
 		return true, nil
 	}
-	var enumOption []EnumVal
-	var defaultOption *EnumVal = nil
-	re := json.Unmarshal([]byte(option), &enumOption)
-	if nil != re {
-		blog.Error("params  not valid")
+
+	// validate type
+	valStr, ok := val.(string)
+	if !ok {
 		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	match := false
 
+	// validate within enum
+	enumOption := ParseEnumOption(option)
+	match := false
 	for _, k := range enumOption {
-		if k.Name == valStr {
+		if k.ID == valStr {
 			match = true
 			break
 		}
-		if k.IsDefault {
-			defaultOption = &k
-		}
 	}
-	if "" == valStr && nil != defaultOption {
-		val = defaultOption.Name
-		valStr = defaultOption.Name
-	} else if !match {
-		blog.Error("params  not valid")
+	if !match {
+		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
 		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
-	}
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
 	return true, nil
 }
@@ -641,4 +680,23 @@ func (valid *ValidMap) validTime(val interface{}, key string) (bool, error) {
 	}
 	return true, nil
 
+}
+
+func getString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if ret, ok := val.(string); ok {
+		return ret
+	}
+	return ""
+}
+func getBool(val interface{}) bool {
+	if val == nil {
+		return false
+	}
+	if ret, ok := val.(bool); ok {
+		return ret
+	}
+	return false
 }

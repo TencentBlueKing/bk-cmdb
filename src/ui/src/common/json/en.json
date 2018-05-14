@@ -16,7 +16,7 @@
         "sorry，您的权限不足": "Sorry, your lack of permissions",
         "内网IP": "Intranet IP",
         "等于": "Equal",
-        "不等于": "Not Equal To",
+        "不等于": "Different",
         "包含": "Contain",
         "不包含": "Not Contain",
         "列表": "Lists",
@@ -76,7 +76,13 @@
         "已删除历史": "Deleted History",
         "返回": "Back",
         "查看删除历史": "Deleted History",
-        "中文名": "Description"
+        "中文名": "Description",
+        "跨业务导入": "Cross Business Import",
+        "导入成功": "Imported Successfully",
+        "复制": "Copy",
+        "复制成功": "Copy Success",
+        "复制失败": "Copy Fail",
+        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?"
     },
     "Index": {
         "首页": "Index",
@@ -85,7 +91,8 @@
         "添加导航成功": "Add navigation success",
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
-        "返回上级": "Return"
+        "返回上级": "Return",
+        "开始查询": "Please enter at least 3 characters to start the query"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -94,15 +101,18 @@
         "使用逗号分隔": "Separated By Commas",
         "查询": "Query",
         "操作账号": "Account",
-        "操作对象": "Object",
+        "对象": "Object",
         "描述": "Description",
         "所属业务": "Business Name",
         "时间": "Time",
-        "操作类型": "Operation Type",
+        "类型": "Type",
         "操作时间": "Operation Time",
         "类型": "Type",
         "全部": "All",
-        "IP": "IP"
+        "IP": "IP",
+        "操作详情": "Operation Details",
+        "变更前": "Before Change",
+        "变更后": "After Change"
     },
     "EventPush": {
         "事件推送": "Event Push",
@@ -178,7 +188,6 @@
         "权限": "Permission",
         "业务权限": "Business Permission",
         "确认删除角色": "Confirm deletion of the role of {name}?",
-        "确认删除角色XXX？": "Confirm deletion of the role of XXX?",
         "删除成功": "Delete Success",
         "与PaaS同步成员": "Members of sync with the PaaS",
         "跳转配置": "Jump Configuration",
@@ -230,6 +239,9 @@
         "用户": "User",
         "时区": "Timezone",
         "bool": "bool",
+        "表格": "Table",
+        "列名称": "Column Name",
+        "列描述": "Column Description",
         "最小值": "Min",
         "请输入最小值": "Please enter a minimum value",
         "最大值": "Max",
@@ -270,6 +282,7 @@
         "已经存在未命名分组": "Unnamed grouping already exists",
         "分组长度超出限制": "Group Name Length exceeds limit",
         "系统内置分组不可删除": "System built-in grouping cannot be deleted",
+        "默认字段分组不可删除": "Default field grouping cannot be deleted",
         "该分组中存在必填字段，不可删除": "A required field exists in this group and cannot be deleted",
         "删除分组成功": "Delete Group Successfully",
         "隐藏成功": "Hide Success",
@@ -376,7 +389,10 @@
         "修改": "Modify",
         "转移": "Transfer",
         "列表显示属性配置": "List display property configuration",
-        "节点属性": "Node properties"
+        "节点属性": "Node properties",
+        "请输入IP地址": "Please Input IP Address",
+        "未查询到该IP地址对应的主机": "Do not find host with this IP address",
+        "请输入完整IP地址进行查询": "Please input full IP address to search"
     },
     "Hosts": {
         "主机管理": "Hosts Manage",
@@ -385,7 +401,7 @@
         "模块名": "Module Name",
         "集群": "Set",
         "集群名": "Set Name",
-        "云区域ID": "Cloud Area ID",
+        "云区域": "Cloud Area",
         "选择业务": "Business",
         "收藏": "Collection",
         "名称": "Name",
@@ -405,7 +421,8 @@
         "变更关联": "Change Association",
         "清空": "Refresh",
         "主机名称": "Hosts Name",
-        "操作系统类型": "Operating System Type"
+        "操作系统类型": "Operating System Type",
+        "主机拓扑": "Host Topo"
     },
     "Inst": {
         "立即创建": "Add",

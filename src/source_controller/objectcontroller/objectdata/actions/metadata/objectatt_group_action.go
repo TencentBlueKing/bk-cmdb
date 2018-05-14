@@ -1,24 +1,25 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -147,6 +148,7 @@ func (cli *objectAttGroupAction) SelectGroup(req *restful.Request, resp *restful
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -171,7 +173,10 @@ func (cli *objectAttGroupAction) SelectGroup(req *restful.Request, resp *restful
 			blog.Error("find object by selector failed, error information is %s", selerr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrObjectPropertyGroupSelectFailed)
 		}
-
+		// translate language
+		for index := range results {
+			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
+		}
 		return http.StatusOK, results, nil
 
 	}, resp)
@@ -285,15 +290,15 @@ func (cli *objectAttGroupAction) DeletePropertyGroupObjectAtt(req *restful.Reque
 
 		// update the object attributes
 		objectAttSelector := map[string]interface{}{
-			common.BKOwnerIDField:    req.PathParameter("owner_id"),
-			common.BKObjIDField:      req.PathParameter("object_id"),
-			common.BKPropertyIDField: req.PathParameter("property_id"),
-			"bk_property_group":         req.PathParameter("group_id"),
+			common.BKOwnerIDField:       req.PathParameter("owner_id"),
+			common.BKObjIDField:         req.PathParameter("object_id"),
+			common.BKPropertyIDField:    req.PathParameter("property_id"),
+			common.BKPropertyGroupField: req.PathParameter("group_id"),
 		}
 
 		objectAttValue := map[string]interface{}{
-			"bk_property_index": -1,
-			"bk_property_group": "default",
+			"bk_property_index":         -1,
+			common.BKPropertyGroupField: "default",
 		}
 
 		cnt, cntErr := cli.CC.InstCli.GetCntByCondition(common.BKTableNameObjAttDes, objectAttSelector)
@@ -325,6 +330,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	// execute
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -351,6 +357,11 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 		if selerr := cli.CC.InstCli.GetMutilByCondition(common.BKTableNamePropertyGroup, nil, groupSelector, &results, page.Sort, page.Start, page.Limit); nil != selerr {
 			blog.Error("select data failed, error information is %s", selerr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectPropertyGroupSelectFailed)
+		}
+
+		// translate language
+		for index := range results {
+			results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
 		}
 
 		return http.StatusOK, results, nil

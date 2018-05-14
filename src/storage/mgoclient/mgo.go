@@ -1,22 +1,24 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package mgoclient
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage"
 	"errors"
 	"fmt"
+	"strings"
 
 	// "log"
 	// "os"
@@ -70,6 +72,11 @@ func (m *MgoCli) Open() error {
 		return err
 	}
 	return nil
+}
+
+// Ping will ping the db server
+func (m *MgoCli) Ping() error {
+	return m.session.Ping()
 }
 
 // GetSession returns mongo session
@@ -164,7 +171,8 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 		query = query.Select(fieldmap)
 	}
 	if "" != sort {
-		query = query.Sort(sort)
+		arrSort := strings.Split(sort, common.BKDBSortFieldSep)
+		query = query.Sort(arrSort...)
 	}
 
 	if 0 < start {
@@ -181,11 +189,11 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 }
 
 // GetCntByCondition returns count number filter by condiction
-func (m *MgoCli) GetCntByCondition(cName string, condiction interface{}) (cnt int, err error) {
+func (m *MgoCli) GetCntByCondition(cName string, condition interface{}) (cnt int, err error) {
 	m.session.Refresh()
 	c := m.session.DB(m.dbName).C(cName)
 	count := 0
-	count, err = c.Find(condiction).Count()
+	count, err = c.Find(condition).Count()
 	if err != nil {
 		return count, err
 	}

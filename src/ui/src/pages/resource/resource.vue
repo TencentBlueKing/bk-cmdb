@@ -87,11 +87,14 @@
     import vHosts from '@/pages/hosts/hosts'
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
-    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
+    import vDeleteHistory from '@/components/history/delete'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
             return {
+                isDropdownShow: false,
+                selectedList: [],
+                forSelectedList: [],
                 filing: {
                     isShow: false
                 },
@@ -303,6 +306,11 @@
     .host-resource-wrapper{
         position: relative;
         height: 100%;
+        .button-contain{
+            display: inline-block;
+            width: calc(100% - 110px);
+            vertical-align: middle;
+        }
     }
     .biz-selector {
         display: inline-block;

@@ -1,6 +1,7 @@
 <template>
     <div>
         <input class="bk-form-input selected-host" type="text" readonly :value="localSelected.join(',')" @click="isSelectBoxShow = !isSelectBoxShow">
+        <i class="bk-icon icon-close bk-selector-icon clear-icon" @click.stop="clear" v-show="localSelected.length"></i>
         <div class="selectbox-wrapper" v-show="isSelectBoxShow" @click.self="handleCancel">
             <div class="selectbox-box">
                 <div class="top-box">
@@ -24,29 +25,27 @@
                                     :attribute="attribute"
                                     @filterChange="setFilterParams">
                                 </v-filter>
-                                <v-table
-                                    :tableHeader="table.header"
-                                    :tableList="table.list"
+                                <v-table class="asst-host-table"
+                                    :header="table.header"
+                                    :list="table.list"
                                     :defaultSort="table.defaultSort"
                                     :pagination="table.pagination"
-                                    :chooseId.sync="table.chooseId"
-                                    :isLoading="table.isLoading"
-                                    :maxHeight="'auto'"
+                                    :checked.sync="table.chooseId"
+                                    :loading="table.isLoading"
                                     :multipleCheck="multiple"
-                                    @handlePageTurning="setCurrentPage"
-                                    @handlePageSizeChange="setCurrentSize"
-                                    @handleTableSortClick="setCurrentSort"
-                                    @handleTableAllCheck="checkAllHost">
+                                    :maxHeight="200"
+                                    @handlePageChange="setCurrentPage"
+                                    @handleSizeChange="setCurrentSize"
+                                    @handleSortChange="setCurrentSort"
+                                    @handleCheckAll="checkAllHost">
                                     <template v-for="({id, name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
-                                        <td v-if="id === 'bk_host_id'" style="width: 50px;" class="checkbox-wrapper">
-                                            <label class="bk-form-checkbox bk-checkbox-small" @click.stop>
-                                                <input type="checkbox" 
-                                                    :value="item['host']['bk_host_id']"
-                                                    :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
-                                                    @change="setChoose(item['host']['bk_host_id'])">
-                                            </label>
-                                        </td>
-                                        <td v-else>{{getCellValue(property, item)}}</td>
+                                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                                            <input type="checkbox"
+                                                :value="item['host']['bk_host_id']"
+                                                :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
+                                                v-model="table.chooseId">
+                                        </label>
+                                        <template v-else>{{getCellValue(property, item)}}</template>
                                     </template>
                                 </v-table>
                             </div>
@@ -90,7 +89,8 @@
                     pagination: {
                         current: 1,
                         size: 10,
-                        count: 0
+                        count: 0,
+                        sizeDirection: 'top'
                     },
                     chooseId: [],
                     allHost: null,
@@ -169,7 +169,8 @@
         methods: {
             initLocalSelected () {
                 if (Array.isArray(this.selected)) {
-                    this.localSelected = this.selected.map(({bk_inst_name: bkInstName}) => bkInstName)
+                    let availableSelected = this.selected.filter(({id}) => id !== '')
+                    this.localSelected = availableSelected.map(({bk_inst_name: bkInstName}) => bkInstName)
                 }
             },
             initChoosed () {
@@ -229,23 +230,28 @@
                 this.table.header = [{
                     id: 'bk_host_id',
                     name: 'bk_host_id',
-                    type: 'checkbox'
+                    type: 'checkbox',
+                    width: 50
                 }].concat(columns.map(column => {
+                    const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                     return {
                         id: column['bk_property_id'],
-                        name: column['bk_property_name'],
-                        property: column
+                        name: property ? property['bk_property_name'] : column['bk_property_name'],
+                        property: property
                     }
                 }))
             },
             setQueryColumns () {
+                let bkOsType = this.allProperties.find(({bk_property_id: bkPropertyId}) => {
+                    return bkPropertyId === 'bk_os_type'
+                })
                 this.filter.queryColumns = [{
                     bk_property_id: 'bk_host_name',
                     bk_property_name: this.$t("Hosts['主机名称']"),
                     bk_property_type: 'singlechar',
                     bk_obj_id: 'host'
                 }, {
-                    bk_option: '[{"name":"Linux", "type":"text"},{"name":"Windows", "type":"text"}]',
+                    bk_option: bkOsType.option,
                     bk_property_id: 'bk_os_type',
                     bk_property_name: this.$t("Hosts['操作系统类型']"),
                     bk_property_type: 'enum',
@@ -312,8 +318,14 @@
                 })
             },
             getTableList () {
+                let params = this.$deepClone(this.filter.params)
+                params.page = {
+                    start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                    limit: this.table.pagination.size,
+                    sort: this.table.sort
+                }
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.filter.params).then(res => {
+                this.$axios.post('hosts/search', params).then(res => {
                     this.table.isLoading = false
                     if (res.result) {
                         this.table.pagination.count = res.data.count
@@ -339,6 +351,9 @@
                         }
                     })
                     value = tempValue.join(',')
+                } else if (property['bk_property_type'] === 'enum' && Array.isArray(property.option)) {
+                    let option = property.option.find(({id}) => id === value)
+                    value = option ? option.name : ''
                 }
                 return value
             },
@@ -358,7 +373,10 @@
             handleConfirm () {
                 this.isSelectBoxShow = false
                 this.setLocalSelected()
-                this.$emit('update:selected', this.table.chooseId.join(','))
+                let availableId = this.table.chooseId.filter(id => {
+                    return !!this.table.allHost.find(({bk_host_id: bkHostId}) => bkHostId === id)
+                })
+                this.$emit('update:selected', availableId.join(','))
             },
             setLocalSelected () {
                 let selectedHost = this.table.allHost.filter(({bk_host_id: bkHostId}) => this.table.chooseId.indexOf(bkHostId) !== -1)
@@ -366,6 +384,11 @@
             },
             handleCancel () {
                 this.isSelectBoxShow = false
+                this.initLocalSelected()
+            },
+            clear () {
+                this.table.chooseId = []
+                this.handleConfirm()
             }
         },
         components: {
@@ -451,6 +474,25 @@
                     &:first-child{
                         margin-right: 10px;
                     }
+                }
+            }
+        }
+    }
+</style>
+<style lang="scss">
+    .asst-host-table{
+        .table-pagination{
+            padding: 0 6px !important;
+            .bk-page{
+                height: 26px;
+                margin: 8px 0;
+                ul{
+                    height: 26px;
+                }
+                .page-item{
+                    min-width: 26px;
+                    height: 26px;
+                    line-height: 26px;
                 }
             }
         }

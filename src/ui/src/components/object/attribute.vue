@@ -11,6 +11,7 @@
 <template>
     <div class="attribute-wrapper">
         <template v-if="displayType === 'list'">
+            <slot name="list"></slot>
             <template v-for="propertyGroup in groupOrder" v-if="bkPropertyGroups.hasOwnProperty(propertyGroup)">
                 <div class="attribute-group" v-show="!(propertyGroup === 'none' && isNoneGroupHide)">
                     <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
@@ -101,6 +102,9 @@
                                                         :disabled="checkIsFieldDisabled(property)">
                                                     </input>
                                                 </span>
+                                                <input type="text" class="bk-form-input" v-else-if="property['bk_property_type'] === 'int'"
+                                                    :disabled="checkIsFieldDisabled(property)"
+                                                    v-model.trim.number="localValues[property['bk_property_id']]">
                                                 <input v-else
                                                     type="text" class="bk-form-input"
                                                     :disabled="checkIsFieldDisabled(property)" 
@@ -299,6 +303,7 @@
                         }
                     }
                 }
+                
                 return formData
             }
         },
@@ -322,6 +327,11 @@
                     this.localValues = {}
                 } else if (this.type === 'update') {
                     this.setUpdateInitData()
+                }
+                if (displayType === 'form') {
+                    this.$validator.validateAll().then(() => {
+                        this.errors.clear()
+                    })
                 }
             },
             isMultipleUpdate (isMultipleUpdate) {
@@ -353,6 +363,54 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                let isConfirmShow = false
+                if (this.displayType === 'list') {
+                    return false
+                }
+                if (this.type === 'create') {
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        if (property['bk_property_type'] === 'enum') {
+                            let isDefault = property.option.find(({id}) => {
+                                return id === this.formData[key]
+                            })['is_default']
+                            if (!isDefault) {
+                                isConfirmShow = true
+                                break
+                            }
+                        } else {
+                            if (this.formData[key].length) {
+                                isConfirmShow = true
+                                break
+                            }
+                        }
+                    }
+                } else {
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        let value = this.formValues[key]
+                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+                            value = []
+                            if (this.formValues.hasOwnProperty(key)) {
+                                this.formValues[key].map(formValue => {
+                                    value.push(formValue['bk_inst_id'])
+                                })
+                            }
+                            value = value.join(',')
+                        }
+                        if (value !== this.formData[key] && !(this.formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
+                            isConfirmShow = true
+                            break
+                        }
+                    }
+                }
+                return isConfirmShow
+            },
             confirmHost (hostInfo) {
                 this.hideSelectHost()
             },
@@ -436,6 +494,8 @@
                         })
                         if (obj) {
                             return obj.name
+                        } else {
+                            return ''
                         }
                     } else {
                         return value
@@ -515,7 +575,7 @@
                         if (option.hasOwnProperty('max') && option.max) {
                             rules['max_value'] = option.max
                         }
-                    } else if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    } else if ((bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') && option !== null) {
                         rules['regex'] = option
                     }
                 }

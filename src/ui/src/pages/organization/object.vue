@@ -20,7 +20,7 @@
                             <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" @click="importSlider.isShow = true">
+                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.create && unauthorized.update">
                         <i class="icon-cc-import"></i>
                         <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
@@ -46,40 +46,58 @@
                         </bk-select-option>
                     </bk-select>
                 </div>
-                <input v-if="filter.type === 'int'" type="number" class="bk-form-input search-text" 
-                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="setTablePage(1)">
-                <input v-else type="text" class="bk-form-input search-text" 
-                    :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="setTablePage(1)">
-                <i class="bk-icon icon-search" @click="setTablePage(1)"></i>
+                <template v-if="filter.type === 'enum'">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                        <bk-select-option v-for="option in getEnumOptions()"
+                            :key="option.id"
+                            :value="option.id"
+                            :label="option.name">
+                        </bk-select-option>
+                    </bk-select>
+                </template>
+                <template v-else>
+                    <input v-if="filter.type === 'int'" type="text" class="bk-form-input search-text int" 
+                    :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
+                    <input v-else type="text" class="bk-form-input search-text" :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
+                    <i class="bk-icon icon-search" @click="doFilter"></i>
+                </template>
             </div>
         </div>
         <div class="table-contain">
             <v-object-table
-                :tableHeader="table.header" 
-                :tableList="table.list" 
+                :header="table.header" 
+                :list="table.list" 
                 :pagination="table.pagination"
                 :defaultSort="table.defaultSort"
-                :chooseId.sync="table.chooseId"
+                :checked.sync="table.chooseId"
+                :wrapperMinusHeight="150"
                 @handleRowClick="editObject"
-                @handleTableSortClick="setTableSort"
-                @handlePageTurning="setTablePage"
-                @handlePageSizeChange="setTableSize"
-                @handleTableAllCheck="getAllObjectId">
-                    <template v-for="({property,id,name}, index) in table.header" :slot="id" slot-scope="{ item }" 
-                    v-if="(property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== '') || property['bk_property_type'] === 'enum'">
-                        <td v-if="property['bk_property_type'] === 'enum'">{{getEnumCell(item[id], property)}}</td>
-                        <td v-else>{{getAssociateCell(item[id])}}</td>
+                @handleSortChange="setTableSort"
+                @handlePageChange="setTablePage"
+                @handleSizeChange="setTableSize"
+                @handleCheckAll="getAllObjectId">
+                <template v-for="({property, id}, index) in table.header.filter(head => head.type !== 'checkbox')" :slot="id" slot-scope="{item}">
+                    <template v-if="!!property['bk_asst_obj_id']">
+                        {{getAssociateCell(item[id])}}
                     </template>
+                    <template v-else-if="property['bk_property_type'] === 'enum'">
+                        {{getEnumCell(item[id], property)}}
+                    </template>
+                    <template v-else>{{item[id]}}</template>
+                </template>
             </v-object-table>
             <v-sideslider
                 :isShow.sync="slider.isShow"
+                :hasQuickClose="true"
                 :hasCloseConfirm="true"
+                :isCloseConfirmShow="slider.isCloseConfirmShow"
                 :title="slider.title"
-                @closeSlider="closeObjectSlider">
+                @closeSlider="closeObjectSliderConfirm">
                 <div class="slide-content" slot="content">
                     <bk-tab :active-name="tab.activeName" style="border: none;" @tab-changed="tabChanged">
                         <bk-tabpanel name="attr" :title="$t('Common[\'属性\']')">
                             <v-object-attr 
+                                ref="attribute"
                                 :formFields="attr.formFields" 
                                 :formValues="attr.formValues" 
                                 :type="attr.type"
@@ -147,7 +165,7 @@
     import vImport from '@/components/import/import'
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
-    import vDeleteHistory from '@/components/deleteHistory/deleteHistory'
+    import vDeleteHistory from '@/components/history/delete'
     export default {
         mixins: [Authority],
         data () {
@@ -171,7 +189,7 @@
                         size: 10,
                         current: 1
                     },
-                    defaultSort: '-bk_biz_id',
+                    defaultSort: '-bk_inst_id',
                     sort: ''
                 },
                 filing: {
@@ -180,6 +198,7 @@
                 // 侧滑状态
                 slider: {
                     isShow: false,
+                    isCloseConfirmShow: false,
                     title: {
                         icon: '',
                         text: ''
@@ -238,20 +257,39 @@
                             limit: this.table.pagination.size,
                             sort: this.table.sort ? this.table.sort : this.table.defaultSort
                         },
-                        fields: [],
+                        fields: this.objId === 'biz' ? [] : {},
                         condition: {}
                     }
                 }
                 if (this.objId === 'biz') {
                     config.url = `biz/search/${this.bkSupplierAccount}`
                 } else {
-                    config.url = `inst/search/${this.bkSupplierAccount}/${this.objId}`
+                    config.url = `inst/association/search/owner/${this.bkSupplierAccount}/object/${this.objId}`
                 }
-                if (this.filter.selected && this.filter.value) {
-                    if (this.filter.type === 'bool') {
+                if (this.filter.selected && this.filter.value !== '') {
+                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
                         config.params.condition[this.filter.selected] = this.filter.value === 'true'
                     } else {
-                        config.params.condition[this.filter.selected] = this.filter.value
+                        if (this.filter.type === 'singleasst' || this.filter.type === 'multiasst') {
+                            let bkAsstObjId = this.getProperty(this.filter.selected)['bk_asst_obj_id']
+                            config.params.condition[bkAsstObjId] = [{
+                                field: 'bk_inst_name',
+                                operator: '$regex',
+                                value: this.filter.value
+                            }]
+                        } else if (this.filter.type === 'bool') {
+                            config.params.condition[this.objId] = [{
+                                field: this.filter.selected,
+                                operator: '$eq',
+                                value: ['true', 'false'].includes(this.filter.value) ? this.filter.value === 'true' : this.filter.value
+                            }]
+                        } else {
+                            config.params.condition[this.objId] = [{
+                                field: this.filter.selected,
+                                operator: '$regex',
+                                value: this.filter.value
+                            }]
+                        }
                     }
                 }
                 return config
@@ -269,7 +307,11 @@
                 return this.filterList.filter(({id}) => {
                     let property = this.getProperty(id)
                     if (property) {
-                        return property['bk_property_type'] !== 'singleasst' && property['bk_property_type'] !== 'multiasst'
+                        if (this.objId === 'biz') {
+                            return property['bk_property_type'] !== 'singleasst' && property['bk_property_type'] !== 'multiasst'
+                        } else {
+                            return property['bk_asst_obj_id'] !== 'biz'
+                        }
                     }
                     return false
                 })
@@ -281,6 +323,7 @@
                 // 页码调整到第一页
                 this.table.pagination.current = 1
                 this.filter.value = ''
+                this.table.chooseId = []
                 // 初始化表格
                 this.initTable()
             },
@@ -304,9 +347,20 @@
                         }
                     })
                 }
+            },
+            'slider.isShow' (isShow) {
+                if (!isShow) {
+                    this.closeObjectSlider()
+                }
+            },
+            'filter.selected' () {
+                this.filter.value = ''
             }
         },
         methods: {
+            closeObjectSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.attribute.isCloseConfirmShow()
+            },
             getProperty (id) {
                 return this.attr.formFields.find(({bk_property_id: bkPropertyId}) => bkPropertyId === id)
             },
@@ -398,12 +452,17 @@
                                         break
                                     }
                                 }
-                                if (val['bk_property_type'] !== 'singleasst' || val['bk_property_type'] !== 'multiasst') {
-                                    filterList.push({
-                                        id: val['bk_property_id'],
-                                        name: val['bk_property_name'],
-                                        type: val['bk_property_type']
+                                if (val['bk_property_type'] !== 'singleasst' && val['bk_property_type'] !== 'multiasst') {
+                                    let property = res.data.find(({bk_property_id: bkPropertyId}) => {
+                                        return bkPropertyId === val['bk_property_id']
                                     })
+                                    if (property) {
+                                        filterList.push({
+                                            id: val['bk_property_id'],
+                                            name: property['bk_property_name'],
+                                            type: val['bk_property_type']
+                                        })
+                                    }
                                 }
                             })
                         } else { // 没有时则显示前六
@@ -420,7 +479,7 @@
                                 } else {
                                     headerTail.push(headerObj)
                                 }
-                                if (attr['bk_property_type'] !== 'singleasst' || attr['bk_property_type'] !== 'multiasst') {
+                                if (attr['bk_property_type'] !== 'singleasst' && attr['bk_property_type'] !== 'multiasst') {
                                     filterList.push({
                                         id: attr['bk_property_id'],
                                         name: attr['bk_property_name'],
@@ -439,6 +498,7 @@
                             headerLead.unshift({
                                 id: 'bk_inst_id',
                                 name: 'ID',
+                                width: 50,
                                 type: 'checkbox',
                                 property: {}
                             })
@@ -478,7 +538,7 @@
                     return data
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
-                        this.$alertMsg(this.$t("Common['您没有当前模型的权限']"))
+                        this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
                 })
             },
@@ -516,6 +576,10 @@
                 this.table.pagination.current = page
                 this.getTableList()
             },
+            doFilter () {
+                this.table.chooseId = []
+                this.setTablePage(1)
+            },
             // 保存新增/修改的属性
             saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {
                 if (this.attr.type === 'update') {
@@ -537,7 +601,7 @@
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
-                            this.$alertMsg(this.$t("Common['创建成功']"), 'success')
+                            this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
@@ -616,6 +680,14 @@
                 if (obj) {
                     return obj.name
                 }
+            },
+            getEnumOptions () {
+                let selectedPropertyId = this.filter.selected
+                let property = this.attr.formFields.find(({bk_property_id: bkPropertyId}) => bkPropertyId === selectedPropertyId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
             }
         },
         mounted () {
@@ -872,6 +944,9 @@
             &:focus{
                 z-index: 2;
             }
+        }
+        .search-options{
+            width: 320px;
         }
         .icon-search{
             position: absolute;
