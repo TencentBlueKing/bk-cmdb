@@ -15,13 +15,14 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/language"
 	appParse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -125,9 +126,9 @@ func GetSingleApp(req *restful.Request, objURL string, cond interface{}) (map[st
 }
 
 //GetAppInfo get app info
-func GetAppInfo(req *restful.Request, fields string, conditon map[string]interface{}, hostAddr string) (map[string]interface{}, error) {
+func GetAppInfo(req *restful.Request, fields string, conditon map[string]interface{}, objAddr string, defLang language.DefaultCCLanguageIf) (map[string]interface{}, error) {
 	//moduleURL := "http://" + cc.ObjCtrl + "/object/v1/insts/module/search"
-	URL := hostAddr + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
+	URL := objAddr + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
 	params := make(map[string]interface{})
 	params["condition"] = conditon
 	params["sort"] = common.BKAppIDField
@@ -146,24 +147,24 @@ func GetAppInfo(req *restful.Request, fields string, conditon map[string]interfa
 	info := dataInterface["info"].([]interface{})
 	if 1 != len(info) {
 		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
-		return nil, errors.New("业务不存在")
+		return nil, errors.New(defLang.Languagef("app_not_exist")) //"业务不存在")
 	}
 	row := info[0].(map[string]interface{})
 
 	if 0 == len(row) {
 		blog.Error("not application info error, params:%v, error:%s", params, errMsg)
-		return nil, errors.New("业务存在")
+		return nil, errors.New(defLang.Languagef("app_not_exist")) //"业务不存在")
 	}
 
 	return row, nil
 }
 
 //GetDefaultAppID get default biz id
-func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string) (int, error) {
+func GetDefaultAppID(req *restful.Request, ownerID, fields, objAddr string, defLang language.DefaultCCLanguageIf) (int, error) {
 	conds := make(map[string]interface{})
 	conds[common.BKOwnerIDField] = ownerID
 	conds[common.BKDefaultField] = common.DefaultAppFlag
-	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	appinfo, err := GetAppInfo(req, fields, conds, objAddr, defLang)
 	if nil != err {
 		blog.Errorf("get default app info error:%v", err.Error())
 		return 0, err
@@ -172,14 +173,40 @@ func GetDefaultAppID(req *restful.Request, ownerID, fields, hostAddr string) (in
 }
 
 //GetDefaultAppID get supplier ID
-func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, hostAddr string) (int, error) {
+func GetDefaultAppIDBySupplierID(req *restful.Request, supplierID int, fields, objAddr string, defLang language.DefaultCCLanguageIf) (int, error) {
 	conds := make(map[string]interface{})
 	conds[common.BKSupplierIDField] = supplierID
 	conds[common.BKDefaultField] = common.DefaultAppFlag
-	appinfo, err := GetAppInfo(req, fields, conds, hostAddr)
+	appinfo, err := GetAppInfo(req, fields, conds, objAddr, defLang)
 	if nil != err {
 		blog.Errorf("get default app info error:%v", err.Error())
 		return 0, err
 	}
 	return util.GetIntByInterface(appinfo[common.BKAppIDField])
+}
+
+// IsExistHostIDInApp  is host exsit in app
+func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int, defLang language.DefaultCCLanguageIf) (bool, error) {
+	conds := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID}
+	url := CC.HostCtrl() + "/host/v1/meta/hosts/modules/search"
+	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPSelectPost, conds)
+	blog.Info("IsExistHostIDInApp request url:%s, params:{appid:%d, hostid:%d}", url, appID, hostID)
+	blog.Info("IsExistHostIDInApp res:%v,%s, %v", isSucess, errmsg, data)
+	if !isSucess {
+		return false, errors.New(defLang.Languagef("host_search_module_fail_with_errmsg", errmsg)) //"获取主机关系失败;" + errmsg)
+	}
+	//数据为空
+	if nil == data {
+		return false, nil
+	}
+	ids, ok := data.([]interface{})
+	if !ok {
+		return false, errors.New(defLang.Languagef("host_search_module_fail_with_errmsg", errmsg)) //"获取主机关系失败;" + errmsg)
+	}
+
+	if len(ids) > 0 {
+		return true, nil
+	}
+	return false, nil
+
 }

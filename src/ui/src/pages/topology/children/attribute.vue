@@ -9,7 +9,7 @@
                         </label>
                         <div class="attribute-item-field fl" :style="{zIndex: attribute[bkObjId].length - index}">
                             <input v-if="property['bk_property_type'] === 'int'" 
-                                type="number" class="bk-form-input"
+                                type="text" class="bk-form-input"
                                 :disabled="!property['editable']"
                                 v-model.number="localValues[property['bk_property_id']]">
                             <v-member-selector v-else-if="property['bk_property_type'] === 'objuser'"
@@ -184,6 +184,38 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                let isConfirmShow = false
+                if (this.displayType === 'list') {
+                    return false
+                }
+                if (this.type === 'create') {
+                    isConfirmShow = Object.values(this.localValues).some(val => {
+                        return val.length
+                    })
+                } else {
+                    for (let key in this.localValues) {
+                        let property = this.attribute[this.bkObjId].find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        let value = this.formValues[key]
+                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+                            value = []
+                            if (this.formValues.hasOwnProperty(key)) {
+                                this.formValues[key].map(formValue => {
+                                    value.push(formValue['bk_inst_id'])
+                                })
+                            }
+                            value = value.join(',')
+                        }
+                        if (value !== this.localValues[key] && !(this.localValues[key] === '' && !this.formValues.hasOwnProperty(key))) {
+                            isConfirmShow = true
+                            break
+                        }
+                    }
+                }
+                return isConfirmShow
+            },
             toggleDisplayType (displayType) {
                 this.displayType = displayType
             },
@@ -281,7 +313,7 @@
                         if (option.hasOwnProperty('max')) {
                             rules['max_value'] = option.max
                         }
-                    } else if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
+                    } else if ((bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') && option !== null) {
                         rules['regex'] = option
                     }
                 }

@@ -113,6 +113,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		objType := common.BKInnerObjIDHost
@@ -131,13 +132,13 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 		limit := dat.Limit
 		sort := dat.Sort
 		fieldArr := strings.Split(fields, ",")
-		result := make([]interface{}, 0)
+		result := make([]map[string]interface{}, 0)
 		count, err := instdata.GetCntByCondition(objType, condition)
 		if err != nil {
-			blog.Error("get object type:%s,input:%v error:%v", objType, value, err)
+			blog.Error("get object type:%s,input:%s error:%v", objType, value, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSelectInst)
 		}
-		err = instdata.GetObjectByCondition(objType, fieldArr, condition, &result, sort, start, limit)
+		err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, start, limit)
 		if err != nil {
 			blog.Error("get object type:%s,input:%v error:%v", objType, value, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSelectInst)
@@ -158,7 +159,7 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
-		data := common.KvMap{"key": dcCommon.REDIS_SNAP_KEY_PREFIX + hostID}
+		data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
 		var result interface{} = ""
 		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 

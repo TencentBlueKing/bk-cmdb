@@ -115,17 +115,19 @@
             }
             .nav-item{
                 position: relative;
+                z-index: 1200;
+                &:hover{
+                    .nav-classification-name,
+                    .nav-classification-model{
+                        display: block;
+                    }
+                    .nav-classification{
+                        background-color: $navActiveColor;
+                    }
+                }
             }
             .nav-classification{
                 text-align: center;
-                &:hover{
-                    .nav-classification-name{
-                        display: block;
-                    }
-                    ~ .nav-classification-model{
-                        display: block;
-                    }
-                }
                 .nav-classification-icon{
                     margin: 0;
                 }
@@ -152,6 +154,9 @@
                 top: 100%;
                 z-index: 1;
                 background-color: #2f3c5d;
+                &:hover{
+                    display: block;
+                }
                 .nav-classification-link{
                     padding: 0 10px 0 37px;
                 }
@@ -166,6 +171,7 @@
         height: 62px;
         background: transparent center center no-repeat;
         background-size: 173px 31px;
+        cursor: pointer;
         &.en{
             background-image: url(../../common/images/nav_title.png);
         }

@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instapi
 
 import (
@@ -29,12 +29,13 @@ import (
 
 // instNameAsst  association inst name
 type instNameAsst struct {
-	ID         string `json:"id"`
-	ObjID      string `json:"bk_obj_id"`
-	ObjIcon    string `json:"bk_obj_icon"`
-	ObjectID   int    `json:"bk_inst_id"`
-	ObjectName string `json:"bk_obj_name"`
-	Name       string `json:"bk_inst_name"`
+	ID         string                 `json:"id"`
+	ObjID      string                 `json:"bk_obj_id"`
+	ObjIcon    string                 `json:"bk_obj_icon"`
+	ObjectID   int                    `json:"bk_inst_id"`
+	ObjectName string                 `json:"bk_obj_name"`
+	Name       string                 `json:"bk_inst_name"`
+	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 
 // Inst public inst
@@ -54,7 +55,7 @@ func (cli *instHelper) InitInstHelper(hostCtrl, objCtrl string) error {
 }
 
 // getObjectAsst read association objectid the return key is engilish property name, value is the objectid
-func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, int) {
+func (cli *instHelper) GetObjectAsst(forward *api.ForwardParam, objID, ownerID string) (map[string]string, int) {
 
 	rstmap := map[string]string{}
 
@@ -69,7 +70,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 		return nil, common.CCErrCommJSONMarshalFailed
 	}
 	cli.objcli.SetAddress(cli.objCtrl)
-	rests, restErr := cli.objcli.SearchMetaObjectAtt(searchData)
+	rests, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 	if nil != restErr {
 		blog.Error("failed to read the object att, error is %s ", restErr.Error())
 		return nil, common.CCErrTopoInstSelectFailed
@@ -80,7 +81,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 
 		switch item.PropertyType {
 
-		case common.FiledTypeSingleAsst:
+		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
 			asst["bk_object_att_id"] = item.PropertyID
@@ -93,7 +94,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -116,7 +117,7 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 				blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			}
 
-			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(searchData)
+			asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchData)
 			if nil != asstRstErr {
 				blog.Error("failed to read the object asst, error is %s ", restErr.Error())
 				return nil, common.CCErrTopoInstSelectFailed
@@ -134,6 +135,16 @@ func (cli *instHelper) GetObjectAsst(objID, ownerID string) (map[string]string, 
 
 //getInstDetail get inst detail
 func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, IDs, page, false)
+}
+
+//getInstDetail get inst detail
+func (cli *instHelper) getInstAsstDetail(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+	return cli.getRawInstAsst(req, ownerID, objID, IDs, page, true)
+}
+
+// getRawInstAsst get inst detail
+func (cli *instHelper) getRawInstAsst(req *restful.Request, ownerID, objID string, IDs []string, page map[string]interface{}, isDetail bool) ([]instNameAsst, int, int) {
 
 	tmpIDs := []int{}
 	for _, ID := range IDs {
@@ -272,6 +283,9 @@ func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, 
 						if dataItemValStr, convOk := dataItemVal.(string); convOk {
 							inst.Name = dataItemValStr
 							inst.ObjID = objID
+							if true == isDetail {
+								inst.InstInfo = dataItem
+							}
 						}
 
 						// delete exsit ID
@@ -315,11 +329,21 @@ func (cli *instHelper) getInstAsst(req *restful.Request, ownerID, objID string, 
 	return rstName, cnt, common.CCSuccess
 }
 
-//GetInstDetailsSub get inst detail sub
+//GetInstDetailsSub get inst detail sub without assocate object detaill
 func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getInstDetailsSub(req, objID, ownerID, input, page, false)
+}
+
+//GetInstDetailsSub get inst detail sub with assocate object detaill
+func (cli *instHelper) GetInstAsstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}) (map[string]interface{}, int) {
+	return cli.getInstDetailsSub(req, objID, ownerID, input, page, true)
+}
+
+//getInstDetailsSub get inst detail sub
+func (cli *instHelper) getInstDetailsSub(req *restful.Request, objID, ownerID string, input map[string]interface{}, page map[string]interface{}, isDetail bool) (map[string]interface{}, int) {
 
 	// get objID asst model and field
-	rstmap, errorno := cli.GetObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.GetObjectAsst(&api.ForwardParam{Header: req.Request.Header}, objID, ownerID)
 	if common.CCSuccess != errorno {
 		return nil, errorno
 	}
@@ -334,9 +358,19 @@ func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID st
 
 					if keyItem, keyItemOk := dataItem[key]; keyItemOk {
 
+						if nil == keyItem {
+							continue
+						}
+
 						keyItemStr := fmt.Sprintf("%v", keyItem)
 						blog.Debug("keyitemstr:%s", keyItemStr)
-						retData, _, retErr := cli.getInstAsst(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						var retData []instNameAsst
+						var retErr int
+						if true == isDetail {
+							retData, _, retErr = cli.getInstAsstDetail(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						} else {
+							retData, _, retErr = cli.getInstAsst(req, ownerID, objID, strings.Split(keyItemStr, ","), page)
+						}
 						if common.CCSuccess != retErr {
 							blog.Error("failed to get inst details")
 						}
@@ -356,7 +390,7 @@ func (cli *instHelper) GetInstDetailsSub(req *restful.Request, objID, ownerID st
 //GetInstDetails get inst detail
 func (cli *instHelper) GetInstDetails(req *restful.Request, objID, ownerID, instStr string, page map[string]interface{}) (string, int) {
 
-	rstmap, errorno := cli.GetObjectAsst(objID, ownerID)
+	rstmap, errorno := cli.GetObjectAsst(&api.ForwardParam{Header: req.Request.Header}, objID, ownerID)
 	if common.CCSuccess != errorno {
 		return "", errorno
 	}
@@ -380,6 +414,10 @@ func (cli *instHelper) GetInstDetails(req *restful.Request, objID, ownerID, inst
 		for key, val := range rstmap {
 
 			if keyItem, keyItemOk := data[key]; keyItemOk {
+
+				if nil == keyItem {
+					continue
+				}
 
 				keyItemStr := fmt.Sprintf("%v", keyItem)
 				blog.Debug("keyitemstr:%s", keyItemStr)

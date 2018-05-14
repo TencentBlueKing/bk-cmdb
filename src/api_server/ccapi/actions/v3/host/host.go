@@ -30,9 +30,17 @@ type hostAction struct {
 	cc *api.APIResource
 }
 
-// GetHosts get hosts by id
+// GetHosts get hosts by id without assocate object detaill
 func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/search"
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectPost)
+	io.WriteString(resp, rsp)
+
+}
+
+// GetHostsAsstDetail get hosts by id with assocate object detaill
+func (cli *hostAction) GetHostsAsstDetail(req *restful.Request, resp *restful.Response) {
+	url := cli.cc.HostAPI() + "/host/v1/search/asstdetail"
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectPost)
 	io.WriteString(resp, rsp)
 
@@ -120,13 +128,14 @@ func (cli *hostAction) addHostFromAgent(req *restful.Request, resp *restful.Resp
 }
 
 func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.Response) {
-	url := cli.cc.HostAPI() + "/hosts/modules/biz/mutiple"
+	url := cli.cc.HostAPI() + "/host/v1/hosts/modules/biz/mutiple"
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
 	io.WriteString(resp, rsp)
 }
 
 func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search", Params: nil, Handler: host.GetHosts, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search/asstdetail", Params: nil, Handler: host.GetHostsAsstDetail, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/hosts/batch", Params: nil, Handler: host.DeleteHosts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/hosts/batch", Params: nil, Handler: host.UpdateHosts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}", Params: nil, Handler: host.GetHostDetail, FilterHandler: nil, Version: v3.APIVersion})
@@ -138,6 +147,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/modules/resource/idle", Params: nil, Handler: host.AssginHostToApp, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/hosts/snapshot/{bk_host_id}", Params: nil, Handler: host.Snapshot, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: host.addHostFromAgent, FilterHandler: nil, Version: v3.APIVersion})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/biz/mutiple", Params: nil, Handler: host.addHostModuleMutiple, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/biz/mutilple", Params: nil, Handler: host.addHostModuleMutiple, FilterHandler: nil, Version: v3.APIVersion})
 	host.cc = api.NewAPIResource()
 }

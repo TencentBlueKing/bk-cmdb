@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/topo_service/logics"
 	auditlogAPI "configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
@@ -53,6 +54,7 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 
 	// get the error object by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
@@ -103,13 +105,13 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 		}
 
 		client := auditlogAPI.NewClient(cli.CC.AuditCtrl())
-
 		ret, err := client.GetAuditlogs(dat)
 		blog.Debug("search operation log  params: %v", dat)
 		if nil != err {
 			blog.Error("search operation log error: %v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommParamsInvalid)
 		}
+		ret = logics.TranslateOpLanguage(ret, defLang)
 
 		return http.StatusOK, ret, nil
 	}, resp)

@@ -78,9 +78,6 @@
         "value": "icon-cc-host"
     },
     {
-        "value": "icon-cc-subnet"
-    },
-    {
         "value": "icon-cc-process"
     },
     {
@@ -295,5 +292,8 @@
     },
     {
         "value": "icon-cc-win"
+    },
+    {
+        "value": "icon-cc-weblogic"
     }
 ]

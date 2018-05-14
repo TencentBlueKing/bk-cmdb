@@ -216,7 +216,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			}
 
 			// set snap cache
-			h.redisCli.Set(common.REDIS_SNAP_KEY_PREFIX+hostid, data, time.Minute*10)
+			h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10)
 
 			// update host fields value
 			condition := map[string]interface{}{bkcommon.BKHostIDField: host[bkcommon.BKHostIDField]}
@@ -272,12 +272,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = "Linux"
+		ostype = bkcommon.HostOSTypeEnumLinux //"Linux"
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = "Windows"
+		ostype = bkcommon.HostOSTypeEnumWindows // "Windows"
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -293,6 +293,8 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		}
 	}
 
+	osbit := val.Get("data.system.info.systemtype").String()
+
 	return map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
@@ -305,6 +307,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		"bk_host_name":  hostname,
 		"bk_outer_mac":  OuterMAC,
 		"bk_mac":        InnerMAC,
+		"bk_os_bit":     osbit,
 	}
 }
 func getIPS(val *gjson.Result) (ips []string) {
@@ -349,9 +352,9 @@ func (h *HostSnap) concede() {
 	blog.Info("concede")
 	h.isMaster = false
 	h.subscribing = false
-	val := h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Val()
+	val := h.redisCli.Get(common.MasterProcLockKey).Val()
 	if len(val) > 5 && h.id == val[0:5] {
-		h.redisCli.Del(common.MASTER_PROC_LOCK_KEY)
+		h.redisCli.Del(common.MasterProcLockKey)
 	}
 }
 
@@ -360,20 +363,20 @@ func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
 	if h.isMaster {
 		var val string
-		val, err = h.redisCli.Get(common.MASTER_PROC_LOCK_KEY).Result()
+		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
 		}
 		if len(val) > 5 && h.id == val[0:len(h.id)] {
 			blog.Infof("master check : i am still master")
-			h.redisCli.Set(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
+			h.redisCli.Set(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
 			ok = true
 		} else {
 			blog.Infof("exit master,val = %v, id = %v", val, h.id)
 			h.isMaster = false
 		}
 	} else {
-		ok, err = h.redisCli.SetNX(common.MASTER_PROC_LOCK_KEY, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
+		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
 		}

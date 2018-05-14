@@ -1,19 +1,25 @@
 <template>
     <div class="search-container">
         <div class="search-box">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="`${$t('Common[\'快速查询\']')}...`"
+            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
+                @focus="focus = true"
+                @blur="focus = false"
                 @keydown="handleKeydow($event)">
             <label class="bk-icon icon-search" for="indexSearch"></label>
-            <ul ref="searchList" class="search-list" v-show="searchList.length">
+            <ul ref="searchList" class="search-list" v-show="focus && !loading && searchList.length">
                 <li ref="searchItem" class="search-item clearfix" v-for="(result, index) in searchList" :key="index" @click="handleRoute(index)">
                     <search-item-match class="fl"
                         :result="result"
-                        :keyword="resultKeyword">
+                        :keyword="keyword">
                     </search-item-match>
                     <span class="search-item-source fr">{{result['biz']['bk_biz_name']}}</span>
                 </li>
             </ul>
+            <div class="search-loading" v-show="loading">
+                <div v-bkloading="{isLoading: loading}" style="height: 100%;"></div>
+            </div>
+            <div class="search-empty" v-show="!loading && keyword.length > 2 && !searchList.length">{{$t("Common['暂时没有数据']")}}</div>
         </div>
     </div>
 </template>
@@ -23,8 +29,8 @@
     export default {
         data () {
             return {
+                focus: false,
                 keyword: '',
-                resultKeyword: '',
                 searchList: [],
                 searchParams: {
                     'page': {
@@ -56,15 +62,20 @@
                         'condition': []
                     }]
                 },
-                highlightIndex: -1
+                loading: false,
+                highlightIndex: -1,
+                cancelSource: null
             }
         },
         watch: {
             keyword (keyword) {
-                if (keyword.length > 3) {
+                if (keyword.length > 2) {
                     this.searchParams.ip.data = [keyword]
+                    this.loading = true
                     this.handleSearch(keyword)
                 } else {
+                    this.loading = false
+                    this.cancelSource && this.cancelSource.cancel()
                     this.searchParams.ip.data = []
                     this.searchList = []
                 }
@@ -89,11 +100,22 @@
         },
         methods: {
             // 函数节流，500ms发起一次主机查询
-            handleSearch: Throttle(function (keyword) {
-                this.$axios.post('hosts/search', this.searchParams).then(res => {
-                    this.resultKeyword = keyword
-                    this.searchList = res.data.info
-                })
+            handleSearch: Throttle(function () {
+                this.cancelSource && this.cancelSource.cancel()
+                if (this.keyword.length > 2) {
+                    this.cancelSource = this.$Axios.CancelToken.source()
+                    this.loading = true
+                    this.$axios.post('hosts/search', this.searchParams, {cancelToken: this.cancelSource.token}).then(res => {
+                        this.searchList = res.data.info
+                        this.loading = false
+                        this.cancelSource = null
+                    }).catch((e) => {
+                        if (!this.$Axios.isCancel(e)) {
+                            this.cancelSource = null
+                            this.loading = false
+                        }
+                    })
+                }
             }, 500, {leading: false, trailing: true}),
             // 点击搜索结果，进行路由跳转
             handleRoute (index) {
@@ -153,14 +175,9 @@
                     }
                 },
                 render (h) {
-                    // 用render函数处理搜索结果的文本，高亮搜索结果中的关键词
+                    // todo 用render函数处理搜索结果的文本，高亮搜索结果中的关键词，需后端返回分词结果
                     let innerip = this.result['host']['bk_host_innerip']
-                    let indexOfKeyword = innerip.indexOf(this.keyword)
-                    return h('div', [
-                        innerip.substr(0, indexOfKeyword),
-                        h('span', {style: {color: '#3c96ff'}}, this.keyword),
-                        innerip.substr(indexOfKeyword + this.keyword.length)
-                    ])
+                    return h('div', innerip)
                 }
             }
         }
@@ -222,5 +239,22 @@
                 color: #c3cdd7;
             }
         }
+    }
+    .search-loading,
+    .search-empty{
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        height: 32px;
+        line-height: 32px;
+        padding: 0 20px 0 17px;
+        background-color: #fff;
+        border-radius: 2px;
+        border-top-right-radius: 0;
+        border-top-left-radius: 0;
+        border: solid 1px #c3cdd7;
+        border-top: none;
+        font-size: 12px;
     }
 </style>

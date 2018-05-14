@@ -1,29 +1,30 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/api/metadata"
+	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
@@ -69,7 +70,7 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		//create default module
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if nil != err {
@@ -120,7 +121,7 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 
 		input[common.BKAppIDField] = appID
 		// check
-		valid := validator.NewValidMapWithKeyFileds(tmpID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField}, defErr)
+		valid := validator.NewValidMapWithKeyFields(tmpID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField}, forward, defErr)
 		_, err = valid.ValidMap(input, common.ValidCreate, 0)
 		if nil != err {
 			blog.Error("failed to valid the input data, error info is %s", err.Error())
@@ -148,7 +149,7 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 			// save change log
 			instID := gjson.Get(moduleRes, "data."+common.BKSetIDField).Int()
 			ownerID := fmt.Sprint(input[common.BKOwnerIDField])
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDSet)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetCreateFailed)
 			}
@@ -184,7 +185,7 @@ func (cli *setAction) DeleteSet(req *restful.Request, resp *restful.Response) {
 	user := util.GetActionUser(req)
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		appID, convErr := strconv.Atoi(req.PathParameter("app_id"))
 		if nil != convErr {
 			blog.Error("the appid is invalid, error info is %s", convErr.Error())
@@ -263,7 +264,7 @@ func (cli *setAction) DeleteSet(req *restful.Request, resp *restful.Response) {
 		{
 			// save change log
 			instID := gjson.Get(moduleRes, "data.bk_set_id").Int()
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDSet)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
 			}
@@ -292,7 +293,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		forward := &api.ForwardParam{Header: req.Request.Header}
 		appID, convErr := strconv.Atoi(req.PathParameter("app_id"))
 		if nil != convErr {
 			blog.Error("the appid is invalid, error info is %s", convErr.Error())
@@ -329,7 +330,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 			blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
 		}
-		valid := validator.NewValidMapWithKeyFileds(common.BKDefaultOwnerID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField, common.BKSetNameField}, defErr)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDSet, cli.CC.ObjCtrl(), []string{common.BKInstParentStr, common.BKOwnerIDField, common.BKSetNameField}, forward, defErr)
 		_, err := valid.ValidMap(data, common.ValidUpdate, setID)
 		if nil != err {
 			blog.Error("failed to valid the input data, error info is %s", err.Error())
@@ -368,7 +369,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 			// save change log
 			instID := setID //gjson.Get(moduleRes, "data.bk_set_id").Int()
 			//ownerID := fmt.Sprint(input[common.BKOwnerIDField])
-			headers, attErr := inst.getHeader(ownerID, common.BKInnerObjIDSet)
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
 			if common.CCSuccess != attErr {
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetUpdateFailed)
 			}

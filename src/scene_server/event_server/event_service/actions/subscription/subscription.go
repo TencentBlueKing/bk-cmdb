@@ -32,7 +32,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -369,33 +368,22 @@ func (cli *subscriptionAction) Telnet(req *restful.Request, resp *restful.Respon
 		}
 		pjson := gjson.ParseBytes(value)
 		callbackurl := pjson.Get("callback_url").String()
-		uri, err := getDailAddress(callbackurl)
+		uri, err := util.GetDailAddress(callbackurl)
 		if err != nil {
 			blog.Error("telent callback error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsInvalid, "bk_callback_url")
 		}
 		blog.Infof("telnet %", uri)
 
-		_, err = net.Dial("tcp", uri)
+		conn, err := net.Dial("tcp", uri)
 		if err != nil {
 			blog.Error("telent callback error:%v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeTelnetFailed)
 		}
+		conn.Close()
 
 		return http.StatusOK, nil, nil
 	}, resp)
-}
-
-func getDailAddress(URL string) (string, error) {
-	uri, err := url.Parse(URL)
-	if err != nil {
-		return "", err
-	}
-	var port = uri.Port()
-	if uri.Port() == "" {
-		port = "80"
-	}
-	return uri.Hostname() + ":" + port, err
 }
 
 func init() {

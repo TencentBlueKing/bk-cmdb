@@ -21,7 +21,12 @@
         <div class="topo-view-ctn">
             <bk-tab :active-name="view.tab.active" @tab-changed="tabChanged" class="topo-view-tab">
                 <bk-tabpanel name="host" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <v-hosts ref="hosts" :outerParams="searchParams" :isShowRefresh="true" :outerLoading="tree.loading">
+                    <v-hosts ref="hosts"
+                        :outerParams="searchParams"
+                        :isShowRefresh="true"
+                        :outerLoading="tree.loading"
+                        :isShowCrossImport="false && attributeBkObjId === 'module'"
+                        @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
                 </bk-tabpanel>
@@ -41,6 +46,14 @@
                 </bk-tabpanel>
             </bk-tab>
         </div>
+        <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="700" :padding="0">
+            <v-cross-import  slot="content"
+                :is-show.sync="view.crossImport.isShow"
+                :bizId="tree.bkBizId"
+                :moduleId="tree.activeNode['bk_inst_id']"
+                @handleCrossImportSuccess="setSearchParams">
+            </v-cross-import>
+        </bk-dialog>
     </div>
 </template>
 <script>
@@ -48,6 +61,7 @@
     import vTree from '@/components/tree/tree.v2'
     import vHosts from '@/pages/hosts/hosts'
     import vAttribute from './children/attribute'
+    import vCrossImport from './children/crossImport'
     import { mapGetters } from 'vuex'
     export default {
         data () {
@@ -69,6 +83,9 @@
                         type: 'update',
                         formValues: {},
                         isLoading: true
+                    },
+                    crossImport: {
+                        isShow: false
                     }
                 },
                 nodeToggleRecord: {},
@@ -446,15 +463,55 @@
                 })
                 this.searchParams = params
             },
+            handleCrossImport () {
+                this.view.crossImport.isShow = true
+            },
             tabChanged (active) {
-                this.view.tab.active = active
-                this.view.attribute.formValues = {}
+                if (active === this.view.tab.active) {
+                    return
+                }
                 if (active === 'host') {
-                    this.view.attribute.type = 'update'
+                    let isConfirmShow = this.$refs.topoAttribute.isCloseConfirmShow()
+                    if (isConfirmShow) {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.view.tab.active = active
+                                this.view.attribute.formValues = {}
+                                if (active === 'host') {
+                                    this.view.attribute.type = 'update'
+                                }
+                            }
+                        })
+                    } else {
+                        this.view.tab.active = active
+                        this.view.attribute.formValues = {}
+                        if (active === 'host') {
+                            this.view.attribute.type = 'update'
+                        }
+                    }
+                } else {
+                    this.view.tab.active = active
+                    this.view.attribute.formValues = {}
+                    if (active === 'host') {
+                        this.view.attribute.type = 'update'
+                    }
                 }
             },
             cancelCreate () {
                 this.tabChanged('host')
+            }
+        },
+        beforeRouteLeave (to, from, next) {
+            if (this.$refs.topoAttribute.isCloseConfirmShow()) {
+                this.$bkInfo({
+                    title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                    confirmFn: () => {
+                        next(true)
+                    }
+                })
+            } else {
+                next(true)
             }
         },
         created () {
@@ -463,6 +520,7 @@
         components: {
             vApplicationSelector,
             vTree,
+            vCrossImport,
             vHosts,
             vAttribute
         }

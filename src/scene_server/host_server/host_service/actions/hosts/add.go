@@ -21,9 +21,8 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"io/ioutil"
-
 	"github.com/emicklei/go-restful"
+	"io/ioutil"
 )
 
 func init() {
@@ -43,6 +42,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 	}
 	ownerID := common.BKDefaultOwnerID
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 	m.CallResponseEx(func() (int, interface{}, error) {
 
 		value, err := ioutil.ReadAll(req.Request.Body)
@@ -58,7 +58,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
 		}
 		//get default biz
-		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl())
+		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl(), defLang)
 
 		if 0 == appID || nil != err {
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultAppName)
@@ -75,7 +75,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultResModuleName)
 		}
 
-		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, moduleID, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, moduleID, m.CC)
 
 		retData := make(map[string]interface{})
 		retData["success"] = succ
@@ -99,13 +99,19 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 		//ImportFrom string
 	}
 	ownerID := common.BKDefaultOwnerID
-	value, err := ioutil.ReadAll(req.Request.Body)
+
 	var data hostList
 
-	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	language := util.GetActionLanguage(req)
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	m.CallResponseEx(func() (int, interface{}, error) {
 
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPBodyEmpty)
+		}
 		err = json.Unmarshal([]byte(value), &data)
 		if err != nil {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
@@ -114,15 +120,14 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 		if nil == data.HostInfo {
 			blog.Error("get unmarshall json value %v error:%v", string(value), err)
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
-
-			m.ResponseFailed(common.CC_Err_Comm_http_Input_Params, "主机参数不能为空", resp)
+			//m.ResponseFailed(common.CC_Err_Comm_http_Input_Params, "主机参数不能为空", resp)
 		}
 
 		//get default app
-		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl())
+		appID, err := logics.GetDefaultAppID(req, ownerID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 
 		if 0 == appID || nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		//get internal set
@@ -133,7 +138,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
 		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, err.Error())
+			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModule, err.Error())
 		}
 
 		// get language
@@ -144,7 +149,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
 
-		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, moduleID, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl(), defErr)
+		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, moduleID, m.CC)
 
 		if nil == err {
 			return http.StatusOK, nil, nil
@@ -155,7 +160,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 			} else if 0 < len(errRow) {
 				errString = errRow[0]
 			}
-			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrHostModuleRelationAddFailed, errString)
+			return http.StatusInternalServerError, resp, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errString)
 
 		}
 	}, resp)

@@ -39,6 +39,7 @@ package:
 	rm -rf $(SOURCE_ROOT)/bin/pub/cmdb
 	mkdir -p $(SOURCE_ROOT)/bin/pub && cp -R $(BIN_PATH) ./bin/pub/cmdb
 	cd $(SOURCE_ROOT)/bin/pub && tar -zvcf cmdb.tar.gz cmdb
+	@echo -e "\033[34mpackage success and store in $(SOURCE_ROOT)/bin/pub/cmdb.tar.gz cmdb\033[0m"
 
 .PHONY:enterprise
 enterprise:
@@ -46,9 +47,11 @@ enterprise:
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/server/bin/
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/server/conf/
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/errors/
+	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/language/
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/web/
 
-	cp -R ${RESOURCE_DIR}/errors/common/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/errors/
+	cp -R ${RESOURCE_DIR}/errors/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
+	cp -R ${RESOURCE_DIR}/language/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
 	cp  ${BIN_PATH}/cmdb_*/cmdb_*  $(SOURCE_ROOT)/bin/enterprise/cmdb/server/bin/
 
 .PHONY:clean
