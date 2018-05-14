@@ -17,16 +17,25 @@
                     <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
                     <ul class="clearfix attribute-list">
                         <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
-                            <li class="attribute-item fl" v-if="!property['bk_isapi']" :key="propertyIndex">
-                                <template v-if="property['bk_property_type'] !== 'bool'">
-                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
-                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
-                                </template>
-                                <template v-else>
+                            <li :class="['attribute-item', property['bk_property_type']]" v-if="!property['bk_isapi']" :key="propertyIndex">
+                                <template v-if="property['bk_property_type'] === 'bool'">
                                     <span class="attribute-item-label">{{property['bk_property_name']}}</span>
                                     <span class="attribute-item-value bk-form-checkbox">
                                         <input type="checkbox" :checked="getFieldValue(property)" disabled>
                                     </span>
+                                </template>
+                                <template v-else-if="property['bk_property_type'] === 'list'">
+                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
+                                    <v-table-field
+                                        :width="700"
+                                        :property="property"
+                                        :value="getFieldValue(property)"
+                                        :type="'list'">
+                                    </v-table-field>
+                                </template>
+                                <template v-else>
+                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
+                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
                                 </template>
                             </li>
                         </template>
@@ -45,7 +54,7 @@
                             <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
                                 <ul class="clearfix attribute-list edit">
                                     <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
-                                        <li class="attribute-item fl" :class="property['bk_property_type']" :key="propertyIndex"
+                                        <li :class="['attribute-item', property['bk_property_type']]" :key="propertyIndex"
                                             v-if="checkIsShowField(property)">
                                             <div>
                                                 <label :class="[{'required': property['isrequired']}]" class="bk-form-checkbox bk-checkbox-small">
@@ -95,6 +104,12 @@
                                                     :selected.sync="localValues[property['bk_property_id']]"
                                                     :disabled="checkIsFieldDisabled(property)"
                                                 ></v-timezone>
+                                                <v-table-field v-else-if="property['bk_property_type'] === 'list'"
+                                                    :width="675"
+                                                    :property="property"
+                                                    :value.sync="localValues[property['bk_property_id']]"
+                                                    :type="'form'">
+                                                </v-table-field>
                                                 <span class="bk-form-checkbox" v-else-if="property['bk_property_type'] === 'bool'">
                                                     <input
                                                         type="checkbox"
@@ -149,6 +164,7 @@
     import vEnumeration from '@/components/common/selector/enumeration'
     import vAssociation from '@/components/common/selector/association'
     import vHost from '@/components/common/hostAssociation/host'
+    import vTableField from '@/components/common/tableField/tableField'
     import vValidate from '@/components/common/validator/validate'
     import { mapGetters } from 'vuex'
     import Authority from '@/mixins/authority'
@@ -279,7 +295,7 @@
                     if (this.isMultipleUpdate && !this.multipleEditableFields[bkPropertyId]) {
                         delete formData[bkPropertyId]
                     }
-                    if (Array.isArray(formData[bkPropertyId])) {
+                    if (['singleasst', 'multiasst'].includes(bkPropertyType) && Array.isArray(formData[bkPropertyId])) {
                         formData[bkPropertyId] = formData[bkPropertyId].filter(({id}) => !!id).map(({bk_inst_id: bkInstId}) => bkInstId).join(',')
                     }
                 })
@@ -615,7 +631,8 @@
             vValidate,
             vHost,
             vEnumeration,
-            vAssociation
+            vAssociation,
+            vTableField
         }
     }
 </script>
@@ -632,6 +649,12 @@
             line-height: 16px;
             margin: 12px 0 0 0;
             white-space: nowrap;
+            float: left;
+            &.list{
+                float:none;
+                clear: both;
+                width: 100%;
+            }
             .attribute-item-label{
                 width: 100px;
                 // color: #737987;
