@@ -202,7 +202,7 @@
             position: relative;
             display: inline-block;
             width: 323px;
-            height: 250px;
+            height: 230px;
             overflow: hidden;
             margin: 0 10px 20px;
             background-color: #fff;
@@ -213,7 +213,7 @@
                     height: 155px;
                 }
                 .classify-models-layout{
-                    height: 95px;
+                    height: 75px;
                     &:before{
                         opacity: 0;
                     }
@@ -243,6 +243,7 @@
         .classify-info{
             display: inline-block;
             vertical-align: middle;
+            margin-top: 6px;
             .classify-info-icon{
                 display: block;
                 font-size: 48px;
@@ -255,8 +256,8 @@
         }
     }
     .classify-models-layout{
-        height: 85px;
-        padding: 15px 0;
+        height: 65px;
+        padding: 7px 0;
         position: relative;
         font-size: 0;
         border: solid 1px #c3cdd7;
@@ -286,7 +287,7 @@
             font-size: 14px;
             line-height: 20px;
             text-align: center;
-            margin: 6px 16px;
+            margin: 4px 16px;
             padding: 0 6px;
             color: #3c96ff;
             border-radius: 10px;
@@ -321,6 +322,8 @@
     .model-container{
         position: relative;
         height: calc(100% - 114px);
+        margin: 0 auto;
+        width: 1660px;
         .model-return{
             width: 102px;
             margin: 0 20px 14px;
@@ -336,7 +339,7 @@
             position: relative;
             display: inline-block;
             width: 306px;
-            height: 130px;
+            height: 112px;
             margin: 0 0 20px 20px;
             font-size: 14px;
             background-color: #f5faff;
@@ -368,8 +371,8 @@
             .model-icon-layout{
                 height: 100%;
                 overflow: hidden;
-                font-size: 80px;
                 text-align: center;
+                font-size: 0;
                 &:before{
                     content: "";
                     width: 0;
@@ -378,13 +381,16 @@
                     vertical-align: middle;
                 }
                 .model-icon{
+                    font-size: 80px;
+                    display: inline-block;
+                    vertical-align: middle;
                     color:#c1d9f5;
                 }
             }
             .model-name-layout{
                 height: 100%;
                 width: 165px;
-                padding: 0px 0px 0 46px;
+                padding: 0px 0px 0 30px;
                 &:before{
                     content: "";
                     width: 0;
@@ -406,6 +412,7 @@
                 @include ellipsis;
             }
             .model-name-id{
+                display: block;
                 line-height: 24px;
                 color: $textColor;
                 @include ellipsis;
@@ -444,6 +451,45 @@
             .index-wrapper{
                 .classify-list{
                     width: 1029px;
+                }
+            }
+        }
+    }
+
+    /* 导航栏收起时的模型列表宽度 */
+    @media (max-width: 1389px) {
+        .content-wrapper.fold{
+            .index-wrapper{
+                .model-container {
+                    width: 1000px;
+                }
+            }
+        }
+    }
+    @media (min-width: 1390px) and (max-width: 1709px) {
+        .content-wrapper.fold{
+            .index-wrapper{
+                .model-container{
+                    width: 1330px;
+                }
+            }
+        }
+    }
+    /* 导航栏展开时的模型列表宽度 */
+    @media (max-width: 1544px) {
+        .content-wrapper{
+            .index-wrapper{
+                .model-container{
+                    width: 1000px;
+                }
+            }
+        }
+    }
+    @media (min-width: 1545px) and (max-width: 1864px) {
+        .content-wrapper{
+            .index-wrapper{
+                .model-container{
+                    width: 1330px;
                 }
             }
         }
