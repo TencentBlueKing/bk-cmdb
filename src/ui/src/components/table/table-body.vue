@@ -21,7 +21,7 @@
                                 @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
-                    <td v-else :key="colIndex">
+                    <td v-else :key="colIndex" @click="handleCellClick(item, rowIndex, colIndex)">
                         <data-content class="data-content" :item="item" :head="head" :layout="layout" :rowIndex="rowIndex"></data-content>
                     </td>
                 </template>
@@ -84,6 +84,9 @@
             },
             handleRowClick (item, rowIndex) {
                 this.table.$emit('handleRowClick', item, rowIndex)
+            },
+            handleCellClick (item, rowIndex, colIndex) {
+                this.table.$emit('handleCellClick', item, rowIndex, colIndex)
             }
         },
         components: {
