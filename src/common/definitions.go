@@ -515,6 +515,11 @@ const (
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = "##"
+	// ExcelAsstPrimaryKeyRowChar split char
+	ExcelAsstPrimaryKeyRowChar = "\n"
+
+	// ExcelDelAsstObjectRelation delete asst object relation
+	ExcelDelAsstObjectRelation = "/"
 )
 
 // table names
@@ -616,6 +621,11 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
+)
+
+const (
+	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
+	InstAsstIDSplit = ","
 )
 
 // integer const
