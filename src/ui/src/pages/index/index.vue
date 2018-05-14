@@ -39,7 +39,7 @@
                     <router-link exact class="model-item" v-for="(model, index) in sortedDisplayModels"
                         :key="index"
                         :to="`/organization/${model['bk_obj_id']}`">
-                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isModelNavigated(model)}]" @click.stop="toggleModelNavVisible(model)"></i>
+                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isModelNavigated(model)}]" @click.stop.prevent="toggleModelNavVisible(model)"></i>
                         <div class="model-name-layout fl">
                             <span class="model-name">
                                 <h3 class="model-name-text">{{model['bk_obj_name']}}</h3>
