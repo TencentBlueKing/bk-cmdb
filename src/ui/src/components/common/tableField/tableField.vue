@@ -1,5 +1,5 @@
 <template>
-    <div class="table-field">
+    <div class="table-field" :style="{width: width + 'px'}">
         <v-table v-if="type === 'list'"
             :width="width"
             :emptyHeight="40"
@@ -18,11 +18,13 @@
             :list="localValue"
             :valueKey="'list_header_name'"
             :labelKey="'list_header_describe'"
-            :sortable="false">
-            <template v-for="(head, index) in header" :slot="head['list_header_name']" slot-scope="{ item, rowIndex }">
-                <div v-if="head['list_header_name'] !== operationId">
-                    <input class="bk-form-input" type="text"
+            :sortable="false"
+            @handleCellClick="setCellEditable">
+            <template v-for="(head, index) in header" :slot="head['list_header_name']" slot-scope="{ item, rowIndex, colIndex }">
+                <div class="input-cell" v-if="head['list_header_name'] !== operationId">
+                    <input class="bk-form-input" type="text" :ref="`input-${rowIndex}-${colIndex}`"
                         :value="item[head['list_header_name']]"
+                        @blur="hideInput($event)"
                         @change="updateValue($event, head, rowIndex)">
                 </div>
                 <div v-else class="field-operation">
@@ -116,12 +118,32 @@
             deleteRow (rowIndex) {
                 this.localValue.splice(rowIndex, 1)
                 this.$emit('update:value', this.$deepClone(this.localValue))
+            },
+            hideInput (event) {
+                event.target.classList.remove('edit')
+            },
+            setCellEditable (item, rowIndex, colIndex) {
+                const input = this.$refs[`input-${rowIndex}-${colIndex}`]
+                if (Array.isArray(input) && input.length) {
+                    input[0].classList.add('edit')
+                    input[0].focus()
+                }
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .input-cell{
+        .bk-form-input{
+            height: 32px;
+            line-height: 30px;
+            border: none;
+            &.edit{
+                border: 1px solid $borderColor;
+            }
+        }
+    }
     .field-operation{
         text-align: center;
         font-size: 14px;

@@ -6,7 +6,7 @@
         <tbody v-show="table.list.length">
             <tr v-for="(item, rowIndex) in table.list" :key="rowIndex" @click="handleRowClick(item, rowIndex)">
                 <template v-for="(head, colIndex) in table.header">
-                    <td v-if="head.type === 'checkbox'" class="body-checkbox" @click.stop :key="colIndex">
+                    <td v-if="head.type === 'checkbox'" @click.stop :key="colIndex">
                         <data-content class="data-content checkbox-content"
                             v-if="table.$scopedSlots[head[table.valueKey]]"
                             :item="item"
@@ -21,17 +21,20 @@
                                 @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
-                    <td v-else :key="colIndex" @click="handleCellClick(item, rowIndex, colIndex)">
-                        <data-content class="data-content" :item="item" :head="head" :layout="layout" :rowIndex="rowIndex"></data-content>
+                    <td is="data-content" class="data-content" v-else
+                        :key="colIndex"
+                        :item="item"
+                        :head="head"
+                        :layout="layout"
+                        :rowIndex="rowIndex"
+                        :colIndex="colIndex">
                     </td>
                 </template>
             </tr>
         </tbody>
         <tbody v-if="!table.list.length">
             <tr>
-                <td :colspan="table.header.length" align="center" :style="{height: emptyHeight}">
-                    <data-empty class="data-empty" :layout="layout"></data-empty>
-                </td>
+                <td is="data-empty" class="data-empty" :colspan="table.header.length" align="center" :style="{height: emptyHeight}" :layout="layout"></td>
             </tr>
         </tbody>
     </table>
@@ -84,27 +87,30 @@
             },
             handleRowClick (item, rowIndex) {
                 this.table.$emit('handleRowClick', item, rowIndex)
-            },
-            handleCellClick (item, rowIndex, colIndex) {
-                this.table.$emit('handleCellClick', item, rowIndex, colIndex)
             }
         },
         components: {
             'data-content': {
-                props: ['head', 'item', 'layout', 'rowIndex'],
+                props: ['head', 'item', 'layout', 'rowIndex', 'colIndex'],
                 render (h) {
                     const table = this.layout.table
                     const column = this.head[table.valueKey]
+                    const defaultConfig = {
+                        on: {
+                            click: this.handleCellClick
+                        }
+                    }
                     if (typeof table.renderCell === 'function') {
-                        return h('div', {}, table.renderCell(this.item, this.head, this.layout))
+                        return h('td', defaultConfig, table.renderCell(this.item, this.head, this.layout))
                     } else if (table.$scopedSlots[column]) {
-                        return h('div', {}, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex}))
+                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex, colIndex: this.colIndex, layout: this.layout}))
                     } else {
-                        return h('div', {
-                            attrs: {
-                                title: this.item[this.head[table.valueKey]]
-                            }
-                        }, this.item[this.head[table.valueKey]])
+                        return h('td', Object.assign({}, defaultConfig, {attrs: {title: this.item[this.head[table.valueKey]]}}), this.item[this.head[table.valueKey]])
+                    }
+                },
+                methods: {
+                    handleCellClick () {
+                        this.layout.table.$emit('handleCellClick', this.item, this.rowIndex, this.colIndex)
                     }
                 }
             },
@@ -113,9 +119,9 @@
                 render (h) {
                     const dataEmptySlot = this.layout.table.$slots['data-empty']
                     if (dataEmptySlot) {
-                        return h('div', {}, dataEmptySlot)
+                        return h('td', {}, dataEmptySlot)
                     } else {
-                        return h('div', {}, this.$t("Common['暂时没有数据']"))
+                        return h('td', {}, this.$t("Common['暂时没有数据']"))
                     }
                 }
             }
@@ -133,12 +139,8 @@
         tr {
             td {
                 height: 40px;
-                padding: 6px 16px;
                 cursor: pointer;
                 @include ellipsis;
-                &.body-checkbox{
-                    padding: 0;
-                }
             }
         }
     }
@@ -189,6 +191,7 @@
         }
     }
     .data-content{
+        padding: 0 16px;
         font-size: 12px;
         @include ellipsis;
         &.checkbox-content{
