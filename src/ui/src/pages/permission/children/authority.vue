@@ -77,17 +77,6 @@
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
-                                        <label class="bk-form-checkbox bk-checkbox-small"
-                                            :for="'model-create-'+model['bk_obj_id']" 
-                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
-                                            @click="updateGroupAuthorities">
-                                            <input type="checkbox" value='create' 
-                                                :id="'model-create-'+model['bk_obj_id']"
-                                                :disabled="model.selectedAuthorities.indexOf('search') === -1"
-                                                v-model="model.selectedAuthorities">{{$t('Common["新增"]')}}
-                                        </label>
-                                    </span>
-                                    <span class="model-authority-checkbox fl">
                                         <label class="bk-form-checkbox bk-checkbox-small" 
                                             :for="'model-update-'+model['bk_obj_id']" 
                                             :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}"
@@ -311,7 +300,7 @@
             checkAllModelAuthorities (classifyIndex, modelIndex, event) {
                 let model = this.classifications[classifyIndex]['models'][modelIndex]
                 if (event.target.checked) {
-                    model.selectedAuthorities = ['search', 'create', 'update', 'delete']
+                    model.selectedAuthorities = ['search', 'update', 'delete']
                 } else {
                     model.selectedAuthorities = []
                 }
