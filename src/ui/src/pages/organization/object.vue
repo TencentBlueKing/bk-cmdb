@@ -627,6 +627,7 @@
                     if (res.result) {
                         this.setTablePage(1)
                         this.closeObjectSlider()
+                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
