@@ -56,7 +56,7 @@
                     </bk-select>
                 </template>
                 <template v-else>
-                    <input v-if="filter.type === 'int'" type="text" class="bk-form-input search-text int" 
+                    <input v-if="filter.type === 'int'" type="text" maxlength="11" class="bk-form-input search-text int" 
                     :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
                     <input v-else type="text" class="bk-form-input search-text" :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
                     <i class="bk-icon icon-search" @click="doFilter"></i>

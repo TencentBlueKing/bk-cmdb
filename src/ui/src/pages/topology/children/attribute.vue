@@ -9,7 +9,7 @@
                         </label>
                         <div class="attribute-item-field fl" :style="{zIndex: attribute[bkObjId].length - index}">
                             <input v-if="property['bk_property_type'] === 'int'" 
-                                type="text" class="bk-form-input"
+                                type="text" maxlength="11" class="bk-form-input"
                                 :disabled="!property['editable']"
                                 v-model.number="localValues[property['bk_property_id']]">
                             <v-member-selector v-else-if="property['bk_property_type'] === 'objuser'"
