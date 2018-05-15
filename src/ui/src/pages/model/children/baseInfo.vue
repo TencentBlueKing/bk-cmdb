@@ -47,7 +47,7 @@
                     <div class="from-common-content interior-width-control">
                         <input type="text" name="" value=""
                             maxlength="20"
-                            :disabled="isReadOnly"
+                            :disabled="isReadOnly || baseInfo.ispre"
                             name="validation_name"
                             :placeholder="$t('ModelManagement[\'请填写模型名\']')"
                             :data-parsley-required="true"
