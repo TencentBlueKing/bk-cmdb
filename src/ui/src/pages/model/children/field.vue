@@ -1102,6 +1102,16 @@
             vBaseInfo
         },
         watch: {
+            'newFieldInfo.isonly' (isonly) {
+                if (isonly) {
+                    this.newFieldInfo.isRequired = true
+                }
+            },
+            'curFieldInfo.isonly' (isonly) {
+                if (isonly) {
+                    this.curFieldInfo.isrequired = true
+                }
+            },
             objId () {
                 if (this.objId === '') {
                     this.$refs.baseInfo.clearData()
@@ -1190,7 +1200,10 @@
                 ],
                 fieldList: [],          // 字段配置列表
                 defaultModel: '',
-                curFieldInfo: {},         // 当前改动项
+                curFieldInfo: {         // 当前改动项
+                    isonly: false,
+                    isrequired: false
+                },
                 curFieldInfoCopy: {},
                 newFieldInfo: {
                     propertyName: '',       // 字段名称
