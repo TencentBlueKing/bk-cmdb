@@ -117,7 +117,12 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 		return nil, err
 	}
 
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
+	resMapDataInfoV3, ok := resDataV3.(map[string]interface{})
+	var resDataInfoV3 []interface{}
+	if true == ok {
+		resDataInfoV3, _ = resMapDataInfoV3["info"].([]interface{})
+
+	}
 
 	for _, roleStr := range roleArr {
 
@@ -875,14 +880,29 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	}
 	maintainer := ""
 	productPm := ""
-	if nil != itemMap["bk_biz_maintainer"] {
-		maintainer, _ = itemMap["bk_biz_maintainer"].(string)
+	operator := ""
+	developer := ""
+	tester := ""
+	if nil != itemMap[common.BKMaintainersField] {
+		maintainer, _ = itemMap[common.BKMaintainersField].(string)
 	}
-	if nil != itemMap["bk_biz_productor"] {
-		productPm, _ = itemMap["bk_biz_productor"].(string)
+	if nil != itemMap[common.BKProductPMField] {
+		productPm, _ = itemMap[common.BKProductPMField].(string)
+	}
+	if nil != itemMap[common.BKOperatorField] {
+		operator, _ = itemMap[common.BKOperatorField].(string)
+	}
+	if nil != itemMap[common.BKDeveloperField] {
+		developer, _ = itemMap[common.BKDeveloperField].(string)
+	}
+	if nil != itemMap[common.BKTesterField] {
+		tester, _ = itemMap[common.BKTesterField].(string)
 	}
 	maintainer = strings.Replace(maintainer, ",", ";", -1)
 	productPm = strings.Replace(productPm, ",", ";", -1)
+	operator = strings.Replace(operator, ",", ";", -1)
+	developer = strings.Replace(developer, ",", ";", -1)
+	tester = strings.Replace(tester, ",", ";", -1)
 	lifecycle := ""
 	if nil != itemMap["life_cycle"] {
 		lifecycle, _ = itemMap["life_cycle"].(string)
@@ -907,6 +927,8 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		//"Display":"",
 		//"Source": "",
 		//"GroupName": "",
+		"Operator":    operator,
+		"Developer":   developer,
 		"Maintainers": maintainer,
 		"CompanyID":   "0",
 		"Owner":       "",
@@ -914,10 +936,10 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		"LifeCycle":   lifecycle,
 		"Lanuage":     language,
 		"TimeZone":    timeZone,
-
-		"LastTime":   convertToV2Time(itemMap[common.LastTimeField]),
-		"DeptName":   "",
-		"CreateTime": convertToV2Time(itemMap[common.CreateTimeField]),
+		"Tester":      tester,
+		"LastTime":    convertToV2Time(itemMap[common.LastTimeField]),
+		"DeptName":    "",
+		"CreateTime":  convertToV2Time(itemMap[common.CreateTimeField]),
 	}
 	return itemMapV2, nil
 }

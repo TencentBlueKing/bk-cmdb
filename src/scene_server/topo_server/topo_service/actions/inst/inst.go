@@ -455,11 +455,35 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		parseChildFunc = func(child []manager.TopoInstRst) (int, interface{}, error) {
 
 			for _, instItem := range child {
+				blog.Debug("the inst child:%v", instItem)
 				// store all child inst
-				if 0 == strings.Compare(instItem.ObjID, common.BKInnerObjIDHost) {
-					blog.Warn("can not delete the inst which has the 'host' child")
-					return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoInstHasHostChild)
+				switch instItem.ObjID {
+				case common.BKInnerObjIDModule:
+					// check wether it can be delete
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
+					if nil != rstErr {
+						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+
+					if !rstOk {
+						blog.Error("failed to delete app, because of it has some hosts")
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+				case common.BKInnerObjIDSet:
+					// check wether it can be delete
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKSetIDField: []int{instItem.InstID}})
+					if nil != rstErr {
+						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+
+					if !rstOk {
+						blog.Error("failed to delete app, because of it has some hosts")
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
 				}
+
 				willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
 				//  if it is the last one, then will try next group
 				if len(instItem.Child) != 0 {
@@ -480,11 +504,6 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
 		}
 		for _, instItem := range topoInstItems {
-
-			if 0 == strings.Compare(instItem.ObjID, common.BKInnerObjIDHost) {
-				blog.Warn("can not delete the inst which has the 'host' child")
-				return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoInstHasHostChild)
-			}
 
 			willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
 			//  if it is the last one, then will try next group
