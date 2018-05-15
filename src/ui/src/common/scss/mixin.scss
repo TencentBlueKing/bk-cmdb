@@ -16,12 +16,20 @@
 
 @mixin scrollbar { // 页面滚动条
     &::-webkit-scrollbar {
-        width: 6px;
-        height: 5px;
+        width: 8px;
+        height: 8px;
         &-thumb {
             border-radius: 20px;
             background: #a5a5a5;
             box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
         }
     }
+}
+
+@mixin verticalHack{
+    display: inline-block;
+    vertical-align: middle;
+    content: '';
+    width: 0;
+    height: 100%;
 }
