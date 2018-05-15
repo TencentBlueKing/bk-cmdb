@@ -138,20 +138,21 @@
                 let headerLead = []
                 let headerMiddle = []
                 let headerTail = []
-                attribute.map(property => {
+                attribute.forEach(property => {
                     let {
                         isonly,
                         isrequired,
-                        'bk_isapi': bkIsapi,
-                        'bk_property_id': bkPropertyId,
-                        'bk_property_name': bkPropertyName
+                        bk_isapi: bkIsapi,
+                        bk_property_id: bkPropertyId,
+                        bk_property_name: bkPropertyName,
+                        bk_property_type: bkPropertyType
                     } = property
                     let headerItem = {
                         id: bkPropertyId,
                         name: bkPropertyName,
                         property: property
                     }
-                    if (!bkIsapi) {
+                    if (!bkIsapi && !['list'].includes(bkPropertyType)) {
                         if (isonly && isrequired) {
                             headerLead.push(headerItem)
                         } else if (isonly || isonly) {

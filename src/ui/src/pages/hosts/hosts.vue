@@ -372,7 +372,7 @@
                             bk_isapi: bkIsapi,
                             bk_property_type: bkPropertyType
                         } = property
-                        return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
+                        return !bkIsapi && !['list', 'multiasst', 'singleasst'].includes(bkPropertyType)
                     })
                 })
                 return attribute
@@ -394,7 +394,7 @@
                     if (bkObjId === 'host') {
                         let requiredProperties = []
                         let notRequiredProperties = []
-                        properties.map(property => {
+                        properties.filter(property => !['list'].includes(property['bk_property_type'])).map(property => {
                             if (property['isrequired']) {
                                 requiredProperties.push(property)
                             } else {
@@ -506,7 +506,8 @@
                         let hostDisplayColumns = res.data['host_display_column'] || []
                         let hostQueryColumns = res.data['host_query_column'] || []
                         let availableDisplayColumn = hostDisplayColumns.filter(column => {
-                            return this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
+                            const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
+                            return property && !['list'].includes(property['bk_property_type'])
                         })
                         if (availableDisplayColumn.length) {
                             this.table.useDefaultHeader = false
@@ -515,7 +516,8 @@
                             this.table.useDefaultHeader = true
                         }
                         let availableQueryColumn = hostQueryColumns.filter(column => {
-                            return this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
+                            const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
+                            return property && !['list'].includes(property['bk_property_type'])
                         })
                         this.filter.queryColumns = availableQueryColumn
                     } else {
@@ -643,7 +645,7 @@
                 this.sideslider.fields.fieldOptions = [{
                     'bk_obj_id': 'host',
                     'bk_obj_name': this.$t('Hosts[\'主机\']'),
-                    'properties': properties,
+                    'properties': properties.filter(property => !['list'].includes(property['bk_property_type'])),
                     'loaded': true
                 }]
                 this.sideslider.fields.minField = 1
