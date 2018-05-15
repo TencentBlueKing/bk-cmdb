@@ -95,7 +95,6 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	var logConents []auditoplog.AuditLogExt
 	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
 	for index, host := range hostInfos {
-		var subArea = iSubArea
 		if nil == host {
 			continue
 		}
