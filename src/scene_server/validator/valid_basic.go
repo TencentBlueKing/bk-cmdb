@@ -475,6 +475,9 @@ func (valid *ValidMap) validTimeZone(val interface{}, key string) (bool, error) 
 		blog.Error("params can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
+	if nil == val {
+		return true, nil
+	}
 	if reflect.TypeOf(val).Kind() != reflect.String {
 		blog.Error("params should be  timezone")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedTimeZone, key)
@@ -495,6 +498,9 @@ func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
 	if isIn && nil == val {
 		blog.Error("params can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+	}
+	if nil == val {
+		return true, nil
 	}
 
 	if reflect.TypeOf(val).Kind() != reflect.Bool {
