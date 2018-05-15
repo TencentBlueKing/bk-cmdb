@@ -79,7 +79,9 @@
             toggleTab (index) {
                 // this.calcActiveName = this.navList[index].name
                 // this.$emit('tab-changed', this.calcActiveName, index)
-                this.$emit('tab-changed', this.navList[index].name)
+                if (this.navList[index].name !== this.activeName) {
+                    this.$emit('tab-changed', this.navList[index].name)
+                }
             },
             addNavItem (item) {
                 this.navList.push(item)
