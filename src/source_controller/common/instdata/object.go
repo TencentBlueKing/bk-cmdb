@@ -53,6 +53,19 @@ func UpdateObjByCondition(objType string, data interface{}, condition interface{
 	return nil
 }
 
+var defaultNameLanguagePkg = map[string]map[string][]string{
+	common.BKInnerObjIDModule: {
+		"1": {"inst_module_idle", common.BKModuleNameField, common.BKModuleIDField},
+		"2": {"inst_module_fault", common.BKModuleNameField, common.BKModuleIDField},
+	},
+	common.BKInnerObjIDApp: {
+		"1": {"inst_biz_default", common.BKAppNameField, common.BKAppIDField},
+	},
+	common.BKInnerObjIDSet: {
+		"1": {"inst_set_default", common.BKSetNameField, common.BKSetIDField},
+	},
+}
+
 //GetObjectByCondition get object by condition
 func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := commondata.ObjTableMap[objType]
@@ -60,30 +73,19 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 		return err
 	}
 
-	if nil != defLang && (objType == common.BKInnerObjIDApp || objType == common.BKInnerObjIDModule) {
+	// translate language for default name
+	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
 		switch result.(type) {
 		case *[]map[string]interface{}:
 			results := *result.(*[]map[string]interface{})
 			for index := range results {
-				if objType == common.BKInnerObjIDModule {
-					switch fmt.Sprint(results[index]["default"]) {
-					case "1":
-						results[index][common.BKModuleNameField] =
-							util.FirstNotEmptyString(defLang.Language("inst_module_idle"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
-					case "2":
-						results[index][common.BKModuleNameField] =
-							util.FirstNotEmptyString(defLang.Language("inst_module_fault"), fmt.Sprint(results[index][common.BKModuleNameField]), fmt.Sprint(results[index][common.BKModuleIDField]))
-					}
-				} else if objType == common.BKInnerObjIDApp {
-					switch fmt.Sprint(results[index]["default"]) {
-					case "1":
-						results[index][common.BKAppNameField] =
-							util.FirstNotEmptyString(defLang.Language("inst_biz_default"), fmt.Sprint(results[index][common.BKAppNameField]), fmt.Sprint(results[index][common.BKAppIDField]))
-					}
+				l := m[fmt.Sprint(results[index]["default"])]
+				if len(l) >= 3 {
+					results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(results[index][l[1]]), fmt.Sprint(results[index][l[2]]))
 				}
 			}
 		default:
-			blog.Infof("GetObjectByCondition %v", reflect.TypeOf(result))
+			blog.Infof("GetObjectByCondition translate error: %v", reflect.TypeOf(result))
 		}
 	}
 
