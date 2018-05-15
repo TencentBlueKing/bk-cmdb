@@ -33,7 +33,9 @@
                     'default': '$eq,$ne',
                     'singlechar': '$regex,$eq,$ne',
                     'longchar': '$regex,$eq,$ne',
-                    'objuser': '$regex,$eq,$ne'
+                    'objuser': '$regex,$eq,$ne',
+                    'singleasst': '$regex,$eq,$ne',
+                    'multiasst': '$regex,$eq,$ne'
                 },
                 operatorMap: {
                     '$nin': this.$t("Common['不包含']"),
