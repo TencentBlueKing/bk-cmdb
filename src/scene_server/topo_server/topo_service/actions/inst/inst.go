@@ -677,11 +677,27 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		// take snapshot before update
+		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+		if common.CCSuccess != retStrErr {
+			blog.Errorf("get inst detail error: %v", retStrErr)
+			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+		}
+
 		data, jsErr := js.Map()
 		if nil != jsErr {
 			blog.Error("failed to create json object, error info is %s", jsErr.Error())
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+
+		if mapPreData, ok := preData.(map[string]interface{}); ok {
+			if val, ok := mapPreData[common.BKInstParentStr]; ok {
+				data[common.BKInstParentStr] = val
+			} else {
+				blog.Error("not found the inst parent id, inst %d", instID)
+			}
+		}
+
 		forward := &api.ForwardParam{Header: req.Request.Header}
 		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, instID)
@@ -692,13 +708,6 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 		input["condition"] = condition
 		input["data"] = data
-
-		// take snapshot before update
-		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
-		if common.CCSuccess != retStrErr {
-			blog.Errorf("get inst detail error: %v", retStrErr)
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-		}
 
 		// set the inst association table
 		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {

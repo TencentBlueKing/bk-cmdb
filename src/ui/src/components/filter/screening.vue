@@ -52,14 +52,13 @@
                                 :quick-select="false"
                                 :range-separator="'-'"
                                 :align="'right'"
-                                :timer="column['bk_property_type'] === 'time'"
                                 :initDate="localQueryColumnData[column['bk_property_id']]['value'].join(' - ')"
                                 @change="setQueryDate(...arguments, column)">
                             </bk-daterangepicker>
                         </template>
                         <template v-else>
                             <!-- 判断条件选择 -->
-                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1">
+                            <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1 || typeOfAsst.indexOf(column['bk_property_type']) !== -1">
                                 <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
                                     <bk-select-option v-for="(operator, index) in operators['char']"
                                         :key="index"
@@ -79,7 +78,7 @@
                             </template>
                             <!-- 判断输入类型 -->
                             <template v-if="column['bk_property_type'] === 'int'">
-                                <input type="text" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
+                                <input type="text" maxlength="11" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'objuser'">
                                 <v-member-selector class="screening-group-item-value"
@@ -173,7 +172,8 @@
                     }]
                 },
                 typeOfChar: ['singlechar', 'longchar'],
-                typeOfDate: ['date', 'time']
+                typeOfDate: ['date', 'time'],
+                typeOfAsst: ['singleasst', 'multiasst']
             }
         },
         computed: {
@@ -221,22 +221,38 @@
                             }
                             filter.condition.push(condition)
                         }
-                        if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
+                        if (this.typeOfAsst.indexOf(property['bk_property_type']) !== -1) {
+                            filter.condition.push({
+                                'bk_obj_id': property['bk_asst_obj_id'],
+                                fields: [],
+                                condition: [{
+                                    field: 'bk_inst_name',
+                                    operator: column.operator,
+                                    value: column.value
+                                }]
+                            })
+                        } else if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
+                            let operator = column.operator
+                            let value = column.value
+                            if (property['bk_property_id'] === 'bk_module_name' || property['bk_property_id'] === 'bk_set_name') {
+                                operator = operator === '$regex' ? '$in' : operator
+                                value = value.replace('，', ',').split(',')
+                            }
                             condition.condition.push({
                                 field: column.field,
-                                operator: column.operator,
-                                value: column.value
+                                operator: operator,
+                                value: value
                             })
                         } else {
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$gte',
-                                value: column.value[0]
+                                value: `${column.value[0]} 00:00:00`
                             })
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$lte',
-                                value: column.value[1]
+                                value: `${column.value[1]} 23:59:59`
                             })
                         }
                     }
