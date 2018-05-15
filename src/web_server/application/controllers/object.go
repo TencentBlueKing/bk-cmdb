@@ -121,6 +121,7 @@ func ImportObject(c *gin.Context) {
 
 	reply, err := httpRequest(url, params, c.Request.Header)
 	blog.Debug("return the result:", reply)
+
 	if nil != err {
 		c.String(http.StatusOK, err.Error())
 	} else {
@@ -176,13 +177,23 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 			continue
 		}
 		blog.Debug("key:%s value:%v", key, keyVal)
-
+		if nil == keyVal {
+			cell.SetString("")
+			continue
+		}
 		switch t := keyVal.(type) {
 		case bool:
 			cell.SetBool(t)
+		case string:
+			if "\"\"" == t {
+				cell.SetValue("")
+			} else {
+				cell.SetValue(t)
+			}
 		default:
 			switch key {
 			case common.BKOptionField:
+
 				bOptions, err := json.Marshal(t)
 				if nil != err {
 					blog.Errorf("option format error:%v", t)
@@ -190,8 +201,11 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 				} else {
 					cell.SetString(string(bOptions))
 				}
+
 			default:
-				cell.SetValue(t)
+				if nil != keyVal {
+					cell.SetValue(t)
+				}
 			}
 		}
 	}

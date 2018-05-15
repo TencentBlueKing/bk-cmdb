@@ -73,7 +73,7 @@
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
-                        <input type="text" class="userapi-text fl"
+                        <input type="text" maxlength="11" class="userapi-text fl"
                             v-if="property.bkPropertyType === 'int'" 
                             v-model.number="property.value">
                         <input v-else type="text" class="userapi-text fl"
