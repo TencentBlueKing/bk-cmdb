@@ -21,7 +21,7 @@
                                 @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
-                    <td v-else :key="colIndex">
+                    <td v-else :key="colIndex" @click="handleCellClick(item, rowIndex, colIndex)">
                         <data-content class="data-content" :item="item" :head="head" :layout="layout" :rowIndex="rowIndex"></data-content>
                     </td>
                 </template>
@@ -84,6 +84,9 @@
             },
             handleRowClick (item, rowIndex) {
                 this.table.$emit('handleRowClick', item, rowIndex)
+            },
+            handleCellClick (item, rowIndex, colIndex) {
+                this.table.$emit('handleCellClick', item, rowIndex, colIndex)
             }
         },
         components: {
@@ -95,7 +98,7 @@
                     if (typeof table.renderCell === 'function') {
                         return h('div', {}, table.renderCell(this.item, this.head, this.layout))
                     } else if (table.$scopedSlots[column]) {
-                        return h('div', {}, table.$scopedSlots[column]({item: this.item}))
+                        return h('div', {}, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex}))
                     } else {
                         return h('div', {
                             attrs: {
@@ -130,7 +133,7 @@
         tr {
             td {
                 height: 40px;
-                padding: 0 16px;
+                padding: 6px 16px;
                 cursor: pointer;
                 @include ellipsis;
                 &.body-checkbox{

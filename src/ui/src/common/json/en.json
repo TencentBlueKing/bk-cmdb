@@ -112,7 +112,8 @@
         "IP": "IP",
         "操作详情": "Operation Details",
         "变更前": "Before Change",
-        "变更后": "After Change"
+        "变更后": "After Change",
+        "关系变更": "relationship change"
     },
     "EventPush": {
         "事件推送": "Event Push",
@@ -422,7 +423,8 @@
         "清空": "Refresh",
         "主机名称": "Hosts Name",
         "操作系统类型": "Operating System Type",
-        "主机拓扑": "Host Topo"
+        "主机拓扑": "Host Topo",
+        "关联关系": "Association Relationship"
     },
     "Inst": {
         "立即创建": "Add",

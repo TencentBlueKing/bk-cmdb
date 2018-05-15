@@ -382,6 +382,9 @@ const (
 
 	// BKDescriptionField the description field
 	BKDescriptionField = "description"
+
+	// BKIsOnlyField the isonly name field
+	BKIsOnlyField = "isonly"
 )
 
 // DefaultResSetName the inner module set

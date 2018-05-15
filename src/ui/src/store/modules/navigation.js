@@ -119,6 +119,11 @@ const getters = {
             }
             return usercustomNavigation.hasOwnProperty(id) && usercustomNavigation[id].length
         })
+        navigation.forEach(({id}, index) => {
+            if (!state.notCustomClassifications.includes(id)) {
+                navigation[index]['children'] = navigation[index]['children'].filter(model => usercustomNavigation[id].includes(model.id))
+            }
+        })
         return navigation
     }
 }
