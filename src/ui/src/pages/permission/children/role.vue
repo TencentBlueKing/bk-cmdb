@@ -29,14 +29,15 @@
         </div>
         <v-role-table class="role-table"
             :sortable="false"
-            :isLoading="isLoading"
-            :tableHeader="table.header"
-            :tableList="table.list">
-            <td slot="operation" slot-scope="{ item }" align="center" style="font-size: 0">
+            :loading="isLoading"
+            :header="table.header"
+            :list="table.list"
+            :wrapperMinusHeight="240">
+            <template slot="operation" slot-scope="{ item }" style="text-align: center;font-size: 0">
                 <i class="icon-cc-skip" @click="skipToUser(item)"></i>
                 <i class="icon-cc-edit" @click.stop="editRole(item)"></i>
                 <i class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
-            </td>        
+            </template>        
         </v-role-table>
         <v-role-form 
             :data="form.data" 

@@ -303,11 +303,6 @@
                 查询分组信息
             */
             getFieldGroup () {
-                let params = {
-                    page: {
-                        sort: 'bk_property_name'
-                    }
-                }
                 return this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.objId}`, {}).then((res) => {
                     if (res.result) {
                         this.groupFieldList = res.data

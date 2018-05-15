@@ -25,29 +25,27 @@
                                     :attribute="attribute"
                                     @filterChange="setFilterParams">
                                 </v-filter>
-                                <v-table
-                                    :tableHeader="table.header"
-                                    :tableList="table.list"
+                                <v-table class="asst-host-table"
+                                    :header="table.header"
+                                    :list="table.list"
                                     :defaultSort="table.defaultSort"
                                     :pagination="table.pagination"
-                                    :chooseId.sync="table.chooseId"
-                                    :isLoading="table.isLoading"
-                                    :maxHeight="'auto'"
+                                    :checked.sync="table.chooseId"
+                                    :loading="table.isLoading"
                                     :multipleCheck="multiple"
-                                    @handlePageTurning="setCurrentPage"
-                                    @handlePageSizeChange="setCurrentSize"
-                                    @handleTableSortClick="setCurrentSort"
-                                    @handleTableAllCheck="checkAllHost">
+                                    :maxHeight="200"
+                                    @handlePageChange="setCurrentPage"
+                                    @handleSizeChange="setCurrentSize"
+                                    @handleSortChange="setCurrentSort"
+                                    @handleCheckAll="checkAllHost">
                                     <template v-for="({id, name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
-                                        <td v-if="id === 'bk_host_id'" style="width: 50px;" class="checkbox-wrapper">
-                                            <label class="bk-form-checkbox bk-checkbox-small" @click.stop>
-                                                <input type="checkbox" 
-                                                    :value="item['host']['bk_host_id']"
-                                                    :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
-                                                    @change="setChoose(item['host']['bk_host_id'])">
-                                            </label>
-                                        </td>
-                                        <td v-else>{{getCellValue(property, item)}}</td>
+                                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                                            <input type="checkbox"
+                                                :value="item['host']['bk_host_id']"
+                                                :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
+                                                v-model="table.chooseId">
+                                        </label>
+                                        <template v-else>{{getCellValue(property, item)}}</template>
                                     </template>
                                 </v-table>
                             </div>
@@ -91,7 +89,8 @@
                     pagination: {
                         current: 1,
                         size: 10,
-                        count: 0
+                        count: 0,
+                        sizeDirection: 'top'
                     },
                     chooseId: [],
                     allHost: null,
@@ -231,7 +230,8 @@
                 this.table.header = [{
                     id: 'bk_host_id',
                     name: 'bk_host_id',
-                    type: 'checkbox'
+                    type: 'checkbox',
+                    width: 50
                 }].concat(columns.map(column => {
                     const property = this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                     return {
@@ -474,6 +474,25 @@
                     &:first-child{
                         margin-right: 10px;
                     }
+                }
+            }
+        }
+    }
+</style>
+<style lang="scss">
+    .asst-host-table{
+        .table-pagination{
+            padding: 0 6px !important;
+            .bk-page{
+                height: 26px;
+                margin: 8px 0;
+                ul{
+                    height: 26px;
+                }
+                .page-item{
+                    min-width: 26px;
+                    height: 26px;
+                    line-height: 26px;
                 }
             }
         }
