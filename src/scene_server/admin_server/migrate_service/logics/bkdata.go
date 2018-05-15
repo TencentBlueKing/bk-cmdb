@@ -192,10 +192,20 @@ func addBKProcess(req *restful.Request) error {
 		procName := procArr[0]
 		funcName := procArr[1]
 		portStr := procArr[2]
+		var protocal string
+		if len(procArr) > 3 {
+			protocal = procArr[3]
+		}
 		procModelData[common.BKProcNameField] = procName
 		procModelData[common.BKFuncName] = funcName
 		procModelData[common.BKPort] = portStr
 		procModelData[common.BKWorkPath] = "/data/bkee"
+
+		if protocal == "udp" {
+			procModelData[common.BKProtocol] = "2"
+		} else {
+			procModelData[common.BKProtocol] = "1"
+		}
 		byteParams, _ := json.Marshal(procModelData)
 		url := procAPI + "/process/v1/" + ownerID + "/" + appIDStr
 		blog.Info("migrate add process url :%s", url)
