@@ -77,3 +77,23 @@ func IsStrProperty(propertyType string) bool {
 
 	return false
 }
+
+// IsInnerObject is inner object model
+func IsInnerObject(objID string) bool {
+	switch objID {
+	case common.BKInnerObjIDApp:
+		return true
+	case common.BKInnerObjIDHost:
+		return true
+	case common.BKInnerObjIDModule:
+		return true
+	case common.BKInnerObjIDPlat:
+		return true
+	case common.BKInnerObjIDProc:
+		return true
+	case common.BKInnerObjIDSet:
+		return true
+	}
+
+	return false
+}

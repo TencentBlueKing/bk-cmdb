@@ -522,6 +522,11 @@ const (
 	ExcelDelAsstObjectRelation = "/"
 )
 
+const (
+	// InputTypeExcel  data from excel
+	InputTypeExcel = "excel"
+)
+
 // table names
 const (
 	// BKTableNameProcModule the table name of the process module
