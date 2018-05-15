@@ -23,10 +23,19 @@
                                 </div>
                                 <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
                             </div>
+                            <div class="select-icon-mask" v-show="isIconDrop" @click="closeDrop"></div>
                             <div class="select-icon-list" v-show="isIconDrop">
-                                <ul>
-                                    <li v-for="(item,index) in list" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
+                                <ul class="clearfix icon-list">
+                                    <li v-for="(item,index) in curIconList" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
                                         <i :class="item.value"></i>
+                                    </li>
+                                </ul>
+                                <ul class="clearfix pagination bk-page bk-page-compact bk-page-small">
+                                    <li v-for="page in icon.totalPage"
+                                    class="page-item" :class="{'cur-page': icon.curPage === page}"
+                                    @click="icon.curPage = page"
+                                    >
+                                        <a class="page-button">{{page}}</a>
                                     </li>
                                 </ul>
                             </div>
@@ -38,7 +47,7 @@
                     <div class="from-common-content interior-width-control">
                         <input type="text" name="" value=""
                             maxlength="20"
-                            :disabled="isReadOnly"
+                            :disabled="isReadOnly || baseInfo.ispre"
                             name="validation_name"
                             :placeholder="$t('ModelManagement[\'请填写模型名\']')"
                             :data-parsley-required="true"
@@ -142,13 +151,22 @@
                 isIconDrop: false,             // 选择图标下拉框
                 isChoose: true,                // 判断编辑分类的时候是否选择了icon
                 iconValue: 'icon-cc-business', // 选择icon的值
-                list: []                        // icon 的值
+                icon: {
+                    list: [],
+                    count: 0,
+                    curPage: 1,
+                    totalPage: 0,
+                    size: 24
+                }
             }
         },
         computed: {
             ...mapGetters([
                 'bkSupplierAccount'
-            ])
+            ]),
+            curIconList () {
+                return this.icon.list.slice((this.icon.curPage - 1) * this.icon.size, this.icon.curPage * this.icon.size)
+            }
         },
         watch: {
             isShow (val) {
@@ -164,6 +182,18 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                if (this.type === 'new') {
+                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-business') {
+                        return true
+                    }
+                } else {
+                    if (this.baseInfo['bk_obj_name'] !== this.baseInfoCopy['bk_obj_name'] || this.baseInfo['bk_obj_icon'] !== this.baseInfoCopy['bk_obj_icon']) {
+                        return true
+                    }
+                }
+                return false
+            },
             /*
                 点击出现选中icon下拉框
             */
@@ -214,7 +244,7 @@
                 this.$axios.post('objects', params).then(res => {
                     if (res.result) {
                         this.baseInfo = res.data[0]
-                        this.baseInfoCopy = this.$deepClone(this.baseInfo)
+                        this.baseInfoCopy = this.$deepClone(res.data[0])
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -281,7 +311,7 @@
                                     bk_obj_name: this.baseInfo['bk_obj_name'],
                                     bk_obj_id: this.baseInfo['bk_obj_id']
                                 })
-                                this.$store.commit('updateClassify', {
+                                this.$store.commit('navigation/updateModel', {
                                     bk_classification_id: this.classificationId,
                                     bk_obj_id: this.baseInfo['bk_obj_id'],
                                     bk_obj_name: this.baseInfo['bk_obj_name']
@@ -296,6 +326,13 @@
         },
         mounted () {
             this.list = iconList
+            this.icon = {
+                list: iconList,
+                count: this.list.length,
+                curPage: 1,
+                totalPage: Math.ceil(this.list.length / 24),
+                size: 24
+            }
         }
     }
 </script>
@@ -417,7 +454,13 @@
             display: inline-block;
             position: relative;
             border: 1px solid #c3cdd7;
-
+            .select-icon-mask{
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
             .select-icon-show{
                 height: 34px;
                 line-height: 34px;
@@ -458,16 +501,17 @@
                 top: 44px;
                 left: 0;
                 width: 390px;
-                height: 206px;
+                height: 248px;
                 border: 1px solid #bec6de;
                 z-index: 500;
                 background: #fff;
                 box-shadow: 0 2px 2px rgba(0,0,0,.1);
                 overflow: auto;
                 @include scrollbar;
-                ul{
+                .icon-list{
                     padding: 0;
                     margin: 0;
+                    height: 184px;
                     li{
                         width: 60px;
                         height: 46px;
@@ -487,6 +531,14 @@
                         &:nth-child(6n){
                             margin-right: 0;
                         }
+                    }
+                }
+                .pagination{
+                    margin-top: 10px;
+                    li{
+                        text-align: center;
+                        float: left;
+                        cursor: pointer;
                     }
                 }
             }

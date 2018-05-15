@@ -13,27 +13,36 @@
             </div>
         </div>
         <v-table class="process-table" 
-            :tableHeader="table.header"
-            :tableList="table.list"
+            :header="table.header"
+            :list="table.list"
             :defaultSort="table.defaultSort"
             :pagination="table.pagination"
-            :isLoading="table.isLoading"
-            @handlePageTurning="setCurrentPage"
-            @handlePageSizeChange="setCurrentSize"
-            @handleTableSortClick="setCurrentSort"
+            :loading="table.isLoading"
+            :wrapperMinusHeight="150"
+            @handlePageChange="setCurrentPage"
+            @handleSizeChange="setCurrentSize"
+            @handleSortChange="setCurrentSort"
             @handleRowClick="showProcessAttribute">
-            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }" v-if="property['bk_property_type'] === 'enum'">
-                <td>
+            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }">
+                <template v-if="property['bk_property_type'] === 'enum'">
                     {{getEnumCell(item[id], property)}}
-                </td>
+                </template>
+                <template v-else-if="!!property['bk_asst_obj_id']">
+                    {{getAssociateCell(item[id])}}
+                </template>
+                <template v-else>{{item[id]}}</template>
             </template>
         </v-table>
         <v-side-slider
             :isShow.sync="slider.isShow"
-            :title="slider.title">
-            <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" :class="['tab-wrapper', slider.tab.active]">
+            :isCloseConfirmShow="slider.isCloseConfirmShow"
+            :hasCloseConfirm="true"
+            :title="slider.title"
+            @closeSlider="closeSliderConfirm">
+            <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" :class="['tab-wrapper', slider.tab.active]" style="border:none;">
                 <bk-tabpanel name="attribute" :title="$t('ProcessManagement[\'属性\']')">
                     <v-attribute :active="slider.isShow && slider.tab.active === 'attribute'"
+                        ref="attribute"
                         :type="slider.tab.attribute.type"
                         :formFields="attribute"
                         :formValues="slider.tab.attribute.formValues"
@@ -82,6 +91,7 @@
                 },
                 slider: {
                     isShow: false,
+                    isCloseConfirmShow: false,
                     title: {
                         text: this.$t("ProcessManagement['新增进程']"),
                         icon: 'icon-cc-cube-entity'
@@ -160,6 +170,9 @@
             }
         },
         methods: {
+            closeSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.attribute.isCloseConfirmShow()
+            },
             getEnumCell (data, property) {
                 let obj = property.option.find(({id}) => {
                     return id === data
@@ -167,6 +180,18 @@
                 if (obj) {
                     return obj.name
                 }
+            },
+            // 计算关联属性单元格显示的值
+            getAssociateCell (data) {
+                let label = []
+                if (Array.isArray(data)) {
+                    data.map(({bk_inst_name: bkInstName}) => {
+                        if (bkInstName) {
+                            label.push(bkInstName)
+                        }
+                    })
+                }
+                return label.join(',')
             },
             createProcess () {
                 this.slider.title.text = this.$t("ProcessManagement['新增进程']")

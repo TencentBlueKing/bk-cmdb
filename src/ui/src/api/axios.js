@@ -10,6 +10,15 @@
 
 import Vue from 'vue'
 import Axios from 'axios'
+import bkMessage from '@/magicbox/bk-magic/components/message'
+
+const alertMsg = (message, theme = 'error', delay = 3000) => {
+    bkMessage({
+        message,
+        theme,
+        delay
+    })
+}
 
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
@@ -28,7 +37,7 @@ const catchErrorMsg = (response) => {
     } else if (response.statusText) {
         msg = response.statusText
     }
-    Vue.prototype.$alertMsg(msg)
+    $alertMsg(msg)
 }
 
 Vue.prototype.$axiosResponseInterceptor = axios.interceptors.response.use(
@@ -42,7 +51,7 @@ Vue.prototype.$axiosResponseInterceptor = axios.interceptors.response.use(
                     window.location.href = window.loginUrl
                     break
                 case 403:
-                    Vue.prototype.$alertMsg(error.response.statusText)
+                    $alertMsg(error.response.statusText)
                     break
                 case 500:
                     // 异常
@@ -61,3 +70,4 @@ Vue.prototype.$Axios = Axios
 
 export const $axios = axios
 export const $Axios = Axios
+export const $alertMsg = alertMsg

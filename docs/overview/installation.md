@@ -169,8 +169,8 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--mongo_user|MongoDB中CMDB数据库用户名|是|无|
 |--mongo_pass|MongoDB中CMDB数据库用户名密码|是|无|
 |--blueking_cmdb_url|该值表示部署完成后,输入到浏览器中访问的cmdb 网址, 格式: http://xx.xxx.com:80, 用户自定义填写;在没有配置 DNS 解析的情况下, 填写服务器的 IP:PORT。端口为当前cmdb_webserver监听的端口。|是|无|
-|--blueking_paas_url|蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置|是|无|
-|--listen_port|cmdb_webserver服务监听的端口，默认是8083|否|8083|
+|--blueking_paas_url|蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置|否|无|
+|--listen_port|cmdb_webserver服务监听的端口，默认是8083|是|8083|
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
