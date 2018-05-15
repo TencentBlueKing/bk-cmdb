@@ -52,7 +52,6 @@
                                 :quick-select="false"
                                 :range-separator="'-'"
                                 :align="'right'"
-                                :timer="column['bk_property_type'] === 'time'"
                                 :initDate="localQueryColumnData[column['bk_property_id']]['value'].join(' - ')"
                                 @change="setQueryDate(...arguments, column)">
                             </bk-daterangepicker>
@@ -248,12 +247,12 @@
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$gte',
-                                value: column.value[0]
+                                value: `${column.value[0]} 00:00:00`
                             })
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$lte',
-                                value: column.value[1]
+                                value: `${column.value[1]} 23:59:59`
                             })
                         }
                     }
