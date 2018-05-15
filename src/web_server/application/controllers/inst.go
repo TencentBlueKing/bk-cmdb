@@ -91,6 +91,7 @@ func ImportInst(c *gin.Context) {
 	url = apiSite + "/api/" + webCommon.API_VERSION + "/inst/" + c.Param("bk_supplier_account") + "/" + objID
 	blog.Debug("batch insert insts, the url is %s", url)
 	params := make(map[string]interface{})
+	params["InputType"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
 	reply, err := httpRequest(url, params, c.Request.Header)
 	blog.Debug("return the result:", reply)

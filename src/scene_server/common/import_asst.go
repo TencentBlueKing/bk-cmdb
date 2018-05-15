@@ -88,6 +88,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 		if false == ok {
 			continue
 		}
+
 		if util.IsAssocateProperty(f.PropertyType) {
 			strInsts, _ := val.(string)
 			if common.ExcelDelAsstObjectRelation == strings.Trim(strInsts, "\n ") {
@@ -123,6 +124,7 @@ func (a *AsstObjectInst) InitInstFromData(hostInfos map[int]map[string]interface
 	}
 
 	err := a.getAsstInstByAsstObjectConds()
+
 	if nil != err {
 		return nil, err
 	}
@@ -151,12 +153,18 @@ func (a *AsstObjectInst) GetIDsByExcelStr(objID, key string) (int64, error) {
 func (a *AsstObjectInst) getAsstInstByAsstObjectConds() error {
 	ret := make(map[string]map[string]int64)
 	for objID, conds := range a.asstInstConds {
-		_, ok := a.fields[objID]
-		if false == ok {
+		isExist := false
+		for _, f := range a.fields {
+			if f.AssociationID == objID {
+				isExist = true
+			}
+		}
+
+		if false == isExist {
 			continue
 		}
 		searchObjID := objID
-		_, ok = commondata.ObjTableMap[objID]
+		_, ok := commondata.ObjTableMap[objID]
 		if false == ok {
 			searchObjID = common.BKINnerObjIDObject
 		}
@@ -182,7 +190,7 @@ func (a *AsstObjectInst) getAsstInstByAsstObjectConds() error {
 			for _, f := range primaryKey {
 				key, ok := mapItem[f.PropertyID]
 				if false == ok {
-					errMsg := a.defLang.Languagef("host_str_asst_str_query_data_format_error", objID, f.PropertyID)
+					errMsg := a.defLang.Languagef("import_str_asst_str_query_data_format_error", objID, f.PropertyID)
 					blog.Error(errMsg)
 					return errors.New(errMsg)
 				}
@@ -233,6 +241,7 @@ func (a *AsstObjectInst) getInstData(url, method string, params interface{}) (bo
 	blog.Info("get request url:%s", url)
 	blog.Info("get request info  params:%v", string(strParams))
 	reply, err := httpcli.ReqHttp(a.req, url, method, []byte(strParams))
+
 	blog.Info("get request result:%v", string(reply))
 	if err != nil {
 		blog.Error("http do error, params:%s, error:%s", strParams, err.Error())
@@ -279,13 +288,13 @@ func (a *AsstObjectInst) getAsstObjectConds(Infos map[int]map[string]interface{}
 
 				asstFields, ok := a.asstPrimaryKey[f.AssociationID]
 				if false == ok {
-					errs[rowIndex] = errors.New(a.defLang.Languagef("host_asst_property_str_not_found", key))
+					errs[rowIndex] = errors.New(a.defLang.Languagef("import_asst_property_str_not_found", key))
 					continue
 				}
 
 				strVal, ok := val.(string)
 				if false == ok {
-					errs[rowIndex] = errors.New(a.defLang.Languagef("host_property_str_format_error", key))
+					errs[rowIndex] = errors.New(a.defLang.Languagef("import_property_str_format_error", key))
 					continue
 				}
 
@@ -301,17 +310,19 @@ func (a *AsstObjectInst) getAsstObjectConds(Infos map[int]map[string]interface{}
 					}
 					primaryKeys := strings.Split(row, common.ExcelAsstPrimaryKeySplitChar)
 					if len(primaryKeys) != len(asstFields) {
-						errs[rowIndex] = errors.New(a.defLang.Languagef("host_asst_property_str_primary_count_len", key))
+						errs[rowIndex] = errors.New(a.defLang.Languagef("import_asst_property_str_primary_count_len", key))
 						continue
 					}
 					conds := common.KvMap{}
-					conds[common.BKObjIDField] = f.AssociationID
+					if false == util.IsInnerObject(f.AssociationID) {
+						conds[common.BKObjIDField] = f.AssociationID
+					}
 					for i, val := range primaryKeys {
 						asstf := asstFields[i]
 						var err error
 						conds[asstf.PropertyID], err = sceneUtil.ConvByPropertytype(f, val)
 						if nil != err {
-							errs[rowIndex] = errors.New(a.defLang.Languagef("host_asst_property_str_primary_count_len", key))
+							errs[rowIndex] = errors.New(a.defLang.Languagef("import_asst_property_str_primary_count_len", key))
 							continue
 						}
 					}
@@ -379,4 +390,18 @@ func (a *AsstObjectInst) getObjectFields(objID, sort string) ([]sourceAPI.ObjAtt
 		}
 	}
 	return atts, nil
+}
+
+// SetMapFields set import object property fields
+func (a *AsstObjectInst) SetMapFields(objID string) error {
+	fields, err := a.getObjectFields(objID, "")
+	if nil != err {
+		return err
+	}
+	ret := make(map[string]*sourceAPI.ObjAttDes)
+	for index, f := range fields {
+		ret[f.PropertyID] = &fields[index]
+	}
+	a.fields = ret
+	return nil
 }
