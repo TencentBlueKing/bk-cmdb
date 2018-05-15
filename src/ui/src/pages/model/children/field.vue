@@ -144,13 +144,15 @@
                                         <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="item.option.min" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMin(item)">
+                                                <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.trim="item.option.min" v-if="item.option" :disabled="isReadOnly">
+                                                <span class="error-msg" v-show="isIntErrorShow.min">{{$t('Common["内容不合法"]')}}</span>
                                             </div>
                                         </div>
                                         <div class="from-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
                                             <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
                                             <div class="from-common-content interior-width-control">
-                                                <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="item.option.max" v-if="item.option" :disabled="isReadOnly" @input="inputOptionMax(item)">
+                                                <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.trim="item.option.max" v-if="item.option" :disabled="isReadOnly">
+                                                <span class="error-msg" v-show="isIntErrorShow.max">{{$t('Common["内容不合法"]')}}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -591,13 +593,15 @@
                                     <div class="from-common-item mt20">
                                         <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
                                         <div class="from-common-content interior-width-control">
-                                            <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.number="newFieldInfo.option.min" @input="inputOptionMin(newFieldInfo)">
+                                            <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.trim="newFieldInfo.option.min">
+                                            <span class="error-msg" v-show="isIntErrorShow.min">{{$t('Common["内容不合法"]')}}</span>
                                         </div>
                                     </div>
                                     <div class="from-common-item  mt20 tr">
                                         <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
-                                            <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.number="newFieldInfo.option.max" @input="inputOptionMax(newFieldInfo)">
+                                        <div class="from-common-content interior-width-control tl">
+                                            <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.trim="newFieldInfo.option.max">
+                                            <span class="error-msg" v-show="isIntErrorShow.max">{{$t('Common["内容不合法"]')}}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1112,6 +1116,15 @@
                     this.curFieldInfo.isrequired = true
                 }
             },
+            'newFieldInfo.option': {
+                handler (newOption, oldOption) {
+                    if (this.newFieldInfo.propertyType === 'int') {
+                        this.isIntErrorShow.min = false
+                        this.isIntErrorShow.max = false
+                    }
+                },
+                deep: true
+            },
             objId () {
                 if (this.objId === '') {
                     this.$refs.baseInfo.clearData()
@@ -1144,6 +1157,10 @@
                 reg: '^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."\' \\/]){1,15}$',
                 isSelectErrorShow: false,       // 关联模型为空时的提示状态
                 isEnumErrorShow: false,         // 枚举内容为空是的提示状态
+                isIntErrorShow: {
+                    min: false,
+                    max: false
+                },
                 tips: {
                     innerField: {
                         isShow: false,
@@ -1240,10 +1257,7 @@
                 modelList: [],          // 模型分类及附属模型信息列表
                 curModelType: '',
                 curIndex: 0,            // 当前展开项索引
-                isAddFieldShow: false,
-                maxValue: '',
-                minValue: '',
-                isIconDrop: false            // 选择图标下拉框
+                isAddFieldShow: false
             }
         },
         computed: {
@@ -1521,6 +1535,8 @@
             */
             toggleDetailShow (item, index) {
                 $('#validate-form-change').parsley().reset()
+                this.isIntErrorShow.min = false
+                this.isIntErrorShow.max = false
                 if (!this.fieldList[index].isShow) {
                     this.parseFieldOption(item, index)
                     this.curFieldInfo['bk_property_name'] = item['bk_property_name']
@@ -1647,6 +1663,19 @@
                         return false
                     }
                 }
+                if (this.newFieldInfo.propertyType === 'int') {
+                    this.isIntErrorShow.min = !/^[0-9]*$/.test(this.newFieldInfo.option.min)
+                    this.isIntErrorShow.max = !/^[0-9]*$/.test(this.newFieldInfo.option.max)
+                    if (this.isIntErrorShow.min || this.isIntErrorShow.max) {
+                        return false
+                    }
+                    if (parseInt(this.newFieldInfo.option.min) > parseInt(this.newFieldInfo.option.max)) {
+                        this.isIntErrorShow.min = true
+                        return false
+                    }
+                }
+                this.isIntErrorShow.min = false
+                this.isIntErrorShow.max = false
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 return true
@@ -1667,6 +1696,19 @@
                         return false
                     }
                 }
+                if (item['bk_property_type'] === 'int') {
+                    this.isIntErrorShow.min = !/^[0-9]*$/.test(item.option.min)
+                    this.isIntErrorShow.max = !/^[0-9]*$/.test(item.option.max)
+                    if (this.isIntErrorShow.min || this.isIntErrorShow.max) {
+                        return false
+                    }
+                    if (parseInt(item.option.min) > parseInt(item.option.max)) {
+                        this.isIntErrorShow.min = true
+                        return false
+                    }
+                }
+                this.isIntErrorShow.min = false
+                this.isIntErrorShow.max = false
                 this.isSelectErrorShow = false
                 this.isEnumErrorShow = false
                 return true
@@ -2007,7 +2049,8 @@
     $primaryColor: #f9f9f9; //主要
     $fnMainColor: #bec6de; //文案主要颜色
     $primaryHoverColor: #6b7baa; // 主要颜色
-    .select-error{
+    .select-error,
+    .error-msg{
         font-size: 12px;
         color: #ff3737;
     }
