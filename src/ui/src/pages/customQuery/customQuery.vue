@@ -32,14 +32,15 @@
         </div>
         <div class="userAPI-table">
             <v-table ref="userAPITable"
-                :tableHeader="table.header"
-                :tableList="table.list"
+                :header="table.header"
+                :list="table.list"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :isLoading="table.isLoading"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setCurrentSize"
-                @handleTableSortClick="setCurrentSort"
+                :loading="table.isLoading"
+                :wrapperMinusHeight="150"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setCurrentSize"
+                @handleSortChange="setCurrentSort"
                 @handleRowClick="showUserAPIDetails">
             </v-table>
         </div>
@@ -48,8 +49,12 @@
                 :isShow.sync="slider.isShow"
                 :hasQuickClose="true"
                 :title="slider.title"
+                :hasCloseConfirm="true"
+                :isCloseConfirmShow="slider.isCloseConfirmShow"
+                @closeSlider="closeSliderConfirm"
                 @close="hideUserAPISlider">
                 <v-define slot="content" 
+                    ref="define"
                     :id="slider.id"
                     :bkBizId="filter.bkBizId"
                     :isShow="slider.isShow"
@@ -115,6 +120,7 @@
                 },
                 slider: {
                     isShow: false,
+                    isCloseConfirmShow: false,
                     type: 'create',
                     id: null,
                     title: {
@@ -144,6 +150,9 @@
             }
         },
         methods: {
+            closeSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
+            },
             /* 获取自定义API列表 */
             getUserAPIList () {
                 this.table.isLoading = true

@@ -73,7 +73,7 @@
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
-                        <input type="text" class="userapi-text fl"
+                        <input type="text" maxlength="11" class="userapi-text fl"
                             v-if="property.bkPropertyType === 'int'" 
                             v-model.number="property.value">
                         <input v-else type="text" class="userapi-text fl"
@@ -100,7 +100,8 @@
                     <bk-select class="userapi-new-select"
                         ref="propertySelector"
                         @on-selected="addUserProperties">
-                            <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])"
+                            <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
+                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -124,7 +125,7 @@
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
-        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams"></v-preview>
+        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
     </div>
 </template>
 <script>
@@ -179,9 +180,19 @@
                     }]
                 },
                 userProperties: [], // 自定义查询条件
+                dataCopy: {
+                    name: '',
+                    userProperties: [],
+                    attributeSelected: ''
+                },
                 isPropertiesShow: false, // 自定义条件下拉列表展示与否
                 isPreviewShow: false, // 显示预览
                 object: {
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: []
+                    },
                     'host': {
                         id: 'host',
                         name: this.$t("Hosts['主机']"),
@@ -209,10 +220,10 @@
             ...mapGetters(['bkSupplierAccount']),
             /* 生成保存自定义API的参数 */
             apiParams () {
-                let paramsMap = {
-                    'set': {'bk_obj_id': 'set', condition: [], fields: []},
-                    'module': {'bk_obj_id': 'module', condition: [], fields: []},
-                    'biz': {
+                let paramsMap = [
+                    {'bk_obj_id': 'set', condition: [], fields: []},
+                    {'bk_obj_id': 'module', condition: [], fields: []},
+                    {
                         'bk_obj_id': 'biz',
                         condition: [{
                             field: 'default', // 该参数表明查询非资源池下的主机
@@ -220,44 +231,63 @@
                             value: 1
                         }],
                         fields: []
-                    },
-                    'host': {
+                    }, {
                         'bk_obj_id': 'host',
                         condition: [],
                         fields: this.attribute.selected ? this.attribute.selected.split(',') : []
                     }
-                }
+                ]
                 this.userProperties.forEach((property, index) => {
-                    if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
+                    let param = paramsMap.find(({bk_obj_id: bkObjId}) => {
+                        return bkObjId === property.bkObjId
+                    })
+                    if (property.bkPropertyType === 'singleasst' || property.bkPropertyType === 'multiasst') {
+                        paramsMap.push({
+                            'bk_obj_id': property.bkAsstObjId,
+                            fields: [],
+                            condition: [{
+                                field: 'bk_inst_name',
+                                operator: property.operator,
+                                value: property.value
+                            }]
+                        })
+                    } else if (property.bkPropertyType === 'time' || property.bkPropertyType === 'date') {
                         let value = property['value'].split(' - ')
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: value[0] === value[1] ? '$eq' : '$gte',
                             value: value[0]
                         })
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: value[0] === value[1] ? '$eq' : '$lte',
                             value: value[1]
                         })
                     } else if (property.bkPropertyType === 'bool' && ['true', 'false'].includes(property.value)) {
-                        paramsMap[property.bkObjId]['condition'].push({
+                        param['condition'].push({
                             field: property.bkPropertyId,
                             operator: property.operator,
                             value: property.value === 'true'
                         })
                     } else {
-                        paramsMap[property.bkObjId]['condition'].push({
+                        let operator = property.operator
+                        let value = property.value
+                        // 多模块与多集群查询
+                        if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
+                            operator = operator === '$regex' ? '$in' : operator
+                            value = value.replace('，', ',').split(',')
+                        }
+                        param['condition'].push({
                             field: property.bkPropertyId,
-                            operator: property.operator,
-                            value: property.value
+                            operator: operator,
+                            value: value
                         })
                     }
                 })
                 let params = {
                     'bk_biz_id': this.bkBizId,
                     'info': {
-                        condition: [paramsMap['biz'], paramsMap['set'], paramsMap['module'], paramsMap['host']]
+                        condition: paramsMap
                     },
                     'name': this.name
                 }
@@ -298,6 +328,7 @@
                 })
                 this.attribute.list = tempList.concat(this.attribute.default)
                 this.attribute.selected = selected.join(',')
+                this.dataCopy.attributeSelected = this.attribute.selected
             },
             selectedObjId () {
                 this.$refs.propertySelector.$forceUpdate()
@@ -307,12 +338,26 @@
             this.initObjectProperties()
         },
         methods: {
+            isCloseConfirmShow () {
+                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                    return true
+                }
+                for (let i = 0; i < this.userProperties.length; i++) {
+                    let property = this.userProperties[i]
+                    let propertyCopy = this.dataCopy.userProperties[i]
+                    for (let key in property) {
+                        if (property[key] !== propertyCopy[key]) {
+                            return true
+                        }
+                    }
+                }
+                return false
+            },
             deleteUserAPIConfirm () {
-                var self = this
                 this.$bkInfo({
                     title: this.$t("CustomQuery['确认要删除']", {name: self.apiParams.name}),
-                    confirmFn () {
-                        self.deleteUserAPI()
+                    confirmFn: () => {
+                        this.deleteUserAPI()
                     }
                 })
             },
@@ -330,8 +375,9 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                this.$Axios.all([this.getObjectProperty('biz'), this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
+                .then(this.$Axios.spread((bizRes, hostRes, setRes, moduleRes) => {
+                    this.object['biz']['properties'] = bizRes.result ? bizRes.data : []
                     this.object['host']['properties'] = hostRes.result ? hostRes.data : []
                     this.object['set']['properties'] = setRes.result ? setRes.data : []
                     this.object['module']['properties'] = moduleRes.result ? moduleRes.data : []
@@ -390,6 +436,7 @@
                                     'bkPropertyType': originalProperty['bk_property_type'],
                                     'bkPropertyName': originalProperty['bk_property_name'],
                                     'bkPropertyId': originalProperty['bk_property_id'],
+                                    'bkAsstObjId': originalProperty['bk_asst_obj_id'],
                                     'operator': property.operator,
                                     'value': property.value
                                 })
@@ -403,12 +450,18 @@
                 })
                 this.userProperties = properties
                 this.name = detail['name']
+                this.dataCopy = {
+                    name: detail['name'],
+                    userProperties: this.$deepClone(properties),
+                    attributeSelected: this.attribute.selected
+                }
             },
             addUserProperties ({value: bkPropertyId}, index) {
                 let property = this.getOriginalProperty(bkPropertyId, this.selectedObjId)
                 let {
                     'bk_property_name': bkPropertyName,
                     'bk_property_type': bkPropertyType,
+                    'bk_asst_obj_id': bkAsstObjId,
                     'bk_obj_id': bkObjId
                 } = property
                 property.disabled = true
@@ -417,6 +470,7 @@
                     bkPropertyId,
                     bkPropertyType,
                     bkPropertyName,
+                    bkAsstObjId,
                     operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
                     value: ''
                 })

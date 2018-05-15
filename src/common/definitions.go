@@ -88,6 +88,21 @@ const (
 
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
+
+	// BKInnerObjIDSwitch the inner object
+	BKInnerObjIDSwitch = "bk_switch"
+	// BKInnerObjIDRouter the inner object
+	BKInnerObjIDRouter = "bk_router"
+	// BKInnerObjIDBlance the inner object
+	BKInnerObjIDBlance = "bk_load_balance"
+	// BKInnerObjIDFirewall the inner object
+	BKInnerObjIDFirewall = "bk_firewall"
+	// BKInnerObjIDWeblogic the inner object
+	BKInnerObjIDWeblogic = "bk_weblogic"
+	// BKInnerObjIDTomcat the inner object
+	BKInnerObjIDTomcat = "bk_tomcat"
+	// BKInnerObjIDApache the inner object
+	BKInnerObjIDApache = "bk_apache"
 )
 
 // Revision

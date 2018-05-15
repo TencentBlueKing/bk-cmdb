@@ -39,7 +39,7 @@
                             <bk-select
                                 :selected.sync="filter.classify"
                                 :filterable="true">   
-                                <template v-for="(classifyGroup, groupIndex) in allClassify">
+                                <template v-for="(classifyGroup, groupIndex) in activeClassifications">
                                     <bk-option-group v-if="classifyGroup['bk_objects'].length"
                                             :label="classifyGroup['bk_classification_name']"
                                             :key="groupIndex">
@@ -66,7 +66,7 @@
                             >
                                 <bk-select-option v-for="(operateType, operateTypeIndex) in operateTypeList"
                                     :key="operateTypeIndex"
-                                    :value="operateType.type"
+                                    :value="operateType.value"
                                     :label="$t(operateType.label)"
                                 ></bk-select-option>
                             </bk-select>
@@ -91,29 +91,37 @@
                 </div>
                 <div class="table-content">
                     <v-table ref="table"
-                        :tableHeader="tableHeader"
-                        :tableList="tableList"
+                        :header="tableHeader"
+                        :list="tableList"
                         :pagination="pagination"
-                        :isLoading="isLoading"
+                        :loading="isLoading"
                         :defaultSort="defaultSort"
-                        @handlePageTurning="setCurrentPage"
-                        @handlePageSizeChange="setCurrentSize"
-                        @handleTableSortClick="setCurrentSort"
-                    >
+                        :wrapperMinusHeight="150"
+                        @handlePageChange="setCurrentPage"
+                        @handleSizeChange="setCurrentSize"
+                        @handleSortChange="setCurrentSort"
+                        @handleRowClick="showDetails">
                     </v-table>
                 </div>
             </div>
         </div>
+        <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
+            <v-history-details :details="details.data" slot="content"></v-history-details>
+        </v-sideslider>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import moment from 'moment'
+    import vSideslider from '@/components/slider/sideslider'
+    import vHistoryDetails from '@/components/history/details'
     import vTable from '@/components/table/table'
     export default {
         components: {
-            vTable
+            vTable,
+            vSideslider,
+            vHistoryDetails
         },
         data () {
             return {
@@ -123,21 +131,20 @@
                     'biz': false
                 },
                 operateTypeList: [{
-                    id: '',
-                    type: '',
+                    value: '',
                     label: 'OperationAudit["全部"]'
                 }, {
-                    id: 1,
-                    type: 'add',
+                    value: 1,
                     label: 'Common["新增"]'
                 }, {
-                    id: 2,
-                    type: 'update',
+                    value: 2,
                     label: 'Common["修改"]'
                 }, {
-                    id: 3,
-                    type: 'delete',
+                    value: 3,
                     label: 'Common["删除"]'
+                }, {
+                    value: 100,
+                    label: 'OperationAudit["关系变更"]'
                 }],
                 ranges: {
                     昨天: [moment().subtract(1, 'days'), moment()],
@@ -195,16 +202,20 @@
                 }],
                 tableList: [],
                 defaultSort: '-op_time',
-                sort: '-op_time'
+                sort: '-op_time',
+                details: {
+                    isShow: false,
+                    data: null
+                }
             }
         },
         computed: {
             /* 从store中回去操作对象列表 */
             ...mapGetters([
-                'allClassify',
                 'bkBizList',
                 'language'
             ]),
+            ...mapGetters('navigation', ['activeClassifications']),
             /* 开始时间 */
             startDate () {
                 return this.$formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD')
@@ -252,7 +263,7 @@
             operateTypeMap () {
                 let operateTypeMap = {}
                 this.operateTypeList.forEach((operateType, index) => {
-                    operateTypeMap[operateType['id']] = this.$t(operateType['label'])
+                    operateTypeMap[operateType['value']] = this.$t(operateType['label'])
                 })
                 return operateTypeMap
             }
@@ -368,13 +379,9 @@
                     obj[key] = value
                 }
             },
-            leftPadding (str, targetLength = 2, padding = 0) {
-                let strLength = [...str.toString()].length
-                if (strLength < targetLength) {
-                    return (new Array(targetLength - strLength)).fill(padding).join('') + str
-                } else {
-                    return str
-                }
+            showDetails (item) {
+                this.details.data = item
+                this.details.isShow = true
             }
         }
     }
