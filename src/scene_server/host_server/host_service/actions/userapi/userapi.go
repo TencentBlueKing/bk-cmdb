@@ -205,7 +205,7 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 	//if name in condition , add like search
 	name, ok := condition["name"].(string)
 	if ok && "" != name {
-		condition["name"] = common.KvMap{common.BKDBLIKE: fmt.Sprintf(".*%s.*", name)}
+		condition["name"] = common.KvMap{common.BKDBLIKE: hostParse.SpeceialCharChange(name)}
 	}
 
 	condition[common.BKAppIDField], _ = util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))
