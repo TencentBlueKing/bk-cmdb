@@ -234,7 +234,7 @@
                         } else if (this.typeOfDate.indexOf(property['bk_property_type']) === -1) {
                             let operator = column.operator
                             let value = column.value
-                            if (property['bk_property_id'] === 'bk_module_name') {
+                            if (property['bk_property_id'] === 'bk_module_name' || property['bk_property_id'] === 'bk_set_name') {
                                 operator = operator === '$regex' ? '$in' : operator
                                 value = value.replace('，', ',').split(',')
                             }
