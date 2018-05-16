@@ -47,7 +47,7 @@
                     </bk-select>
                 </div>
                 <template v-if="filter.type === 'enum'">
-                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter" :showClear="true">
                         <bk-select-option v-for="option in getEnumOptions()"
                             :key="option.id"
                             :value="option.id"
@@ -99,7 +99,8 @@
                             <v-object-attr 
                                 ref="attribute"
                                 :formFields="attr.formFields" 
-                                :formValues="attr.formValues" 
+                                :formValues="attr.formValues"
+                                :showDelete="isShowDelete"
                                 :type="attr.type"
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
@@ -246,6 +247,9 @@
                 })
                 return objName
             },
+            isShowDelete () {
+                return !(this.objId === 'biz' && this.attr.formValues['bk_biz_name'] === '蓝鲸')
+            },
             // 表格查询需要的参数
             axiosConfig () {
                 let config = {
@@ -285,7 +289,7 @@
                         } else {
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
-                                operator: '$regex',
+                                operator: this.filter.type === 'enum' ? '$eq' : '$regex',
                                 value: this.filter.value
                             }]
                         }
@@ -527,7 +531,7 @@
                         info: []
                     }
                     if (res.result) {
-                        data.count = res.data.count
+                        data.count = res.data.count || 0
                         data.info = res.data.info || []
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
