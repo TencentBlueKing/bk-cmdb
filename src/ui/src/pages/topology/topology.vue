@@ -25,7 +25,7 @@
                         :outerParams="searchParams"
                         :isShowRefresh="true"
                         :outerLoading="tree.loading"
-                        :isShowCrossImport="attributeBkObjId === 'module'"
+                        :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
@@ -96,6 +96,7 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            ...mapGetters('navigation', ['authority']),
             /* 获取当前属性表单对应的属性obj_id */
             attributeBkObjId () {
                 let bkObjId
