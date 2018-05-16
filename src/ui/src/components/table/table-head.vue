@@ -254,7 +254,7 @@
     }
     .head-label{
         font-size: 14px;
-        width: 100%;
+        max-width: 100%;
         @include ellipsis;
         &.has-sort{
             max-width: calc(100% - 25px);

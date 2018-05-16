@@ -241,6 +241,7 @@ const (
 	CCErrTopoUserPrivilegeSelectFailed             = 1001047
 	CCErrTopoRolePrivilegeCreateFailed             = 1001048
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
+	CCErrHostNotAllowedToMutiBiz                   = 1001050
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

@@ -1,10 +1,9 @@
 <template>
-    <div class="search-container">
+    <div class="search-container" v-click-outside="handleClickOutside">
         <div class="search-box">
             <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
                 @focus="focus = true"
-                @blur="focus = false"
                 @keydown="handleKeydow($event)">
             <label class="bk-icon icon-search" for="indexSearch"></label>
             <ul ref="searchList" class="search-list" v-show="focus && !loading && searchList.length">
@@ -13,7 +12,7 @@
                         :result="result"
                         :keyword="keyword">
                     </search-item-match>
-                    <span class="search-item-source fr">{{result['biz']['bk_biz_name']}}</span>
+                    <span class="search-item-source fr">{{result['biz'][0]['bk_biz_name']}}</span>
                 </li>
             </ul>
             <div class="search-loading" v-show="loading">
@@ -139,7 +138,7 @@
                 if (this.highlightIndex >= 0) {
                     let targetResult = this.searchList[this.highlightIndex]
                     let targetInnerip = targetResult['host']['bk_host_innerip']
-                    let targetDefault = targetResult['biz']['default'] // 1为资源池下的主机，其他为业务下的主机
+                    let targetDefault = targetResult['biz'][0]['default'] // 1为资源池下的主机，其他为业务下的主机
                     this.$store.commit('setQuickSearchParams', {
                         text: targetInnerip,
                         type: 'ip'
@@ -147,7 +146,7 @@
                     if (targetDefault === 1) {
                         this.$router.push('/resource')
                     } else {
-                        this.$store.commit('setBkBizId', targetResult['biz']['bk_biz_id'])
+                        this.$store.commit('setBkBizId', targetResult['biz'][0]['bk_biz_id'])
                         this.$router.push('/hosts')
                     }
                 }
@@ -161,6 +160,9 @@
                 } else if (eventKey === 'ArrowUp' && this.highlightIndex >= 0) {
                     this.highlightIndex--
                 }
+            },
+            handleClickOutside () {
+                this.focus = false
             }
         },
         components: {

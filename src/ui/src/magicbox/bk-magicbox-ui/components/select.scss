@@ -18,6 +18,29 @@ $selectorHighlight: #eef6fe;
     .bk-select-icon{
         color: #bec6de;
     }
+    .bk-select-clear{
+        position: absolute;
+        top: 10px;
+        right: 7px;
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        font-size: 12px;
+        background-color: #ddd;
+        color: #fff !important;
+        border-radius: 50%;
+        text-align: center;
+        cursor: pointer;
+        transition: backgroundColor linear .2s;
+        &:hover {
+            background-color: #ccc;
+        }
+        &:before{
+            margin: 0 auto;
+            display: block;
+            transform: scale(.7);
+        }
+    }
     .bk-select-input:hover:not([disabled="disabled"]){
         color: #6b7baa;
     }
