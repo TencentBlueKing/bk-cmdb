@@ -15,16 +15,12 @@
                 <div class="title-content clearfix">
                     <div class="group-content group-content-business">
                         <div class="selector-content selector-content-business">
-                            <bk-select :selected.sync="filter.bkBizId" :filterable="true" :placeholder="$t('OperationAudit[\'请选择业务\']')">
+                            <bk-select :selected.sync="filter.bkBizId" :filterable="true" :showClear="true" :placeholder="$t('OperationAudit[\'请选择业务\']')">
                                 <bk-select-option v-for="(option, index) in bkBizList"
                                     :key="option['bk_biz_id']"
                                     :value="option['bk_biz_id']"
                                     :label="option['bk_biz_name']"></bk-select-option>
                             </bk-select>
-                            <i class="bk-icon icon-close bk-selector-icon clear-icon" 
-                                v-show="isShowClearIcon.biz"
-                                @click="filter.bkBizId = ''"
-                            ></i>
                         </div>
                     </div>
                     <div class="group-content group-content-ip">
@@ -36,7 +32,8 @@
                     <div class="group-content group-content-classify">
                         <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
                         <div class="selector-content selector-content-classify">
-                            <bk-select
+                            <bk-select 
+                                :showClear="true"
                                 :selected.sync="filter.classify"
                                 :filterable="true">   
                                 <template v-for="(classifyGroup, groupIndex) in activeClassifications">
@@ -51,10 +48,6 @@
                                     </bk-option-group>
                                 </template>
                             </bk-select>
-                            <i class="bk-icon icon-close bk-selector-icon clear-icon" 
-                                v-show="isShowClearIcon.classify"
-                                @click="filter.classify = ''"
-                            ></i>
                         </div>
                     </div>
                     <div class="group-content group-content-type">

@@ -251,7 +251,8 @@ textarea {
     }
 }
 
-.del-btn {
+.del-btn ,
+.del-btn.bk-button{
     /* 删除按钮 */
     background: #fff;
     color: #ef4c4c;

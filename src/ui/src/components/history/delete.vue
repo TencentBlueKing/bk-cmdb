@@ -110,7 +110,7 @@
                 }
                 let params = {
                     condition: {
-                        op_type: 'delete',
+                        op_type: 3, // delete
                         op_time: this.opTime,
                         op_target: this.objId
                     },
