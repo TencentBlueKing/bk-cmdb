@@ -515,18 +515,25 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	/*EXCEL color AARRGGBB :
+	AA means Alpha
+	RRGGBB means Red, in hex.
+	GG means Red, in hex.
+	BB means Red, in hex.
+	*/
+
 	// ExcelHeaderFirstRowColor cell bg color
-	ExcelHeaderFirstRowColor = "92D050"
+	ExcelHeaderFirstRowColor = "FF92D050"
 	// ExcelHeaderFirstRowFontColor  font color
-	ExcelHeaderFirstRowFontColor = "000000"
+	ExcelHeaderFirstRowFontColor = "FF000000"
 	// ExcelHeaderFirstRowRequireFontColor require font color
-	ExcelHeaderFirstRowRequireFontColor = "FF0000"
+	ExcelHeaderFirstRowRequireFontColor = "FFFF0000"
 	// ExcelHeaderOtherRowColor cell bg color
-	ExcelHeaderOtherRowColor = "C6EFCE"
+	ExcelHeaderOtherRowColor = "FFC6EFCE"
 	// ExcelHeaderOtherRowFontColor font color
-	ExcelHeaderOtherRowFontColor = "000000"
+	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
-	ExcelCellDefaultBorderColor = "D4D4D4"
+	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = "##"
