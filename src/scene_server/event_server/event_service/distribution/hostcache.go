@@ -54,29 +54,63 @@ func (c *HostIdenCache) AddHost(i *HostIdentifier) {
 // HostIdentifier define
 type HostIdentifier struct {
 	cache           *HostIdenCache
-	HostID          int    `json:"bk_host_id"`          // 主机ID(host_id)								数字
-	HostName        string `json:"bk_host_name"`        // 主机名称
-	SupplierID      int    `json:"bk_supplier_id"`      // 开发商ID（bk_supplier_id）				数字
-	SupplierAccount int    `json:"bk_supplier_account"` // 开发商帐号（bk_supplier_account）	数字
-	CloudID         int    `json:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
-	CloudName       string `json:"bk_cloud_name"`       // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
-	BizID           int    `json:"bk_biz_id"`           // 业务ID
-	BizName         string `json:"bk_biz_name"`         // 业务名称
-	SetID           int    `json:"bk_set_id"`           // 所属集群(bk_set_id)：						数字
-	SetName         string `json:"bk_set_name"`         // 所属集群名称(bk_set_name)：			字符串（最大长度25）
-	ModuleID        int    `json:"bk_module_id"`        // 所属模块(bk_module_id)：				数字
-	ModuleName      string `json:"bk_module_name"`      // 所属模块(bk_module_name)：			字符串（最大长度25）
+	HostID          int         `json:"bk_host_id"`          // 主机ID(host_id)								数字
+	HostName        interface{} `json:"bk_host_name"`        // 主机名称
+	SupplierID      int         `json:"bk_supplier_id"`      // 开发商ID（bk_supplier_id）				数字
+	SupplierAccount int         `json:"bk_supplier_account"` // 开发商帐号（bk_supplier_account）	数字
+	CloudID         int         `json:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
+	CloudName       interface{} `json:"bk_cloud_name"`       // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
+	BizID           int         `json:"bk_biz_id"`           // 业务ID
+	BizName         interface{} `json:"bk_biz_name"`         // 业务名称
+	SetID           int         `json:"bk_set_id"`           // 所属集群(bk_set_id)：						数字
+	SetName         interface{} `json:"bk_set_name"`         // 所属集群名称(bk_set_name)：			字符串（最大长度25）
+	ModuleID        int         `json:"bk_module_id"`        // 所属模块(bk_module_id)：				数字
+	ModuleName      interface{} `json:"bk_module_name"`      // 所属模块(bk_module_name)：			字符串（最大长度25）
 
-	SetStatus string `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
-	SetEnv    string `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
+	SetStatus interface{} `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
+	SetEnv    interface{} `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
 
-	InnerIP string `json:"bk_host_innerip"` // 内网IP
-	OuterIP string `json:"bk_host_outerip"` // 外网IP
-	OSType  string `json:"bk_os_type"`      // 操作系统类型
-	OSName  string `json:"bk_os_name"`      // 操作系统名称
-	Memory  int    `json:"bk_mem"`          // 内存容量
-	CPU     int    `json:"bk_cpu"`          // CPU逻辑核心数
-	Disk    int    `json:"bk_disk"`         // 磁盘容量
+	InnerIP interface{} `json:"bk_host_innerip"` // 内网IP
+	OuterIP interface{} `json:"bk_host_outerip"` // 外网IP
+	OSType  interface{} `json:"bk_os_type"`      // 操作系统类型
+	OSName  interface{} `json:"bk_os_name"`      // 操作系统名称
+	Memory  interface{} `json:"bk_mem"`          // 内存容量
+	CPU     interface{} `json:"bk_cpu"`          // CPU逻辑核心数
+	Disk    interface{} `json:"bk_disk"`         // 磁盘容量
+}
+
+// Set set inst value
+func (i *HostIdentifier) Set(key string, value interface{}) {
+	switch key {
+	case "bk_host_name":
+		i.HostName = value
+	case "bk_cloud_name":
+		i.CloudName = value
+	case "bk_biz_name":
+		i.BizName = value
+	case "bk_set_name":
+		i.SetName = value
+	case "bk_module_name":
+		i.ModuleName = value
+	case "bk_service_status":
+		i.SetStatus = value
+	case "bk_set_env":
+		i.SetEnv = value
+	case "bk_host_innerip":
+		i.InnerIP = value
+	case "bk_host_outerip":
+		i.OuterIP = value
+	case "bk_os_type":
+		i.OSType = value
+	case "bk_os_name":
+		i.OSName = value
+	case "bk_mem":
+		i.Memory = value
+	case "bk_cpu":
+		i.CPU = value
+	case "bk_disk":
+		i.Disk = value
+	}
 }
 
 func (i *HostIdentifier) SetBizID(id int) {

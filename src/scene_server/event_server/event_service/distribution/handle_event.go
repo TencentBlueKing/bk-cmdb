@@ -115,7 +115,7 @@ func handleInst(event *types.EventInstCtx) (err error) {
 
 	// selete members
 
-	origindists := event.GetDistInst()
+	origindists := GetDistInst(&event.EventInst)
 
 	for _, origindist := range origindists {
 		subscribers := findEventTypeSubscribers(origindist.GetType())
@@ -145,29 +145,31 @@ func handleInst(event *types.EventInstCtx) (err error) {
 	return
 }
 
-func prepareDistInst(subscriber string, event types.EventInstCtx) *types.DistInst {
-	dstbID, err := nextDistID(subscriber)
-	if err != nil {
-		return nil
-	}
-	subscribeID, err := strconv.ParseInt(subscriber, 10, 64)
-	if err != nil {
-		return nil
-	}
-	distinst := types.DistInst{
-		EventInst:      event.EventInst,
-		DstbID:         dstbID,
-		SubscriptionID: subscribeID,
-	}
+var hostIndentDiffFiels = map[string][]string{
+	common.BKAppNameField:     {common.BKAppNameField},
+	common.BKInnerObjIDSet:    {common.BKSetNameField, "bk_service_status", "bk_set_env"},
+	common.BKInnerObjIDModule: {common.BKModuleNameField},
+	common.BKInnerObjIDPlat:   {common.BKCloudNameField},
+	common.BKInnerObjIDHost: {common.BKHostNameField,
+		common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
+		common.BKOSTypeField, common.BKOSNameField,
+		"bk_mem", "bk_cpu", "bk_disk"},
+}
 
-	if event.EventType == types.EventTypeInstData && event.ObjType == "object" {
-		var m map[string]interface{}
+func GetDistInst(e *types.EventInst) []types.DistInst {
+	distinst := types.DistInst{
+		EventInst: *e,
+	}
+	distinst.ID = 0
+	var ds []types.DistInst
+	var m map[string]interface{}
+	if e.EventType == types.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
 		var ok bool
 
-		if event.Action == "delete" {
-			m, ok = event.PreData.(map[string]interface{})
+		if e.Action == "delete" && len(e.Data) > 0 {
+			m, ok = e.Data[0].PreData.(map[string]interface{})
 		} else {
-			m, ok = event.CurData.(map[string]interface{})
+			m, ok = e.Data[0].CurData.(map[string]interface{})
 		}
 		if !ok {
 			return nil
@@ -176,8 +178,61 @@ func prepareDistInst(subscriber string, event types.EventInstCtx) *types.DistIns
 		if m[common.BKObjIDField] != nil {
 			distinst.ObjType = m[common.BKObjIDField].(string)
 		}
+
 	}
-	return &distinst
+	ds = append(ds, distinst)
+
+	// add new dist if event belong to hostidentifier
+	if diffFields, ok := hostIndentDiffFiels[e.ObjType]; ok && e.Action == types.EventActionUpdate && e.EventType == types.EventTypeInstData {
+		for dataIndex := range e.Data {
+			curdata := e.Data[dataIndex].CurData.(map[string]interface{})
+			predata := e.Data[dataIndex].PreData.(map[string]interface{})
+			if checkDifferent(curdata, predata, diffFields...) {
+				hostIdentify := types.DistInst{
+					EventInst: *e,
+				}
+				hostIdentify.Data = nil
+				hostIdentify.EventType = types.EventTypeRelation
+				hostIdentify.ObjType = "hostidentifier"
+
+				count := 0
+				identifiers := GetIdentifierCache().getCache(e.ObjType, curdata[common.BKAppIDField].(int))
+				total := len(identifiers)
+				// pack identifiers into 1 distribution to prevent send too many messages
+				for ident := range identifiers {
+					count++
+					d := types.EventData{PreData: *ident}
+					for _, field := range diffFields {
+						ident.Set(field, curdata[field])
+					}
+					d.CurData = *ident
+					hostIdentify.Data = append(hostIdentify.Data, d)
+					// each group is divided into 1000 units in order to limit the message size
+					if count%1000 == 0 || count == total {
+						ds = append(ds, hostIdentify)
+						hostIdentify.Data = nil
+					}
+				}
+			}
+		}
+	} else if e.EventType == types.EventTypeRelation && distinst.ObjType == "moduletransfer" {
+
+	}
+
+	return ds
+}
+
+func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
+	for _, field := range fields {
+		if curdata[field] != predata[field] {
+			return true
+		}
+	}
+	return false
+}
+
+func GetIdentifierCache() *HostIdenCache {
+	return &HostIdenCache{}
 }
 
 func pushToQueue(key, value string) (err error) {
