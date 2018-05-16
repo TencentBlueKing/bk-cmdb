@@ -180,7 +180,14 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 		condition[common.BKOwnerIDField] = ownerID
 		condition[common.BKAppIDField] = appID
 		if processName, ok := condition["bk_process_name"]; ok {
-			condition["bk_process_name"] = map[string]interface{}{common.BKDBLIKE: processName}
+			processNameStr, ok := processName.(string)
+			if ok {
+				condition["bk_process_name"] = map[string]interface{}{common.BKDBLIKE: params.SpeceialCharChange(processNameStr)}
+
+			} else {
+				condition["bk_process_name"] = map[string]interface{}{common.BKDBLIKE: processName}
+
+			}
 		}
 		page := js.Page
 		searchParams := make(map[string]interface{})
