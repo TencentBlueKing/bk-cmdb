@@ -30,14 +30,16 @@
                                         <i :class="item.value"></i>
                                     </li>
                                 </ul>
-                                <ul class="clearfix pagination bk-page bk-page-compact bk-page-small">
-                                    <li v-for="page in icon.totalPage"
-                                    class="page-item" :class="{'cur-page': icon.curPage === page}"
-                                    @click="icon.curPage = page"
-                                    >
-                                        <a class="page-button">{{page}}</a>
-                                    </li>
-                                </ul>
+                                <div class="page-wrapper">
+                                    <ul class="clearfix page">
+                                        <li v-for="page in icon.totalPage"
+                                        class="page-item" :class="{'cur-page': icon.curPage === page}"
+                                        @click="icon.curPage = page"
+                                        >
+                                            {{page}}
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -533,12 +535,31 @@
                         }
                     }
                 }
-                .pagination{
-                    margin-top: 10px;
+                .page-wrapper {
+                    text-align: center;
+                }
+                .page{
+                    display: inline-block;
+                    margin-top: 15px;
                     li{
                         text-align: center;
                         float: left;
+                        margin-right: 5px;
+                        width: 24px;
+                        height: 20px;
+                        border-radius: 2px;
+                        font-size: 12px;
                         cursor: pointer;
+                        color: #c3cdd7;
+                        border: 1px solid #c3cdd7;
+                        &.cur-page{
+                            color: #fff;
+                            background: #3c96ff;
+                            border-color: #3c96ff;
+                        }
+                        &:last-child{
+                            margin: 0;
+                        }
                     }
                 }
             }

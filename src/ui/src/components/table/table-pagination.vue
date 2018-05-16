@@ -1,8 +1,8 @@
 <template>
     <div class="table-pagination clearfix">
         <div class="pagination-info fl">
-            <span class="mr20" v-if="hasCheckbox">{{$tc("Common['已选N行']", checked.length, {N: checked.length})}}</span>
-            <span class="mr20">{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
+            <span class="mr10" v-if="hasCheckbox">{{$tc("Common['已选N行']", checked.length, {N: checked.length})}}</span>
+            <span class="mr10">{{$tc('Common[\'页码\']', pagination.current, {current: pagination.current, total: totalPage})}}</span>
             <i18n path="Common['每页显示']">
                 <div ref="paginationSize" place="page"
                     :class="['pagination-size', {'active': isShowSizeSetting}]"
@@ -133,12 +133,12 @@
         display: inline-block;
         vertical-align: middle;
         position: relative;
-        width: 60px;
+        width: 54px;
         height: 24px;
         line-height: 22px;
         border: 1px solid #c3cdd7;
         border-radius: 2px;
-        padding: 0 25px 0 10px;
+        padding: 0 25px 0 6px;
         background-color: #fff;
         color: $textColor;
         font-size: 14px;
