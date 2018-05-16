@@ -171,6 +171,7 @@
         },
         methods: {
             closeSliderConfirm () {
+                this.slider.tab.module.bkProcessId = null
                 this.slider.isCloseConfirmShow = this.$refs.attribute.isCloseConfirmShow()
             },
             getEnumCell (data, property) {
