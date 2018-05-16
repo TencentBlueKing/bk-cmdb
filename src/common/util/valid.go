@@ -69,7 +69,7 @@ func IsAssocateProperty(propertyType string) bool {
 	return false
 }
 
-// IsStrProperty  is Assocate property
+// IsStrProperty  is string property
 func IsStrProperty(propertyType string) bool {
 	if common.FieldTypeLongChar == propertyType || common.FieldTypeSingleChar == propertyType {
 		return true
