@@ -5,7 +5,7 @@
             <div class="classify-container" v-show="display.type === 'classification'">
                 <ul class="classify-list">
                     <li class="classify-item" v-for="(classification, index) in sortedClassifications" :key="index">
-                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isClassificationNavigated(classification)}]" @click.stop="toggleClassifyNavVisible(classification)"></i>
+                        <i :class="['icon-cc-star', {navigated: isClassificationNavigated(classification)}]" @click.stop="toggleClassifyNavVisible(classification)"></i>
                         <div class="classify-info-layout" @click="showModels(classification)">
                             <span class="classify-info">
                                 <i :class="['classify-info-icon', classification['bk_classification_icon']]"></i>
@@ -39,7 +39,7 @@
                     <router-link exact class="model-item" v-for="(model, index) in sortedDisplayModels"
                         :key="index"
                         :to="`/organization/${model['bk_obj_id']}`">
-                        <i :class="['bk-icon', 'icon-star-shape', {navigated: isModelNavigated(model)}]" @click.stop.prevent="toggleModelNavVisible(model)"></i>
+                        <i :class="['icon-cc-star', {navigated: isModelNavigated(model)}]" @click.stop.prevent="toggleModelNavVisible(model)"></i>
                         <div class="model-name-layout fl">
                             <span class="model-name">
                                 <h3 class="model-name-text">{{model['bk_obj_name']}}</h3>
@@ -174,11 +174,11 @@
         overflow: hidden;
         background: #fff url(../../common/images/index-bg.png) center bottom no-repeat;
     }
-    .bk-icon.icon-star-shape{
+    .icon-cc-star{
         position: absolute;
         top: 7px;
         right: 13px;
-        font-size: 16px;
+        font-size: 18px;
         color: #5f95de;
         cursor: pointer;
         &.navigated{
