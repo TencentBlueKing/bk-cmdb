@@ -94,6 +94,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	//operator log
 	var logConents []auditoplog.AuditLogExt
 	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
+	filterFields := []string{common.CreateTimeField}
 	for index, host := range hostInfos {
 		if nil == host {
 			continue
@@ -105,7 +106,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			continue
 		}
 
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
+		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, filterFields, forward, errHandle)
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, ok := hostMap[key]
 
@@ -177,7 +178,6 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 				host[common.BKCloudIDField] = iSubArea
 			}
 
-			host[common.CreateTimeField] = ts
 			//补充未填写字段的默认值
 			for _, field := range defaultFields {
 				_, ok := host[field.PropertyID]
@@ -186,7 +186,9 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 					host[field.PropertyID] = ""
 				}
 			}
+
 			_, err = valid.ValidMap(host, common.ValidCreate, 0)
+			host[common.CreateTimeField] = ts
 
 			if nil != err {
 				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
