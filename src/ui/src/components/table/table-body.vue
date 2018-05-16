@@ -131,6 +131,9 @@
         border-spacing: 0;
         table-layout: fixed;
         tr {
+            &:hover{
+                background-color: #f1f7ff;
+            }
             td {
                 height: 40px;
                 padding: 6px 16px;
