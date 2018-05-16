@@ -691,3 +691,25 @@ const (
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
 const SystemTableName = "cc_System"
+
+// GetInstIDField ObjID-->instID mapping
+func GetInstIDField(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKAppIDField
+	case BKInnerObjIDSet:
+		return BKSetIDField
+	case BKInnerObjIDModule:
+		return BKModuleIDField
+	case BKInnerObjIDHost:
+		return BKHostIDField
+	case BKInnerObjIDProc:
+		return BKProcIDField
+	case BKInnerObjIDPlat:
+		return BKCloudIDField
+	case BKINnerObjIDObject:
+		return BKObjIDField
+	default:
+		return BKObjIDField
+	}
+}

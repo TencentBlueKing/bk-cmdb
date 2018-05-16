@@ -146,7 +146,7 @@ func handleInst(event *types.EventInstCtx) (err error) {
 }
 
 var hostIndentDiffFiels = map[string][]string{
-	common.BKAppNameField:     {common.BKAppNameField},
+	common.BKInnerObjIDApp:    {common.BKAppNameField},
 	common.BKInnerObjIDSet:    {common.BKSetNameField, "bk_service_status", "bk_set_env"},
 	common.BKInnerObjIDModule: {common.BKModuleNameField},
 	common.BKInnerObjIDPlat:   {common.BKCloudNameField},
