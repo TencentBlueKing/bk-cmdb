@@ -20,6 +20,7 @@
     position: relative;
     
     .bk-dropdown-trigger {
+        cursor: pointer;
         .bk-icon {
             transition: all ease 0.2s;
             &.icon-flip {
@@ -49,6 +50,15 @@
             display: inline-block;
             overflow: auto;
             height: auto;
+            &::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+                &-thumb {
+                    border-radius: 20px;
+                    background: #a5a5a5;
+                    box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+                }
+            }
         }
 
         &.left-align {

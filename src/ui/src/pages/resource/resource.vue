@@ -323,11 +323,8 @@
     .icon-btn{
         width: 36px;
         padding: 0;
-    }
-    .del-button{
-        &:hover{
-            border: 1px solid #ef4c4c;
-            background: #fff;
+        &:not(:disabled):hover{
+            border-color: #ef4c4c;
             .icon-cc-del{
                 color: #ef4c4c;
             }

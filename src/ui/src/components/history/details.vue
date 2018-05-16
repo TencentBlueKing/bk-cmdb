@@ -13,17 +13,17 @@
                 :loading="loadingAttribute"
                 :sortable="false"
                 :width="width? width : 700"
-                :height="height ? height : 0"
                 :wrapperMinusHeight="300"
                 :header="tableHeader"
                 :list="tableList"
                 :rowBorder="true"
-                :colBorder="true">
-                <template slot="pre_data" slot-scope="{item}">
-                    <div v-html="item['pre_data']"></div>
+                :colBorder="true"
+                v-bind="height ? {height} : {}">
+                <template slot="pre_data" slot-scope="{item}" v-html="item['pre_data']">
+                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['pre_data']"></div>
                 </template>
                 <template slot="cur_data" slot-scope="{item}">
-                    <div v-html="item['cur_data']"></div>
+                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
         </template>
@@ -54,7 +54,7 @@
                     optionKey: 'biz'
                 }, {
                     label: 'OperationAudit[\'IP\']',
-                    key: 'bk_host_innerip'
+                    key: 'ext_key'
                 }, {
                     label: 'OperationAudit[\'类型\']',
                     key: 'op_type',
@@ -191,6 +191,12 @@
                     return value
                 }
                 return null
+            },
+            hasChanged (item) {
+                if ([2, 100].includes(this.details['op_type'])) {
+                    return item['pre_data'] !== item['cur_data']
+                }
+                return false
             }
         }
     }
@@ -227,6 +233,16 @@
             padding-left: 4px;
             color: #333948;
             width: 220px;
+        }
+    }
+    .details-data{
+        min-height: 100%;
+        width: calc(100% + 32px);
+        padding: 6px 16px;
+        margin: 0 0 0 -16px;
+        white-space: normal;
+        &.has-changed{
+            background-color: #e9faf0;
         }
     }
 </style>
