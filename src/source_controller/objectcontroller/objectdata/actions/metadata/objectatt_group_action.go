@@ -243,33 +243,35 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 		blog.Debug("property group is %s", string(val))
 
 		// decode the data struct
-		propertyGroupObjectAtt := propertyGroupObjectAtt{}
-		jsErr := json.Unmarshal(val, &propertyGroupObjectAtt)
+		propertyGroupObjectAttArr := make([]propertyGroupObjectAtt, 0)
+		jsErr := json.Unmarshal(val, &propertyGroupObjectAttArr)
 		if nil != jsErr {
 			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		blog.Debug("property group object att, %+v", propertyGroupObjectAtt)
+		blog.Debug("property group object att, %+v", propertyGroupObjectAttArr)
 
-		// update the object attributes
-		objectAttSelector := map[string]interface{}{
-			common.BKOwnerIDField:    propertyGroupObjectAtt.Condition.OwnerID,
-			common.BKObjIDField:      propertyGroupObjectAtt.Condition.ObjectID,
-			common.BKPropertyIDField: propertyGroupObjectAtt.Condition.PropertyID,
+		for _, objAtt := range propertyGroupObjectAttArr {
+
+			// update the object attributes
+			objectAttSelector := map[string]interface{}{
+				common.BKOwnerIDField:    objAtt.Condition.OwnerID,
+				common.BKObjIDField:      objAtt.Condition.ObjectID,
+				common.BKPropertyIDField: objAtt.Condition.PropertyID,
+			}
+
+			objectAttValue := metadata.ObjectAttDes{
+				PropertyIndex: objAtt.Data.PropertyIndex,
+				PropertyGroup: objAtt.Data.PropertyGroupID,
+			}
+
+			// update the object attribute
+			if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjAttDes, objectAttValue, objectAttSelector); nil != updateerr {
+				blog.Error("fail update object by condition, error:%v", updateerr.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectPropertyGroupUpdateFailed)
+			}
 		}
-
-		objectAttValue := metadata.ObjectAttDes{
-			PropertyIndex: propertyGroupObjectAtt.Data.PropertyIndex,
-			PropertyGroup: propertyGroupObjectAtt.Data.PropertyGroupID,
-		}
-
-		// update the object attribute
-		if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjAttDes, objectAttValue, objectAttSelector); nil != updateerr {
-			blog.Error("fail update object by condition, error:%v", updateerr.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectPropertyGroupUpdateFailed)
-		}
-
 		return http.StatusOK, nil, nil
 	}, resp)
 }
