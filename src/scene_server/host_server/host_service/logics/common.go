@@ -19,8 +19,6 @@ import (
 	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -101,23 +99,4 @@ func GetObjectFields(forward *sourceAPI.ForwardParam, ownerID, objID, ObjAddr, s
 		}
 	}
 	return atts, nil
-}
-
-// ConvByPropertytype convert str to property type
-func ConvByPropertytype(fields *sourceAPI.ObjAttDes, val string) (interface{}, error) {
-	switch fields.PropertyType {
-	case common.FieldTypeInt:
-		return util.GetIntByInterface(val)
-	case common.FieldTypeBool:
-		val := strings.ToLower(val)
-		switch val {
-		case "true":
-			return true, nil
-		case "false":
-			return false, nil
-		default:
-			return false, fmt.Errorf("%s not bool", val)
-		}
-	}
-	return val, nil
 }

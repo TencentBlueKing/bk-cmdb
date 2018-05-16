@@ -117,8 +117,8 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 }
 
 // InitInstFromData get assocate object instance data, return map[row]error,  error
-func (a *AsstObjectInst) InitInstFromData(hostInfos map[int]map[string]interface{}) (map[int]error, error) {
-	rowErr := a.getAsstObjectConds(hostInfos)
+func (a *AsstObjectInst) InitInstFromData(infos map[int]map[string]interface{}) (map[int]error, error) {
+	rowErr := a.getAsstObjectConds(infos)
 	if 0 != len(rowErr) {
 		return rowErr, nil
 	}
@@ -273,12 +273,12 @@ func (a *AsstObjectInst) getInstData(url, method string, params interface{}) (bo
 }
 
 // getAsstObjectConds get all  assocatie field object condition
-func (a *AsstObjectInst) getAsstObjectConds(Infos map[int]map[string]interface{}) map[int]error {
+func (a *AsstObjectInst) getAsstObjectConds(infos map[int]map[string]interface{}) map[int]error {
 
 	errs := make(map[int]error, 0)
 	asstMap := make(map[string][]interface{}) //map[AssociationID][]condition
 
-	for rowIndex, host := range Infos {
+	for rowIndex, host := range infos {
 		for key, val := range host {
 			f, ok := a.fields[key]
 			if false == ok {
