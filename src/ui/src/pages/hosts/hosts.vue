@@ -69,7 +69,7 @@
                             </button>
                         </form>
                         <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
-                        <button class="bk-button button-setting" @click="setTableField">
+                        <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
                         </button>
                         <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
@@ -84,7 +84,6 @@
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :checked.sync="table.chooseId"
                 :loading="table.isLoading || outerLoading"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setTableCurrentPage"
@@ -93,7 +92,7 @@
                 @handleCheckAll="getAllHostID"
                 @handleRowClick="showHostAttribute">
                     <template v-for="({id,name, property}, index) in table.tableHeader" :slot="id" slot-scope="{ item }">
-                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                        <label v-if="id === 'bk_host_id'" style="width:100%;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
                             <input type="checkbox"
                                 :value="item['host']['bk_host_id']" 
                                 v-model="table.chooseId">

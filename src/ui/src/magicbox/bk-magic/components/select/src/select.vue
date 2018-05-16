@@ -204,6 +204,9 @@
 
                 index > -1 && this.localOptions.splice(index, 1)
             },
+            updateOption (optIndex, opt) {
+                this.localOptions.splice(optIndex, 1, opt)
+            },
             // 点击选项后的handler
             optionClickHandlder (child, index) {
                 let multipleArr = []

@@ -124,7 +124,7 @@
             },
             rowBorder: {
                 type: Boolean,
-                default: false
+                default: true
             },
             colBorder: {
                 type: Boolean,
