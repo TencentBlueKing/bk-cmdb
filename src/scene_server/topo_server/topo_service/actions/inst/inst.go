@@ -417,12 +417,12 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				if common.InputTypeExcel == inputType {
 					err, ok := rowErr[colIDx] //import instance assocate property fields has error
 					if true == ok {
-						rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, err.Error()))
+						rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
 						continue
 					} else {
 						err := assObjectInt.SetObjAsstPropertyVal(colInput)
 						if nil != err {
-							rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, err.Error()))
+							rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
 						}
 					}
 
@@ -431,10 +431,10 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				if _, _, isUpdate, rstErr := createFunc(forward, req, defErr, colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
 					if !isUpdate {
 						blog.Debug("failed to create inst, error info is %s", rstErr.Error())
-						rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
+						rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, rstErr.Error()))
 					} else {
 						blog.Debug("failed to update inst, error info is %s", rstErr.Error())
-						rsts.UpdateErrors = append(rsts.UpdateErrors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
+						rsts.UpdateErrors = append(rsts.UpdateErrors, defLang.Languagef("import_row_int_error_str", colIDx, rstErr.Error()))
 					}
 
 				} else {

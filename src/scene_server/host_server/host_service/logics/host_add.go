@@ -112,8 +112,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		//生产日志
 		if ok {
 			if err, ok := rowErr[index]; true == ok {
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
-				fmt.Println("ok1", fmt.Sprintf("%d行%s", index, err.Error()))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error())) //fmt.Sprintf("%d行%s", index, err.Error()))
 				continue
 			}
 			//delete(host, common.BKCloudIDField)
@@ -122,7 +121,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			err := assObjectInt.SetObjAsstPropertyVal(host)
 			if nil != err {
 				blog.Error("host assocate property error %d %s", index, err)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 
 				continue
 			}
@@ -133,8 +132,8 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
 			if nil != err {
 				blog.Error("host valid error %v %v", index, err)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
-				fmt.Println("assObjectInt valid", fmt.Sprintf("%d行%s", index, err.Error()))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+				fmt.Println("assObjectInt valid", langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 
 				continue
 			}
@@ -142,7 +141,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			err = scenecommon.UpdateInstAssociation(ObjAddr, req, hostID, ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
 			if nil != err {
 				blog.Error("update host asst attr error : %v", err)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, innerIP))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 				continue
 			}
 			//prepare the log
@@ -164,13 +163,13 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		} else {
 			if err, ok := rowErr[index]; true == ok {
-				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 				continue
 			}
 			err := assObjectInt.SetObjAsstPropertyVal(host)
 			if nil != err {
 				blog.Error("host assocate property error %v %v", index, err)
-				updateErrMsg = append(updateErrMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 				continue
 			}
 			_, ok := host[common.BKCloudIDField]
@@ -190,7 +189,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			_, err = valid.ValidMap(host, common.ValidCreate, 0)
 
 			if nil != err {
-				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, err.Error()))
+				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 				continue
 			}
 
@@ -212,7 +211,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			err = scenecommon.CreateInstAssociation(ObjAddr, req, hostAsstData)
 			if nil != err {
 				blog.Error("add host asst attr error : %v", err)
-				errMsg = append(errMsg, fmt.Sprintf("%d行%s", index, innerIP))
+				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 				continue
 			}
 
@@ -296,7 +295,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 		for _, field := range defaultFields {
 			_, ok := host[field.PropertyID]
 			if !ok {
-				if common.FieldTypeLongChar == field.PropertyType || common.FieldTypeSingleChar == field.PropertyType {
+				if true == util.IsStrProperty(field.PropertyType) {
 					host[field.PropertyID] = ""
 				} else {
 					host[field.PropertyID] = nil
