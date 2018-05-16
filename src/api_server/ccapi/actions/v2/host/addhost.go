@@ -84,7 +84,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	err = converter.ResToV2ForEnterIP(rspV3)
 	if err != nil {
 		blog.Error("convert addhost result to v2 error:%s, reply:%s", err.Error(), rspV3)
-		converter.RespFailV2(common.CCErrAddHostToModuleFailStr, defErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error()).Error(), resp)
+		converter.RespFailV2(common.CCErrAddHostToModuleFailStr, err.Error(), resp)
 		return
 	}
 	converter.RespSuccessV2("", resp)
