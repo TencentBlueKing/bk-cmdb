@@ -2,7 +2,7 @@
     "Common": {
         "logo": "en",
         "您没有当前业务的权限": "You do not have permission to the current business",
-        "页码": "Page {current} / Total {total} pages",
+        "页码": "{count} rows total　Page {current} / {total}",
         "每页显示": "{page} rows per page",
         "每页显示XXX行": "XXX rows per page",
         "首页": "First",
@@ -82,7 +82,8 @@
         "复制": "Copy",
         "复制成功": "Copy Success",
         "复制失败": "Copy Fail",
-        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?"
+        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
+        "内容不合法": "Illegal content"
     },
     "Index": {
         "首页": "Index",
@@ -107,7 +108,6 @@
         "时间": "Time",
         "类型": "Type",
         "操作时间": "Operation Time",
-        "类型": "Type",
         "全部": "All",
         "IP": "IP",
         "操作详情": "Operation Details",

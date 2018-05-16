@@ -20,12 +20,12 @@
                             <span>{{$t("ModelManagement['导出']")}}</span>
                         </button>
                     </form>
-                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.create && unauthorized.update">
+                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.update">
                         <i class="icon-cc-import"></i>
                         <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
                 </template>
-                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.create">{{$t("Inst['立即创建']")}}</button>
+                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
             <div class="fr btn-group">
                 <button class="bk-button setting" @click="filing.isShow = true" :title="$t('Common[\'查看删除历史\']')">
@@ -47,7 +47,7 @@
                     </bk-select>
                 </div>
                 <template v-if="filter.type === 'enum'">
-                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter" :showClear="true">
                         <bk-select-option v-for="option in getEnumOptions()"
                             :key="option.id"
                             :value="option.id"
@@ -56,7 +56,7 @@
                     </bk-select>
                 </template>
                 <template v-else>
-                    <input v-if="filter.type === 'int'" type="text" class="bk-form-input search-text int" 
+                    <input v-if="filter.type === 'int'" type="text" maxlength="11" class="bk-form-input search-text int" 
                     :placeholder="$t('Common[\'快速查询\']')" v-model.number="filter.value" @keyup.enter="doFilter">
                     <input v-else type="text" class="bk-form-input search-text" :placeholder="$t('Common[\'快速查询\']')" v-model.trim="filter.value" @keyup.enter="doFilter">
                     <i class="bk-icon icon-search" @click="doFilter"></i>
@@ -99,7 +99,8 @@
                             <v-object-attr 
                                 ref="attribute"
                                 :formFields="attr.formFields" 
-                                :formValues="attr.formValues" 
+                                :formValues="attr.formValues"
+                                :showDelete="isShowDelete"
                                 :type="attr.type"
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
@@ -246,6 +247,9 @@
                 })
                 return objName
             },
+            isShowDelete () {
+                return !(this.objId === 'biz' && this.attr.formValues['bk_biz_name'] === '蓝鲸')
+            },
             // 表格查询需要的参数
             axiosConfig () {
                 let config = {
@@ -285,7 +289,7 @@
                         } else {
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
-                                operator: '$regex',
+                                operator: this.filter.type === 'enum' ? '$eq' : '$regex',
                                 value: this.filter.value
                             }]
                         }
@@ -527,7 +531,7 @@
                         info: []
                     }
                     if (res.result) {
-                        data.count = res.data.count
+                        data.count = res.data.count || 0
                         data.info = res.data.info || []
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
@@ -627,6 +631,7 @@
                     if (res.result) {
                         this.setTablePage(1)
                         this.closeObjectSlider()
+                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }

@@ -28,6 +28,7 @@ import (
 	restful "github.com/emicklei/go-restful"
 )
 
+// 进程:功能:port
 var prc2port = []string{"job_java:java:8008,8443", "uwsgi:uwsgi:8000,8001,8003,8004",
 	"paas_agent:paas_agent:4245", "common_mysql:mysqld:3306", "common_redis:redis-server:6379", "redis_cluster:redis-server:16379,6379",
 	"zk_java:java:2181", "kafka_java:java:9092", "es_java:java:9300,10004", "beam.smp:beam.smp:15672,5672,25672",
@@ -36,39 +37,41 @@ var prc2port = []string{"job_java:java:8008,8443", "uwsgi:uwsgi:8000,8001,8003,8
 	"gse_api:gse_api:59313,50002", "gse_task:gse_task:48668,48669,48671,48329", "gse_transit:gse_transit:58625", "gse_proc:gse_proc:52023,52025",
 	"gse_btsvr:gse_btsvr:10020,58930,58925", "gse_ops:gse_ops:58725,58726", "gse_alarm:gse_alarm:53425", "gse_agent:gse_agent:60020,34334,36510",
 	"license_server:license_server:443", "consul:consul:8301,8300,8302,8500,53",
-	"cmdb_adminserver:cc_migrate:32004",
-	"cmdb_apiserver:cc_apiserver:33031",
-	"cmdb_auditcontroller:cc_auditcontroller:31004",
-	"cmdb_datacollection:cc_datacollection:32006",
-	"cmdb_eventserver:cc_eventserver:32005",
-	"cmdb_hostcontroller:cc_hostcontroller:31002",
-	"cmdb_hostserver:cc_host:32001",
-	"cmdb_objectcontroller:cc_objectcontroller:31001",
-	"cmdb_proccontroller:cc_proccontroller:31003",
-	"cmdb_procserver:cc_proc:32003",
-	"cmdb_toposerver:cc_topo:32002",
-	"cmdb_webserver:cc_webserver:33083"}
+	"cmdb_adminserver:adminserver:32004",
+	"cmdb_apiserver:apiserver:33031",
+	"cmdb_auditcontroller:auditcontroller:31004",
+	"cmdb_datacollection:datacollection:32006",
+	"cmdb_eventserver:eventserver:32005",
+	"cmdb_hostcontroller:hostcontroller:31002",
+	"cmdb_hostserver:hostserver:32001",
+	"cmdb_objectcontroller:objectcontroller:31001",
+	"cmdb_proccontroller:proccontroller:31003",
+	"cmdb_procserver:procserver:32003",
+	"cmdb_toposerver:toposerver:32002",
+	"cmdb_webserver:webserver:33083"}
 
+// 集群:模块:进程
 var setModuleKv = map[string]map[string]string{"作业平台": {"job": "job_java"},
 	"配置平台": {
-		"cc_migrate":          "cmdb_adminserver",
-		"cc_apiserver":        "cmdb_apiserver",
-		"cc_auditcontroller":  "cmdb_auditcontroller",
-		"cc_datacollection":   "cmdb_datacollection",
-		"cc_eventserver":      "cmdb_eventserver",
-		"cc_hostcontroller":   "cmdb_hostcontroller",
-		"cc_host":             "cmdb_hostserver",
-		"cc_objectcontroller": "cmdb_objectcontroller",
-		"cc_proccontroller":   "cmdb_proccontroller",
-		"cc_proc":             "cmdb_procserver",
-		"cc_topo":             "cmdb_toposerver",
-		"cc_webserver":        "cmdb_webserver"},
+		"adminserver":      "cmdb_adminserver",
+		"apiserver":        "cmdb_apiserver",
+		"auditcontroller":  "cmdb_auditcontroller",
+		"datacollection":   "cmdb_datacollection",
+		"eventserver":      "cmdb_eventserver",
+		"hostcontroller":   "cmdb_hostcontroller",
+		"hostserver":       "cmdb_hostserver",
+		"objectcontroller": "cmdb_objectcontroller",
+		"proccontroller":   "cmdb_proccontroller",
+		"procserver":       "cmdb_procserver",
+		"toposerver":       "cmdb_toposerver",
+		"webserver":        "cmdb_webserver",
+	},
 	"管控平台":   {"gse_api": "gse_api", "gse_data": "gse_data", "gse_dba": "gse_dba", "gse_task": "gse_task", "gse_transit": "gse_transit", "gse_proc": "gse_proc", "gse_btsvr": "gse_btsvr", "gse_ops": "gse_ops", "gse_opts": "", "gse_alarm": "gse_alarm", "gse_agent": "gse_agent", "license": "license_server"},
 	"故障自愈":   {"fta": "fta_py"},
 	"数据服务模块": {"dataapi": "dataapi_py", "databus": "databus_java", "monitor": "monitor_py"},
 	"公共组件": {"mysql": "common_mysql", "redis": "common_redis", "redis_cluster": "redis_cluster", "zookeeper": "zk_java", "kafka": "kafka_java", "elasticsearch": "es_java",
-		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul"},
-	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi"},
+		"rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul", "mongodb": "mongodb"},
+	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi", "appo": "paas_agent", "appt": "paas_agent"},
 }
 
 var appID int = 0
@@ -189,10 +192,25 @@ func addBKProcess(req *restful.Request) error {
 		procName := procArr[0]
 		funcName := procArr[1]
 		portStr := procArr[2]
+		var protocal string
+		if len(procArr) > 3 {
+			protocal = procArr[3]
+		}
 		procModelData[common.BKProcNameField] = procName
 		procModelData[common.BKFuncName] = funcName
 		procModelData[common.BKPort] = portStr
 		procModelData[common.BKWorkPath] = "/data/bkee"
+
+		protocal = strings.ToLower(protocal)
+		switch protocal {
+		case "udp":
+			procModelData[common.BKProtocol] = "2"
+		case "tcp":
+			procModelData[common.BKProtocol] = "1"
+		default:
+			procModelData[common.BKProtocol] = "1"
+		}
+
 		byteParams, _ := json.Marshal(procModelData)
 		url := procAPI + "/process/v1/" + ownerID + "/" + appIDStr
 		blog.Info("migrate add process url :%s", url)

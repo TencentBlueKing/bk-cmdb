@@ -2,7 +2,7 @@
     <div class="topo-wrapper clearfix">
         <div class="topo-tree-ctn fl">
             <div class="biz-selector-ctn">
-                <v-application-selector :selected.sync="tree.bkBizId"></v-application-selector>
+                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected"></v-application-selector>
             </div>
             <div class="topo-options-ctn" hidden>
                 <i class="topo-option-del icon-cc-del fr" v-if="isShowOptionDel && Object.keys(tree.treeData).length" @click="deleteNode"></i>
@@ -25,7 +25,7 @@
                         :outerParams="searchParams"
                         :isShowRefresh="true"
                         :outerLoading="tree.loading"
-                        :isShowCrossImport="false && attributeBkObjId === 'module'"
+                        :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
@@ -40,6 +40,7 @@
                         :type="view.attribute.type"
                         :active="view.tab.active === 'attribute'"
                         :isLoading="view.attribute.isLoading"
+                        :editable="tree.bkBizName !== '蓝鲸'"
                         @submit="submitNode"
                         @delete="deleteNode"
                         @cancel="cancelCreate"></v-attribute>
@@ -68,6 +69,7 @@
             return {
                 tree: {
                     bkBizId: -1,
+                    bkBizName: '',
                     treeData: {},
                     model: [],
                     activeNode: {},
@@ -94,6 +96,7 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            ...mapGetters('navigation', ['authority']),
             /* 获取当前属性表单对应的属性obj_id */
             attributeBkObjId () {
                 let bkObjId
@@ -171,6 +174,9 @@
             }
         },
         methods: {
+            handleBizSelected (data) {
+                this.tree.bkBizName = data.label
+            },
             /* 获取最大展开层级 */
             getLevel (node) {
                 let level = node.level
@@ -533,6 +539,7 @@
             width: 280px;
             height: 100%;
             border-right: 1px solid #e7e9ef;
+            background: #fafbfd;
         }
         .topo-view-ctn{
             height: 100%;

@@ -31,7 +31,7 @@
         </slot>
         <div class="table-container">
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
-                <bk-dropdown-menu ref="dropdown" class="mr10">
+                <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
                         <span>{{$t('Common["复制"]')}}</span>
                         <i :class="['bk-icon icon-angle-down',{'icon-flip': isDropdownShow}]"></i>
@@ -84,8 +84,8 @@
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :checked.sync="table.chooseId"
                 :loading="table.isLoading || outerLoading"
+                :checked="table.chooseId"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
@@ -93,7 +93,7 @@
                 @handleCheckAll="getAllHostID"
                 @handleRowClick="showHostAttribute">
                     <template v-for="({id,name, property}, index) in table.tableHeader" :slot="id" slot-scope="{ item }">
-                        <label v-if="id === 'bk_host_id'" style="width: 50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                        <label v-if="id === 'bk_host_id'" style="width:100%;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
                             <input type="checkbox"
                                 :value="item['host']['bk_host_id']" 
                                 v-model="table.chooseId">
@@ -1018,7 +1018,7 @@
     overflow: hidden;
     .dropdown-btn{
         width: 100px;
-        cursor: default;
+        cursor: pointer;
     }
     .btn-group{
         display: inline-block;

@@ -25,7 +25,7 @@
                         :property="getTableFieldProperty(rowIndex)"
                         :value="item['pre_data']">
                     </v-table-field>
-                    <div v-else v-html="item['pre_data']"></div>
+                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-else v-html="item['pre_data']"></div>
                 </template>
                 <template slot="cur_data" slot-scope="{item, rowIndex, colIndex, layout}">
                     <v-table-field class="history-details-table-field" v-if="isTableField(rowIndex)"
@@ -33,7 +33,7 @@
                         :property="getTableFieldProperty(rowIndex)"
                         :value="item['cur_data']">
                     </v-table-field>
-                    <div v-else v-html="item['cur_data']"></div>
+                    <div v-else :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
         </template>
@@ -66,7 +66,7 @@
                     optionKey: 'biz'
                 }, {
                     label: 'OperationAudit[\'IP\']',
-                    key: 'bk_host_innerip'
+                    key: 'ext_key'
                 }, {
                     label: 'OperationAudit[\'类型\']',
                     key: 'op_type',
@@ -216,6 +216,12 @@
             },
             getTableFieldProperty (rowIndex) {
                 return (this.attribute[this.objId] || [])[rowIndex] || {}
+            },
+            hasChanged (item) {
+                if ([2, 100].includes(this.details['op_type'])) {
+                    return item['pre_data'] !== item['cur_data']
+                }
+                return false
             }
         }
     }
@@ -256,6 +262,16 @@
     }
     .history-details-table-field{
         margin-left: -16px;
+    }
+    .details-data{
+        min-height: 100%;
+        width: calc(100% + 32px);
+        padding: 6px 16px;
+        margin: 0 0 0 -16px;
+        white-space: normal;
+        &.has-changed{
+            background-color: #e9faf0;
+        }
     }
 </style>
 <style lang="scss">

@@ -6,22 +6,15 @@
         <tbody v-show="table.list.length">
             <tr v-for="(item, rowIndex) in table.list" :key="rowIndex" @click="handleRowClick(item, rowIndex)">
                 <template v-for="(head, colIndex) in table.header">
-                    <td v-if="head.type === 'checkbox'" @click.stop :key="colIndex">
-                        <data-content class="data-content checkbox-content"
-                            v-if="table.$scopedSlots[head[table.valueKey]]"
-                            :item="item"
-                            :head="head"
-                            :layout="layout"
-                            :rowIndex="rowIndex">
-                        </data-content>
-                        <label v-else class="bk-form-checkbox bk-checkbox-small" :for="getCheckboxId(head, rowIndex)">
+                    <td v-if="head.type === 'checkbox' && !table.$scopedSlots[head[table.valueKey]]" class="data-content checkbox-content" @click.stop :key="colIndex">
+                        <label class="bk-form-checkbox bk-checkbox-small" :for="getCheckboxId(head, rowIndex)">
                             <input type="checkbox"
                                 :id="getCheckboxId(head, rowIndex)"
                                 :checked="checked.indexOf(item[head[table.valueKey]]) !== -1"
                                 @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
-                    <td is="data-content" class="data-content" v-else
+                    <td is="data-content" :class="['data-content', {'checkbox-content': head.type === 'checkbox'}]" v-else
                         :key="colIndex"
                         :item="item"
                         :head="head"
@@ -34,7 +27,11 @@
         </tbody>
         <tbody v-if="!table.list.length">
             <tr>
-                <td is="data-empty" class="data-empty" :colspan="table.header.length" align="center" :style="{height: emptyHeight}" :layout="layout"></td>
+                <td is="data-empty" class="data-empty" align="center"
+                    :colspan="table.header.length"
+                    :style="{height: emptyHeight}" 
+                    :layout="layout">
+                </td>
             </tr>
         </tbody>
     </table>
@@ -137,6 +134,9 @@
         border-spacing: 0;
         table-layout: fixed;
         tr {
+            &:hover{
+                background-color: #f1f7ff;
+            }
             td {
                 height: 40px;
                 cursor: pointer;
@@ -195,6 +195,7 @@
         font-size: 12px;
         @include ellipsis;
         &.checkbox-content{
+            padding: 0;
             height: 100%;
         }
     }

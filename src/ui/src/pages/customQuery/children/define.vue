@@ -73,7 +73,7 @@
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
-                        <input type="text" class="userapi-text fl"
+                        <input type="text" maxlength="11" class="userapi-text fl"
                             v-if="property.bkPropertyType === 'int'" 
                             v-model.number="property.value">
                         <input v-else type="text" class="userapi-text fl"
@@ -125,7 +125,7 @@
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
-        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams"></v-preview>
+        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
     </div>
 </template>
 <script>
@@ -188,6 +188,11 @@
                 isPropertiesShow: false, // 自定义条件下拉列表展示与否
                 isPreviewShow: false, // 显示预览
                 object: {
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: []
+                    },
                     'host': {
                         id: 'host',
                         name: this.$t("Hosts['主机']"),
@@ -265,10 +270,17 @@
                             value: property.value === 'true'
                         })
                     } else {
+                        let operator = property.operator
+                        let value = property.value
+                        // 多模块与多集群查询
+                        if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
+                            operator = operator === '$regex' ? '$in' : operator
+                            value = value.replace('，', ',').split(',')
+                        }
                         param['condition'].push({
                             field: property.bkPropertyId,
-                            operator: property.operator,
-                            value: property.value
+                            operator: operator,
+                            value: value
                         })
                     }
                 })
@@ -366,8 +378,9 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                this.$Axios.all([this.getObjectProperty('biz'), this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
+                .then(this.$Axios.spread((bizRes, hostRes, setRes, moduleRes) => {
+                    this.object['biz']['properties'] = bizRes.result ? bizRes.data : []
                     this.object['host']['properties'] = hostRes.result ? hostRes.data : []
                     this.object['set']['properties'] = setRes.result ? setRes.data : []
                     this.object['module']['properties'] = moduleRes.result ? moduleRes.data : []

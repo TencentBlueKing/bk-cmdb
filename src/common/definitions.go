@@ -88,6 +88,21 @@ const (
 
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
+
+	// BKInnerObjIDSwitch the inner object
+	BKInnerObjIDSwitch = "bk_switch"
+	// BKInnerObjIDRouter the inner object
+	BKInnerObjIDRouter = "bk_router"
+	// BKInnerObjIDBlance the inner object
+	BKInnerObjIDBlance = "bk_load_balance"
+	// BKInnerObjIDFirewall the inner object
+	BKInnerObjIDFirewall = "bk_firewall"
+	// BKInnerObjIDWeblogic the inner object
+	BKInnerObjIDWeblogic = "bk_weblogic"
+	// BKInnerObjIDTomcat the inner object
+	BKInnerObjIDTomcat = "bk_tomcat"
+	// BKInnerObjIDApache the inner object
+	BKInnerObjIDApache = "bk_apache"
 )
 
 // Revision
@@ -382,6 +397,9 @@ const (
 
 	// BKDescriptionField the description field
 	BKDescriptionField = "description"
+
+	// BKIsOnlyField the isonly name field
+	BKIsOnlyField = "isonly"
 )
 
 // DefaultResSetName the inner module set
@@ -626,3 +644,8 @@ const (
 	MaxInt    = int(MaxUint >> 1)
 	MinInt    = -MaxInt - 1
 )
+
+//flag
+const HostCrossBizField = "hostcrossbiz"
+const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
+const SystemTableName = "cc_System"

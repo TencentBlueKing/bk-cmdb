@@ -21,8 +21,9 @@ import (
 	"net/http"
 
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 func init() {
@@ -58,10 +59,13 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")
 		}
 		//get default biz
-		appID, err := logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, "bk_biz_id", m.CC.ObjCtrl(), defLang)
+		var appID = data.ApplicationID
+		if 0 == appID {
+			appID, err = logics.GetDefaultAppIDBySupplierID(req, data.SupplierID, common.BKAppIDField, m.CC.ObjCtrl(), defLang)
 
-		if 0 == appID || nil != err {
-			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultAppName)
+			if nil != err {
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultAppName)
+			}
 		}
 
 		//get empty set

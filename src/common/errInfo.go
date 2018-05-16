@@ -223,23 +223,25 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
-	CCErrTopoAppDeleteFailed                = 1001031
-	CCErrTopoAppUpdateFailed                = 1001032
-	CCErrTopoAppSearchFailed                = 1001033
-	CCErrTopoAppCreateFailed                = 1001034
-	CCErrTopoForbiddenToDeleteModelFailed   = 1001035
-	CCErrTopoMainlineCreatFailed            = 1001037
-	CCErrTopoMainlineDeleteFailed           = 1001038
-	CCErrTopoMainlineSelectFailed           = 1001039
-	CCErrTopoTopoSelectFailed               = 1001040
-	CCErrTopoUserGroupCreateFailed          = 1001041
-	CCErrTopoUserGroupDeleteFailed          = 1001042
-	CCErrTopoUserGroupUpdateFailed          = 1001043
-	CCErrTopoUserGroupSelectFailed          = 1001044
-	CCErrTopoUserGroupPrivilegeUpdateFailed = 1001045
-	CCErrTopoUserGroupPrivilegeSelectFailed = 1001046
-	CCErrTopoUserPrivilegeSelectFailed      = 1001047
-	CCErrTopoRolePrivilegeCreateFailed      = 1001048
+	CCErrTopoAppDeleteFailed                       = 1001031
+	CCErrTopoAppUpdateFailed                       = 1001032
+	CCErrTopoAppSearchFailed                       = 1001033
+	CCErrTopoAppCreateFailed                       = 1001034
+	CCErrTopoForbiddenToDeleteModelFailed          = 1001035
+	CCErrTopoMainlineCreatFailed                   = 1001037
+	CCErrTopoMainlineDeleteFailed                  = 1001038
+	CCErrTopoMainlineSelectFailed                  = 1001039
+	CCErrTopoTopoSelectFailed                      = 1001040
+	CCErrTopoUserGroupCreateFailed                 = 1001041
+	CCErrTopoUserGroupDeleteFailed                 = 1001042
+	CCErrTopoUserGroupUpdateFailed                 = 1001043
+	CCErrTopoUserGroupSelectFailed                 = 1001044
+	CCErrTopoUserGroupPrivilegeUpdateFailed        = 1001045
+	CCErrTopoUserGroupPrivilegeSelectFailed        = 1001046
+	CCErrTopoUserPrivilegeSelectFailed             = 1001047
+	CCErrTopoRolePrivilegeCreateFailed             = 1001048
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
+	CCErrHostNotAllowedToMutiBiz                   = 1001050
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

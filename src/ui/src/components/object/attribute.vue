@@ -19,13 +19,13 @@
                         <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
                             <li :class="['attribute-item', property['bk_property_type']]" v-if="!property['bk_isapi']" :key="propertyIndex">
                                 <template v-if="property['bk_property_type'] === 'bool'">
-                                    <span class="attribute-item-label">{{property['bk_property_name']}}</span>
+                                    <span class="attribute-item-label" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                     <span class="attribute-item-value bk-form-checkbox">
                                         <input type="checkbox" :checked="getFieldValue(property)" disabled>
                                     </span>
                                 </template>
                                 <template v-else-if="property['bk_property_type'] === 'list'">
-                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
+                                    <span class="attribute-item-label has-colon" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                     <v-table-field
                                         :width="700"
                                         :property="property"
@@ -34,7 +34,7 @@
                                     </v-table-field>
                                 </template>
                                 <template v-else>
-                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
+                                    <span class="attribute-item-label has-colon" :title="property['bk_property_name']">{{property['bk_property_name']}} :</span>
                                     <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
                                 </template>
                             </li>
@@ -152,7 +152,7 @@
                 <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.create">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>
@@ -525,7 +525,9 @@
                     bk_property_type: bkPropertyType,
                     editable
                 } = property
-                if (this.isMultipleUpdate && bkPropertyType !== 'bool') {
+                if (bkPropertyId === 'bk_biz_name' && this.formValues[bkPropertyId] === '蓝鲸') {
+                    return true
+                } else if (this.isMultipleUpdate && bkPropertyType !== 'bool') {
                     return !this.multipleEditableFields[bkPropertyId]
                 } else if (this.type === 'create') {
                     return false
@@ -656,21 +658,30 @@
                 width: 100%;
             }
             .attribute-item-label{
-                width: 100px;
-                // color: #737987;
-                color: #6b7baa;
+                width: 116px;
+                color: #737987;
+                // color: #6b7baa;
                 text-align: right;
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 margin-right: 10px;
+                padding-right: 6px;
+                position: relative;
+                &.has-colon:after{
+                    content: ":";
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    line-height: 14px;
+                }
             }
             .attribute-item-value{
-                max-width: 230px;
+                max-width: 250px;
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                color: #4d597d;
+                color: #333948;
             }
             .attribute-item-value.bk-form-checkbox{
                 padding: 0;
@@ -719,6 +730,7 @@
                 width: 310px;
                 white-space: normal;
                 position: relative;
+                color: #333948;
                 .bk-date{
                     width: 100%;
                 }
