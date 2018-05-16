@@ -509,7 +509,9 @@
                     bk_property_type: bkPropertyType,
                     editable
                 } = property
-                if (this.isMultipleUpdate && bkPropertyType !== 'bool') {
+                if (bkPropertyId === 'bk_biz_name' && this.formValues[bkPropertyId] === '蓝鲸') {
+                    return true
+                } else if (this.isMultipleUpdate && bkPropertyType !== 'bool') {
                     return !this.multipleEditableFields[bkPropertyId]
                 } else if (this.type === 'create') {
                     return false

@@ -99,7 +99,8 @@
                             <v-object-attr 
                                 ref="attribute"
                                 :formFields="attr.formFields" 
-                                :formValues="attr.formValues" 
+                                :formValues="attr.formValues"
+                                :showDelete="isShowDelete"
                                 :type="attr.type"
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
@@ -245,6 +246,9 @@
                     })
                 })
                 return objName
+            },
+            isShowDelete () {
+                return !(this.objId === 'biz' && this.attr.formValues['bk_biz_name'] === '蓝鲸')
             },
             // 表格查询需要的参数
             axiosConfig () {
