@@ -52,7 +52,6 @@
                                 :quick-select="false"
                                 :range-separator="'-'"
                                 :align="'right'"
-                                :timer="column['bk_property_type'] === 'time'"
                                 :initDate="localQueryColumnData[column['bk_property_id']]['value'].join(' - ')"
                                 @change="setQueryDate(...arguments, column)">
                             </bk-daterangepicker>
@@ -79,7 +78,7 @@
                             </template>
                             <!-- 判断输入类型 -->
                             <template v-if="column['bk_property_type'] === 'int'">
-                                <input type="text" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
+                                <input type="text" maxlength="11" class="bk-form-input screening-group-item-value" v-model.number="localQueryColumnData[column['bk_property_id']]['value']">
                             </template>
                             <template v-else-if="column['bk_property_type'] === 'objuser'">
                                 <v-member-selector class="screening-group-item-value"
@@ -248,12 +247,12 @@
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$gte',
-                                value: column.value[0]
+                                value: `${column.value[0]} 00:00:00`
                             })
                             condition.condition.push({
                                 field: column.field,
                                 operator: '$lte',
-                                value: column.value[1]
+                                value: `${column.value[1]} 23:59:59`
                             })
                         }
                     }

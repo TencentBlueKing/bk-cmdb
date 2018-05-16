@@ -49,7 +49,7 @@
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
-            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content"></v-history-details>
+            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content" :height="300" :width="635"></v-history-details>
         </div>
     </div>
 </template>

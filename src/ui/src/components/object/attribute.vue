@@ -137,7 +137,7 @@
                 <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.create">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>

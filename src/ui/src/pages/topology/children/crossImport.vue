@@ -205,6 +205,13 @@
                     return this.$formatTime(value, 'YYYY-MM-DD')
                 } else if (bkPropertyType === 'time') {
                     return this.$formatTime(value)
+                } else if (bkPropertyType === 'enum') {
+                    let opt = property.option.find(({id}) => {
+                        return id === value
+                    })
+                    if (opt) {
+                        return opt.name
+                    }
                 } else {
                     return value
                 }

@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
@@ -189,6 +190,12 @@ func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAt
 		return 0, fmt.Errorf("'%s' is the built-in property", obj.PropertyID)
 	}
 
+	err := util.ValidPropertyOption(obj.PropertyType, obj.Option)
+	if nil != err {
+		blog.Errorf("'%s' %s", obj.PropertyID, err.Error())
+		return 0, fmt.Errorf("'%s' %s", obj.PropertyID, err.Error())
+	}
+
 	// check objid
 	checkObjCond := make(map[string]interface{})
 	checkObjCond[common.BKOwnerIDField] = obj.OwnerID
@@ -285,6 +292,10 @@ func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAt
 		asstID = id
 	}
 
+	//primary key must be required
+	if true == obj.IsOnly {
+		obj.IsRequired = true
+	}
 	val, _ := json.Marshal(obj)
 	rst, rstErr := cli.objcli.CreateMetaObjectAtt(forward, val)
 	if nil != rstErr && 0 != asstID {
@@ -421,6 +432,11 @@ func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, v
 	}
 	if fieldValue, ok := obj["option"]; ok {
 		objAtt["option"] = fieldValue
+		err := util.ValidPropertyOption(itemObj.PropertyType, fieldValue)
+		if nil != err {
+			blog.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
+			return fmt.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
+		}
 	}
 	if fieldValue, ok := obj["creator"]; ok {
 		objAtt["creator"] = fieldValue
@@ -445,6 +461,11 @@ func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, v
 	}
 	if fieldValue, ok := obj["isonly"]; ok {
 		objAtt["isonly"] = fieldValue
+
+		//primary key is required
+		if true == fieldValue {
+			objAtt["isrequired"] = true
+		}
 	}
 	if fieldValue, ok := obj["bk_property_type"]; ok {
 		objAtt["bk_property_type"] = fieldValue

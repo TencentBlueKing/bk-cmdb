@@ -18,7 +18,7 @@ export default {
         ...mapGetters(['isAdmin']),
         ...mapGetters('navigation', ['authority', 'authorizedNavigation']),
         unauthorized () {
-            let fullAuthority = ['search', 'create', 'update', 'delete']
+            let fullAuthority = ['search', 'update', 'delete']
             let fullAuthorityClassification = ['bk_host_manage', 'bk_back_config', 'bk_index']
             let authorized = []
             if (this.isAdmin) {
@@ -42,7 +42,6 @@ export default {
             }
             return {
                 search: authorized.indexOf('search') === -1,
-                create: authorized.indexOf('create') === -1,
                 update: authorized.indexOf('update') === -1,
                 delete: authorized.indexOf('delete') === -1
             }
