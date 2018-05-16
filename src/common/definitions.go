@@ -525,7 +525,7 @@ const (
 	// ExcelHeaderFirstRowColor cell bg color
 	ExcelHeaderFirstRowColor = "FF92D050"
 	// ExcelHeaderFirstRowFontColor  font color
-	ExcelHeaderFirstRowFontColor = "FF000000"
+	ExcelHeaderFirstRowFontColor = "00000000"
 	// ExcelHeaderFirstRowRequireFontColor require font color
 	ExcelHeaderFirstRowRequireFontColor = "FFFF0000"
 	// ExcelHeaderOtherRowColor cell bg color
@@ -542,6 +542,9 @@ const (
 
 	// ExcelDelAsstObjectRelation delete asst object relation
 	ExcelDelAsstObjectRelation = "/"
+
+	// ExcelDataValidationListLen excel dropdown list item count
+	ExcelDataValidationListLen = 50
 )
 
 const (
