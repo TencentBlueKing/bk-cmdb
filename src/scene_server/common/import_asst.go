@@ -278,8 +278,8 @@ func (a *AsstObjectInst) getAsstObjectConds(infos map[int]map[string]interface{}
 	errs := make(map[int]error, 0)
 	asstMap := make(map[string][]interface{}) //map[AssociationID][]condition
 
-	for rowIndex, host := range infos {
-		for key, val := range host {
+	for rowIndex, info := range infos {
+		for key, val := range info {
 			f, ok := a.fields[key]
 			if false == ok {
 				continue
