@@ -109,18 +109,10 @@
                             </v-object-attr>
                         </bk-tabpanel>
                         <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attr.type==='update'">
-                            <template v-if="objId!=='biz'">
-                                <v-relevance :isShow="tab.activeName==='relevance'" style="padding: 30px 0;"
-                                    :objId="objId"
-                                    :ObjectID="attr.formValues['bk_inst_id']"
-                                ></v-relevance>
-                            </template>
-                            <template v-else>
-                                <v-relevance :isShow="tab.activeName==='relevance'" style="padding: 30px 0;"
-                                    :objId="objId"
-                                    :ObjectID="attr.formValues['bk_biz_id']"
-                                ></v-relevance>
-                            </template>
+                            <v-relevance :isShow="tab.activeName==='relevance'"
+                                :objId="objId"
+                                :ObjectID="objId !== 'biz' ? attr.formValues['bk_inst_id'] : attr.formValues['bk_biz_id']">
+                            </v-relevance>
                         </bk-tabpanel>
                         <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
                             <v-history :active="tab.activeName === 'history'" :type="objId" :instId="objId === 'biz' ? attr.formValues['bk_biz_id'] : attr.formValues['bk_inst_id']"></v-history>
