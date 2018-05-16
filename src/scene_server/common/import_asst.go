@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/util"
 	sceneUtil "configcenter/src/scene_server/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
-	"configcenter/src/source_controller/common/commondata"
+	//"configcenter/src/source_controller/common/commondata"
 )
 
 // AsstObjectInst  instances assocate object fields value
@@ -91,7 +91,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 
 		if util.IsAssocateProperty(f.PropertyType) {
 			strInsts, _ := val.(string)
-			if common.ExcelDelAsstObjectRelation == strings.Trim(strInsts, "\n ") {
+			if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strInsts) {
 				inst[key] = ""
 				continue
 			}
@@ -101,6 +101,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 			}
 			insts := strings.Split(strInsts, common.ExcelAsstPrimaryKeyRowChar)
 			for _, inst := range insts {
+				inst = strings.TrimSpace(inst)
 				if "" == inst {
 					continue
 				}
@@ -108,7 +109,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 				if nil != err {
 					return err
 				}
-				strIds = append(strIds, fmt.Sprintf("%v", id))
+				strIds = append(strIds, fmt.Sprintf("%d", id))
 			}
 			inst[key] = strings.Join(strIds, common.InstAsstIDSplit)
 		}
@@ -164,8 +165,8 @@ func (a *AsstObjectInst) getAsstInstByAsstObjectConds() error {
 			continue
 		}
 		searchObjID := objID
-		_, ok := commondata.ObjTableMap[objID]
-		if false == ok {
+
+		if util.IsInnerObject(objID) {
 			searchObjID = common.BKINnerObjIDObject
 		}
 
@@ -298,7 +299,7 @@ func (a *AsstObjectInst) getAsstObjectConds(infos map[int]map[string]interface{}
 					continue
 				}
 
-				if common.ExcelDelAsstObjectRelation == strings.Trim(strVal, "\n ") {
+				if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strVal) {
 					continue
 				}
 				rows := strings.Split(strVal, common.ExcelAsstPrimaryKeyRowChar)
