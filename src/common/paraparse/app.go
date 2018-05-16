@@ -63,9 +63,9 @@ func ParseCommonParams(input []interface{}, output map[string]interface{}) error
 			case reflect.Float32:
 				output[field] = value
 			default:
-				d := make(map[string]interface{})
-				d[common.BKDBLIKE] = value
-				output[field] = d
+				//d := make(map[string]interface{})
+				//d[common.BKDBLIKE] = value
+				output[field] = value
 			}
 
 		default:
