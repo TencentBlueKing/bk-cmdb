@@ -644,3 +644,8 @@ const (
 	MaxInt    = int(MaxUint >> 1)
 	MinInt    = -MaxInt - 1
 )
+
+//flag
+const HostCrossBizField = "hostcrossbiz"
+const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
+const SystemTableName = "cc_System"
