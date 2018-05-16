@@ -31,7 +31,7 @@
         </slot>
         <div class="table-container">
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
-                <bk-dropdown-menu ref="dropdown" class="mr10">
+                <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
                         <span>{{$t('Common["复制"]')}}</span>
                         <i :class="['bk-icon icon-angle-down',{'icon-flip': isDropdownShow}]"></i>
@@ -85,6 +85,7 @@
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
                 :loading="table.isLoading || outerLoading"
+                :checked="table.chooseId"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
@@ -1015,7 +1016,7 @@
     overflow: hidden;
     .dropdown-btn{
         width: 100px;
-        cursor: default;
+        cursor: pointer;
     }
     .btn-group{
         display: inline-block;

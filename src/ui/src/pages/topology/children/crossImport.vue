@@ -206,12 +206,8 @@
                 } else if (bkPropertyType === 'time') {
                     return this.$formatTime(value)
                 } else if (bkPropertyType === 'enum') {
-                    let opt = property.option.find(({id}) => {
-                        return id === value
-                    })
-                    if (opt) {
-                        return opt.name
-                    }
+                    const option = (Array.isArray(property.option) ? property.option : []).find(({id}) => id === value)
+                    return option ? option.name : ''
                 } else {
                     return value
                 }
