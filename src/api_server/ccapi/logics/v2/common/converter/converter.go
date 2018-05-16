@@ -117,7 +117,12 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 		return nil, err
 	}
 
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
+	resMapDataInfoV3, ok := resDataV3.(map[string]interface{})
+	var resDataInfoV3 []interface{}
+	if true == ok {
+		resDataInfoV3, _ = resMapDataInfoV3["info"].([]interface{})
+
+	}
 
 	for _, roleStr := range roleArr {
 

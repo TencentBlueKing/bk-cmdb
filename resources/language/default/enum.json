@@ -25,5 +25,21 @@
     "process_property_bind_ip_enum_4": "第一外网IP",
     "process_property_protocol_enum_1": "TCP",
     "process_property_protocol_enum_2": "UDP",
+
+    "bk_switch_property_protocol_enum_1": "待运营",
+    "bk_switch_property_protocol_enum_2": "运营中",
+    "bk_switch_property_protocol_enum_3": "已下架",
+
+    "bk_router_property_protocol_enum_1": "待运营",
+    "bk_router_property_protocol_enum_2": "运营中",
+    "bk_router_property_protocol_enum_3": "已下架",
+
+    "bk_load_balance_property_protocol_enum_1": "待运营",
+    "bk_load_balance_property_protocol_enum_2": "运营中",
+    "bk_load_balance_property_protocol_enum_3": "已下架",
+
+    "bk_firewall_property_protocol_enum_1": "待运营",
+    "bk_firewall_property_protocol_enum_2": "运营中",
+    "bk_firewall_property_protocol_enum_3": "已下架",
     "": ""
 }

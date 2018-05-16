@@ -153,6 +153,8 @@
                 } else {
                     this.calcPageList(middlePage - pageSize)
                 }
+                this.$emit('update:curPage', this.renderList[Math.ceil(this.renderList.length / 2)])
+                this.$emit('page-change', this.renderList[Math.ceil(this.renderList.length / 2)])
             },
             /**
              *  点击右侧...按钮
@@ -167,6 +169,8 @@
                 } else {
                     this.calcPageList(middlePage + pageSize)
                 }
+                this.$emit('update:curPage', this.renderList[Math.ceil(this.renderList.length / 2)])
+                this.$emit('page-change', this.renderList[Math.ceil(this.renderList.length / 2)])
             },
             // 上一页
             prevPage () {

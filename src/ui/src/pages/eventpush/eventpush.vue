@@ -14,31 +14,34 @@
             <bk-button type="primary" @click="addPush">{{$t('EventPush["新增推送"]')}}</bk-button>
         </div>
         <v-table
-            :tableHeader="table.header"
-            :tableList="table.list"
+            :header="table.header"
+            :list="table.list"
             :defaultSort="table.defaultSort"
             :pagination="table.pagination"
-            :isLoading="table.isLoading"
-            @handlePageTurning="setCurrentPage"
-            @handlePageSizeChange="setCurrentSize"
-            @handleTableSortClick="setCurrentSort">
-                <td slot="statistics" slot-scope="{ item }">
+            :loading="table.isLoading"
+            :wrapperMinusHeight="150"
+            @handlePageChange="setCurrentPage"
+            @handleSizeChange="setCurrentSize"
+            @handleSortChange="setCurrentSort">
+                <template slot="statistics" slot-scope="{ item }">
                     <i class="circle" :class="[{'danger':item.statistics.failure},{'success':!item.statistics.failure}]"></i>
                     {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
-                </td>
-                <td slot="setting" slot-scope="{ item }">
-                    <i class="icon-cc-edit mr20" @click="editEvent(item)"></i>
-                    <i class="icon-cc-del" @click="delConfirm(item)"></i>
-                </td>
+                </template>
+                <template slot="setting" slot-scope="{ item }">
+                    <i class="icon-cc-edit mr20" @click.stop="editEvent(item)"></i>
+                    <i class="icon-cc-del" @click.stop="delConfirm(item)"></i>
+                </template>
         </v-table>
         <v-sideslider
             :title="sliderTitle"
-            :isShow.sync="isSliderShow"
-            :hasQuickClose="true"
-            @closeSlider="closeSlider"
+            :isShow.sync="slider.isShow"
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="slider.isCloseConfirmShow"
+            @closeSlider="closeSliderConfirm"
         >
             <v-push-detail
-                :isShow="isSliderShow"
+                ref="detail"
+                :isShow="slider.isShow"
                 :type="operationType"
                 :curEvent="curEvent"
                 @saveSuccess="saveSuccess"
@@ -59,7 +62,10 @@
             return {
                 curEvent: {},
                 operationType: '',              // 当前事件推送操作类型  add/edit
-                isSliderShow: false,            // 弹窗状态
+                slider: {
+                    isShow: false,            // 弹窗状态
+                    isCloseConfirmShow: false
+                },
                 sliderTitle: {
                     text: '',
                     icon: 'icon-cc-edit'
@@ -164,7 +170,7 @@
             */
             editEvent (item) {
                 this.curEvent = {...item}
-                this.isSliderShow = true
+                this.slider.isShow = true
                 this.operationType = 'edit'
                 this.sliderTitle.text = this.$t('EventPush["编辑推送"]')
             },
@@ -213,14 +219,14 @@
             */
             addPush () {
                 this.operationType = 'add'
-                this.isSliderShow = true
+                this.slider.isShow = true
                 this.sliderTitle.text = this.$t('EventPush["新增推送"]')
             },
-            /*
-                关闭推送弹窗
-            */
             closeSlider () {
-                this.isSliderShow = false
+                this.slider.isShow = false
+            },
+            closeSliderConfirm () {
+                this.slider.isCloseConfirmShow = this.$refs.detail.isCloseConfirmShow()
             },
             setCurrentPage (current) {
                 this.table.pagination.current = current
