@@ -261,9 +261,9 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 				common.BKPropertyIDField: objAtt.Condition.PropertyID,
 			}
 
-			objectAttValue := metadata.ObjectAttDes{
-				PropertyIndex: objAtt.Data.PropertyIndex,
-				PropertyGroup: objAtt.Data.PropertyGroupID,
+			objectAttValue := map[string]interface{}{
+				"bk_property_index": objAtt.Data.PropertyIndex,
+				"bk_property_group": objAtt.Data.PropertyGroupID,
 			}
 
 			// update the object attribute
