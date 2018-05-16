@@ -65,21 +65,26 @@
         </div>
         <div class="table-contain">
             <v-object-table
-                :tableHeader="table.header" 
-                :tableList="table.list" 
+                :header="table.header" 
+                :list="table.list" 
                 :pagination="table.pagination"
                 :defaultSort="table.defaultSort"
-                :chooseId.sync="table.chooseId"
+                :checked.sync="table.chooseId"
+                :wrapperMinusHeight="150"
                 @handleRowClick="editObject"
-                @handleTableSortClick="setTableSort"
-                @handlePageTurning="setTablePage"
-                @handlePageSizeChange="setTableSize"
-                @handleTableAllCheck="getAllObjectId">
-                    <template v-for="({property,id,name}, index) in table.header" :slot="id" slot-scope="{ item }" 
-                    v-if="(property.hasOwnProperty('bk_asst_obj_id') && property['bk_asst_obj_id'] !== '') || property['bk_property_type'] === 'enum'">
-                        <td v-if="property['bk_property_type'] === 'enum'">{{getEnumCell(item[id], property)}}</td>
-                        <td v-else>{{getAssociateCell(item[id])}}</td>
+                @handleSortChange="setTableSort"
+                @handlePageChange="setTablePage"
+                @handleSizeChange="setTableSize"
+                @handleCheckAll="getAllObjectId">
+                <template v-for="({property, id}, index) in table.header.filter(head => head.type !== 'checkbox')" :slot="id" slot-scope="{item}">
+                    <template v-if="!!property['bk_asst_obj_id']">
+                        {{getAssociateCell(item[id])}}
                     </template>
+                    <template v-else-if="property['bk_property_type'] === 'enum'">
+                        {{getEnumCell(item[id], property)}}
+                    </template>
+                    <template v-else>{{item[id]}}</template>
+                </template>
             </v-object-table>
             <v-sideslider
                 :isShow.sync="slider.isShow"
@@ -99,6 +104,7 @@
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
                                 :isBatchUpdate="false"
+                                @closeSlider="closeObjectSlider"
                                 @submit="saveObjectAttr"
                                 @delete="confirmDelete">
                             </v-object-attr>
@@ -492,6 +498,7 @@
                             headerLead.unshift({
                                 id: 'bk_inst_id',
                                 name: 'ID',
+                                width: 50,
                                 type: 'checkbox',
                                 property: {}
                             })

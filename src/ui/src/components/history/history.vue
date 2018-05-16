@@ -32,14 +32,15 @@
         </div>
         <div class="history-table">
             <v-table
-                :isLoading="table.isLoading" 
-                :tableHeader="table.header" 
-                :tableList="table.list" 
+                :loading="table.isLoading" 
+                :header="table.header" 
+                :list="table.list" 
                 :pagination="table.pagination" 
                 :defaultSort="table.defaultSort"
-                @handleTableSortClick="setTableSort"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setPageSize"
+                :wrapperMinusHeight="250"
+                @handleSortChange="setTableSort"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setPageSize"
                 @handleRowClick="showDetails">
             </v-table>
         </div>

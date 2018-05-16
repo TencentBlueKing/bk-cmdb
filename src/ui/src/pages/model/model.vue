@@ -143,7 +143,7 @@
                         :isNewField="isNewField"
                         ></v-layout>
                     </bk-tabpanel>
-                    <bk-tabpanel name="layout2" :title="'字段分组2'" :show="curModel.type==='change'">
+                    <bk-tabpanel name="layout2" title="字段分组2" :show="curModel.type==='change'">
                         <v-layout2 ref="layout2"
                         :isShow="curTabName==='layout2'"
                         :activeModel="curModel"

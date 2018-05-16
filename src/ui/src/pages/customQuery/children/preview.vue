@@ -14,13 +14,17 @@
             <h3 class="preview-title">{{$t("CustomQuery['测试']")}}</h3>
             <v-table class="preview-table"
                 :sortable="false"
-                :tableHeader="table.header"
-                :tableList="table.list"
+                :header="table.header"
+                :list="table.list"
                 :pagination="table.pagination"
-                :isLoading="table.isLoading"
-                :maxHeight="table.maxHeight"
-                @handlePageTurning="setCurrentPage"
-                @handlePageSizeChange="setCurrentSize">
+                :loading="table.isLoading"
+                :maxHeight="325"
+                :width="515"
+                @handlePageChange="setCurrentPage"
+                @handleSizeChange="setCurrentSize">
+                <template v-for="({id,name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
+                    <template>{{getCellValue(property, item)}}</template>
+                </template>
             </v-table>
             <div class="preview-btn-group">
                 <bk-button type="primary" class="preview-btn-confirm" @click="closePreview">{{$t("Common['确认']")}}</bk-button>
@@ -42,26 +46,40 @@
             apiParams: {
                 type: Object,
                 required: true
+            },
+            attribute: {
+                type: Object,
+                required: true
             }
         },
         data () {
             return {
                 table: {
                     header: [{
+                        objId: 'host',
                         id: 'bk_host_innerip',
-                        name: this.$t("Common['内网IP']")
+                        name: this.$t("Common['内网IP']"),
+                        property: []
                     }, {
+                        objId: 'biz',
                         id: 'bk_biz_name',
-                        name: this.$t("Common['业务']")
+                        name: this.$t("Common['业务']"),
+                        property: []
                     }, {
+                        objId: 'set',
                         id: 'bk_set_name',
-                        name: this.$t("Hosts['集群']")
+                        name: this.$t("Hosts['集群']"),
+                        property: []
                     }, {
+                        objId: 'module',
                         id: 'bk_module_name',
-                        name: this.$t("Hosts['模块']")
+                        name: this.$t("Hosts['模块']"),
+                        property: []
                     }, {
+                        objId: 'host',
                         id: 'bk_cloud_id',
-                        name: this.$t("Hosts['云区域']")
+                        name: this.$t("Hosts['云区域']"),
+                        property: []
                     }],
                     list: [],
                     pagination: {
@@ -69,12 +87,18 @@
                         count: 0,
                         size: 10
                     },
-                    isLoading: false,
-                    maxHeight: 0
+                    isLoading: false
                 }
             }
         },
         computed: {
+            allProperties () {
+                let allProperties = []
+                for (let key in this.attribute) {
+                    allProperties = [...allProperties, ...this.attribute[key].properties]
+                }
+                return allProperties
+            },
             previewFields () {
                 let [, , , hostCondition] = this.apiParams['info']['condition']
                 let fields = []
@@ -110,12 +134,75 @@
             }
         },
         methods: {
+            setTableHeader (columns) {
+                this.table.header.map(header => {
+                    const property = this.getColumnProperty(header['id'], header['objId'])
+                    this.$set(header, 'property', property)
+                })
+            },
+            getColumnProperty (bkPropertyId, bkObjId) {
+                return this.allProperties.find(property => {
+                    return property['bk_property_id'] === bkPropertyId && property['bk_obj_id'] === bkObjId
+                })
+            },
+            getCellValue (property, item) {
+                if (property) {
+                    let bkObjId = property['bk_obj_id']
+                    let value = item[bkObjId][property['bk_property_id']]
+                    if (property['bk_property_id'] === 'bk_module_name') {
+                        let moduleName = []
+                        item.module.map(({bk_module_name: bkModuleName}) => {
+                            moduleName.push(bkModuleName)
+                        })
+                        return moduleName.join(',')
+                    }
+                    if (property['bk_property_id'] === 'bk_set_name') {
+                        let setName = []
+                        item.set.map(({bk_set_name: bksetName}) => {
+                            setName.push(bksetName)
+                        })
+                        return setName.join(',')
+                    }
+                    if (property['bk_property_id'] === 'bk_biz_name') {
+                        let bizName = []
+                        item.biz.map(({bk_biz_name: bkbizName}) => {
+                            bizName.push(bkbizName)
+                        })
+                        return bizName.join(',')
+                    }
+                    if (property['bk_asst_obj_id'] && Array.isArray(value)) {
+                        let tempValue = []
+                        value.map(({bk_inst_name: bkInstName}) => {
+                            if (bkInstName) {
+                                tempValue.push(bkInstName)
+                            }
+                        })
+                        value = tempValue.join(',')
+                    } else if (property['bk_property_type'] === 'date') {
+                        value = this.$formatTime(value, 'YYYY-MM-DD')
+                    } else if (property['bk_property_type'] === 'time') {
+                        value = this.$formatTime(value)
+                    } else if (property['bk_property_type'] === 'enum') {
+                        let option = property.option.find(({id}) => {
+                            return id === value
+                        })
+                        if (option) {
+                            value = option.name
+                        } else {
+                            value = ''
+                        }
+                    }
+                    return value
+                }
+                return ''
+            },
             getPreviewList () {
                 this.table.isLoading = true
                 this.$axios.post('hosts/search', this.previewParams).then(res => {
                     if (res.result) {
                         this.table.pagination.count = res.data.count
-                        this.initTableList(res.data.info)
+                        this.setTableHeader()
+                        this.table.list = res.data.info
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -123,28 +210,6 @@
                 }).catch(() => {
                     this.table.isLoading = false
                 })
-            },
-            initTableList (list) {
-                let tableList = []
-                list.forEach((item, index) => {
-                    let cellItem = {}
-                    this.table.header.map(({id}) => {
-                        Object.keys(item).map(bkObjId => {
-                            if (item[bkObjId].hasOwnProperty(id)) {
-                                let cellValue = item[bkObjId][id]
-                                if (Array.isArray(cellValue)) {
-                                    cellItem[id] = cellValue.map(({bk_inst_name: bkInstName}) => {
-                                        return bkInstName
-                                    }).join(',')
-                                } else {
-                                    cellItem[id] = cellValue
-                                }
-                            }
-                        })
-                    })
-                    tableList.push(cellItem)
-                })
-                this.table.list = tableList
             },
             setCurrentPage (current) {
                 this.table.pagination.current = current
@@ -184,8 +249,7 @@
             margin: 0 40px 15px;
         }
         .preview-table{
-            padding: 0 40px;
-            margin-top: 6px;
+            margin: 6px 40px 0;
         }
         .preview-btn-group{
             text-align: right;
@@ -197,13 +261,21 @@
     }
 </style>
 <style lang="scss">
-    .userapi-preview .preview-table{
-        min-height: auto !important;
-    }
-    .userapi-preview .preview-table .table-scrollbar{
-        max-height: 250px !important;
-    }
-    .userapi-preview .preview-table .min-height-control{
-        min-height: 250px;
+    .preview-table{
+        .table-pagination{
+            padding: 0 6px !important;
+            .bk-page{
+                height: 26px;
+                margin: 8px 0;
+                ul{
+                    height: 26px;
+                }
+                .page-item{
+                    min-width: 26px;
+                    height: 26px;
+                    line-height: 26px;
+                }
+            }
+        }
     }
 </style>
