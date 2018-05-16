@@ -499,6 +499,9 @@ func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
 		blog.Error("params can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
+	if nil == val {
+		return true, nil
+	}
 
 	if reflect.TypeOf(val).Kind() != reflect.Bool {
 		blog.Error("params should be  bool")

@@ -28,10 +28,10 @@
                 <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
             <div class="fr btn-group">
-                <button class="bk-button setting" @click="filing.isShow = true" :title="$t('Common[\'查看删除历史\']')">
+                <button class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
                     <i class="icon-cc-history"></i>
                 </button>
-                <button class="bk-button setting" @click="settingSlider.isShow = true">
+                <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
                 </button>
             </div>
