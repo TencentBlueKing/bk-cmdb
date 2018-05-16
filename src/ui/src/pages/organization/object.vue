@@ -47,7 +47,7 @@
                     </bk-select>
                 </div>
                 <template v-if="filter.type === 'enum'">
-                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter">
+                    <bk-select class="search-options fl" :selected.sync="filter.value" @on-selected="doFilter" :showClear="true">
                         <bk-select-option v-for="option in getEnumOptions()"
                             :key="option.id"
                             :value="option.id"
@@ -285,7 +285,7 @@
                         } else {
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
-                                operator: '$regex',
+                                operator: this.filter.type === 'enum' ? '$eq' : '$regex',
                                 value: this.filter.value
                             }]
                         }
@@ -527,7 +527,7 @@
                         info: []
                     }
                     if (res.result) {
-                        data.count = res.data.count
+                        data.count = res.data.count || 0
                         data.info = res.data.info || []
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
