@@ -92,7 +92,7 @@
                 @handleCheckAll="getAllHostID"
                 @handleRowClick="showHostAttribute">
                     <template v-for="({id,name, property}, index) in table.tableHeader" :slot="id" slot-scope="{ item }">
-                        <label v-if="id === 'bk_host_id'" style="height: 100%;width: 50px;line-height:50px;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
+                        <label v-if="id === 'bk_host_id'" style="width:100%;text-align:center;" class="bk-form-checkbox bk-checkbox-small" @click.stop>
                             <input type="checkbox"
                                 :value="item['host']['bk_host_id']" 
                                 v-model="table.chooseId">
