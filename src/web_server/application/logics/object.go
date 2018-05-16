@@ -102,29 +102,27 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 }
 
 func ConvAttrOption(attrItems map[int]map[string]interface{}) {
-	for _, attr := range attrItems {
-		fieldType, ok := attr[common.BKPropertyTypeField].(string)
-		if false == ok {
-			continue
-		}
+	for index, attr := range attrItems {
+
 		option, ok := attr[common.BKOptionField].(string)
 		if false == ok {
 			continue
 		}
+
 		if "\"\"" == option {
-			attr[common.BKOptionField] = ""
+			option = ""
+			attrItems[index][common.BKOptionField] = option
+			continue
+		}
+		fieldType, _ := attr[common.BKPropertyTypeField].(string)
+		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType {
 			continue
 		}
 
-		switch fieldType {
-		case common.FieldTypeInt:
-			fallthrough
-		case common.FieldTypeEnum:
-			var iOption interface{}
-			err := json.Unmarshal([]byte(option), iOption)
-			if nil == err {
-				attr[common.BKOptionField] = iOption
-			}
+		var iOption interface{}
+		err := json.Unmarshal([]byte(option), &iOption)
+		if nil == err {
+			attrItems[index][common.BKOptionField] = iOption
 		}
 	}
 }

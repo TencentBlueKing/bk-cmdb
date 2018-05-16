@@ -193,17 +193,17 @@
         position: relative;
         .search-keyword{
             width: 100%;
-            height: 54px;
+            height: 44px;
             border-radius: 2px;
             border: solid 1px #c3cdd7;
             padding: 0 56px 0 16px;
-            font-size: 18px;
+            font-size: 16px;
         }
         .icon-search{
             position: absolute;
-            top: 15px;
+            top: 12px;
             right: 16px;
-            font-size: 24px;
+            font-size: 20px;
         }
     }
     .search-list{

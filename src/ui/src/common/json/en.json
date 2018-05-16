@@ -82,7 +82,8 @@
         "复制": "Copy",
         "复制成功": "Copy Success",
         "复制失败": "Copy Fail",
-        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?"
+        "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
+        "内容不合法": "Illegal content"
     },
     "Index": {
         "首页": "Index",
@@ -107,12 +108,12 @@
         "时间": "Time",
         "类型": "Type",
         "操作时间": "Operation Time",
-        "类型": "Type",
         "全部": "All",
         "IP": "IP",
         "操作详情": "Operation Details",
         "变更前": "Before Change",
-        "变更后": "After Change"
+        "变更后": "After Change",
+        "关系变更": "relationship change"
     },
     "EventPush": {
         "事件推送": "Event Push",
@@ -422,7 +423,8 @@
         "清空": "Refresh",
         "主机名称": "Hosts Name",
         "操作系统类型": "Operating System Type",
-        "主机拓扑": "Host Topo"
+        "主机拓扑": "Host Topo",
+        "关联关系": "Association Relationship"
     },
     "Inst": {
         "立即创建": "Add",

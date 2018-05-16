@@ -81,6 +81,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	var logConents []auditoplog.AuditLogExt
 	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
 	for index, host := range hostInfos {
+		var subArea = iSubArea
 		if nil == host {
 			continue
 		}
@@ -90,6 +91,15 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			errMsg = append(errMsg, langHandle.Languagef("host_import_innerip_empty", index))
 			continue
 		}
+
+		_, ok = host[common.BKCloudIDField]
+		if ok {
+			subArea, err = util.GetIntByInterface(host[common.BKCloudIDField])
+			if nil != err {
+				subArea = iSubArea
+			}
+		}
+
 		notExistFields := []string{} //没有赋值的key，不需要校验
 		for key, value := range defaultFields {
 			_, ok := host[key]
@@ -109,7 +119,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, notExistFields, forward, errHandle)
 
-		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
+		key := fmt.Sprintf("%s-%v", innerIP, subArea)
 		iHost, ok := hostMap[key]
 		//生产日志
 		if ok {
@@ -264,6 +274,13 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 				host[key] = val[common.BKDefaultField]
 			}
 		}
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
+		_, err = valid.ValidMap(host, "update", 0)
+
+		if nil != err {
+			return err
+		}
+
 
 		isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 		if !isSuccess {

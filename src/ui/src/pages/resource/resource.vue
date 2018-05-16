@@ -40,12 +40,12 @@
                         <span>{{$t('HostResourcePool[\'导出选中\']')}}</span>
                     </button>
                 </form>
-                <button class="bk-button del-button fl mr10" :disabled="!hasSelectedHost" @click="confirmDel">
+                <button class="bk-button icon-btn del-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
-                    <button class="bk-button del-button fl ml10" @click="showFiling" :title="$t('Common[\'查看删除历史\']')">
+                    <button class="bk-button icon-btn fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">
                         <i class="icon-cc-history"></i>
                     </button>
                 </div>
@@ -320,12 +320,21 @@
     .icon-cc-history{
         font-size: 16px;
     }
-    .del-button{
+    .icon-btn{
         width: 36px;
         padding: 0;
+    }
+    .del-button{
         &:hover{
+            border: 1px solid #ef4c4c;
+            background: #fff;
             .icon-cc-del{
                 color: #ef4c4c;
+            }
+        }
+        &.disabled{
+            .icon-cc-del{
+                color: #ccc;
             }
         }
     }

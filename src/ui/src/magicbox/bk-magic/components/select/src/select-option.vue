@@ -64,6 +64,14 @@
                 set () {}
             }
         },
+        watch: {
+            value (value) {
+                this.$parent.updateOption(this.optIndex, this)
+            },
+            label (label) {
+                this.$parent.updateOption(this.optIndex, this)
+            }
+        },
         methods: {
             optionClick (e) {
                 if (this.disabled || this.isEmptyMark) return
