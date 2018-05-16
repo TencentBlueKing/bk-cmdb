@@ -19,11 +19,11 @@
                         <template v-for="(property, propertyIndex) in bkPropertyGroups[propertyGroup]['properties']">
                             <li class="attribute-item fl" v-if="!property['bk_isapi']" :key="propertyIndex">
                                 <template v-if="property['bk_property_type'] !== 'bool'">
-                                    <span class="attribute-item-label">{{property['bk_property_name']}} :</span>
+                                    <span class="attribute-item-label has-colon" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                     <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
                                 </template>
                                 <template v-else>
-                                    <span class="attribute-item-label">{{property['bk_property_name']}}</span>
+                                    <span class="attribute-item-label" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                     <span class="attribute-item-value bk-form-checkbox">
                                         <input type="checkbox" :checked="getFieldValue(property)" disabled>
                                     </span>
@@ -635,21 +635,30 @@
             margin: 12px 0 0 0;
             white-space: nowrap;
             .attribute-item-label{
-                width: 100px;
-                // color: #737987;
-                color: #6b7baa;
+                width: 116px;
+                color: #737987;
+                // color: #6b7baa;
                 text-align: right;
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 margin-right: 10px;
+                padding-right: 6px;
+                position: relative;
+                &.has-colon:after{
+                    content: ":";
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    line-height: 14px;
+                }
             }
             .attribute-item-value{
-                max-width: 230px;
+                max-width: 250px;
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                color: #4d597d;
+                color: #333948;
             }
             .attribute-item-value.bk-form-checkbox{
                 padding: 0;
@@ -698,6 +707,7 @@
                 width: 310px;
                 white-space: normal;
                 position: relative;
+                color: #333948;
                 .bk-date{
                     width: 100%;
                 }
