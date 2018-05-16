@@ -85,6 +85,7 @@
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
                 :loading="table.isLoading || outerLoading"
+                :checked="table.chooseId"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"

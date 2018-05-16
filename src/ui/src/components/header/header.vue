@@ -51,15 +51,9 @@
             <div class="user-detail-contain fr pr">
                 <div class="dropdown-content-user fl">
                     <div class="select-trigger">
-                        <span class="f14">{{userName}}</span>
+                        <span class="f14">{{isAdmin == 1 ? userName + '（' + $t("Common['管理员']") + '）' : userName}}</span>
                         <i class="bk-icon icon-angle-down"></i>
                         <ul class="select-content">
-                            <li v-if="isAdmin == 1">
-                                <i class="icon-cc-user"></i>{{$t("Common['管理员']")}}
-                            </li>
-                            <li v-else>
-                                <i class="icon-cc-user"></i>{{$t("Common['普通用户']")}}
-                            </li>
                             <li @click="logOut">
                                 <i class="icon-cc-logout"></i>{{$t("Common['注销']")}}
                             </li>
