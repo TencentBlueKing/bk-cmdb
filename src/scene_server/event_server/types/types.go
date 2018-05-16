@@ -13,7 +13,6 @@
 package types
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/types"
 	"encoding/json"
 	"time"
@@ -68,10 +67,14 @@ type EventInst struct {
 	Action      string      `json:"action"`
 	ActionTime  types.Time  `json:"action_time"`
 	ObjType     string      `json:"obj_type"`
-	CurData     interface{} `json:"cur_data"`
-	PreData     interface{} `json:"pre_data"`
+	Data        []EventData `json:"data"`
 	RequestID   string      `json:"request_id"`
 	RequestTime types.Time  `json:"request_time"`
+}
+
+type EventData struct {
+	CurData interface{} `json:"cur_data"`
+	PreData interface{} `json:"pre_data"`
 }
 
 func (e *EventInst) GetType() string {
@@ -79,89 +82,6 @@ func (e *EventInst) GetType() string {
 		return e.ObjType
 	}
 	return e.ObjType + e.Action
-}
-
-func (e *EventInst) GetDistInst() []DistInst {
-	distinst := DistInst{
-		EventInst: *e,
-	}
-	distinst.ID = 0
-	var ds []DistInst
-	var m map[string]interface{}
-	if e.EventType == EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
-		var ok bool
-
-		if e.Action == "delete" {
-			m, ok = e.PreData.(map[string]interface{})
-		} else {
-			m, ok = e.CurData.(map[string]interface{})
-		}
-		if !ok {
-			return nil
-		}
-
-		if m[common.BKObjIDField] != nil {
-			distinst.ObjType = m[common.BKObjIDField].(string)
-		}
-
-	}
-	ds = append(ds, distinst)
-
-	// add new dist if event belong to hostidentifier
-	if e.Action == EventActionUpdate && e.EventType == EventTypeInstData {
-		curdata := e.CurData.(map[string]interface{})
-		predata := e.PreData.(map[string]interface{})
-		switch e.ObjType {
-		case common.BKInnerObjIDApp:
-			if checkDifferent(curdata, predata, common.BKAppNameField) {
-
-			}
-		case common.BKInnerObjIDSet:
-			if checkDifferent(curdata, predata, common.BKSetNameField, "bk_service_status", "bk_set_env") {
-
-			}
-		case common.BKInnerObjIDModule:
-			if checkDifferent(curdata, predata, common.BKModuleNameField) {
-
-			}
-		case common.BKInnerObjIDPlat:
-			if checkDifferent(curdata, predata, common.BKCloudNameField) {
-
-			}
-		case common.BKInnerObjIDHost:
-			if checkDifferent(curdata, predata,
-				common.BKHostNameField,
-				common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
-				common.BKOSTypeField, common.BKOSNameField,
-				"bk_mem", "bk_cpu", "bk_disk",
-			) {
-
-			}
-		}
-	}
-	if e.EventType == EventTypeRelation && distinst.ObjType == "moduletransfer" {
-
-	}
-	hostIdentify := DistInst{
-		EventInst: *e,
-	}
-	hostIdentify.PreData = nil
-	hostIdentify.CurData = nil
-	hostIdentify.EventType = EventTypeRelation
-	hostIdentify.ObjType = "hostidentifier"
-
-	ds = append(ds, hostIdentify)
-
-	return ds
-}
-
-func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
-	for _, field := range fields {
-		if curdata[field] != predata[field] {
-			return true
-		}
-	}
-	return false
 }
 
 type EventInstCtx struct {
