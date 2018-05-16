@@ -15,52 +15,36 @@
 import { mapGetters } from 'vuex'
 export default {
     computed: {
-        ...mapGetters(['navigation'])
-    },
-    data () {
-        return {
-            unauthorized: {
-                search: false,
-                create: true,
-                update: true,
-                delete: true
-            }
-        }
-    },
-    watch: {
-        navigation () {
-            this.setAuthority()
-        },
-        '$route.fullPath' () {
-            this.setAuthority()
-        }
-    },
-    methods: {
-        setAuthority () {
-            let authority = []
-            let navigation = this.navigation
-            let path = this.$route.fullPath
-            for (let navType in navigation) {
-                if (navigation[navType]['authorized']) {
-                    let subNav = navigation[navType]['children']
-                    let isFound = false
-                    for (let i = 0; i < subNav.length; i++) {
-                        if (subNav[i]['path'] === path) {
-                            authority = subNav[i]['authority']
-                            isFound = true
-                            break
-                        }
+        ...mapGetters(['isAdmin']),
+        ...mapGetters('navigation', ['authority', 'authorizedNavigation']),
+        unauthorized () {
+            let fullAuthority = ['search', 'update', 'delete']
+            let fullAuthorityClassification = ['bk_host_manage', 'bk_back_config', 'bk_index']
+            let authorized = []
+            if (this.isAdmin) {
+                authorized = fullAuthority
+            } else {
+                let modelAuthority = this.authority['model_config']
+                let model = null
+                for (let i = 0; i < this.authorizedNavigation.length; i++) {
+                    model = this.authorizedNavigation[i]['children'].find(({path}) => path === this.$route.path)
+                    if (model) {
+                        break
                     }
-                    if (isFound) break
+                }
+                if (model) {
+                    if (fullAuthorityClassification.includes(model['classificationId'])) {
+                        authorized = fullAuthority
+                    } else {
+                        authorized = modelAuthority.hasOwnProperty(model['classificationId']) ? modelAuthority[model['classificationId']][model['id']] : []
+                    }
                 }
             }
-            this.unauthorized.search = authority.indexOf('search') === -1
-            this.unauthorized.create = authority.indexOf('create') === -1
-            this.unauthorized.update = authority.indexOf('update') === -1
-            this.unauthorized.delete = authority.indexOf('delete') === -1
+            return {
+                search: authorized.indexOf('search') === -1,
+                update: authorized.indexOf('update') === -1,
+                delete: authorized.indexOf('delete') === -1
+            }
         }
-    },
-    beforeMount () {
-        this.setAuthority()
     }
 }

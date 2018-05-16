@@ -30,14 +30,13 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/tidwall/gjson"
 
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
@@ -435,7 +434,6 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
 		instID, convErr := strconv.Atoi(req.PathParameter("inst_id"))
-		var uURL string
 		if nil != convErr {
 			blog.Error("the instid[%s], must be int value, error info is %s", req.PathParameter("inst_id"), convErr.Error())
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
@@ -457,11 +455,35 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		parseChildFunc = func(child []manager.TopoInstRst) (int, interface{}, error) {
 
 			for _, instItem := range child {
+				blog.Debug("the inst child:%v", instItem)
 				// store all child inst
-				if 0 == strings.Compare(instItem.ObjID, common.BKInnerObjIDHost) {
-					blog.Warn("can not delete the inst which has the 'host' child")
-					return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoInstHasHostChild)
+				switch instItem.ObjID {
+				case common.BKInnerObjIDModule:
+					// check wether it can be delete
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
+					if nil != rstErr {
+						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+
+					if !rstOk {
+						blog.Error("failed to delete app, because of it has some hosts")
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+				case common.BKInnerObjIDSet:
+					// check wether it can be delete
+					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKSetIDField: []int{instItem.InstID}})
+					if nil != rstErr {
+						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
+
+					if !rstOk {
+						blog.Error("failed to delete app, because of it has some hosts")
+						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					}
 				}
+
 				willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
 				//  if it is the last one, then will try next group
 				if len(instItem.Child) != 0 {
@@ -482,11 +504,6 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
 		}
 		for _, instItem := range topoInstItems {
-
-			if 0 == strings.Compare(instItem.ObjID, common.BKInnerObjIDHost) {
-				blog.Warn("can not delete the inst which has the 'host' child")
-				return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoInstHasHostChild)
-			}
 
 			willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
 			//  if it is the last one, then will try next group
@@ -513,16 +530,9 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			}
 			ids[delItem.instID] = struct{}{}
 			input := make(map[string]interface{})
-			switch delItem.objID {
-			case common.BKInnerObjIDPlat:
-				input[common.BKCloudIDField] = delItem.instID
-				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
-			default:
-				input[common.BKOwnerIDField] = delItem.ownerID
-				input[common.BKObjIDField] = delItem.objID
-				input[common.BKInstIDField] = delItem.instID
-				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
-			}
+			input[common.BKOwnerIDField] = delItem.ownerID
+			input[common.BKObjIDField] = delItem.objID
+			input[common.BKInstIDField] = delItem.instID
 
 			// delete the association
 			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
@@ -535,6 +545,8 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 				blog.Errorf("get inst detail error: %v", retStrErr)
 				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 			}
+
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 			inputJSON, jsErr := json.Marshal(input)
 			if nil != jsErr {
@@ -599,7 +611,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
-		var uURL string
+
 		ownerID := req.PathParameter("owner_id")
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
@@ -611,18 +623,11 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 
 		//update object
 		input := make(map[string]interface{})
-		condition := make(map[string]interface{})
 
-		switch objID {
-		case common.BKInnerObjIDPlat:
-			condition[common.BKCloudIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
-		default:
-			condition[common.BKOwnerIDField] = ownerID
-			condition[common.BKObjIDField] = objID
-			condition[common.BKInstIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
-		}
+		condition := make(map[string]interface{})
+		condition[common.BKOwnerIDField] = ownerID
+		condition[common.BKObjIDField] = objID
+		condition[common.BKInstIDField] = instID
 
 		value, readErr := ioutil.ReadAll(req.Request.Body)
 		if nil != readErr {
@@ -636,11 +641,27 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		// take snapshot before update
+		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+		if common.CCSuccess != retStrErr {
+			blog.Errorf("get inst detail error: %v", retStrErr)
+			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+		}
+
 		data, jsErr := js.Map()
 		if nil != jsErr {
 			blog.Error("failed to create json object, error info is %s", jsErr.Error())
 			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+
+		if mapPreData, ok := preData.(map[string]interface{}); ok {
+			if val, ok := mapPreData[common.BKInstParentStr]; ok {
+				data[common.BKInstParentStr] = val
+			} else {
+				blog.Error("not found the inst parent id, inst %d", instID)
+			}
+		}
+
 		forward := &api.ForwardParam{Header: req.Request.Header}
 		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
 		_, err = valid.ValidMap(data, common.ValidUpdate, instID)
@@ -652,17 +673,13 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		input["condition"] = condition
 		input["data"] = data
 
-		// take snapshot before update
-		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
-		if common.CCSuccess != retStrErr {
-			blog.Errorf("get inst detail error: %v", retStrErr)
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-		}
-
 		// set the inst association table
 		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
 			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
 		}
+
+		// update the inst value
+		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
 		inputJSON, jsErr := json.Marshal(input)
 		if nil != jsErr {
@@ -1191,8 +1208,6 @@ func (cli *instAction) getInstDeteilByCondition(req *restful.Request, objID stri
 	case common.BKInnerObjIDSet:
 		objType = common.BKInnerObjIDSet
 		condition[common.BKOwnerIDField] = ownerID
-	case common.BKInnerObjIDPlat:
-		objType = common.BKInnerObjIDPlat
 	default:
 		objType = common.BKINnerObjIDObject
 		condition[common.BKOwnerIDField] = ownerID
@@ -1243,8 +1258,6 @@ func (cli *instAction) getInstDetail(req *restful.Request, instID int, objID, ow
 	case common.BKInnerObjIDSet:
 		condition[common.BKSetIDField] = instID
 		condition[common.BKOwnerIDField] = ownerID
-	case common.BKInnerObjIDPlat:
-		condition[common.BKCloudIDField] = instID
 	default:
 		condition[common.BKObjIDField] = objID
 		condition[common.BKInstIDField] = instID

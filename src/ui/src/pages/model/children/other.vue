@@ -34,7 +34,7 @@
             <h3>{{$t('ModelManagement["模型删除"]')}}</h3>
             <p>{{$t('ModelManagement["删除模型和其下所有实例，此动作不可逆，请谨慎操作"]')}}</p>
             <div class="bottom-contain">
-                <bk-button type="primary" class="mr10" :title="$t('ModelManagement[\'删除模型\']')" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre']">
+                <bk-button type="primary" class="mr10" :title="$t('ModelManagement[\'删除模型\']')" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre'] || parentClassificationId === 'bk_biz_topo'">
                     <span>{{$t('ModelManagement["删除模型"]')}}</span>
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
@@ -106,6 +106,7 @@
                 this.$axios.put(`object/${this.id}`, params).then(res => {
                     if (res.result) {
                         this.$emit('closeSideSlider')
+                        this.$store.dispatch('navigation/getClassifications', true)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -121,6 +122,7 @@
                 this.$axios.put(`object/${this.id}`, params).then(res => {
                     if (res.result) {
                         this.$emit('stopModel')
+                        this.$store.dispatch('navigation/getClassifications', true)
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -142,6 +144,7 @@
                     this.$axios.delete(`object/${this.id}`).then(res => {
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
+                            this.$store.dispatch('navigation/getClassifications', true)
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }

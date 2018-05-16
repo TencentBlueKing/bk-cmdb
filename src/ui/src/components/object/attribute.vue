@@ -11,6 +11,7 @@
 <template>
     <div class="attribute-wrapper">
         <template v-if="displayType === 'list'">
+            <slot name="list"></slot>
             <template v-for="propertyGroup in groupOrder" v-if="bkPropertyGroups.hasOwnProperty(propertyGroup)">
                 <div class="attribute-group" v-show="!(propertyGroup === 'none' && isNoneGroupHide)">
                     <h3 class="title">{{propertyGroup === 'none' ? $t("Common['更多属性']") : bkPropertyGroups[propertyGroup]['bkPropertyGroupName']}}</h3>
@@ -136,7 +137,7 @@
                 <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.create">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>
@@ -302,6 +303,7 @@
                         }
                     }
                 }
+                
                 return formData
             }
         },
@@ -361,6 +363,54 @@
             }
         },
         methods: {
+            isCloseConfirmShow () {
+                let isConfirmShow = false
+                if (this.displayType === 'list') {
+                    return false
+                }
+                if (this.type === 'create') {
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        if (property['bk_property_type'] === 'enum') {
+                            let isDefault = property.option.find(({id}) => {
+                                return id === this.formData[key]
+                            })['is_default']
+                            if (!isDefault) {
+                                isConfirmShow = true
+                                break
+                            }
+                        } else {
+                            if (this.formData[key].length) {
+                                isConfirmShow = true
+                                break
+                            }
+                        }
+                    }
+                } else {
+                    for (let key in this.formData) {
+                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                            return bkPropertyId === key
+                        })
+                        let value = this.formValues[key]
+                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
+                            value = []
+                            if (this.formValues.hasOwnProperty(key)) {
+                                this.formValues[key].map(formValue => {
+                                    value.push(formValue['bk_inst_id'])
+                                })
+                            }
+                            value = value.join(',')
+                        }
+                        if (value !== this.formData[key] && !(this.formData[key] === '' && !this.formValues.hasOwnProperty(key))) {
+                            isConfirmShow = true
+                            break
+                        }
+                    }
+                }
+                return isConfirmShow
+            },
             confirmHost (hostInfo) {
                 this.hideSelectHost()
             },
