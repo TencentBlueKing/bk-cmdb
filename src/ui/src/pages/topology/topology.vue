@@ -533,6 +533,7 @@
             width: 280px;
             height: 100%;
             border-right: 1px solid #e7e9ef;
+            background: #fafbfd;
         }
         .topo-view-ctn{
             height: 100%;
