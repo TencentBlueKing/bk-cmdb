@@ -183,9 +183,13 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 			if ok {
 				enumVals := getEnumNames(optionArr)
-				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				dd.SetDropList(enumVals)
-				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
+
+				if len(enumVals) < common.ExcelDataValidationListLen {
+					dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+					dd.SetDropList(enumVals)
+					sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
+
+				}
 			}
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 

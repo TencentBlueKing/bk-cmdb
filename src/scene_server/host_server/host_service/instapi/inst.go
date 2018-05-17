@@ -375,7 +375,6 @@ func (cli *instHelper) getInstDetailsSub(req *restful.Request, objID, ownerID st
 							blog.Error("failed to get inst details")
 						}
 						dataItem[key] = retData
-						fmt.Println("retData in: ", retData)
 
 					}
 

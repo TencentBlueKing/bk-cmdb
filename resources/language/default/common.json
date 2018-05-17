@@ -10,6 +10,6 @@
     "property_is_required":"是否必填",
     "property_is_readonly": "是否只读",
     "app_not_exist":"业务不存在",
-
+    "import_row_int_error_str":"%d行%s",
     "":""
 }
