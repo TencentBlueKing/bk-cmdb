@@ -385,6 +385,17 @@ textarea {
         }
     }
 }
+.business-wrapper {
+    .bk-tab2 {
+        height: 100%;
+        .bk-tab2-content {
+            height: calc(100% - 58px);
+            section {
+                height: 100%;
+            }
+        }
+    }
+}
 
 .management-wrapper {
     /*进程管理页面表格样式覆盖*/

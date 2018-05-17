@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="relevance-content-wrapper">
         <div class="tab-wrapper clearfix">
             <ul class="relevance-tab">
                 <li :class="{'active': relevanceTabName === 'topo'}" @click="relevanceTabName = 'topo'">
@@ -8,15 +8,13 @@
                 <li :class="{'active': relevanceTabName === 'tree'}" @click="relevanceTabName = 'tree'">
                     <i class="icon-cc-tree"></i>树形
                 </li>
-                <li :class="{'active': relevanceTabName === 'list'}" @click="relevanceTabName = 'list'">
-                    <i class="icon-cc-list"></i>列表
-                </li>
             </ul>
             <bk-button type="primary" class="btn btn-add">新增关联</bk-button>
         </div>
         <v-topo v-show="relevanceTabName === 'topo'"
+            :isShow="relevanceTabName === 'topo'"
         ></v-topo>
-        <v-tree v-show="relevanceTabName === 'tree'" :isShow="relevanceTabName === 'tree'" style="padding: 30px 0;"
+        <v-tree v-show="relevanceTabName === 'tree'" :isShow="relevanceTabName === 'tree'"
             :objId="objId"
             :ObjectID="ObjectID"
         ></v-tree>
@@ -41,7 +39,16 @@
         },
         data () {
             return {
-                relevanceTabName: 'topo'
+                relevanceTabName: ''
+            }
+        },
+        watch: {
+            isShow (isShow) {
+                if (isShow) {
+                    this.relevanceTabName = 'topo'
+                } else {
+                    this.relevanceTabName = ''
+                }
             }
         },
         components: {
@@ -52,8 +59,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .relevance-content-wrapper {
+        height: 100%;
+    }
     .tab-wrapper{
-        padding: 20px 30px 0;
+        padding: 20px 30px;
     }
     .relevance-tab{
         >li{
