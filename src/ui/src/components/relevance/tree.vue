@@ -213,7 +213,7 @@
 
 <style lang="scss" scoped>
     .relevance-wrapper{
-        padding: 30px 20px;
+        padding: 0 30px;
         min-height: 300px;
         .relevance-box{
             height: 100%;
