@@ -125,9 +125,9 @@
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
                             <div slot="list" class="attribute-group">
-                                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                                <h3 class="title">{{$t("BusinessTopology['业务拓扑']")}}</h3>
                                 <ul class="attribute-list clearfix">
-                                    <li class="attribute-item fl" v-for="item in sideslider.hostRelation">
+                                    <li class="attribute-item" v-for="item in sideslider.hostRelation">
                                         <span class="attribute-item-value">{{item}}</span>
                                     </li>
                                 </ul>
