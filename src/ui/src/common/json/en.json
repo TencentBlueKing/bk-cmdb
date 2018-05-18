@@ -195,7 +195,8 @@
         "跳转配置": "Jump Configuration",
         "角色成员": "Member",
         "新建角色成功": "Successful New Role",
-        "更新角色成功": "Updates the role of success"
+        "更新角色成功": "Updates the role of success",
+        "点击新增": "Click to add"
     },
     "ModelManagement": {
         "模型管理": "Model Manage",

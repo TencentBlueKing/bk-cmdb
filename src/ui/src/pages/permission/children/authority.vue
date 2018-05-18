@@ -108,7 +108,10 @@
         <template v-else>
             <div class="user-none">
                 <img src="../../../common/images/user-none.png" :alt="$t('Permission[\'没有创建角色\']')">
-                <p>{{$t('Permission["没有创建角色"]')}}</p>
+                <p>
+                    {{$t('Permission["没有创建角色"]')}}
+                    <span class="btn" @click="changeTab">{{$t('Permission["点击新增"]')}}</span>
+                </p>
             </div>
         </template>
     </div>
@@ -117,6 +120,7 @@
 <script>
     import { mapGetters } from 'vuex'
     import Throttle from 'lodash.throttle'
+    import bus from '@/eventbus/bus'
     export default {
         props: {
             roles: {
@@ -230,6 +234,10 @@
             }
         },
         methods: {
+            changeTab () {
+                this.$emit('update:activeTabName', 'role')
+                bus.$emit('changePermissionTab')
+            },
             getGroupAuthorities (groupID) {
                 this.$axios.get(`topo/privilege/group/detail/${this.bkSupplierAccount}/${groupID}`).then((res) => {
                     if (res.result) {
@@ -476,11 +484,14 @@
         left: 50%;
         transform: translate(-50%, -50%);
         color: $primaryColor;
-        width: 180px;
         margin: 0 auto;
         text-align: center;
         img{
             width: 180px;
+        }
+        span{
+            color: #3c96ff;
+            cursor: pointer;
         }
     }
 </style>
