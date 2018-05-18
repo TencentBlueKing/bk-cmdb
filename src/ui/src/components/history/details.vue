@@ -18,12 +18,22 @@
                 :list="tableList"
                 :rowBorder="true"
                 :colBorder="true"
-                v-bind="height ? {height} : {}">
-                <template slot="pre_data" slot-scope="{item}" v-html="item['pre_data']">
-                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['pre_data']"></div>
+                v-bind="height ? {height}: {}">
+                <template slot="pre_data" slot-scope="{item, rowIndex, colIndex, layout}">
+                    <v-table-field class="history-details-table-field" v-if="isTableField(rowIndex)"
+                        :width="getWidth(layout, 'pre_data')"
+                        :property="getTableFieldProperty(rowIndex)"
+                        :value="item['pre_data']">
+                    </v-table-field>
+                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-else v-html="item['pre_data']"></div>
                 </template>
-                <template slot="cur_data" slot-scope="{item}">
-                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
+                <template slot="cur_data" slot-scope="{item, rowIndex, colIndex, layout}">
+                    <v-table-field class="history-details-table-field" v-if="isTableField(rowIndex)"
+                        :width="getWidth(layout, 'cur_data')"
+                        :property="getTableFieldProperty(rowIndex)"
+                        :value="item['cur_data']">
+                    </v-table-field>
+                    <div v-else :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
         </template>
@@ -33,9 +43,11 @@
 <script>
     import {mapGetters} from 'vuex'
     import vTable from '@/components/table/table'
+    import vTableField from '@/components/common/tableField/tableField'
     export default {
         components: {
-            vTable
+            vTable,
+            vTableField
         },
         props: {
             details: Object,
@@ -164,6 +176,12 @@
             }
         },
         methods: {
+            getWidth (layout, type) {
+                if ([2, 100].includes(this.details['op_type'])) {
+                    return layout.colgroup[type === 'pre_data' ? 1 : 2]
+                }
+                return layout.colgroup[1]
+            },
             getCellValue (property, type) {
                 const data = this.details.content[type]
                 if (data) {
@@ -191,6 +209,13 @@
                     return value
                 }
                 return null
+            },
+            isTableField (rowIndex) {
+                const properties = this.attribute[this.objId] || []
+                return properties[rowIndex] && properties[rowIndex]['bk_property_type'] === 'list'
+            },
+            getTableFieldProperty (rowIndex) {
+                return (this.attribute[this.objId] || [])[rowIndex] || {}
             },
             hasChanged (item) {
                 if ([2, 100].includes(this.details['op_type'])) {
@@ -235,6 +260,9 @@
             width: 220px;
         }
     }
+    .history-details-table-field{
+        margin-left: -16px;
+    }
     .details-data{
         min-height: 100%;
         width: calc(100% + 32px);
@@ -243,6 +271,20 @@
         white-space: normal;
         &.has-changed{
             background-color: #e9faf0;
+        }
+    }
+</style>
+<style lang="scss">
+    .history-details-table-field{
+        .table-wrapper{
+            border-color: transparent;
+        }
+        table.cc-table-head{
+            tr {
+                th{
+                    border-top-color: transparent;
+                }
+            }
         }
     }
 </style>

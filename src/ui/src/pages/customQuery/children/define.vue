@@ -101,7 +101,7 @@
                         ref="propertySelector"
                         @on-selected="addUserProperties">
                             <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                            <bk-select-option v-for="(property, index) in properties"
                                 :disabled="property.disabled"
                                 :key="property['bk_property_id']"
                                 :value="property['bk_property_id']"
@@ -295,6 +295,9 @@
                     params['id'] = this.id
                 }
                 return params
+            },
+            properties () {
+                return this.object[this.selectedObjId]['properties'].filter(property => !property['bk_isapi'] && !['list', 'singleasst', 'multiasst'].includes(property['bk_property_type']))
             }
         },
         watch: {

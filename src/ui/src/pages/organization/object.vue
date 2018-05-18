@@ -141,7 +141,7 @@
             <v-config-field 
                 slot="content"
                 :isShow="settingSlider.isShow"
-                :attrList="attr.formFields"
+                :attrList="attr.formFields.filter(({bk_property_type:bkPropertyType}) => !['list'].includes(bkPropertyType))"
                 @apply="settingApply"
                 @cancel="settingSlider.isShow = false"
                 :objId="objId">
@@ -455,7 +455,7 @@
                                         break
                                     }
                                 }
-                                if (val['bk_property_type'] !== 'singleasst' && val['bk_property_type'] !== 'multiasst') {
+                                if (!['list'].includes(val['bk_property_type'])) {
                                     let property = res.data.find(({bk_property_id: bkPropertyId}) => {
                                         return bkPropertyId === val['bk_property_id']
                                     })
@@ -469,20 +469,20 @@
                                 }
                             })
                         } else { // 没有时则显示前六
-                            res.data.map(attr => {
-                                let headerObj = {
-                                    id: attr['bk_property_id'],
-                                    name: attr['bk_property_name'],
-                                    property: attr
-                                }
-                                if (attr['bk_isonly'] && attr['bk_isrequired']) {
-                                    header.unshift(headerObj)
-                                } else if (attr['bk_isonly'] || attr['bk_isrequired']) {
-                                    header.push(headerObj)
-                                } else {
-                                    headerTail.push(headerObj)
-                                }
-                                if (attr['bk_property_type'] !== 'singleasst' && attr['bk_property_type'] !== 'multiasst') {
+                            res.data.forEach(attr => {
+                                if (!['list'].includes(attr['bk_property_type'])) {
+                                    let headerObj = {
+                                        id: attr['bk_property_id'],
+                                        name: attr['bk_property_name'],
+                                        property: attr
+                                    }
+                                    if (attr['bk_isonly'] && attr['bk_isrequired']) {
+                                        header.unshift(headerObj)
+                                    } else if (attr['bk_isonly'] || attr['bk_isrequired']) {
+                                        header.push(headerObj)
+                                    } else {
+                                        headerTail.push(headerObj)
+                                    }
                                     filterList.push({
                                         id: attr['bk_property_id'],
                                         name: attr['bk_property_name'],
