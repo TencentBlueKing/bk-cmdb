@@ -124,6 +124,12 @@ const getters = {
                 navigation[index]['children'] = navigation[index]['children'].filter(model => usercustomNavigation[id].includes(model.id))
             }
         })
+        navigation = navigation.filter(({id, children}) => {
+            if (state.notCustomClassifications.includes(id)) {
+                return true
+            }
+            return children.length
+        })
         return navigation
     }
 }
