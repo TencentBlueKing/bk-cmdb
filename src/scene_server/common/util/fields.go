@@ -10,23 +10,32 @@
  * limitations under the License.
  */
 
-package metadata
+package util
 
-// propertyGroupCondition used to reflect the property group json
-type propertyGroupCondition struct {
-	Condition map[string]interface{} `json:"condition"`
-	Data      map[string]interface{} `json:"data"`
-}
+import (
+	"fmt"
+	"strings"
 
-// propertyGroupObjectAtt uset to update or delete the property group object attribute
-type propertyGroupObjectAtt struct {
-	Condition struct {
-		OwnerID    string `json:"bk_supplier_account"`
-		ObjectID   string `json:"bk_obj_id"`
-		PropertyID string `json:"bk_property_id"`
-	} `json:"condition"`
-	Data struct {
-		PropertyGroupID string `json:"bk_property_group"`
-		PropertyIndex   int    `json:"bk_property_index"`
-	} `json:"data"`
+	"configcenter/src/common"
+	gutil "configcenter/src/common/util"
+	sourceAPI "configcenter/src/source_controller/api/object"
+)
+
+// ConvByPropertytype convert str to property type
+func ConvByPropertytype(fields *sourceAPI.ObjAttDes, val string) (interface{}, error) {
+	switch fields.PropertyType {
+	case common.FieldTypeInt:
+		return gutil.GetIntByInterface(val)
+	case common.FieldTypeBool:
+		val := strings.ToLower(val)
+		switch val {
+		case "true":
+			return true, nil
+		case "false":
+			return false, nil
+		default:
+			return false, fmt.Errorf("%s not bool", val)
+		}
+	}
+	return val, nil
 }
