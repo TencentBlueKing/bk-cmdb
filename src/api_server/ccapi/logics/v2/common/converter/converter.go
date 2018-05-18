@@ -989,21 +989,11 @@ func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 	tempMap := make(map[string]interface{})
 	blog.Debug(" itemMap: %v", itemMap)
 	for key, val := range itemMap {
-		switch val.(type) {
-		case int:
-			tempMap[key] = fmt.Sprintf("%v", val)
-		case json.Number:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int16:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int32:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int64:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int8:
-			tempMap[key] = fmt.Sprint("%v", val)
+		filedInt, err := util.GetIntByInterface(val)
+		if nil != err {
+			blog.Errorf("convert field %s to number fail!value:%v", key, val)
 		}
-
+		tempMap[key] = strconv.Itoa(filedInt)
 	}
 
 	return tempMap
@@ -1015,13 +1005,27 @@ func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map
 	tempMap := make(map[string]interface{})
 	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
-
-		filedInt64, err := itemMap[field].(json.Number).Int64()
-		if nil != err {
-			blog.Debug("convert field %s to number fail!", field)
-			return nil, err
+		item, ok := itemMap[field]
+		if !ok {
+			continue
 		}
-		tempMap[field] = strconv.Itoa(int(filedInt64))
+		if nil == item {
+			tempMap[field] = ""
+			continue
+		}
+
+		switch item.(type) {
+		case string:
+		case nil:
+		default:
+			filedInt, err := util.GetIntByInterface(item)
+			if nil != err {
+				blog.Debug("convert field %s to number fail!", field)
+				return nil, err
+			}
+			tempMap[field] = strconv.Itoa(filedInt)
+		}
+
 	}
 
 	return tempMap, nil
