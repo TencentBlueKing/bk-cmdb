@@ -100,7 +100,7 @@
                     if (typeof table.renderCell === 'function') {
                         return h('td', defaultConfig, table.renderCell(this.item, this.head, this.layout))
                     } else if (table.$scopedSlots[column]) {
-                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex}))
+                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex, colIndex: this.colIndex, layout: this.layout}))
                     } else {
                         return h('td', Object.assign({}, defaultConfig, {attrs: {title: this.item[this.head[table.valueKey]]}}), this.item[this.head[table.valueKey]])
                     }
