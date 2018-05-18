@@ -14,6 +14,7 @@
             :emptyHeight="40"
             :colBorder="true"
             :rowBorder="true"
+            :rowHoverColor="false"
             :header="header"
             :list="localValue"
             :valueKey="'list_header_name'"
