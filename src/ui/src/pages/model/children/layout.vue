@@ -22,7 +22,10 @@
                             <span class="hidden-list-icon">
                                 <i></i><i></i><i></i>
                             </span>
-                            <span class="hidden-list-text">{{item['bk_property_name']}}</span>
+                            <span class="hidden-list-text">
+                                <span class="text-name">{{item['bk_property_name']}}</span>
+                                <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                            </span>
                         </li>
                     </draggable>
                 </ul>
@@ -30,7 +33,9 @@
             <div class="layout-list">
                 <div class="layout-list-ul" v-for="(vitems, vindex) in fieldClassification">
                     <div class="layout-list-title">
-                        <span class="layout-title-text" v-show="!isEditTitle || vindex !== curFieldIndex">{{vitems.label}}</span>
+                        <span class="layout-title-text" v-show="!isEditTitle || vindex !== curFieldIndex">
+                            {{vitems.label}}
+                        </span>
                         <input type="text" class="layout-title-text border" 
                             v-focus="labelShow" 
                             v-model="labelList[vindex]" 
@@ -53,7 +58,10 @@
                                 <span class="layout-list-icon">
                                     <i></i><i></i><i></i>
                                 </span>
-                                <span class="layout-list-text">{{item['bk_property_name']}}</span>
+                                <span class="layout-list-text">
+                                    <span class="text-name">{{item['bk_property_name']}}</span>
+                                    <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                                </span>
                                 <i class="bk-icon icon-eye-slash-shape" @click="deleteModelField(item)"></i>
                             </li>
                         </draggable>
@@ -436,20 +444,20 @@
             deleteFieldGroup (item) {
                 let status = true
                 // 系统内置字段不可删除
-                if (item['ispre']) {
+                if (item['isPre']) {
                     status = false
                     this.$alertMsg(this.$t('ModelManagement["系统内置分组不可删除"]'))
                     return
                 }
                 // "默认字段"分组不可删除
-                if (item['bk_group_id'] === 'default') {
+                if (item['groupID'] === 'default') {
                     status = false
                     this.$alertMsg(this.$t('ModelManagement["默认字段分组不可删除"]'))
                 } else {
                     if (item.modelField) {
                         item.modelField.forEach(ele => {
                             // modelField 存在必填字段
-                            if (ele['bk_isrequired']) {
+                            if (ele['isrequired']) {
                                 status = false
                                 this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
                             }
@@ -579,6 +587,13 @@
                             height: 40px;
                             line-height: 40px;
                             padding: 0 10px 0 15px;
+                            .text-name {
+                                display: inline-block;
+                                max-width: calc(100% - 40px);
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                vertical-align: middle;
+                            }
                         }
                         .hidden-list-icon,
                         .layout-list-icon{
@@ -775,5 +790,19 @@
             -webkit-transition: all .35s !important;
             transition: all .35s !important;
         }
+    }
+    .icon-cc-required,
+    .icon-cc-key {
+        display: inline-block;
+        transform: scale(calc(8 / 12));
+        letter-spacing: 1px;
+        font-size: 12px;
+    }
+    .icon-cc-required {
+        color: #ff5656;
+    }
+    .icon-cc-key {
+        color: #ffb400;
+        transform: scale(calc(9 / 12));
     }
 </style>

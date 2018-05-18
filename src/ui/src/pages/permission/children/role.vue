@@ -58,6 +58,7 @@
 <script>
     import vRoleForm from './roleForm'
     import vRoleTable from '@/components/table/table'
+    import bus from '@/eventbus/bus'
     import { mapGetters } from 'vuex'
     export default {
         components: {
@@ -192,6 +193,11 @@
         },
         mounted () {
             this.getRoleList()
+        },
+        created () {
+            bus.$on('changePermissionTab', () => {
+                this.createRole()
+            })
         }
     }
 </script>
