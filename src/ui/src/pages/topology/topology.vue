@@ -369,7 +369,8 @@
             /* 删除拓扑节点 */
             deleteNode () {
                 this.$bkInfo({
-                    title: `${this.$t('Common[\'确定删除\']')}${this.tree.activeNode['bk_inst_name']}?`,
+                    title: `${this.$t('Common[\'确定删除\']')} ${this.tree.activeNode['bk_inst_name']}?`,
+                    content: `${this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']')}`,
                     confirmFn: () => {
                         let url
                         let {
