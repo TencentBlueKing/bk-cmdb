@@ -22,7 +22,10 @@
                             <span class="hidden-list-icon">
                                 <i></i><i></i><i></i>
                             </span>
-                            <span class="hidden-list-text">{{attr['bk_property_name']}}</span>
+                            <span class="hidden-list-text">
+                                <span class="text-name">{{attr['bk_property_name']}}</span>
+                                <i v-if="attr['isrequired'] && !attr['isonly']" class="icon-cc-required"></i><i v-if="attr['isonly']" class="icon-cc-key"></i>
+                            </span>
                         </li>
                     </draggable>
                 </ul>
@@ -46,7 +49,10 @@
                                 <span class="layout-list-icon">
                                     <i></i><i></i><i></i>
                                 </span>
-                                <span class="layout-list-text">{{property['bk_property_name']}}</span>
+                                <span class="layout-list-text">
+                                    <span class="text-name">{{property['bk_property_name']}}</span>
+                                    <i v-if="property['isrequired'] && !property['isonly']" class="icon-cc-required"></i><i v-if="property['isonly']" class="icon-cc-key"></i>
+                                </span>
                                 <i class="bk-icon icon-eye-slash-shape" @click=""></i>
                             </li>
                         </draggable>
@@ -60,10 +66,10 @@
                 </div>
             </div>
         </div>
-        <!-- <div class="base-info">
-            <button class="btn main-btn" type="primary" title="确认" @click="confirm">确认</button>
-            <button class="btn vice-btn cancel-btn-sider" type="default" title="取消" @click="cancel">取消</button>
-        </div> -->
+        <div class="base-info">
+            <button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" @click="confirm">{{$t('Common["确认"]')}}</button>
+            <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
+        </div>
     </div>
 </template>
 
@@ -86,8 +92,9 @@
                 attrGroup: [],          // 属性分组
                 attrList: [],           // 全部属性
                 groupAttrList: [],      // 按分组排好序的属性
-                localGroup: [],         // 修改过的属性分组
+                localGroupAttrList: [], // 保存时做比对
                 hideAttr: [],           // 隐藏字段
+                localHideAttr: [],      // 隐藏字段 保存时做比对
                 activeAttr: {}          // 当前移动的属性
             }
         },
@@ -115,9 +122,22 @@
         methods: {
             checkMove (evt) {
                 this.activeAttr = evt.draggedContext.element
+                // 唯一字段、必填字段不能够被隐藏
+                return !(evt.to.attributes[2].value === 'content-left' && (evt.draggedContext.element.isonly || evt.draggedContext.element.isrequired))
             },
             moveEnd (evt) {
                 this.$forceUpdate()
+            },
+            confirm () {
+                this.groupAttrList.map(group => {
+                    // group.properties
+                })
+            },
+            /**
+             * 取消
+             */
+            cancel () {
+
             },
             /**
              * 调整分组位置
@@ -126,8 +146,8 @@
              * @param to {Number} - 要移动到的项的index
              */
             async groupMove (groupAttrList, from, to) {
-                await this.updateGroupIndex(groupAttrList[from], groupAttrList[to])
-                ;[groupAttrList[from], groupAttrList[to]] = [groupAttrList[to], groupAttrList[from]]
+                await this.updateGroupIndex(groupAttrList[from], groupAttrList[to]);
+                [groupAttrList[from], groupAttrList[to]] = [groupAttrList[to], groupAttrList[from]]
                 this.$forceUpdate()
             },
             async updateGroupIndex (fromGroup, toGroup) {
@@ -232,10 +252,12 @@
                     this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
                     return
                 }
-                group.properties.map(property => {
-                    property['bk_property_group'] = 'none'
-                    this.hideAttr.push(property)
-                })
+                if (group.properties.length) {
+                    group.properties.map(property => {
+                        property['bk_property_group'] = 'none'
+                        this.hideAttr.push(property)
+                    })
+                }
                 this.groupAttrList.splice(groupIndex, 1)
             },
             /**
@@ -395,6 +417,13 @@
                             height: 40px;
                             line-height: 40px;
                             padding: 0 10px 0 15px;
+                            .text-name {
+                                display: inline-block;
+                                max-width: calc(100% - 40px);
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                vertical-align: middle;
+                            }
                         }
                         .hidden-list-icon,
                         .layout-list-icon{
@@ -591,5 +620,19 @@
             -webkit-transition: all .35s !important;
             transition: all .35s !important;
         }
+    }
+    .icon-cc-required,
+    .icon-cc-key {
+        display: inline-block;
+        transform: scale(calc(8 / 12));
+        letter-spacing: 1px;
+        font-size: 12px;
+    }
+    .icon-cc-required {
+        color: #ff5656;
+    }
+    .icon-cc-key {
+        color: #ffb400;
+        transform: scale(calc(9 / 12));
     }
 </style>
