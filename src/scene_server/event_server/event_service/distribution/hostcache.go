@@ -70,6 +70,8 @@ type HostIdentifier struct {
 	SetStatus interface{} `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
 	SetEnv    interface{} `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
 
+	Belong []Belong `json:"belong"`
+
 	InnerIP interface{} `json:"bk_host_innerip"` // 内网IP
 	OuterIP interface{} `json:"bk_host_outerip"` // 外网IP
 	OSType  interface{} `json:"bk_os_type"`      // 操作系统类型
@@ -77,6 +79,9 @@ type HostIdentifier struct {
 	Memory  interface{} `json:"bk_mem"`          // 内存容量
 	CPU     interface{} `json:"bk_cpu"`          // CPU逻辑核心数
 	Disk    interface{} `json:"bk_disk"`         // 磁盘容量
+}
+
+type Belong struct {
 }
 
 // Set set inst value

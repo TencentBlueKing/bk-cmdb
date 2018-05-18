@@ -195,8 +195,14 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 				hostIdentify.EventType = types.EventTypeRelation
 				hostIdentify.ObjType = "hostidentifier"
 
+				instID, _ := curdata[common.GetInstIDField(e.ObjType)].(int)
+				if instID == 0 {
+					// this should wound happen -_-
+					blog.Errorf("conver instID faile the raw is %v", curdata[common.GetInstIDField(e.ObjType)])
+					continue
+				}
 				count := 0
-				identifiers := GetIdentifierCache().getCache(e.ObjType, curdata[common.BKAppIDField].(int))
+				identifiers := GetIdentifierCache().getCache(e.ObjType, instID)
 				total := len(identifiers)
 				// pack identifiers into 1 distribution to prevent send too many messages
 				for ident := range identifiers {
@@ -216,7 +222,7 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 			}
 		}
 	} else if e.EventType == types.EventTypeRelation && distinst.ObjType == "moduletransfer" {
-
+		
 	}
 
 	return ds
