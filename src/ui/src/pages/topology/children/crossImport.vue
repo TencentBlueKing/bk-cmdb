@@ -17,6 +17,12 @@
             <bk-button class="search-btn search-field" type="primary" :disabled="!isValidIp" @click="doSearch">{{$t("Common['查询']")}}</bk-button>
         </div>
         <div class="search-result" v-if="Object.keys(result).length">
+            <div class="attribute-group" v-if="hostRelation.length">
+                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                <ul class="attribute-list">
+                    <li class="attribute-item" v-for="(relation, index) in hostRelation" :key="index">{{relation}}</li>
+                </ul>
+            </div>
             <div class="attribute-group" v-for="(groupId, groupIndex) in hostPropertyGroupOrder"
                 v-show="groupId !== 'none' || !isNoneGroupHide"
                 :key="groupIndex">
@@ -53,6 +59,7 @@
     </div>
 </template>
 <script>
+    import { getHostRelation } from '@/utils/util'
     import {mapGetters} from 'vuex'
     export default {
         props: {
@@ -83,7 +90,8 @@
                 attribute: {},
                 propertyGroups: {},
                 loading: false,
-                showTips: true
+                showTips: true,
+                hostRelation: []
             }
         },
         computed: {
@@ -205,6 +213,9 @@
                     return this.$formatTime(value, 'YYYY-MM-DD')
                 } else if (bkPropertyType === 'time') {
                     return this.$formatTime(value)
+                } else if (bkPropertyType === 'enum') {
+                    const option = (Array.isArray(property.option) ? property.option : []).find(({id}) => id === value)
+                    return option ? option.name : ''
                 } else {
                     return value
                 }
@@ -247,9 +258,11 @@
                                 this.showTips = false
                                 this.noResult = false
                                 this.result = res.data.info[0]['host']
+                                this.hostRelation = getHostRelation(res.data.info[0])
                             } else {
                                 this.noResult = true
                                 this.result = {}
+                                this.hostRelation = []
                             }
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
@@ -274,7 +287,7 @@
                         this.$emit('update:isShow', false)
                         this.$emit('handleCrossImportSuccess')
                     } else {
-                        if (res.data.error && res.data.error.length) {
+                        if (res.data && Array.isArray(res.data.error) && res.data.error.length) {
                             this.$alertMsg(res.data.error[0])
                         } else {
                             this.$alertMsg(res['bk_error_msg'])

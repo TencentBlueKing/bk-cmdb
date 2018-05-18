@@ -19,5 +19,11 @@
     "host_str_del_for_resource_pool": "%s 主机从资源池中清除失败",
     "host_str_belong_module": "%s 主机已经存在于当前模块中",
     "host_str_add_module_relation_fail": "%s 主机添加到模块失败",
+    "host_property_str_not_found": "主机属性%s不存在",
+    "host_property_str_format_error": "主机属性%s格式错误",
+    "host_asst_property_str_not_found": "主机关联属性%s格式错误",
+    "host_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
+    "host_str_asst_str_query_data_format_error": "获取%s关联对象%s数据格式",
+
     "": ""
 }

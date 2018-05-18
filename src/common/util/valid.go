@@ -59,3 +59,41 @@ func ValidPropertyOption(propertyType string, option interface{}) error {
 	}
 	return nil
 }
+
+// IsAssocateProperty  is Assocate property
+func IsAssocateProperty(propertyType string) bool {
+	if common.FieldTypeSingleAsst == propertyType || common.FieldTypeMultiAsst == propertyType {
+		return true
+	}
+
+	return false
+}
+
+// IsStrProperty  is string property
+func IsStrProperty(propertyType string) bool {
+	if common.FieldTypeLongChar == propertyType || common.FieldTypeSingleChar == propertyType {
+		return true
+	}
+
+	return false
+}
+
+// IsInnerObject is inner object model
+func IsInnerObject(objID string) bool {
+	switch objID {
+	case common.BKInnerObjIDApp:
+		return true
+	case common.BKInnerObjIDHost:
+		return true
+	case common.BKInnerObjIDModule:
+		return true
+	case common.BKInnerObjIDPlat:
+		return true
+	case common.BKInnerObjIDProc:
+		return true
+	case common.BKInnerObjIDSet:
+		return true
+	}
+
+	return false
+}

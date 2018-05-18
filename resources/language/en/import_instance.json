@@ -1,0 +1,7 @@
+{
+    "import_property_str_not_found": "property %s does not exists",
+    "import_property_str_format_error": "property %s format error",
+    "import_asst_property_str_not_found": "property %s does not exists",
+    "import_asst_property_str_primary_count_len": "Association Object %s primary Key  count error",
+    "import_str_asst_str_query_data_format_error": "Get %s Association Object %s Data Format"
+}

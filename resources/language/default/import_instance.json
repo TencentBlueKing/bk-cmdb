@@ -1,0 +1,7 @@
+{
+    "import_property_str_not_found": "主机属性%s不存在",
+    "import_property_str_format_error": "主机属性%s格式错误",
+    "import_asst_property_str_not_found": "主机关联属性%s格式错误",
+    "import_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
+    "import_str_asst_str_query_data_format_error": "获取%s的%s关联对象%s数据格式"
+}

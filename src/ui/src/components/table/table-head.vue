@@ -26,7 +26,7 @@
                     @mousedown.left="handleMouseDown($event, column)"
                     @mouseout="handleMouseOut($event, column)"
                     @click="handleSort(column)">
-                    <div class="head-label fl" :title="column.name">{{column.name}}</div>
+                    <div :class="['head-label', 'fl', {'has-sort': column.sortable}]" :title="column.name">{{column.name}}</div>
                     <div class="head-sort fl" v-if="column.sortable">
                         <i :class="['head-sort-angle', 'ascing', {'active': column.id === sortStore.sort && sortStore.order === 'asc'}]"
                             @click.stop="handleSort(column, 'asc')">
@@ -254,8 +254,11 @@
     }
     .head-label{
         font-size: 14px;
-        max-width: calc(100% - 25px);
+        max-width: 100%;
         @include ellipsis;
+        &.has-sort{
+            max-width: calc(100% - 25px);
+        }
     }
     .head-sort{
         width: 20px;
