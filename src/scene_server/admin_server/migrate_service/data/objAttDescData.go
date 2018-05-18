@@ -195,7 +195,7 @@ func ProcRow() []*metadata.ObjectAttDes {
 func SwitchRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDSwitch
 	dataRows := []*metadata.ObjectAttDes{
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_func", PropertyName: "用途", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -214,7 +214,7 @@ func SwitchRow() []*metadata.ObjectAttDes {
 func RouterRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDRouter
 	dataRows := []*metadata.ObjectAttDes{
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_func", PropertyName: "用途", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -233,7 +233,7 @@ func RouterRow() []*metadata.ObjectAttDes {
 func LoadBalanceRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDBlance
 	dataRows := []*metadata.ObjectAttDes{
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_func", PropertyName: "用途", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -252,7 +252,7 @@ func LoadBalanceRow() []*metadata.ObjectAttDes {
 func FirewallRow() []*metadata.ObjectAttDes {
 	objID := common.BKInnerObjIDFirewall
 	dataRows := []*metadata.ObjectAttDes{
-		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: common.KvMap{}},
+		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: true, IsOnly: true, Editable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: common.KvMap{}},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "SN", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_name", PropertyName: "名称", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.ObjectAttDes{ObjectID: objID, PropertyID: "bk_func", PropertyName: "用途", IsRequired: false, IsOnly: false, IsPre: true, Editable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},

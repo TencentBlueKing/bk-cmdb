@@ -124,6 +124,9 @@ const (
 	// CCErrCommParams should be string
 	CCErrCommParamsShouldBeString = 1199032
 
+	// CCErrCommSearchPropertyFailed get object property fields error
+	CCErrCommSearchPropertyFailed = 1199033
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -241,6 +244,7 @@ const (
 	CCErrTopoUserPrivilegeSelectFailed             = 1001047
 	CCErrTopoRolePrivilegeCreateFailed             = 1001048
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
+	CCErrHostNotAllowedToMutiBiz                   = 1001050
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

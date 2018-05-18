@@ -12,7 +12,8 @@
                 :disabled="disabled"
                 v-model="model"
             >
-            <i class="bk-icon icon-angle-down bk-select-icon"></i>
+            <i class="bk-icon icon-close bk-select-clear" v-if="showClear && isSelected" @click.stop="clear"></i>
+            <i class="bk-icon icon-angle-down bk-select-icon" v-show="!showClear || (showClear && !isSelected)"></i>
         </div>
         <transition name="toggle-slide">
             <div class="bk-select-list"
@@ -86,6 +87,10 @@
                 default () {
                     return []
                 }
+            },
+            showClear: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -157,6 +162,11 @@
 
                     this.setSelected(value)
                 })
+            }
+        },
+        computed: {
+            isSelected () {
+                return ![null, undefined, ''].includes(this.selected)
             }
         },
         methods: {
@@ -346,6 +356,10 @@
                 }
 
                 this.model = this.curLabel || this.curValue
+            },
+            clear () {
+                this.$emit('update:selected', '')
+                this.$emit('on-selected', '', undefined)
             }
         },
         mounted () {

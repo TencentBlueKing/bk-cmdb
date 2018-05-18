@@ -9,24 +9,18 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package util
 
-package metadata
+import (
+	"testing"
 
-// propertyGroupCondition used to reflect the property group json
-type propertyGroupCondition struct {
-	Condition map[string]interface{} `json:"condition"`
-	Data      map[string]interface{} `json:"data"`
-}
+	"github.com/stretchr/testify/require"
+)
 
-// propertyGroupObjectAtt uset to update or delete the property group object attribute
-type propertyGroupObjectAtt struct {
-	Condition struct {
-		OwnerID    string `json:"bk_supplier_account"`
-		ObjectID   string `json:"bk_obj_id"`
-		PropertyID string `json:"bk_property_id"`
-	} `json:"condition"`
-	Data struct {
-		PropertyGroupID string `json:"bk_property_group"`
-		PropertyIndex   int    `json:"bk_property_index"`
-	} `json:"data"`
+func TestIntArrIntersection(t *testing.T) {
+	slice1 := []int{1, 2, 3}
+	slice2 := []int{3, 4, 5}
+	slice3 := IntArrIntersection(slice1, slice2)
+	require.Equal(t, 3, slice3[0])
+
 }
