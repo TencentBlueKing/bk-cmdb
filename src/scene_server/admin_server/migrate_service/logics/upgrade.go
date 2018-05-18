@@ -7,14 +7,14 @@ import (
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
-	dbStorage "configcenter/src/storage"
+	"configcenter/src/storage"
 	"sort"
 	"strconv"
 	"strings"
 )
 
 // Upgrade upgrade
-func Upgrade(instData dbStorage.DI) error {
+func Upgrade(instData storage.DI) error {
 	err := upgradeAppfield(instData)
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func Upgrade(instData dbStorage.DI) error {
 	return nil
 }
 
-func upgradeGlobalization(db dbStorage.DI) error {
+func upgradeGlobalization(db storage.DI) error {
 	presetRows := data.AppRow()
 	presetRows = append(presetRows, data.HostRow()...)
 	presetRows = append(presetRows, data.ModuleRow()...)
@@ -105,12 +105,45 @@ func upgradeGlobalization(db dbStorage.DI) error {
 		// update inst
 		tablename := commondata.GetInstTableName(curRow.ObjectID)
 		blog.Infof("updating option for table %s, property %s, option: %v", tablename, curRow.PropertyID, newOptions)
+		defaultValue := ""
+		validValues := []string{}
 		for _, option := range newOptions {
+			validValues = append(validValues, option.ID)
+			if option.IsDefault {
+				defaultValue = option.ID
+			}
 			updateinstdata := map[string]interface{}{
 				curRow.PropertyID: option.ID,
 			}
 			updateinstcondition := map[string]interface{}{
 				curRow.PropertyID: option.Name,
+			}
+			if tablename == common.BKTableNameBaseInst {
+				updateinstcondition[common.BKObjIDField] = curRow.ObjectID
+			}
+
+			blog.Infof("update inst table %s, condition %#v, data %#v", tablename, updateinstcondition, updateinstdata)
+			err = db.UpdateByCondition(tablename, updateinstdata, updateinstcondition)
+			if err != nil {
+				blog.Errorf("upgradeGlobalization update inst error: %v", err)
+				return err
+			}
+		}
+
+		// update default
+		if defaultValue != "" {
+			err = db.AddColumn(tablename, &storage.Column{Name: curRow.PropertyID, Ext: defaultValue})
+			if err != nil {
+				blog.Errorf("upgradeGlobalization update inst error: %v", err)
+				return err
+			}
+			updateinstdata := map[string]interface{}{
+				curRow.PropertyID: defaultValue,
+			}
+			updateinstcondition := map[string]interface{}{
+				curRow.PropertyID: map[string]interface{}{
+					"$nin": validValues,
+				},
 			}
 			if tablename == common.BKTableNameBaseInst {
 				updateinstcondition[common.BKObjIDField] = curRow.ObjectID
@@ -142,7 +175,7 @@ func upgradeGlobalization(db dbStorage.DI) error {
 	return nil
 }
 
-func upgradeAppfield(instData dbStorage.DI) error {
+func upgradeAppfield(instData storage.DI) error {
 	condition := map[string]interface{}{
 		common.BKObjIDField: common.BKInnerObjIDApp,
 		common.BKPropertyIDField: map[string]interface{}{
@@ -156,5 +189,8 @@ func upgradeAppfield(instData dbStorage.DI) error {
 		"isrequired": true,
 	}
 	instData.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+
+	instData.AddColumn(common.BKTableNameBaseApp, &storage.Column{Name: common.BKTimeZoneField, Ext: "Asia/Shanghai"})
+
 	return nil
 }
