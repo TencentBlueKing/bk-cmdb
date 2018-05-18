@@ -22,7 +22,7 @@ import (
 )
 
 func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
-	blog.Errorf("add data for  %s table ", tableName)
+	blog.Infof("add data for  %s table ", tableName)
 	rows := getObjAttDescData(ownerID)
 	for _, row := range rows {
 		selector := map[string]interface{}{
@@ -51,7 +51,6 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 		}
 	}
 
-	blog.Errorf("add data for  %s table  ", tableName)
 	return nil
 }
 
