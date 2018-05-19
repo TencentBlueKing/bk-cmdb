@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"fmt"
 )
 
 // ValidPropertyOption valid property field option
@@ -58,7 +57,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 
 		minVal := 0
 		maxVal := 0
-		
+
 		{
 			min, ok := tmp["min"]
 			if !ok {
