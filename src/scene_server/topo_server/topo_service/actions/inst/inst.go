@@ -423,6 +423,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 						err := assObjectInt.SetObjAsstPropertyVal(colInput)
 						if nil != err {
 							rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
+							continue
 						}
 					}
 
