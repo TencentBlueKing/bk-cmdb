@@ -79,6 +79,7 @@ type HealthInfo struct {
 }
 
 type Action struct {
+	Method      string
 	Path        string
 	HandlerFunc http.HandlerFunc
 }

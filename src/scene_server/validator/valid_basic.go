@@ -173,16 +173,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	}
 	//valid create request
 	if validType == common.ValidCreate {
-		diffArr := util.StrArrDiff(valRule.NoEnumFiledArr, keyDataArr)
-		if 0 != len(diffArr) {
-			//			var lanDiffArr []string
-			//			for _, i := range diffArr {
-			//				lanDiffArr = append(lanDiffArr, valid.PropertyKv[i])
-			//			}
-			keyStr := strings.Join(diffArr, ",")
-			blog.Error("params lost filed")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsLostField, keyStr)
-		}
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
 	}
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
@@ -194,6 +185,52 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return result, err
 	}
 
+}
+
+func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes) {
+	for _, field := range fields {
+		_, ok := valData[field.PropertyID]
+		if !ok {
+			switch field.PropertyType {
+			case common.FieldTypeSingleChar:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeLongChar:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeInt:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeEnum:
+				enumOptions := ParseEnumOption(field.Option)
+				v := ""
+				if len(enumOptions) > 0 {
+					var defaultOption *EnumVal
+					for _, k := range enumOptions {
+						if k.IsDefault {
+							defaultOption = &k
+							break
+						}
+					}
+					if nil != defaultOption {
+						v = defaultOption.ID
+					}
+				}
+				valData[field.PropertyID] = v
+			case common.FieldTypeDate:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeTime:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeUser:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeMultiAsst:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeTimeZone:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeBool:
+				valData[field.PropertyID] = false
+			default:
+				valData[field.PropertyID] = nil
+			}
+		}
+	}
 }
 
 //valid create unique
