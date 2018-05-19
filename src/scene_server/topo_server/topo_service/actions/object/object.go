@@ -79,7 +79,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.AssociationID = tmp
 			} else {
 				blog.Error("can not parse the bk_asst_obj_id, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_asst_obj_id")
 			}
 		}
 
@@ -88,7 +88,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.Editable = tmp
 			} else {
 				blog.Error("can not parse the editable, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "editable")
 			}
 		}
 
@@ -97,7 +97,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsOnly = tmp
 			} else {
 				blog.Error("can not parse the isonly, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, common.BKIsOnlyField)
 			}
 		}
 
@@ -106,7 +106,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsRequired = tmp
 			} else {
 				blog.Error("can not parse the isrequired, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "isrequired")
 			}
 		}
 
@@ -115,7 +115,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsReadOnly = tmp
 			} else {
 				blog.Error("can not parse the isreadonly, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "isreadonly")
 			}
 		}
 
@@ -124,7 +124,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsSystem = tmp
 			} else {
 				blog.Error("can not parse the bk_issystem, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "bk_issystem")
 			}
 		}
 		if jsTmp, ok := jsObjAttr.CheckGet("bk_isapi"); ok {
@@ -132,7 +132,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsAPI = tmp
 			} else {
 				blog.Error("can not parse the bk_issystem, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "bk_isapi")
 			}
 		}
 
@@ -144,24 +144,24 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmp = strings.TrimSpace(tmp)
 			if "" == tmp {
 				blog.Error("bk_property_id could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_id")
 			}
 			tmpItem.PropertyID = tmp
 		} else {
 			blog.Error("can not parse the bk_property_ids, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_id")
 		}
 	}
 	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_name"); ok {
 		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			if "" == tmp {
 				blog.Error("bk_property_name could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_name")
 			}
 			tmpItem.PropertyName = tmp
 		} else {
 			blog.Error("can not parse the bk_property_name, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_name")
 		}
 	}
 
@@ -170,7 +170,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmpItem.Unit = tmp
 		} else {
 			blog.Error("can not parse the unit, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "unit")
 		}
 	}
 
@@ -179,7 +179,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmpItem.Placeholder = tmp
 		} else {
 			blog.Error("can not parse the placeholder, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "placeholder")
 		}
 	}
 
@@ -187,12 +187,12 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			if "" == tmp {
 				blog.Error("bk_property_type could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_type")
 			}
 			tmpItem.PropertyType = tmp
 		} else {
 			blog.Error("can not parse the bk_property_type, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_type")
 		}
 	}
 
@@ -201,22 +201,22 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		case common.FieldTypeEnum:
 			if tmp, tmpErr := jsTmp.Array(); nil == tmpErr {
 				tmpItem.Option = tmp
-				if err := util.ValidPropertyOption(common.FieldTypeEnum, tmpItem.Option); nil != err {
+				if err := util.ValidPropertyOption(common.FieldTypeEnum, tmpItem.Option, errProxy); nil != err {
 					return tmpItem, err
 				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsInvalid, "option")
 			}
 		case common.FieldTypeInt:
 			if tmp, tmpErr := jsTmp.Map(); nil == tmpErr {
 				tmpItem.Option = tmp
-				if err := util.ValidPropertyOption(common.FieldTypeInt, tmpItem.Option); nil != err {
+				if err := util.ValidPropertyOption(common.FieldTypeInt, tmpItem.Option, errProxy); nil != err {
 					return tmpItem, err
 				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsInvalid, "option")
 			}
 		default:
 			tmpItem.Option = jsTmp

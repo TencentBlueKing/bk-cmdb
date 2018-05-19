@@ -13,69 +13,76 @@
 package util
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"fmt"
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(propertyType string, option interface{}) error {
+func ValidPropertyOption(propertyType string, option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	switch propertyType {
 	case common.FieldTypeEnum:
 		if nil == option {
-			return fmt.Errorf(" option is required")
+			return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 		}
 
 		arrOption, ok := option.([]interface{})
 		if false == ok {
 			blog.Errorf(" option %v not enum option", option)
-			return fmt.Errorf(" option %v not enum option", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 		for _, o := range arrOption {
 			mapOption, ok := o.(map[string]interface{})
 			if false == ok {
 				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
-				return fmt.Errorf(" option %v not enum option, enum option item must id and name", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
 			_, idOk := mapOption["id"]
 			_, nameOk := mapOption["name"]
 			if false == idOk || false == nameOk {
 				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
-				return fmt.Errorf(" option %v not enum option, enum option item must id and name", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 
 			}
 		}
 	case common.FieldTypeInt:
 		if nil == option {
-			return fmt.Errorf(" option is required")
+			return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 		}
 
 		tmp, ok := option.(map[string]interface{})
 		if false == ok {
-			return fmt.Errorf(" option %v not int option", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 
+		minVal := 0
+		maxVal := 0
+		
 		{
 			min, ok := tmp["min"]
 			if !ok {
-				return fmt.Errorf("option %v not include the min field", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
-			_, err := GetIntByInterface(min)
+			minVal, err := GetIntByInterface(min)
 			if nil != err {
-				return fmt.Errorf("the min %v is not a valid int value ", min)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
 		}
 
 		{
 			max, ok := tmp["max"]
 			if !ok {
-				return fmt.Errorf("option %v not include the max field", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
-			_, err := GetIntByInterface(max)
+			maxVal, err := GetIntByInterface(max)
 			if nil != err {
-				return fmt.Errorf("the max %v is not a valid int value ", max)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
+		}
+
+		if minVal > maxVal {
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 
 	}
