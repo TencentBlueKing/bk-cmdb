@@ -14,6 +14,7 @@ package util
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -51,9 +52,31 @@ func ValidPropertyOption(propertyType string, option interface{}) error {
 			return fmt.Errorf(" option is required")
 		}
 
-		_, ok := option.(map[string]interface{})
+		tmp, ok := option.(map[string]interface{})
 		if false == ok {
 			return fmt.Errorf(" option %v not int option", option)
+		}
+
+		{
+			min, ok := tmp["min"]
+			if !ok {
+				return fmt.Errorf("option %v not include the min field", option)
+			}
+			_, err := GetIntByInterface(min)
+			if nil != err {
+				return fmt.Errorf("the min %v is not a valid int value ", min)
+			}
+		}
+
+		{
+			max, ok := tmp["max"]
+			if !ok {
+				return fmt.Errorf("option %v not include the max field", option)
+			}
+			_, err := GetIntByInterface(max)
+			if nil != err {
+				return fmt.Errorf("the max %v is not a valid int value ", max)
+			}
 		}
 
 	}
