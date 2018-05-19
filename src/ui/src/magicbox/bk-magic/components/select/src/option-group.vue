@@ -58,6 +58,9 @@
                 // 返回localOptions的长度 - 1给当前子组件作为index值
                 return this.preLength + this.localOptions.length - 1
             },
+            updateOption (optIndex, opt) {
+                this.$parent.updateOption(optIndex, opt)
+            },
             optionClickHandlder (v, k) {
                 this.$parent.optionClickHandlder(v, k)
             },
