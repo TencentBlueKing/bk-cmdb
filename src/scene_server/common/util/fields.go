@@ -22,8 +22,8 @@ import (
 )
 
 // ConvByPropertytype convert str to property type
-func ConvByPropertytype(fields *sourceAPI.ObjAttDes, val string) (interface{}, error) {
-	switch fields.PropertyType {
+func ConvByPropertytype(field *sourceAPI.ObjAttDes, val string) (interface{}, error) {
+	switch field.PropertyType {
 	case common.FieldTypeInt:
 		return gutil.GetIntByInterface(val)
 	case common.FieldTypeBool:
@@ -35,6 +35,10 @@ func ConvByPropertytype(fields *sourceAPI.ObjAttDes, val string) (interface{}, e
 			return false, nil
 		default:
 			return false, fmt.Errorf("%s not bool", val)
+		}
+	default:
+		if common.BKInnerObjIDHost == field.ObjectID && common.BKCloudIDField == field.PropertyID {
+			return gutil.GetIntByInterface(val)
 		}
 	}
 	return val, nil
