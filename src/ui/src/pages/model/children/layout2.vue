@@ -9,8 +9,8 @@
  */
 
 <template>
-    <div class="tab-content" v-bkloading="{isLoading: false}">
-        <div class="table-content">
+    <div class="tab-content">
+        <div class="table-content" v-bkloading="{isLoading: isLoading}">
             <div class="hidden-list">
                 <div class="hidden-list-title">
                     <i class="bk-icon icon-eye-slash-shape"></i>
@@ -45,7 +45,7 @@
                     </div>
                     <ul>
                         <draggable class="content-right" :index="groupIndex" v-model="group.properties" :options="{animation: 150, group:'field'}" :move="checkMove" @end="moveEnd">
-                            <li v-for="property in group.properties">
+                            <li v-for="(property, propertyIndex) in group.properties">
                                 <span class="layout-list-icon">
                                     <i></i><i></i><i></i>
                                 </span>
@@ -53,7 +53,7 @@
                                     <span class="text-name">{{property['bk_property_name']}}</span>
                                     <i v-if="property['isrequired'] && !property['isonly']" class="icon-cc-required"></i><i v-if="property['isonly']" class="icon-cc-key"></i>
                                 </span>
-                                <i class="bk-icon icon-eye-slash-shape" @click=""></i>
+                                <i class="bk-icon icon-eye-slash-shape" v-if="!property['isonly'] && !property['isrequired']" @click="deleteAttr(property, propertyIndex, groupIndex)"></i>
                             </li>
                         </draggable>
                     </ul>
@@ -67,14 +67,14 @@
             </div>
         </div>
         <div class="base-info">
-            <button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" @click="confirm">{{$t('Common["确认"]')}}</button>
+            <button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" @click="confirm">{{$t('Common["确定"]')}}</button>
             <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
         </div>
     </div>
 </template>
 
 <script>
-    import {mapGetters} from 'vuex'
+    import { mapGetters } from 'vuex'
     import draggable from 'vuedraggable'
     export default {
         props: {
@@ -88,13 +88,14 @@
         },
         data () {
             return {
+                isLoading: false,
                 activeGroupName: '',    // 当前编辑的分组名
                 attrGroup: [],          // 属性分组
                 attrList: [],           // 全部属性
                 groupAttrList: [],      // 按分组排好序的属性
-                localGroupAttrList: [], // 保存时做比对
+                groupAttrListCopy: [], // 保存时做比对
                 hideAttr: [],           // 隐藏字段
-                localHideAttr: [],      // 隐藏字段 保存时做比对
+                hideAttrCopy: [],      // 隐藏字段 保存时做比对
                 activeAttr: {}          // 当前移动的属性
             }
         },
@@ -120,24 +121,76 @@
             }
         },
         methods: {
+            deleteAttr (property, propertyIndex, groupIndex) {
+                this.groupAttrList[groupIndex].properties.splice(propertyIndex, 1)
+                this.hideAttr.push(property)
+            },
+            /**
+             * 检查是否可移动到指定区域
+             * @param evt {Object} - 拖拽对象的相关属性
+             * @return - 返回false会取消移动操作
+             */
             checkMove (evt) {
                 this.activeAttr = evt.draggedContext.element
                 // 唯一字段、必填字段不能够被隐藏
                 return !(evt.to.attributes[2].value === 'content-left' && (evt.draggedContext.element.isonly || evt.draggedContext.element.isrequired))
             },
+            /**
+             * 移动结束回调
+             */
             moveEnd (evt) {
                 this.$forceUpdate()
             },
-            confirm () {
-                this.groupAttrList.map(group => {
-                    // group.properties
+            /**
+             * 确认
+             */
+            async confirm (isSaveAll = true) {
+                this.isLoading = true
+                let params = []
+                if (isSaveAll) {
+                    this.groupAttrList.map(group => {
+                        group.properties.map((property, index) => {
+                            params.push({
+                                condition: {
+                                    bk_obj_id: property['bk_obj_id'],
+                                    bk_property_id: property['bk_property_id'],
+                                    bk_supplier_account: this.bkSupplierAccount
+                                },
+                                data: {
+                                    bk_property_group: group['bk_group_id'],
+                                    bk_property_index: index
+                                }
+                            })
+                        })
+                    })
+                }
+                this.hideAttr.map((property, index) => {
+                    params.push({
+                        condition: {
+                            bk_obj_id: property['bk_obj_id'],
+                            bk_property_id: property['bk_property_id'],
+                            bk_supplier_account: this.bkSupplierAccount
+                        },
+                        data: {
+                            bk_property_group: 'none',
+                            bk_property_index: index
+                        }
+                    })
                 })
+                try {
+                    await this.$axios.put('/objectatt/group/property', params)
+                    this.$alertMsg(this.$t('Common["更新成功"]'), 'success')
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
+                }
             },
             /**
              * 取消
              */
             cancel () {
-
+                this.$emit('cancel')
             },
             /**
              * 调整分组位置
@@ -150,7 +203,11 @@
                 [groupAttrList[from], groupAttrList[to]] = [groupAttrList[to], groupAttrList[from]]
                 this.$forceUpdate()
             },
+            /**
+             * 更新属性分组信息
+             */
             async updateGroupIndex (fromGroup, toGroup) {
+                this.isLoading = true
                 let groupList = [fromGroup, toGroup]
                 await this.$Axios.all(groupList.map((group, index) => {
                     let params = {
@@ -163,6 +220,7 @@
                     }
                     return this.$axios.put('/objectatt/group/update', params)
                 }))
+                this.isLoading = false
             },
             /**
              * 添加分组
@@ -171,7 +229,7 @@
                 if (this.isEditTitle || !this.checkGroupParams()) {
                     return
                 }
-
+                this.isLoading = true
                 // 取 groupId groupIndex
                 let reg = /^[0-9]+$/
                 let groupId = 0
@@ -182,6 +240,8 @@
                     }
                     groupIndex = bkGroupIndex > groupIndex ? bkGroupIndex : groupIndex
                 })
+                groupId++
+                groupIndex++
 
                 let params = {
                     bk_group_id: groupId.toString(),  // groupID唯一，前端不展示
@@ -202,18 +262,29 @@
                     })
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
                 }
             },
+            /**
+             * 将分组名切换为编辑态
+             * @param group {Object} - 分组信息
+             */
             editGroupName (group) {
                 if (!this.isEditTitle) {
                     group.isEditTitle = true
                     this.activeGroupName = group['bk_group_name']
                 }
             },
+            /**
+             * 修改分组名
+             * @param group {Object} - 分组信息
+             */
             async changeGroupName (group) {
                 if (!this.checkGroupParams(group)) {
                     return
                 }
+                this.isLoading = true
                 let params = {
                     condition: {
                         id: group.id
@@ -224,19 +295,21 @@
                 }
                 try {
                     await this.$axios.put('/objectatt/group/update', params)
-                    let activeGroup = this.attrGroup.find(({id}) => {
+                    let activeGroup = this.groupAttrList.find(({id}) => {
                         return id === group.id
                     })
                     activeGroup['bk_group_name'] = group['bk_group_name']
                     group.isEditTitle = false
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
                 }
             },
             /**
              * 删除分组
              */
-            deleteGroup (group, groupIndex) {
+            async deleteGroup (group, groupIndex) {
                 if (group['ispre']) {
                     this.$alertMsg(this.$t('ModelManagement["系统内置分组不可删除"]'))
                     return
@@ -252,21 +325,32 @@
                     this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
                     return
                 }
-                if (group.properties.length) {
-                    group.properties.map(property => {
-                        property['bk_property_group'] = 'none'
-                        this.hideAttr.push(property)
-                    })
+                try {
+                    await this.$axios.delete(`/objectatt/group/groupid/${group['id']}`)
+                    // 该分组下有属性时更新属性分组为none
+                    if (group.properties.length) {
+                        this.confirm(false)
+                        group.properties.map(property => {
+                            property['bk_property_group'] = 'none'
+                            this.hideAttr.push(property)
+                        })
+                    } else {
+                        this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
+                    }
+                    this.groupAttrList.splice(groupIndex, 1)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
-                this.groupAttrList.splice(groupIndex, 1)
             },
             /**
              * 获取字段相关信息
              */
             async getAttrData () {
+                this.isLoading = true
                 await this.getAttrGroup()
                 await this.getAttr()
                 this.setGroupAttrList()
+                this.isLoading = false
             },
             /**
              * 获取属性分组
@@ -279,6 +363,7 @@
                         return groupA['bk_group_index'] - groupB['bk_group_index']
                     })
                 } catch (e) {
+                    this.isLoading = false
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
@@ -294,6 +379,7 @@
                     let res = await this.$axios.post(`/object/attr/search`, params)
                     this.attrList = res.data
                 } catch (e) {
+                    this.isLoading = false
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
@@ -301,25 +387,44 @@
              * 将属性分组
              */
             setGroupAttrList () {
-                this.groupAttrList = this.$deepClone(this.attrGroup)
-                this.groupAttrList.map(group => {
+                let groupAttrList = this.$deepClone(this.attrGroup)
+                groupAttrList.map(group => {
                     this.$set(group, 'isEditTitle', false)
                     if (!group.hasOwnProperty('properties')) {
                         group['properties'] = []
                     }
                 })
-                this.hideAttr = []
+                let hideAttr = []
                 this.attrList.map(attr => {
-                    let group = this.groupAttrList.find(({bk_group_id: bkGroupId}) => {
+                    let group = groupAttrList.find(({bk_group_id: bkGroupId}) => {
                         return bkGroupId === attr['bk_property_group']
                     })
                     if (group) {
                         group.properties.push(attr)
                     } else {
-                        this.hideAttr.push(attr)
+                        hideAttr.push(attr)
                     }
                 })
+
+                // 排序
+                groupAttrList.map(group => {
+                    group.properties.sort((propertyA, propertyB) => {
+                        return propertyA['bk_property_index'] - propertyB['bk_property_index']
+                    })
+                })
+                hideAttr.sort((propertyA, propertyB) => {
+                    return propertyA['bk_property_index'] - propertyB['bk_property_index']
+                })
+
+                this.groupAttrList = groupAttrList
+                this.hideAttr = hideAttr
+                this.groupAttrListCopy = this.$deepClone(this.groupAttrList)
+                this.hideAttrCopy = this.$deepClone(this.hideAttr)
             },
+            /**
+             * 检查分组名参数
+             * @param group {Object} - 分组信息
+             */
             checkGroupParams (group) {
                 if (group) {
                     if (this.activeGroupName === group['bk_group_name']) {

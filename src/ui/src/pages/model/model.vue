@@ -147,6 +147,7 @@
                         <v-layout2 ref="layout2"
                         :isShow="curTabName==='layout2'"
                         :activeModel="curModel"
+                        @cancel="cancel"
                         ></v-layout2>
                     </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
