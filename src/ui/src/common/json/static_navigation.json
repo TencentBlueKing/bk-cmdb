@@ -9,7 +9,7 @@
     },
     "bk_host_manage": {
         "i18n": "Hosts['主机管理']",
-        "icon": "icon-cc-business",
+        "icon": "icon-cc-host",
         "id": "bk_host_manage",
         "name": "主机管理",
         "children": [{
