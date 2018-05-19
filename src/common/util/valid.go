@@ -58,54 +58,38 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 		{
 			// min
 			min, ok := tmp["min"]
-			if !ok {
-				return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-			}
 			maxVal := 0
 			minVal := 0
 			err := errProxy.Error(common.CCErrCommParamsNeedInt)
-			switch d := min.(type) {
-			case string:
-				if 0 == len(d) {
-					minVal = -99999999999
-				}
-				if 11 < len(d) {
-					return errProxy.Error(common.CCErrCommOverLimit)
-				}
 
-			}
-			minVal, err = GetIntByInterface(min)
-			if nil != err {
-				switch min.(type) {
-				case string:
-				default:
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
+			if ok {
+				minVal, err = GetIntByInterface(min)
+				if nil != err {
+					switch d := min.(type) {
+					case string:
+						if 11 < len(d) {
+							return errProxy.Error(common.CCErrCommOverLimit)
+						}
+					default:
+						return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
+					}
 
+				}
 			}
 
 			// max
 			max, ok := tmp["max"]
-			if !ok {
-				return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-			}
-
-			switch d := min.(type) {
-			case string:
-				if 0 == len(d) {
-					maxVal = 99999999999
-				}
-				if 11 < len(d) {
-					return errProxy.Error(common.CCErrCommOverLimit)
-				}
-
-			}
-			maxVal, err = GetIntByInterface(max)
-			if nil != err {
-				switch min.(type) {
-				case string:
-				default:
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+			if ok {
+				maxVal, err = GetIntByInterface(max)
+				if nil != err {
+					switch d := max.(type) {
+					case string:
+						if 11 < len(d) {
+							return errProxy.Error(common.CCErrCommOverLimit)
+						}
+					default:
+						return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+					}
 				}
 			}
 
