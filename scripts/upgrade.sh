@@ -45,8 +45,10 @@ if [ -f $new_version_package ];then
         done
     popd > /dev/null
 
-    echo cp `realpath $(pwd)/web`
-    cp -R -f $(pwd)/upgrade_tmp/cmdb/web .
+    if [ -d $(pwd)/upgrade_tmp/cmdb/web ]; then 
+        echo cp `realpath $(pwd)/web`
+        cp -R -f $(pwd)/upgrade_tmp/cmdb/web .
+    fi
 
     # delete the template directory
     rm -rf $(pwd)/upgrade_tmp/
