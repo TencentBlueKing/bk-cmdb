@@ -59,7 +59,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 			// min
 			min, ok := tmp["min"]
 			if !ok {
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+				return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
 			}
 			maxVal := 0
 			minVal := 0
@@ -70,7 +70,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 					minVal = -99999999999
 				}
 				if 11 < len(d) {
-					return errProxy.Errorf(common.CCErrCommOverLimit)
+					return errProxy.Error(common.CCErrCommOverLimit)
 				}
 
 			}
@@ -96,7 +96,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 					maxVal = 99999999999
 				}
 				if 11 < len(d) {
-					return errProxy.Errorf(common.CCErrCommOverLimit)
+					return errProxy.Error(common.CCErrCommOverLimit)
 				}
 
 			}
