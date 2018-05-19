@@ -130,6 +130,10 @@
                 type: Boolean,
                 default: false
             },
+            rowHoverColor: {
+                type: [String, Boolean],
+                default: '#f1f7ff'
+            },
             stripe: {
                 type: Boolean,
                 default: false
