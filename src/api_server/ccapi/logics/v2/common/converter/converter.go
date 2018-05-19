@@ -110,7 +110,7 @@ func ResToV2ForAppList(respV3 string) (interface{}, error) {
 //ResToV2ForAppList: convert cc v3 json data to cc v2 for application list
 func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error) {
 
-	resDataV2 := make(map[string]interface{})
+	resDataV2 := make(map[string][]interface{})
 	resDataV3, err := getResDataV3(respV3)
 	if nil != err {
 		blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
@@ -124,13 +124,18 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 
 	}
 
-	for _, roleStr := range roleArr {
+	for _, item := range resDataInfoV3 {
+		itemMap := item.(map[string]interface{})
 
-		roleAppData := make([]map[string]interface{}, 0)
-		for _, item := range resDataInfoV3 {
-			itemMap := item.(map[string]interface{})
+		mapV2, err := convertOneApp(itemMap)
+		if nil != err {
+			blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
+			return nil, err
+		}
+		for _, roleStr := range roleArr {
 
 			roleStrV3, ok := defs.RoleMap[roleStr]
+
 			if !ok {
 				continue
 			}
@@ -141,15 +146,16 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 			}
 
 			if strings.Contains(roleUsers.(string), uin) {
-				mapV2, err := convertOneApp(itemMap)
-				if nil != err {
-					blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
-					return nil, err
+				apps, ok := resDataV2[roleStr]
+				if !ok {
+					apps = make([]interface{}, 0)
 				}
-				roleAppData = append(roleAppData, mapV2)
+				resDataV2[roleStr] = append(apps, mapV2)
+
 			}
+
 		}
-		resDataV2[roleStr] = roleAppData
+
 	}
 
 	return resDataV2, nil
