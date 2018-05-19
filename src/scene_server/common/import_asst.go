@@ -59,9 +59,10 @@ func NewAsstObjectInst(req *restful.Request, ownerID, objAddr string, fields map
 // GetObjAsstObjectPrimaryKey  get instance assocate object primary property fields
 func (a *AsstObjectInst) GetObjAsstObjectPrimaryKey() error {
 	ret := make(map[string][]sourceAPI.ObjAttDes)
+
 	for _, f := range a.fields {
 		if util.IsAssocateProperty(f.PropertyType) {
-			fields, err := a.getObjectFields(f.AssociationID, common.BKPropertyNameField)
+			fields, err := a.getObjectFields(f.AssociationID, common.BKPropertyIDField)
 			if nil != err {
 				blog.Errorf("get object  assocate property %s error:%s", f.PropertyID, err.Error())
 				return err
@@ -82,7 +83,7 @@ func (a *AsstObjectInst) GetObjAsstObjectPrimaryKey() error {
 
 // SetObjAsstPropertyVal set instance assocate object value to property fields
 func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) error {
-	var strIds []string
+
 	for key, val := range inst {
 		f, ok := a.fields[key]
 		if false == ok {
@@ -99,7 +100,9 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 			if "" == strInsts {
 				continue
 			}
+
 			insts := strings.Split(strInsts, common.ExcelAsstPrimaryKeyRowChar)
+			var strIds []string
 			for _, inst := range insts {
 				inst = strings.TrimSpace(inst)
 				if "" == inst {
@@ -112,6 +115,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 				strIds = append(strIds, fmt.Sprintf("%d", id))
 			}
 			inst[key] = strings.Join(strIds, common.InstAsstIDSplit)
+
 		}
 	}
 	return nil
@@ -319,9 +323,10 @@ func (a *AsstObjectInst) getAsstObjectConds(infos map[int]map[string]interface{}
 						conds[common.BKObjIDField] = f.AssociationID
 					}
 					for i, val := range primaryKeys {
+
 						asstf := asstFields[i]
 						var err error
-						conds[asstf.PropertyID], err = sceneUtil.ConvByPropertytype(f, val)
+						conds[asstf.PropertyID], err = sceneUtil.ConvByPropertytype(&asstf, val)
 						if nil != err {
 							errs[rowIndex] = errors.New(a.defLang.Languagef("import_asst_property_str_primary_count_len", key))
 							continue
