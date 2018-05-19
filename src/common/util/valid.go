@@ -55,29 +55,22 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 
-		minVal := 0
-		maxVal := 0
-
-		{
-			min, ok := tmp["min"]
-			if !ok {
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-			}
-			minVal, err := GetIntByInterface(min)
-			if nil != err {
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-			}
+		min, ok := tmp["min"]
+		if !ok {
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
+		minVal, err := GetIntByInterface(min)
+		if nil != err {
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 
-		{
-			max, ok := tmp["max"]
-			if !ok {
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-			}
-			maxVal, err := GetIntByInterface(max)
-			if nil != err {
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-			}
+		max, ok := tmp["max"]
+		if !ok {
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
+		maxVal, err := GetIntByInterface(max)
+		if nil != err {
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 
 		if minVal > maxVal {
