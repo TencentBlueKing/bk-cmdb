@@ -142,7 +142,7 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 		mapField, _ := field.(map[string]interface{})
 		fieldName, _ := mapField["bk_property_id"].(string)
 		fieldType, _ := mapField["bk_property_type"].(string)
-		option, _ := mapField["option"].(string)
+		option, _ := mapField["option"]
 		switch fieldType {
 		case common.FieldTypeSingleChar:
 			ret[fieldName] = ""
