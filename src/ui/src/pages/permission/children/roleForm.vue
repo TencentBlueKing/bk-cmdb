@@ -33,7 +33,7 @@
                 </div>
                 <div class="content-group clearfix">
                     <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>
-                    <v-member-selector class="fl member-selector" :selected.sync="data['user_list']" :multiple="true" :exclude="true"></v-member-selector>
+                    <v-member-selector class="fl member-selector" :selected.sync="data['user_list']" :multiple="true"></v-member-selector>
                 </div>
             </div>
             <div class="role-form-btn">
