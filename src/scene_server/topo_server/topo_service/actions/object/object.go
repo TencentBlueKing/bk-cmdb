@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"strings"
@@ -69,7 +70,7 @@ func (cli *objectAction) SetManager(mgr manager.Manager) error {
 
 var errEmpty = fmt.Errorf("empty string")
 
-func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr *simplejson.Json) (*api.ObjAttDes, error) {
+func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr *simplejson.Json, errProxy errors.DefaultCCErrorIf) (*api.ObjAttDes, error) {
 
 	if !tmpItem.IsPre {
 		// is not the inner field
@@ -369,7 +370,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					// need to update
 					for _, tmpItem := range items {
 
-						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx))
+						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx), defErr)
 						if nil != itemErr {
 							blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
@@ -408,7 +409,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					tmpItem := &api.ObjAttDes{}
 					tmpItem.ObjectID = objID
 					tmpItem.OwnerID = ownerID
-					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx))
+					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx), defErr)
 					if nil != itemErr {
 						blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
