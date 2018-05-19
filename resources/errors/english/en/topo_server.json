@@ -15,7 +15,7 @@
 	"1101014": "Delete Model Failed",
 	"1101015": "Update model failed",
 	"1101016": "Query model failed",
-	"1101017": "Failed to create a model instance",
+	"1101017": "Failed to create a model properties",
 	"1101018": "Failed to delete model properties",
 	"1101019": "Failed to update model properties",
 	"1101020": "Query Model Property Failed",

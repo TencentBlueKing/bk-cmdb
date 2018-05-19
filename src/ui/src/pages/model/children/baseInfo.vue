@@ -523,6 +523,7 @@
                         cursor: pointer;
                         &.active{
                             color: #498fe0;
+                            background: #e2efff;
                         }
                         i{
                             font-size: 24px;

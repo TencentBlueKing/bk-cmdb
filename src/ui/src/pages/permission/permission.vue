@@ -19,6 +19,7 @@
             <bk-tabpanel name="authority" :title="$t('Permission[\'权限\']')">
                 <v-authority :roles="roles"
                     :activeGroup="activeGroup"
+                    :activeTabName.sync="activeTabName"
                 ></v-authority>
             </bk-tabpanel>
             <bk-tabpanel name="business" :title="$t('Permission[\'业务权限\']')">
