@@ -69,7 +69,7 @@
                             </button>
                         </form>
                         <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
-                        <button class="bk-button button-setting" @click="setTableField">
+                        <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
                         </button>
                         <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
@@ -125,9 +125,9 @@
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
                             <div slot="list" class="attribute-group">
-                                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                                <h3 class="title">{{$t("BusinessTopology['业务拓扑']")}}</h3>
                                 <ul class="attribute-list clearfix">
-                                    <li class="attribute-item fl" v-for="item in sideslider.hostRelation">
+                                    <li class="attribute-item" v-for="item in sideslider.hostRelation">
                                         <span class="attribute-item-value">{{item}}</span>
                                     </li>
                                 </ul>
