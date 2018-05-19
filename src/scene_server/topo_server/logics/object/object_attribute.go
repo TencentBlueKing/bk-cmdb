@@ -190,7 +190,7 @@ func (cli *objAttLogic) CreateObjectAtt(forward *api.ForwardParam, obj api.ObjAt
 		return 0, fmt.Errorf("'%s' is the built-in property", obj.PropertyID)
 	}
 
-	err := util.ValidPropertyOption(obj.PropertyType, obj.Option)
+	err := util.ValidPropertyOption(obj.PropertyType, obj.Option, errProxy)
 	if nil != err {
 		blog.Errorf("'%s' %s", obj.PropertyID, err.Error())
 		return 0, fmt.Errorf("'%s' %s", obj.PropertyID, err.Error())
@@ -432,7 +432,7 @@ func (cli *objAttLogic) UpdateObjectAtt(forward *api.ForwardParam, attrID int, v
 	}
 	if fieldValue, ok := obj["option"]; ok {
 		objAtt["option"] = fieldValue
-		err := util.ValidPropertyOption(itemObj.PropertyType, fieldValue)
+		err := util.ValidPropertyOption(itemObj.PropertyType, fieldValue, errProxy)
 		if nil != err {
 			blog.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
 			return fmt.Errorf("'%s' %s", itemObj.PropertyID, err.Error())
