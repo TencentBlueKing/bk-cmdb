@@ -128,6 +128,20 @@ const (
 	// BKDBNE the db operator
 	BKDBNE = "$ne"
 
+	// BKDBNIN the db oeprator
+	BKDBNIN = "$nin"
+
+	// BKDBLT the db operator
+	BKDBLT = "$lt"
+
+	// BKDBLTE the db operator
+	BKDBLTE = "$lte"
+
+	// BKDBGT the db operator
+	BKDBGT = "$gt"
+
+	// BKDBGTE the db opeartor
+	BKDBGTE = "$gte"
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
