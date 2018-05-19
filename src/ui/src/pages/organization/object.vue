@@ -548,7 +548,9 @@
             getAllObjectId (isAllCheck) {
                 if (isAllCheck) {
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
-                    this.$axios.post(this.axiosConfig.url, {fields: [idKey]}).then(res => {
+                    const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
+                    this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
+                    this.$axios.post(this.axiosConfig.url, params).then(res => {
                         if (res.result) {
                             let chooseId = []
                             res.data.info.map(attr => {
