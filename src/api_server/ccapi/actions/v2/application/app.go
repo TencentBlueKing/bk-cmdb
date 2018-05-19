@@ -174,11 +174,11 @@ func (cli *appAction) GetAppByUIN(req *restful.Request, resp *restful.Response) 
 	}
 
 	userName := formData["userName"][0]
-
+	v3Username := strings.Trim(converter.DecorateUserName(userName), ",")
 	orCondition := []map[string]interface{}{
 		map[string]interface{}{
 			"bk_biz_maintainer": map[string]interface{}{
-				common.BKDBLIKE: strings.Trim(converter.DecorateUserName(userName), ","),
+				common.BKDBLIKE: fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", v3Username, v3Username, v3Username, v3Username),
 			},
 		},
 	}
@@ -192,7 +192,7 @@ func (cli *appAction) GetAppByUIN(req *restful.Request, resp *restful.Response) 
 	if filterOnly == false {
 		orCondition = append(orCondition, map[string]interface{}{
 			"bk_biz_productor": map[string]interface{}{
-				common.BKDBLIKE: strings.Trim(converter.DecorateUserName(userName), ","),
+				common.BKDBLIKE: fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", v3Username, v3Username, v3Username, v3Username),
 			},
 		})
 	}
@@ -256,6 +256,7 @@ func (cli *appAction) GetUserRoleApp(req *restful.Request, resp *restful.Respons
 	userName := formData["uin"][0]
 	roleArr := strings.Split(formData["roleList"][0], ",")
 
+	v3Username := converter.DecorateUserName(userName)
 	roleOrCondition := make([]map[string]interface{}, 0)
 	for _, roleStr := range roleArr {
 		roleStrV3, ok := defs.RoleMap[roleStr]
@@ -265,7 +266,7 @@ func (cli *appAction) GetUserRoleApp(req *restful.Request, resp *restful.Respons
 
 		roleOrCondition = append(roleOrCondition, map[string]interface{}{
 			roleStrV3: map[string]interface{}{
-				common.BKDBLIKE: converter.DecorateUserName(userName),
+				common.BKDBLIKE: fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", v3Username, v3Username, v3Username, v3Username),
 			},
 		})
 	}
