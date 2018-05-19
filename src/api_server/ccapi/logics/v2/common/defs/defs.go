@@ -55,5 +55,5 @@ var RoleMap = map[string]string{
 	"Maintainers": common.BKMaintainersField,
 	"ProductPm":   common.BKProductPMField,
 	"Tester":      common.BKTesterField,
-	"Developer":   common.BKOperatorField,
+	"Developer":   common.BKDeveloperField,
 }

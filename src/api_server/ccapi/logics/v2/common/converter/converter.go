@@ -140,16 +140,18 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 				continue
 			}
 
+			apps, ok := resDataV2[roleStr]
+			if !ok {
+				apps = make([]interface{}, 0)
+				resDataV2[roleStr] = apps
+			}
 			roleUsers, ok := itemMap[roleStrV3]
 			if !ok {
 				continue
 			}
-
-			if strings.Contains(roleUsers.(string), uin) {
-				apps, ok := resDataV2[roleStr]
-				if !ok {
-					apps = make([]interface{}, 0)
-				}
+			strUser, _ := roleUsers.(string)
+			roleUsersList := strings.Split(strUser, ",")
+			if util.InStrArr(roleUsersList, uin) {
 				resDataV2[roleStr] = append(apps, mapV2)
 
 			}
