@@ -200,6 +200,9 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		case common.FieldTypeEnum:
 			if tmp, tmpErr := jsTmp.Array(); nil == tmpErr {
 				tmpItem.Option = tmp
+				if err := util.ValidPropertyOption(common.FieldTypeEnum, tmpItem.Option); nil != err {
+					return tmpItem, err
+				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
 				return tmpItem, tmpErr
@@ -207,6 +210,9 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		case common.FieldTypeInt:
 			if tmp, tmpErr := jsTmp.Map(); nil == tmpErr {
 				tmpItem.Option = tmp
+				if err := util.ValidPropertyOption(common.FieldTypeInt, tmpItem.Option); nil != err {
+					return tmpItem, err
+				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
 				return tmpItem, tmpErr

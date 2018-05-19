@@ -103,7 +103,7 @@
                                                     </input>
                                                 </span>
                                                 <input type="text" class="bk-form-input" v-else-if="property['bk_property_type'] === 'int'"
-                                                    :disabled="checkIsFieldDisabled(property)"
+                                                    :disabled="checkIsFieldDisabled(property)" maxlength="11" 
                                                     v-model.trim.number="localValues[property['bk_property_id']]">
                                                 <input v-else
                                                     type="text" class="bk-form-input"

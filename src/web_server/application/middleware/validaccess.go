@@ -89,6 +89,23 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	//biz  search privilege, return true
+	if strings.Contains(pathStr, BK_APP_SEARCH) || strings.Contains(pathStr, BK_SET_SEARCH) || strings.Contains(pathStr, BK_MODULE_SEARCH) || strings.Contains(pathStr, BK_INST_SEARCH) || strings.Contains(pathStr, BK_HOSTS_SEARCH) {
+		return true
+	}
+	if strings.Contains(pathStr, BK_HOSTS_SNAP) || strings.Contains(pathStr, BK_HOSTS_HIS) {
+		return true
+	}
+	if strings.Contains(pathStr, BK_TOPO_MODEL) {
+		return true
+	}
+	if strings.Contains(pathStr, BK_INST_SEARCH_OWNER) && strings.Contains(pathStr, BK_OBJECT_PLAT) {
+		return true
+	}
+	if searchPatternRegexp.MatchString(pathStr) {
+		return true
+	}
+
 	//valid resource config
 	if resPatternRegexp.MatchString(pathStr) {
 		blog.Debug("valid resource config: %v", pathStr)
@@ -108,6 +125,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 			}
 			return validModelConfigPrivi(modelPrivi, method, pathArr)
 		}
+		blog.Error("valid inst error")
 		return false
 
 	}
@@ -123,6 +141,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 			}
 			return validInstsOpPrivi(modelPrivi, method, pathArr)
 		}
+		blog.Error("valid inst error")
 		return false
 
 	}
@@ -147,20 +166,6 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 			//			return validSysConfigPrivi(sysPrivi, BK_CC_AUDIT)
 		}
 
-	}
-
-	//biz  search privilege, return true
-	if strings.Contains(pathStr, BK_APP_SEARCH) || strings.Contains(pathStr, BK_SET_SEARCH) || strings.Contains(pathStr, BK_MODULE_SEARCH) || strings.Contains(pathStr, BK_INST_SEARCH) || strings.Contains(pathStr, BK_HOSTS_SEARCH) {
-		return true
-	}
-	if strings.Contains(pathStr, BK_HOSTS_SNAP) || strings.Contains(pathStr, BK_HOSTS_HIS) {
-		return true
-	}
-	if strings.Contains(pathStr, BK_TOPO_MODEL) {
-		return true
-	}
-	if searchPatternRegexp.MatchString(pathStr) {
-		return true
 	}
 
 	//valid biz operaiton privilege
