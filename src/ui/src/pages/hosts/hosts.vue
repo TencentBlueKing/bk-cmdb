@@ -364,19 +364,6 @@
             exportUrl () {
                 return `${window.siteUrl}hosts/export`
             },
-            filterAttribute () {
-                let attribute = this.$deepClone(this.attribute)
-                attribute.forEach(attr => {
-                    attr.properties = attr.properties.filter(property => {
-                        let {
-                            bk_isapi: bkIsapi,
-                            bk_property_type: bkPropertyType
-                        } = property
-                        return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
-                    })
-                })
-                return attribute
-            },
             searchParams () {
                 let params = {
                     page: {
@@ -662,7 +649,7 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.filterAttribute
+                this.sideslider.fields.fieldOptions = this.attribute
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
             },
