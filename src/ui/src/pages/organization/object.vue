@@ -71,6 +71,7 @@
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
                 :wrapperMinusHeight="150"
+                :loading="table.loading"
                 @handleRowClick="editObject"
                 @handleSortChange="setTableSort"
                 @handlePageChange="setTablePage"
@@ -181,6 +182,7 @@
                 filterList: [],
                 // 表格数据
                 table: {
+                    loading: false,
                     header: [],
                     list: [],
                     chooseId: [],
@@ -525,6 +527,7 @@
             },
             // 获取表格列表
             getTableList () {
+                this.table.loading = true
                 return this.$axios.post(this.axiosConfig.url, this.axiosConfig.params).then(res => {
                     let data = {
                         count: 0,
@@ -543,10 +546,13 @@
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
+                }).finally(() => {
+                    this.table.loading = false
                 })
             },
             getAllObjectId (isAllCheck) {
                 if (isAllCheck) {
+                    this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
                     const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
@@ -560,6 +566,8 @@
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
+                    }).finally(() => {
+                        this.table.loading = false
                     })
                 } else {
                     this.table.chooseId = []

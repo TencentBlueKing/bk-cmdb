@@ -480,7 +480,7 @@
                     // border-right: 1px solid $borderColor;
                     text-align: center;
                     >i{
-                        color: #498fe0;
+                        color: #3c96ff;
                         vertical-align: middle;
                         font-size: 24px;
                     }
@@ -522,7 +522,7 @@
                         float: left;
                         cursor: pointer;
                         &.active{
-                            color: #498fe0;
+                            color: #3c96ff;
                             background: #e2efff;
                         }
                         i{
