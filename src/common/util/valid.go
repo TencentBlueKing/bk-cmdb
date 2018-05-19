@@ -58,7 +58,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 		{
 			// min
 			min, ok := tmp["min"]
-			maxVal := 0
+			maxVal := 99999999999 // default
 			minVal := 0
 			err := errProxy.Error(common.CCErrCommParamsNeedInt)
 
