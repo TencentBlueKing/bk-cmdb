@@ -91,7 +91,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 			}
 
 			if minVal > maxVal {
-				return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
 			}
 		}
 
