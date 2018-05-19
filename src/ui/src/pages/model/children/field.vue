@@ -1221,7 +1221,10 @@
                     isonly: false,
                     isrequired: false
                 },
-                curFieldInfoCopy: {},
+                curFieldInfoCopy: {
+                    isonly: false,
+                    isrequired: false
+                },
                 newFieldInfo: {
                     propertyName: '',       // 字段名称
                     propertyId: '',         // API标识

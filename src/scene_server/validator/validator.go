@@ -32,6 +32,7 @@ type ValRule struct {
 	ownerID        string
 	objID          string
 	objCtrl        string
+	AllFieldAttDes []api.ObjAttDes
 }
 
 type MetaRst struct {
@@ -54,6 +55,7 @@ func (valid *ValRule) GetObjAttrByID(forward *api.ForwardParam, objID string) er
 	client := api.NewClient(valid.objCtrl)
 
 	result, _ := client.SearchMetaObjectAttExceptInnerFiled(forward, []byte(info))
+	valid.AllFieldAttDes = result
 	blog.Infof("valid result:%+v selector:%s", result, info)
 	for _, j := range result {
 		cell := make(map[string]interface{})

@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/migrate_service/data"
 	"configcenter/src/scene_server/validator"
 	"encoding/json"
 	"errors"
@@ -50,14 +49,8 @@ func addDefaultApp(req *restful.Request, cc *api.APIResource, ownerID string) er
 	params[common.BKAppNameField] = common.DefaultAppName
 	params[common.BKMaintainersField] = "admin"
 	params[common.BKProductPMField] = "admin"
-
-	if data.Distribution == common.RevisionEnterprise {
-		params[common.BKTimeZoneField] = "Asia/Shanghai"
-		params[common.BKLanguageField] = "1" //中文
-	} else {
-		delete(params, common.BKTimeZoneField)
-		delete(params, common.BKLanguageField)
-	}
+	params[common.BKTimeZoneField] = "Asia/Shanghai"
+	params[common.BKLanguageField] = "1" //中文
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(params)
@@ -149,7 +142,7 @@ func getObjectFields(url string, req *restful.Request, objID string) (common.KvM
 		mapField, _ := field.(map[string]interface{})
 		fieldName, _ := mapField["bk_property_id"].(string)
 		fieldType, _ := mapField["bk_property_type"].(string)
-		option, _ := mapField["option"].(string)
+		option, _ := mapField["option"]
 		switch fieldType {
 		case common.FieldTypeSingleChar:
 			ret[fieldName] = ""
