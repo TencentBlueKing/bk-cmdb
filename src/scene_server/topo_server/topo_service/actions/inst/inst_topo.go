@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/util"
 	scenecommon "configcenter/src/scene_server/common"
 	api "configcenter/src/source_controller/api/object"
+	sourcecommon "configcenter/src/source_controller/common/instdata"
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
@@ -267,7 +268,8 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 		// search the insts
 
 		// construct the object id
-		currInstID := instRes.Get(common.BKInstIDField).String()
+
+		currInstID := instRes.Get(sourcecommon.GetIDNameByType(objID)).Int()
 		currObjectID := instRes.Get(common.BKObjIDField).String()
 
 		// search parent association inst id
@@ -349,28 +351,34 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 		condition := map[string]interface{}{}
 		objType := ""
 		targetpre := cli.CC.ObjCtrl() + "/object/v1/insts/"
+		instName := ""
 		switch objID {
 		case common.BKInnerObjIDHost:
 			objType = ""
 			targetpre = cli.CC.HostCtrl() + "/host/v1/hosts"
 			condition[common.BKHostIDField] = instID
+			instName = common.BKHostInnerIPField
 		case common.BKInnerObjIDModule:
 			objType = common.BKInnerObjIDModule
 			condition[common.BKModuleIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
+			instName = common.BKModuleNameField
 		case common.BKInnerObjIDApp:
 			objType = common.BKInnerObjIDApp
 			condition[common.BKAppIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
+			instName = common.BKAppNameField
 		case common.BKInnerObjIDSet:
 			objType = common.BKInnerObjIDSet
 			condition[common.BKSetIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
+			instName = common.BKSetNameField
 		default:
 			objType = common.BKINnerObjIDObject
 			condition[common.BKObjIDField] = objID
 			condition[common.BKInstIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
+			instName = common.BKObjNameField
 		}
 
 		// construct the search params
@@ -412,6 +420,7 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			objConditionStr, _ := json.Marshal(objCondition)
 
 			// get objid information
+			cli.objcli.SetAddress(cli.CC.ObjCtrl())
 			objItems, objErr := cli.objcli.SearchMetaObject(&api.ForwardParam{Header: req.Request.Header}, objConditionStr)
 			if nil != objErr {
 				blog.Error("failed to search objects, error info is %s", objErr.Error())
@@ -429,6 +438,8 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			commonInst.ObjID = objItems[0].ObjectID
 			commonInst.ObjIcon = objItems[0].ObjIcon
 			commonInst.ID = strconv.Itoa(objItems[0].ID)
+			commonInst.InstID = int(dataInfo.Get(sourcecommon.GetIDNameByType(objID)).Int())
+			commonInst.InstName = dataInfo.Get(instName).String()
 
 			// get current topo child inst
 			rstTopoChild, rstErr := cli.getCommonChildInstTopo(req, objID, ownerID, dataInfo, js.Page)
