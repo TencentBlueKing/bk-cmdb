@@ -110,7 +110,7 @@ func ResToV2ForAppList(respV3 string) (interface{}, error) {
 //ResToV2ForAppList: convert cc v3 json data to cc v2 for application list
 func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error) {
 
-	resDataV2 := make(map[string]interface{})
+	resDataV2 := make(map[string][]interface{})
 	resDataV3, err := getResDataV3(respV3)
 	if nil != err {
 		blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
@@ -124,32 +124,40 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 
 	}
 
-	for _, roleStr := range roleArr {
+	for _, item := range resDataInfoV3 {
+		itemMap := item.(map[string]interface{})
 
-		roleAppData := make([]map[string]interface{}, 0)
-		for _, item := range resDataInfoV3 {
-			itemMap := item.(map[string]interface{})
+		mapV2, err := convertOneApp(itemMap)
+		if nil != err {
+			blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
+			return nil, err
+		}
+		for _, roleStr := range roleArr {
 
 			roleStrV3, ok := defs.RoleMap[roleStr]
+
 			if !ok {
 				continue
 			}
 
+			apps, ok := resDataV2[roleStr]
+			if !ok {
+				apps = make([]interface{}, 0)
+				resDataV2[roleStr] = apps
+			}
 			roleUsers, ok := itemMap[roleStrV3]
 			if !ok {
 				continue
 			}
+			strUser, _ := roleUsers.(string)
+			roleUsersList := strings.Split(strUser, ",")
+			if util.InStrArr(roleUsersList, uin) {
+				resDataV2[roleStr] = append(apps, mapV2)
 
-			if strings.Contains(roleUsers.(string), uin) {
-				mapV2, err := convertOneApp(itemMap)
-				if nil != err {
-					blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
-					return nil, err
-				}
-				roleAppData = append(roleAppData, mapV2)
 			}
+
 		}
-		resDataV2[roleStr] = roleAppData
+
 	}
 
 	return resDataV2, nil
@@ -989,21 +997,11 @@ func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 	tempMap := make(map[string]interface{})
 	blog.Debug(" itemMap: %v", itemMap)
 	for key, val := range itemMap {
-		switch val.(type) {
-		case int:
-			tempMap[key] = fmt.Sprintf("%v", val)
-		case json.Number:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int16:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int32:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int64:
-			tempMap[key] = fmt.Sprint("%v", val)
-		case int8:
-			tempMap[key] = fmt.Sprint("%v", val)
+		filedInt, err := util.GetIntByInterface(val)
+		if nil != err {
+			blog.Errorf("convert field %s to number fail!value:%v", key, val)
 		}
-
+		tempMap[key] = strconv.Itoa(filedInt)
 	}
 
 	return tempMap
@@ -1015,13 +1013,27 @@ func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map
 	tempMap := make(map[string]interface{})
 	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
-
-		filedInt64, err := itemMap[field].(json.Number).Int64()
-		if nil != err {
-			blog.Debug("convert field %s to number fail!", field)
-			return nil, err
+		item, ok := itemMap[field]
+		if !ok {
+			continue
 		}
-		tempMap[field] = strconv.Itoa(int(filedInt64))
+		if nil == item {
+			tempMap[field] = ""
+			continue
+		}
+
+		switch item.(type) {
+		case string:
+		case nil:
+		default:
+			filedInt, err := util.GetIntByInterface(item)
+			if nil != err {
+				blog.Debug("convert field %s to number fail!", field)
+				return nil, err
+			}
+			tempMap[field] = strconv.Itoa(filedInt)
+		}
+
 	}
 
 	return tempMap, nil

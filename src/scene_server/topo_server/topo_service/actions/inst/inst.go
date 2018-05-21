@@ -73,6 +73,12 @@ func init() {
 
 func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
 
+	InstName := common.BKInstNameField
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		InstName = common.BKCloudNameField
+	}
+
 	nonExistsFiled := make([]api.ObjAttDes, 0)
 	ignorItems := make([]string, 0)
 	for _, item := range attDes {
@@ -129,11 +135,11 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 			condition := make(map[string]interface{})
 			condition[common.BKOwnerIDField] = ownerID
 			condition[common.BKObjIDField] = objID
-			condition[common.BKInstNameField] = targetInput[common.BKInstNameField]
+			condition[InstName] = targetInput[InstName]
 
-			if _, ok := targetInput[common.BKInstNameField]; !ok {
+			if _, ok := targetInput[InstName]; !ok {
 				blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
-				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, common.BKInstNameField)
+				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
 			}
 
 			if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
@@ -189,7 +195,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	}
 
 	// set default InstaName value if not set
-	if _, ok := targetInput[common.BKInstNameField]; !ok {
+	if _, ok := targetInput[InstName]; !ok {
 		searchObjIDCond := make(map[string]interface{})
 		searchObjIDCond[common.BKObjIDField] = objID
 		searchObjIDCond[common.BKOwnerIDField] = ownerID
@@ -202,7 +208,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 		} else if len(rstItems) > 0 {
 			objName = rstItems[0].ObjectName
 		}
-		input[common.BKInstNameField] = fmt.Sprintf("默认 %s)", objName)
+		input[InstName] = fmt.Sprintf("%s", objName)
 	}
 
 	input[common.BKOwnerIDField] = ownerID
@@ -216,7 +222,14 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 		return http.StatusBadRequest, nil, isUpdate, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	cURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+	cURL := ""
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		cURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+	default:
+		cURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+	}
+
 	blog.Debug("inst:%v", string(inputJSON))
 
 	instRes, err := httpcli.ReqHttp(req, cURL, targetMethod, inputJSON)
@@ -423,6 +436,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 						err := assObjectInt.SetObjAsstPropertyVal(colInput)
 						if nil != err {
 							rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
+							continue
 						}
 					}
 
