@@ -182,49 +182,6 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 	}
 	ds = append(ds, distinst)
 
-	// add new dist if event belong to hostidentifier
-	if diffFields, ok := hostIndentDiffFiels[e.ObjType]; ok && e.Action == types.EventActionUpdate && e.EventType == types.EventTypeInstData {
-		for dataIndex := range e.Data {
-			curdata := e.Data[dataIndex].CurData.(map[string]interface{})
-			predata := e.Data[dataIndex].PreData.(map[string]interface{})
-			if checkDifferent(curdata, predata, diffFields...) {
-				hostIdentify := types.DistInst{
-					EventInst: *e,
-				}
-				hostIdentify.Data = nil
-				hostIdentify.EventType = types.EventTypeRelation
-				hostIdentify.ObjType = "hostidentifier"
-
-				instID, _ := curdata[common.GetInstIDField(e.ObjType)].(int)
-				if instID == 0 {
-					// this should wound happen -_-
-					blog.Errorf("conver instID faile the raw is %v", curdata[common.GetInstIDField(e.ObjType)])
-					continue
-				}
-				count := 0
-				identifiers := GetIdentifierCache().getCache(e.ObjType, instID)
-				total := len(identifiers)
-				// pack identifiers into 1 distribution to prevent send too many messages
-				for ident := range identifiers {
-					count++
-					d := types.EventData{PreData: *ident}
-					for _, field := range diffFields {
-						ident.Set(field, curdata[field])
-					}
-					d.CurData = *ident
-					hostIdentify.Data = append(hostIdentify.Data, d)
-					// each group is divided into 1000 units in order to limit the message size
-					if count%1000 == 0 || count == total {
-						ds = append(ds, hostIdentify)
-						hostIdentify.Data = nil
-					}
-				}
-			}
-		}
-	} else if e.EventType == types.EventTypeRelation && distinst.ObjType == "moduletransfer" {
-		
-	}
-
 	return ds
 }
 
@@ -235,10 +192,6 @@ func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (
 		}
 	}
 	return false
-}
-
-func GetIdentifierCache() *HostIdenCache {
-	return &HostIdenCache{}
 }
 
 func pushToQueue(key, value string) (err error) {
