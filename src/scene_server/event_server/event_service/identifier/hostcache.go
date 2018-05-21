@@ -45,9 +45,9 @@ type HostIdenCache struct {
 
 func (c *HostIdenCache) AddHost(i *HostIdentifier) {
 	c.hostCache[i.HostID] = i
-	c.bizCache[i.BizID][i] = true
-	c.setCache[i.SetID][i] = true
-	c.moduleCache[i.ModuleID][i] = true
+	// c.bizCache[i.BizID][i] = true
+	// c.setCache[i.SetID][i] = true
+	// c.moduleCache[i.ModuleID][i] = true
 	c.platCache[i.CloudID][i] = true
 }
 
@@ -82,77 +82,77 @@ type Module struct {
 }
 
 // Set set inst value
-func (i *HostIdentifier) Set(key string, value interface{}) {
-	switch key {
-	case "bk_host_name":
-		i.HostName = value
-	case "bk_cloud_name":
-		i.CloudName = value
-	case "bk_biz_name":
-		i.BizName = value
-	case "bk_set_name":
-		i.SetName = value
-	case "bk_module_name":
-		i.ModuleName = value
-	case "bk_service_status":
-		i.SetStatus = value
-	case "bk_set_env":
-		i.SetEnv = value
-	case "bk_host_innerip":
-		i.InnerIP = value
-	case "bk_host_outerip":
-		i.OuterIP = value
-	case "bk_os_type":
-		i.OSType = value
-	case "bk_os_name":
-		i.OSName = value
-	case "bk_mem":
-		i.Memory = value
-	case "bk_cpu":
-		i.CPU = value
-	case "bk_disk":
-		i.Disk = value
-	}
-}
+// func (i *HostIdentifier) Set(key string, value interface{}) {
+// 	switch key {
+// 	case "bk_host_name":
+// 		i.HostName = value
+// 	case "bk_cloud_name":
+// 		i.CloudName = value
+// 	case "bk_biz_name":
+// 		i.BizName = value
+// 	case "bk_set_name":
+// 		i.SetName = value
+// 	case "bk_module_name":
+// 		i.ModuleName = value
+// 	case "bk_service_status":
+// 		i.SetStatus = value
+// 	case "bk_set_env":
+// 		i.SetEnv = value
+// 	case "bk_host_innerip":
+// 		i.InnerIP = value
+// 	case "bk_host_outerip":
+// 		i.OuterIP = value
+// 	case "bk_os_type":
+// 		i.OSType = value
+// 	case "bk_os_name":
+// 		i.OSName = value
+// 	case "bk_mem":
+// 		i.Memory = value
+// 	case "bk_cpu":
+// 		i.CPU = value
+// 	case "bk_disk":
+// 		i.Disk = value
+// 	}
+// }
 
-func (i *HostIdentifier) SetBizID(id int) {
-	if id == i.BizID {
-		return
-	}
-	delete(i.cache.bizCache[i.BizID], i)
-	i.BizID = id
-	i.cache.bizCache[id][i] = true
-}
+// func (i *HostIdentifier) SetBizID(id int) {
+// 	if id == i.BizID {
+// 		return
+// 	}
+// 	delete(i.cache.bizCache[i.BizID], i)
+// 	i.BizID = id
+// 	i.cache.bizCache[id][i] = true
+// }
 
-func (i *HostIdentifier) SetSetID(id int) {
-	if id == i.SetID {
-		return
-	}
-	delete(i.cache.setCache[i.SetID], i)
-	i.SetID = id
-	i.cache.setCache[id][i] = true
-}
+// func (i *HostIdentifier) SetSetID(id int) {
+// 	if id == i.SetID {
+// 		return
+// 	}
+// 	delete(i.cache.setCache[i.SetID], i)
+// 	i.SetID = id
+// 	i.cache.setCache[id][i] = true
+// }
 
-func (i *HostIdentifier) SetModuleID(id int) {
-	if id == i.ModuleID {
-		return
-	}
-	delete(i.cache.moduleCache[i.ModuleID], i)
-	i.ModuleID = id
-	i.cache.moduleCache[id][i] = true
-}
+// func (i *HostIdentifier) SetModuleID(id int) {
+// 	if id == i.ModuleID {
+// 		return
+// 	}
+// 	delete(i.cache.moduleCache[i.ModuleID], i)
+// 	i.ModuleID = id
+// 	i.cache.moduleCache[id][i] = true
+// }
 
-func (i *HostIdentifier) SetPlatID(id int) {
-	if id == i.CloudID {
-		return
-	}
-	delete(i.cache.platCache[i.CloudID], i)
-	i.CloudID = id
-	i.cache.platCache[id][i] = true
-}
+// func (i *HostIdentifier) SetPlatID(id int) {
+// 	if id == i.CloudID {
+// 		return
+// 	}
+// 	delete(i.cache.platCache[i.CloudID], i)
+// 	i.CloudID = id
+// 	i.cache.platCache[id][i] = true
+// }
 
-func (i *HostIdentifier) ModuleTransfer(bizID, setID, moduleID int) {
-	i.SetBizID(bizID)
-	i.SetSetID(setID)
-	i.SetModuleID(moduleID)
-}
+// func (i *HostIdentifier) ModuleTransfer(bizID, setID, moduleID int) {
+// 	i.SetBizID(bizID)
+// 	i.SetSetID(setID)
+// 	i.SetModuleID(moduleID)
+// }

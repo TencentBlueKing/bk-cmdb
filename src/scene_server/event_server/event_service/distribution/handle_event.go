@@ -55,6 +55,7 @@ func StartHandleInsts() (err error) {
 		// pod one event from cache
 		event := popEventInst()
 		if event == nil {
+			time.Sleep(time.Second * 2)
 			continue
 		}
 		if err := handleInst(event); err != nil {
@@ -145,17 +146,6 @@ func handleInst(event *types.EventInstCtx) (err error) {
 	return
 }
 
-var hostIndentDiffFiels = map[string][]string{
-	common.BKInnerObjIDApp:    {common.BKAppNameField},
-	common.BKInnerObjIDSet:    {common.BKSetNameField, "bk_service_status", "bk_set_env"},
-	common.BKInnerObjIDModule: {common.BKModuleNameField},
-	common.BKInnerObjIDPlat:   {common.BKCloudNameField},
-	common.BKInnerObjIDHost: {common.BKHostNameField,
-		common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
-		common.BKOSTypeField, common.BKOSNameField,
-		"bk_mem", "bk_cpu", "bk_disk"},
-}
-
 func GetDistInst(e *types.EventInst) []types.DistInst {
 	distinst := types.DistInst{
 		EventInst: *e,
@@ -183,15 +173,6 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 	ds = append(ds, distinst)
 
 	return ds
-}
-
-func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
-	for _, field := range fields {
-		if curdata[field] != predata[field] {
-			return true
-		}
-	}
-	return false
 }
 
 func pushToQueue(key, value string) (err error) {
