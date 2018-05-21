@@ -125,7 +125,7 @@ const getters = {
             }
         })
         navigation = navigation.filter(({id, children}) => {
-            if (state.notCustomClassifications.includes(id)) {
+            if (['bk_index', 'bk_host_manage'].includes(id)) {
                 return true
             }
             return children.length
