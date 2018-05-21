@@ -24,7 +24,7 @@
                             </span>
                             <span class="hidden-list-text">
                                 <span class="text-name">{{item['bk_property_name']}}</span>
-                                <i v-if="item['isrequired']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                                <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
                             </span>
                         </li>
                     </draggable>
@@ -60,7 +60,7 @@
                                 </span>
                                 <span class="layout-list-text">
                                     <span class="text-name">{{item['bk_property_name']}}</span>
-                                    <i v-if="item['isrequired']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                                    <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
                                 </span>
                                 <i class="bk-icon icon-eye-slash-shape" @click="deleteModelField(item)"></i>
                             </li>

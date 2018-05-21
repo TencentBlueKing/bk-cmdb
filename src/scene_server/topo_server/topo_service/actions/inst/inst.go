@@ -22,6 +22,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	scenecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/topo_server/topo_service/actions/object"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"configcenter/src/scene_server/validator"
@@ -71,6 +72,12 @@ func init() {
 }
 
 func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Request, defErr errors.DefaultCCErrorIf, targetInput map[string]interface{}, ownerID, objID string, isBatch bool, asstDes []api.ObjAsstDes, attDes []api.ObjAttDes) (int, interface{}, bool, error) {
+
+	InstName := common.BKInstNameField
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		InstName = common.BKCloudNameField
+	}
 
 	nonExistsFiled := make([]api.ObjAttDes, 0)
 	ignorItems := make([]string, 0)
@@ -128,11 +135,11 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 			condition := make(map[string]interface{})
 			condition[common.BKOwnerIDField] = ownerID
 			condition[common.BKObjIDField] = objID
-			condition[common.BKInstNameField] = targetInput[common.BKInstNameField]
+			condition[InstName] = targetInput[InstName]
 
-			if _, ok := targetInput[common.BKInstNameField]; !ok {
+			if _, ok := targetInput[InstName]; !ok {
 				blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
-				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, common.BKInstNameField)
+				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
 			}
 
 			if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
@@ -153,13 +160,13 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 
 			targetMethod = common.HTTPUpdate
 			// clear the association field
-			if isBatch {
+			/*if isBatch {
 				for _, item := range asstDes {
 					if _, ok := targetInput[item.ObjectAttID]; ok {
 						delete(targetInput, item.ObjectAttID)
 					}
 				}
-			}
+			}*/
 
 			input["data"] = targetInput
 			input["condition"] = condition
@@ -188,7 +195,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	}
 
 	// set default InstaName value if not set
-	if _, ok := targetInput[common.BKInstNameField]; !ok {
+	if _, ok := targetInput[InstName]; !ok {
 		searchObjIDCond := make(map[string]interface{})
 		searchObjIDCond[common.BKObjIDField] = objID
 		searchObjIDCond[common.BKOwnerIDField] = ownerID
@@ -201,7 +208,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 		} else if len(rstItems) > 0 {
 			objName = rstItems[0].ObjectName
 		}
-		input[common.BKInstNameField] = fmt.Sprintf("默认 %s)", objName)
+		input[InstName] = fmt.Sprintf("%s", objName)
 	}
 
 	input[common.BKOwnerIDField] = ownerID
@@ -215,7 +222,14 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 		return http.StatusBadRequest, nil, isUpdate, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	cURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+	cURL := ""
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		cURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+	default:
+		cURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+	}
+
 	blog.Debug("inst:%v", string(inputJSON))
 
 	instRes, err := httpcli.ReqHttp(req, cURL, targetMethod, inputJSON)
@@ -287,6 +301,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 	language := util.GetActionLanguage(req)
 	// get error object by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 
 	// logics
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -321,6 +336,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		innerBatchInfo := &struct {
 			// BatchInfo batch info
 			BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
+			InputType string                          `json:"InputType"`
 		}{}
 
 		if _, batchInfoOK := input["BatchInfo"]; batchInfoOK {
@@ -331,6 +347,26 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
 			blog.Debug("the batch info %+v", *innerBatchInfo.BatchInfo)
+		}
+
+		var assObjectInt *scenecommon.AsstObjectInst
+		var rowErr map[int]error
+		inputType := innerBatchInfo.InputType
+		if common.InputTypeExcel == inputType {
+			assObjectInt = scenecommon.NewAsstObjectInst(req, ownerID, cli.CC.ObjCtrl(), nil, defLang)
+			assObjectInt.SetMapFields(objID)
+			err = assObjectInt.GetObjAsstObjectPrimaryKey()
+			if nil != err {
+				blog.Error("failed to read the object att, error is %s ", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommSearchPropertyFailed, err.Error())
+				//return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error())
+			}
+			rowErr, err = assObjectInt.InitInstFromData(*innerBatchInfo.BatchInfo)
+			if nil != err {
+				blog.Error("failed to read the object att, error is %s ", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoInstSelectFailed)
+				//return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
+			}
 		}
 
 		cli.objcli.SetAddress(cli.CC.ObjCtrl())
@@ -347,6 +383,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to marshal the data[%+v], error info is %s", searchData, jsErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONMarshalFailed)
 		}
+
 		forward := &api.ForwardParam{Header: req.Request.Header}
 		attdes, restErr := cli.objcli.SearchMetaObjectAtt(forward, searchData)
 		if nil != restErr {
@@ -389,16 +426,29 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 
 			rsts := &batchResult{}
 			for colIDx, colInput := range *innerBatchInfo.BatchInfo {
-
 				delete(colInput, "import_from")
+				if common.InputTypeExcel == inputType {
+					err, ok := rowErr[colIDx] //import instance assocate property fields has error
+					if true == ok {
+						rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
+						continue
+					} else {
+						err := assObjectInt.SetObjAsstPropertyVal(colInput)
+						if nil != err {
+							rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, err.Error()))
+							continue
+						}
+					}
+
+				}
 
 				if _, _, isUpdate, rstErr := createFunc(forward, req, defErr, colInput, ownerID, objID, true, asstDes, attdes); nil != rstErr {
 					if !isUpdate {
 						blog.Debug("failed to create inst, error info is %s", rstErr.Error())
-						rsts.Errors = append(rsts.Errors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
+						rsts.Errors = append(rsts.Errors, defLang.Languagef("import_row_int_error_str", colIDx, rstErr.Error()))
 					} else {
 						blog.Debug("failed to update inst, error info is %s", rstErr.Error())
-						rsts.UpdateErrors = append(rsts.UpdateErrors, fmt.Sprintf("Line:%d Error:%s", colIDx, rstErr.Error()))
+						rsts.UpdateErrors = append(rsts.UpdateErrors, defLang.Languagef("import_row_int_error_str", colIDx, rstErr.Error()))
 					}
 
 				} else {

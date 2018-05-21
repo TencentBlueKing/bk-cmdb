@@ -13,49 +13,126 @@
 package util
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(propertyType string, option interface{}) error {
+func ValidPropertyOption(propertyType string, option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	switch propertyType {
 	case common.FieldTypeEnum:
 		if nil == option {
-			return fmt.Errorf(" option is required")
+			return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 		}
 
 		arrOption, ok := option.([]interface{})
 		if false == ok {
 			blog.Errorf(" option %v not enum option", option)
-			return fmt.Errorf(" option %v not enum option", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 		for _, o := range arrOption {
 			mapOption, ok := o.(map[string]interface{})
 			if false == ok {
 				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
-				return fmt.Errorf(" option %v not enum option, enum option item must id and name", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
 			_, idOk := mapOption["id"]
 			_, nameOk := mapOption["name"]
 			if false == idOk || false == nameOk {
 				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
-				return fmt.Errorf(" option %v not enum option, enum option item must id and name", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 
 			}
 		}
 	case common.FieldTypeInt:
 		if nil == option {
-			return fmt.Errorf(" option is required")
+			return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 		}
 
-		_, ok := option.(map[string]interface{})
+		tmp, ok := option.(map[string]interface{})
 		if false == ok {
-			return fmt.Errorf(" option %v not int option", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
+
+		{
+			// min
+			min, ok := tmp["min"]
+			maxVal := 99999999999 // default
+			minVal := 0
+			err := errProxy.Error(common.CCErrCommParamsNeedInt)
+
+			if ok {
+				switch d := min.(type) {
+				case string:
+					if 11 < len(d) {
+						return errProxy.Error(common.CCErrCommOverLimit)
+					}
+				}
+				minVal, err = GetIntByInterface(min)
+				if nil != err {
+					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
+				}
+			}
+
+			// max
+			max, ok := tmp["max"]
+			if ok {
+				switch d := max.(type) {
+				case string:
+					if 11 < len(d) {
+						return errProxy.Error(common.CCErrCommOverLimit)
+					}
+				}
+				maxVal, err = GetIntByInterface(max)
+				if nil != err {
+					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+				}
+			}
+
+			if minVal > maxVal {
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
+			}
 		}
 
 	}
 	return nil
+}
+
+// IsAssocateProperty  is Assocate property
+func IsAssocateProperty(propertyType string) bool {
+	if common.FieldTypeSingleAsst == propertyType || common.FieldTypeMultiAsst == propertyType {
+		return true
+	}
+
+	return false
+}
+
+// IsStrProperty  is string property
+func IsStrProperty(propertyType string) bool {
+	if common.FieldTypeLongChar == propertyType || common.FieldTypeSingleChar == propertyType {
+		return true
+	}
+
+	return false
+}
+
+// IsInnerObject is inner object model
+func IsInnerObject(objID string) bool {
+	switch objID {
+	case common.BKInnerObjIDApp:
+		return true
+	case common.BKInnerObjIDHost:
+		return true
+	case common.BKInnerObjIDModule:
+		return true
+	case common.BKInnerObjIDPlat:
+		return true
+	case common.BKInnerObjIDProc:
+		return true
+	case common.BKInnerObjIDSet:
+		return true
+	}
+
+	return false
 }
