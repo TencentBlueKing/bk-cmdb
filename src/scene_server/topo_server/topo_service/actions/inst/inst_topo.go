@@ -15,11 +15,15 @@ package inst
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	//httpcli "configcenter/src/common/http/httpclient"
+	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
-	//"github.com/tidwall/gjson"
+	"github.com/tidwall/gjson"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +31,37 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 )
+
+// getAsstParentObject get the association parent object, the return key is engilish property name, value is the objectid
+func (cli *instAction) getAsstParentObject(forward *api.ForwardParam, objID, ownerID string) (map[string]string, int) {
+
+	//  the key is the field id , the value is the object id
+	rstMap := map[string]string{}
+
+	// get module
+	cli.objcli.SetAddress(cli.CC.ObjCtrl())
+	attAsstCond := map[string]interface{}{}
+	attAsstCond[common.BKAsstObjIDField] = objID
+	attAsstCond[common.BKOwnerIDField] = ownerID
+
+	searchAttAsstCond, err := json.Marshal(attAsstCond)
+	if nil != err {
+		return rstMap, common.CCErrCommJSONMarshalFailed
+	}
+
+	asstRst, asstRstErr := cli.objcli.SearchMetaObjectAsst(forward, searchAttAsstCond)
+	if nil != asstRstErr {
+		blog.Error("failed to read the object asst, error is %s ", asstRstErr.Error())
+		return nil, common.CCErrTopoInstSelectFailed
+	}
+
+	for _, asstItem := range asstRst {
+		rstMap[asstItem.ObjectAttID] = asstItem.ObjectID
+	}
+
+	// rstmap: key is the bk_property_id  value is the association object id
+	return rstMap, common.CCSuccess
+}
 
 // getObjectAsst read association objectid the return key is engilish property name, value is the objectid
 func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID string) (map[string]string, int) {
@@ -57,7 +92,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 		case common.FieldTypeSingleAsst:
 
 			asst := map[string]interface{}{}
-			asst["bk_object_att_id"] = item.PropertyID
+			asst[common.BKObjAttIDField] = item.PropertyID
 			asst[common.BKOwnerIDField] = item.OwnerID
 			asst[common.BKObjIDField] = item.ObjectID
 
@@ -80,7 +115,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 		case common.FieldTypeMultiAsst:
 
 			asst := map[string]interface{}{}
-			asst["bk_object_att_id"] = item.PropertyID
+			asst[common.BKObjAttIDField] = item.PropertyID
 			asst[common.BKOwnerIDField] = item.OwnerID
 			asst[common.BKObjIDField] = item.ObjectID
 			searchData, jsErr := json.Marshal(asst)
@@ -95,7 +130,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 				return nil, common.CCErrTopoInstSelectFailed
 			}
 
-			if len(asstRst) > 0 { // only association with one object by one filed
+			if len(asstRst) > 0 { // only association with one object by one field
 				rstmap[item.PropertyID] = asstRst[0].AsstObjID
 			}
 		}
@@ -212,97 +247,131 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
 	forward := &api.ForwardParam{Header: req.Request.Header}
 
-	// read the association filed about objID
-	rstmap, errorno := cli.getObjectAsst(forward, objID, ownerID)
-	if common.CCSuccess != errorno {
-		blog.Error("failed to search the association with ownerid(%s) objectid(%s)", ownerID, objID)
-		return nil, errorno
+	// read the parent association field about objID
+	rstMap, errNo := cli.getAsstParentObject(forward, objID, ownerID)
+	if common.CCSuccess != errNo {
+		blog.Error("failed to search the parent association with ownerid(%s) objectid(%s)", ownerID, objID)
+		return nil, errNo
 	}
 
-	js, err := simplejson.NewJson([]byte(instRes))
-	if nil != err {
-		blog.Error("the input json is invalid, error info is %s", err.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
+	blog.Debug("the parent association object:%+v", rstMap)
+	js := gjson.Parse(instRes)
 
-	input, jsErr := js.Map()
-	if nil != jsErr {
-		blog.Error("the input json is invalid, error info is %s", jsErr.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
-
-	blog.Debug("input: %+v", input)
-	blog.Debug("rstmap:%+v", rstmap)
 	// inst result
 	rstInst := make([]commonInstTopo, 0)
 
-	// parse the data
-	if data, ok := input["data"].(map[string]interface{}); ok {
-		if info, infoOk := data["info"].([]interface{}); infoOk {
+	js.Get("data.info").ForEach(func(key, value gjson.Result) bool {
 
-			for _, infoItem := range info {
+		blog.Infof("the key:%v, the value:%v", key, value)
 
-				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
-
-					// key 是关联字段，val 是字段关联的模型ID
-					for key, val := range rstmap {
-
-						// search association objid
-						objCondition := map[string]interface{}{}
-						objCondition[common.BKOwnerIDField] = ownerID
-						objCondition[common.BKObjIDField] = val
-						objConditionStr, _ := json.Marshal(objCondition)
-
-						// get objid information
-						objItems, objErr := cli.objcli.SearchMetaObject(forward, objConditionStr)
-						if nil != objErr {
-							blog.Error("failed to search objects, error info is %s", objErr.Error())
-							return nil, common.CCErrCommHTTPDoRequestFailed
-						}
-
-						if 0 == len(objItems) {
-							blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, val)
-							return nil, common.CCErrTopoObjectSelectFailed
-						}
-
-						// set common object name
-						commonInst := commonInstTopo{}
-						commonInst.InstName = objItems[0].ObjectName
-						commonInst.ObjID = val
-						commonInst.ObjIcon = objItems[0].ObjIcon
-						commonInst.ID = strconv.Itoa(objItems[0].ID)
-
-						if keyItem, keyItemOk := dataItem[key]; keyItemOk {
-
-							keyItemStr := fmt.Sprintf("%v", keyItem)
-
-							blog.Debug("keyitemstr:%s", keyItemStr)
-
-							// search association insts
-							retData, cnt, retErr := cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), map[string]interface{}{
-								"start": 0,
-								"limit": common.BKNoLimit,
-								"sort":  "",
-							})
-							if common.CCSuccess != retErr {
-								blog.Error("failed to get inst details")
-								continue
-							}
-							commonInst.Count = cnt
-							commonInst.Children = append(commonInst.Children, retData...)
-							//dataItem[key] = retData
-						}
-
-						// append the result
-						sort.Sort(instAsstSort(commonInst.Children))
-						rstInst = append(rstInst, commonInst)
-					}
-
-				}
-			}
-		}
-	}
+		return true
+	})
 
 	sort.Sort(instTopoSort(rstInst))
 	return rstInst, common.CCSuccess
+}
+
+func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful.Response) {
+	blog.Info("select inst association topo (parent|child) topo")
+
+	// read language
+	language := util.GetActionLanguage(req)
+
+	// generate error object by language
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	cli.CallResponseEx(func() (int, interface{}, error) {
+
+		//{owner_id}/object/{object_id}/inst/{inst_id}
+		ownerID := req.PathParameter("owner_id")
+		objID := req.PathParameter("object_id")
+
+		instID, convErr := strconv.Atoi(req.PathParameter("inst_id"))
+		if nil != convErr {
+			blog.Error("failed to convert, the error info is %s", convErr.Error())
+			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
+		}
+
+		value, readErr := ioutil.ReadAll(req.Request.Body)
+		if nil != readErr {
+			blog.Error("failed to read the body, error is %s", readErr.Error())
+			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+
+		var js params.SearchParams
+		if 0 != len(value) {
+			err := json.Unmarshal([]byte(value), &js)
+			if nil != err {
+				blog.Error("failed to unmarshal the data[%s], error is %s", value, err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			}
+		}
+
+		condition := map[string]interface{}{}
+		objType := ""
+		targetpre := cli.CC.ObjCtrl() + "/object/v1/insts/"
+		switch objID {
+		case common.BKInnerObjIDHost:
+			objType = ""
+			targetpre = cli.CC.HostCtrl() + "/host/v1/hosts"
+			condition[common.BKHostIDField] = instID
+		case common.BKInnerObjIDModule:
+			objType = common.BKInnerObjIDModule
+			condition[common.BKModuleIDField] = instID
+			condition[common.BKOwnerIDField] = ownerID
+		case common.BKInnerObjIDApp:
+			objType = common.BKInnerObjIDApp
+			condition[common.BKAppIDField] = instID
+			condition[common.BKOwnerIDField] = ownerID
+		case common.BKInnerObjIDSet:
+			objType = common.BKInnerObjIDSet
+			condition[common.BKSetIDField] = instID
+			condition[common.BKOwnerIDField] = ownerID
+		default:
+			objType = common.BKINnerObjIDObject
+			condition[common.BKObjIDField] = objID
+			condition[common.BKInstIDField] = instID
+			condition[common.BKOwnerIDField] = ownerID
+		}
+
+		// construct the search params
+
+		searchParams := make(map[string]interface{})
+		searchParams["condition"] = condition
+		searchParams["fields"] = ""
+		searchParams["start"] = 0
+		searchParams["limit"] = common.BKNoLimit
+		searchParams["sort"] = ""
+
+		//search insts
+		sURL := targetpre + objType + "/search"
+
+		inputJSON, jsErr := json.Marshal(searchParams)
+		if nil != jsErr {
+			blog.Error("failed to marshal the data[%+v], error info is %s", searchParams, jsErr.Error())
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
+		}
+
+		instRes, err := httpcli.ReqHttp(req, sURL, "POST", []byte(inputJSON))
+		if nil != err {
+			blog.Error("failed to select the insts, error info is %s", err.Error())
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstSelectFailed)
+		}
+
+		// get common topo child inst
+		rstTopoChild, rstErr := cli.getCommonChildInstTopo(req, objID, ownerID, instRes, js.Page)
+		blog.Debug("result topo child : %+v", rstTopoChild)
+		if common.CCSuccess != rstErr {
+			return http.StatusInternalServerError, "", defErr.Error(rstErr)
+		}
+
+		// get common topo parent inst
+		rstTopoParent, rstErr := cli.getCommonParentInstTopo(req, objID, ownerID, instRes, js.Page)
+		blog.Debug("result topo parent : %+v", rstTopoParent)
+		if common.CCSuccess != rstErr {
+			return http.StatusInternalServerError, "", defErr.Error(rstErr)
+		}
+
+		return http.StatusOK, rstTopoChild, nil
+
+	}, resp)
 }
