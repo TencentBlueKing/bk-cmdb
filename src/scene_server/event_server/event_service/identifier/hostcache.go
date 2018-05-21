@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package distribution
+package identifier
 
 import (
 	"configcenter/src/common"
