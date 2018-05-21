@@ -206,6 +206,9 @@
                             } else if (list.property['bk_property_type'] === 'enum') {
                                 let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
                                 item[list.id] = option ? option.name : ''
+                            } else if (['date', 'time'].includes(list.property['bk_property_type'])) {
+                                const format = list.property['bk_property_type'] === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'
+                                item[list.id] = this.$formatTime(item.content['pre_data'][list.id], format)
                             } else {
                                 item[list.id] = item.content['pre_data'][list.id]
                             }

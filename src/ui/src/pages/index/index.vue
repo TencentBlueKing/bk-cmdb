@@ -5,29 +5,32 @@
             <div class="classify-container" v-show="display.type === 'classification'">
                 <ul class="classify-list">
                     <li class="classify-item" v-for="(classification, index) in sortedClassifications" :key="index">
-                        <i :class="['icon-cc-star', {navigated: isClassificationNavigated(classification)}]" @click.stop="toggleClassifyNavVisible(classification)"></i>
-                        <div class="classify-info-layout" @click="showModels(classification)">
+                        <i v-if="!isHostManage(classification)"
+                            :class="['icon-cc-star', {navigated: isClassificationNavigated(classification)}]"
+                            @click.stop="toggleClassifyNavVisible(classification)">
+                        </i>
+                        <div :class="['classify-info-layout', `classify-info-layout-${classification['bk_classification_id']}`]" @click="showModels(classification)">
                             <span class="classify-info">
                                 <i :class="['classify-info-icon', classification['bk_classification_icon']]"></i>
                                 <span class="classify-info-name">{{classification['bk_classification_name']}}</span>
                             </span>
                         </div>
-                        <div :class="['classify-models-layout', {'has-more': classification['bk_objects'].length > 3}]">
-                            <template v-for="(model, index) in classification['bk_objects']">
-                                <router-link exact class="classify-model-link"
-                                    v-if="index < 5"
+                        <ul :class="['classify-models-list', {'has-more': classification['bk_objects'].length > 3}]">
+                            <li class="classify-model-item" 
+                                v-for="(model, index) in classification['bk_objects'].filter((model, index) => index <= 4)">
+                                <router-link exact
+                                    :class="['classify-model-link', `classify-model-link-${model['bk_classification_id']}`]"
                                     :key="index"
                                     :title="model['bk_obj_name']"
-                                    :to="`/organization/${model['bk_obj_id']}`"
+                                    :to="getRouterLink(model)"
                                      @click.stop>
                                     {{model['bk_obj_name']}}
                                 </router-link>
-                            </template>
-                            <a href="javascript:void(0)" class="classify-model-link more"
-                                v-if="classification['bk_objects'].length > 5"
-                                @click="showModels(classification)">
-                            </a>
-                        </div>
+                            </li>
+                            <li class="classify-model-item" v-if="classification['bk_objects'].length > 5">
+                                <a href="javascript:void(0)" class="classify-model-link more" @click="showModels(classification)"></a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -57,16 +60,28 @@
 </template>
 <script>
     import vSearch from './children/search'
+    import { bk_host_manage as bkHostManage } from '@/common/json/static_navigation.json'
     import { mapGetters } from 'vuex'
     export default {
         data () {
             return {
-                search: {
-                    keyword: ''
-                },
                 display: {
                     type: 'classification',
                     displayClassificationId: null
+                },
+                hostManageClassification: {
+                    'bk_classification_icon': bkHostManage.icon,
+                    'bk_classification_id': bkHostManage.id,
+                    'bk_classification_name': this.$t(bkHostManage.i18n),
+                    'bk_classification_type': 'inner',
+                    'bk_objects': bkHostManage.children.map(nav => {
+                        return {
+                            'bk_obj_name': this.$t(nav.i18n),
+                            'bk_obj_id': nav.id,
+                            'path': nav.path,
+                            'bk_classification_id': bkHostManage.id
+                        }
+                    })
                 }
             }
         },
@@ -74,7 +89,7 @@
             ...mapGetters('usercustom', ['usercustom']),
             ...mapGetters('navigation', ['authorizedClassifications']),
             sortedClassifications () {
-                let sortedClassifications = [...this.authorizedClassifications]
+                let sortedClassifications = [this.hostManageClassification, ...this.authorizedClassifications]
                 return sortedClassifications
                 // 已添加到导航的排到前面
                 /* const navigatedValue = {
@@ -110,10 +125,21 @@
             }
         },
         methods: {
+            isHostManage (obj) {
+                return obj['bk_classification_id'] === bkHostManage.id
+            },
+            getRouterLink (model) {
+                if (this.isHostManage(model)) {
+                    return model.path
+                }
+                return `/organization/${model['bk_obj_id']}`
+            },
             // 显示视图
             showModels (classification) {
+                const classificationId = classification['bk_classification_id']
+                if (this.isHostManage(classification)) return
                 this.display.type = 'model'
-                this.display.displayClassificationId = classification['bk_classification_id']
+                this.display.displayClassificationId = classificationId
             },
             // 检测分类是否已添加到导航
             isClassificationNavigated (classification) {
@@ -212,13 +238,13 @@
                 .classify-info-layout{
                     height: 155px;
                 }
-                .classify-models-layout{
+                .classify-models-list{
                     height: 75px;
-                    &:before{
+                    &:after{
                         opacity: 0;
                     }
                 }
-                .classify-model-link:nth-child(n+4){
+                .classify-model-item:nth-child(n+4){
                     opacity: 1;
                 }
             }
@@ -233,6 +259,9 @@
         border-top-right-radius: 2px;
         transition: height .2s ease-out;
         background-image: linear-gradient(#6ea9f9, #6ea9f9),linear-gradient(10deg, #42c0ff 0%, #3c96ff 100%), linear-gradient(#6ea9f9, #6ea9f9);
+        &-bk_host_manage {
+            cursor: default;
+        }
         &:before{
             content: "";
             display: inline-block;
@@ -255,7 +284,7 @@
             }
         }
     }
-    .classify-models-layout{
+    .classify-models-list{
         height: 65px;
         padding: 7px 0;
         position: relative;
@@ -265,7 +294,7 @@
         border-bottom-left-radius: 2px;
         border-bottom-right-radius: 2px;
         transition: height .2s ease-out;
-        &.has-more:before{
+        &.has-more:after{
             content: '';
             position: absolute;
             bottom: 18px;
@@ -279,42 +308,53 @@
             transition: opacity .2s ease-out;
             pointer-events: none;
         }
-        .classify-model-link{
+        .classify-model-item {
             display: inline-block;
             vertical-align: middle;
-            width: 75px;
-            height: 20px;
-            font-size: 14px;
-            line-height: 20px;
+            width: 107px;
             text-align: center;
-            margin: 4px 16px;
-            padding: 0 6px;
-            color: #3c96ff;
-            border-radius: 10px;
-            transition: all .2s ease-out !important;
-            @include ellipsis;
-            &:hover{
-                background-color: #ebf0f7;
-            }
+            padding: 4px 4px;
+            font-size: 14px;
+            transition: all .2s ease-out;
             &:nth-child(n+4) {
                 opacity: 0;
             }
-            &.more{
-                border-radius: 0;
-                background-color: transparent;
-                position: relative;
-                &:before{
-                    content: '';
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    width: 4px;
-                    height: 4px;
-                    margin: -2px 0 0 -2px;
-                    border-radius: 50%;
-                    background-color: #c3cdd7;
-                    box-shadow: -7px 0 #c3cdd7, 7px 0 #c3cdd7;
-                    pointer-events: none;
+            &:last-child{
+                .classify-model-link{
+                    max-width: 150px;
+                }
+            }
+            .classify-model-link{
+                display: inline-block;
+                height: 20px;
+                line-height: 20px;
+                text-align: center;
+                padding: 0 8px;
+                color: #3c96ff;
+                border-radius: 10px;
+                max-width: 100%;
+                @include ellipsis;
+                &:hover{
+                    background-color: #ebf0f7;
+                }
+                &.more{
+                    border-radius: 0;
+                    background-color: transparent;
+                    position: relative;
+                    overflow: visible;
+                    &:after{
+                        content: '';
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 4px;
+                        height: 4px;
+                        margin: -2px 0 0 -2px;
+                        border-radius: 50%;
+                        background-color: #c3cdd7;
+                        box-shadow: -7px 0 #c3cdd7, 7px 0 #c3cdd7;
+                        pointer-events: none;
+                    }
                 }
             }
         }
@@ -360,7 +400,7 @@
                     }
                 }
             }
-            .bk-icon.icon-star-shape{
+            .icon-cc-star{
                 color: #dde4eb;
                 top: 6px;
                 right: 12px;

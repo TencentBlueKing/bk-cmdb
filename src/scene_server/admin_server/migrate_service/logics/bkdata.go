@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/migrate_service/data"
 	"encoding/json"
 	"errors"
 	"strconv"
@@ -138,14 +137,8 @@ func BKAppInit(req *restful.Request, cc *api.APIResource, ownerID string) error 
 func addBKApp(req *restful.Request) error {
 	appModelData[common.BKAppNameField] = common.BKAppName
 	appModelData[common.BKMaintainersField] = "admin"
-
-	if data.Distribution == common.RevisionEnterprise {
-		appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
-		appModelData[common.BKLanguageField] = "1" //"中文"
-	} else {
-		delete(appModelData, common.BKTimeZoneField)
-		delete(appModelData, common.BKLanguageField)
-	}
+	appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
+	appModelData[common.BKLanguageField] = "1" //"中文"
 	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(appModelData)
