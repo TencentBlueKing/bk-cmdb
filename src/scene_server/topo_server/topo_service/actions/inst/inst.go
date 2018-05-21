@@ -859,7 +859,9 @@ func (cli *instAction) getRawInstAsst(req *restful.Request, ownerID, objID strin
 		instID = common.BKSetIDField
 		instName = common.BKSetNameField
 		searchParams["sort"] = common.BKSetIDField
-		condition[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: tmpIDS}
+		if 0 != len(tmpIDS) {
+			condition[common.BKSetIDField] = map[string]interface{}{common.BKDBIN: tmpIDS}
+		}
 		condition[common.BKOwnerIDField] = ownerID
 	case common.BKInnerObjIDModule:
 		targetOBJ = common.BKInnerObjIDModule

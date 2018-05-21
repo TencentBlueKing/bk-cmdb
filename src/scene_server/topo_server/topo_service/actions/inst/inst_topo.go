@@ -18,6 +18,7 @@ import (
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	scenecommon "configcenter/src/scene_server/common"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
@@ -255,17 +256,87 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 	}
 
 	blog.Debug("the parent association object:%+v", rstMap)
-	js := gjson.Parse(instRes)
-
 	// inst result
 	rstInst := make([]commonInstTopo, 0)
 
-	js.Get("data.info").ForEach(func(key, value gjson.Result) bool {
+	for _, prevObjID := range rstMap {
 
-		blog.Infof("the key:%v, the value:%v", key, value)
+		// search prev association objid
+		objCondition := map[string]interface{}{}
+		objCondition[common.BKOwnerIDField] = ownerID
+		objCondition[common.BKObjIDField] = prevObjID
 
-		return true
-	})
+		objConditionStr, _ := json.Marshal(objCondition)
+
+		// get objid information
+		objItems, objErr := cli.objcli.SearchMetaObject(forward, objConditionStr)
+		if nil != objErr {
+			blog.Error("failed to search objects, error info is %s", objErr.Error())
+			return nil, common.CCErrTopoObjectSelectFailed
+		}
+
+		if 0 == len(objItems) {
+			blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, prevObjID)
+			return nil, common.CCSuccess
+		}
+
+		// set common object name
+		commonInst := commonInstTopo{}
+		commonInst.ObjectName = objItems[0].ObjectName
+		commonInst.ObjID = objItems[0].ObjectID
+		commonInst.ObjIcon = objItems[0].ObjIcon
+		commonInst.ID = strconv.Itoa(objItems[0].ID)
+
+		rstInst = append(rstInst, commonInst)
+
+		// search the insts
+
+		js := gjson.Parse(instRes)
+		rstItems := js.Get("data.info").Array()
+
+		for _, valItem := range rstItems {
+			blog.Infof("the value:%v", valItem)
+
+			// construct the object id
+			currInstID := valItem.Get(common.BKInstIDField).String()
+			currObjectID := valItem.Get(common.BKObjIDField).String()
+
+			// search parent association inst id
+			objCondition := map[string]interface{}{}
+			objCondition[common.BKAsstObjIDField] = currObjectID
+			objCondition[common.BKAsstInstIDField] = currInstID
+			objCondition[common.BKObjIDField] = prevObjID
+
+			asstInstRes, asstInstResErr := scenecommon.SearchInstAssociation(cli.CC.ObjCtrl(), objCondition, req)
+			if nil != asstInstResErr {
+				blog.Errorf("failed to request, error info is %s", asstInstResErr.Error())
+				return rstInst, common.CCErrTopoInstSelectFailed
+			}
+
+			// extract the inst id for the prev object
+			targetInstIDS := make([]string, 0)
+			gjson.Get(asstInstRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
+
+				targetInstIDS = append(targetInstIDS, fmt.Sprintf("%d", value.Int()))
+				return true
+			})
+
+			// search the prev object insts
+			retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
+				"start": 0,
+				"limit": common.BKNoLimit,
+				"sort":  "",
+			})
+			if common.CCSuccess != retErr {
+				blog.Error("failed to get inst details")
+				return nil, retErr
+			}
+			commonInst.Count = cnt
+			commonInst.Children = append(commonInst.Children, retData...)
+
+		}
+
+	}
 
 	sort.Sort(instTopoSort(rstInst))
 	return rstInst, common.CCSuccess
