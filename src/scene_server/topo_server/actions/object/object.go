@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	"configcenter/src/scene_server/topo_server/manager"
 	"strings"
 
 	api "configcenter/src/source_controller/api/object"

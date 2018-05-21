@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/topo_service/logics"
+	"configcenter/src/scene_server/topo_server/logics"
 	auditlogAPI "configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/common/commondata"
 )

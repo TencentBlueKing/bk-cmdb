@@ -18,13 +18,14 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	"configcenter/src/scene_server/topo_server/manager"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"github.com/emicklei/go-restful"
 )
 
 var objcls = &objClsAction{}
