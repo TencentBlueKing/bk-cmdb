@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package ccapi
+package main
 
 import (
 	"configcenter/src/common"
@@ -23,9 +23,10 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	confCenter "configcenter/src/scene_server/topo_server/topo_service/config"
-	"configcenter/src/scene_server/topo_server/topo_service/manager"
-	"configcenter/src/scene_server/topo_server/topo_service/rdiscover"
+	confCenter "configcenter/src/scene_server/topo_server/config"
+	"configcenter/src/scene_server/topo_server/manager"
+	"configcenter/src/scene_server/topo_server/rdiscover"
+
 	"github.com/emicklei/go-restful"
 
 	"time"
