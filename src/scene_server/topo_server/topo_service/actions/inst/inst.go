@@ -1229,13 +1229,22 @@ func (cli *instAction) SelectTopo(req *restful.Request, resp *restful.Response) 
 		}
 
 		// get common topo inst
-		retstr, retStrErr := cli.getCommonChildInstTopo(req, objID, ownerID, instRes, js.Page)
-		blog.Debug("retstr: %+v", retstr)
-		if common.CCSuccess != retStrErr {
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+		results := make([]commonInstTopo, 0)
+		jsInstRes := gjson.Parse(instRes)
+		dataInfoItems := jsInstRes.Get("data.info").Array()
+
+		for _, dataInfo := range dataInfoItems {
+
+			retstr, retStrErr := cli.getCommonChildInstTopo(req, objID, ownerID, dataInfo, js.Page)
+			blog.Debug("retstr: %+v", retstr)
+			if common.CCSuccess != retStrErr {
+				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+			}
+
+			return http.StatusOK, retstr, nil
 		}
 
-		return http.StatusOK, retstr, nil
+		return http.StatusOK, results, nil
 
 	}, resp)
 

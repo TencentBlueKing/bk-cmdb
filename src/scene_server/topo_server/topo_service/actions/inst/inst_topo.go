@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"strings"
 
-	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 )
 
@@ -141,7 +140,7 @@ func (cli *instAction) getObjectAsst(forward *api.ForwardParam, objID, ownerID s
 	// rstmap: key is the bk_property_id  value is the association object id
 	return rstmap, common.CCSuccess
 }
-func (cli *instAction) getCommonChildInstTopo(req *restful.Request, objID, ownerID, instRes string, page map[string]interface{}) ([]commonInstTopo, int) {
+func (cli *instAction) getCommonChildInstTopo(req *restful.Request, objID, ownerID string, instRes gjson.Result, page map[string]interface{}) ([]commonInstTopo, int) {
 
 	// set address
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
@@ -154,95 +153,73 @@ func (cli *instAction) getCommonChildInstTopo(req *restful.Request, objID, owner
 		return nil, errorno
 	}
 
-	js, err := simplejson.NewJson([]byte(instRes))
-	if nil != err {
-		blog.Error("the input json is invalid, error info is %s", err.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
+	blog.Infof("rstmap:%+v", rstmap)
 
-	input, jsErr := js.Map()
-	if nil != jsErr {
-		blog.Error("the input json is invalid, error info is %s", jsErr.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
-
-	blog.Debug("input: %+v", input)
-	blog.Debug("rstmap:%+v", rstmap)
 	// inst result
 	rstInst := make([]commonInstTopo, 0)
 
 	// parse the data
-	if data, ok := input["data"].(map[string]interface{}); ok {
-		if info, infoOk := data["info"].([]interface{}); infoOk {
 
-			for _, infoItem := range info {
+	// key 是关联字段，val 是字段关联的模型ID
+	for key, val := range rstmap {
 
-				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
+		// search association objid
+		objCondition := map[string]interface{}{}
+		objCondition[common.BKOwnerIDField] = ownerID
+		objCondition[common.BKObjIDField] = val
+		objConditionStr, _ := json.Marshal(objCondition)
 
-					// key 是关联字段，val 是字段关联的模型ID
-					for key, val := range rstmap {
-
-						// search association objid
-						objCondition := map[string]interface{}{}
-						objCondition[common.BKOwnerIDField] = ownerID
-						objCondition[common.BKObjIDField] = val
-						objConditionStr, _ := json.Marshal(objCondition)
-
-						// get objid information
-						objItems, objErr := cli.objcli.SearchMetaObject(forward, objConditionStr)
-						if nil != objErr {
-							blog.Error("failed to search objects, error info is %s", objErr.Error())
-							return nil, common.CCErrCommHTTPDoRequestFailed
-						}
-
-						if 0 == len(objItems) {
-							blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, val)
-							return nil, common.CCErrTopoObjectSelectFailed
-						}
-
-						// set common object name
-						commonInst := commonInstTopo{}
-						commonInst.InstName = objItems[0].ObjectName
-						commonInst.ObjID = val
-						commonInst.ObjIcon = objItems[0].ObjIcon
-						commonInst.ID = strconv.Itoa(objItems[0].ID)
-
-						if keyItem, keyItemOk := dataItem[key]; keyItemOk {
-
-							keyItemStr := fmt.Sprintf("%v", keyItem)
-
-							blog.Debug("keyitemstr:%s", keyItemStr)
-
-							// search association insts
-							retData, cnt, retErr := cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), map[string]interface{}{
-								"start": 0,
-								"limit": common.BKNoLimit,
-								"sort":  "",
-							})
-							if common.CCSuccess != retErr {
-								blog.Error("failed to get inst details")
-								continue
-							}
-							commonInst.Count = cnt
-							commonInst.Children = append(commonInst.Children, retData...)
-							//dataItem[key] = retData
-						}
-
-						// append the result
-						sort.Sort(instAsstSort(commonInst.Children))
-						rstInst = append(rstInst, commonInst)
-					}
-
-				}
-			}
+		// get objid information
+		objItems, objErr := cli.objcli.SearchMetaObject(forward, objConditionStr)
+		if nil != objErr {
+			blog.Error("failed to search objects, error info is %s", objErr.Error())
+			return nil, common.CCErrCommHTTPDoRequestFailed
 		}
+
+		if 0 == len(objItems) {
+			blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, val)
+			return nil, common.CCErrTopoObjectSelectFailed
+		}
+
+		// set common object name
+		commonInst := commonInstTopo{}
+		commonInst.ObjectName = objItems[0].ObjectName
+		commonInst.ObjID = val
+		commonInst.ObjIcon = objItems[0].ObjIcon
+		commonInst.ID = strconv.Itoa(objItems[0].ID)
+
+		tmpKeyResult := instRes.Get(key)
+		if tmpKeyResult.Exists() {
+
+			keyItemStr := tmpKeyResult.String()
+
+			blog.Debug("keyitemstr:%s", keyItemStr)
+
+			// search association insts
+			retData, cnt, retErr := cli.getInstAsst(req, ownerID, val, strings.Split(keyItemStr, ","), map[string]interface{}{
+				"start": 0,
+				"limit": common.BKNoLimit,
+				"sort":  "",
+			})
+			if common.CCSuccess != retErr {
+				blog.Error("failed to get inst details")
+				continue
+			}
+			commonInst.Count = cnt
+			commonInst.Children = append(commonInst.Children, retData...)
+			//dataItem[key] = retData
+		}
+
+		// append the result
+		sort.Sort(instAsstSort(commonInst.Children))
+		rstInst = append(rstInst, commonInst)
 	}
 
 	sort.Sort(instTopoSort(rstInst))
 	return rstInst, common.CCSuccess
 }
 
-func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, ownerID, instRes string, page map[string]interface{}) ([]commonInstTopo, int) {
+func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, ownerID string, instRes gjson.Result, page map[string]interface{}) ([]commonInstTopo, int) {
 
 	// set address
 	cli.objcli.SetAddress(cli.CC.ObjCtrl())
@@ -287,54 +264,46 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 		commonInst.ObjIcon = objItems[0].ObjIcon
 		commonInst.ID = strconv.Itoa(objItems[0].ID)
 
-		rstInst = append(rstInst, commonInst)
-
 		// search the insts
 
-		js := gjson.Parse(instRes)
-		rstItems := js.Get("data.info").Array()
+		// construct the object id
+		currInstID := instRes.Get(common.BKInstIDField).String()
+		currObjectID := instRes.Get(common.BKObjIDField).String()
 
-		for _, valItem := range rstItems {
-			blog.Infof("the value:%v", valItem)
+		// search parent association inst id
+		objCondition = map[string]interface{}{}
+		objCondition[common.BKAsstObjIDField] = currObjectID
+		objCondition[common.BKAsstInstIDField] = currInstID
+		objCondition[common.BKObjIDField] = prevObjID
 
-			// construct the object id
-			currInstID := valItem.Get(common.BKInstIDField).String()
-			currObjectID := valItem.Get(common.BKObjIDField).String()
-
-			// search parent association inst id
-			objCondition := map[string]interface{}{}
-			objCondition[common.BKAsstObjIDField] = currObjectID
-			objCondition[common.BKAsstInstIDField] = currInstID
-			objCondition[common.BKObjIDField] = prevObjID
-
-			asstInstRes, asstInstResErr := scenecommon.SearchInstAssociation(cli.CC.ObjCtrl(), objCondition, req)
-			if nil != asstInstResErr {
-				blog.Errorf("failed to request, error info is %s", asstInstResErr.Error())
-				return rstInst, common.CCErrTopoInstSelectFailed
-			}
-
-			// extract the inst id for the prev object
-			targetInstIDS := make([]string, 0)
-			gjson.Get(asstInstRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
-
-				targetInstIDS = append(targetInstIDS, fmt.Sprintf("%d", value.Int()))
-				return true
-			})
-
-			// search the prev object insts
-			retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
-				"start": 0,
-				"limit": common.BKNoLimit,
-				"sort":  "",
-			})
-			if common.CCSuccess != retErr {
-				blog.Error("failed to get inst details")
-				return nil, retErr
-			}
-			commonInst.Count = cnt
-			commonInst.Children = append(commonInst.Children, retData...)
-
+		asstInstRes, asstInstResErr := scenecommon.SearchInstAssociation(cli.CC.ObjCtrl(), objCondition, req)
+		if nil != asstInstResErr {
+			blog.Errorf("failed to request, error info is %s", asstInstResErr.Error())
+			return rstInst, common.CCErrTopoInstSelectFailed
 		}
+
+		// extract the inst id for the prev object
+		targetInstIDS := make([]string, 0)
+		gjson.Get(asstInstRes, "data.info.#."+common.BKInstIDField).ForEach(func(key, value gjson.Result) bool {
+
+			targetInstIDS = append(targetInstIDS, fmt.Sprintf("%d", value.Int()))
+			return true
+		})
+
+		// search the prev object insts
+		retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  "",
+		})
+		if common.CCSuccess != retErr {
+			blog.Error("failed to get inst details")
+			return nil, retErr
+		}
+		commonInst.Count = cnt
+		commonInst.Children = append(commonInst.Children, retData...)
+
+		rstInst = append(rstInst, commonInst)
 
 	}
 
@@ -428,21 +397,63 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstSelectFailed)
 		}
 
-		// get common topo child inst
-		rstTopoChild, rstErr := cli.getCommonChildInstTopo(req, objID, ownerID, instRes, js.Page)
-		blog.Debug("result topo child : %+v", rstTopoChild)
-		if common.CCSuccess != rstErr {
-			return http.StatusInternalServerError, "", defErr.Error(rstErr)
+		//  construct the current inst
+		jsInstRes := gjson.Parse(instRes)
+
+		results := make([]commonInstTopoV2, 0)
+		dataInfoItems := jsInstRes.Get("data.info").Array()
+		for _, dataInfo := range dataInfoItems {
+
+			// get the current object
+			objCondition := map[string]interface{}{}
+			objCondition[common.BKOwnerIDField] = ownerID
+			objCondition[common.BKObjIDField] = objID
+
+			objConditionStr, _ := json.Marshal(objCondition)
+
+			// get objid information
+			objItems, objErr := cli.objcli.SearchMetaObject(&api.ForwardParam{Header: req.Request.Header}, objConditionStr)
+			if nil != objErr {
+				blog.Error("failed to search objects, error info is %s", objErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoObjectSelectFailed)
+			}
+
+			if 0 == len(objItems) {
+				blog.Error("failed to search the object by the condition ownerid(%s) objid(%s)", ownerID, objID)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoObjectSelectFailed)
+			}
+
+			// set the current object name
+			commonInst := commonInstTopo{}
+			commonInst.ObjectName = objItems[0].ObjectName
+			commonInst.ObjID = objItems[0].ObjectID
+			commonInst.ObjIcon = objItems[0].ObjIcon
+			commonInst.ID = strconv.Itoa(objItems[0].ID)
+
+			// get current topo child inst
+			rstTopoChild, rstErr := cli.getCommonChildInstTopo(req, objID, ownerID, dataInfo, js.Page)
+			if common.CCSuccess != rstErr {
+				return http.StatusInternalServerError, "", defErr.Error(rstErr)
+			}
+
+			blog.Infof("topo child inst:%v", rstTopoChild)
+
+			// get current topo parent inst
+			rstTopoParent, rstErr := cli.getCommonParentInstTopo(req, objID, ownerID, dataInfo, js.Page)
+			if common.CCSuccess != rstErr {
+				return http.StatusInternalServerError, "", defErr.Error(rstErr)
+			}
+
+			blog.Infof("topo parent inst:%v", rstTopoParent)
+
+			results = append(results, commonInstTopoV2{
+				Prev: rstTopoParent,
+				Next: rstTopoChild,
+				Curr: commonInst,
+			})
 		}
 
-		// get common topo parent inst
-		rstTopoParent, rstErr := cli.getCommonParentInstTopo(req, objID, ownerID, instRes, js.Page)
-		blog.Debug("result topo parent : %+v", rstTopoParent)
-		if common.CCSuccess != rstErr {
-			return http.StatusInternalServerError, "", defErr.Error(rstErr)
-		}
-
-		return http.StatusOK, rstTopoChild, nil
+		return http.StatusOK, &results, nil
 
 	}, resp)
 }
