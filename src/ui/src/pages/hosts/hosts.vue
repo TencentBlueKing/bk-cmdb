@@ -125,9 +125,9 @@
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
                             <div slot="list" class="attribute-group">
-                                <h3 class="title">{{$t("Hosts['主机拓扑']")}}</h3>
+                                <h3 class="title">{{$t("BusinessTopology['业务拓扑']")}}</h3>
                                 <ul class="attribute-list clearfix">
-                                    <li class="attribute-item fl" v-for="item in sideslider.hostRelation">
+                                    <li class="attribute-item" v-for="item in sideslider.hostRelation">
                                         <span class="attribute-item-value">{{item}}</span>
                                     </li>
                                 </ul>
@@ -363,19 +363,6 @@
             },
             exportUrl () {
                 return `${window.siteUrl}hosts/export`
-            },
-            filterAttribute () {
-                let attribute = this.$deepClone(this.attribute)
-                attribute.forEach(attr => {
-                    attr.properties = attr.properties.filter(property => {
-                        let {
-                            bk_isapi: bkIsapi,
-                            bk_property_type: bkPropertyType
-                        } = property
-                        return !bkIsapi && bkPropertyType !== 'multiasst' && bkPropertyType !== 'singleasst'
-                    })
-                })
-                return attribute
             },
             searchParams () {
                 let params = {
@@ -662,7 +649,7 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.filterAttribute
+                this.sideslider.fields.fieldOptions = this.attribute
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
             },

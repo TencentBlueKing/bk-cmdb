@@ -124,6 +124,12 @@ const getters = {
                 navigation[index]['children'] = navigation[index]['children'].filter(model => usercustomNavigation[id].includes(model.id))
             }
         })
+        navigation = navigation.filter(({id, children}) => {
+            if (['bk_index', 'bk_host_manage'].includes(id)) {
+                return true
+            }
+            return children.length
+        })
         return navigation
     }
 }

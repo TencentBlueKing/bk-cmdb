@@ -29,6 +29,8 @@ func GetObjIDByType(objType string) string {
 		return common.BKProcIDField
 	case common.BKInnerObjIDHost:
 		return common.BKHostIDField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudIDField
 	}
 	return common.BKInstIDField
 }
