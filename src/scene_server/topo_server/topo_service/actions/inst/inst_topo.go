@@ -292,18 +292,20 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 			return true
 		})
 
-		// search the prev object insts
-		retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
-			"start": 0,
-			"limit": common.BKNoLimit,
-			"sort":  "",
-		})
-		if common.CCSuccess != retErr {
-			blog.Error("failed to get inst details")
-			return nil, retErr
+		if 0 == len(targetInstIDS) { // can not found the association inst
+			// search the prev object insts
+			retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
+				"start": 0,
+				"limit": common.BKNoLimit,
+				"sort":  "",
+			})
+			if common.CCSuccess != retErr {
+				blog.Error("failed to get inst details")
+				return nil, retErr
+			}
+			commonInst.Count = cnt
+			commonInst.Children = append(commonInst.Children, retData...)
 		}
-		commonInst.Count = cnt
-		commonInst.Children = append(commonInst.Children, retData...)
 
 		rstInst = append(rstInst, commonInst)
 
