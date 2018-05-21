@@ -24,6 +24,6 @@
     "host_asst_property_str_not_found": "主机关联属性%s格式错误",
     "host_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
     "host_str_asst_str_query_data_format_error": "获取%s关联对象%s数据格式",
-
+    "plat_id_not_exist": "云区域id不存在",
     "": ""
 }
