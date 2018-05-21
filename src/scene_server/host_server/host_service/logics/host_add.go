@@ -272,6 +272,13 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 	addParams[common.BKModuleIDField] = []int{moduleID}
 	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
 
+	isExist, err := IsExistPlat(req, ObjAddr, common.KvMap{common.BKCloudIDField: cloudID})
+	if nil != err {
+		return errors.New(langHandle.Language("host_search_fail")) // "查询主机信息失败")
+	}
+	if !isExist {
+		return errors.New(langHandle.Language("plat_id_not_exist"))
+	}
 	conds := map[string]interface{}{
 		common.BKHostInnerIPField: ip,
 		common.BKCloudIDField:     cloudID,
@@ -310,7 +317,6 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 		if nil != err {
 			return err
 		}
-
 
 		isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
 		if !isSuccess {
