@@ -322,24 +322,22 @@ func findEventTypeSubscribers(eventtype string) []string {
 }
 
 func popEventInst() *types.EventInstCtx {
-	eventseletor := common.KvMap{
-		"expire": time.Second * 60,
-		"key":    []string{types.EventCacheEventQueueKey},
-	}
-	eventslice := []string{}
-	api.GetAPIResource().CacheCli.GetOneByCondition("blpop", nil, eventseletor, &eventslice)
+	var eventstr string
 
-	if len(eventslice) <= 0 || eventslice[1] == "nil" {
+	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+	redisCli.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
+
+	if eventstr == "" {
 		return nil
 	}
 
 	// Unmarshal event
-	eventbytes := []byte(eventslice[1])
+	eventbytes := []byte(eventstr)
 	event := types.EventInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
 
-	return &types.EventInstCtx{EventInst: event, Raw: eventslice[1]}
+	return &types.EventInstCtx{EventInst: event, Raw: eventstr}
 }
