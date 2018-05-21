@@ -605,6 +605,8 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
+
+	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 )
 
 const (
