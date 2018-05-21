@@ -849,3 +849,26 @@ input.parsley-error {
         color: #ff5656;
     }
 }
+
+.topo-pop-box {
+    position: fixed;
+    color: #c3cdd7;
+    font-size: 12px;
+    line-height: 24px;
+    padding: 0 8px;
+    border: 1px solid #c3cdd7;
+    border-radius: 2px;
+    background: #fff;
+    left: 500px;
+    top: 500px;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    .detail {
+        color: #737987;
+        cursor: pointer;
+    }
+    .color-danger{
+        color: #ff5656;
+        cursor: pointer;
+    }
+}

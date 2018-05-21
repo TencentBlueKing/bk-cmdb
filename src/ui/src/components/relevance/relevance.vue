@@ -13,6 +13,8 @@
         </div>
         <v-topo v-show="relevanceTabName === 'topo'"
             :isShow="relevanceTabName === 'topo'"
+            :objId="objId"
+            :instId="ObjectID"
         ></v-topo>
         <v-tree v-show="relevanceTabName === 'tree'" :isShow="relevanceTabName === 'tree'"
             :objId="objId"
