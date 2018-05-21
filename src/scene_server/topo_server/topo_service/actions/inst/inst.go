@@ -35,7 +35,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"sort"
+
 	"strconv"
 	"strings"
 
@@ -64,6 +64,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectAssociationTopo})
 
 	// create cc object
 	inst.CreateAction()
