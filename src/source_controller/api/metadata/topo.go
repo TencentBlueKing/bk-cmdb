@@ -27,22 +27,10 @@ type TopoGraphics struct {
 
 	BizID           int    `json:"bk_biz_id" bson:"bk_biz_id"`
 	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"` // bk_supplier_account
-
-	Assts []Asst `json:"assts" bson:"-"`
 }
 
 // Position the node position in graph
 type Position struct {
 	X int64 `json:"x" bson:"x"`
 	Y int64 `json:"y" bson:"y"`
-}
-
-// Asst the node association node
-type Asst struct {
-	AsstType string            `json:"bk_asst_type"`
-	NodeType string            `json:"node_type"`
-	ObjID    string            `json:"bk_obj_id"`
-	InstID   int               `json:"bk_inst_id"`
-	ObjAtt   string            `json:"bk_object_att_id"`
-	Lable    map[string]string `json:"lable"`
 }
