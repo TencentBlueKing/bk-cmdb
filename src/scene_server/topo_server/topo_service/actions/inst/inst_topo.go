@@ -380,7 +380,7 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			condition[common.BKObjIDField] = objID
 			condition[common.BKInstIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
-			instName = common.BKObjNameField
+			instName = common.BKInstNameField
 		}
 
 		// construct the search params
