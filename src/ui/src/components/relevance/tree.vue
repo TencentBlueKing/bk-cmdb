@@ -98,6 +98,7 @@
                     if (res.result) {
                         this.$set(node, 'children', [])
                         res.data.map(model => {
+                            model.name = model['bk_obj_name']
                             // 加入分页相关信息 默认是第一页 每页10条
                             model.page = 1
                             model.pageSize = 10
@@ -108,6 +109,7 @@
                             model.id = this.treeItemId++
                             if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
                                 model.children.map(inst => {
+                                    inst.name = inst['bk_inst_name']
                                     inst.level = node.level + 2
                                     inst.id = this.treeItemId++
                                     inst.children = []
@@ -185,11 +187,13 @@
                         model.pageSize = 10
                         model.loadNode = 2
                         model.id = this.treeItemId++
+                        model.name = model['bk_obj_name']
                         if (!model.count) {
                             model.children = []
                         }
                         if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
                             model.children.map(inst => {
+                                inst.name = inst['bk_inst_name']
                                 // 插入层级
                                 inst.level = 2
                                 // 根据添加唯一性id

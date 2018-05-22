@@ -22,20 +22,8 @@
                     <img alt="loading" src="../../common/images/icon/loading_2_16x16.gif">
                 </span>
                 <span @click="Func(model)" :class="isActive" :title="model['bk_inst_name']" class="item-name">
-                    <i :class="model['bk_obj_icon']" class="icon" v-if="model['bk_obj_icon']"></i><i v-else class="icon-none"></i>{{model['bk_inst_name']}}
+                    <i :class="model['bk_obj_icon']" class="icon" v-if="model['bk_obj_icon']"></i><i v-else class="icon-none"></i>{{model['name']}}
                     <span class="count" v-if="model.count">{{model.count}}</span>
-                    <!-- <span class="fr operation-group" v-if="model.ObjIcon">
-                        <select v-model="model.pageSize" title="分页设置">
-                            <option>10</option>
-                            <option>20</option>
-                            <option>50</option>
-                            <option>100</option>
-                        </select>
-                        <span class="arrow-btn">
-                            <i class="bk-icon icon-angle-down left" @click="pageUp(model)" title="上一页"></i>
-                            <i class="bk-icon icon-angle-down right" @click="pageDown(model)" title="下一页"></i>
-                        </span>
-                    </span> -->
                 </span>
             </div>
         </template>
