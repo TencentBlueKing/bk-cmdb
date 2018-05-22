@@ -154,9 +154,9 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 		dupParams[common.BKAppIDField] = appID
 		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
 
-		rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
-		if nil != err {
-			blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", err.Error(), dupParams)
+		rowCount, getErr := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
+		if nil != getErr {
+			blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", getErr.Error(), dupParams)
 			userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
 			return
 		}

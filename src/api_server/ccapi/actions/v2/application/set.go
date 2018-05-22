@@ -563,10 +563,10 @@ func (cli *moduleAction) GetModulesByProperty(req *restful.Request, resp *restfu
 	param := make(map[string]interface{})
 
 	if len(formData["SetID"]) > 0 && formData["SetID"][0] != "" {
-		setIDArr, err := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
-		if err != nil {
-			blog.Error("SliceStrToInt error:%v", err)
-			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		setIDArr, sliceErr := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
+		if sliceErr != nil {
+			blog.Error("SliceStrToInt error:%v", sliceErr)
+			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, sliceErr.Error()).Error(), resp)
 			return
 		}
 
