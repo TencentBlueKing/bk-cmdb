@@ -13,6 +13,7 @@
 package input
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"context"
 	"sync"
@@ -93,7 +94,11 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 			goto end
 
 		case target := <-cli.inputerChan:
-			go cli.executeInputer(ctx, target)
+			common.GoRun(func() {
+				cli.executeInputer(ctx, target)
+			}, func() {
+				target.SetStatus(ExceptionExitStatus)
+			})
 
 		case <-time.After(time.Second * 10):
 
@@ -103,10 +108,18 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 			for _, inputer := range cli.inputers {
 				switch inputer.GetStatus() {
 				case NormalStatus:
-					go cli.executeInputer(ctx, inputer)
+					common.GoRun(func() {
+						cli.executeInputer(ctx, inputer)
+					}, func() {
+						inputer.SetStatus(ExceptionExitStatus)
+					})
 
 				case WaitingToRunStatus:
-					go cli.executeInputer(ctx, inputer)
+					common.GoRun(func() {
+						cli.executeInputer(ctx, inputer)
+					}, func() {
+						inputer.SetStatus(ExceptionExitStatus)
+					})
 
 				case RunningStatus:
 					// pass
@@ -115,7 +128,11 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 				case StoppedStatus:
 					// pass
 				case ExceptionExitStatus:
-					go cli.executeInputer(ctx, inputer)
+					common.GoRun(func() {
+						cli.executeInputer(ctx, inputer)
+					}, func() {
+						inputer.SetStatus(ExceptionExitStatus)
+					})
 
 				default:
 					log.Fatalf("unknown the Inputer status (%d)", inputer.GetStatus())
