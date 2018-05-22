@@ -25,6 +25,8 @@
 <script>
     import vis from 'vis'
     import { getImgUrl } from '@/utils/util'
+    const XAXIS = 120
+    const YAXIS = 80
     export default {
         props: {
             isShow: {
@@ -33,6 +35,9 @@
             },
             instId: {
                 type: Number
+            },
+            objId: {
+                type: String
             }
         },
         data () {
@@ -176,7 +181,7 @@
                                 bk_obj_icon: 'icon-cc-subnet',
                                 bk_obj_id: 'plat',
                                 bk_obj_name: '主机',
-                                insts: [
+                                children: [
                                     {
                                         bk_inst_id: 1,
                                         bk_inst_name: '父级'
@@ -190,7 +195,7 @@
                                 bk_obj_icon: 'icon-cc-subnet',
                                 bk_obj_id: 'plat',
                                 bk_obj_name: '子网区域',
-                                insts: [
+                                children: [
                                     {
                                         bk_inst_id: 2,
                                         bk_inst_name: '子级'
@@ -203,14 +208,6 @@
                 ]
                 this.formatTopo(relationInfo[0])
             },
-            loadImg (src) {
-                return new Promise((resolve, reject) => {
-                    let img = new Image()
-                    img.onload = resolve(img)
-                    img.onerror = reject
-                    img.src = src
-                })
-            },
             formatTopo (relationInfo) {
                 let {
                     nodes,
@@ -220,7 +217,7 @@
                 for (let key in relationInfo) {
                     if (key !== 'curr') {
                         relationInfo[key].map(model => {
-                            model.insts.map(inst => {
+                            model.children.map(inst => {
                                 // 处理edges
                                 let isEdgeExist = false
                                 if (key === 'prev') {
@@ -234,17 +231,18 @@
                                 }
                                 if (!isEdgeExist) {
                                     edges.push({
-                                        to: key === 'prev' ? inst['bk_inst_id'] : relationInfo['curr']['bk_inst_id'],
-                                        from: key === 'prev' ? relationInfo['curr']['bk_inst_id'] : inst['bk_inst_id']
+                                        to: key === 'prev' ? model['bk_obj_id'] + inst['bk_inst_id'] : relationInfo['curr']['bk_obj_id'] + relationInfo['curr']['bk_inst_id'],
+                                        from: key === 'prev' ? relationInfo['curr']['bk_obj_id'] + relationInfo['curr']['bk_inst_id'] : model['bk_obj_id'] + inst['bk_inst_id']
                                     })
                                 }
 
                                 // 处理nodes
-                                let isNodeExist = nodes.findIndex(({id}) => {
-                                    return id === inst['bk_inst_id']
+                                let isNodeExist = nodes.findIndex(({instId, objId}) => {
+                                    return instId === inst['bk_inst_id'] && objId === model['bk_obj_id']
                                 }) > -1
                                 if (!isNodeExist) {
                                     insertNode.push({
+                                        bk_obj_id: model['bk_obj_id'],
                                         bk_inst_id: inst['bk_inst_id'],
                                         bk_inst_name: inst['bk_inst_name'],
                                         bk_obj_icon: model['bk_obj_icon']
@@ -253,11 +251,12 @@
                             })
                         })
                     } else {
-                        let isNodeExist = nodes.findIndex(({id}) => {
-                            return id === relationInfo[key]['bk_inst_id']
+                        let isNodeExist = nodes.findIndex(({instId, objId}) => {
+                            return instId === relationInfo[key]['bk_inst_id'] && objId === relationInfo[key]['bk_obj_id']
                         }) > -1
                         if (!isNodeExist) {
                             insertNode.push({
+                                bk_obj_id: relationInfo[key]['bk_obj_id'],
                                 bk_inst_id: relationInfo[key]['bk_inst_id'],
                                 bk_inst_name: relationInfo[key]['bk_inst_name'],
                                 bk_obj_icon: relationInfo[key]['bk_obj_icon']
@@ -274,13 +273,17 @@
                     let unselectedUrl = this.initImg(image, '#6c7bb2')
 
                     nodes.push({
-                        id: node['bk_inst_id'],
+                        objId: node['bk_obj_id'],
+                        instId: node['bk_inst_id'],
+                        id: node['bk_obj_id'] + node['bk_inst_id'],
                         label: node['bk_inst_name'],
-                        value: this.instId === node['bk_inst_id'] ? 25 : 15,  // 设置大小
+                        value: this.instId === node['bk_inst_id'] && this.objId === node['bk_obj_id'] ? 25 : 15,  // 设置大小
                         image: {
                             selected: selectedUrl,
                             unselected: unselectedUrl
-                        }
+                        },
+                        x: this.instId === node['bk_inst_id'] ? 0 : XAXIS,
+                        y: this.instId === node['bk_inst_id'] ? 0 : YAXIS
                     })
                     count++
                 })
@@ -320,10 +323,6 @@
                     if (params.nodes.length) {
                         let id = params.nodes[0]
                         this.initPopBox(id, event)
-
-                        // if (this.isBelongtoCurclassify(id) && id !== 'plat') {
-                        //     self.$emit('nodeClick', self.getModelById(id))
-                        // }
                     }
                 })
                 this.isLoading = false
@@ -358,7 +357,7 @@
                     e.stopPropagation()
                     this.deleteRelation(instId)
                 }, false)
-                // 确保元素已经加载到dom
+                // 确保元素加载到dom
                 this.popBox.isPopShow = true
                 document.body.addEventListener('click', this.removePop, false)
                 setTimeout(() => {
