@@ -104,7 +104,7 @@ func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restfu
 
 		for index := range datas {
 			blog.InfoJSON("%s", datas[index])
-			_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index])
+			_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index].FillBlank())
 			if cli.CC.InstCli.IsDuplicateErr(err) {
 				condition := metadata.TopoGraphics{}
 				condition.SetScopeType(*datas[index].ScopeType)
