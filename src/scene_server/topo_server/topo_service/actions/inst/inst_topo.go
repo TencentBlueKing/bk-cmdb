@@ -292,7 +292,7 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 			return true
 		})
 
-		if 0 == len(targetInstIDS) { // can not found the association inst
+		if 0 != len(targetInstIDS) { // can not found the association inst
 			// search the prev object insts
 			retData, cnt, retErr := cli.getInstAsst(req, ownerID, prevObjID, targetInstIDS, map[string]interface{}{
 				"start": 0,
