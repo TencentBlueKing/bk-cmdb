@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 	"net/http"
 	"strconv"
 	"strings"
