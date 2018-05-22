@@ -479,8 +479,8 @@ func (cli *appAction) GetDefaultApp(req *restful.Request, resp *restful.Response
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
 		}
 		blog.Info("get default a app return %v", appInfo)
-		json, err := simplejson.NewJson([]byte(appInfo))
-		appResData, _ := json.Map()
+		appJson, err := simplejson.NewJson([]byte(appInfo))
+		appResData, _ := appJson.Map()
 		return http.StatusOK, appResData["data"], nil
 	}, resp)
 
