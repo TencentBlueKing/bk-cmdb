@@ -99,6 +99,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.DeleteApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/biz/search/{owner_id}", Params: nil, Handler: app.SearchApp, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/status/{flag}/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateAppDataStatus, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/topo/internal/{owner_id}/{app_id}", Params: nil, Handler: app.GetInternalTopo, Version: v3.APIVersion})
 	// set cc api interface
 	app.CreateAction()
