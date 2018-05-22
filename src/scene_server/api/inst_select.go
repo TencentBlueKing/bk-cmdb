@@ -57,3 +57,10 @@ func (cli *Client) ReForwardSelectInstByObject(callfunc func(url, method string)
 		return callfunc(fmt.Sprintf("%s/topo/v1/inst/search/owner/%s/object/%s", cli.address, ownerid, objid), common.HTTPSelectPost)
 	}
 }
+
+func (cli *Client) ReForwardSelectInstAssociationTopo(callfunc func(url, method string) (string, error), ownerid, objid, instID string) func() (string, error) {
+
+	return func() (string, error) {
+		return callfunc(fmt.Sprintf("%s/topo/v1/inst/association/topo/search/owner/%s/object/%s/inst/%s", cli.address, ownerid, objid, instID), common.HTTPSelectPost)
+	}
+}
