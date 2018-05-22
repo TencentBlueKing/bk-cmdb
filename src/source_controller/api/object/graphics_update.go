@@ -20,33 +20,27 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// SearchTopoGraphics search topo graphics
-func (cli *Client) SearchTopoGraphics(forward *ForwardParam, params *TopoGraphics) ([]TopoGraphics, error) {
+// UpdateGraphics search topo graphics
+func (cli *Client) UpdateGraphics(forward *ForwardParam, params []TopoGraphics) error {
 
 	out, err := json.Marshal(params)
 	if err != nil {
 		blog.Errorf("SearchTopoGraphics marshal error %v", err)
-		return nil, err
+		return err
 	}
 
-	rst, err := cli.base.HttpCli.POST(fmt.Sprintf("%s/object/v1/topographics/search", cli.address), forward.Header, out)
+	rst, err := cli.base.HttpCli.POST(fmt.Sprintf("%s/object/v1/topographics/update", cli.address), forward.Header, out)
 
 	if nil != err {
 		blog.Error("request failed, error:%v", err)
-		return nil, Err_Request_Object
+		return Err_Request_Object
 	}
 
 	rstRes := gjson.ParseBytes(rst)
 
 	if rstRes.Get(common.HTTPBKAPIErrorCode).Int() != common.CCSuccess {
-		return nil, fmt.Errorf("%v", rstRes.Get(common.HTTPBKAPIErrorMessage))
+		return fmt.Errorf("%v", rstRes.Get(common.HTTPBKAPIErrorMessage))
 	}
 
-	var ret []TopoGraphics
-	if jserr := json.Unmarshal([]byte(rstRes.Get("data").String()), &ret); nil != jserr {
-		blog.Error("can not unmarshal the result , error information is %v, %s", jserr, rstRes.String())
-		return nil, jserr
-	}
-
-	return ret, nil
+	return nil
 }
