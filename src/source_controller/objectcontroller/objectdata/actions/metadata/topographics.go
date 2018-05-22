@@ -32,9 +32,10 @@ func init() {
 
 	// register actions
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/topographics/search", Params: nil, Handler: graphics.SearchTopoGraphics})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/topographics/update", Params: nil, Handler: graphics.UpdateTopoGraphics})
 
 	// set cc api resource
-	objaction.CC = api.NewAPIResource()
+	graphics.CC = api.NewAPIResource()
 }
 
 // ObjectAction
@@ -45,7 +46,7 @@ type graphicsAction struct {
 // CreateClassification create object's classification
 func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("create classification")
+	blog.Info("SearchTopoGraphics")
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -61,18 +62,65 @@ func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restfu
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		selector := map[string]interface{}{}
-		if jsErr := json.Unmarshal([]byte(value), selector); nil != jsErr {
-			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		selector := metadata.TopoGraphics{}
+		if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
+			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
 		results := []metadata.TopoGraphics{}
-		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectDes{}.TableName(), nil, selector, &results, "", -1, -1); nil != selErr {
+		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.TopoGraphics{}.TableName(), nil, selector, &results, "", -1, -1); nil != selErr {
 			blog.Error("select data failed, error information is %s", selErr.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBSelectFailed)
 		}
 
 		return http.StatusOK, results, nil
+	}, resp)
+}
+
+func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restful.Response) {
+
+	blog.Info("UpdateTopoGraphics")
+
+	// get the language
+	language := util.GetActionLanguage(req)
+
+	// get the error factory by the language
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+
+	// execute
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if err != nil {
+			blog.Error("read http request body failed, error:%s", err.Error())
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+
+		datas := []metadata.TopoGraphics{}
+		if jsErr := json.Unmarshal(value, &datas); nil != jsErr {
+			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		for index := range datas {
+			blog.InfoJSON("%s", datas[index])
+			_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index])
+			if cli.CC.InstCli.IsDuplicateErr(err) {
+				condition := metadata.TopoGraphics{}
+				condition.SetScopeType(*datas[index].ScopeType)
+				condition.SetScopeID(*datas[index].ScopeID)
+				condition.SetNodeType(*datas[index].NodeType)
+				condition.SetObjID(*datas[index].ObjID)
+				condition.SetInstID(*datas[index].InstID)
+				if err = cli.CC.InstCli.UpdateByCondition(metadata.TopoGraphics{}.TableName(), datas[index], condition); err != nil {
+					blog.Error("update data failed, error information is %s", err.Error())
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBUpdateFailed)
+				}
+			} else if err != nil {
+				blog.Error("insert data failed, error information is %s", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBInsertFailed)
+			}
+		}
+		return http.StatusOK, nil, nil
 	}, resp)
 }

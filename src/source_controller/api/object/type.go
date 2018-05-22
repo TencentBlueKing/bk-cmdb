@@ -69,11 +69,11 @@ type ObjClsObjectDes struct {
 // TopoGraphics Topo Graphics
 type TopoGraphics struct {
 	metadata.TopoGraphics `json:",inline"`
-	Assts                 []Asst `json:"assts"`
+	Assts                 []GraphAsst `json:"assts,omitempty"`
 }
 
 // Asst the node association node
-type Asst struct {
+type GraphAsst struct {
 	AsstType string            `json:"bk_asst_type"`
 	NodeType string            `json:"node_type"`
 	ObjID    string            `json:"bk_obj_id"`
