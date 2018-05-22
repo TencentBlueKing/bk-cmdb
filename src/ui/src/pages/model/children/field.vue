@@ -1111,9 +1111,19 @@
                     this.newFieldInfo.isRequired = true
                 }
             },
+            'newFieldInfo.isRequired' (isRequired) {
+                if (!isRequired) {
+                    this.newFieldInfo.isonly = false
+                }
+            },
             'curFieldInfo.isonly' (isonly) {
                 if (isonly) {
                     this.curFieldInfo.isrequired = true
+                }
+            },
+            'curFieldInfo.isrequired' (isrequired) {
+                if (!isrequired) {
+                    this.curFieldInfo.isonly = false
                 }
             },
             'newFieldInfo.option': {
