@@ -86,7 +86,9 @@ func (cli *gseAction) GetAgentStatus(req *restful.Request, resp *restful.Respons
 		intIp := ip2long(ip)
 		comID := platID<<22 + companyID
 		agentFlag := fmt.Sprintf("agentalive_cloudid_%d", comID)
-		cellData := map[string]interface{}{"agentFlag": agentFlag, "offset": intIp}
+		newAgentLiveKey := fmt.Sprintf("agent_status_%d", comID)
+
+		cellData := map[string]interface{}{"agentFlag": agentFlag, "offset": intIp, "newHashMapKey": newAgentLiveKey, "ip": fmt.Sprintf("%d", intIp)}
 
 		hostDataArr = append(hostDataArr, cellData)
 	}
@@ -107,7 +109,10 @@ func (cli *gseAction) GetAgentStatus(req *restful.Request, resp *restful.Respons
 	blog.Debug("agentStatus:%v", agentStatus)
 	agentStatuLen := len(agentStatus)
 	for _, host := range hosts {
-		hostMap := host.(map[string]interface{})
+		hostMap, ok := host.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		platIdInt, err := util.GetIntByInterface(hostMap[common.BKCloudIDField])
 		if nil != err {
 			blog.Error("SubArea is not ok")
@@ -177,6 +182,7 @@ func getGseAgentStatus(hostDataArr []interface{}) ([]int64, error) {
 		blog.Error("getRedisSession error:%v", err)
 		return nil, err
 	}
+
 	length := len(hostDataArr)
 	data := make([]int64, length)
 	pipe := client.Pipeline()
@@ -212,6 +218,34 @@ func getGseAgentStatus(hostDataArr []interface{}) ([]int64, error) {
 			}
 		}
 	}
+
+	for i, hostData := range hostDataArr {
+		hostDataMap := hostData.(map[string]interface{})
+		blog.Infof("get gse hostDataMap:%v", hostDataMap)
+		key, ok := hostDataMap["newHashMapKey"].(string)
+		ip, okIP := hostDataMap["ip"].(string)
+		if ok && okIP {
+			ok, err := client.HExists(key, ip).Result()
+			if nil != err {
+				blog.Errorf("get gse hostDataMap, key%s, ip:%s, error:%s", key, ip, err.Error())
+			} else if ok {
+				cmd := client.HGet(key, ip)
+				if nil != cmd.Err() {
+					blog.Errorf("get gse hostDataMap, key%s, ip:%s, error:%s", key, ip, cmd.Err().Error())
+				}
+				val, err := cmd.Int64()
+				if nil != cmd.Err() {
+					blog.Errorf("get gse hostDataMap not int, key%s, ip:%s, error:%s", key, ip, err)
+				}
+				if 1 == val {
+					data[i] = 1
+				}
+			}
+
+		}
+
+	}
+
 	return data, nil
 
 }
