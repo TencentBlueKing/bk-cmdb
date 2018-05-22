@@ -190,3 +190,9 @@ func (cli *topoMgr) DeleteObject(forward *api.ForwardParam, id int, params []byt
 	target := cli.logics[Object].(ObjectLogic)
 	return target.DeleteObject(forward, id, params, errProxy)
 }
+
+// DeleteObject delete object info
+func (cli *topoMgr) SearchGraphics(forward *api.ForwardParam, params map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error) {
+	target := cli.logics[Object].(TopoGraphics)
+	return target.SearchGraphics(forward, params, errProxy)
+}

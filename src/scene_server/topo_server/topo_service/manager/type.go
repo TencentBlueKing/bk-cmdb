@@ -84,6 +84,11 @@ type ObjectLogic interface {
 	DeleteObject(forward *api.ForwardParam, id int, params []byte, errProxy errors.DefaultCCErrorIf) error
 }
 
+// TopoGraphics define the TopoGraphics interface
+type TopoGraphics interface {
+	SearchGraphics(forward *api.ForwardParam, params map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error)
+}
+
 // ObjectAttLogic define the logic interface
 type ObjectAttLogic interface {
 	CreateTopoModel(forward *api.ForwardParam, obj api.ObjAttDes, errProxy errors.DefaultCCErrorIf) (int, error)
@@ -122,6 +127,9 @@ type Manager interface {
 
 	// object attribute group interface
 	ObjectAttGroupLogic
+
+	// TopoGraphics interface
+	TopoGraphics
 }
 
 // Hooker define callback hook
