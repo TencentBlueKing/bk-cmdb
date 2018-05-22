@@ -12,14 +12,14 @@ type topoGraphicsLogic struct {
 	mgr    manager.Manager
 }
 
-var _ manager.TopoGraphics = (*topoGraphicsLogic)(nil) // check the interface
+var _ manager.TopoGraphicsLogic = (*topoGraphicsLogic)(nil) // check the interface
 
 func init() {
 	obj := &topoGraphicsLogic{}
 
 	obj.objcli = api.NewClient("")
 	manager.SetManager(obj)
-	manager.RegisterLogic(manager.ObjectAsst, obj)
+	manager.RegisterLogic(manager.TopoGraphics, obj)
 }
 
 // Set implement SetConfiger interface
@@ -33,7 +33,12 @@ func (cli *topoGraphicsLogic) SetManager(mgr manager.Manager) error {
 	return nil
 }
 
-func (cli *topoGraphicsLogic) SearchGraphics(forward *api.ForwardParam, params map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error) {
+func (cli *topoGraphicsLogic) SearchGraphics(forward *api.ForwardParam, params *api.TopoGraphics, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error) {
 	cli.objcli.SetAddress(cli.cfg.Get(cli))
 	return cli.objcli.SearchTopoGraphics(forward, params)
+}
+
+func (cli *topoGraphicsLogic) UpdateGraphics(forward *api.ForwardParam, params []api.TopoGraphics, errProxy errors.DefaultCCErrorIf) error {
+	cli.objcli.SetAddress(cli.cfg.Get(cli))
+	return cli.objcli.UpdateGraphics(forward, params)
 }
