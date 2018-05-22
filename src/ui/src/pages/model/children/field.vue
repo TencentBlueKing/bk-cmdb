@@ -1960,7 +1960,7 @@
                                     }
                                 }
                                 // 去掉临时不显示的内容后长度不为0时才添加到列表中
-                                if (val['bk_objects'].length) {
+                                if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
                                     this.modelList.push(val)
                                 }
                             }
