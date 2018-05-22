@@ -17,9 +17,9 @@ import (
 	"fmt"
 )
 
-func (cli *Client) ReForwardSelectObjectTopoGraphics(callfunc func(url, method string) (string, error)) func() (string, error) {
+func (cli *Client) ReForwardSelectObjectTopoGraphics(callfunc func(url, method string) (string, error), scopeType, scopeID string) func() (string, error) {
 
 	return func() (string, error) {
-		return callfunc(fmt.Sprintf("%s/topo/v1/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", cli.address), common.HTTPCreate)
+		return callfunc(fmt.Sprintf("%s/topo/v1/objects/topographics/scope_type/%s/scope_id/%s/action/search", cli.address, scopeType, scopeID), common.HTTPCreate)
 	}
 }

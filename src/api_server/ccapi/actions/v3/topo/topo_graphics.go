@@ -46,11 +46,12 @@ func (cli *graphicsAction) SelectObjectTopoGraphics(req *restful.Request, resp *
 	blog.Info("SelectObjectTopoGraphics")
 
 	senceCLI := api.NewClient(module.CC.TopoAPI())
-
+	scopeType := req.PathParameter("scope_type")
+	scopeID := req.PathParameter("scope_id")
 	cli.CallResponse(
 		senceCLI.ReForwardSelectObjectTopoGraphics(func(url, method string) (string, error) {
 			return httpclient.ReqForward(req, url, method)
-		}),
+		}, scopeType, scopeID),
 		resp)
 
 }
@@ -61,11 +62,12 @@ func (cli *graphicsAction) UpdateObjectTopoGraphics(req *restful.Request, resp *
 	blog.Info("UpdateObjectTopoGraphics ")
 
 	senceCLI := api.NewClient(module.CC.TopoAPI())
-
+	scopeType := req.PathParameter("scope_type")
+	scopeID := req.PathParameter("scope_id")
 	cli.CallResponse(
 		senceCLI.ReForwardUpdateObjectTopoGraphics(func(url, method string) (string, error) {
 			return httpclient.ReqForward(req, url, method)
-		}),
+		}, scopeType, scopeID),
 		resp)
 
 }

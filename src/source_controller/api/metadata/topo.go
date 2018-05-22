@@ -27,11 +27,33 @@ type TopoGraphics struct {
 	SupplierAccount *string                `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
 }
 
-func (t *TopoGraphics) SetNodeType(val string)            { t.NodeType = &val }
-func (t *TopoGraphics) SetObjID(val string)               { t.ObjID = &val }
-func (t *TopoGraphics) SetInstID(val int)                 { t.InstID = &val }
-func (t *TopoGraphics) SetNodeName(val string)            { t.NodeName = &val }
-func (t *TopoGraphics) SetPosition(val Position)          { t.Position = &val }
+func (t *TopoGraphics) FillBlank() *TopoGraphics {
+	if t.BizID == nil {
+		t.SetBizID(0)
+	}
+	if t.SupplierAccount == nil {
+		t.SetSupplierAccount("0")
+	}
+	if t.Ext == nil {
+		t.SetExt(map[string]interface{}{})
+	}
+	if t.Position == nil {
+		t.SetPosition(&Position{})
+	}
+	return t
+}
+
+func (t *TopoGraphics) SetNodeType(val string) { t.NodeType = &val }
+func (t *TopoGraphics) SetObjID(val string)    { t.ObjID = &val }
+func (t *TopoGraphics) SetInstID(val int)      { t.InstID = &val }
+func (t *TopoGraphics) SetNodeName(val string) { t.NodeName = &val }
+func (t *TopoGraphics) SetPosition(val *Position) {
+	if val == nil {
+		t.Position = &Position{}
+	} else {
+		t.Position = val
+	}
+}
 func (t *TopoGraphics) SetExt(val map[string]interface{}) { t.Ext = val }
 func (t *TopoGraphics) SetIcon(val string)                { t.Icon = &val }
 func (t *TopoGraphics) SetScopeType(val string)           { t.ScopeType = &val }

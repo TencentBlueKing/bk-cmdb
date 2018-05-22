@@ -23,6 +23,7 @@ import (
 	"github.com/emicklei/go-restful"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 func init() {
@@ -52,12 +53,18 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 		graphcondition := api.TopoGraphics{}
 		graphcondition.SetScopeType(scopeType)
 		graphcondition.SetScopeID(scopeID)
-		nodes, err := cli.mgr.SearchGraphics(forward, &graphcondition, defErr)
+		dbnodes, err := cli.mgr.SearchGraphics(forward, &graphcondition, defErr)
 		if err != nil {
 			blog.Errorf("SearchGraphics failed %v", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsUpdateFailed)
 		}
 
+		graphnodes := map[string]*api.TopoGraphics{}
+		for index, node := range dbnodes {
+			graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)] = &dbnodes[index]
+		}
+
+		nodes := []api.TopoGraphics{}
 		if scopeType == "global" {
 			objs, err := cli.mgr.SelectObject(forward, []byte("{}"), defErr)
 			if err != nil {
@@ -81,14 +88,22 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 				node.SetNodeType("obj")
 				node.SetObjID(obj.ObjectID)
 				node.SetInstID(0)
-				node.SetPosition(metadata.Position{})
 				node.SetNodeName(obj.ObjectName)
-				node.SetExt(map[string]interface{}{})
-				node.SetIcon(obj.ObjIcon)
 				node.SetScopeType("global")
 				node.SetScopeID("0")
 				node.SetBizID(0)
 				node.SetSupplierAccount("0")
+				node.SetIcon(obj.ObjIcon)
+
+				oldnode := graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)]
+				if oldnode != nil {
+					node.SetPosition(oldnode.Position)
+					node.SetExt(oldnode.Ext)
+				} else {
+					node.SetPosition(&metadata.Position{})
+					node.SetExt(map[string]interface{}{})
+				}
+
 				for _, asst := range objAssts[obj.ObjectID] {
 					node.Assts = append(node.Assts, api.GraphAsst{
 						AsstType: "",
