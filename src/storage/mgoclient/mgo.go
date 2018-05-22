@@ -334,3 +334,8 @@ func (m *MgoCli) DropColumn(tableName, field string) error {
 func (m *MgoCli) GetType() string {
 	return storage.DI_MONGO
 }
+
+// IsDuplicateErr returns whether err is duplicate error
+func (m *MgoCli) IsDuplicateErr(err error) bool {
+	return mgo.IsDup(err)
+}
