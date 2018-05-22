@@ -32,6 +32,9 @@ const ObjectGroup = "object_group"
 // Object const definition
 const Object = "object"
 
+// TopoGraphics const definition
+const TopoGraphics = "topo_graphics"
+
 // TopoModelRsp 拓扑模型结构
 type TopoModelRsp struct {
 	ObjID      string `json:"bk_obj_id"`
@@ -85,8 +88,9 @@ type ObjectLogic interface {
 }
 
 // TopoGraphics define the TopoGraphics interface
-type TopoGraphics interface {
-	SearchGraphics(forward *api.ForwardParam, params map[string]interface{}, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error)
+type TopoGraphicsLogic interface {
+	SearchGraphics(forward *api.ForwardParam, params *api.TopoGraphics, errProxy errors.DefaultCCErrorIf) ([]api.TopoGraphics, error)
+	UpdateGraphics(forward *api.ForwardParam, params []api.TopoGraphics, errProxy errors.DefaultCCErrorIf) error
 }
 
 // ObjectAttLogic define the logic interface
@@ -128,8 +132,8 @@ type Manager interface {
 	// object attribute group interface
 	ObjectAttGroupLogic
 
-	// TopoGraphics interface
-	TopoGraphics
+	// TopoGraphicsLogic interface
+	TopoGraphicsLogic
 }
 
 // Hooker define callback hook
