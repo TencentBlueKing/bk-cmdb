@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	api "configcenter/src/source_controller/api/object"
+	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
 	"github.com/emicklei/go-restful"
 	"io/ioutil"
@@ -43,6 +44,7 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
 	forward := &api.ForwardParam{Header: req.Request.Header}
 
 	// execute
@@ -94,6 +96,7 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 				node.SetBizID(0)
 				node.SetSupplierAccount("0")
 				node.SetIcon(obj.ObjIcon)
+				commondata.TranslateObjectName(defLang, &obj.ObjectDes)
 
 				oldnode := graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)]
 				if oldnode != nil {
