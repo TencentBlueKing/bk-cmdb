@@ -29,7 +29,7 @@ func init() {
 
 	// register action
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", Params: nil, Handler: obj.SelectObjectTopoGraphics})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/{action}", Params: nil, Handler: obj.UpdateObjectTopoGraphics})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", Params: nil, Handler: obj.UpdateObjectTopoGraphics})
 
 }
 
@@ -58,51 +58,49 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsUpdateFailed)
 		}
 
-		if len(nodes) > 0 {
-			return http.StatusOK, nodes, nil
-		}
-
-		objs, err := cli.mgr.SelectObject(forward, []byte("{}"), defErr)
-		if err != nil {
-			blog.Errorf("SelectObject failed %v", err.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsSearchFailed)
-		}
-
-		assts, err := cli.mgr.SelectObjectAsst(forward, map[string]interface{}{}, defErr)
-		if err != nil {
-			blog.Errorf("SelectObjectAsst failed %v", err.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsSearchFailed)
-		}
-
-		objAssts := map[string][]api.ObjAsstDes{}
-		for _, asst := range assts {
-			objAssts[asst.ObjectID] = append(objAssts[asst.ObjectID], asst)
-		}
-
-		for _, obj := range objs {
-			node := api.TopoGraphics{}
-			node.SetNodeType("obj")
-			node.SetObjID(obj.ObjectID)
-			node.SetInstID(0)
-			node.SetPosition(metadata.Position{})
-			node.SetNodeName(obj.ObjectName)
-			node.SetExt(map[string]interface{}{})
-			node.SetIcon(obj.ObjIcon)
-			node.SetScopeType("global")
-			node.SetScopeID("0")
-			node.SetBizID(0)
-			node.SetSupplierAccount("0")
-			for _, asst := range objAssts[obj.ObjectID] {
-				node.Assts = append(node.Assts, api.GraphAsst{
-					AsstType: "",
-					NodeType: "obj",
-					ObjID:    asst.AsstObjID,
-					InstID:   0,
-					ObjAtt:   asst.ObjectAttID,
-					Lable:    map[string]string{},
-				})
+		if scopeType == "global" {
+			objs, err := cli.mgr.SelectObject(forward, []byte("{}"), defErr)
+			if err != nil {
+				blog.Errorf("SelectObject failed %v", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsSearchFailed)
 			}
-			nodes = append(nodes, node)
+
+			assts, err := cli.mgr.SelectObjectAsst(forward, map[string]interface{}{}, defErr)
+			if err != nil {
+				blog.Errorf("SelectObjectAsst failed %v", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoGraphicsSearchFailed)
+			}
+
+			objAssts := map[string][]api.ObjAsstDes{}
+			for _, asst := range assts {
+				objAssts[asst.ObjectID] = append(objAssts[asst.ObjectID], asst)
+			}
+
+			for _, obj := range objs {
+				node := api.TopoGraphics{}
+				node.SetNodeType("obj")
+				node.SetObjID(obj.ObjectID)
+				node.SetInstID(0)
+				node.SetPosition(metadata.Position{})
+				node.SetNodeName(obj.ObjectName)
+				node.SetExt(map[string]interface{}{})
+				node.SetIcon(obj.ObjIcon)
+				node.SetScopeType("global")
+				node.SetScopeID("0")
+				node.SetBizID(0)
+				node.SetSupplierAccount("0")
+				for _, asst := range objAssts[obj.ObjectID] {
+					node.Assts = append(node.Assts, api.GraphAsst{
+						AsstType: "",
+						NodeType: "obj",
+						ObjID:    asst.AsstObjID,
+						InstID:   0,
+						ObjAtt:   asst.ObjectAttID,
+						Lable:    map[string]string{},
+					})
+				}
+				nodes = append(nodes, node)
+			}
 		}
 
 		return http.StatusOK, nodes, nil
