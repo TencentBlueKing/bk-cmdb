@@ -2,12 +2,11 @@ language: go
 
 go:
   - "1.8"  
-  - "1.10.x"
-  - master
 
 before_install:
   - go get -v github.com/golang/lint/golint
 
 script:
+  - ls ./
   - ./pre-commit
   - cd src && make server
