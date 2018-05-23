@@ -91,10 +91,12 @@ class TableLayout {
 
     updateColumns () {
         const table = this.table
-        let columns = this.columns.filter(column => table.header.some(head => column.head === head))
-        table.header.forEach(head => {
-            if (!columns.some(column => column.head === head)) {
-                columns.push({
+        const newColumns = []
+        table.header.forEach((head, index) => {
+            if (this.columns[index] && head === this.columns[index].head) {
+                newColumns[index] = this.columns[index]
+            } else {
+                newColumns[index] = {
                     head: head,
                     id: head[table.valueKey],
                     name: head[table.labelKey],
@@ -107,10 +109,10 @@ class TableLayout {
                     sortable: table.sortable && (head.hasOwnProperty('sortable') ? head.sortable : true),
                     sortKey: head.hasOwnProperty('sortKey') ? head.sortKey : head[table.valueKey],
                     dragging: false
-                })
+                }
             }
         })
-        this.columns = columns
+        this.columns = newColumns
     }
 }
 
