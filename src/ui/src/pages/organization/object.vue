@@ -127,6 +127,12 @@
                         <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
                             <v-history :active="tab.activeName === 'history'" :type="objId" :instId="objId === 'biz' ? attr.formValues['bk_biz_id'] : attr.formValues['bk_inst_id']"></v-history>
                         </bk-tabpanel>
+                        <bk-tabpanel name="associationList" title="关联列表">
+                            <v-association-list :data="attr.formValues" :objId="objId"></v-association-list>
+                        </bk-tabpanel>
+                        <bk-tabpanel name="newAssociation" title="新增关联">
+                            <v-new-association :data="attr.formValues" :objId="objId"></v-new-association>
+                        </bk-tabpanel>
                     </bk-tab>
                 </div>
             </v-sideslider>
@@ -157,6 +163,8 @@
 </template>
 
 <script>
+    import vAssociationList from '@/components/relevance/list'
+    import vNewAssociation from '@/components/relevance/new-association'
     import { mapGetters } from 'vuex'
     import vObjectTable from '@/components/table/table'
     import vObjectAttr from '@/components/object/attribute'
@@ -722,7 +730,9 @@
             vImport,
             vSideslider,
             vConfigField,
-            vDeleteHistory
+            vDeleteHistory,
+            vAssociationList,
+            vNewAssociation
         }
     }
 </script>
