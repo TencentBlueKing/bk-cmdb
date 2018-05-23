@@ -53,8 +53,10 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount',
-                'object/attribute'
+                'bkSupplierAccount'
+            ]),
+            ...mapGetters('object', [
+                'attribute'
             ]),
             formValuesConfig () {
                 let config = {
@@ -141,7 +143,7 @@
                     this.$store.dispatch('object/getAttribute', this.objId),
                     this.getFormValues()
                 ])
-                this.attr.formFields = this['object/attribute'][this.objId]
+                this.attr.formFields = this.attribute[this.objId]
                 this.attr.isLoading = false
             },
             async getFormValues () {

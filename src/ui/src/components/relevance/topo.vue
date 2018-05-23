@@ -2,21 +2,9 @@
     <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
         <div id="topo" class="topo"></div>
         <ul class="model-list">
-            <li class="model" @click="">
-                <i class="icon icon-cc-biz"></i>
-                业务
-            </li>
-            <li class="model">
-                <i class="icon icon-cc-cpu"></i>
-                业务
-            </li>
-            <li class="model">
-                <i class="icon icon-cc-win"></i>
-                业务
-            </li>
-            <li class="model">
-                <i class="icon icon-cc-firewall"></i>
-                业务
+            <li class="model" v-for="filter in filterList">
+                <i class="icon icon-cc-biz" :class="filter['bk_obj_icon']"></i>
+                {{filter['bk_obj_name']}}
             </li>
         </ul>
         <v-attribute 
@@ -33,8 +21,7 @@
     import vis from 'vis'
     import vAttribute from './attribute'
     import { getImgUrl } from '@/utils/util'
-    const XAXIS = 120
-    const YAXIS = 80
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             isShow: {
@@ -50,6 +37,9 @@
         },
         data () {
             return {
+                filterList: [],
+                network: {},
+                position: {},
                 attr: {
                     isShow: false,
                     instId: '',
@@ -61,13 +51,16 @@
                 isLoading: false,
                 popBox: {
                     isShow: false,
-                    rand: ''
+                    rand: '',
+                    showPopTimer: 0,
+                    timer: 0
                 },
                 nodes: [],
                 edges: [],
                 options: {
                     physics: false,
                     interaction: {
+                        // dragNodes: false,
                         navigationButtons: true,
                         hover: true
                     },
@@ -92,11 +85,20 @@
                             min: 15,
                             max: 25
                         }
+                    },
+                    layout: {
+                        hierarchical: {
+                            direction: 'LR'
+                        }
                     }
-                }
+                },
+                activeNode: {}
             }
         },
         computed: {
+            ...mapGetters('object', [
+                'attribute'
+            ]),
             graphData () {
                 return {
                     nodes: new vis.DataSet(this.nodes),
@@ -107,11 +109,45 @@
         watch: {
             isShow (isShow) {
                 if (isShow) {
-                    this.getRelationInfo()
+                    this.nodes = []
+                    this.edges = []
+                    this.getRelationInfo(this.objId, this.instId)
+                } else {
+                    this.activeNode = {}
                 }
             }
         },
         methods: {
+            setFilterList (data) {
+                let filterList = []
+                for (let key in data) {
+                    if (key !== 'curr') {
+                        data[key].map(model => {
+                            if (model.children !== null) {
+                                model.children.map(inst => {
+                                    let current = filterList.find(({bk_inst_id: bkInstId, bk_obj_id: bkObjId}) => {
+                                        return bkObjId === inst['bk_obj_id'] && bkInstId === inst['bk_inst_id']
+                                    })
+                                    if (!current) {
+                                        filterList.push({
+                                            bk_obj_id: model['bk_obj_id'],
+                                            bk_obj_name: model['bk_obj_name'],
+                                            bk_obj_icon: model['bk_obj_icon'],
+                                            count: 1
+                                        })
+                                    } else {
+                                        current.count++
+                                    }
+                                })
+                            }
+                        })
+                    }
+                }
+                this.filterList = filterList
+            },
+            getPosition () {
+                this.position = this.network.getPositions()
+            },
             /*
                 把十六位色值转换为rgb
                 return {
@@ -180,10 +216,11 @@
             getIconByClass (iconClass) {
                 return iconClass.substr(5)
             },
-            async getRelationInfo (instId) {
+            async getRelationInfo (objId, instId) {
                 this.isLoading = true
                 try {
-                    const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${this.objId}/inst/${this.instId}`)
+                    const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
+                    this.setFilterList(res.data[0])
                     this.formatTopo(res.data[0])
                 } catch (e) {
                     this.isLoading = false
@@ -231,6 +268,7 @@
                                             bk_inst_id: inst['bk_inst_id'],
                                             bk_inst_name: inst['bk_inst_name'],
                                             bk_obj_icon: model['bk_obj_icon'],
+                                            id: inst['id'],
                                             relation: key
                                         })
                                     }
@@ -247,7 +285,8 @@
                                 bk_obj_name: relationInfo[key]['bk_obj_name'],
                                 bk_inst_id: relationInfo[key]['bk_inst_id'],
                                 bk_inst_name: relationInfo[key]['bk_inst_name'],
-                                bk_obj_icon: relationInfo[key]['bk_obj_icon']
+                                bk_obj_icon: relationInfo[key]['bk_obj_icon'],
+                                id: relationInfo[key]['id']
                             })
                         }
                     }
@@ -260,23 +299,35 @@
                     let selectedUrl = this.initImg(image, '#3c96ff')
                     let unselectedUrl = this.initImg(image, '#6c7bb2')
 
-                    this.calcPosition(insertNode, node)
-
-                    nodes.push({
-                        objId: node['bk_obj_id'],
-                        instId: node['bk_inst_id'],
-                        objName: node['bk_obj_name'],
-                        instName: node['bk_inst_name'],
-                        id: `${node['bk_obj_id']}|${node['bk_inst_id']}`,
-                        label: node['bk_inst_name'],
-                        value: this.instId === node['bk_inst_id'] && this.objId === node['bk_obj_id'] ? 25 : 15,  // 设置大小
-                        image: {
-                            selected: selectedUrl,
-                            unselected: unselectedUrl
-                        },
-                        x: this.instId === node['bk_inst_id'] ? 0 : XAXIS,
-                        y: this.instId === node['bk_inst_id'] ? 0 : YAXIS
-                    })
+                    let isNodeExist = nodes.findIndex(({instId, objId}) => {
+                        return instId === node['bk_inst_id'] && objId === node['bk_obj_id']
+                    }) > -1
+                    if (!isNodeExist && node['id'] !== '') {
+                        let level = 500
+                        if (node['bk_obj_id'] === this.objId && node['bk_inst_id'] === this.instId) {
+                            level = 500
+                        } else {
+                            let activeNodeLevel = this.activeNode['level'] ? this.activeNode['level'] : level
+                            level = node['relation'] === 'prev' ? activeNodeLevel - 1 : activeNodeLevel + 1
+                        }
+                        nodes.push({
+                            objId: node['bk_obj_id'],
+                            instId: node['bk_inst_id'],
+                            objName: node['bk_obj_name'],
+                            instName: node['bk_inst_name'],
+                            id: `${node['bk_obj_id']}|${node['bk_inst_id']}`,
+                            label: node['bk_inst_name'],
+                            value: this.instId === node['bk_inst_id'] && this.objId === node['bk_obj_id'] ? 25 : 15,  // 设置大小
+                            image: unselectedUrl,
+                            // image: {
+                            //     selected: selectedUrl,
+                            //     unselected: unselectedUrl
+                            // },
+                            selectedUrl: selectedUrl,
+                            unselectedUrl: unselectedUrl,
+                            level: level
+                        })
+                    }
                     count++
                 })
                 let timer = setInterval(() => {
@@ -285,9 +336,6 @@
                         this.initTopo()
                     }
                 }, 200)
-            },
-            calcPosition (insertNode, node) {
-
             },
             initImg (image, color) {
                 let base64 = this.getBase64Img(image, this.parseColor(color))
@@ -298,32 +346,101 @@
                 return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
             },
             initTopo () {
+                for (let key in this.position) {
+                    let node = this.nodes.find(({id}) => {
+                        return id === key
+                    })
+                    if (node) {
+                        node.x = this.position[key].x
+                        node.y = this.position[key].y
+                    }
+                }
                 let data = {
                     nodes: this.nodes,
                     edges: this.edges
                 }
-                let network = new vis.Network(this.container, this.graphData, this.options)
+                this.network = new vis.Network(this.container, this.graphData, this.options)
                 // let network = window.network
 
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
-                network.on('hoverNode', () => {
+                this.network.on('hoverNode', (params) => {
+                    let id = params.node
+                    this.initPopBox(id, event)
                     networkCanvas.style.cursor = 'pointer'
                 })
-                network.on('blurNode', () => {
+                this.network.on('blurNode', () => {
                     networkCanvas.style.cursor = 'default'
                 })
-                network.on('click', (params) => {
+                this.network.on('dragging', () => {
+                    if (this.activeNode['image']) {
+                        this.activeNode.image = this.activeNode.unselectedUrl
+                    }
+                })
+                this.network.on('click', (params) => {
+                    // 点击了某一根线
+                    if (params.edges.length) {
+                        let edgeId = params.edges[0]
+                        let edge = this.edges.find(({id}) => {
+                            return id === edgeId
+                        })
+                        this.deleteRelation(edge)
+                    }
                     // 点击了具体某个节点
                     if (params.nodes.length) {
+                        this.getPosition()
                         let id = params.nodes[0]
-                        this.initPopBox(id, event)
+                        if (this.activeNode['image']) {
+                            this.activeNode.image = this.activeNode.unselectedUrl
+                        }
+                        this.activeNode = this.nodes.find(node => {
+                            return id === node.id
+                        })
+                        this.activeNode.image = this.activeNode.selectedUrl
+
+                        this.getRelationInfo(id.split('|')[0], Number(id.split('|')[1]))
                     }
                 })
                 this.isLoading = false
             },
-            deleteRelation (id) {
+            async deleteRelation (edge) {
+                let associated = []
+                let id = 0
+                try {
+                    const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${edge.to.split('|')[0]}/inst/${edge.to.split('|')[1]}`)
+                    if (res.data[0]['next']) {
+                        res.data[0]['next'].map(model => {
+                            if (model['bk_obj_id'] === edge.to.split('|')[0] && model.children !== null) {
+                                model.map(inst => {
+                                    associated.push(inst['bk_inst_id'])
+                                })
+                            }
+                        })
+                    }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
 
+                await this.$store.dispatch('object/getAttribute', edge.to.split('|')[0])
+                let parentAttrList = this.attribute[edge.to.split('|')[0]]
+                let parentAttr = parentAttrList.find(({bk_asst_obj_id: bkAsstObjId}) => {
+                    return edge.to.split('|')[0] === bkAsstObjId
+                })
+                if (parentAttr) {
+                    id = parentAttr['bk_property_id']
+                }
+                let params = {
+                    updateType: 'update',
+                    objId: edge.to.split('|')[0],
+                    associated: associated,
+                    id: id,
+                    value: edge.from.split('|')[1],
+                    params: {
+
+                    }
+                }
+                // console.log(params)
+                // this.$store.dispatch('association/updateAssociation', )
             },
             showInstDetail (id) {
                 let objId = id.split('|')[0]
@@ -343,7 +460,7 @@
                 this.removePop()
                 this.attr.isShow = true
             },
-            initPopBox (id, event) {
+            initPopBox (id, event, time = 5000) {
                 this.removePop()
 
                 // 创建popBox
@@ -353,7 +470,7 @@
                 let div = document.createElement('div')
                 div.setAttribute('class', 'topo-pop-box')
                 div.setAttribute('id', this.popBox.rand)
-                div.style.top = `${Y - 50}px`
+                div.style.top = `${Y - 40}px`
                 div.style.left = `${X}px`
                 div.innerHTML = '<span class="detail" id="instDetail">详情</span> | <span class="color-danger" id="deleteRelation">删除关联</span>'
                 document.body.appendChild(div)
@@ -367,15 +484,16 @@
                     e.stopPropagation()
                     this.deleteRelation(id)
                 }, false)
-                // 确保元素加载到dom
-                this.popBox.isPopShow = true
                 document.body.addEventListener('click', this.removePop, false)
-                setTimeout(() => {
-                    this.popBox.isPopShow = false
-                })
+
+                clearTimeout(this.popBox.timer)
+                this.popBox.timer = setTimeout(() => {
+                    this.removePop()
+                    clearTimeout(this.popBox.timer)
+                }, time)
             },
             removePop () {
-                if (!this.popBox.isPopShow && this.popBox.rand) {
+                if (this.popBox.rand) {
                     let div = document.getElementById(this.popBox.rand)
                     document.body.removeChild(div)
                     this.popBox.rand = ''
