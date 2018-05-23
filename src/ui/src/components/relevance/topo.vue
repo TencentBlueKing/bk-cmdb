@@ -1,11 +1,15 @@
 <template>
     <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
         <div id="topo" class="topo"></div>
-        <ul class="model-list">
-            <li class="model" v-for="filter in filterList">
+        <ul class="model-list" v-if="filterList.length">
+            <li class="model" v-for="filter in filterList" @click="changeModelDisplay(filter)" v-if="filter.count">
+                <i class="icon" :class="filter.model['bk_obj_icon']"></i>
+                {{filter.model['bk_obj_name']}} {{filter.count}}
+            </li>
+            <!-- <li class="model" v-for="filter in filterList">
                 <i class="icon icon-cc-biz" :class="filter['bk_obj_icon']"></i>
                 {{filter['bk_obj_name']}}
-            </li>
+            </li> -->
         </ul>
         <v-attribute 
             :isShow.sync="attr.isShow"
@@ -40,7 +44,6 @@
                 topoStruct: {},
                 tid: 0,
 
-                filterList: [],
                 network: {},
                 position: {},
                 attr: {
@@ -58,12 +61,11 @@
                     showPopTimer: 0,
                     timer: 0
                 },
-                nodes: [],
                 edges: [],
                 options: {
                     physics: false,
                     interaction: {
-                        // dragNodes: false,
+                        dragNodes: false,
                         navigationButtons: true,
                         hover: true
                     },
@@ -107,6 +109,30 @@
                     nodes: new vis.DataSet(this.nodes),
                     edges: new vis.DataSet(this.edges)
                 }
+            },
+            nodes () {
+                return this.getNodes(this.topoStruct, 500, true)
+            },
+            filterList () {
+                let {
+                    activeNode
+                } = this
+                let modelList = []
+                if (activeNode !== null && activeNode.children) {
+                    for (let key in activeNode.children) {
+                        if (key !== 'curr') {
+                            console.log(activeNode)
+                            activeNode.children[key].map(model => {
+                                modelList.push({
+                                    model: model,
+                                    count: model.children ? model.children.length : 0
+                                })
+                            })
+                        }
+                    }
+                }
+                console.log(modelList, 1)
+                return modelList
             }
         },
         watch: {
@@ -121,6 +147,79 @@
             }
         },
         methods: {
+            changeModelDisplay (filter) {
+                let {
+                    activeNode
+                } = this
+                if (activeNode !== null && activeNode.children) {
+                    for (let key in activeNode.children) {
+                        if (key !== 'curr') {
+                            let model = activeNode.children[key].find(model => {
+                                return model['bk_obj_id'] === filter.model['bk_obj_id']
+                            })
+                            if (model) {
+                                model.isShow = !model.isShow
+                            }
+                        }
+                    }
+                }
+                this.initTopo()
+            },
+            getNodes (data, level, isRoot, direction) {
+                let nodes = []
+                let localLevel = level
+                for (let key in data) {
+                    if (key !== 'curr') {
+                        if (isRoot) {
+                            direction = key === 'prev' ? 'left' : 'right'
+                            localLevel = key === 'prev' ? level - 1 : level + 1
+                        }
+                        data[key].map(model => {
+                            if (model.children !== null && model.isShow) {
+                                model.children.map(inst => {
+                                    nodes.push({
+                                        id: inst.tid,
+                                        label: inst['bk_inst_name'],
+                                        value: 15,
+                                        image: inst.unselectedUrl,
+                                        level: localLevel,
+                                        isLoad: inst['isLoad'],
+                                        objId: model['bk_obj_id'],
+                                        objName: model['bk_obj_name'],
+                                        instId: inst['bk_inst_id'],
+                                        instName: model['bk_inst_name'],
+                                        selectedUrl: inst.selectedUrl,
+                                        unselectedUrl: inst.unselectedUrl
+                                    })
+                                    if (inst.hasOwnProperty('children')) {
+                                        let childLevel = direction === 'left' ? localLevel - 1 : localLevel + 1
+                                        nodes = nodes.concat(this.getNodes(inst.children, childLevel, false, direction))
+                                    }
+                                })
+                            }
+                        })
+                    } else {
+                        if (isRoot) {
+                            let current = data[key]
+                            nodes.push({
+                                id: current.tid,
+                                label: current['bk_inst_name'],
+                                value: 25,
+                                image: current.unselectedUrl,
+                                level: localLevel,
+                                isLoad: current['isLoad'],
+                                objId: current['bk_obj_id'],
+                                objName: current['bk_obj_name'],
+                                instId: current['bk_inst_id'],
+                                instName: current['bk_inst_name'],
+                                selectedUrl: current.selectedUrl,
+                                unselectedUrl: current.unselectedUrl
+                            })
+                        }
+                    }
+                }
+                return nodes
+            },
             setFilterList (data) {
                 let filterList = []
                 for (let key in data) {
@@ -219,11 +318,11 @@
             getIconByClass (iconClass) {
                 return iconClass.substr(5)
             },
-            getCurrentNode (topoStruct) {
+            getActiveNode (topoStruct) {
                 let {
-                    activeNode
+                    tid
                 } = this
-                let currentNode = null
+                let activeNode = null
                 for (let key in topoStruct) {
                     if (key !== 'curr') {
                         for (let i = 0; i < topoStruct[key].length; i++) {
@@ -231,162 +330,96 @@
                             if (model.children !== null) {
                                 for (let j = 0; j < model.children.length; j++) {
                                     let inst = model.children[j]
-                                    if (activeNode.id === inst.tid) {
-                                        currentNode = inst
+                                    if (tid === inst.tid) {
+                                        activeNode = inst
                                     } else {
                                         if (inst.hasOwnProperty('children')) {
-                                            let res = this.getCurrentNode(inst.children)
-                                            currentNode = res !== null ? res : null
+                                            let res = this.getActiveNode(inst.children)
+                                            if (res) {
+                                                activeNode = res
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                    } else {
+                        if (topoStruct[key].tid === tid) {
+                            activeNode = topoStruct[key]
+                        }
                     }
                 }
-                return currentNode
+                return activeNode
             },
-            setTopoStruct (data) {
-                let currentNode = this.getCurrentNode(this.TopoStruct)
+            async setTopoStruct (data) {
+                this.activeNode = this.getActiveNode(this.topoStruct)
+                let count = 0
+                let competedNum = 0
+                let currentTid = this.activeNode !== null ? this.activeNode.tid : `${data['curr']['bk_obj_id']}|${data['curr']['bk_inst_id']}|${Math.random().toString(36).substr(2)}`
                 for (let key in data) {
                     if (key !== 'curr') {
-                        data[key].map(model => {
+                        data[key].map(async model => {
+                            // this.$set(model, 'isShow', true)
+                            model.isShow = true
                             if (model.children !== null) {
-                                model.children.map(inst => {
-                                    inst.tid = `${model['bk_obj_id']}|${inst['bk_inst_id']}|${this.tid++}`
+                                model.children.map(async inst => {
+                                    count++
+                                    let tid = `${model['bk_obj_id']}|${inst['bk_inst_id']}|${Math.random().toString(36).substr(2)}`
+
+                                    // 处理edges
+                                    this.edges.push({
+                                        to: key === 'prev' ? tid : currentTid,
+                                        from: key === 'prev' ? currentTid : tid
+                                    })
+
+                                    // 处理nodes
+                                    let image = await getImgUrl(`./static/svg/${this.getIconByClass(model['bk_obj_icon'])}.svg`)
+                                    let selectedUrl = this.initImg(image, '#3c96ff')
+                                    let unselectedUrl = this.initImg(image, '#6c7bb2')
+                                    inst.isLoad = false
+                                    inst.selectedUrl = selectedUrl
+                                    inst.unselectedUrl = unselectedUrl
+                                    inst.tid = tid
+                                    competedNum++
                                 })
                             }
                         })
+                    } else {
+                        if (!this.activeNode) {
+                            count++
+                            let image = await getImgUrl(`./static/svg/${this.getIconByClass(data[key]['bk_obj_icon'])}.svg`)
+                            let selectedUrl = this.initImg(image, '#3c96ff')
+                            let unselectedUrl = this.initImg(image, '#6c7bb2')
+                            data[key].selectedUrl = selectedUrl
+                            data[key].unselectedUrl = unselectedUrl
+                            data[key].isLoad = true
+                            data[key].tid = currentTid
+                            competedNum++
+                        }
                     }
                 }
-                console.log(currentNode)
-                if (currentNode) {
-                    this.$set(currentNode, 'children', data)
-                } else {
-                    this.topoStruct = data
-                }
+                let timer = setInterval(() => {
+                    if (count === competedNum) {
+                        clearInterval(timer)
+                        if (this.activeNode) {
+                            this.$set(this.activeNode, 'children', data)
+                        } else {
+                            this.topoStruct = data
+                        }
+                        this.initTopo()
+                    }
+                }, 200)
             },
             async getRelationInfo (objId, instId) {
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
-                    this.setFilterList(res.data[0])
-                    this.formatTopo(res.data[0])
-                    this.setTopoStruct(res.data[0])
+                    // this.setFilterList(res.data[0])
+                    await this.setTopoStruct(res.data[0])
                 } catch (e) {
                     this.isLoading = false
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
-            },
-            formatTopo (relationInfo) {
-                let {
-                    nodes,
-                    edges
-                } = this
-                let insertNode = []
-                for (let key in relationInfo) {
-                    if (key !== 'curr') {
-                        relationInfo[key].map(model => {
-                            if (model.children !== null) {
-                                model.children.map(inst => {
-                                    // 处理edges
-                                    let isEdgeExist = false
-                                    if (key === 'prev') {
-                                        isEdgeExist = edges.findIndex(({to, from}) => {
-                                            return from === relationInfo['curr']['bk_inst_id'] && to === inst['bk_inst_id']
-                                        }) > -1
-                                    } else {
-                                        isEdgeExist = edges.findIndex(({to, from}) => {
-                                            return to === relationInfo['curr']['bk_inst_id'] && from === inst['bk_inst_id']
-                                        }) > -1
-                                    }
-                                    if (!isEdgeExist) {
-                                        edges.push({
-                                            to: key === 'prev' ? `${model['bk_obj_id']}|${inst['bk_inst_id']}` : `${relationInfo['curr']['bk_obj_id']}|${relationInfo['curr']['bk_inst_id']}`,
-                                            from: key === 'prev' ? `${relationInfo['curr']['bk_obj_id']}|${relationInfo['curr']['bk_inst_id']}` : `${model['bk_obj_id']}|${inst['bk_inst_id']}`
-                                        })
-                                    }
-    
-                                    // 处理nodes
-                                    let isNodeExist = nodes.findIndex(({instId, objId}) => {
-                                        return instId === inst['bk_inst_id'] && objId === model['bk_obj_id']
-                                    }) > -1
-                                    
-                                    if (!isNodeExist) {
-                                        insertNode.push({
-                                            bk_obj_id: model['bk_obj_id'],
-                                            bk_obj_name: model['bk_obj_name'],
-                                            bk_inst_id: inst['bk_inst_id'],
-                                            bk_inst_name: inst['bk_inst_name'],
-                                            bk_obj_icon: model['bk_obj_icon'],
-                                            id: inst['id'],
-                                            relation: key
-                                        })
-                                    }
-                                })
-                            }
-                        })
-                    } else {
-                        let isNodeExist = nodes.findIndex(({instId, objId}) => {
-                            return instId === relationInfo[key]['bk_inst_id'] && objId === relationInfo[key]['bk_obj_id']
-                        }) > -1
-                        if (!isNodeExist) {
-                            insertNode.push({
-                                bk_obj_id: relationInfo[key]['bk_obj_id'],
-                                bk_obj_name: relationInfo[key]['bk_obj_name'],
-                                bk_inst_id: relationInfo[key]['bk_inst_id'],
-                                bk_inst_name: relationInfo[key]['bk_inst_name'],
-                                bk_obj_icon: relationInfo[key]['bk_obj_icon'],
-                                id: relationInfo[key]['id']
-                            })
-                        }
-                    }
-                }
-
-                let count = 0
-                insertNode.map(async node => {
-                    let src = `./static/svg/${this.getIconByClass(node['bk_obj_icon'])}.svg`
-                    let image = await getImgUrl(src)
-                    let selectedUrl = this.initImg(image, '#3c96ff')
-                    let unselectedUrl = this.initImg(image, '#6c7bb2')
-
-                    let isNodeExist = nodes.findIndex(({instId, objId}) => {
-                        return instId === node['bk_inst_id'] && objId === node['bk_obj_id']
-                    }) > -1
-                    if (!isNodeExist && node['id'] !== '') {
-                        let level = 500
-                        if (node['bk_obj_id'] === this.objId && node['bk_inst_id'] === this.instId) {
-                            level = 500
-                        } else {
-                            let activeNodeLevel = this.activeNode['level'] ? this.activeNode['level'] : level
-                            level = node['relation'] === 'prev' ? activeNodeLevel - 1 : activeNodeLevel + 1
-                        }
-                        nodes.push({
-                            objId: node['bk_obj_id'],
-                            instId: node['bk_inst_id'],
-                            objName: node['bk_obj_name'],
-                            instName: node['bk_inst_name'],
-                            id: `${node['bk_obj_id']}|${node['bk_inst_id']}`,
-                            label: node['bk_inst_name'],
-                            value: this.instId === node['bk_inst_id'] && this.objId === node['bk_obj_id'] ? 25 : 15,  // 设置大小
-                            image: unselectedUrl,
-                            // image: {
-                            //     selected: selectedUrl,
-                            //     unselected: unselectedUrl
-                            // },
-                            selectedUrl: selectedUrl,
-                            unselectedUrl: unselectedUrl,
-                            level: level
-                        })
-                    }
-                    count++
-                })
-                let timer = setInterval(() => {
-                    if (count === insertNode.length) {
-                        clearInterval(timer)
-                        this.initTopo()
-                    }
-                }, 200)
             },
             initImg (image, color) {
                 let base64 = this.getBase64Img(image, this.parseColor(color))
@@ -406,10 +439,6 @@
                         node.y = this.position[key].y
                     }
                 }
-                let data = {
-                    nodes: this.nodes,
-                    edges: this.edges
-                }
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 // let network = window.network
 
@@ -424,32 +453,35 @@
                     networkCanvas.style.cursor = 'default'
                 })
                 this.network.on('dragging', () => {
-                    if (this.activeNode['image']) {
+                    if (this.activeNode) {
                         this.activeNode.image = this.activeNode.unselectedUrl
                     }
                 })
                 this.network.on('click', (params) => {
                     // 点击了某一根线
-                    if (params.edges.length) {
+                    if (!params.nodes.length && params.edges.length) {
                         let edgeId = params.edges[0]
                         let edge = this.edges.find(({id}) => {
                             return id === edgeId
                         })
-                        this.deleteRelation(edge)
+                        // this.deleteRelation(edge)
                     }
                     // 点击了具体某个节点
                     if (params.nodes.length) {
                         this.getPosition()
                         let id = params.nodes[0]
-                        if (this.activeNode['image']) {
+                        if (this.activeNode) {
                             this.activeNode.image = this.activeNode.unselectedUrl
                         }
-                        this.activeNode = this.nodes.find(node => {
-                            return id === node.id
-                        })
+                        this.tid = id
+                        this.activeNode = this.getActiveNode(this.topoStruct)
                         this.activeNode.image = this.activeNode.selectedUrl
 
-                        this.getRelationInfo(id.split('|')[0], Number(id.split('|')[1]))
+                        // 当前节点没有点击过时 加载其关联内容
+                        if (!this.activeNode.isLoad) {
+                            this.activeNode.isLoad = true
+                            this.getRelationInfo(id.split('|')[0], Number(id.split('|')[1]))
+                        }
                     }
                 })
                 this.isLoading = false
@@ -553,6 +585,9 @@
         },
         mounted () {
             this.container = document.getElementById('topo')
+        },
+        created () {
+            this.getRelationInfo(this.objId, this.instId)
         },
         components: {
             vAttribute
