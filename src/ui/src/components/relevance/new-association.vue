@@ -1,6 +1,6 @@
 <template>
     <div class="new-association">
-        <a href="javascript:void(0)" class="association-close-handle bk-icon icon-angle-double-down"></a>
+        <a href="javascript:void(0)" class="association-close-handle bk-icon icon-angle-double-down" @click="close"></a>
         <div class="association-filter clearfix">
             <label class="filter-label fl">{{$t('Association["关联列表"]')}}</label>
             <bk-select class="association-list-selector fl" :selected.sync="filter.objId">
@@ -57,7 +57,7 @@
                 type: String,
                 required: true
             },
-            data: {
+            instance: {
                 type: Object,
                 defaut () {
                     return {}
@@ -183,7 +183,6 @@
                 }
             },
             'filter.property.id' (id) {
-                console.log(id)
                 if (id !== this.instanceIdKey) {
                     const property = this.getFilterProperty()
                     const spliceLength = this.table.header.length === 3 ? 0 : 1
@@ -192,15 +191,15 @@
                         name: property['bk_property_name']
                     })
                 }
-            },
-            data (data) {
-                this.getAssociationTopo()
             }
         },
         created () {
             this.getAssociationTopo()
         },
         methods: {
+            close () {
+                this.$emit('handleNewAssociationClose')
+            },
             search () {
                 this.setCurrentPage(1)
             },
@@ -213,8 +212,8 @@
                 this.search()
             },
             getAssociationTopo () {
-                if (this.data && this.data.hasOwnProperty(this.dataIdKey)) {
-                    const topoUrl = `inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.data[this.dataIdKey]}`
+                if (this.instance && this.instance.hasOwnProperty(this.dataIdKey)) {
+                    const topoUrl = `inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.instance[this.dataIdKey]}`
                     this.$axios.post(topoUrl).then(res => {
                         if (res.result) {
                             this.association = res.data.length ? res.data[0]['next'] : []
@@ -235,10 +234,10 @@
                 }
                 if (this.objId === 'host') {
                     let params = {}
-                    params[this.instanceIdKey] = this.data[this.instanceIdKey]
+                    params[this.instanceIdKey] = this.instance[this.instanceIdKey]
                     payload['params'] = params
                 } else {
-                    payload[this.dataIdKey] = this.data[this.dataIdKey]
+                    payload[this.dataIdKey] = this.instance[this.dataIdKey]
                 }
                 const response = await this.$store.dispatch({
                     type: 'association/updateAssociation',
@@ -410,6 +409,7 @@
 
 <style lang="scss" scoped>
     .new-association{
+        background-color: #fff;
         .association-close-handle{
             display: block;
             height: 35px;
@@ -447,10 +447,16 @@
         height: 22px;
         line-height: 20px;
         font-size: 12px;
+        padding: 0 8px;
+        background-color: #30d878;
+        border-color: #30d878;
         &-remove{
             background-color: #fff;
             color: #3c96ff;
             border-color: currentcolor;
+            &:hover{
+                color: #30d878;
+            }
         }
     }
     .new-association-table{
