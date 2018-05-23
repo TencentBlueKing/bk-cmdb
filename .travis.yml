@@ -7,7 +7,7 @@ before_install:
   - go get -v github.com/golang/lint/golint
 
 install:
-  - ls ./
+  - # skip
 
 script:
   - cd src && make server
