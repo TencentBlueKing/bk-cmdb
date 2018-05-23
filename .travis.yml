@@ -8,8 +8,8 @@ before_install:
 
 install:
   - ls ./
-  
+
 script:
   - ls ./
-  - ./pre-commit
+  - ./pre-commit.sh
   - cd src && make server
