@@ -66,6 +66,22 @@ type ObjClsObjectDes struct {
 	metadata.ObjClassificationObject `json:",inline"`
 }
 
+// TopoGraphics Topo Graphics
+type TopoGraphics struct {
+	metadata.TopoGraphics `json:",inline"`
+	Assts                 []GraphAsst `json:"assts,omitempty"`
+}
+
+// Asst the node association node
+type GraphAsst struct {
+	AsstType string            `json:"bk_asst_type"`
+	NodeType string            `json:"node_type"`
+	ObjID    string            `json:"bk_obj_id"`
+	InstID   int               `json:"bk_inst_id"`
+	ObjAtt   string            `json:"bk_object_att_id"`
+	Lable    map[string]string `json:"lable"`
+}
+
 // ObjDesRsp 用于提取congtroller 返回的数据结构
 type ObjDesRsp struct {
 	Result  bool        `json:"result"`
