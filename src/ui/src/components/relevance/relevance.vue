@@ -2,30 +2,27 @@
     <div class="relevance-content-wrapper">
         <div class="tab-wrapper clearfix">
             <ul class="relevance-tab">
-                <li :class="{'active': relevanceTabName === 'topo'}" @click="relevanceTabName = 'topo'">
+                <li :class="{'active': currentComponent === 'v-topo'}" @click="currentComponent = 'v-topo'">
                     <i class="icon-cc-resources"></i>拓扑
                 </li>
-                <li :class="{'active': relevanceTabName === 'tree'}" @click="relevanceTabName = 'tree'">
+                <li :class="{'active': currentComponent === 'v-tree'}" @click="currentComponent = 'v-tree'">
                     <i class="icon-cc-tree"></i>树形
                 </li>
             </ul>
-            <bk-button type="primary" class="btn btn-add">新增关联</bk-button>
+            <bk-button type="primary" class="btn btn-add" @click="currentComponent = 'v-new-association'">新增关联</bk-button>
         </div>
-        <v-topo v-show="relevanceTabName === 'topo'"
-            :isShow="relevanceTabName === 'topo'"
-            :objId="objId"
-            :instId="ObjectID"
-        ></v-topo>
-        <v-tree v-show="relevanceTabName === 'tree'" :isShow="relevanceTabName === 'tree'"
-            :objId="objId"
-            :ObjectID="ObjectID"
-        ></v-tree>
+        <component v-bind="componentProps"
+            :is="currentComponent"
+            :class="{'new-association': currentComponent === 'v-new-association'}"
+            @handleNewAssociationClose="handleNewAssociationClose">
+        </component>
     </div>
 </template>
 
 <script>
     import vTopo from './topo'
     import vTree from './tree'
+    import vNewAssociation from './new-association'
     export default {
         props: {
             isShow: {
@@ -37,31 +34,64 @@
             },
             ObjectID: {
                 required: true
-            }
+            },
+            instance: Object
         },
         data () {
             return {
-                relevanceTabName: ''
+                currentComponent: null,
+                prevComponent: null
+            }
+        },
+        computed: {
+            componentProps () {
+                const component = this.currentComponent
+                const props = {
+                    'v-topo': {
+                        isShow: component === 'v-topo',
+                        objId: this.objId,
+                        instId: this.ObjectID
+                    },
+                    'v-tree': {
+                        objId: this.objId,
+                        ObjectID: this.ObjectID
+                    },
+                    'v-new-association': {
+                        objId: this.objId,
+                        instance: this.instance
+                    }
+                }
+                return component ? props[component] : {}
             }
         },
         watch: {
             isShow (isShow) {
                 if (isShow) {
-                    this.relevanceTabName = 'topo'
+                    this.currentComponent = 'v-topo'
                 } else {
-                    this.relevanceTabName = ''
+                    this.currentComponent = null
                 }
+            },
+            currentComponent (currentComponent, prevComponent) {
+                this.prevComponent = prevComponent
+            }
+        },
+        methods: {
+            handleNewAssociationClose () {
+                this.currentComponent = this.prevComponent
             }
         },
         components: {
             vTopo,
-            vTree
+            vTree,
+            vNewAssociation
         }
     }
 </script>
 
 <style lang="scss" scoped>
     .relevance-content-wrapper {
+        position: relative;
         height: 100%;
     }
     .tab-wrapper{
@@ -97,5 +127,12 @@
         float: right;
         height: 24px;
         line-height: 24px;
+    }
+    .new-association{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 </style>
