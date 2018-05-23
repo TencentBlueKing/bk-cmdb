@@ -10,5 +10,4 @@ install:
   - # skip
 
 script:
-  - ln -s `pwd` configcenter && mv configcenter ../
-  - cd src && make server
+  - ln -s `pwd` configcenter && mv configcenter ../ && cd src && make server
