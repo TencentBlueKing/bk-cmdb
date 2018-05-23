@@ -448,5 +448,19 @@
         "部分成功": "Partially successful",
         "失败": "failure",
         "成功": "Successful"
+    },
+    "Association": {
+        "实例名": "Instance Name",
+        "业务名": "Business Name",
+        "新增关联": "New Association",
+        "解除选中关联": "Remove Selected Association",
+        "关联列表": "Model",
+        "搜索": "Search",
+        "操作": "operation",
+        "取消关联": "Remove Association",
+        "取消关联成功": "Remove association success",
+        "添加关联": "Add Association",
+        "添加关联成功": "Add association success",
+        "条件筛选": "Filter"
     }
 }
