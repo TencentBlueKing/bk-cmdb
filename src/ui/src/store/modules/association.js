@@ -29,11 +29,11 @@ const actions = {
     /*
     **   payload:
     **        [updateType]       更新类型 remove | new
-    **        [objId]      要更新的实例所属模型Id
-    **        [associated] 当前实例已经关联的实例ID
-    **        [id]         模型关联字段ID
-    **        [value]      被关联的实例ID
-    **        [params]     自定义参数
+    **        [objId]      要更新的实例所属模型Id   父节点的模型id
+    **        [associated] 当前实例已经关联的实例ID  children => bk_inst_id
+    **        [id]         模型关联字段ID           父节点 property => bk_asst_obj_id
+    **        [value]      被关联的实例ID           当前inst_id
+    **        [params]     自定义参数           父节点 inst_id
     */
     updateAssociation (context, payload) {
         const params = getUpdateParams(context, payload)

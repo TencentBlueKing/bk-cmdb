@@ -1111,9 +1111,19 @@
                     this.newFieldInfo.isRequired = true
                 }
             },
+            'newFieldInfo.isRequired' (isRequired) {
+                if (!isRequired) {
+                    this.newFieldInfo.isonly = false
+                }
+            },
             'curFieldInfo.isonly' (isonly) {
                 if (isonly) {
                     this.curFieldInfo.isrequired = true
+                }
+            },
+            'curFieldInfo.isrequired' (isrequired) {
+                if (!isrequired) {
+                    this.curFieldInfo.isonly = false
                 }
             },
             'newFieldInfo.option': {
@@ -1960,7 +1970,7 @@
                                     }
                                 }
                                 // 去掉临时不显示的内容后长度不为0时才添加到列表中
-                                if (val['bk_objects'].length) {
+                                if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
                                     this.modelList.push(val)
                                 }
                             }
