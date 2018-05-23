@@ -36,10 +36,6 @@
     import {mapGetters} from 'vuex'
     export default {
         props: {
-            isShow: {
-                type: Boolean,
-                default: false
-            },
             // 当前实例ID
             objId: {
                 default: ''
@@ -60,12 +56,8 @@
         computed: {
             ...mapGetters(['bkSupplierAccount'])
         },
-        watch: {
-            isShow (val) {
-                if (val) {
-                    this.getRelationInfo()
-                }
-            }
+        created () {
+            this.getRelationInfo()
         },
         methods: {
             /*
