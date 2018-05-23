@@ -37,6 +37,9 @@
         },
         data () {
             return {
+                topoStruct: {},
+                tid: 0,
+
                 filterList: [],
                 network: {},
                 position: {},
@@ -216,12 +219,60 @@
             getIconByClass (iconClass) {
                 return iconClass.substr(5)
             },
+            getCurrentNode (topoStruct) {
+                let {
+                    activeNode
+                } = this
+                let currentNode = null
+                for (let key in topoStruct) {
+                    if (key !== 'curr') {
+                        for (let i = 0; i < topoStruct[key].length; i++) {
+                            let model = topoStruct[key][i]
+                            if (model.children !== null) {
+                                for (let j = 0; j < model.children.length; j++) {
+                                    let inst = model.children[j]
+                                    if (activeNode.id === inst.tid) {
+                                        currentNode = inst
+                                    } else {
+                                        if (inst.hasOwnProperty('children')) {
+                                            let res = this.getCurrentNode(inst.children)
+                                            currentNode = res !== null ? res : null
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                return currentNode
+            },
+            setTopoStruct (data) {
+                let currentNode = this.getCurrentNode(this.TopoStruct)
+                for (let key in data) {
+                    if (key !== 'curr') {
+                        data[key].map(model => {
+                            if (model.children !== null) {
+                                model.children.map(inst => {
+                                    inst.tid = `${model['bk_obj_id']}|${inst['bk_inst_id']}|${this.tid++}`
+                                })
+                            }
+                        })
+                    }
+                }
+                console.log(currentNode)
+                if (currentNode) {
+                    this.$set(currentNode, 'children', data)
+                } else {
+                    this.topoStruct = data
+                }
+            },
             async getRelationInfo (objId, instId) {
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
                     this.setFilterList(res.data[0])
                     this.formatTopo(res.data[0])
+                    this.setTopoStruct(res.data[0])
                 } catch (e) {
                     this.isLoading = false
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
