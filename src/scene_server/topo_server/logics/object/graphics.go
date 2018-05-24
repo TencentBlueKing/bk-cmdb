@@ -14,7 +14,7 @@ package object
 
 import (
 	"configcenter/src/common/errors"
-	"configcenter/src/scene_server/topo_server/topo_service/manager"
+	"configcenter/src/scene_server/topo_server/manager"
 	api "configcenter/src/source_controller/api/object"
 )
 
