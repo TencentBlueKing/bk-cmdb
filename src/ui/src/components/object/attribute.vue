@@ -654,7 +654,7 @@
                 }
             }
             .attribute-item-value{
-                max-width: 250px;
+                max-width: calc(100% - 130px);
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;
