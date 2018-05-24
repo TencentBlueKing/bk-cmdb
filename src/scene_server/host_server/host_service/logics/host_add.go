@@ -100,18 +100,18 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			continue
 		}
 
-		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if ok == false || "" == innerIP {
+		innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		if isOk == false || "" == innerIP {
 			errMsg = append(errMsg, langHandle.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 
 		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, filterFields, forward, errHandle)
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
-		iHost, ok := hostMap[key]
+		iHost, isOk := hostMap[key]
 
 		//生产日志
-		if ok {
+		if isOk {
 			if err, ok := rowErr[index]; true == ok {
 				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error())) //fmt.Sprintf("%d行%s", index, err.Error()))
 				continue
@@ -288,9 +288,9 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 		host[common.BKCloudIDField] = cloudID
 		host["import_from"] = common.HostAddMethodAgent
 		forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-		defaultFields, err := getHostFields(forward, ownerID, ObjAddr)
-		if nil != err {
-			blog.Errorf("get host property error; error:%s", err.Error())
+		defaultFields, hasErr := getHostFields(forward, ownerID, ObjAddr)
+		if nil != hasErr {
+			blog.Errorf("get host property error; error:%s", hasErr.Error())
 			return errors.New("get host property error")
 		}
 		//补充未填写字段的默认值
@@ -305,10 +305,10 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 			}
 		}
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
-		_, err = valid.ValidMap(host, "update", 0)
+		_, hasErr = valid.ValidMap(host, "update", 0)
 
-		if nil != err {
-			return err
+		if nil != hasErr {
+			return hasErr
 		}
 
 
@@ -332,9 +332,9 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 			return errors.New(langHandle.Language("host_search_fail")) // "查询主机信息失败")
 		}
 		//func IsExistHostIDInApp(CC *api.APIResource, req *restful.Request, appID int, hostID int, defLang language.DefaultCCLanguageIf) (bool, error) {
-		bl, err := IsExistHostIDInApp(cc, req, appID, hostID, langHandle)
-		if nil != err {
-			blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", appID, hostID, err.Error())
+		bl, hasErr := IsExistHostIDInApp(cc, req, appID, hostID, langHandle)
+		if nil != hasErr {
+			blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", appID, hostID, hasErr.Error())
 			return errHandle.Errorf(common.CCErrHostNotINAPPFail, hostID)
 
 		}

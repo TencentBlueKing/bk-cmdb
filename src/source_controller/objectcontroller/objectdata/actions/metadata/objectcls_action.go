@@ -66,7 +66,7 @@ func (cli *objectClassificationAction) CreateClassification(req *restful.Request
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		obj := &metadata.ObjClassification{}
-		if err := json.Unmarshal([]byte(value), obj); nil != err {
+		if err = json.Unmarshal([]byte(value), obj); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}

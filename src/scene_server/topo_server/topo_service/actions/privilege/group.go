@@ -182,27 +182,27 @@ func (cli *groupAction) UpdateUserGroup(req *restful.Request, resp *restful.Resp
 			cond["group_id"] = map[string]interface{}{common.BKDBNE: groupID}
 			blog.Info("get user group url: %s", groupURL)
 
-			byteConds, err := json.Marshal(cond)
-			if nil != err {
-				blog.Errorf("json marshal error:%s", err.Error())
+			byteConds, innerErr := json.Marshal(cond)
+			if nil != innerErr {
+				blog.Errorf("json marshal error:%s", innerErr.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONMarshalFailed)
 			}
 			blog.Info("get user group content: %s ", string(byteConds))
-			groupInfo, err := httpcli.ReqHttp(req, groupURL, common.HTTPSelectPost, byteConds)
-			if nil != err {
-				blog.Error("get user group error :%v", err)
+			groupInfo, innerErr := httpcli.ReqHttp(req, groupURL, common.HTTPSelectPost, byteConds)
+			if nil != innerErr {
+				blog.Error("get user group error :%v", innerErr)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			blog.Info("get user group return: %s", groupInfo)
 			var group params.SearchGroup
-			err = json.Unmarshal([]byte(groupInfo), &group)
-			if nil != err || !group.Result {
-				blog.Error("create user group json Unmarshal error data:%s error:%v", groupInfo, err)
+			innerErr = json.Unmarshal([]byte(groupInfo), &group)
+			if nil != innerErr || !group.Result {
+				blog.Error("create user group json Unmarshal error data:%s error:%v", groupInfo, innerErr)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoUserGroupCreateFailed)
 			}
 			groupList, ok := group.Data.([]interface{})
 			if ok && len(groupList) > 0 {
-				blog.Error("create user group error :%v", err)
+				blog.Error("create user group error :%v", innerErr)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDuplicateItem)
 			}
 

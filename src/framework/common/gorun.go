@@ -10,29 +10,30 @@
  * limitations under the License.
  */
 
-package input
+package common
 
 import (
-	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
+	"runtime/debug"
 )
 
-// create a new inputer key
-func makeInputerKey() InputerKey {
-	return InputerKey(common.UUID())
-}
+// GoRun start a goroutine
+func GoRun(callback func(), exception func()) {
 
-// checkWorkerExists check whether the inputer exists
-func inputerExists(target MapInputer, key InputerKey) bool {
-	_, ok := target[key]
-	return ok
-}
+	go func() {
 
-// deleteInputer delete a inputer from MapInputer
-func deleteInputer(target MapInputer, key InputerKey) bool {
+		defer func() {
+			if err := recover(); nil != err {
+				debug.PrintStack()
+				log.Errorf("panic err, %v", err)
+				if nil != exception {
+					exception()
+				}
+			}
 
-	if inputerExists(target, key) {
-		delete(target, key)
-	}
+		}()
 
-	return true
+		callback()
+	}()
+
 }
