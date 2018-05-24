@@ -21,8 +21,8 @@ install: true
 
 script:
  - pwd && ls ./ && ls ../
- - cd ../ && mv ${REPO_NAME} ../../${BUILD_DIR}
- - cd ../../${BUILD_DIR}
+ - cd ../ && mv $REPO_NAME ../../$BUILD_DIR
+ - cd ../../$BUILD_DIR
  - ./pre-commit.sh
  - cd src
  - make
