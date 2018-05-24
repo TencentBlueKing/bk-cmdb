@@ -83,7 +83,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	nonExistsFiled := make([]api.ObjAttDes, 0)
 	ignorItems := make([]string, 0)
 	for _, item := range attDes {
-		if _, ok := targetInput[item.PropertyID]; !ok {
+		if _, ok := targetInput[item.PropertyID]; !ok && !item.IsRequired {
 			nonExistsFiled = append(nonExistsFiled, item)
 			ignorItems = append(ignorItems, item.PropertyID)
 		}
