@@ -8,6 +8,7 @@ go:
 branches:
   only:
   - master
+  - travis_ci
   
 before_install:
   - go get -v github.com/golang/lint/golint
