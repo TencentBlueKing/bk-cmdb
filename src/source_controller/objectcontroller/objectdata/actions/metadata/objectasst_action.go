@@ -64,7 +64,7 @@ func (cli *objectAssociationAction) CreateObjectAssociation(req *restful.Request
 		}
 
 		obj := &metadata.ObjectAsst{}
-		if err := json.Unmarshal([]byte(value), obj); nil != err {
+		if err = json.Unmarshal([]byte(value), obj); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}

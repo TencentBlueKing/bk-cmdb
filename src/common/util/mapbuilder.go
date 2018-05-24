@@ -12,9 +12,7 @@
  
 package util
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 type MapBuiler struct {
 	value map[string]interface{}
@@ -52,6 +50,6 @@ func (m *MapBuiler) Delete(k string) {
 
 func NewMapFromJSON(data string) map[string]interface{} {
 	value := map[string]interface{}{}
-	json.Unmarshal([]byte(data), &value)
+	_ = json.Unmarshal([]byte(data), &value)
 	return value
 }
