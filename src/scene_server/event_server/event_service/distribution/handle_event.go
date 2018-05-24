@@ -91,25 +91,25 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		return err
 	}
 	if !done {
-		running, err := checkFromRunning(priviousRunningkey)
-		if err != nil {
-			return err
+		running, checkErr := checkFromRunning(priviousRunningkey)
+		if checkErr != nil {
+			return checkErr
 		}
 		if !running {
 			// wait a second to ensure previous not in trouble
 			time.Sleep(time.Second * 3)
-			running, err = checkFromRunning(priviousRunningkey)
-			if err != nil {
-				return err
+			running, checkErr = checkFromRunning(priviousRunningkey)
+			if checkErr != nil {
+				return checkErr
 			}
 		}
 		if running {
 			// if previous running, wait it
-			if err = waitPreviousDone(types.EventCacheEventDoneKey, previousID, timeout); err != nil {
-				if err == ERR_WAIT_TIMEOUT {
+			if checkErr = waitPreviousDone(types.EventCacheEventDoneKey, previousID, timeout); checkErr != nil {
+				if checkErr == ERR_WAIT_TIMEOUT {
 					return nil
 				}
-				return err
+				return checkErr
 			}
 		}
 	}
