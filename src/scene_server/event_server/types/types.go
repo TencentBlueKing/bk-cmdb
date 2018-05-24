@@ -72,6 +72,10 @@ type EventInst struct {
 	RequestTime types.Time  `json:"request_time"`
 }
 
+func (e *EventInst) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(e)
+}
+
 type EventData struct {
 	CurData interface{} `json:"cur_data"`
 	PreData interface{} `json:"pre_data"`
