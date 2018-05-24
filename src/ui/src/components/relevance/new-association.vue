@@ -125,7 +125,8 @@
                 return this.attribute[this.objId] || []
             },
             associationOptions () {
-                return this.association.map(model => {
+                const validAssociation = this.association.filter(model => !['plat', 'process'].includes(model['bk_obj_id']))
+                return validAssociation.map(model => {
                     return {
                         value: model['bk_obj_id'],
                         label: this.getAssociationOptionLabel(model)
@@ -193,7 +194,8 @@
                 }
             }
         },
-        created () {
+        async created () {
+            await this.$store.dispatch('object/getAttribute', this.objId)
             this.getAssociationTopo()
         },
         methods: {
@@ -234,7 +236,7 @@
                 }
                 if (this.objId === 'host') {
                     let params = {}
-                    params[this.instanceIdKey] = this.instance[this.instanceIdKey]
+                    params[this.dataIdKey] = this.instance[this.dataIdKey].toString()
                     payload['params'] = params
                 } else {
                     payload[this.dataIdKey] = this.instance[this.dataIdKey]
