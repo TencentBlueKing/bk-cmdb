@@ -72,7 +72,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 
 		obj := &metadata.ObjectAttDes{}
 
-		if err := json.Unmarshal([]byte(value), obj); nil != err {
+		if err = json.Unmarshal([]byte(value), obj); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}

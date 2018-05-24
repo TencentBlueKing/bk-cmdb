@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
@@ -56,7 +56,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		}
 
 		params := make(map[string]interface{}) //favouriteParms{}
-		if err := json.Unmarshal([]byte(value), &params); nil != err {
+		if err = json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
@@ -112,7 +112,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		data := make(map[string]interface{})
-		if err := json.Unmarshal([]byte(value), &data); nil != err {
+		if err = json.Unmarshal([]byte(value), &data); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
@@ -130,6 +130,26 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 			blog.Info("host favorites not permissions or not exists, params:%v", params)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteUpdateFail)
 		}
+
+		//edit new not duplicate
+		newName, ok := data["name"]
+		if ok {
+			dupParams := make(map[string]interface{})
+			dupParams["name"] = newName
+			dupParams[common.BKUser] = req.PathParameter("user")
+			dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+
+			rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
+			if nil != err {
+				blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", err.Error(), dupParams)
+				return http.StatusBadGateway, nil, defErr.Error(common.CCErrCommDBSelectFailed)
+			}
+			if 0 < rowCount {
+				blog.Info("host user api  name duplicatie , params:%v", dupParams)
+				return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommDuplicateItem)
+			}
+		}
+
 		err = cc.InstCli.UpdateByCondition(TABLENAME, data, params)
 		if nil != err {
 			blog.Error("updata host favorites fail, error information is %s, params:%v", err.Error(), params)

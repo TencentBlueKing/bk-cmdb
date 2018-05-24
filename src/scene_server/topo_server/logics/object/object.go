@@ -358,12 +358,12 @@ func (cli *objLogic) existInst(forward *api.ForwardParam, objID, ownerID string,
 
 	cURL := cli.objcli.GetAddress() + "/object/v1/insts/object/search"
 
-	httpcli := httpcli.NewHttpClient()
+	httpClient := httpcli.NewHttpClient()
 
-	httpcli.SetHeader("Content-Type", "application/json")
-	httpcli.SetHeader("Accept", "application/json")
+	httpClient.SetHeader("Content-Type", "application/json")
+	httpClient.SetHeader("Accept", "application/json")
 
-	dres, err := httpcli.POST(cURL, nil, val)
+	dres, err := httpClient.POST(cURL, nil, val)
 	if nil != err {
 		return false, fmt.Errorf("it fails to check the inst, error:%s", err.Error())
 	}

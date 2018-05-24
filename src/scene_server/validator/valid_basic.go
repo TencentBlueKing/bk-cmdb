@@ -98,6 +98,12 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//set default value
 	valid.setEnumDefault(valData, valRule)
+
+	//valid create request
+	if validType == common.ValidCreate {
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+	}
+
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
@@ -171,10 +177,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			return result, err
 		}
 	}
-	//valid create request
-	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
-	}
+
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
 	if validType == common.ValidCreate {
