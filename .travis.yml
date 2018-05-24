@@ -24,7 +24,6 @@ script:
 notifications:
   email:
     recipients:
-      - 564034165@qq.com
       - gmaclinuxer@gmail.com
-    on_success: change # default: change
+    on_success: always # default: change
     on_failure: always # default: always
