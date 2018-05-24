@@ -272,8 +272,12 @@
                     config.url = `inst/association/search/owner/${this.bkSupplierAccount}/object/${this.objId}`
                 }
                 if (this.filter.selected && this.filter.value !== '') {
-                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
-                        config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                    if (this.objId === 'biz') {
+                        if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
+                            config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                        } else {
+                            config.params.condition[this.filter.selected] = this.filter.value
+                        }
                     } else {
                         if (this.filter.type === 'singleasst' || this.filter.type === 'multiasst') {
                             let bkAsstObjId = this.getProperty(this.filter.selected)['bk_asst_obj_id']
