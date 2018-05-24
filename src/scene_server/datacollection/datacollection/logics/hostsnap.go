@@ -466,8 +466,11 @@ func (h *HostSnap) clearMsgChan() {
 		if ts != h.ts {
 			msgCnt = len(h.msgChan) - h.maxSize
 		} else {
-			// TODO may be dead lock
-			<-h.msgChan
+			// TODO think
+			select {
+			case <-time.After(time.Second * 10):
+			case <-h.msgChan:
+			}
 		}
 		h.Unlock()
 	}
