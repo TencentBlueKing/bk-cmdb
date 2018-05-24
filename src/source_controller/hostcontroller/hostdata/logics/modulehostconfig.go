@@ -205,8 +205,8 @@ func GetModuleIDsByHostID(cc *api.APIResource, moduleCond interface{}) ([]int, e
 	}
 	for _, r := range result {
 		item := r.(bson.M)
-		ID, err := util.GetIntByInterface(item[common.BKModuleIDField])
-		if nil != err || ID == 0 {
+		ID, getErr := util.GetIntByInterface(item[common.BKModuleIDField])
+		if nil != getErr || ID == 0 {
 			return ret, errors.New("未找到模块")
 		}
 		ret = append(ret, ID)
@@ -253,16 +253,16 @@ func CheckHostInIDle(cc *api.APIResource, appID, emptyModuleID int, hostIDs []in
 	mapHost := make(map[int]int, 0)
 	for _, item := range result {
 		row := item.(bson.M)
-		moduleID, err := util.GetIntByInterface(row[common.BKModuleIDField])
-		if nil != err {
+		moduleID, getErr := util.GetIntByInterface(row[common.BKModuleIDField])
+		if nil != getErr {
 			continue
 		}
-		hostID, err := util.GetIntByInterface(row[common.BKHostIDField])
-		if nil != err {
+		hostID, getErr := util.GetIntByInterface(row[common.BKHostIDField])
+		if nil != getErr {
 			continue
 		}
-		rowAppID, err := util.GetIntByInterface(row[common.BKAppIDField])
-		if nil != err {
+		rowAppID, getErr := util.GetIntByInterface(row[common.BKAppIDField])
+		if nil != getErr {
 			continue
 		}
 		//host not belong to this biz

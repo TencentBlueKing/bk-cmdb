@@ -170,7 +170,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 		pathParameters := req.PathParameters()
 		var appID int
-		if err := cli.GetParams(cli.CC, &pathParameters, "id", &appID, resp); nil != err {
+		if err = cli.GetParams(cli.CC, &pathParameters, "id", &appID, resp); nil != err {
 			blog.Error("failed to get params, error info is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsInvalid, "id")
 		}

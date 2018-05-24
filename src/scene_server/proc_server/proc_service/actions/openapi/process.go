@@ -66,9 +66,9 @@ func (cli *procAction) GetProcessPortByApplicationID(req *restful.Request, resp 
 			blog.Error("assign error module['ModuleName'] is not string, module:%v", module)
 			continue
 		}
-		processes, err := GetProcessesByModuleName(req, moduleName, cli.CC.ObjCtrl())
-		if nil != err {
-			msg := fmt.Sprintf("GetProcessesByModuleName error:%v", err)
+		processes, getErr := GetProcessesByModuleName(req, moduleName, cli.CC.ObjCtrl())
+		if nil != getErr {
+			msg := fmt.Sprintf("GetProcessesByModuleName error:%v", getErr)
 			blog.Error(msg)
 			cli.ResponseFailed(common.CC_Err_Comm_GET_PROC_FAIL, msg, resp)
 		}
