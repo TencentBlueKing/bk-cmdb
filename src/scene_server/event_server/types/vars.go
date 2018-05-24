@@ -43,6 +43,8 @@ const (
 	EventCacheSubscribeformKey = common.BKCacheKeyV3Prefix + "event:subscribeform_"
 	EventCacheSubscribesKey    = common.BKCacheKeyV3Prefix + "event:subscribers"
 	EventCacheProcessChannel   = common.BKCacheKeyV3Prefix + "event_process_channel"
+
+	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
 )
 
 // TableNames
