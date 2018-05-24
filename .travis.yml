@@ -1,13 +1,13 @@
 language: go
 
 go:
+  - "1.8.x"
   - "1.10.x"  
 
 before_install:
   - go get -v github.com/golang/lint/golint
 
-install:
-  - # skip
+install: true
 
 script:
  - pwd && ls ./ && ls ../
