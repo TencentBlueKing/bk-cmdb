@@ -10,4 +10,8 @@ install:
   - # skip
 
 script:
-  - ln -s `pwd` configcenter && mv configcenter ../ && cd src && make server
+ - pwd && ls ./ && ls ../
+ - cd ../ && mv bk-cmdb ../../configcenter
+ - cd ../../configcenter/src
+ - pwd && ls ./
+ - make server
