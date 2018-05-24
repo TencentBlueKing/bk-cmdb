@@ -559,6 +559,9 @@ const (
 
 	// ExcelDataValidationListLen excel dropdown list item count
 	ExcelDataValidationListLen = 50
+
+	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
+	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
 )
 
 const (

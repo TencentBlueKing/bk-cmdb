@@ -17,6 +17,7 @@ type DI interface {
 	GetIncID(cName string) (int64, error)
 	Insert(cName string, data interface{}) (int, error)
 	InsertMuti(cName string, data ...interface{}) error
+	IsDuplicateErr(err error) bool
 	UpdateByCondition(cName string, data, condiction interface{}) error
 	GetOneByCondition(cName string, fields []string, condiction interface{}, result interface{}) error
 	GetMutilByCondition(cName string, fields []string, condiction interface{}, result interface{}, sort string, start, limit int) error

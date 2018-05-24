@@ -48,6 +48,8 @@
 	"1001048": "Create Role Rights",
 	"1001049": "There is an instance of a heavy name at this level, and the deletion failed.",
 	"1001050": "Host not allowed cross-business transfer",
+	"1001051": "search topo graphics failed",
+	"1001052": "update topo graphics failed",
 	"1101080": "The module does not exist, please refresh the page",
 	"1101081": "blueking business does not allow deletion",
 	"": "" 
