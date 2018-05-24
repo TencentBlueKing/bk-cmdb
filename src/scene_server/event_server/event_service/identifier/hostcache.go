@@ -12,21 +12,26 @@
 
 package identifier
 
+import (
+	"configcenter/src/common"
+	"fmt"
+)
+
 // HostIdentifier define
 type HostIdentifier struct {
 	// cache     *HostIdenCache
-	HostID    int             `json:"bk_host_id"`      // 主机ID(host_id)								数字
-	HostName  string          `json:"bk_host_name"`    // 主机名称
-	CloudID   int             `json:"bk_cloud_id"`     // 所属云区域id(bk_cloud_id)				数字
-	CloudName string          `json:"bk_cloud_name"`   // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
-	InnerIP   string          `json:"bk_host_innerip"` // 内网IP
-	OuterIP   string          `json:"bk_host_outerip"` // 外网IP
-	OSType    string          `json:"bk_os_type"`      // 操作系统类型
-	OSName    string          `json:"bk_os_name"`      // 操作系统名称
-	Memory    string          `json:"bk_mem"`          // 内存容量
-	CPU       string          `json:"bk_cpu"`          // CPU逻辑核心数
-	Disk      string          `json:"bk_disk"`         // 磁盘容量
-	Module    map[int]*Module `json:"associations"`
+	HostID    int                `json:"bk_host_id"`      // 主机ID(host_id)								数字
+	HostName  string             `json:"bk_host_name"`    // 主机名称
+	CloudID   int                `json:"bk_cloud_id"`     // 所属云区域id(bk_cloud_id)				数字
+	CloudName string             `json:"bk_cloud_name"`   // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
+	InnerIP   string             `json:"bk_host_innerip"` // 内网IP
+	OuterIP   string             `json:"bk_host_outerip"` // 外网IP
+	OSType    string             `json:"bk_os_type"`      // 操作系统类型
+	OSName    string             `json:"bk_os_name"`      // 操作系统名称
+	Memory    string             `json:"bk_mem"`          // 内存容量
+	CPU       string             `json:"bk_cpu"`          // CPU逻辑核心数
+	Disk      string             `json:"bk_disk"`         // 磁盘容量
+	Module    map[string]*Module `json:"associations"`
 }
 
 type Module struct {
@@ -42,13 +47,23 @@ type Module struct {
 	SetEnv          string `json:"bk_set_env"`          // 环境类型（bk_set_type）					数字
 }
 
-func (iden *HostIdentifier) fillIden() {
-	// TODO
+func (iden *HostIdentifier) fillIden() *HostIdentifier {
 	for moduleID := range iden.Module {
-		iden.Module[moduleID].BizName = ""
-		iden.Module[moduleID].SetName = ""
-		iden.Module[moduleID].SetEnv = ""
-		iden.Module[moduleID].SetStatus = ""
-		iden.Module[moduleID].ModuleName = ""
+
+		biz, _ := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID)
+		iden.Module[moduleID].BizName = fmt.Sprint(biz.data[common.BKAppNameField])
+
+		set, _ := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID)
+		iden.Module[moduleID].SetName = fmt.Sprint(set.data[common.BKSetNameField])
+		iden.Module[moduleID].SetEnv = fmt.Sprint(set.data[common.BKSetEnvField])
+		iden.Module[moduleID].SetStatus = fmt.Sprint(set.data[common.BKSetStatusField])
+
+		module, _ := getCache(common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID)
+		iden.Module[moduleID].ModuleName = fmt.Sprint(module.data[common.BKModuleNameField])
+
 	}
+	cloud, _ := getCache(common.BKInnerObjIDPlat, iden.CloudID)
+	iden.CloudName = fmt.Sprint(cloud.data[common.BKCloudNameField])
+
+	return iden
 }

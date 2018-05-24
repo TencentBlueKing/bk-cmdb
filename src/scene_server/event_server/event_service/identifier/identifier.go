@@ -37,17 +37,17 @@ var hostIndentDiffFiels = map[string][]string{
 		"bk_mem", "bk_cpu", "bk_disk"},
 }
 
-func GetDistInst(e *types.EventInst) []types.EventInst {
+func handleInst(e *types.EventInst) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	hostIdentify := *e
-	hostIdentify.Data = nil
+	// hostIdentify.Data = nil
 	hostIdentify.EventType = types.EventTypeRelation
 	hostIdentify.ObjType = "hostidentifier"
 	hostIdentify.Action = types.EventActionUpdate
-	var ds []types.EventInst
 
 	// add new dist if event belong to hostidentifier
 	if diffFields, ok := hostIndentDiffFiels[e.ObjType]; ok && e.Action == types.EventActionUpdate && e.EventType == types.EventTypeInstData {
+		blog.Infof("identifier: handle inst %+v", e)
 		for dataIndex := range e.Data {
 			curdata := e.Data[dataIndex].CurData.(map[string]interface{})
 			predata := e.Data[dataIndex].PreData.(map[string]interface{})
@@ -58,16 +58,17 @@ func GetDistInst(e *types.EventInst) []types.EventInst {
 				instID, _ := curdata[instIDField].(int)
 				if instID == 0 {
 					// this should wound happen -_-
-					blog.Errorf("conver instID faile the raw is %v", curdata[instIDField])
+					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[instIDField])
 					continue
 				}
 
 				inst, err := getCache(e.ObjType, instID)
 				if err != nil {
-					blog.Errorf("getCache error %v", err)
+					blog.Errorf("identifier: getCache error %+v", err)
 					continue
 				}
 				if inst == nil {
+					blog.Errorf("identifier: inst == nil, continue")
 					// the inst may be deleted, just ignore
 					continue
 				}
@@ -76,15 +77,16 @@ func GetDistInst(e *types.EventInst) []types.EventInst {
 				}
 				err = inst.saveCache()
 				if err != nil {
-					blog.Errorf("SaveCache error %v", err)
+					blog.Errorf("identifier: SaveCache error %+v", err)
 					continue
 				}
 
 				if e.ObjType == common.BKInnerObjIDHost {
 					hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
-					d := types.EventData{CurData: inst.data}
+					d := types.EventData{CurData: inst.ident.fillIden()}
 					hostIdentify.Data = append(hostIdentify.Data, d)
 					redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
+					blog.Infof("identifier: pushed event inst %+v", hostIdentify)
 				} else {
 					hosIDs := findHost(e.ObjType, instID)
 					total := len(hosIDs)
@@ -104,18 +106,19 @@ func GetDistInst(e *types.EventInst) []types.EventInst {
 							if err = json.Unmarshal([]byte(fmt.Sprint(idens[identIndex])), &iden); err != nil {
 								continue
 							}
-							iden.fillIden()
-							d := types.EventData{CurData: &iden}
+							d := types.EventData{CurData: iden.fillIden()}
 							hostIdentify.Data = append(hostIdentify.Data, d)
 						}
 
 						hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 						redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
+						blog.Infof("identifier: pushed event inst %+v", hostIdentify)
 					}
 				}
 			}
 		}
 	} else if e.EventType == types.EventTypeRelation && hostIdentify.ObjType == "moduletransfer" {
+		blog.Infof("identifier: handle inst %+v", e)
 		for index := range e.Data {
 			var curdata map[string]interface{}
 
@@ -131,13 +134,13 @@ func GetDistInst(e *types.EventInst) []types.EventInst {
 			instID := getInt(curdata, common.BKHostIDField)
 			if instID == 0 {
 				// this should wound happen -_-
-				blog.Errorf("conver instID faile the raw is %v", curdata[common.BKHostIDField])
+				blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKHostIDField])
 				continue
 			}
 
 			inst, err := getCache(common.BKInnerObjIDHost, instID)
 			if err != nil {
-				blog.Errorf("getCache error %v", err)
+				blog.Errorf("identifier: getCache error %+v", err)
 				continue
 			}
 			if inst == nil {
@@ -145,39 +148,57 @@ func GetDistInst(e *types.EventInst) []types.EventInst {
 				continue
 			}
 
+			belong, ok := inst.data["belong"].(map[string]interface{})
+
 			moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
 			switch e.Action {
 			case types.EventActionCreate:
-				inst.data[moduleID] = curdata
+				if ok {
+					belong[moduleID] = curdata
+				}
+				inst.ident.Module[moduleID] = NewModule(curdata)
 			case types.EventActionDelete:
-				delete(inst.data, moduleID)
+				if ok {
+					delete(belong, moduleID)
+				}
+				delete(inst.ident.Module, moduleID)
 			}
+			inst.saveCache()
+			d := types.EventData{CurData: inst.ident.fillIden()}
+			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
 		hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 		redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
+		blog.Infof("identifier: pushed event inst %+v", hostIdentify)
 	}
+}
 
-	return ds
+func NewModule(m map[string]interface{}) *Module {
+	belong := Module{}
+	belong.BizID = getInt(m, common.BKAppIDField)
+	belong.SetID = getInt(m, common.BKSetIDField)
+	belong.ModuleID = getInt(m, common.BKModuleIDField)
+	return &belong
 }
 
 func getInt(data map[string]interface{}, key string) int {
 	i, err := strconv.Atoi(fmt.Sprint(data[key]))
 	if err != nil {
-		blog.Errorf("getInt error: %v", err)
+		blog.Errorf("identifier: getInt error: %+v", err)
 	}
 	return i
 }
 
 func findHost(objType string, instID int) (hostIDs []string) {
-	// TODO cloud_name not handled
-	if objType == common.BKInnerObjIDPlat {
-
-	}
 	relations := []metadata.ModuleHostConfig{}
 	condiction := map[string]interface{}{
 		common.GetInstIDField(objType): instID,
 	}
-	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+	if objType == common.BKInnerObjIDPlat {
+		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+	} else {
+		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+	}
 
 	for index := range relations {
 		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"_host_"+strconv.Itoa(relations[index].HostID))
@@ -194,6 +215,29 @@ type Inst struct {
 
 func (i *Inst) set(key string, value interface{}) {
 	i.data[key] = value
+
+	if i.objType == common.BKInnerObjIDHost {
+		switch key {
+		case "bk_host_name":
+			i.ident.HostName = fmt.Sprint(value)
+		case "bk_cloud_id":
+			i.ident.CloudID, _ = strconv.Atoi(fmt.Sprint(value))
+		case "bk_host_innerip":
+			i.ident.InnerIP = fmt.Sprint(value)
+		case "bk_host_outerip":
+			i.ident.OuterIP = fmt.Sprint(value)
+		case "bk_os_type":
+			i.ident.OSType = fmt.Sprint(value)
+		case "bk_os_name":
+			i.ident.OSName = fmt.Sprint(value)
+		case "bk_mem":
+			i.ident.Memory = fmt.Sprint(value)
+		case "bk_cpu":
+			i.ident.CPU = fmt.Sprint(value)
+		case "bk_disk":
+			i.ident.Disk = fmt.Sprint(value)
+		}
+	}
 }
 
 func (i *Inst) saveCache() error {
@@ -209,6 +253,20 @@ func (i *Inst) saveCache() error {
 	return nil
 }
 
+func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
+	ident := HostIdentifier{}
+	ident.HostName = fmt.Sprint(m["bk_host_name"])
+	ident.CloudID, _ = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	ident.InnerIP = fmt.Sprint(m["bk_host_innerip"])
+	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
+	ident.OSType = fmt.Sprint(m["bk_os_type"])
+	ident.OSName = fmt.Sprint(m["bk_os_name"])
+	ident.Memory = fmt.Sprint(m["bk_mem"])
+	ident.CPU = fmt.Sprint(m["bk_cpu"])
+	ident.Disk = fmt.Sprint(m["bk_disk"])
+	ident.Module = map[string]*Module{}
+	return &ident
+}
 func getCache(objType string, instID int) (*Inst, error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).String()
@@ -218,14 +276,32 @@ func getCache(objType string, instID int) (*Inst, error) {
 		if err != nil {
 			return nil, err
 		}
+		if objType == common.BKInnerObjIDHost {
+			inst.ident = NewHostIdentifier(inst.data)
+			relations := []metadata.ModuleHostConfig{}
+			condiction := map[string]interface{}{
+				common.GetInstIDField(objType): instID,
+			}
+			api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+			for _, rela := range relations {
+				inst.ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
+					SetID:    rela.SetID,
+					ModuleID: rela.ModuleID,
+					BizID:    rela.ApplicationID,
+				}
+			}
+		}
+		inst.saveCache()
 	} else {
 		err := json.Unmarshal([]byte(ret), inst.data)
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal([]byte(ret), inst.ident)
-		if err != nil {
-			return nil, err
+		if objType == common.BKInnerObjIDHost {
+			err = json.Unmarshal([]byte(ret), inst.ident)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -238,46 +314,36 @@ func getCache(objType string, instID int) (*Inst, error) {
 
 // StartHandleInsts handle the duplicate event queue
 func StartHandleInsts() error {
+	blog.Infof("identifier: handle identifiers started")
 	for {
 		event := popEventInst()
 		if event == nil {
 			time.Sleep(time.Second * 2)
 			continue
 		}
-		if err := handleInst(event); err != nil {
-			blog.Errorf("error handle dist: %v, %v", err, event)
-		}
+		handleInst(event)
 	}
 }
 
-func handleInst(event *types.EventInstCtx) (err error) {
-	blog.Info("handling event inst : %v", event.Raw)
-	defer blog.Info("done event inst : %v", event.ID)
-
-	origindists := GetDistInst(&event.EventInst)
-
-	return
-}
-
-func popEventInst() *types.EventInstCtx {
-	var eventstr string
+func popEventInst() *types.EventInst {
 
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	redisCli.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
+	eventstr := redisCli.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if eventstr == "" {
+	if len(eventstr) <= 0 || eventstr[1] == "nil" || eventstr[1] == "" {
 		return nil
 	}
 
 	// Unmarshal event
-	eventbytes := []byte(eventstr)
+	eventbytes := []byte(eventstr[1])
 	event := types.EventInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
-		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
+		blog.Errorf("identifier: event distribute fail, unmarshal error: %+v, date=[%s]", err, eventbytes)
 		return nil
 	}
+	blog.Infof("identifier: pod %s", eventbytes)
+	return &event
 
-	return &types.EventInstCtx{EventInst: event, Raw: eventstr}
 }
 
 func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {

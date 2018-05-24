@@ -261,7 +261,7 @@ func popEventInst() *types.EventInstCtx {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	redisCli.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
 
-	if eventstr == "" {
+	if eventstr == "" || eventstr == "nil" {
 		return nil
 	}
 
