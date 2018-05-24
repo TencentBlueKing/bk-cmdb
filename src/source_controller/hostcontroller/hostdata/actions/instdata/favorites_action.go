@@ -56,7 +56,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		}
 
 		params := make(map[string]interface{}) //favouriteParms{}
-		if err := json.Unmarshal([]byte(value), &params); nil != err {
+		if err = json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
@@ -112,7 +112,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		data := make(map[string]interface{})
-		if err := json.Unmarshal([]byte(value), &data); nil != err {
+		if err = json.Unmarshal([]byte(value), &data); nil != err {
 			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}

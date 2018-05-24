@@ -31,19 +31,19 @@ func InternalError(code int, message string) error {
 	return err
 }
 
-func GetRespWithoutData(code int, message string) string {
-
-	ret, _ := createRespone(code, message, make(map[string]interface{}))
-
-	return ret
-}
-
-func GetRespone(code int, message string, data interface{}) string {
-
-	ret, _ := createRespone(code, message, data)
-
-	return ret
-}
+//func GetRespWithoutData(code int, message string) string {
+//
+//	ret, _ := createRespone(code, message, make(map[string]interface{}))
+//
+//	return ret
+//}
+//
+//func GetRespone(code int, message string, data interface{}) string {
+//
+//	ret, _ := createRespone(code, message, data)
+//
+//	return ret
+//}
 
 func createRespone(code int, message string, data interface{}) (string, error) {
 	bResult := false
