@@ -229,6 +229,11 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
+	// CCErrTopoGetCloudErrStrFaild get cloud error
+	CCErrTopoGetCloudErrStrFaild = 1101031
+	//CCErrTopoCloudNotFound   cloud area not found
+	CCErrTopoCloudNotFound = 1101032
+
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033
@@ -316,6 +321,7 @@ const (
 	CCErrHostFavouriteCreateFail         = 1106015
 	CCErrHostFavouriteUpdateFail         = 1106016
 	CCErrHostFavouriteDeleteFail         = 1106017
+	CCErrHostFavouriteDupFail            = 1106017
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module = 1107001
