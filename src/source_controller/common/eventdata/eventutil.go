@@ -53,13 +53,17 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 		return err
 	}
 	ei := &types.EventInst{
-		ID:          int64(eventID),
-		EventType:   eventType,
-		Action:      action,
-		ActionTime:  commontypes.Now(),
-		ObjType:     objType,
-		CurData:     curData,
-		PreData:     preData,
+		ID:         int64(eventID),
+		EventType:  eventType,
+		Action:     action,
+		ActionTime: commontypes.Now(),
+		ObjType:    objType,
+		Data: []types.EventData{
+			{
+				CurData: curData,
+				PreData: preData,
+			},
+		},
 		RequestID:   c.RequestID,
 		RequestTime: c.RequestTime,
 	}
