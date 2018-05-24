@@ -170,7 +170,6 @@ func getInt(data map[string]interface{}, key string) int {
 
 func findHost(objType string, instID int) (hostIDs []string) {
 	// TODO cloud_name not handled
-
 	if objType == common.BKInnerObjIDPlat {
 
 	}
