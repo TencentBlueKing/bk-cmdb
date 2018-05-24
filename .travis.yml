@@ -9,6 +9,10 @@ branches:
   only:
   - master
   - travis_ci
+
+env:
+  - REPO_NAME=bk-cmdb
+  - BUILD_DIR=configcenter
   
 before_install:
   - go get -v github.com/golang/lint/golint
@@ -17,9 +21,10 @@ install: true
 
 script:
  - pwd && ls ./ && ls ../
- - cd ../ && mv bk-cmdb ../../configcenter
- - cd ../../configcenter/src
- - pwd && ls ./
+ - cd ../ && mv ${REPO_NAME} ../../${BUILD_DIR}
+ - cd ../../${BUILD_DIR}
+ - ./pre-commit.sh
+ - cd src
  - make
 
 notifications:
