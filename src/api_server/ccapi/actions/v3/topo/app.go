@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package topo
 
 import (
@@ -51,8 +51,6 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 	//req.Request.URL.Path = "/topo/v1/app/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPDelete)
 	io.WriteString(resp, rsp)
-	//	blog.Info("Delete App url:%s", req.Request.URL.Path)
-	//	httpcli.ProxyRestHttp(req, resp, url)
 }
 
 // UpdateApp update application
@@ -63,9 +61,17 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 	url := cli.CC.TopoAPI() + "/topo/v1/app/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
 	io.WriteString(resp, rsp)
-	//	req.Request.URL.Path = "/topo/v1/app/" + ownerID + "/" + appID
-	//	blog.Info("Update App url:%s", req.Request.URL.Path)
-	//	httpcli.ProxyRestHttp(req, resp, url)
+}
+
+// UpdateAppDataStatus update application data status
+func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams["owner_id"]
+	appID := pathParams["app_id"]
+	flag := pathParams["flag"]
+	url := cli.CC.TopoAPI() + "/topo/v1/app/status/" + flag + "/" + ownerID + "/" + appID
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
+	io.WriteString(resp, rsp)
 }
 
 // SearchApp search application
@@ -75,9 +81,6 @@ func (cli *appAction) SearchApp(req *restful.Request, resp *restful.Response) {
 	url := cli.CC.TopoAPI() + "/topo/v1/app/search/" + ownerID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectPost)
 	io.WriteString(resp, rsp)
-	//	req.Request.URL.Path = "/topo/v1/app/search/" + ownerID
-	//	blog.Info("Search App url:%s", req.Request.URL.Path)
-	//	httpcli.ProxyRestHttp(req, resp, url)
 }
 
 // GetInternalTopo get internal topo
@@ -88,9 +91,6 @@ func (cli *appAction) GetInternalTopo(req *restful.Request, resp *restful.Respon
 	url := cli.CC.TopoAPI() + "/topo/v1/topo/internal/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectGet)
 	io.WriteString(resp, rsp)
-	//	req.Request.URL.Path = "/topo/v1/app/search/" + ownerID
-	//	blog.Info("Search App url:%s", req.Request.URL.Path)
-	//	httpcli.ProxyRestHttp(req, resp, url)
 }
 
 func init() {
@@ -99,6 +99,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.DeleteApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/biz/search/{owner_id}", Params: nil, Handler: app.SearchApp, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/status/{flag}/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateAppDataStatus, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/topo/internal/{owner_id}/{app_id}", Params: nil, Handler: app.GetInternalTopo, Version: v3.APIVersion})
 	// set cc api interface
 	app.CreateAction()
