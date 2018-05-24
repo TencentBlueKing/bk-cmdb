@@ -338,9 +338,9 @@ func (cli *moduleAction) AddMultiModule(req *restful.Request, resp *restful.Resp
 		moduleCon := map[string]interface{}{
 			common.BKModuleNameField: moduleName,
 		}
-		moduleData, err := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), moduleCon)
-		if err != nil {
-			blog.Error("Marshal json error:%v", err)
+		moduleData, getErr := GetModuleMapByCond(req, "", cli.CC.ObjCtrl(), moduleCon)
+		if getErr != nil {
+			blog.Error("Marshal json error:%v", getErr)
 			cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
 			return
 		}
