@@ -32,8 +32,14 @@ func AtomicFileNew(path string, mode os.FileMode) (*AtomicFile, error) {
 		return nil, err
 	}
 	if err := os.Chmod(f.Name(), mode); err != nil {
-		f.Close()
-		os.Remove(f.Name())
+		closeErr := f.Close()
+		if closeErr != nil {
+			return nil, closeErr
+		}
+
+		if removeErr := os.Remove(f.Name()); removeErr != nil {
+			return nil, removeErr
+		}
 		return nil, err
 	}
 	return &AtomicFile{File: f, path: path}, nil
@@ -42,7 +48,9 @@ func AtomicFileNew(path string, mode os.FileMode) (*AtomicFile, error) {
 // Close the file replacing the configured file.
 func (f *AtomicFile) Close() error {
 	if err := f.File.Close(); err != nil {
-		os.Remove(f.File.Name())
+		if removeErr := os.Remove(f.File.Name()); removeErr != nil {
+			return removeErr
+		}
 		return err
 	}
 	if err := os.Rename(f.Name(), f.path); err != nil {
@@ -56,7 +64,9 @@ func (f *AtomicFile) Close() error {
 // don't want it anymore.
 func (f *AtomicFile) Abort() error {
 	if err := f.File.Close(); err != nil {
-		os.Remove(f.Name())
+		if removeErr := os.Remove(f.Name()); removeErr != nil {
+			return removeErr
+		}
 		return err
 	}
 	if err := os.Remove(f.Name()); err != nil {

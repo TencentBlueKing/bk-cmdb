@@ -128,9 +128,9 @@ func loadCertificates(certFile, keyFile, passwd string) (*tls.Certificate, error
 			return nil, fmt.Errorf("decode private key failed")
 		}
 
-		priDecrPem, err := x509.DecryptPEMBlock(priPem, []byte(passwd))
-		if err != nil {
-			return nil, err
+		priDecrPem, decErr := x509.DecryptPEMBlock(priPem, []byte(passwd))
+		if decErr != nil {
+			return nil, decErr
 		}
 
 		priKey = pem.EncodeToMemory(&pem.Block{
