@@ -274,11 +274,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 
 	isExist, err := IsExistPlat(req, ObjAddr, common.KvMap{common.BKCloudIDField: cloudID})
 	if nil != err {
-<<<<<<< HEAD
 		return errors.New(langHandle.Languagef("plat_get_str_err", err.Error())) // "查询主机信息失败")
-=======
-		return errors.New(langHandle.Languagef("plat_get_str_err", err.Error()))
->>>>>>> 0c8299fdc370d7b58607ddfc430f07b6f0f9626d
 	}
 	if !isExist {
 		return errors.New(langHandle.Language("plat_id_not_exist"))
