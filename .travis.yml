@@ -8,8 +8,7 @@ go:
 branches:
   only:
   - master
-  - travis_ci
-
+  
 env:
   global:
     - REPO_NAME=bk-cmdb
