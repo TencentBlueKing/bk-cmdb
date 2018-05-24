@@ -121,7 +121,7 @@
             <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">
                 {{$t("Common['取消']")}}
             </bk-button>
-            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm">
+            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm" v-if="type === 'update'">
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
@@ -355,7 +355,7 @@
             },
             deleteUserAPIConfirm () {
                 this.$bkInfo({
-                    title: this.$t("CustomQuery['确认要删除']", {name: self.apiParams.name}),
+                    title: this.$t("CustomQuery['确认要删除']", {name: this.apiParams.name}),
                     confirmFn: () => {
                         this.deleteUserAPI()
                     }
