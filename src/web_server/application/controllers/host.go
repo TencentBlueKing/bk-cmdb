@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 	_ "io"
 	"math/rand"
 	"net/http"
@@ -162,6 +162,7 @@ func ExportHost(c *gin.Context) {
 	fileName := fmt.Sprintf("%dhost.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 
+	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportHost save file error:%s", err.Error())

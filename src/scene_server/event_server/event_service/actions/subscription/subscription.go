@@ -60,7 +60,7 @@ func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Res
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 		sub := &types.Subscription{}
-		if err := json.Unmarshal([]byte(value), sub); nil != err {
+		if err = json.Unmarshal([]byte(value), sub); nil != err {
 			blog.Error("fail to unmarshal json, error information is %v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}

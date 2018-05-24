@@ -102,9 +102,9 @@ func (cli *hostAction) GetHostListByIP(req *restful.Request, resp *restful.Respo
 	}
 	if len(formData["ApplicationID"]) > 0 {
 		appIDStrArr := strings.Split(formData["ApplicationID"][0], ",")
-		appIDArr, err := utils.SliceStrToInt(appIDStrArr)
-		if nil != err {
-			blog.Error("GetHostListByIP error: %v", err)
+		appIDArr, sliceErr := utils.SliceStrToInt(appIDStrArr)
+		if nil != sliceErr {
+			blog.Error("GetHostListByIP error: %v", sliceErr)
 			converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 			return
 		}
@@ -388,9 +388,9 @@ func (cli *hostAction) GetHostsByProperty(req *restful.Request, resp *restful.Re
 	}
 
 	if len(formData["SetID"]) > 0 && "" != formData["SetID"][0] {
-		setIDArr, err := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
-		if nil != err {
-			blog.Error("GetHostsByProperty error: %v", err)
+		setIDArr, sliceErr := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
+		if nil != sliceErr {
+			blog.Error("GetHostsByProperty error: %v", sliceErr)
 			converter.RespFailV2(common.CCErrAPIServerV2MultiSetIDErr, defErr.Errorf(common.CCErrAPIServerV2MultiSetIDErr).Error(), resp)
 			return
 		}
@@ -548,11 +548,11 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 		proxyNew[common.BKCloudIDField] = platIdInt
 		proxyNew[common.BKHostInnerIPField] = proxy["InnerIP"]
 		proxyNew[common.BKHostOuterIPField] = proxy["OuterIP"]
-		proxyNew, err := logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
+		proxyNew, inputErr := logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, host.CC.TopoAPI(), req.Request.Header)
 
-		if err != nil {
-			blog.Error("AutoInputV3Field error:%v", err)
-			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		if inputErr != nil {
+			blog.Error("AutoInputV3Field error:%v", inputErr)
+			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, inputErr.Error()).Error(), resp)
 			return
 		}
 		proxyListArrV3 = append(proxyListArrV3, proxyNew)

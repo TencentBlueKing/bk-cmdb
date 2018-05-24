@@ -237,7 +237,7 @@ func (cli *moduleAction) AddModule(req *restful.Request, resp *restful.Response)
 		if moduleType == "普通" || moduleType == "数据库" {
 			reqParam[common.BKModuleTypeField] = moduleType
 		} else {
-			msg := defLang.Language("apiv2_module_type_error")
+			msg = defLang.Language("apiv2_module_type_error")
 			blog.Error("addModule error: %s", msg)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 			return
@@ -247,7 +247,7 @@ func (cli *moduleAction) AddModule(req *restful.Request, resp *restful.Response)
 	}
 
 	if "1" != moduleType && "2" != moduleType {
-		msg := defLang.Language("apiv2_module_type_error")
+		msg = defLang.Language("apiv2_module_type_error")
 		blog.Error("addModule error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
