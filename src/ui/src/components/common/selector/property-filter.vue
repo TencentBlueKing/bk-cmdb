@@ -2,7 +2,7 @@
     <div class="property-filter clearfix">
         <bk-select class="property-selector fl" :selected.sync="localSelected.id" @on-selected="handlePropertySelected">
             <bk-select-option v-for="(property, index) in filteredProperties"
-                :key="index"
+                :key="property['bk_property_id']"
                 :value="property['bk_property_id']"
                 :label="property['bk_property_name']">
             </bk-select-option>
@@ -18,9 +18,9 @@
             <input type="text" class="bk-form-input" maxlength="11" v-model.number="localSelected.value" v-if="selectedProperty['bk_property_type'] === 'int'">
             <bk-select :selected.sync="localSelected.value" :showClear="true" v-else-if="selectedProperty['bk_property_type'] === 'enum'">
                 <bk-select-option v-for="(enumOption, index) in (Array.isArray(selectedProperty.option) ? selectedProperty.option : [])"
-                    :key="option.id"
-                    :value="option.id"
-                    :label="option.name">
+                    :key="enumOption.id"
+                    :value="enumOption.id"
+                    :label="enumOption.name">
                 </bk-select-option>
             </bk-select>
             <input type="text" class="bk-form-input" v-model.trim="localSelected.value" v-else>
@@ -55,6 +55,7 @@
                     operator: '',
                     value: ''
                 },
+                filteredProperties: [],
                 propertyOperator: {
                     'default': ['$eq', '$ne'],
                     'singlechar': ['$regex', '$eq', '$ne'],
@@ -74,23 +75,13 @@
         },
         computed: {
             ...mapGetters('object', ['attribute']),
-            filteredProperties () {
-                return (this.attribute[this.objId] || []).filter(property => {
-                    const {
-                        bk_isapi: bkIsapi,
-                        bk_property_type: bkPropertyType,
-                        bk_property_id: bkPropertyId
-                    } = property
-                    return !bkIsapi && !this.excludeType.includes(bkPropertyType) && !this.excludeId.includes(bkPropertyId)
-                })
-            },
             selectedProperty () {
                 return this.filteredProperties.find(({bk_property_id: bkPropertyId}) => bkPropertyId === this.localSelected.id) || {}
             },
             operatorOptions () {
                 if (this.selectedProperty) {
-                    if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty['bk_property_id'])) {
-                        return [{label: this.operator['$regex'], value: '$regex'}]
+                    if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty['bk_property_id']) || this.objId === 'biz') {
+                        return [{label: this.operatorLabel['$regex'], value: '$regex'}]
                     } else {
                         const propertyType = this.selectedProperty['bk_property_type']
                         const propertyOperator = this.propertyOperator.hasOwnProperty(propertyType) ? this.propertyOperator[propertyType] : this.propertyOperator['default']
@@ -121,6 +112,17 @@
             },
             'localSelected.value' (value) {
                 this.$emit('handleValueChange', value)
+            },
+            async objId (objId) {
+                await this.$store.dispatch('object/getAttribute', objId)
+                this.filteredProperties = this.attribute[objId].filter(property => {
+                    const {
+                        bk_isapi: bkIsapi,
+                        bk_property_type: bkPropertyType,
+                        bk_property_id: bkPropertyId
+                    } = property
+                    return !bkIsapi && !this.excludeType.includes(bkPropertyType) && !this.excludeId.includes(bkPropertyId)
+                })
             }
         },
         methods: {
