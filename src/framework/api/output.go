@@ -78,7 +78,7 @@ func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 	}
 	businessInst, err := mgr.OutputerMgr.CreateInst(targetModel)
 	wrapper := &BusinessWrapper{business: businessInst}
-	wrapper.SetSupplierAccount(supplierAccount)
+	//wrapper.SetSupplierAccount(supplierAccount)
 	return wrapper, err
 }
 
