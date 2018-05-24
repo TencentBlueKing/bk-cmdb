@@ -2,7 +2,7 @@
     <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
         <div id="topo" class="topo"></div>
         <ul class="model-list" v-if="filterList.length">
-            <li class="model" v-for="filter in filterList" @click="changeModelDisplay(filter)" v-if="filter.count">
+            <li class="model" :class="{'unselected': !filter.model.isShow}" v-for="filter in filterList" @click="changeModelDisplay(filter)" v-if="filter.count">
                 <i class="icon" :class="filter.model['bk_obj_icon']"></i>
                 {{filter.model['bk_obj_name']}} {{filter.count}}
             </li>
@@ -26,6 +26,7 @@
     import vAttribute from './attribute'
     import { getImgUrl } from '@/utils/util'
     import { mapGetters } from 'vuex'
+    const LEVEL = 500
     export default {
         props: {
             isShow: {
@@ -42,7 +43,7 @@
         data () {
             return {
                 topoStruct: {},
-                tid: 0,
+                nodeId: 0,
 
                 network: {},
                 position: {},
@@ -131,7 +132,6 @@
                         }
                     }
                 }
-                console.log(modelList, 1)
                 return modelList
             }
         },
@@ -178,7 +178,7 @@
                             if (model.children !== null && model.isShow) {
                                 model.children.map(inst => {
                                     nodes.push({
-                                        id: inst.tid,
+                                        id: inst.nodeId,
                                         label: inst['bk_inst_name'],
                                         value: 15,
                                         image: inst.unselectedUrl,
@@ -202,7 +202,7 @@
                         if (isRoot) {
                             let current = data[key]
                             nodes.push({
-                                id: current.tid,
+                                id: current.nodeId,
                                 label: current['bk_inst_name'],
                                 value: 25,
                                 image: current.unselectedUrl,
@@ -318,10 +318,33 @@
             getIconByClass (iconClass) {
                 return iconClass.substr(5)
             },
-            getActiveNode (topoStruct) {
-                let {
-                    tid
-                } = this
+            getDeleteModel (topoStruct, nodeId) {
+                let deleteModel = null
+                for (let key in topoStruct) {
+                    if (key !== 'curr') {
+                        topoStruct[key].map(model => {
+                            if (model.children !== null) {
+                                model.children.map(inst => {
+                                    if (inst.nodeId === nodeId) {
+                                        deleteModel = model
+                                    }
+                                    if (inst.hasOwnProperty('children') && deleteModel === null) {
+                                        let res = this.getDeleteModel(inst.children, nodeId)
+                                        if (res) {
+                                            deleteModel = res
+                                        }
+                                    }
+                                })
+                            }
+                        })
+                    }
+                }
+                return deleteModel
+            },
+            getActiveNode (topoStruct, nodeId) {
+                if (!nodeId) {
+                    nodeId = this.nodeId
+                }
                 let activeNode = null
                 for (let key in topoStruct) {
                     if (key !== 'curr') {
@@ -330,10 +353,10 @@
                             if (model.children !== null) {
                                 for (let j = 0; j < model.children.length; j++) {
                                     let inst = model.children[j]
-                                    if (tid === inst.tid) {
+                                    if (nodeId === inst.nodeId) {
                                         activeNode = inst
                                     } else {
-                                        if (inst.hasOwnProperty('children')) {
+                                        if (inst.hasOwnProperty('children') && activeNode === null) {
                                             let res = this.getActiveNode(inst.children)
                                             if (res) {
                                                 activeNode = res
@@ -344,19 +367,21 @@
                             }
                         }
                     } else {
-                        if (topoStruct[key].tid === tid) {
+                        if (topoStruct[key].nodeId === nodeId) {
                             activeNode = topoStruct[key]
                         }
                     }
                 }
                 return activeNode
             },
-            async setTopoStruct (data) {
+            async setTopoStruct (data, isRoot) {
                 this.activeNode = this.getActiveNode(this.topoStruct)
                 let count = 0
                 let competedNum = 0
-                let currentTid = this.activeNode !== null ? this.activeNode.tid : `${data['curr']['bk_obj_id']}|${data['curr']['bk_inst_id']}|${Math.random().toString(36).substr(2)}`
+                let currentTid = this.activeNode !== null ? this.activeNode.nodeId : `${data['curr']['bk_obj_id']}|${data['curr']['bk_inst_id']}|${LEVEL}|${Math.random().toString(36).substr(2)}`
+                // let topoStruct = {}
                 for (let key in data) {
+                    // topo
                     if (key !== 'curr') {
                         data[key].map(async model => {
                             // this.$set(model, 'isShow', true)
@@ -364,12 +389,18 @@
                             if (model.children !== null) {
                                 model.children.map(async inst => {
                                     count++
-                                    let tid = `${model['bk_obj_id']}|${inst['bk_inst_id']}|${Math.random().toString(36).substr(2)}`
+                                    let level = 0
+                                    if (isRoot) {
+                                        level = key === 'prev' ? LEVEL - 1 : LEVEL + 1
+                                    } else {
+                                        level = this.activeNode.level - LEVEL < 0 ? this.activeNode.level - 1 : this.activeNode.level + 1
+                                    }
+                                    let nodeId = `${model['bk_obj_id']}|${inst['bk_inst_id']}|${level}|${Math.random().toString(36).substr(2)}`
 
                                     // 处理edges
                                     this.edges.push({
-                                        to: key === 'prev' ? tid : currentTid,
-                                        from: key === 'prev' ? currentTid : tid
+                                        to: key === 'prev' ? nodeId : currentTid,
+                                        from: key === 'prev' ? currentTid : nodeId
                                     })
 
                                     // 处理nodes
@@ -379,23 +410,25 @@
                                     inst.isLoad = false
                                     inst.selectedUrl = selectedUrl
                                     inst.unselectedUrl = unselectedUrl
-                                    inst.tid = tid
+                                    inst.nodeId = nodeId
+                                    inst.level = level
                                     competedNum++
                                 })
                             }
                         })
                     } else {
-                        if (!this.activeNode) {
-                            count++
-                            let image = await getImgUrl(`./static/svg/${this.getIconByClass(data[key]['bk_obj_icon'])}.svg`)
-                            let selectedUrl = this.initImg(image, '#3c96ff')
-                            let unselectedUrl = this.initImg(image, '#6c7bb2')
-                            data[key].selectedUrl = selectedUrl
-                            data[key].unselectedUrl = unselectedUrl
-                            data[key].isLoad = true
-                            data[key].tid = currentTid
-                            competedNum++
-                        }
+                        // if (!this.activeNode) {
+                        count++
+                        let image = await getImgUrl(`./static/svg/${this.getIconByClass(data[key]['bk_obj_icon'])}.svg`)
+                        let selectedUrl = this.initImg(image, '#3c96ff')
+                        let unselectedUrl = this.initImg(image, '#6c7bb2')
+                        data[key].selectedUrl = selectedUrl
+                        data[key].unselectedUrl = unselectedUrl
+                        data[key].isLoad = true
+                        data[key].nodeId = currentTid
+                        data[key].level = isRoot ? LEVEL : this.activeNode.level
+                        competedNum++
+                        // }
                     }
                 }
                 let timer = setInterval(() => {
@@ -410,12 +443,12 @@
                     }
                 }, 200)
             },
-            async getRelationInfo (objId, instId) {
+            async getRelationInfo (objId, instId, isRoot = false) {
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
                     // this.setFilterList(res.data[0])
-                    await this.setTopoStruct(res.data[0])
+                    await this.setTopoStruct(res.data[0], isRoot)
                 } catch (e) {
                     this.isLoading = false
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
@@ -464,7 +497,7 @@
                         let edge = this.edges.find(({id}) => {
                             return id === edgeId
                         })
-                        // this.deleteRelation(edge)
+                        this.deleteRelation(edge)
                     }
                     // 点击了具体某个节点
                     if (params.nodes.length) {
@@ -473,7 +506,7 @@
                         if (this.activeNode) {
                             this.activeNode.image = this.activeNode.unselectedUrl
                         }
-                        this.tid = id
+                        this.nodeId = id
                         this.activeNode = this.getActiveNode(this.topoStruct)
                         this.activeNode.image = this.activeNode.selectedUrl
 
@@ -522,7 +555,34 @@
 
                     }
                 }
-                // console.log(params)
+
+                // this.activeNode.children = null
+                // this.initTopo()
+                // this.topoStruct['next'][1].children = null
+                let parentNode = this.getActiveNode(this.topoStruct, edge.to)
+                let childNode = this.getActiveNode(this.topoStruct, edge.from)
+                console.log(parentNode, childNode, edge.to, edge.from, 111)
+
+                let deleteObj = Math.abs(parentNode - LEVEL) > Math.abs(childNode - LEVEL) ? childNode : parentNode
+                let targetObj = Math.abs(parentNode - LEVEL) > Math.abs(childNode - LEVEL) ? parentNode : childNode
+                console.log(deleteObj.nodeId)
+                // let deleteModel = this.getDeleteModel(this.topoStruct, deleteObj.curr['nodeId'])
+                // deleteObj = null
+                // targetObj = null
+                console.log(deleteObj, 'deleteObj')
+                // console.log(deleteModel)
+                // for (let key in deleteModel) {
+                //     if (key !== 'curr') {
+                //         deleteModel[key].map(model => {
+                //             if (model.children !== null) {
+                //                 model.children.map(inst => {
+                //                 })
+                //             }
+                //         })
+                //     }
+                // }
+                // deleteModel.children = null
+                this.initTopo()
                 // this.$store.dispatch('association/updateAssociation', )
             },
             showInstDetail (id) {
@@ -587,7 +647,7 @@
             this.container = document.getElementById('topo')
         },
         created () {
-            this.getRelationInfo(this.objId, this.instId)
+            this.getRelationInfo(this.objId, this.instId, true)
         },
         components: {
             vAttribute
@@ -608,6 +668,9 @@
             top: 0;
             .model {
                 cursor: pointer;
+                &.unselected {
+                    color: #c3cdd7;
+                }
             }
             .icon {
                 position: relative;
