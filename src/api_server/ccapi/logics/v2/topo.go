@@ -233,20 +233,20 @@ func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc 
 		switch itemMap["ObjID"] {
 		case common.BKInnerObjIDModule:
 
-			mouduleId, err := util.GetIntByInterface(itemMap["ModuleID"])
-			if nil != err {
-				blog.Errorf("%v, %v", err, itemMap)
-				return err
+			mouduleId, getErr := util.GetIntByInterface(itemMap["ModuleID"])
+			if nil != getErr {
+				blog.Errorf("%v, %v", getErr, itemMap)
+				return getErr
 			}
-			appId, err := util.GetIntByInterface(itemMap["ApplicationID"])
-			if nil != err {
-				blog.Errorf("%v, %v", err, itemMap)
-				return err
+			appId, getErr := util.GetIntByInterface(itemMap["ApplicationID"])
+			if nil != getErr {
+				blog.Errorf("%v, %v", getErr, itemMap)
+				return getErr
 			}
 			blog.Debug("mouduleId: %v", mouduleId)
-			hostNum, err := GetModuleHostCount(appId, mouduleId, req, cc)
-			if nil != err {
-				return err
+			hostNum, getErr := GetModuleHostCount(appId, mouduleId, req, cc)
+			if nil != getErr {
+				return getErr
 			}
 			blog.Debug("hostNum: %v", hostNum)
 			itemMap["HostNum"] = hostNum
