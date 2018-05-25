@@ -14,6 +14,7 @@ package identifier
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"fmt"
 )
 
@@ -50,19 +51,35 @@ type Module struct {
 func (iden *HostIdentifier) fillIden() *HostIdentifier {
 	for moduleID := range iden.Module {
 
-		biz, _ := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID)
+		biz, err := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID)
+		if err != nil {
+			blog.Errorf("identifier: getCache error %s", err.Error())
+			continue
+		}
 		iden.Module[moduleID].BizName = fmt.Sprint(biz.data[common.BKAppNameField])
 
-		set, _ := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID)
+		set, err := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID)
+		if err != nil {
+			blog.Errorf("identifier: getCache error %s", err.Error())
+			continue
+		}
 		iden.Module[moduleID].SetName = fmt.Sprint(set.data[common.BKSetNameField])
 		iden.Module[moduleID].SetEnv = fmt.Sprint(set.data[common.BKSetEnvField])
 		iden.Module[moduleID].SetStatus = fmt.Sprint(set.data[common.BKSetStatusField])
 
-		module, _ := getCache(common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID)
+		module, err := getCache(common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID)
+		if err != nil {
+			blog.Errorf("identifier: getCache error %s", err.Error())
+			continue
+		}
 		iden.Module[moduleID].ModuleName = fmt.Sprint(module.data[common.BKModuleNameField])
 
 	}
-	cloud, _ := getCache(common.BKInnerObjIDPlat, iden.CloudID)
+	cloud, err := getCache(common.BKInnerObjIDPlat, iden.CloudID)
+	if err != nil {
+		blog.Errorf("identifier: getCache error %s", err.Error())
+		return iden
+	}
 	iden.CloudName = fmt.Sprint(cloud.data[common.BKCloudNameField])
 
 	return iden
