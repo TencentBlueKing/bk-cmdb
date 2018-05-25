@@ -141,6 +141,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 				return false
 			}
 			if util.InStrArr(mainLineObjIDArr, objName) {
+				//goo main line common object valid
 				goto appvalid
 			}
 
