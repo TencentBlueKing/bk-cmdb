@@ -255,7 +255,7 @@ func getSnapNetInfo(netinfosI *simplejson.Json, unitMB int64) (int64, int64, err
 			}
 		}
 	}
-	rcvRate = 100 * 8 * rcvRate / unitMB
-	sendRate = 100 * 8 * sendRate / unitMB
+	rcvRate = 100 * rcvRate / unitMB
+	sendRate = 100 * sendRate / unitMB
 	return rcvRate, sendRate, err
 }
