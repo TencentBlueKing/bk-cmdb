@@ -13,7 +13,11 @@ env:
   global:
     - REPO_NAME=bk-cmdb
     - BUILD_DIR=configcenter
-  
+
+cache:
+  directories:
+    - node_modules
+    
 before_install:
   - go get -v github.com/golang/lint/golint
 
