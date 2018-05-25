@@ -59,34 +59,47 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 			// min
 			min, ok := tmp["min"]
 			maxVal := 99999999999 // default
-			minVal := 0
+			minVal := -9999999999 // default
 			err := errProxy.Error(common.CCErrCommParamsNeedInt)
 
+			isPass := false
 			if ok {
 				switch d := min.(type) {
 				case string:
+					if 0 == len(d) {
+						isPass = true
+					}
 					if 11 < len(d) {
 						return errProxy.Error(common.CCErrCommOverLimit)
 					}
 				}
-				minVal, err = GetIntByInterface(min)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
+
+				if !isPass {
+					minVal, err = GetIntByInterface(min)
+					if nil != err {
+						return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
+					}
 				}
 			}
 
 			// max
 			max, ok := tmp["max"]
 			if ok {
+				isPass := false
 				switch d := max.(type) {
 				case string:
+					if 0 == len(d) {
+						isPass = true
+					}
 					if 11 < len(d) {
 						return errProxy.Error(common.CCErrCommOverLimit)
 					}
 				}
-				maxVal, err = GetIntByInterface(max)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+				if !isPass {
+					maxVal, err = GetIntByInterface(max)
+					if nil != err {
+						return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+					}
 				}
 			}
 
