@@ -120,59 +120,62 @@ func handleInst(e *types.EventInst) {
 				}
 			}
 		}
-	} else if e.EventType == types.EventTypeRelation && hostIdentify.ObjType == "moduletransfer" {
+	} else if e.EventType == types.EventTypeRelation && e.ObjType == "moduletransfer" {
 		blog.Infof("identifier: handle inst %+v", e)
-		for index := range e.Data {
-			var curdata map[string]interface{}
+		go func() {
+			time.Sleep(time.Second * 3) // delay to ensure moduletransfer ended
+			for index := range e.Data {
+				var curdata map[string]interface{}
 
-			if e.Action == "delete" && len(e.Data) > 0 {
-				curdata, ok = e.Data[index].PreData.(map[string]interface{})
-			} else {
-				curdata, ok = e.Data[index].CurData.(map[string]interface{})
-			}
-			if !ok {
-				continue
-			}
-
-			instID := getInt(curdata, common.BKHostIDField)
-			if instID == 0 {
-				// this should wound happen -_-
-				blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKHostIDField])
-				continue
-			}
-
-			inst, err := getCache(common.BKInnerObjIDHost, instID)
-			if err != nil {
-				blog.Errorf("identifier: getCache error %+v", err)
-				continue
-			}
-			if inst == nil {
-				// the inst may be deleted, just ignore
-				continue
-			}
-
-			belong, ok := inst.data["associations"].(map[string]interface{})
-
-			moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
-			switch e.Action {
-			case types.EventActionCreate:
-				if ok {
-					belong[moduleID] = curdata
+				if e.Action == "delete" && len(e.Data) > 0 {
+					curdata, ok = e.Data[index].PreData.(map[string]interface{})
+				} else {
+					curdata, ok = e.Data[index].CurData.(map[string]interface{})
 				}
-				inst.ident.Module[moduleID] = NewModule(curdata)
-			case types.EventActionDelete:
-				if ok {
-					delete(belong, moduleID)
+				if !ok {
+					continue
 				}
-				delete(inst.ident.Module, moduleID)
+
+				instID := getInt(curdata, common.BKHostIDField)
+				if instID == 0 {
+					// this should wound happen -_-
+					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKHostIDField])
+					continue
+				}
+
+				inst, err := getCache(common.BKInnerObjIDHost, instID)
+				if err != nil {
+					blog.Errorf("identifier: getCache error %+v", err)
+					continue
+				}
+				if inst == nil {
+					// the inst may be deleted, just ignore
+					continue
+				}
+
+				belong, ok := inst.data["associations"].(map[string]interface{})
+
+				moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
+				switch e.Action {
+				case types.EventActionCreate:
+					if ok {
+						belong[moduleID] = curdata
+					}
+					inst.ident.Module[moduleID] = NewModule(curdata)
+				case types.EventActionDelete:
+					if ok {
+						delete(belong, moduleID)
+					}
+					delete(inst.ident.Module, moduleID)
+				}
+				inst.saveCache()
+				d := types.EventData{CurData: inst.ident.fillIden()}
+				hostIdentify.Data = append(hostIdentify.Data, d)
 			}
-			inst.saveCache()
-			d := types.EventData{CurData: inst.ident.fillIden()}
-			hostIdentify.Data = append(hostIdentify.Data, d)
-		}
-		hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
-		redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
-		blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
+			hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
+			redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+			blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
+		}()
 	}
 }
 
@@ -354,6 +357,8 @@ func popEventInst() *types.EventInst {
 		blog.Errorf("identifier: event distribute fail, unmarshal error: %+v, date=[%s]", err, eventbytes)
 		return nil
 	}
+
+	// blog.Infof("pop inst %s", eventbytes)
 	return &event
 }
 
@@ -396,7 +401,7 @@ func fetchHostCache() {
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
 			instID := fmt.Sprint(cache[common.GetInstIDField(objID)])
-			if err := redisCli.Set(types.EventCacheIdentInstPrefix+common.BKInnerObjIDHost+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
+			if err := redisCli.Set(types.EventCacheIdentInstPrefix+objID+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
 				blog.Errorf("set cache error %s", err.Error())
 			}
 		}
