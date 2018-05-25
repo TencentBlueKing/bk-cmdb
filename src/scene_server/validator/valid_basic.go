@@ -21,11 +21,12 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
@@ -97,6 +98,12 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//set default value
 	valid.setEnumDefault(valData, valRule)
+
+	//valid create request
+	if validType == common.ValidCreate {
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+	}
+
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
@@ -170,10 +177,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			return result, err
 		}
 	}
-	//valid create request
-	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
-	}
+
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
 	if validType == common.ValidCreate {
@@ -252,6 +256,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 			searchCond[key] = val
 		}
 	}
+
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
@@ -305,6 +310,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
 	isInner := false
 	urlID := valid.objID
+	searchOnlykeyNum := 0
 	if util.InArray(valid.objID, innerObject) {
 		isInner = true
 	} else {
@@ -318,6 +324,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	for key, val := range valData {
 		if util.InArray(key, valid.IsOnlyArr) {
 			searchCond[key] = val
+			searchOnlykeyNum++
+		}
+	}
+
+	//if no only key in params return true, if part of it return false
+	if 0 == searchOnlykeyNum {
+		return true, nil
+	} else {
+		if searchOnlykeyNum != len(valid.IsOnlyArr) {
+			return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
 		}
 	}
 

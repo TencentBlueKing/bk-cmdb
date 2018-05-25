@@ -31,7 +31,7 @@ func TestDataValue(t *testing.T) {
 		return
 	}
 
-	if err := zkClient.Create("/data1", []byte("DATA")); err != nil {
+	if err = zkClient.Create("/data1", []byte("DATA")); err != nil {
 		fmt.Println(err)
 	}
 
@@ -43,7 +43,7 @@ func TestDataValue(t *testing.T) {
 
 	fmt.Println(result)
 
-	if err := zkClient.Create("/data1/ip/act", []byte("act")); err != nil {
+	if err = zkClient.Create("/data1/ip/act", []byte("act")); err != nil {
 		fmt.Println(err)
 	}
 
@@ -89,9 +89,9 @@ func Test_WatchChildren(t *testing.T) {
 
 	go func() {
 		for {
-			childs, watchEnv, err := zkClient.WatchChildren(path)
-			if err != nil {
-				t.Logf("fail to watch children(%s), err:%s", path, err.Error())
+			childs, watchEnv, watchErr := zkClient.WatchChildren(path)
+			if watchErr != nil {
+				t.Logf("fail to watch children(%s), err:%s", path, watchErr.Error())
 				return
 			}
 

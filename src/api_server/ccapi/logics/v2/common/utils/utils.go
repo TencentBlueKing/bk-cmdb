@@ -13,12 +13,12 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+	"encoding/json"
 )
 
 // SliceStrToInt: 将字符串切片转换为整型切片
@@ -57,6 +57,6 @@ func GetResMap(resp *http.Response) (map[string]interface{}, error) {
 	}
 
 	resMap := make(map[string]interface{})
-	json.Unmarshal(respData, &resMap)
+	_ = json.Unmarshal(respData, &resMap)
 	return resMap, nil
 }
