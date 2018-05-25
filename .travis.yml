@@ -28,7 +28,7 @@ script:
  - pwd && ls ./ && ls ../
  - cd ../ && mv $REPO_NAME ../../$BUILD_DIR
  - cd ../../$BUILD_DIR
- - ./scripts/pre-commit.sh
+ - ./scripts/travis_ci.sh
  - cd src
  - make
 
