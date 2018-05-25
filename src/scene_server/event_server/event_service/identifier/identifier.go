@@ -40,7 +40,7 @@ var hostIndentDiffFiels = map[string][]string{
 func handleInst(e *types.EventInst) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	hostIdentify := *e
-	// hostIdentify.Data = nil
+	hostIdentify.Data = nil
 	hostIdentify.EventType = types.EventTypeRelation
 	hostIdentify.ObjType = "hostidentifier"
 	hostIdentify.Action = types.EventActionUpdate
@@ -89,14 +89,15 @@ func handleInst(e *types.EventInst) {
 					blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 				} else {
 					hosIDs := findHost(e.ObjType, instID)
+					blog.Infof("identifier: hostIDs: %v", hosIDs)
 					total := len(hosIDs)
 					index := 0
 					leftIndex := 0
 					// pack identifiers into 1 distribution to prevent send too many messages
-					for {
+					for leftIndex >= total {
 						leftIndex = index + 256
 						if leftIndex > total {
-							leftIndex = total - 1
+							leftIndex = total
 						}
 						hostIdentify.Data = nil
 						idens := redisCli.MGet(hosIDs[index:leftIndex]...).Val()
@@ -148,7 +149,7 @@ func handleInst(e *types.EventInst) {
 				continue
 			}
 
-			belong, ok := inst.data["belong"].(map[string]interface{})
+			belong, ok := inst.data["associations"].(map[string]interface{})
 
 			moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
 			switch e.Action {
@@ -201,7 +202,7 @@ func findHost(objType string, instID int) (hostIDs []string) {
 	}
 
 	for index := range relations {
-		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"_host_"+strconv.Itoa(relations[index].HostID))
+		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.Itoa(relations[index].HostID))
 	}
 	return hostIDs
 }
@@ -283,7 +284,7 @@ func getCache(objType string, instID int) (*Inst, error) {
 			condiction := map[string]interface{}{
 				common.GetInstIDField(objType): instID,
 			}
-			api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+			api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			for _, rela := range relations {
 				inst.ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
 					SetID:    rela.SetID,
@@ -291,6 +292,7 @@ func getCache(objType string, instID int) (*Inst, error) {
 					BizID:    rela.ApplicationID,
 				}
 			}
+			inst.data["associations"] = inst.ident.Module
 		}
 		inst.saveCache()
 	} else {
@@ -318,6 +320,7 @@ func getCache(objType string, instID int) (*Inst, error) {
 // StartHandleInsts handle the duplicate event queue
 func StartHandleInsts() error {
 	blog.Infof("identifier: handle identifiers started")
+
 	for {
 		event := popEventInst()
 		if event == nil {
@@ -345,7 +348,11 @@ func popEventInst() *types.EventInst {
 		return nil
 	}
 	return &event
+}
 
+func fetchHostCache() {
+	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
+	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, nil, condiction, &relations, "", -1, -1)
 }
 
 func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {

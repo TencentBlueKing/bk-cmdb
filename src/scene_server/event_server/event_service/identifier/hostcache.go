@@ -37,7 +37,7 @@ type HostIdentifier struct {
 
 type Module struct {
 	SupplierID      int    `json:"bk_supplier_id"`      // 开发商ID（bk_supplier_id）				数字
-	SupplierAccount int    `json:"bk_supplier_account"` // 开发商帐号（bk_supplier_account）	数字
+	SupplierAccount string `json:"bk_supplier_account"` // 开发商帐号（bk_supplier_account）	数字
 	BizID           int    `json:"bk_biz_id"`           // 业务ID
 	BizName         string `json:"bk_biz_name"`         // 业务名称
 	SetID           int    `json:"bk_set_id"`           // 所属集群(bk_set_id)：						数字
@@ -57,6 +57,8 @@ func (iden *HostIdentifier) fillIden() *HostIdentifier {
 			continue
 		}
 		iden.Module[moduleID].BizName = fmt.Sprint(biz.data[common.BKAppNameField])
+		iden.Module[moduleID].SupplierAccount = fmt.Sprint(biz.data[common.BKOwnerIDField])
+		iden.Module[moduleID].SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
 		set, err := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID)
 		if err != nil {
