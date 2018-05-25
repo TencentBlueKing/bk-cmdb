@@ -96,7 +96,6 @@ func (p *Privilege) GetRolePrivilege(objID string, role string) []string {
 		return nil
 	}
 	return resultData.Data
-
 }
 
 //GetAppRole get app role
@@ -195,7 +194,6 @@ func (p *Privilege) GetUserPrivilegeConfig() (map[string][]string, []string) {
 	url := fmt.Sprintf("%s/api/%s/topo/privilege/user/detail/%s/%s", p.APIAddr, webCommon.API_VERSION, p.OwnerID, p.UserName)
 	blog.Info("get user privilege config  url: %s", url)
 	getResult, err := p.httpCli.GET(url, nil, nil)
-	blog.Info("get user privilege config  return: %s", getResult)
 	if nil != err {
 		blog.Error("get user privilege return error: %v", err)
 		return nil, nil
@@ -222,4 +220,30 @@ func (p *Privilege) GetUserPrivilegeConfig() (map[string][]string, []string) {
 		}
 	}
 	return modelConfig, sysConfig
+}
+
+// GetAllMainLineObject get all main line object
+func (p *Privilege) GetAllMainLineObject() []string {
+	url := fmt.Sprintf("%s/api/%s/topo/model/%s", p.APIAddr, webCommon.API_VERSION, p.OwnerID)
+	blog.Info("get all main line object url: %s", url)
+	getResult, err := p.httpCli.GET(url, nil, nil)
+	mainLineObjName := make([]string, 0)
+	if nil != err {
+		blog.Error("get all main line object error: %v", err)
+		return mainLineObjName
+	}
+	blog.Info("get all main line object return: %s", string(getResult))
+	var resultData params.SearchMainLine
+	err = json.Unmarshal([]byte(getResult), &resultData)
+	if nil != err || false == resultData.Result {
+		blog.Error("get all main line object error: %v", err)
+		return mainLineObjName
+	}
+	for _, data := range resultData.Data {
+		objID, ok := data[common.BKObjIDField].(string)
+		if ok {
+			mainLineObjName = append(mainLineObjName, objID)
+		}
+	}
+	return mainLineObjName
 }
