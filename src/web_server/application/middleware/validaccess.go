@@ -134,6 +134,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 			} else {
 				objName = pathArr[len(pathArr)-2]
 			}
+			mainLineObjIDStr := session.Get("mainLineObjID").(string)
 			err := json.Unmarshal([]byte(mainLineObjIDStr), &mainLineObjIDArr)
 			if nil != err {
 				blog.Error("get main line object id array false")
