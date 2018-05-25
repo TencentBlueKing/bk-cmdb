@@ -331,10 +331,12 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 			for keyIdx := range attrMap {
 
+				colIdx, _ := strconv.Atoi(keyIdx)
+
 				propertyID, err := jsObjAttr.Get(keyIdx).Get("bk_property_id").String()
 				if nil != err {
 					blog.Error("failed to parse the bk_property_id, error info is %s", err.Error())
-					errStr := defLang.Languagef("import_row_int_error_str", keyIdx, defErr.Errorf(common.CCErrCommParamsLostField, "bk_property_id"))
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsLostField, "bk_property_id"))
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
 						failedArr = append(failedArr, errStr)
@@ -356,7 +358,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 				conditionAttVal, _ := json.Marshal(conditionAtt)
 				if items, err := cli.mgr.SelectObjectAtt(forward, conditionAttVal, defErr); nil != err {
 					blog.Error("failed to search the object attribute, the condition is %+v, error info is %s", conditionAtt, err.Error())
-					errStr := defLang.Languagef("import_row_int_error_str", keyIdx, err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
 						failedArr = append(failedArr, errStr)
@@ -377,7 +379,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx), defErr)
 						if nil != itemErr {
 							blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
-							errStr := defLang.Languagef("import_row_int_error_str", keyIdx, itemErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", colIdx, itemErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
 								failedArr = append(failedArr, errStr)
@@ -395,7 +397,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						blog.Debug("the new attribute:%s", string(itemVal))
 						if updateErr := cli.mgr.UpdateObjectAtt(forward, item.ID, itemVal, defErr); nil != updateErr {
 							blog.Error("failed to update the object attribute, error info is %s", updateErr.Error())
-							errStr := defLang.Languagef("import_row_int_error_str", keyIdx, updateErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", colIdx, updateErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
 								failedArr = append(failedArr, errStr)
@@ -418,7 +420,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx), defErr)
 					if nil != itemErr {
 						blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
-						errStr := defLang.Languagef("import_row_int_error_str", keyIdx, itemErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, itemErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
 							failedArr = append(failedArr, errStr)
@@ -434,7 +436,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 					if _, insertErr := cli.mgr.CreateObjectAtt(forward, *item, defErr); nil != insertErr {
 						blog.Error("failed to create the object attribute, error info is %s", insertErr.Error())
-						errStr := defLang.Languagef("import_row_int_error_str", keyIdx, insertErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, insertErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
 							failedArr = append(failedArr, errStr)
