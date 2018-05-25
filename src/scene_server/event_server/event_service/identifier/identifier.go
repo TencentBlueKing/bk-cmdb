@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/instdata"
 	"encoding/json"
 	"fmt"
@@ -94,7 +95,7 @@ func handleInst(e *types.EventInst) {
 					index := 0
 					leftIndex := 0
 					// pack identifiers into 1 distribution to prevent send too many messages
-					for leftIndex >= total {
+					for leftIndex < total {
 						leftIndex = index + 256
 						if leftIndex > total {
 							leftIndex = total
@@ -105,6 +106,7 @@ func handleInst(e *types.EventInst) {
 						for identIndex := range idens {
 							iden := HostIdentifier{}
 							if err = json.Unmarshal([]byte(fmt.Sprint(idens[identIndex])), &iden); err != nil {
+								blog.Errorf("identifier: unmarshal error %s", err.Error())
 								continue
 							}
 							d := types.EventData{CurData: iden.fillIden()}
@@ -320,7 +322,12 @@ func getCache(objType string, instID int) (*Inst, error) {
 // StartHandleInsts handle the duplicate event queue
 func StartHandleInsts() error {
 	blog.Infof("identifier: handle identifiers started")
-
+	go func() {
+		fetchHostCache()
+		for range time.Tick(time.Minute * 10) {
+			fetchHostCache()
+		}
+	}()
 	for {
 		event := popEventInst()
 		if event == nil {
@@ -351,8 +358,52 @@ func popEventInst() *types.EventInst {
 }
 
 func fetchHostCache() {
-	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
-	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, nil, condiction, &relations, "", -1, -1)
+	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+
+	// fetch host cache
+	relations := []metadata.ModuleHostConfig{}
+	hosts := []*HostIdentifier{}
+	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, map[string]interface{}{}, &relations, "", -1, -1)
+	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, nil, map[string]interface{}{}, &hosts, "", -1, -1)
+
+	relationMap := map[int][]metadata.ModuleHostConfig{}
+	for _, relate := range relations {
+		relationMap[relate.HostID] = append(relationMap[relate.HostID], relate)
+	}
+
+	for _, ident := range hosts {
+		ident.Module = map[string]*Module{}
+		for _, rela := range relationMap[ident.HostID] {
+			ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
+				SetID:    rela.SetID,
+				ModuleID: rela.ModuleID,
+				BizID:    rela.ApplicationID,
+			}
+		}
+
+		if err := redisCli.Set(types.EventCacheIdentInstPrefix+common.BKInnerObjIDHost+fmt.Sprint("_", ident.HostID), ident, 0).Err(); err != nil {
+			blog.Errorf("set cache error %s", err.Error())
+		}
+	}
+	blog.Infof("identifier: fetched %d hosts", len(hosts))
+
+	// fetch others
+	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat}
+	for _, objID := range objs {
+		caches := []map[string]interface{}{}
+		api.GetAPIResource().InstCli.GetMutilByCondition(commondata.GetInstTableName(objID), nil, map[string]interface{}{}, &caches, "", -1, -1)
+
+		for _, cache := range caches {
+			out, _ := json.Marshal(cache)
+			instID := fmt.Sprint(cache[common.GetInstIDField(objID)])
+			if err := redisCli.Set(types.EventCacheIdentInstPrefix+common.BKInnerObjIDHost+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
+				blog.Errorf("set cache error %s", err.Error())
+			}
+		}
+
+		blog.Infof("identifier: fetched %d %s", len(caches), objID)
+	}
+
 }
 
 func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (isDifferent bool) {
