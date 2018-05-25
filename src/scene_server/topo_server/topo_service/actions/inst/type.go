@@ -30,6 +30,13 @@ type commonInstTopo struct {
 	Children []instNameAsst `json:"children"`
 }
 
+// commonInstTopoV2 common inst topo
+type commonInstTopoV2 struct {
+	Prev interface{} `json:"prev"`
+	Next interface{} `json:"next"`
+	Curr interface{} `json:"curr"`
+}
+
 type instTopoSort []commonInstTopo
 
 func (cli instTopoSort) Len() int {

@@ -121,9 +121,9 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 			// save change log
 			headers := []metadata.Header{}
 			// take snapshot before operation
-			details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
-			if err != nil {
-				blog.Errorf("get inst detail error: %v", err)
+			details, getErr := cli.getProcDetail(req, ownerID, appID, int(procID))
+			if getErr != nil {
+				blog.Errorf("get inst detail error: %v", getErr)
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
 			}
 			curData := map[string]interface{}{}
@@ -147,8 +147,8 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContent, "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 		}
 
-		json, err := simplejson.NewJson([]byte(sProcRes))
-		procResData, _ := json.Map()
+		js, err := simplejson.NewJson([]byte(sProcRes))
+		procResData, _ := js.Map()
 		return http.StatusOK, procResData["data"], nil
 	}, resp)
 }

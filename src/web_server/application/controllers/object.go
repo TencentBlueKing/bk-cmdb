@@ -28,7 +28,7 @@ import (
 	lang "configcenter/src/common/language"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 	"time"
 )
 
