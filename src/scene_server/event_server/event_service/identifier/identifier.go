@@ -47,7 +47,7 @@ func handleInst(e *types.EventInst) {
 
 	// add new dist if event belong to hostidentifier
 	if diffFields, ok := hostIndentDiffFiels[e.ObjType]; ok && e.Action == types.EventActionUpdate && e.EventType == types.EventTypeInstData {
-		blog.Infof("identifier: handle inst %+v", e)
+		blog.InfoJSON("identifier: handle inst %s", e)
 		for dataIndex := range e.Data {
 			curdata := e.Data[dataIndex].CurData.(map[string]interface{})
 			predata := e.Data[dataIndex].PreData.(map[string]interface{})
@@ -55,7 +55,7 @@ func handleInst(e *types.EventInst) {
 
 				instIDField := common.GetInstIDField(e.ObjType)
 
-				instID, _ := curdata[instIDField].(int)
+				instID := getInt(curdata, instIDField)
 				if instID == 0 {
 					// this should wound happen -_-
 					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[instIDField])
@@ -85,8 +85,8 @@ func handleInst(e *types.EventInst) {
 					hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 					d := types.EventData{CurData: inst.ident.fillIden()}
 					hostIdentify.Data = append(hostIdentify.Data, d)
-					redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
-					blog.Infof("identifier: pushed event inst %+v", hostIdentify)
+					redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+					blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 				} else {
 					hosIDs := findHost(e.ObjType, instID)
 					total := len(hosIDs)
@@ -111,8 +111,8 @@ func handleInst(e *types.EventInst) {
 						}
 
 						hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
-						redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
-						blog.Infof("identifier: pushed event inst %+v", hostIdentify)
+						redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+						blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 					}
 				}
 			}
@@ -168,8 +168,8 @@ func handleInst(e *types.EventInst) {
 			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
 		hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
-		redisCli.LPush(types.EventCacheEventQueueKey, hostIdentify)
-		blog.Infof("identifier: pushed event inst %+v", hostIdentify)
+		redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
+		blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 	}
 }
 
@@ -242,7 +242,7 @@ func (i *Inst) set(key string, value interface{}) {
 
 func (i *Inst) saveCache() error {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	out, err := json.Marshal(i)
+	out, err := json.Marshal(i.data)
 	if err != nil {
 		return err
 	}
@@ -269,10 +269,11 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 }
 func getCache(objType string, instID int) (*Inst, error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).String()
-	inst := Inst{objType: objType, instID: instID}
+	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
+	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
 	if ret == "" || ret == "nil" {
-		err := instdata.GetObjectByID(objType, nil, instID, inst.data, "")
+		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
+		err := instdata.GetObjectByID(objType, nil, instID, &inst.data, "")
 		if err != nil {
 			return nil, err
 		}
@@ -293,13 +294,15 @@ func getCache(objType string, instID int) (*Inst, error) {
 		}
 		inst.saveCache()
 	} else {
-		err := json.Unmarshal([]byte(ret), inst.data)
+		err := json.Unmarshal([]byte(ret), &inst.data)
 		if err != nil {
+			blog.Errorf("unmarshal error %v, raw is %s", err, ret)
 			return nil, err
 		}
 		if objType == common.BKInnerObjIDHost {
 			err = json.Unmarshal([]byte(ret), inst.ident)
 			if err != nil {
+				blog.Errorf("unmarshal error %s, raw is %s", err.Error(), ret)
 				return nil, err
 			}
 		}
@@ -341,7 +344,6 @@ func popEventInst() *types.EventInst {
 		blog.Errorf("identifier: event distribute fail, unmarshal error: %+v, date=[%s]", err, eventbytes)
 		return nil
 	}
-	blog.Infof("identifier: pod %s", eventbytes)
 	return &event
 
 }
