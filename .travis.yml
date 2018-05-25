@@ -2,7 +2,7 @@ language: go
 
 go:
   - "1.8.x"
-  - "1.10.x"  
+  - "1.10.x"
 
 # safelist
 branches:
@@ -18,7 +18,7 @@ env:
 cache:
   directories:
     - node_modules
-    
+
 before_install:
   - go get -v github.com/golang/lint/golint
 
@@ -28,7 +28,7 @@ script:
  - pwd && ls ./ && ls ../
  - cd ../ && mv $REPO_NAME ../../$BUILD_DIR
  - cd ../../$BUILD_DIR
- - ./pre-commit.sh
+ - ./scripts/pre-commit.sh
  - cd src
  - make
 
