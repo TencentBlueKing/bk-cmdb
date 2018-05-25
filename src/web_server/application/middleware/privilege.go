@@ -225,18 +225,18 @@ func (p *Privilege) GetUserPrivilegeConfig() (map[string][]string, []string) {
 // GetAllMainLineObject get all main line object
 func (p *Privilege) GetAllMainLineObject() []string {
 	url := fmt.Sprintf("%s/api/%s/topo/model/%s", p.APIAddr, webCommon.API_VERSION, p.OwnerID)
-	blog.Info("get all main line object url: %s", url)
+	blog.Infof("get all main line object url: %s", url)
 	getResult, err := p.httpCli.GET(url, nil, nil)
 	mainLineObjName := make([]string, 0)
 	if nil != err {
-		blog.Error("get all main line object error: %v", err)
+		blog.Errorf("get all main line object error: %v", err)
 		return mainLineObjName
 	}
-	blog.Info("get all main line object return: %s", string(getResult))
+	blog.Infof("get all main line object return: %s", string(getResult))
 	var resultData params.SearchMainLine
 	err = json.Unmarshal([]byte(getResult), &resultData)
 	if nil != err || false == resultData.Result {
-		blog.Error("get all main line object error: %v", err)
+		blog.Errorf("get all main line object error: %v", err)
 		return mainLineObjName
 	}
 	for _, data := range resultData.Data {
