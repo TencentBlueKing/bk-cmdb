@@ -2,7 +2,7 @@
     <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
         <div id="topo" class="topo"></div>
         <ul class="model-list" v-if="filterList.length">
-            <li class="model" :class="{'unselected': !filter.isShow}" v-for="filter in filterList" @click="changeModelDisplay(filter)" v-if="filter.count">
+            <li class="model" :class="{'unselected': !filter.isShow}" v-for="(filter, index) in filterList" @click="changeModelDisplay(filter)" v-if="filter.count" :key="index">
                 <i class="icon" :class="filter['bk_obj_icon']"></i>
                 {{filter['bk_obj_name']}} {{filter.count}}
             </li>
@@ -25,10 +25,6 @@
     const LEVEL = 500
     export default {
         props: {
-            isShow: {
-                type: Boolean,
-                default: false
-            },
             instId: {
                 type: Number
             },
@@ -73,8 +69,7 @@
                             hover: '#c3cdd7'
                         },
                         smooth: {           // 线的动画
-                            type: 'curvedCW',
-                            roundness: 0
+                            enabled: false
                         },
                         arrows: 'middle'
                     },
@@ -109,7 +104,7 @@
                 }
             },
             nodes () {
-                return this.getNodes(this.topoStruct, 500, true)
+                return this.getNodes(this.topoStruct, true)
             },
             filterList () {
                 let data = this.activeNode.children
@@ -138,6 +133,10 @@
             }
         },
         methods: {
+            /**
+             * 获取模型Id对应的key
+             * @param objId {String} - 模型id
+             */
             getInstanceIdKey (objId) {
                 if (objId === 'host') {
                     return 'bk_host_id'
@@ -146,11 +145,14 @@
                 }
                 return 'bk_inst_id'
             },
+            /**
+             * 设置筛选
+             * @param filter {Object} - 当前点击的筛选项
+             */
             changeModelDisplay (filter) {
                 let {
                     activeNode
                 } = this
-                // activeNode.isShow = !this.activeNode.isShow
                 if (activeNode !== null && activeNode.children) {
                     for (let key in activeNode.children) {
                         activeNode.children[key].map(inst => {
@@ -158,17 +160,17 @@
                                 inst.isShow = !inst.isShow
                             }
                         })
-                        // let inst = activeNode.children[key].find(inst => {
-                        //     return inst['bk_obj_id'] === filter['bk_obj_id']
-                        // })
-                        // if (inst) {
-                        //     inst.isShow = !inst.isShow
-                        // }
                     }
                 }
                 this.initTopo()
             },
-            getNodes (data, level, isRoot, direction) {
+            /**
+             * 获取node
+             * @param data {Object} - 拓扑结构
+             * @param isRoot {Boolean} - 是否为根节点
+             * @return {Array} - 节点列表
+             */
+            getNodes (data, isRoot = false) {
                 let nodes = []
                 if (isRoot) {
                     nodes.push({
@@ -201,42 +203,11 @@
                 }
                 return nodes
             },
-            setFilterList () {
-                let data = this.activeNode.children
-                let filterList = []
-                for (let key in data) {
-                    if (key !== 'curr') {
-                        data[key].map(model => {
-                            if (model.children !== null) {
-                                model.children.map(inst => {
-                                    let current = filterList.find(({bk_inst_id: bkInstId, bk_obj_id: bkObjId}) => {
-                                        return bkObjId === inst['bk_obj_id'] && bkInstId === inst['bk_inst_id']
-                                    })
-                                    if (!current) {
-                                        filterList.push({
-                                            bk_obj_id: model['bk_obj_id'],
-                                            bk_obj_name: model['bk_obj_name'],
-                                            bk_obj_icon: model['bk_obj_icon'],
-                                            count: 1
-                                        })
-                                    } else {
-                                        current.count++
-                                    }
-                                })
-                            }
-                        })
-                    }
-                }
-                this.filterList = filterList
-            },
-            /*
-                把十六位色值转换为rgb
-                return {
-                    r: '111',
-                    g: '222',
-                    b: '123'
-                }
-            */
+            /**
+             * 把十六位色值转换为rgb
+             * @param color {String} - 十六位色值 例：#123456 / #123
+             * @return {Object} - {r: r, g: g, b: b}
+             */
             parseColor (color) {
                 let r = ''
                 let g = ''
@@ -258,15 +229,12 @@
                     b: b
                 }
             },
-            /*
-                获取图片base64
-                img: 图片地址
-                rgb: {
-                    r: r,
-                    g: g,
-                    b: b
-                }
-            */
+            /**
+             * 获取图片base64
+             * @param img {String} - 图片地址
+             * @param rgb {Object} - 颜色 rgb: {r: r, g: g, b:b}
+             * @return {String} - base64
+             */
             getBase64Img (img, rgb) {
                 let canvas = document.createElement('canvas')
                 canvas.width = img.width
@@ -289,15 +257,21 @@
                 let dataURL = canvas.toDataURL('image/' + ext)
                 return dataURL
             },
-            /*
-                通过图标类名获取icon路径
-                class: icon-xxx-xxx
-                return xxx-xxx
-            */
+            /**
+             * 通过图标类名获取icon路径
+             * @param iconClass {String} - icon-xxx-xxx
+             * @return {String} - xxx-xxx
+             */
             getIconByClass (iconClass) {
                 return iconClass.substr(5)
             },
-            getActiveNode (topoStruct, nodeId, isRoot = false) {
+            /**
+             * 获取指定节点
+             * @param nodeId {Number} - 指定节点id
+             * @param topoStruct {Object} - 拓扑结构
+             * @param isRoot {Boolean} - 是否为根节点
+             */
+            getActiveNode (nodeId, topoStruct = this.topoStruct, isRoot = true) {
                 let activeNode = null
                 if (isRoot) {
                     if (topoStruct.id === nodeId) {
@@ -306,24 +280,35 @@
                 }
                 if (!activeNode) {
                     for (let key in topoStruct.children) {
-                        topoStruct.children[key].map(inst => {
+                        for (let index in topoStruct.children[key]) {
+                            let inst = topoStruct.children[key][index]
                             if (inst.id === nodeId) {
                                 activeNode = inst
                             } else if (inst.hasOwnProperty('children')) {
-                                let res = this.getActiveNode(inst, nodeId)
+                                let res = this.getActiveNode(nodeId, inst, false)
                                 if (res) {
                                     activeNode = res
                                 }
                             }
-                        })
+                            if (activeNode) {
+                                break
+                            }
+                        }
+                        if (activeNode) {
+                            break
+                        }
                     }
                 }
                 return activeNode
             },
+            /**
+             * 设置拓扑树形结构
+             * @param data {Object} - 从查询关联关系接口直接返回的内容
+             * @param isRoot {Boolean} - 页面第一次调用时为true
+             */
             async setTopoStruct (data, isRoot) {
                 let count = 0
                 let competedNum = 0
-                let currentTid = this.activeNode !== null ? this.activeNode.nodeId : `${data['curr']['bk_obj_id']}|${data['curr']['bk_inst_id']}|${LEVEL}|${Math.random().toString(36).substr(2)}`
 
                 let image = await getImgUrl(`./static/svg/${this.getIconByClass(data['curr']['bk_obj_icon'])}.svg`)
                 let selectedUrl = this.initImg(image, '#3c96ff')
@@ -382,27 +367,34 @@
                                     let selectedUrl = this.initImg(image, '#3c96ff')
                                     let unselectedUrl = this.initImg(image, '#62687f')
                                     
-                                    topoStruct[key].push({
-                                        isLoad: false,
-                                        label: inst['bk_inst_name'],
-                                        value: 15,
-                                        isShow: true,
-                                        image: {
-                                            selected: selectedUrl,
-                                            unselected: unselectedUrl
-                                        },
-                                        bk_inst_id: inst['bk_inst_id'],
-                                        bk_inst_name: inst['bk_inst_name'],
-                                        bk_obj_id: model['bk_obj_id'],
-                                        bk_obj_name: model['bk_obj_name'],
-                                        bk_obj_icon: model['bk_obj_icon'],
-                                        fromId: key === 'prev' ? currentNodeId : nodeId,
-                                        id: nodeId,
-                                        parentId: this.activeNode.id,
-                                        level: level,
-                                        selectedUrl: selectedUrl,
-                                        unselectedUrl: unselectedUrl
-                                    })
+                                    let parentNode = null
+                                    if (this.activeNode.id) {
+                                        parentNode = this.getActiveNode(this.activeNode.parentId)
+                                    }
+                                    // 不重复插入父节点
+                                    if (parentNode === null || parentNode['bk_obj_id'] !== model['bk_obj_id'] || parentNode['bk_inst_id'] !== inst['bk_inst_id']) {
+                                        topoStruct[key].push({
+                                            isLoad: false,
+                                            label: inst['bk_inst_name'],
+                                            value: 15,
+                                            isShow: true,
+                                            image: {
+                                                selected: selectedUrl,
+                                                unselected: unselectedUrl
+                                            },
+                                            bk_inst_id: inst['bk_inst_id'],
+                                            bk_inst_name: inst['bk_inst_name'],
+                                            bk_obj_id: model['bk_obj_id'],
+                                            bk_obj_name: model['bk_obj_name'],
+                                            bk_obj_icon: model['bk_obj_icon'],
+                                            fromId: key === 'prev' ? currentNodeId : nodeId,
+                                            id: nodeId,
+                                            parentId: this.activeNode.id,
+                                            level: level,
+                                            selectedUrl: selectedUrl,
+                                            unselectedUrl: unselectedUrl
+                                        })
+                                    }
                                     competedNum++
                                 })
                             }
@@ -417,6 +409,12 @@
                     }
                 }, 200)
             },
+            /**
+             * 获取节点关联关系
+             * @param objId {String} - 模型ID
+             * @param instId {Number} - 实例ID
+             * @param isRoot {Boolean} - 页面首次调用时为true
+             */
             async getRelationInfo (objId, instId, isRoot = false) {
                 this.isLoading = true
                 try {
@@ -427,6 +425,11 @@
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
+            /**
+             * 获取图片地址
+             * @param image {Object} - Image对象
+             * @param color {String} - 颜色色值 例 #123456 / #123
+             */
             initImg (image, color) {
                 let base64 = this.getBase64Img(image, this.parseColor(color))
                 let svg = `<svg xmlns="http://www.w3.org/2000/svg" stroke="" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
@@ -435,6 +438,9 @@
                 </svg>`
                 return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
             },
+            /**
+             * 绘制拓扑图
+             */
             initTopo () {
                 for (let key in this.position) {
                     let node = this.nodes.find(({id}) => {
@@ -446,6 +452,9 @@
                     }
                 }
                 this.network = new vis.Network(this.container, this.graphData, this.options)
+                this.network.focus(this.activeNode.id)
+                // let scale = this.network.getScale()
+                this.network.moveTo({scale: 0.8})
 
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
@@ -464,7 +473,7 @@
                         if (this.activeNode) {
                             this.activeNode.image.unselected = this.activeNode.unselectedUrl
                         }
-                        this.activeNode = this.getActiveNode(this.topoStruct, id, true)
+                        this.activeNode = this.getActiveNode(id)
                         this.activeNode.image.unselected = this.activeNode.selectedUrl
 
                         // 当前节点没有点击过时 加载其关联内容
@@ -478,10 +487,14 @@
                 })
                 this.isLoading = false
             },
+            /**
+             * 删除关联
+             * @param activeNode {Object} - 当前节点
+             */
             async deleteRelation (activeNode) {
                 let associated = []
                 let id = 0
-                let parentNode = this.getActiveNode(this.topoStruct, activeNode.parentId, true)
+                let parentNode = this.getActiveNode(activeNode.parentId)
                 let toNode = activeNode.fromId === activeNode.id ? parentNode : activeNode
                 let fromNode = activeNode.fromId === activeNode.id ? activeNode : parentNode
                 try {
@@ -508,34 +521,38 @@
                 id = toNodeAttr ? toNodeAttr['bk_property_id'] : ''
                 let params = {
                     updateType: 'remove',
-                    objId: activeNode['bk_obj_id'],
-                    associated: associated,
-                    id: id,
-                    multiple: !!associated.length,
-                    value: fromNode['bk_inst_id'],
+                    objId: toNode['bk_obj_id'],             // 父节点bk_obj_id
+                    associated: associated,                 // 已关联的inst_id
+                    id: id,                                 // 父节点bk_property_id
+                    multiple: associated.length > 1,        // 是否为多关联
+                    value: fromNode['bk_inst_id'],          // 子节点bk_inst_id
                     params: {}
                 }
-                if (activeNode['bk_obj_id'] === 'host') {
-                    params.params['bk_host_id'] = activeNode['bk_inst_id']
+                if (toNode['bk_obj_id'] === 'host') {
+                    params.params['bk_host_id'] = toNode['bk_inst_id']
                 } else {
-                    params[this.getInstanceIdKey(activeNode['bk_obj_id'])] = activeNode['bk_inst_id']
+                    params[this.getInstanceIdKey(toNode['bk_obj_id'])] = toNode['bk_inst_id']
                 }
-                console.log(params)
-                // await this.$store.dispatch({
-                //     type: 'association/updateAssociation',
-                //     ...params
-                // })
-                // for (let key in parentNode.children) {
-                //     let index = parentNode.children[key].findIndex(({id}) => {
-                //         return id === activeNode.id
-                //     })
-                //     if (index > -1) {
-                //         parentNode.children[key].splice(index, 1)
-                //         break
-                //     }
-                // }
+                await this.$store.dispatch({
+                    type: 'association/updateAssociation',
+                    ...params
+                })
+                for (let key in parentNode.children) {
+                    let index = parentNode.children[key].findIndex(({id}) => {
+                        return id === activeNode.id
+                    })
+                    if (index > -1) {
+                        parentNode.children[key].splice(index, 1)
+                        break
+                    }
+                }
                 this.initTopo()
             },
+            /**
+             * 显示详情
+             * @param objId {String} - 模型ID
+             * @param instId {Number} - 实例ID 兼容biz_id host_id 等
+             */
             showInstDetail (objId, instId) {
                 this.attr.objId = objId
                 this.attr.instId = instId
@@ -552,9 +569,15 @@
                 this.removePop()
                 this.attr.isShow = true
             },
+            /**
+             * 初始化pop
+             * @param id {Number} - 当前节点id
+             * @param event {Object} - 点击事件对象
+             * @param time {Number} - pop自动消失时间 单位：ms
+             */
             initPopBox (id, event, time = 5000) {
                 this.removePop()
-                let activeNode = this.getActiveNode(this.topoStruct, id, true)
+                let activeNode = this.getActiveNode(id)
                 // 创建popBox
                 this.popBox.rand = Math.random().toString(36).substr(2)
                 let X = event.clientX
@@ -564,17 +587,17 @@
                 div.setAttribute('id', this.popBox.rand)
                 div.style.top = `${Y - 40}px`
                 div.style.left = `${X}px`
-                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? '<span class="detail" id="instDetail">详情</span> | <span class="color-danger" id="deleteRelation">删除关联</span>' : '<span class="detail" id="instDetail">详情</span>'
+                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span> | <span class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</span>` : `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span>`
                 document.body.appendChild(div)
 
                 // 监听事件
-                document.getElementById('instDetail').addEventListener('click', (e) => {
+                document.getElementById('instDetail').addEventListener('click', e => {
                     e.stopPropagation()
                     this.showInstDetail(activeNode['bk_obj_id'], activeNode['bk_inst_id'])
                 }, false)
                 let deleteElem = document.getElementById('deleteRelation')
                 if (deleteElem) {
-                    addEventListener('click', (e) => {
+                    deleteElem.addEventListener('click', e => {
                         e.stopPropagation()
                         this.deleteRelation(activeNode)
                     }, false)
@@ -587,6 +610,9 @@
                     clearTimeout(this.popBox.timer)
                 }, time)
             },
+            /**
+             * 删除pop
+             */
             removePop () {
                 if (this.popBox.rand) {
                     let div = document.getElementById(this.popBox.rand)
@@ -631,6 +657,14 @@
                 top: 1px;
                 vertical-align: bottom;
             }
+        }
+    }
+</style>
+
+<style lang="scss">
+    .relevance-topo-wrapper {
+        .attribute-group {
+            width: 580px;
         }
     }
 </style>
