@@ -272,6 +272,8 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 	// get the language
 	language := util.GetActionLanguage(req)
 
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
+
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -322,7 +324,7 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 			attrMap, mapErr := jsObjAttr.Map()
 			if nil != mapErr {
 				blog.Error("can not convert to map, error info is %s", mapErr.Error())
-				subResult["errors"] = fmt.Sprintf("lost the attr field in the input stream")
+				subResult["errors"] = defErr.Errorf(common.CCErrCommParamsLostField, "attr")
 				result[objID] = subResult
 				continue
 			}
@@ -332,13 +334,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 				propertyID, err := jsObjAttr.Get(keyIdx).Get("bk_property_id").String()
 				if nil != err {
 					blog.Error("failed to parse the bk_property_id, error info is %s", err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", keyIdx, defErr.Errorf(common.CCErrCommParamsLostField, "bk_property_id"))
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
-						failedArr = append(failedArr, fmt.Sprintf("line:%s msg: lost the field(bk_property_id", keyIdx))
+						failedArr = append(failedArr, errStr)
 						subResult["insert_failed"] = failedArr
 					} else {
 						subResult["insert_failed"] = []string{
-							fmt.Sprintf("line:%s msg: lost the field(bk_property_id", keyIdx),
+							errStr,
 						}
 					}
 					result[objID] = subResult
@@ -353,13 +356,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 				conditionAttVal, _ := json.Marshal(conditionAtt)
 				if items, err := cli.mgr.SelectObjectAtt(forward, conditionAttVal, defErr); nil != err {
 					blog.Error("failed to search the object attribute, the condition is %+v, error info is %s", conditionAtt, err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", keyIdx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
-						failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, err.Error()))
+						failedArr = append(failedArr, errStr)
 						subResult["insert_failed"] = failedArr
 					} else {
 						subResult["insert_failed"] = []string{
-							fmt.Sprintf("line:%s msg: %s", keyIdx, err.Error()),
+							errStr,
 						}
 					}
 					result[objID] = subResult
@@ -373,13 +377,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx), defErr)
 						if nil != itemErr {
 							blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", keyIdx, itemErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
-								failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()))
+								failedArr = append(failedArr, errStr)
 								subResult["update_failed"] = failedArr
 							} else {
 								subResult["update_failed"] = []string{
-									fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()),
+									errStr,
 								}
 							}
 							result[objID] = subResult
@@ -390,13 +395,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						blog.Debug("the new attribute:%s", string(itemVal))
 						if updateErr := cli.mgr.UpdateObjectAtt(forward, item.ID, itemVal, defErr); nil != updateErr {
 							blog.Error("failed to update the object attribute, error info is %s", updateErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", keyIdx, updateErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
-								failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, updateErr.Error()))
+								failedArr = append(failedArr, errStr)
 								subResult["update_failed"] = failedArr
 							} else {
 								subResult["update_failed"] = []string{
-									fmt.Sprintf("line:%s msg: %s", keyIdx, updateErr.Error()),
+									errStr,
 								}
 							}
 							result[objID] = subResult
@@ -412,13 +418,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx), defErr)
 					if nil != itemErr {
 						blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", keyIdx, itemErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
-							failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()))
+							failedArr = append(failedArr, errStr)
 							subResult["insert_failed"] = failedArr
 						} else {
 							subResult["insert_failed"] = []string{
-								fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()),
+								errStr,
 							}
 						}
 						result[objID] = subResult
@@ -427,13 +434,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 					if _, insertErr := cli.mgr.CreateObjectAtt(forward, *item, defErr); nil != insertErr {
 						blog.Error("failed to create the object attribute, error info is %s", insertErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", keyIdx, insertErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
-							failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, insertErr.Error()))
+							failedArr = append(failedArr, errStr)
 							subResult["insert_failed"] = failedArr
 						} else {
 							subResult["insert_failed"] = []string{
-								fmt.Sprintf("line:%s msg: %s", keyIdx, insertErr.Error()),
+								errStr,
 							}
 						}
 						result[objID] = subResult
