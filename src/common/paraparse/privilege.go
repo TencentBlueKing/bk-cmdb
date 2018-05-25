@@ -60,3 +60,10 @@ type SearchGroup struct {
 	Message interface{} `json:"message"`
 	Data    interface{} `json:"data"`
 }
+
+type SearchMainLine struct {
+	Code    int                      `json:"code"`
+	Result  bool                     `json:"result"`
+	Message interface{}              `json:"message"`
+	Data    []map[string]interface{} `json:"data"`
+}
