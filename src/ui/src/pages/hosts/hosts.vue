@@ -124,7 +124,7 @@
                             :isMultipleUpdate="sideslider.attribute.form.isMultipleUpdate"
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
-                            <div slot="list" class="attribute-group">
+                            <div slot="list" class="attribute-group relation-list">
                                 <h3 class="title">{{$t("BusinessTopology['业务拓扑']")}}</h3>
                                 <ul class="attribute-list clearfix">
                                     <li class="attribute-item" v-for="item in sideslider.hostRelation">
@@ -1050,5 +1050,13 @@
 }
 .attribute-tab{
     height: 100%;
+}
+.attribute-group.relation-list {
+    .attribute-item {
+        width: 100%;
+        .attribute-item-value {
+            max-width: 100%;
+        }
+    }
 }
 </style>
