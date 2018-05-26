@@ -1,19 +1,30 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except 
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-
+ 
 package model
 
 import (
 	frtypes "configcenter/src/framework/core/types"
+)
+
+// AssociationType the association type
+type AssociationType string
+
+const (
+	// MainLineAssociation the main line association
+	MainLineAssociation AssociationType = "mainline"
+
+	// CommonAssociation the common association
+	CommonAssociation AssociationType = "commonasso"
 )
 
 // Saver the saver interface method
@@ -22,10 +33,21 @@ type Saver interface {
 	Save() error
 }
 
+// Topo the object topo interface
+type Topo interface {
+	Current() Object
+	Prev() []Object
+	Next() []Object
+	ToMapStr() frtypes.MapStr
+}
+
 // Association association operation interface declaration
 type Association interface {
 	Saver
 	Parse(data frtypes.MapStr) error
+	GetType() AssociationType
+	SetTopo(parent, child Object) error
+	GetTopo(obj Object) (Topo, error)
 }
 
 // Group group opeartion interface declaration
@@ -34,6 +56,8 @@ type Group interface {
 
 	Parse(data frtypes.MapStr) error
 	CreateAttribute() Attribute
+
+	GetAttributes() ([]Attribute, error)
 
 	SetID(groupID string)
 	GetID() string
@@ -119,6 +143,8 @@ type Classification interface {
 	Saver
 	Parse(data frtypes.MapStr) error
 
+	GetObjects() ([]Object, error)
+
 	SetID(classificationID string)
 	GetID() string
 
@@ -142,6 +168,9 @@ type Object interface {
 
 	CreateGroup() Group
 	CreateAttribute() Attribute
+
+	GetGroups() ([]Group, error)
+	GetAttributes() ([]Attribute, error)
 
 	SetClassification(class Classification)
 	GetClassification() (Classification, error)
@@ -177,8 +206,8 @@ type Object interface {
 	GetModifier() string
 }
 
-// Manager used to manager object  classification attribute etd.
-type Manager interface {
+// Factory used to create object  classification attribute etd.
+type Factory interface {
 	CreaetObject() Object
 	CreaetClassification() Classification
 	CreateAttribute() Attribute
