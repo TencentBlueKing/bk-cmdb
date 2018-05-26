@@ -12,32 +12,24 @@
  
 package model
 
-import (
-	//frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
-)
+import frtypes "configcenter/src/framework/core/types"
 
-var _ Association = (*association)(nil)
+var _ Topo = (*topo)(nil)
 
-type association struct {
+type topo struct {
 }
 
-func (cli *association) GetType() AssociationType {
-	return CommonAssociation
+func (cli *topo) Current() Object {
+	return nil
 }
-
-func (cli *association) SetTopo(parent, child Object) error {
+func (cli *topo) Prev() []Object {
 	return nil
 }
 
-func (cli *association) GetTopo(obj Object) (Topo, error) {
-	return nil, nil
-}
-
-func (cli *association) Parse(data frtypes.MapStr) error {
+func (cli *topo) Next() []Object {
 	return nil
 }
 
-func (cli *association) Save() error {
+func (cli *topo) ToMapStr() frtypes.MapStr {
 	return nil
 }
