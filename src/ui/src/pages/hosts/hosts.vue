@@ -491,7 +491,7 @@
                 return this.$axios.post('usercustom/user/search', {}).then(res => {
                     if (res.result) {
                         let hostDisplayColumns = res.data['host_display_column'] || []
-                        let hostQueryColumns = res.data['host_query_column'] || []
+                        let hostQueryColumns = (res.data['host_query_column'] || []).filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                         let availableDisplayColumn = hostDisplayColumns.filter(column => {
                             return this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                         })
@@ -649,7 +649,7 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.attribute
+                this.sideslider.fields.fieldOptions = this.attribute.filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
             },
