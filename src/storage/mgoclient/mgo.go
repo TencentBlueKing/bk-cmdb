@@ -56,7 +56,7 @@ func (m *MgoCli) Open() error {
 	// mgo.SetLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	dialInfo := &mgo.DialInfo{
-		Addrs:     []string{m.host},
+		Addrs:     []string{m.host + ":" + m.port},
 		Direct:    false,
 		Timeout:   time.Second * 5,
 		Database:  m.dbName,
