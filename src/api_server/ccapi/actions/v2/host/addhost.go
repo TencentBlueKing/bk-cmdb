@@ -28,6 +28,9 @@ import (
 
 func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/addhost", Params: nil, Handler: host.AddHost, FilterHandler: nil, Version: v2.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/enterIp", Params: nil, Handler: host.EnterIP, FilterHandler: nil, Version: v2.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "host/enterip", Params: nil, Handler: host.EnterIP, FilterHandler: nil, Version: v2.APIVersion})
+
 }
 
 func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
@@ -85,6 +88,75 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		blog.Error("convert addhost result to v2 error:%s, reply:%s", err.Error(), rspV3)
 		converter.RespFailV2(common.CCErrAddHostToModuleFailStr, err.Error(), resp)
+		return
+	}
+	converter.RespSuccessV2("", resp)
+}
+
+func (cli *hostAction) EnterIP(req *restful.Request, resp *restful.Response) {
+	blog.Debug("EnterIP start!")
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Error("EnterIP error:%v", err)
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+
+	formData := req.Request.Form
+	ips := formData.Get("ip")
+	hostName := formData.Get("hostname")
+	moduleName := formData.Get("moduleName")
+	appName := formData.Get("appName")
+	setName := formData.Get("setName")
+	osType := formData.Get("osType")
+
+	if "" == ips {
+		blog.Errorf("EnterIP error ips empty")
+		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
+		return
+	}
+	ipArr := strings.Split(ips, ",")
+	var hostNameArr []string
+	if "" != hostName {
+		hostNameArr = strings.Split(hostName, ",")
+	}
+	if osType == "window" {
+		osType = "windows"
+	}
+	if "" != osType && osType != "windows" && osType != "linux" {
+		blog.Errorf("osType mast be windows or linux; not %s", osType)
+		converter.RespFailV2(common.CCErrAPIServerV2OSTypeErr, defErr.Error(common.CCErrAPIServerV2OSTypeErr).Error(), resp)
+		return
+	}
+	osType = "1"
+	if "windows" == osType {
+		osType = "2"
+	}
+	input := make(common.KvMap)
+	input["ips"] = ipArr
+	input[common.BKHostNameField] = hostNameArr
+	input[common.BKModuleNameField] = moduleName
+	input[common.BKSetNameField] = setName
+	input[common.BKAppNameField] = appName
+	input[common.BKOSTypeField] = osType
+	input[common.BKOwnerIDField] = common.BKDefaultOwnerID
+
+	paramJson, _ := json.Marshal(input)
+	url := fmt.Sprintf("%s/host/v1/host/add/module", cli.CC.HostAPI())
+	blog.Infof("http request for add module url:%s, params:%s", url, string(paramJson))
+	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJson))
+	blog.Infof("http request for add module url:%s, reply:%s", url, rspV3)
+	if err != nil {
+		blog.Error("EnterIP url:%s, params:%s, error:%s", url, string(paramJson), err.Error())
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+
+	err = converter.ResToV2ForEnterIP(rspV3)
+	if err != nil {
+		blog.Error("convert EnterIP result to v2 error:%s, reply:%s", err.Error(), rspV3)
+		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
 	converter.RespSuccessV2("", resp)

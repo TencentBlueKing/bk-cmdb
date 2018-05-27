@@ -36,6 +36,7 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 			return err
 		}
 		if isExist > 0 {
+			metaCli.UpdateByCondition(tableName, row, selector)
 			continue
 		}
 		id, err := metaCli.GetIncID(tableName)
@@ -50,6 +51,21 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 			return err
 		}
 	}
+	selector := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			"$in": []string{"bk_switch",
+				"bk_router",
+				"bk_load_balance",
+				"bk_firewall",
+				"bk_weblogic",
+				"bk_tomcat",
+				"bk_apache",
+			},
+		},
+		common.BKPropertyIDField: "bk_name",
+	}
+
+	metaCli.DelByCondition(tableName, selector)
 
 	return nil
 }
@@ -87,7 +103,6 @@ func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
 	}
 	for _, r := range dataRows {
 		r.OwnerID = ownerID
-		r.IsPre = false
 		if false != r.Editable {
 			r.Editable = true
 		}
