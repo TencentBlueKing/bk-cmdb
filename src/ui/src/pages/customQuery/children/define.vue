@@ -188,11 +188,6 @@
                 isPropertiesShow: false, // 自定义条件下拉列表展示与否
                 isPreviewShow: false, // 显示预览
                 object: {
-                    'biz': {
-                        id: 'biz',
-                        name: this.$t("Common['业务']"),
-                        properties: []
-                    },
                     'host': {
                         id: 'host',
                         name: this.$t("Hosts['主机']"),
@@ -275,7 +270,7 @@
                         // 多模块与多集群查询
                         if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
                             operator = operator === '$regex' ? '$in' : operator
-                            value = value.replace('，', ',').split(',')
+                            value = operator === '$in' ? [...value.replace('，', ',').split(','), value] : value
                         }
                         param['condition'].push({
                             field: property.bkPropertyId,
@@ -375,12 +370,11 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('biz'), this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((bizRes, hostRes, setRes, moduleRes) => {
-                    this.object['biz']['properties'] = bizRes.result ? bizRes.data : []
-                    this.object['host']['properties'] = hostRes.result ? hostRes.data : []
-                    this.object['set']['properties'] = setRes.result ? setRes.data : []
-                    this.object['module']['properties'] = moduleRes.result ? moduleRes.data : []
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
+                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                    this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
