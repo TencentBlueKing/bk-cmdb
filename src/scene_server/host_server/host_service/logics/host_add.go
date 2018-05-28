@@ -32,7 +32,7 @@ import (
 )
 
 //AddHost, return error info
-func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
+func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 	user := scenecommon.GetUserFromHeader(req)
 
@@ -80,14 +80,20 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		return errors.New("get host property failure"), nil, nil, nil
 	}
 
-	assObjectInt := scenecommon.NewAsstObjectInst(req, ownerID, ObjAddr, defaultFields, langHandle)
-	err = assObjectInt.GetObjAsstObjectPrimaryKey()
-	if nil != err {
-		return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error()), nil, nil, nil
-	}
-	rowErr, err := assObjectInt.InitInstFromData(hostInfos)
-	if nil != err {
-		return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
+	var assObjectInt *scenecommon.AsstObjectInst
+	var rowErr map[int]error
+	if common.InputTypeExcel == inputType {
+		assObjectInt = scenecommon.NewAsstObjectInst(req, ownerID, ObjAddr, defaultFields, langHandle)
+		err = assObjectInt.GetObjAsstObjectPrimaryKey()
+		if nil != err {
+			return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error()), nil, nil, nil
+		}
+		var err error
+		rowErr, err = assObjectInt.InitInstFromData(hostInfos)
+		if nil != err {
+			return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
+		}
+
 	}
 
 	ts := time.Now().UTC()
@@ -112,29 +118,38 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		//生产日志
 		if isOk {
-			if err, ok := rowErr[index]; true == ok {
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error())) //fmt.Sprintf("%d行%s", index, err.Error()))
-				continue
+			if common.InputTypeExcel == inputType {
+				if err, ok := rowErr[index]; true == ok {
+					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error())) //fmt.Sprintf("%d行%s", index, err.Error()))
+					continue
+				}
+				err := assObjectInt.SetObjAsstPropertyVal(host)
+				if nil != err {
+					blog.Error("host assocate property error %d %s", index, err.Error())
+					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+
+					continue
+				}
+
 			}
 			//delete(host, common.BKCloudIDField)
 			delete(host, "import_from")
 			delete(host, common.CreateTimeField)
-			err := assObjectInt.SetObjAsstPropertyVal(host)
+
+			hostID, _ := util.GetIntByInterface(iHost[common.BKHostIDField])
+			cloudID, err := util.GetIntByInterface(iHost[common.BKCloudIDField])
 			if nil != err {
-				blog.Error("host assocate property error %d %s", index, err)
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+				blog.Error("get cloud id error %d %s", index, err.Error())
+				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, "cloud id "+err.Error()))
 
 				continue
 			}
-
-			hostID, _ := util.GetIntByInterface(iHost[common.BKHostIDField])
-			fmt.Println("assObjectInt", hostID)
+			host[common.BKCloudIDField] = cloudID
 
 			_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
 			if nil != err {
 				blog.Error("host valid error %v %v", index, err)
 				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				fmt.Println("assObjectInt valid", langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 
 				continue
 			}
@@ -163,28 +178,24 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
 
 		} else {
-			if err, ok := rowErr[index]; true == ok {
-				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				continue
+
+			if common.InputTypeExcel == inputType {
+				if err, ok := rowErr[index]; true == ok {
+					errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+					continue
+				}
+
+				err := assObjectInt.SetObjAsstPropertyVal(host)
+				if nil != err {
+					blog.Error("host assocate property error %v %v", index, err)
+					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+					continue
+				}
 			}
-			err := assObjectInt.SetObjAsstPropertyVal(host)
-			if nil != err {
-				blog.Error("host assocate property error %v %v", index, err)
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				continue
-			}
+
 			_, ok := host[common.BKCloudIDField]
 			if false == ok {
 				host[common.BKCloudIDField] = iSubArea
-			}
-
-			//补充未填写字段的默认值
-			for _, field := range defaultFields {
-				_, ok := host[field.PropertyID]
-				if !ok {
-
-					host[field.PropertyID] = ""
-				}
 			}
 
 			_, err = valid.ValidMap(host, common.ValidCreate, 0)
