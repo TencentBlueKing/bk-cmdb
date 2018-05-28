@@ -1,19 +1,18 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package types
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/types"
 	"encoding/json"
 	"time"
@@ -68,10 +67,18 @@ type EventInst struct {
 	Action      string      `json:"action"`
 	ActionTime  types.Time  `json:"action_time"`
 	ObjType     string      `json:"obj_type"`
-	CurData     interface{} `json:"cur_data"`
-	PreData     interface{} `json:"pre_data"`
+	Data        []EventData `json:"data"`
 	RequestID   string      `json:"request_id"`
 	RequestTime types.Time  `json:"request_time"`
+}
+
+func (e *EventInst) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(e)
+}
+
+type EventData struct {
+	CurData interface{} `json:"cur_data"`
+	PreData interface{} `json:"pre_data"`
 }
 
 func (e *EventInst) GetType() string {
@@ -79,32 +86,6 @@ func (e *EventInst) GetType() string {
 		return e.ObjType
 	}
 	return e.ObjType + e.Action
-}
-
-func (e *EventInst) GetDistInst() *DistInst {
-	ne := *e
-	distinst := DistInst{
-		EventInst: ne,
-	}
-	distinst.ID = 0
-	if e.EventType == EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
-		var m map[string]interface{}
-		var ok bool
-
-		if e.Action == "delete" {
-			m, ok = e.PreData.(map[string]interface{})
-		} else {
-			m, ok = e.CurData.(map[string]interface{})
-		}
-		if !ok {
-			return nil
-		}
-
-		if m[common.BKObjIDField] != nil {
-			distinst.ObjType = m[common.BKObjIDField].(string)
-		}
-	}
-	return &distinst
 }
 
 type EventInstCtx struct {

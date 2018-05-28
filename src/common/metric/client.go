@@ -70,8 +70,8 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 	})
 
 	actions := []Action{
-		{Path: "/metrics", HandlerFunc: metricHandler},
-		{Path: "/healthz", HandlerFunc: healthHandler},
+		{Method: "GET", Path: "/metrics", HandlerFunc: metricHandler},
+		{Method: "GET", Path: "/healthz", HandlerFunc: healthHandler},
 	}
 
 	return actions

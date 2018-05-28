@@ -22,7 +22,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 	"math/rand"
 	"net/http"
 	"os"
@@ -91,6 +91,7 @@ func ImportInst(c *gin.Context) {
 	url = apiSite + "/api/" + webCommon.API_VERSION + "/inst/" + c.Param("bk_supplier_account") + "/" + objID
 	blog.Debug("batch insert insts, the url is %s", url)
 	params := make(map[string]interface{})
+	params["InputType"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
 	reply, err := httpRequest(url, params, c.Request.Header)
 	blog.Debug("return the result:", reply)
@@ -155,6 +156,7 @@ func ExportInst(c *gin.Context) {
 	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 	//fileName := fmt.Sprintf("tmp/%s_inst.xls", time.Now().UnixNano())
+	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportInst save file error:%s", err.Error())

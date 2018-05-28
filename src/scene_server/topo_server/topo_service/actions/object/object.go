@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"strings"
@@ -69,7 +70,7 @@ func (cli *objectAction) SetManager(mgr manager.Manager) error {
 
 var errEmpty = fmt.Errorf("empty string")
 
-func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr *simplejson.Json) (*api.ObjAttDes, error) {
+func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr *simplejson.Json, errProxy errors.DefaultCCErrorIf) (*api.ObjAttDes, error) {
 
 	if !tmpItem.IsPre {
 		// is not the inner field
@@ -78,7 +79,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.AssociationID = tmp
 			} else {
 				blog.Error("can not parse the bk_asst_obj_id, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_asst_obj_id")
 			}
 		}
 
@@ -87,7 +88,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.Editable = tmp
 			} else {
 				blog.Error("can not parse the editable, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "editable")
 			}
 		}
 
@@ -96,7 +97,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsOnly = tmp
 			} else {
 				blog.Error("can not parse the isonly, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, common.BKIsOnlyField)
 			}
 		}
 
@@ -105,7 +106,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsRequired = tmp
 			} else {
 				blog.Error("can not parse the isrequired, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "isrequired")
 			}
 		}
 
@@ -114,7 +115,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsReadOnly = tmp
 			} else {
 				blog.Error("can not parse the isreadonly, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "isreadonly")
 			}
 		}
 
@@ -123,7 +124,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsSystem = tmp
 			} else {
 				blog.Error("can not parse the bk_issystem, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "bk_issystem")
 			}
 		}
 		if jsTmp, ok := jsObjAttr.CheckGet("bk_isapi"); ok {
@@ -131,7 +132,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 				tmpItem.IsAPI = tmp
 			} else {
 				blog.Error("can not parse the bk_issystem, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedBool, "bk_isapi")
 			}
 		}
 
@@ -143,24 +144,24 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmp = strings.TrimSpace(tmp)
 			if "" == tmp {
 				blog.Error("bk_property_id could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_id")
 			}
 			tmpItem.PropertyID = tmp
 		} else {
 			blog.Error("can not parse the bk_property_ids, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_id")
 		}
 	}
 	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_name"); ok {
 		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			if "" == tmp {
 				blog.Error("bk_property_name could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_name")
 			}
 			tmpItem.PropertyName = tmp
 		} else {
 			blog.Error("can not parse the bk_property_name, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_name")
 		}
 	}
 
@@ -169,7 +170,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmpItem.Unit = tmp
 		} else {
 			blog.Error("can not parse the unit, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "unit")
 		}
 	}
 
@@ -178,7 +179,7 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 			tmpItem.Placeholder = tmp
 		} else {
 			blog.Error("can not parse the placeholder, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "placeholder")
 		}
 	}
 
@@ -186,12 +187,12 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
 			if "" == tmp {
 				blog.Error("bk_property_type could not be empty")
-				return tmpItem, errEmpty
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_type")
 			}
 			tmpItem.PropertyType = tmp
 		} else {
 			blog.Error("can not parse the bk_property_type, error info is %s", tmpErr.Error())
-			return tmpItem, tmpErr
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_type")
 		}
 	}
 
@@ -200,16 +201,22 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		case common.FieldTypeEnum:
 			if tmp, tmpErr := jsTmp.Array(); nil == tmpErr {
 				tmpItem.Option = tmp
+				if err := util.ValidPropertyOption(common.FieldTypeEnum, tmpItem.Option, errProxy); nil != err {
+					return tmpItem, err
+				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsInvalid, "option")
 			}
 		case common.FieldTypeInt:
 			if tmp, tmpErr := jsTmp.Map(); nil == tmpErr {
 				tmpItem.Option = tmp
+				if err := util.ValidPropertyOption(common.FieldTypeInt, tmpItem.Option, errProxy); nil != err {
+					return tmpItem, err
+				}
 			} else {
 				blog.Error("can not parse the option, error info is %s", tmpErr.Error())
-				return tmpItem, tmpErr
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsInvalid, "option")
 			}
 		default:
 			tmpItem.Option = jsTmp
@@ -265,6 +272,8 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 	// get the language
 	language := util.GetActionLanguage(req)
 
+	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
+
 	// get the error info by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -315,23 +324,26 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 			attrMap, mapErr := jsObjAttr.Map()
 			if nil != mapErr {
 				blog.Error("can not convert to map, error info is %s", mapErr.Error())
-				subResult["errors"] = fmt.Sprintf("lost the attr field in the input stream")
+				subResult["errors"] = defErr.Errorf(common.CCErrCommParamsLostField, "attr")
 				result[objID] = subResult
 				continue
 			}
 
 			for keyIdx := range attrMap {
 
+				colIdx, _ := strconv.Atoi(keyIdx)
+
 				propertyID, err := jsObjAttr.Get(keyIdx).Get("bk_property_id").String()
 				if nil != err {
 					blog.Error("failed to parse the bk_property_id, error info is %s", err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsLostField, "bk_property_id"))
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
-						failedArr = append(failedArr, fmt.Sprintf("line:%s msg: lost the field(bk_property_id", keyIdx))
+						failedArr = append(failedArr, errStr)
 						subResult["insert_failed"] = failedArr
 					} else {
 						subResult["insert_failed"] = []string{
-							fmt.Sprintf("line:%s msg: lost the field(bk_property_id", keyIdx),
+							errStr,
 						}
 					}
 					result[objID] = subResult
@@ -346,13 +358,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 				conditionAttVal, _ := json.Marshal(conditionAtt)
 				if items, err := cli.mgr.SelectObjectAtt(forward, conditionAttVal, defErr); nil != err {
 					blog.Error("failed to search the object attribute, the condition is %+v, error info is %s", conditionAtt, err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
-						failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, err.Error()))
+						failedArr = append(failedArr, errStr)
 						subResult["insert_failed"] = failedArr
 					} else {
 						subResult["insert_failed"] = []string{
-							fmt.Sprintf("line:%s msg: %s", keyIdx, err.Error()),
+							errStr,
 						}
 					}
 					result[objID] = subResult
@@ -363,16 +376,17 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					// need to update
 					for _, tmpItem := range items {
 
-						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx))
+						item, itemErr := cli.updateObjectAttribute(&tmpItem, jsObjAttr.Get(keyIdx), defErr)
 						if nil != itemErr {
 							blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", colIdx, itemErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
-								failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()))
+								failedArr = append(failedArr, errStr)
 								subResult["update_failed"] = failedArr
 							} else {
 								subResult["update_failed"] = []string{
-									fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()),
+									errStr,
 								}
 							}
 							result[objID] = subResult
@@ -383,13 +397,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 						blog.Debug("the new attribute:%s", string(itemVal))
 						if updateErr := cli.mgr.UpdateObjectAtt(forward, item.ID, itemVal, defErr); nil != updateErr {
 							blog.Error("failed to update the object attribute, error info is %s", updateErr.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", colIdx, updateErr.Error())
 							if failed, ok := subResult["update_failed"]; ok {
 								failedArr := failed.([]string)
-								failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, updateErr.Error()))
+								failedArr = append(failedArr, errStr)
 								subResult["update_failed"] = failedArr
 							} else {
 								subResult["update_failed"] = []string{
-									fmt.Sprintf("line:%s msg: %s", keyIdx, updateErr.Error()),
+									errStr,
 								}
 							}
 							result[objID] = subResult
@@ -402,16 +417,17 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 					tmpItem := &api.ObjAttDes{}
 					tmpItem.ObjectID = objID
 					tmpItem.OwnerID = ownerID
-					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx))
+					item, itemErr := cli.updateObjectAttribute(tmpItem, jsObjAttr.Get(keyIdx), defErr)
 					if nil != itemErr {
 						blog.Error("failed to reset the object attribute, error info is %s ", itemErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, itemErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
-							failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()))
+							failedArr = append(failedArr, errStr)
 							subResult["insert_failed"] = failedArr
 						} else {
 							subResult["insert_failed"] = []string{
-								fmt.Sprintf("line:%s msg: %s", keyIdx, itemErr.Error()),
+								errStr,
 							}
 						}
 						result[objID] = subResult
@@ -420,13 +436,14 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 					if _, insertErr := cli.mgr.CreateObjectAtt(forward, *item, defErr); nil != insertErr {
 						blog.Error("failed to create the object attribute, error info is %s", insertErr.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, insertErr.Error())
 						if failed, ok := subResult["insert_failed"]; ok {
 							failedArr := failed.([]string)
-							failedArr = append(failedArr, fmt.Sprintf("line:%s msg: %s", keyIdx, insertErr.Error()))
+							failedArr = append(failedArr, errStr)
 							subResult["insert_failed"] = failedArr
 						} else {
 							subResult["insert_failed"] = []string{
-								fmt.Sprintf("line:%s msg: %s", keyIdx, insertErr.Error()),
+								errStr,
 							}
 						}
 						result[objID] = subResult

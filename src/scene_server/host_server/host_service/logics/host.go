@@ -307,8 +307,8 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 		}
 		hostAppData := make([]interface{}, 0)
 		for _, appID := range hostAppIDArr {
-			appInfo, ok := hostAppMap[appID]
-			if ok {
+			appInfo, mapOk := hostAppMap[appID]
+			if mapOk {
 				hostAppData = append(hostAppData, appInfo)
 			}
 		}
@@ -318,33 +318,33 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 		hostSetIDArr, ok := hostSetConfig[hostID32]
 		hostSetData := make([]interface{}, 0)
 		for _, setID := range hostSetIDArr {
-			setInfo, ok := hostSetMap[setID]
-			if false == ok {
+			setInfo, isOk := hostSetMap[setID]
+			if false == isOk {
 				continue
 			}
 			appID := setAppConfig[setID]
-			if false == ok {
+			if false == isOk {
 				continue
 			}
-			appInfoI, ok := hostAppMap[appID]
-			if false == ok {
+			appInfoI, isOk := hostAppMap[appID]
+			if false == isOk {
 				continue
 			}
-			appInfo, ok := appInfoI.(map[string]interface{})
-			if false == ok {
+			appInfo, isOk := appInfoI.(map[string]interface{})
+			if false == isOk {
 				continue
 			}
-			appName, ok := appInfo[common.BKAppNameField].(string)
-			if false == ok {
+			appName, isOk := appInfo[common.BKAppNameField].(string)
+			if false == isOk {
 				continue
 			}
-			data, ok := setInfo.(map[string]interface{})
-			if false == ok {
+			data, isOk := setInfo.(map[string]interface{})
+			if false == isOk {
 				continue
 			}
 
-			setName, ok := data[common.BKSetNameField].(string)
-			if false == ok {
+			setName, isOk := data[common.BKSetNameField].(string)
+			if false == isOk {
 				continue
 			}
 			datacp := make(map[string]interface{})

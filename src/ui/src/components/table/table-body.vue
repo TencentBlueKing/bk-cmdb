@@ -4,7 +4,11 @@
             <col v-for="(width, index) in layout.colgroup" :key="index" :width="width">
         </colgroup>
         <tbody v-show="table.list.length">
-            <tr v-for="(item, rowIndex) in table.list" :key="rowIndex" @click="handleRowClick(item, rowIndex)">
+            <tr v-for="(item, rowIndex) in table.list" 
+                :key="rowIndex"
+                @click="handleRowClick(item, rowIndex)"
+                @mouseover="handleRowMouseover($event, item, rowIndex)"
+                @mouseout="handleRowMouseout($event, item, rowIndex)">
                 <template v-for="(head, colIndex) in table.header">
                     <td v-if="head.type === 'checkbox' && !table.$scopedSlots[head[table.valueKey]]" class="data-content checkbox-content" @click.stop :key="colIndex">
                         <label class="bk-form-checkbox bk-checkbox-small" :for="getCheckboxId(head, rowIndex)">
@@ -84,6 +88,18 @@
             },
             handleRowClick (item, rowIndex) {
                 this.table.$emit('handleRowClick', item, rowIndex)
+            },
+            handleRowMouseover (event, item, rowIndex) {
+                const rowHoverColor = this.table.rowHoverColor
+                if (rowHoverColor) {
+                    event.currentTarget.style.backgroundColor = rowHoverColor
+                }
+            },
+            handleRowMouseout (event, item, rowIndex) {
+                const rowHoverColor = this.table.rowHoverColor
+                if (rowHoverColor) {
+                    event.currentTarget.style.backgroundColor = 'inherit'
+                }
             }
         },
         components: {
@@ -100,7 +116,7 @@
                     if (typeof table.renderCell === 'function') {
                         return h('td', defaultConfig, table.renderCell(this.item, this.head, this.layout))
                     } else if (table.$scopedSlots[column]) {
-                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex}))
+                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex, colIndex: this.colIndex, layout: this.layout}))
                     } else {
                         return h('td', Object.assign({}, defaultConfig, {attrs: {title: this.item[this.head[table.valueKey]]}}), this.item[this.head[table.valueKey]])
                     }
@@ -134,9 +150,6 @@
         border-spacing: 0;
         table-layout: fixed;
         tr {
-            &:hover{
-                background-color: #f1f7ff;
-            }
             td {
                 height: 40px;
                 cursor: pointer;

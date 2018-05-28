@@ -25,13 +25,21 @@ import (
 )
 
 //getHostFields 获取主所有字段和默认值
-func getHostFields(forward *sourceAPI.ForwardParam, ownerID, ObjAddr string) map[string]map[string]interface{} {
-	return GetObjectFields(forward, ownerID, common.BKInnerObjIDHost, ObjAddr)
+func getHostFields(forward *sourceAPI.ForwardParam, ownerID, ObjAddr string) (map[string]*sourceAPI.ObjAttDes, error) {
+	fields, err := GetObjectFields(forward, ownerID, common.BKInnerObjIDHost, ObjAddr, "")
+	if nil != err {
+		return nil, err
+	}
+	ret := make(map[string]*sourceAPI.ObjAttDes)
+	for index, f := range fields {
+		ret[f.PropertyID] = &fields[index]
+	}
+	return ret, nil
 }
 
 //convertHostInfo convert host info，InnerIP+SubArea key map[string]interface
-func convertHostInfo(hosts []interface{}) map[string]interface{} {
-	var hostMap map[string]interface{} = make(map[string]interface{})
+func convertHostInfo(hosts []interface{}) map[string]map[string]interface{} {
+	var hostMap map[string]map[string]interface{} = make(map[string]map[string]interface{})
 	for _, host := range hosts {
 		h := host.(map[string]interface{})
 

@@ -45,8 +45,11 @@ let install = Vue => {
 
                     moveX = positionX + mouseX - mousedownX
                     moveY = positionY + mouseY - mousedownY
-
+                    
                     target.style.left = moveX + 'px'
+                    if (moveY < target.offsetHeight / 2) {
+                        moveY = target.offsetHeight / 2
+                    }
                     target.style.top = moveY + 'px'
                 }
                 return false

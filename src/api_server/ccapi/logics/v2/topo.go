@@ -13,19 +13,22 @@
 package logics
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	simplejson "github.com/bitly/go-simplejson"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"encoding/json"
-	"fmt"
-	simplejson "github.com/bitly/go-simplejson"
-	restful "github.com/emicklei/go-restful"
 )
 
-func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID int64) (map[string]interface{}, int) {
+func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID int64, conds common.KvMap) (map[string]interface{}, int) {
 	apps, errCode := getAppInfo(req, cc, appID)
 	if 0 != errCode {
 		return nil, 0
@@ -52,7 +55,8 @@ func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID
 		"Children":        make([]interface{}, 0),
 	}
 
-	modules, errCode := getModules(req, cc, appID)
+	moduleFields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
+	modules, errCode := getModulesByConds(req, cc, appID, conds, moduleFields, "")
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -150,6 +154,152 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 	return modulesMap, 0
 }
 
+// GetDefaultTopo 获取空闲机池topo
+func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[string]interface{}, error) {
+	defaultTopo := make(map[string]interface{})
+	url := fmt.Sprintf("%s/topo/v1/topo/internal/%s/%s", topoApi, common.BKDefaultOwnerID, appID)
+	res, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
+	if err != nil {
+		blog.Error("getDefaultTopo error:%v", err)
+		return nil, err
+	}
+
+	//appIDInt ,_:= strconv.Atoi(appID)
+	resMap := make(map[string]interface{})
+
+	err = json.Unmarshal([]byte(res), &resMap)
+	if resMap["result"].(bool) {
+
+		resMapData, ok := resMap["data"].(map[string]interface{})
+		if false == ok {
+			blog.Error("assign error resMap:%v", resMap)
+			return defaultTopo, nil
+		}
+		defaultTopo["Children"] = make([]map[string]interface{}, 0)
+		resModule, ok := resMapData["module"].([]interface{})
+		if false == ok {
+			blog.Error("assign error resMapData:%v", resMapData)
+			return defaultTopo, nil
+		}
+		for _, module := range resModule {
+			Module, ok := module.(map[string]interface{})
+			if false == ok {
+				blog.Error("assign error module:%v", module)
+				continue
+			}
+			moduleMap := map[string]interface{}{
+				"ModuleID":      Module[common.BKModuleIDField],
+				"ModuleName":    Module[common.BKModuleNameField],
+				"ApplicationID": appID,
+				"ObjID":         "module",
+			}
+			defaultTopo["Children"] = append(defaultTopo["Children"].([]map[string]interface{}), moduleMap)
+		}
+		defaultTopo["SetName"] = common.DefaultResSetName
+		setIdInt, _ := util.GetIntByInterface(resMap["data"].(map[string]interface{})[common.BKSetIDField])
+		setIdStr := strconv.Itoa(setIdInt)
+		defaultTopo["SetID"] = setIdStr
+		defaultTopo["ObjID"] = "set"
+	}
+
+	blog.Debug("defaultTopo:%v", defaultTopo)
+	return defaultTopo, nil
+}
+
+// AppendDefaultTopo combin  idle pool set
+func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]interface{}) map[string]interface{} {
+	topoChildren, ok := topo["Children"].([]map[string]interface{})
+	if false == ok {
+		err := fmt.Sprintf("assign error topo.Children is not []map[string]interface{},topo:%v", topo)
+		blog.Error(err)
+		return nil
+	}
+
+	children := make([]map[string]interface{}, 0)
+	children = append(children, defaultTopo)
+	for _, child := range topoChildren {
+		children = append(children, child)
+	}
+	topo["Children"] = children
+	return topo
+}
+
+// SetModuleHostCount get set host count
+func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc *api.APIResource) error {
+	blog.Debug("setModuleHostCount data: %v", data)
+	for _, itemMap := range data {
+		blog.Debug("ObjID: %s", itemMap)
+
+		switch itemMap["ObjID"] {
+		case common.BKInnerObjIDModule:
+
+			mouduleId, getErr := util.GetIntByInterface(itemMap["ModuleID"])
+			if nil != getErr {
+				blog.Errorf("%v, %v", getErr, itemMap)
+				return getErr
+			}
+			appId, getErr := util.GetIntByInterface(itemMap["ApplicationID"])
+			if nil != getErr {
+				blog.Errorf("%v, %v", getErr, itemMap)
+				return getErr
+			}
+			blog.Debug("mouduleId: %v", mouduleId)
+			hostNum, getErr := GetModuleHostCount(appId, mouduleId, req, cc)
+			if nil != getErr {
+				return getErr
+			}
+			blog.Debug("hostNum: %v", hostNum)
+			itemMap["HostNum"] = hostNum
+		}
+
+		if nil != itemMap["Children"] {
+			children, ok := itemMap["Children"].([]map[string]interface{})
+			if false == ok {
+				children = make([]map[string]interface{}, 0)
+			}
+			SetModuleHostCount(children, req, cc)
+		} else {
+			children := make([]interface{}, 0)
+			itemMap["Children"] = children
+		}
+	}
+	return nil
+}
+
+// GetModuleHostCount get module host count
+func GetModuleHostCount(appID, mouduleID interface{}, req *restful.Request, cc *api.APIResource) (int, error) {
+
+	param := map[string]interface{}{
+		common.BKAppIDField:    appID,
+		common.BKModuleIDField: []interface{}{mouduleID},
+	}
+	paramJson, err := json.Marshal(param)
+	if err != nil {
+		blog.Error("getModuleHostCount Marshal json error:%v", err)
+		return 0, nil
+	}
+
+	url := fmt.Sprintf("%s/host/v1/getmodulehostlist", cc.HostAPI())
+	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJson))
+	blog.Debug(rspV3, err)
+	if nil != err {
+		blog.Errorf("getModuleHostCount url:%s, params:%s, error:%s", url, string(paramJson), err.Error())
+		return 0, err
+	}
+	rspV3Map := make(map[string]interface{})
+	err = json.Unmarshal([]byte(rspV3), &rspV3Map)
+	if nil != err {
+		blog.Error("getmodulehostlist Unmarshal json error:%v, rspV3:%s", err, rspV3)
+		return 0, nil
+	}
+	rspV3MapData, ok := rspV3Map["data"].([]interface{})
+	if false == ok {
+		blog.Error("assign error rspV3Map.data is not []interface{}, rspV3Map:%v", rspV3Map)
+		return 0, nil
+	}
+	return len(rspV3MapData), nil
+}
+
 func getSets(req *restful.Request, cc *api.APIResource, ownerID string, appID int64) ([]interface{}, int) {
 	url := cc.TopoAPI() + fmt.Sprintf("/topo/v1/set/search/%s/%d", ownerID, appID)
 	var js params.SearchParams
@@ -170,11 +320,18 @@ func getSets(req *restful.Request, cc *api.APIResource, ownerID string, appID in
 }
 
 func getModules(req *restful.Request, cc *api.APIResource, appID int64) ([]interface{}, int) {
+
+	fields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
+
+	return getModulesByConds(req, cc, appID, nil, fields, "")
+}
+
+func getModulesByConds(req *restful.Request, cc *api.APIResource, appID int64, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
 	url := cc.TopoAPI() + fmt.Sprintf("/topo/v1/openapi/module/searchByApp/%d", appID)
 	var js params.SearchParams
-	js.Fields = []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
-	js.Condition = common.KvMap{common.BKAppIDField: appID}
-	js.Page = common.KvMap{"start": 0, "limit": common.BKNoLimit}
+	js.Fields = fields
+	js.Condition = conds
+	js.Page = common.KvMap{"start": 0, "limit": common.BKNoLimit, "sort": sort}
 
 	inputBody, err := json.Marshal(js)
 	if nil != err {

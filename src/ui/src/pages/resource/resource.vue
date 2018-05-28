@@ -45,7 +45,7 @@
                 </button>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
-                    <button class="bk-button icon-btn fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">
+                    <button class="bk-button icon-btn icon-history fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">
                         <i class="icon-cc-history"></i>
                     </button>
                 </div>
@@ -325,6 +325,9 @@
         padding: 0;
         &:not(:disabled):hover{
             border-color: #ef4c4c;
+            &.icon-history {
+                border-color: #c3cdd7;
+            }
             .icon-cc-del{
                 color: #ef4c4c;
             }

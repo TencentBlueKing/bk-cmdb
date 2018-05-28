@@ -62,6 +62,11 @@ const (
 	BK_IMPORT string = "import"
 )
 
+const (
+	BK_INST_SEARCH_OWNER string = "inst/search/owner"
+	BK_OBJECT_PLAT       string = "object/plat"
+)
+
 const BK_CC_CLASSIFIC string = "object/classifications"
 
 const BK_CC_OBJECT_ATTR string = "object/attr/search"

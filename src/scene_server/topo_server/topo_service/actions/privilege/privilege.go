@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package privilege
 
 import (
@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -159,6 +160,29 @@ func (cli *groupAction) GetUserPrivi(req *restful.Request, resp *restful.Respons
 		userNameMap[common.BKDBLIKE] = userName
 		cond[common.BKUserListField] = userNameMap
 		var gPrivilege params.Gprivilege
+
+		//get cross biz privilege
+		isHostCrossBiz := false
+		url := cli.CC.ObjCtrl() + "/object/v1/system/" + common.HostCrossBizField + "/" + ownerID
+		blog.Info("get system config url :%s", url)
+		reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
+		if err != nil {
+			blog.Error("get system config : %v", err)
+			isHostCrossBiz = false
+		}
+		blog.Info("get system config return :%s", string(reply))
+
+		var result api.APIRsp
+		err = json.Unmarshal([]byte(reply), &result)
+		if nil != err {
+			blog.Error("get system config error : %v", err)
+			isHostCrossBiz = false
+		}
+		if result.Result {
+			isHostCrossBiz = true
+		}
+		gPrivilege.IsHostCrossBiz = isHostCrossBiz
+
 		gPrivilege.ModelConfig = make(map[string]map[string][]string)
 		jsonStr, _ := json.Marshal(cond)
 		groupURL := cli.CC.ObjCtrl() + "/object/v1/privilege/group/" + ownerID + "/" + "search"

@@ -93,9 +93,9 @@ func (ccAPI *CCAPIServer) Start() error {
 
 	// load the errors resource
 	if errorres, ok := config["errors.res"]; ok {
-		if errif, err := errors.New(errorres); nil != err {
-			blog.Error("failed to create errors object, error info is  %s ", err.Error())
-			chErr <- err
+		if errif, createErr := errors.New(errorres); nil != createErr {
+			blog.Error("failed to create errors object, error info is  %s ", createErr.Error())
+			chErr <- createErr
 		} else {
 			a.Error = errif
 		}

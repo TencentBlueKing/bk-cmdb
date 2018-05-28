@@ -21,11 +21,12 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
@@ -97,6 +98,12 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//set default value
 	valid.setEnumDefault(valData, valRule)
+
+	//valid create request
+	if validType == common.ValidCreate {
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+	}
+
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
@@ -170,19 +177,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			return result, err
 		}
 	}
-	//valid create request
-	if validType == common.ValidCreate {
-		diffArr := util.StrArrDiff(valRule.NoEnumFiledArr, keyDataArr)
-		if 0 != len(diffArr) {
-			//			var lanDiffArr []string
-			//			for _, i := range diffArr {
-			//				lanDiffArr = append(lanDiffArr, valid.PropertyKv[i])
-			//			}
-			keyStr := strings.Join(diffArr, ",")
-			blog.Error("params lost filed")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsLostField, keyStr)
-		}
-	}
+
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
 	if validType == common.ValidCreate {
@@ -193,6 +188,52 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return result, err
 	}
 
+}
+
+func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes) {
+	for _, field := range fields {
+		_, ok := valData[field.PropertyID]
+		if !ok {
+			switch field.PropertyType {
+			case common.FieldTypeSingleChar:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeLongChar:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeInt:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeEnum:
+				enumOptions := ParseEnumOption(field.Option)
+				v := ""
+				if len(enumOptions) > 0 {
+					var defaultOption *EnumVal
+					for _, k := range enumOptions {
+						if k.IsDefault {
+							defaultOption = &k
+							break
+						}
+					}
+					if nil != defaultOption {
+						v = defaultOption.ID
+					}
+				}
+				valData[field.PropertyID] = v
+			case common.FieldTypeDate:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeTime:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeUser:
+				valData[field.PropertyID] = ""
+			case common.FieldTypeMultiAsst:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeTimeZone:
+				valData[field.PropertyID] = nil
+			case common.FieldTypeBool:
+				valData[field.PropertyID] = false
+			default:
+				valData[field.PropertyID] = nil
+			}
+		}
+	}
 }
 
 //valid create unique
@@ -215,6 +256,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 			searchCond[key] = val
 		}
 	}
+
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
@@ -268,6 +310,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
 	isInner := false
 	urlID := valid.objID
+	searchOnlykeyNum := 0
 	if util.InArray(valid.objID, innerObject) {
 		isInner = true
 	} else {
@@ -281,6 +324,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	for key, val := range valData {
 		if util.InArray(key, valid.IsOnlyArr) {
 			searchCond[key] = val
+			searchOnlykeyNum++
+		}
+	}
+
+	//if no only key in params return true, if part of it return false
+	if 0 == searchOnlykeyNum {
+		return true, nil
+	} else {
+		if searchOnlykeyNum != len(valid.IsOnlyArr) {
+			return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
 		}
 	}
 

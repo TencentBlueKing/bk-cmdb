@@ -71,6 +71,7 @@
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
                 :wrapperMinusHeight="150"
+                :loading="table.loading"
                 @handleRowClick="editObject"
                 @handleSortChange="setTableSort"
                 @handlePageChange="setTablePage"
@@ -182,6 +183,7 @@
                 filterList: [],
                 // 表格数据
                 table: {
+                    loading: false,
                     header: [],
                     list: [],
                     chooseId: [],
@@ -271,8 +273,12 @@
                     config.url = `inst/association/search/owner/${this.bkSupplierAccount}/object/${this.objId}`
                 }
                 if (this.filter.selected && this.filter.value !== '') {
-                    if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
-                        config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                    if (this.objId === 'biz') {
+                        if (this.filter.type === 'bool' && ['true', 'false'].includes(this.filter.value)) {
+                            config.params.condition[this.filter.selected] = this.filter.value === 'true'
+                        } else {
+                            config.params.condition[this.filter.selected] = this.filter.value
+                        }
                     } else {
                         if (this.filter.type === 'singleasst' || this.filter.type === 'multiasst') {
                             let bkAsstObjId = this.getProperty(this.filter.selected)['bk_asst_obj_id']
@@ -290,7 +296,7 @@
                         } else {
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
-                                operator: this.filter.type === 'enum' ? '$eq' : '$regex',
+                                operator: ['enum', 'int'].includes(this.filter.type) ? '$eq' : '$regex',
                                 value: this.filter.value
                             }]
                         }
@@ -526,6 +532,7 @@
             },
             // 获取表格列表
             getTableList () {
+                this.table.loading = true
                 return this.$axios.post(this.axiosConfig.url, this.axiosConfig.params).then(res => {
                     let data = {
                         count: 0,
@@ -544,12 +551,17 @@
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
+                }).finally(() => {
+                    this.table.loading = false
                 })
             },
             getAllObjectId (isAllCheck) {
                 if (isAllCheck) {
+                    this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
-                    this.$axios.post(this.axiosConfig.url, {fields: [idKey]}).then(res => {
+                    const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
+                    this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
+                    this.$axios.post(this.axiosConfig.url, params).then(res => {
                         if (res.result) {
                             let chooseId = []
                             res.data.info.map(attr => {
@@ -559,6 +571,8 @@
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
                         }
+                    }).finally(() => {
+                        this.table.loading = false
                     })
                 } else {
                     this.table.chooseId = []
