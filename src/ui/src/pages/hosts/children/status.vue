@@ -22,7 +22,7 @@
                 <ul class="info-list">
                     <li class="attr-item clearfix">
                         <div class="item-title">{{$t('HostResourcePool[\'总流入量\']')}}：</div>
-                        <div class="item-detail">{{hostSnapshot.rcvRate}}Mb/s</div>
+                        <div class="item-detail">{{(hostSnapshot.rcvRate / 100).toFixed(2)}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
                         <div class="item-title">{{$t('HostResourcePool[\'启动时间\']')}}：</div>
@@ -30,7 +30,7 @@
                     </li>
                     <li class="attr-item clearfix">
                         <div class="item-title">{{$t('HostResourcePool[\'总流出量\']')}}：</div>
-                        <div class="item-detail">{{hostSnapshot.sendRate}}Mb/s</div>
+                        <div class="item-detail">{{(hostSnapshot.sendRate / 100).toFixed(2)}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
                         <div class="item-title">{{$t('HostResourcePool[\'磁盘总量\']')}}：</div>
