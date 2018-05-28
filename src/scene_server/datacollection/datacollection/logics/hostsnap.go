@@ -298,9 +298,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	return map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,             //Mhz
-		"bk_disk":       disk / 1024 / 1024, //MB
-		"bk_mem":        mem / 1024 / 1024,  //MB
+		"bk_cpu_mhz":    CPUMhz,                    //Mhz
+		"bk_disk":       disk / 1024 / 1024 / 1024, //GB
+		"bk_mem":        mem / 1024 / 1024,         //MB
 		"bk_os_type":    ostype,
 		"bk_os_name":    osname,
 		"bk_os_version": version,
