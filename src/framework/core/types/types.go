@@ -15,7 +15,21 @@ package types
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
+// EventType  CMDB event definition
+type EventType string
+
+
+// EventCallbackFunc the event deal function
+type EventCallbackFunc func(evn Event) error
+
+// Event the cmdb event definition
+type Event struct{
+
+}
+
 // Saver the save interface
 type Saver interface {
 	Save() error
 }
+
+

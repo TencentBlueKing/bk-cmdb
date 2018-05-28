@@ -13,6 +13,9 @@
 package input
 
 import (
+
+	"configcenter/src/framework/core/types"
+
 	"configcenter/src/framework/core/output"
 	"context"
 	"time"
@@ -78,6 +81,7 @@ type InputerResult struct {
 
 // InputerContext the inputer context
 type InputerContext interface {
+	RegisterEvent(event types.EventType)
 }
 
 // Manager is the interface that must be implemented by every input manager.
