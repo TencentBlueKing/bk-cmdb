@@ -113,15 +113,15 @@
                 this.object.list.map(property => {
                     let {
                         bk_isapi: bkIsapi,
-                        bk_property_id: bkPropertyId
+                        bk_property_id: bkPropertyId,
+                        bk_obj_id: bkObjId
                     } = property
                     if (!bkIsapi) {
-                        if (this.isShowExclude) {
-                            if (this.shownProperty.indexOf(bkPropertyId) === -1) {
+                        const isCurrentShownProperty = this.shownList.some(property => property['bk_obj_id'] === bkObjId && this.shownProperty.indexOf(bkPropertyId) !== -1)
+                        if (!isCurrentShownProperty) {
+                            if (this.isShowExclude) {
                                 hideList.push(property)
-                            }
-                        } else {
-                            if (this.excludeFields.indexOf(bkPropertyId) === -1 && this.shownProperty.indexOf(bkPropertyId) === -1) {
+                            } else if (this.excludeFields.indexOf(bkPropertyId) === -1) {
                                 hideList.push(property)
                             }
                         }
