@@ -130,12 +130,12 @@
                 }
                 return level
             },
-            handleNodeClick (activeNode, activeParentNode, activeRootNode) {
+            handleNodeClick (activeNode, nodeOptions) {
                 this.activeNode = activeNode
-                this.activeParentNode = activeParentNode
+                this.activeParentNode = nodeOptions.parent
                 this.checkNode(activeNode)
             },
-            handleNodeToggle (isOpen, node, parentNode, rootNode, level, nodeId) {
+            handleNodeToggle (isOpen, node, nodeOptions) {
                 if (!node.child || !node.child.length) {
                     this.$set(node, 'isLoading', true)
                     this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.bkBizId}/${node['bk_inst_id']}`).then(res => {

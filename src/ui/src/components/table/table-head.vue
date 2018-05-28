@@ -7,7 +7,7 @@
         <tr :class="{'has-gutter': layout.scrollY}">
             <template v-for="(column, index) in columns">
                 <th v-if="column.type === 'checkbox'" class="header-checkbox">
-                    <label :for="getCheckboxId(column)" class="bk-form-checkbox bk-checkbox-small" v-if="table.multiple">
+                    <label :for="getCheckboxId(column)" class="bk-form-checkbox bk-checkbox-small" v-if="table.multipleCheck">
                         <input type="checkbox" v-if="table.crossPageCheck"
                             :id="getCheckboxId(column)"
                             :disabled="!table.list.length"

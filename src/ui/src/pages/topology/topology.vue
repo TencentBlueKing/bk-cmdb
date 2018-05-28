@@ -73,6 +73,7 @@
                     treeData: {},
                     model: [],
                     activeNode: {},
+                    activeNodeOptions: {},
                     activeParentNode: {},
                     initNode: {},
                     loading: true
@@ -375,8 +376,7 @@
                         let url
                         let {
                             bk_obj_id: bkObjId,
-                            bk_inst_id: bkInstId,
-                            index: nodeIndex
+                            bk_inst_id: bkInstId
                         } = this.tree.activeNode
                         if (bkObjId === 'set') {
                             url = `set/${this.tree.bkBizId}/${bkInstId}`
@@ -388,7 +388,7 @@
                         this.$axios.delete(url).then(res => {
                             if (res.result) {
                                 this.view.tab.active = 'host'
-                                this.tree.activeParentNode.child.splice(nodeIndex, 1)
+                                this.tree.activeParentNode.child.splice(this.tree.activeNodeOptions.index, 1)
                                 this.tree.initNode = {
                                     level: 1,
                                     open: true,
@@ -404,15 +404,16 @@
                 })
             },
             /* 点击节点，设置查询参数 */
-            handleNodeClick (activeNode, activeParentNode) {
+            handleNodeClick (activeNode, nodeOptions) {
                 this.$refs.hosts.clearChooseId()
                 this.tree.activeNode = activeNode
-                this.tree.activeParentNode = activeParentNode
+                this.tree.activeNodeOptions = nodeOptions
+                this.tree.activeParentNode = nodeOptions.parent
                 this.view.attribute.type = 'update'
                 this.setSearchParams()
             },
             /* node节点展开时，判断是否加载下级节点 */
-            handleNodeToggle (isOpen, node, parentNode, rootNode, level, nodeId) {
+            handleNodeToggle (isOpen, node, nodeOptions) {
                 if (!node.child || !node.child.length) {
                     this.$set(node, 'isLoading', true)
                     this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.tree.bkBizId}/${node['bk_inst_id']}`).then(res => {
