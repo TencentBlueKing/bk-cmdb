@@ -62,7 +62,7 @@
                                             @click="updateGroupAuthorities">
                                             <input type="checkbox"
                                                 :id="'model-all-'+model['bk_obj_id']" 
-                                                :checked="model.selectedAuthorities.length === 4"
+                                                :checked="model.selectedAuthorities.length === 3"
                                                 @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
                                         </label>
                                     </span>
