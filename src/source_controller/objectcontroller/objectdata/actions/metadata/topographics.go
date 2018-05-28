@@ -62,6 +62,8 @@ func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restfu
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
+		blog.Infof("search param %s", value)
+
 		selector := metadata.TopoGraphics{}
 		if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
 			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())

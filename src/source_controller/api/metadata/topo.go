@@ -14,18 +14,18 @@ package metadata
 
 // TopoGraphics define
 type TopoGraphics struct {
-	ScopeType       *string                `json:"scope_type,omitempty" bson:"scope_type"` // biz,user,global,classification
-	ScopeID         *string                `json:"scope_id,omitempty" bson:"scope_id"`     // ID for ScopeType
-	NodeType        *string                `json:"node_type,omitempty" bson:"node_type"`   // obj inst
-	ObjID           *string                `json:"bk_obj_id,omitempty" bson:"bk_obj_id"`
-	IsPre           *bool                  `json:"ispre,omitempty"             bson:"ispre"`
-	InstID          *int                   `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
-	NodeName        *string                `json:"node_name,omitempty" bson:"node_name"`
-	Position        *Position              `json:"position,omitempty" bson:"position"`
-	Ext             map[string]interface{} `json:"ext,omitempty" bson:"fext"`
-	Icon            *string                `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon"`
-	BizID           *int                   `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	SupplierAccount *string                `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"` // bk_supplier_account
+	ScopeType       *string                `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
+	ScopeID         *string                `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
+	NodeType        *string                `json:"node_type,omitempty" bson:"node_type,omitempty"`   // obj inst
+	ObjID           *string                `json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	IsPre           *bool                  `json:"ispre,omitempty"             bson:"ispre,omitempty"`
+	InstID          *int                   `json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	NodeName        *string                `json:"node_name,omitempty" bson:"node_name,omitempty"`
+	Position        *Position              `json:"position,omitempty" bson:"position,omitempty"`
+	Ext             map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
+	Icon            *string                `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
+	BizID           *int                   `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	SupplierAccount *string                `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
 }
 
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
