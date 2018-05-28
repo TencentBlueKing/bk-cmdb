@@ -236,7 +236,7 @@
                             let value = column.value
                             if (property['bk_property_id'] === 'bk_module_name' || property['bk_property_id'] === 'bk_set_name') {
                                 operator = operator === '$regex' ? '$in' : operator
-                                value = value.replace('，', ',').split(',')
+                                value = operator === '$in' ? [...value.replace('，', ',').split(','), value] : value
                             }
                             condition.condition.push({
                                 field: column.field,
