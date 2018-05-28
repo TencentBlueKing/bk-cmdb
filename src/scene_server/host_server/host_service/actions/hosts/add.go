@@ -40,6 +40,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 		ApplicationID int                            `json:"bk_biz_id"`
 		HostInfo      map[int]map[string]interface{} `json:"host_info"`
 		SupplierID    int                            `json:"bk_supplier_id"`
+		InputType     string                         `json:"input_type"`
 	}
 	ownerID := common.BKDefaultOwnerID
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
@@ -79,7 +80,7 @@ func (m *hostModuleConfigAction) AddHost(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, common.DefaultResModuleName)
 		}
 
-		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, moduleID, m.CC)
+		err, succ, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, data.HostInfo, data.InputType, moduleID, m.CC)
 
 		retData := make(map[string]interface{})
 		retData["success"] = succ
@@ -153,7 +154,7 @@ func (m *hostModuleConfigAction) AddHostFromAgent(req *restful.Request, resp *re
 
 		defErr := m.CC.Error.CreateDefaultCCErrorIf(language)
 
-		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, moduleID, m.CC)
+		err, _, updateErrRow, errRow := logics.AddHost(req, ownerID, appID, addHost, "", moduleID, m.CC)
 
 		if nil == err {
 			return http.StatusOK, nil, nil
