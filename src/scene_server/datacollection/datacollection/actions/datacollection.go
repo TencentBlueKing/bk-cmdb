@@ -66,7 +66,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli)
 	hostSnap.Start()
 
-	go mock(config, chanName)
+	// go mock(config, chanName)
 	return nil
 }
 
