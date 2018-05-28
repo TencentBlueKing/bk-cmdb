@@ -382,7 +382,7 @@
                                 break
                             }
                         } else {
-                            if (this.formData[key].length) {
+                            if (this.formData[key] !== null && this.formData[key].length) {
                                 isConfirmShow = true
                                 break
                             }
