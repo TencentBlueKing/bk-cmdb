@@ -26,6 +26,7 @@
                         :isShowRefresh="true"
                         :outerLoading="tree.loading"
                         :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
+                        :tableVisible="view.tab.active === 'host'"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
