@@ -159,7 +159,7 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 		if len(e.Data) <= 0 {
 			return nil
 		}
-		if e.Action == "delete" {
+		if e.Action == types.EventActionDelete {
 			m, ok = e.Data[0].PreData.(map[string]interface{})
 		} else {
 			m, ok = e.Data[0].CurData.(map[string]interface{})
