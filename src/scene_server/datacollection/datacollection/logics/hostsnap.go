@@ -146,7 +146,7 @@ func (h *HostSnap) Run() {
 					break f
 				case msg = <-h.msgChan:
 					addCount++
-					msgs = append(msgs, <-h.msgChan)
+					msgs = append(msgs, msg)
 				}
 				if addCount > h.maxSize {
 					break f
@@ -397,8 +397,7 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
-		}
-		if val == h.id {
+		} else if val == h.id {
 			blog.Infof("master check : i am still master")
 			h.redisCli.Set(common.MasterProcLockKey, h.id, masterProcLockLiveTime)
 			ok = true
@@ -411,8 +410,7 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
-		}
-		if ok {
+		} else if ok {
 			blog.Infof("slave check: ok")
 			blog.Infof("i am master from now")
 			h.isMaster = true
