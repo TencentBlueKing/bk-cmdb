@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
@@ -54,7 +55,7 @@ func handleInst(e *types.EventInst) {
 			predata := e.Data[dataIndex].PreData.(map[string]interface{})
 			if checkDifferent(curdata, predata, diffFields...) {
 
-				instIDField := common.GetInstIDField(e.ObjType)
+				instIDField := util.GetObjIDByType(e.ObjType)
 
 				instID := getInt(curdata, instIDField)
 				if 0 == instID {
@@ -198,7 +199,7 @@ func getInt(data map[string]interface{}, key string) int {
 func findHost(objType string, instID int) (hostIDs []string) {
 	relations := []metadata.ModuleHostConfig{}
 	condiction := map[string]interface{}{
-		common.GetInstIDField(objType): instID,
+		util.GetObjIDByType(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
 		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
@@ -287,7 +288,7 @@ func getCache(objType string, instID int) (*Inst, error) {
 			inst.ident = NewHostIdentifier(inst.data)
 			relations := []metadata.ModuleHostConfig{}
 			condiction := map[string]interface{}{
-				common.GetInstIDField(objType): instID,
+				util.GetObjIDByType(objType): instID,
 			}
 			api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			for _, rela := range relations {
@@ -400,7 +401,7 @@ func fetchHostCache() {
 
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
-			instID := fmt.Sprint(cache[common.GetInstIDField(objID)])
+			instID := fmt.Sprint(cache[util.GetObjIDByType(objID)])
 			if err := redisCli.Set(types.EventCacheIdentInstPrefix+objID+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
 				blog.Errorf("set cache error %s", err.Error())
 			}
