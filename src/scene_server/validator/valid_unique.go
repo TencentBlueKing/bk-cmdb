@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 // validCreateUnique  valid create unique
@@ -68,23 +70,8 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 		blog.Error("request failed, error:%v", err)
 		return false, err
 	}
+	count := gjson.Get(string(rst), "data.count").Int()
 
-	var rstRes InstRst
-	if jserr := json.Unmarshal(rst, &rstRes); nil != jserr {
-		blog.Error("can not unmarshal the result , error information is %v", jserr)
-		return false, jserr
-	}
-	if false == rstRes.Result {
-		blog.Error("get rst res error :%v", rstRes)
-		return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
-	}
-
-	data := rstRes.Data.(map[string]interface{})
-	count, err := util.GetIntByInterface(data["count"])
-	if nil != err {
-		blog.Error("get data error :%v", data)
-		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
-	}
 	if 0 != count {
 		blog.Error("duplicate data ")
 		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
@@ -96,7 +83,6 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
 	isInner := false
 	urlID := valid.objID
-	searchOnlykeyNum := 0
 	if util.InArray(valid.objID, innerObject) {
 		isInner = true
 	} else {
@@ -106,30 +92,22 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	if 0 == len(valid.IsOnlyArr) {
 		return true, nil
 	}
+
+	mapData := valid.getInstDataById(objID, instID)
 	searchCond := make(map[string]interface{})
+
+	for key, val := range mapData {
+		if util.InArray(key, valid.IsOnlyArr) {
+			searchCond[key] = val
+		}
+	}
 	for key, val := range valData {
 		if util.InArray(key, valid.IsOnlyArr) {
 			searchCond[key] = val
-			searchOnlykeyNum++
 		}
 	}
-
-	//if no only key in params return true, if part of it return false
-	if 0 == searchOnlykeyNum {
-		return true, nil
-	} else {
-		if searchOnlykeyNum != len(valid.IsOnlyArr) {
-			return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
-		}
-	}
-
-	if 1 == len(searchCond) {
-		for key := range searchCond {
-			if key == common.BKAppIDField {
-				return true, nil
-			}
-		}
-	}
+	objIDName := util.GetObjIDByType(objID)
+	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID
@@ -143,67 +121,64 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetHeader("Content-Type", "application/json")
 	httpCli.SetHeader("Accept", "application/json")
-	blog.Info("get insts by cond: %s", string(info))
-	blog.Info("get insts by cond instID: %v", instID)
+	blog.Infof("get insts by cond: %s, instID %v", string(info), instID)
 	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
 	blog.Info("get insts by return: %s", string(rst))
 	if nil != err {
 		blog.Error("request failed, error:%v", err)
 		return false, valid.ccError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
-	var rstRes InstRst
-	if jserr := json.Unmarshal(rst, &rstRes); nil != jserr {
-		blog.Error("can not unmarshal the result , error information is %v", jserr)
-		return false, valid.ccError.Error(common.CCErrCommJSONUnmarshalFailed)
-	}
-	if false == rstRes.Result {
-		blog.Error("valid update unique false: %v", rstRes)
-		return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
-	}
-	data := rstRes.Data.(map[string]interface{})
-	count, err := util.GetIntByInterface(data["count"])
-	if nil != err {
-		err := "data false"
-		blog.Error("data struct false %v", err)
-		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
-	}
-	if 0 == count {
-		return true, nil
-	} else if 1 == count {
-		info, ok := data["info"]
-		if false == ok {
-			blog.Error("data struct false lack info %v", data)
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-		infoMap, ok := info.([]interface{})
-		if false == ok {
-			blog.Error("data struct false lack info is not array%v", data)
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-		for _, j := range infoMap {
-			i := j.(map[string]interface{})
-			objIDName := util.GetObjIDByType(objID)
-			instIDc, ok := i[objIDName]
-			if false == ok {
-				blog.Error("data struct false no objID%v", objIDName)
-				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-			}
-			instIDci, err := util.GetIntByInterface(instIDc)
-
-			if nil != err {
-				blog.Error("instID not int , error info is %s", err.Error())
-				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-			}
-			if instIDci == instID {
-				return true, nil
-			}
-			blog.Error("duplicate data ")
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-	} else {
+	count := gjson.Get(string(rst), "data.count").Int()
+	if 0 != count {
 		blog.Error("duplicate data ")
 		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
 	}
 	return true, nil
+}
+
+// getInstDataById get inst data by id
+func (valid *ValidMap) getInstDataById(objID string, instID int) map[string]interface{} {
+	isInner := false
+	urlID := valid.objID
+
+	if util.InArray(valid.objID, innerObject) {
+		isInner = true
+	} else {
+		urlID = common.BKINnerObjIDObject
+	}
+
+	if 0 == len(valid.IsOnlyArr) {
+		return nil
+	}
+	searchCond := make(map[string]interface{})
+
+	if !isInner {
+		searchCond[common.BKObjIDField] = objID
+		searchCond[common.BKInstIDField] = instID
+	} else {
+		objIDName := util.GetObjIDByType(objID)
+		searchCond[objIDName] = instID
+
+	}
+	condition := make(map[string]interface{})
+	condition["condition"] = searchCond
+	info, _ := json.Marshal(condition)
+	httpCli := httpclient.NewHttpClient()
+	httpCli.SetHeader("Content-Type", "application/json")
+	httpCli.SetHeader("Accept", "application/json")
+	blog.Infof("get insts by cond: %s instID: %v", string(info), instID)
+	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
+	blog.Info("get insts by return: %s", string(rst))
+	if nil != err {
+		blog.Error("request failed, error:%v", err)
+		return nil
+	}
+	data := make(map[string]interface{})
+	result := gjson.Get(string(rst), "data.info.0").Map()
+	for key, val := range result {
+		data[key] = val.Raw
+	}
+
+	return data
+
 }
