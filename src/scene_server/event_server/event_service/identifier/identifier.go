@@ -57,7 +57,7 @@ func handleInst(e *types.EventInst) {
 				instIDField := common.GetInstIDField(e.ObjType)
 
 				instID := getInt(curdata, instIDField)
-				if instID == 0 {
+				if 0 == instID {
 					// this should wound happen -_-
 					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[instIDField])
 					continue
@@ -68,7 +68,7 @@ func handleInst(e *types.EventInst) {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
 				}
-				if inst == nil {
+				if nil == inst {
 					blog.Errorf("identifier: inst == nil, continue")
 					// the inst may be deleted, just ignore
 					continue
@@ -82,7 +82,7 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				if e.ObjType == common.BKInnerObjIDHost {
+				if common.BKInnerObjIDHost == e.ObjType {
 					hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 					d := types.EventData{CurData: inst.ident.fillIden()}
 					hostIdentify.Data = append(hostIdentify.Data, d)
@@ -120,14 +120,14 @@ func handleInst(e *types.EventInst) {
 				}
 			}
 		}
-	} else if e.EventType == types.EventTypeRelation && e.ObjType == "moduletransfer" {
+	} else if types.EventTypeRelation == e.EventType && "moduletransfer" == e.ObjType {
 		blog.Infof("identifier: handle inst %+v", e)
 		go func() {
 			time.Sleep(time.Second * 3) // delay to ensure moduletransfer ended
 			for index := range e.Data {
 				var curdata map[string]interface{}
 
-				if e.Action == "delete" && len(e.Data) > 0 {
+				if types.EventActionDelete == e.Action && len(e.Data) > 0 {
 					curdata, ok = e.Data[index].PreData.(map[string]interface{})
 				} else {
 					curdata, ok = e.Data[index].CurData.(map[string]interface{})
@@ -137,7 +137,7 @@ func handleInst(e *types.EventInst) {
 				}
 
 				instID := getInt(curdata, common.BKHostIDField)
-				if instID == 0 {
+				if 0 == instID {
 					// this should wound happen -_-
 					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKHostIDField])
 					continue
@@ -148,7 +148,7 @@ func handleInst(e *types.EventInst) {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
 				}
-				if inst == nil {
+				if nil == inst {
 					// the inst may be deleted, just ignore
 					continue
 				}
@@ -277,13 +277,13 @@ func getCache(objType string, instID int) (*Inst, error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
-	if ret == "" || ret == "nil" {
+	if "" == ret || "nil" == ret {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		err := instdata.GetObjectByID(objType, nil, instID, &inst.data, "")
 		if err != nil {
 			return nil, err
 		}
-		if objType == common.BKInnerObjIDHost {
+		if common.BKInnerObjIDHost == objType {
 			inst.ident = NewHostIdentifier(inst.data)
 			relations := []metadata.ModuleHostConfig{}
 			condiction := map[string]interface{}{
@@ -302,7 +302,7 @@ func getCache(objType string, instID int) (*Inst, error) {
 		inst.saveCache()
 	} else {
 		err := json.Unmarshal([]byte(ret), &inst.data)
-		if err != nil {
+		if nil != err {
 			blog.Errorf("unmarshal error %v, raw is %s", err, ret)
 			return nil, err
 		}
@@ -333,7 +333,7 @@ func StartHandleInsts() error {
 	}()
 	for {
 		event := popEventInst()
-		if event == nil {
+		if nil == event {
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -346,7 +346,7 @@ func popEventInst() *types.EventInst {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	eventstr := redisCli.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if len(eventstr) <= 0 || eventstr[1] == "nil" || eventstr[1] == "" {
+	if 0 >= len(eventstr) || "nil" == eventstr[1] || "" == eventstr[1] {
 		return nil
 	}
 
