@@ -134,7 +134,7 @@ func mock(config map[string]string, channel string) {
 	for {
 		err := mockCli.Publish(channel, MOCKMSG).Err()
 		if err != nil {
-			blog.Error("publish mock fail", err.Error())
+			// blog.Error("publish mock fail", err.Error())
 		}
 		// blog.Infof("mock publish success")
 		cnt++
