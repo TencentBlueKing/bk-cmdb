@@ -122,7 +122,7 @@ func (cli *topoAction) SelectTopoInst(req *restful.Request, resp *restful.Respon
 
 	cli.CallResponse(
 		senceCLI.ReForwardSelectMetaTopoInst(func(url, method string) (string, error) {
-			return httpclient.ReqForward(req, fmt.Sprintf("%s?=%s", url, req.QueryParameter("level")), method)
+			return httpclient.ReqForward(req, fmt.Sprintf("%s?level=%s", url, req.QueryParameter("level")), method)
 		}, ownerID, appID),
 		resp)
 }
