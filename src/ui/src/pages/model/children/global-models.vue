@@ -17,16 +17,12 @@
                     nodes: null,
                     edges: null,
                     options: {
+                        interaction: {
+                            selectable: false
+                        },
                         nodes: {
-                            shape: 'circle',
-                            widthConstraint: 55,
-                            borderWidth: 0,
-                            color: {
-                                background: '#6b7baa'
-                            },
-                            font: {
-                                color: '#fff'
-                            }
+                            shape: 'image',
+                            widthConstraint: 55
                         },
                         edges: {
                             color: {
@@ -48,6 +44,14 @@
                         }
                     }
                 }
+            }
+        },
+        computed: {
+            noPositionNodes () {
+                return this.network.nodes.filter(node => {
+                    const position = node.data.position
+                    return position.x === null && position.y === null
+                })
             }
         },
         mounted () {
@@ -76,7 +80,11 @@
                 this.network.nodes = data.map(nodeData => {
                     const node = {
                         id: nodeData['bk_obj_id'],
-                        label: nodeData['node_name'],
+                        image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                            name: nodeData['node_name'],
+                            backgroundColor: nodeData['ispre'] ? '#6b7baa' : '#fff',
+                            fontColor: nodeData['ispre'] ? '#fff' : '#6b7baa'
+                        }))}`,
                         data: nodeData
                     }
                     if (nodeData['position']['x'] !== null && nodeData['position']['y'] !== null) {
@@ -118,13 +126,25 @@
                     const hasPosition = node.hasOwnProperty('x') && node.hasOwnProperty('y')
                     return isSingle && !hasPosition
                 })
-                const fixedNodeY = -1 * this.$el.offsetHeight / 2
+                const fixedNodeY = this.getSingleNodePositionY()
                 const fixedDistance = 70
+                const compensateDistance = noPositionSingleNode.length % 2 === 0 ? fixedDistance / 2 : 0
+                const middleIndex = Math.floor(noPositionSingleNode.length / 2)
                 noPositionSingleNode.forEach((node, index) => {
-                    node.x = index % 2 === 0 ? index / 2 * fixedDistance : -1 * (index + 1) / 2 * fixedDistance
+                    node.x = (index - middleIndex) * fixedDistance - compensateDistance
                     node.y = fixedNodeY
                 })
-                this.networkDataSet.nodes.update(noPositionSingleNode)
+                if (noPositionSingleNode.length) {
+                    this.networkDataSet.nodes.update(noPositionSingleNode)
+                }
+            },
+            getSingleNodePositionY () {
+                const asstNodes = this.network.nodes.filter(node => this.network.edges.some(edge => edge.to === node.id || edge.from === node.id))
+                if (asstNodes.length) {
+                    const asstNodePositions = this.networkInstance.getPositions(asstNodes.map(node => node.id))
+                    return Math.min(...asstNodes.map(node => asstNodePositions[node.id]['y'])) - 70
+                }
+                return 0
             },
             // 判断是否是双向关联A.to = B.from && A.from = B.to
             getTwoWayAsst (node, asst, edges) {
@@ -136,26 +156,16 @@
                     image.onload = () => {
                         this.networkDataSet.nodes.update({
                             id: node.id,
-                            shape: 'image',
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
-                                name: node.label,
-                                backgroundColor: '#6b7baa',
-                                color: '#fff'
-                            }))}`,
-                            font: {
-                                size: 0
-                            }
+                                name: node.data['node_name'],
+                                backgroundColor: node.data.ispre ? '#6b7baa' : '#fff',
+                                fontColor: node.data.ispre ? '#fff' : '#6b7baa',
+                                iconColor: node.data.ispre ? '#fff' : '#498fe0'
+                            }))}`
                         })
                     }
                     image.src = `${window.location.origin}/static/svg/${node['data']['bk_obj_icon'].substr(5)}.svg`
                 })
-            },
-            updateInitPosition () {
-                let updateNodes = this.network.nodes.filter(node => {
-                    const position = node.data.position
-                    return position.x === null && position.y === null
-                })
-                this.updateNodePosition(updateNodes)
             },
             updateNodePosition (updateNodes) {
                 if (!updateNodes.length) return
@@ -178,24 +188,29 @@
                     }
                 })
             },
+            listenerCallback () {
+                this.networkInstance.setOptions({
+                    physics: {
+                        enabled: false
+                    }
+                })
+                this.networkInstance.on('dragEnd', (params) => {
+                    if (params.nodes.length) {
+                        this.updateNodePosition(this.networkDataSet.nodes.get(params.nodes))
+                    }
+                })
+                this.setSingleNodePosition()
+                this.loadNodeImage()
+                this.updateNodePosition(this.noPositionNodes)
+                this.networkInstance.moveTo({scale: 0.8})
+                this.loading = false
+            },
             addListener () {
                 const networkInstance = this.networkInstance
-                networkInstance.once('stabilized', () => {
-                    networkInstance.setOptions({
-                        physics: {
-                            enabled: false
-                        }
-                    })
-                    networkInstance.on('dragEnd', (params) => {
-                        if (params.nodes.length) {
-                            this.updateNodePosition(this.networkDataSet.nodes.get(params.nodes))
-                        }
-                    })
-                    this.setSingleNodePosition()
-                    this.loadNodeImage()
-                    this.updateInitPosition()
-                    this.loading = false
-                })
+                networkInstance.once('stabilized', this.listenerCallback)
+                if (!this.noPositionNodes.length) {
+                    this.listenerCallback()
+                }
             }
         }
 

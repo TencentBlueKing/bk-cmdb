@@ -53,16 +53,28 @@ const GET_BASE_64_IMAGE = (image, color) => {
 }
 
 export function generateObjIcon (image, options) {
-    const base64Image = GET_BASE_64_IMAGE(image, options.color)
-    return `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
-                <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="35" y="-12" fill="${options.color}" width="35" >
-                    <image width="15" xlink:href="${base64Image}"></image>
-                </svg>
-                <foreignObject x="0" y="58" width="100%" height="100%">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
-                        <div style="color:${options.color};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
-                    </div>
-                </foreignObject>
-            </svg>`
+    if (image instanceof Image) {
+        const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
+        return `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+                    <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="35" y="-12" fill="${options.iconColor}" width="35" >
+                        <image width="15" xlink:href="${base64Image}"></image>
+                    </svg>
+                    <foreignObject x="0" y="58" width="100%" height="100%">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
+                            <div style="color:${options.fontColor};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
+                        </div>
+                    </foreignObject>
+                </svg>`
+    } else {
+        options = image
+        return `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+                    <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
+                    <foreignObject x="0" y="58" width="100%" height="100%">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
+                            <div style="color:${options.fontColor};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
+                        </div>
+                    </foreignObject>
+                </svg>`
+    }
 }
