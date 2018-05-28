@@ -17,9 +17,6 @@
                     nodes: null,
                     edges: null,
                     options: {
-                        interaction: {
-                            selectable: false
-                        },
                         nodes: {
                             shape: 'image',
                             widthConstraint: 55
@@ -33,6 +30,14 @@
                             smooth: {
                                 type: 'curvedCW',
                                 roundness: 0
+                            },
+                            arrows: {
+                                to: {
+                                    scaleFactor: 0.6
+                                },
+                                from: {
+                                    scaleFactor: 0.6
+                                }
                             }
                         },
                         physics: {
@@ -76,6 +81,7 @@
                     this.$alertMsg(e)
                 }
             },
+            // 设置节点数据
             setNodes (data) {
                 this.network.nodes = data.map(nodeData => {
                     const node = {
@@ -96,6 +102,7 @@
                 })
                 this.networkDataSet.nodes = new Vis.DataSet(this.network.nodes)
             },
+            // 设置连线数据
             setEdges (data) {
                 let edges = []
                 data.forEach(node => {
@@ -119,6 +126,7 @@
                 this.network.edges = edges
                 this.networkDataSet.edges = new Vis.DataSet(this.network.edges)
             },
+            // 设置单节点位置并更新其节点位置信息
             setSingleNodePosition () {
                 const edges = this.network.edges
                 const noPositionSingleNode = this.network.nodes.filter(node => {
@@ -138,6 +146,7 @@
                     this.networkDataSet.nodes.update(noPositionSingleNode)
                 }
             },
+            // 获取单节点摆放的初始化Y轴坐标
             getSingleNodePositionY () {
                 const asstNodes = this.network.nodes.filter(node => this.network.edges.some(edge => edge.to === node.id || edge.from === node.id))
                 if (asstNodes.length) {
@@ -150,6 +159,7 @@
             getTwoWayAsst (node, asst, edges) {
                 return edges.find(edge => edge.from === asst['bk_obj_id'] && edge.to === node['bk_obj_id'])
             },
+            // 加载节点icon并更新
             loadNodeImage () {
                 this.network.nodes.forEach(node => {
                     let image = new Image()
@@ -167,6 +177,7 @@
                     image.src = `${window.location.origin}/static/svg/${node['data']['bk_obj_icon'].substr(5)}.svg`
                 })
             },
+            // 批量更新节点位置信息
             updateNodePosition (updateNodes) {
                 if (!updateNodes.length) return
                 const nodePositions = this.networkInstance.getPositions(updateNodes.map(node => node.id))
@@ -188,6 +199,11 @@
                     }
                 })
             },
+            // 拓扑稳定后执行事件
+            // 1.取消物理模拟
+            // 2.配置拖拽结束监听，更新位置信息
+            // 3.设置无位置信息的单节点位置
+            // 4.加载节点图标
             listenerCallback () {
                 this.networkInstance.setOptions({
                     physics: {
@@ -198,6 +214,7 @@
                     if (params.nodes.length) {
                         this.updateNodePosition(this.networkDataSet.nodes.get(params.nodes))
                     }
+                    this.networkInstance.unselectAll()
                 })
                 this.setSingleNodePosition()
                 this.loadNodeImage()

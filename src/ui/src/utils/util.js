@@ -70,7 +70,7 @@ export function generateObjIcon (image, options) {
         options = image
         return `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
                     <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                    <foreignObject x="0" y="58" width="100%" height="100%">
+                    <foreignObject x="0" y="43" width="100%" height="100%">
                         <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
                             <div style="color:${options.fontColor};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
                         </div>
