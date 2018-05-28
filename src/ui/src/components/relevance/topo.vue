@@ -35,10 +35,9 @@
         data () {
             return {
                 topoStruct: {},
-                nodeId: 0,
+                nodeId: 0,                  // 前端节点ID 递增
 
                 network: {},
-                position: {},
                 attr: {
                     isShow: false,
                     instId: '',
@@ -442,18 +441,8 @@
              * 绘制拓扑图
              */
             initTopo () {
-                for (let key in this.position) {
-                    let node = this.nodes.find(({id}) => {
-                        return id === key
-                    })
-                    if (node) {
-                        node.x = this.position[key].x
-                        node.y = this.position[key].y
-                    }
-                }
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 this.network.focus(this.activeNode.id)
-                // let scale = this.network.getScale()
                 this.network.moveTo({scale: 0.8})
 
                 // 绑定事件
