@@ -27,6 +27,7 @@
             <ul class="collect-list">
                 <li ref="collectItem" class="collect-item"
                     v-for="(item, index) in localFavoriteList"
+                    v-if="item.isShow"
                     :key="index"
                     :class="{'editing': item.edit || item.isShowDeleteConfirm}"
                     @click="apply(item)">
@@ -90,17 +91,14 @@
                 this.localFavoriteList = this.favoriteList.map(favorite => {
                     return Object.assign({
                         edit: false,
+                        isShow: true,
                         isShowDeleteConfirm: false
                     }, favorite)
                 })
             },
             'filter.text' (filterText) {
-                this.localFavoriteList.map(({name}, index) => {
-                    if (name.indexOf(filterText) === -1) {
-                        this.$refs.collectItem[index].style.display = 'none'
-                    } else {
-                        this.$refs.collectItem[index].style.display = 'block'
-                    }
+                this.localFavoriteList.map((item, index) => {
+                    item.isShow = item.name.indexOf(filterText) !== -1
                 })
             },
             'filter.sort' (sort) {
@@ -120,6 +118,7 @@
                 this.localFavoriteList = favoriteList.map(favorite => {
                     return Object.assign({
                         edit: false,
+                        isShow: true,
                         isShowDeleteConfirm: false
                     }, favorite)
                 })
