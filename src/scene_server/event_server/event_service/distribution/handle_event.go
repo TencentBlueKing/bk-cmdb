@@ -156,11 +156,15 @@ func GetDistInst(e *types.EventInst) []types.DistInst {
 	if e.EventType == types.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
 		var ok bool
 
-		if e.Action == "delete" && len(e.Data) > 0 {
+		if len(e.Data) <= 0 {
+			return nil
+		}
+		if e.Action == "delete" {
 			m, ok = e.Data[0].PreData.(map[string]interface{})
 		} else {
 			m, ok = e.Data[0].CurData.(map[string]interface{})
 		}
+
 		if !ok {
 			return nil
 		}
