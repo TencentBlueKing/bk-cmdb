@@ -27,7 +27,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 )
 
 //GetHostData get host data from excel

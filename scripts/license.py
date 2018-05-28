@@ -28,7 +28,7 @@ def update_license(target_file, temp_file):
             is_begin=True
             tmp_file.write(line)
     os.rename(temp_file,target_file)
-    os.system("gofmt "+temp_file +" > /dev/null 2>&1")
+    os.system("go fmt "+temp_file +" > /dev/null 2>&1")
     
 
 def list_dir(target_dir):

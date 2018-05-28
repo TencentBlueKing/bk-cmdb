@@ -47,7 +47,7 @@ func (cli *ccErrorHelper) Error(language string, errCode int) error {
 // Errorf returns an error that adapt to the error interface which accepts arguments
 func (cli *ccErrorHelper) Errorf(language string, ErrorCode int, args ...interface{}) error {
 	return &ccError{code: ErrorCode, callback: func() string {
-		return cli.errorStrf(language, ErrorCode, args)
+		return cli.errorStrf(language, ErrorCode, args...)
 	}}
 }
 

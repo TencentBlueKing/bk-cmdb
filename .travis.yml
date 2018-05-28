@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - "1.10.x"  
+
+before_install:
+  - go get -v github.com/golang/lint/golint
+
+install:
+  - # skip
+
+script:
+  - ln -s `pwd` configcenter && mv configcenter ../ && cd src && make server

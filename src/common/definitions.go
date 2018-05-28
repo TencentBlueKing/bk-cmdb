@@ -128,6 +128,20 @@ const (
 	// BKDBNE the db operator
 	BKDBNE = "$ne"
 
+	// BKDBNIN the db oeprator
+	BKDBNIN = "$nin"
+
+	// BKDBLT the db operator
+	BKDBLT = "$lt"
+
+	// BKDBLTE the db operator
+	BKDBLTE = "$lte"
+
+	// BKDBGT the db operator
+	BKDBGT = "$gt"
+
+	// BKDBGTE the db opeartor
+	BKDBGTE = "$gte"
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -515,21 +529,44 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	/*EXCEL color AARRGGBB :
+	AA means Alpha
+	RRGGBB means Red, in hex.
+	GG means Red, in hex.
+	BB means Red, in hex.
+	*/
+
 	// ExcelHeaderFirstRowColor cell bg color
-	ExcelHeaderFirstRowColor = "92D050"
+	ExcelHeaderFirstRowColor = "FF92D050"
 	// ExcelHeaderFirstRowFontColor  font color
-	ExcelHeaderFirstRowFontColor = "000000"
+	ExcelHeaderFirstRowFontColor = "00000000"
 	// ExcelHeaderFirstRowRequireFontColor require font color
-	ExcelHeaderFirstRowRequireFontColor = "FF0000"
+	ExcelHeaderFirstRowRequireFontColor = "FFFF0000"
 	// ExcelHeaderOtherRowColor cell bg color
-	ExcelHeaderOtherRowColor = "C6EFCE"
+	ExcelHeaderOtherRowColor = "FFC6EFCE"
 	// ExcelHeaderOtherRowFontColor font color
-	ExcelHeaderOtherRowFontColor = "000000"
+	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
-	ExcelCellDefaultBorderColor = "D4D4D4"
+	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = "##"
+	// ExcelAsstPrimaryKeyRowChar split char
+	ExcelAsstPrimaryKeyRowChar = "\n"
+
+	// ExcelDelAsstObjectRelation delete asst object relation
+	ExcelDelAsstObjectRelation = "/"
+
+	// ExcelDataValidationListLen excel dropdown list item count
+	ExcelDataValidationListLen = 50
+
+	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
+	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
+)
+
+const (
+	// InputTypeExcel  data from excel
+	InputTypeExcel = "excel"
 )
 
 // table names
@@ -568,6 +605,8 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
+
+	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 )
 
 const (
@@ -631,6 +670,11 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
+)
+
+const (
+	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
+	InstAsstIDSplit = ","
 )
 
 // integer const

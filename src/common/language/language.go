@@ -46,7 +46,7 @@ func (cli *ccLanguageHelper) Language(language string, key string) string {
 
 // Languagef returns an langauge that adapt to the language interface which accepts arguments
 func (cli *ccLanguageHelper) Languagef(language string, key string, args ...interface{}) string {
-	return cli.languageStrf(language, key, args)
+	return cli.languageStrf(language, key, args...)
 }
 
 // load load language package file from dir
