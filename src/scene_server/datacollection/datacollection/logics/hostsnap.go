@@ -22,6 +22,7 @@ import (
 	"github.com/tidwall/gjson"
 	"io"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -129,8 +130,6 @@ func (h *HostSnap) Run() {
 				if !h.subscribing {
 					go h.subChan()
 				}
-			} else {
-				blog.Infof("loop: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 			}
 		case msg = <-h.msgChan:
 			// read all from msgChan and lock to prevent clear operation
@@ -208,12 +207,12 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
-				// TODO add log
+				blog.Infof("host not found, continue, %s", val.String())
 				continue
 			}
 			hostid := fmt.Sprint(host[bkcommon.BKHostIDField])
 			if hostid == "" {
-				// TODO add log
+				blog.Infof("host id not found, continue, %s", val.String())
 				continue
 			}
 
@@ -338,12 +337,35 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 	}*/
 	ips := getIPS(val)
 	if len(ips) > 0 {
-		// TODO add log
+		blog.Infof("handle clouid: %s ips: %v", cloudid, ips)
 		for _, ip := range ips {
 			if host := h.getCache()[cloudid+"::"+ip]; host != nil {
 				return host
 			}
 		}
+
+		blog.Infof("ips not in cache clouid: %s,ip: %v", cloudid, ips)
+		clouidInt, _ := strconv.Atoi(cloudid)
+		condition := map[string]interface{}{
+			bkcommon.BKCloudIDField: clouidInt,
+			bkcommon.BKHostInnerIPField: map[string]interface{}{
+				bkcommon.BKDBIN: ips,
+			},
+		}
+		result := []map[string]interface{}{}
+		err := instdata.GetHostByCondition(nil, condition, &result, "", 0, 0)
+		if err != nil {
+			blog.Errorf("fetch db error %v", err)
+		}
+		for _, host := range result {
+			cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
+			innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
+			h.setCache(cloudid+"::"+innerip, host)
+			return h.getCache()[cloudid+"::"+innerip]
+		}
+		blog.Infof("ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
+	} else {
+		blog.Errorf("message has no ip, message:%s", val.String())
 	}
 	return nil
 }
@@ -354,7 +376,7 @@ func (h *HostSnap) concede() {
 	h.isMaster = false
 	h.subscribing = false
 	val := h.redisCli.Get(common.MasterProcLockKey).Val()
-	if len(val) > len(h.id) && h.id == val[0:len(h.id)] {
+	if val != h.id {
 		h.redisCli.Del(common.MasterProcLockKey)
 	}
 }
@@ -362,22 +384,31 @@ func (h *HostSnap) concede() {
 // saveRunning lock master process
 func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
+	setNXChan := make(chan struct{})
+	go func() {
+		select {
+		case <-time.After(masterProcLockLiveTime):
+			blog.Fatalf("saveRunning check: set nx time out!! the network may be broken, redis stats: %v ", h.redisCli.PoolStats())
+		case <-setNXChan:
+		}
+	}()
 	if h.isMaster {
 		var val string
 		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
 		}
-		if len(val) > len(h.id) && h.id == val[0:len(h.id)] {
+		if val == h.id {
 			blog.Infof("master check : i am still master")
-			h.redisCli.Set(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime)
+			h.redisCli.Set(common.MasterProcLockKey, h.id, masterProcLockLiveTime)
 			ok = true
 		} else {
 			blog.Infof("exit master,val = %v, id = %v", val, h.id)
 			h.isMaster = false
+			ok = false
 		}
 	} else {
-		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id+"||"+time.Now().Format(time.RFC3339), masterProcLockLiveTime).Result()
+		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
 		}
@@ -385,8 +416,11 @@ func (h *HostSnap) saveRunning() (ok bool) {
 			blog.Infof("slave check: ok")
 			blog.Infof("i am master from now")
 			h.isMaster = true
+		} else {
+			blog.Infof("slave check: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 		}
 	}
+	close(setNXChan)
 	return ok
 }
 
@@ -395,7 +429,7 @@ const mockmsg = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\
 // subChan subscribe message from redis channel
 func (h *HostSnap) subChan() {
 	h.subscribing = true
-	var l int
+	var chanlen int
 	subChan, err := h.snapCli.Subscribe(h.chanName)
 	if nil != err {
 		h.interrupt <- err
@@ -433,15 +467,15 @@ func (h *HostSnap) subChan() {
 		if "" == msg.Payload {
 			continue
 		}
-		// TODO l char var name
-		l = len(h.msgChan)
-		if h.maxSize*2 <= l {
+
+		chanlen = len(h.msgChan)
+		if h.maxSize*2 <= chanlen {
 			//  if msgChan fulled, clear old msgs
-			blog.Infof("msgChan full, maxsize %d, len %d", h.maxSize, l)
+			blog.Infof("msgChan full, maxsize %d, len %d", h.maxSize, chanlen)
 			h.clearMsgChan()
 		}
-		if l%10 == 0 && l != 0 {
-			blog.Infof("buff len %d", l)
+		if chanlen != 0 && chanlen%10 == 0 {
+			blog.Infof("buff len %d", chanlen)
 		}
 
 		h.msgChan <- msg.Payload
@@ -466,7 +500,6 @@ func (h *HostSnap) clearMsgChan() {
 		if ts != h.ts {
 			msgCnt = len(h.msgChan) - h.maxSize
 		} else {
-			// TODO think
 			select {
 			case <-time.After(time.Second * 10):
 			case <-h.msgChan:
@@ -480,17 +513,32 @@ func (h *HostSnap) clearMsgChan() {
 	blog.Warnf("cleared %d", cnt)
 }
 
+var cachelock = sync.Mutex{}
+
 func (h *HostSnap) getCache() map[string]map[string]interface{} {
+	cachelock.Lock()
+	defer cachelock.Unlock()
 	return h.cache.cache[h.cache.flag]
 }
 
+func (h *HostSnap) setCache(key string, val map[string]interface{}) {
+	cachelock.Lock()
+	h.cache.cache[h.cache.flag][key] = val
+	cachelock.Unlock()
+}
+
 func (h *HostSnap) fetchDB() {
+	cachelock.Lock()
 	h.cache.cache[h.cache.flag] = fetch()
+	cachelock.Unlock()
 	go func() {
 		ticker := time.NewTicker(fetchDBInterval)
 		for range ticker.C {
-			h.cache.cache[!h.cache.flag] = fetch()
+			cache := fetch()
+			cachelock.Lock()
+			h.cache.cache[!h.cache.flag] = cache
 			h.cache.flag = !h.cache.flag
+			cachelock.Unlock()
 		}
 	}()
 }
@@ -503,8 +551,8 @@ func fetch() map[string]map[string]interface{} {
 	}
 	hostcache := map[string]map[string]interface{}{}
 	for _, host := range result {
-		cloudid, _ := host[bkcommon.BKCloudIDField].(string)
-		innerip, _ := host[bkcommon.BKHostInnerIPField].(string)
+		cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
+		innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
 		hostcache[cloudid+"::"+innerip] = host
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
