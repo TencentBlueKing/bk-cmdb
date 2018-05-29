@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package actions
 
 import (
@@ -82,7 +82,7 @@ func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *rest
 		if len(originals) > 0 {
 			ec := eventdata.NewEventContextByReq(req)
 			for _, i := range originals {
-				err := ec.InsertEvent(eventtypes.EventTypeInstData, "processmodule", eventtypes.EventActionDelete, nil, i)
+				err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionDelete, nil, i)
 				if err != nil {
 					blog.Error("create event error:%s", err.Error())
 				}
@@ -126,7 +126,7 @@ func (cli *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *rest
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcCreateProc2Module)
 			}
 			//  record events
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, "processmodule", eventtypes.EventActionCreate, i, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionCreate, i, nil)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
