@@ -28,7 +28,10 @@
                 <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
             <div class="fr btn-group">
-                <button class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
+                <button v-if="objId !== 'biz'" class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
+                    <i class="icon-cc-history"></i>
+                </button>
+                <button v-else class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
                     <i class="icon-cc-history"></i>
                 </button>
                 <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
@@ -263,7 +266,7 @@
                             sort: this.table.sort ? this.table.sort : this.table.defaultSort
                         },
                         fields: this.objId === 'biz' ? [] : {},
-                        condition: {}
+                        condition: this.objId === 'biz' ? {bk_data_status: {'$ne': 'disabled'}} : {}
                     }
                 }
                 if (this.objId === 'biz') {
@@ -327,6 +330,11 @@
             }
         },
         watch: {
+            'filing.isShow' (isShow) {
+                if (!isShow && this.objId === 'biz') {
+                    this.getTableList()
+                }
+            },
             // 切换模型时，重新初始化表格
             objId () {
                 // 页码调整到第一页
@@ -632,24 +640,34 @@
                     bk_biz_name: bizName
                 } = data
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", {name: this.objId === 'biz' ? bizName : instName}),
+                    title: this.objId === 'biz' ? this.$t("Common['确认要归档']", {name: this.objId === 'biz' ? bizName : instName}) : this.$t("Common['确认要删除']", {name: this.objId === 'biz' ? bizName : instName}),
                     confirmFn: () => {
                         this.deleteObject(data)
                     }
                 })
             },
             // 删除模型实例
-            deleteObject ({bk_biz_id: bizId, bk_inst_id: instId}) {
-                let deleteUrl = this.objId === 'biz' ? `biz/${this.bkSupplierAccount}/${bizId}` : `inst/${this.bkSupplierAccount}/${this.objId}/${instId}`
-                this.$axios.delete(deleteUrl).then(res => {
-                    if (res.result) {
-                        this.setTablePage(1)
-                        this.closeObjectSlider()
-                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async deleteObject ({bk_biz_id: bizId, bk_inst_id: instId}) {
+                let url = ''
+                let method = ''
+                if (this.objId === 'biz') {
+                    url = `biz/status/disabled/${this.bkSupplierAccount}/${bizId}`
+                    method = 'put'
+                } else {
+                    url = `inst/${this.bkSupplierAccount}/${this.objId}/${instId}`
+                    method = 'delete'
+                }
+                try {
+                    let res = await this.$axios({
+                        method: method,
+                        url: url
+                    })
+                    this.setTablePage(1)
+                    this.closeObjectSlider()
+                    this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             // 展示模型实例属性明细
             editObject (item) {
