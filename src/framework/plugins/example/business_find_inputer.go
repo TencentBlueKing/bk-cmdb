@@ -31,6 +31,12 @@ var businessFind = &businessFindInputer{}
 type businessFindInputer struct {
 }
 
+// Init initialization method
+func (cli *businessFindInputer) Init(ctx input.InputerContext) error {
+
+	return nil
+}
+
 // Name the Inputer name.
 // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 func (cli *businessFindInputer) Name() string {
