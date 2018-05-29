@@ -85,7 +85,8 @@
                     },
                     layout: {
                         hierarchical: {
-                            direction: 'LR'
+                            direction: 'LR',
+                            nodeSpacing: 70
                         }
                     }
                 },
@@ -370,8 +371,8 @@
                                     if (this.activeNode.id) {
                                         parentNode = this.getActiveNode(this.activeNode.parentId)
                                     }
-                                    // 不重复插入父节点
-                                    if (parentNode === null || parentNode['bk_obj_id'] !== model['bk_obj_id'] || parentNode['bk_inst_id'] !== inst['bk_inst_id']) {
+                                    // 不重复插入父节点 子网区域
+                                    if ((parentNode === null || parentNode['bk_obj_id'] !== model['bk_obj_id'] || parentNode['bk_inst_id'] !== inst['bk_inst_id']) && model['bk_obj_id'] !== 'plat') {
                                         topoStruct[key].push({
                                             isLoad: false,
                                             label: inst['bk_inst_name'],
