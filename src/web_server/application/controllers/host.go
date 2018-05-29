@@ -98,6 +98,7 @@ func ImportHost(c *gin.Context) {
 	params := make(map[string]interface{})
 	params["host_info"] = hosts
 	params["bk_supplier_id"] = common.BKDefaultSupplierID
+	params["input_type"] = common.InputTypeExcel
 
 	blog.Infof("add host url: %v", url)
 	blog.Infof("add host content: %v", params)

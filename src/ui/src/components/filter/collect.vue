@@ -98,7 +98,7 @@
             },
             'filter.text' (filterText) {
                 this.localFavoriteList.map((item, index) => {
-                    item.isShow = item.name.indexOf(filterText) !== -1
+                    item.isShow = item.name.toLowerCase().indexOf(filterText.toLowerCase()) !== -1
                 })
             },
             'filter.sort' (sort) {
