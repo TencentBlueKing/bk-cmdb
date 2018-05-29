@@ -56,7 +56,7 @@
             :isShow.sync="slider.isShow">
             <bk-tab :active-name="slider.tab.active" @tab-changed="tabChanged" slot="content" style="border: none;padding: 0 20px;">
                 <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
-                    <v-import 
+                    <v-import v-if="slider.isShow"
                         :templateUrl="slider.import.templateUrl"
                         :importUrl="slider.import.importUrl"
                         @success="search()"

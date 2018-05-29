@@ -112,16 +112,17 @@ textarea {
         color: #bec6de!important;
     }
 }
-
-.bk-select-input {
-    border: 1px solid #c3cdd7;
-    padding-right: 25px;
-    color: $textColor; // color: #6b7baa;
-    &:hover {
-        border-color: #6b7baa;
-    }
-    &.placeholder {
-        color: #bec6de!important;
+.bk-select-wrapper {
+    .bk-select-input {
+        border: 1px solid #c3cdd7;
+        padding-right: 25px;
+        color: $textColor; // color: #6b7baa;
+        &:hover {
+            border-color: #6b7baa;
+        }
+        &.placeholder {
+            color: #bec6de!important;
+        }
     }
 }
 
