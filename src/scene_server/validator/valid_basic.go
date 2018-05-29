@@ -228,7 +228,7 @@ func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes
 			case common.FieldTypeTimeZone:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeBool:
-				valData[field.PropertyID] = false
+				valData[field.PropertyID] = nil
 			default:
 				valData[field.PropertyID] = nil
 			}
