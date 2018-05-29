@@ -17,6 +17,9 @@ import (
 )
 
 func GetOptionStr(o interface{}) string {
-	ret, _ := json.Marshal(o)
+	ret, err := json.Marshal(o)
+	if err != nil {
+		return ""
+	}
 	return string(ret)
 }

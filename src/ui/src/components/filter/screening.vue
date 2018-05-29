@@ -236,7 +236,13 @@
                             let value = column.value
                             if (property['bk_property_id'] === 'bk_module_name' || property['bk_property_id'] === 'bk_set_name') {
                                 operator = operator === '$regex' ? '$in' : operator
-                                value = value.replace('，', ',').split(',')
+                                if (operator === '$in') {
+                                    let arr = value.replace('，', ',').split(',')
+                                    let isExist = arr.findIndex(val => {
+                                        return val === value
+                                    }) > -1
+                                    value = isExist ? arr : [...arr, value]
+                                }
                             }
                             condition.condition.push({
                                 field: column.field,

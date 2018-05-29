@@ -168,3 +168,22 @@ func DeleteInstAssociation(objAddr string, req *restful.Request, instID int, own
 
 	return nil
 }
+
+// SearchInstAssociation search the association
+func SearchInstAssociation(objAdd string, cond map[string]interface{}, req *restful.Request) (string, error) {
+
+	// search the association insts
+	uURL := objAdd + "/object/v1/insts/" + common.BKTableNameInstAsst + "/search"
+	input := map[string]interface{}{
+		"page": map[string]interface{}{
+			"start": 0,
+			"sort":  "",
+			"limit": common.BKNoLimit,
+		},
+		"condition": cond,
+		"fields":    "",
+	}
+
+	inputJSON, _ := json.Marshal(input)
+	return httpcli.ReqHttp(req, uURL, common.HTTPSelectPost, []byte(inputJSON))
+}

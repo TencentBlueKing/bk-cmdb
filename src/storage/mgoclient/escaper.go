@@ -33,13 +33,15 @@ func EscapeHtml(origins ...interface{}) {
 				}
 				if tv.CanInterface() {
 					fv := tv.Interface()
-					switch fv.(type) {
+					switch v := fv.(type) {
 					case string:
-						ts := HTMLEscapeString(fv.(string))
+						ts := HTMLEscapeString(v)
 						ov.SetMapIndex(k, reflect.ValueOf(ts))
 					case *string:
-						ts := HTMLEscapeString(*(fv.(*string)))
-						ov.SetMapIndex(k, reflect.ValueOf(ts))
+						if nil != v {
+							ts := HTMLEscapeString(*v)
+							ov.SetMapIndex(k, reflect.ValueOf(ts))
+						}
 					}
 				}
 			}
@@ -59,13 +61,15 @@ func EscapeHtml(origins ...interface{}) {
 				}
 				if tv.CanInterface() && tv.CanSet() {
 					fv := tv.Interface()
-					switch fv.(type) {
+					switch v := fv.(type) {
 					case string:
-						ts := HTMLEscapeString(fv.(string))
+						ts := HTMLEscapeString(v)
 						tv.Set(reflect.ValueOf(ts))
 					case *string:
-						ts := HTMLEscapeString(*(fv.(*string)))
-						tv.Set(reflect.ValueOf(&ts))
+						if nil != v {
+							ts := HTMLEscapeString(*(v))
+							tv.Set(reflect.ValueOf(&ts))
+						}
 					}
 				}
 			}

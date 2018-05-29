@@ -130,6 +130,11 @@ func (c *Cell) SetFloatWithFormat(n float64, format string) {
 	c.formula = ""
 }
 
+// SetCellFormat set cell value  format
+func (c *Cell) SetFormat(format string) {
+	c.NumFmt = format
+}
+
 var timeLocationUTC, _ = time.LoadLocation("UTC")
 
 func TimeToUTCTime(t time.Time) time.Time {
@@ -373,6 +378,7 @@ func (c *Cell) FormattedValue() (string, error) {
 	return returnVal, err
 }
 
+// SetDataValidation set data validation
 func (c *Cell) SetDataValidation(dd *xlsxCellDataValidation) {
 	c.DataValidation = dd
 }

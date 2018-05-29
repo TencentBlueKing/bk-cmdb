@@ -43,7 +43,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByObject, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.SelectInst, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectTopo, FilterHandler: nil, Version: v3.APIVersion})
-
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", Params: nil, Handler: inst.SelectInstAssociationTopo, FilterHandler: nil, Version: v3.APIVersion})
 	// set cc api interface
 	inst.CreateAction()
 	//inst.sencecli = api.NewClient(inst.CC.TopoAPI())
@@ -121,6 +121,24 @@ func (cli *instAction) SelectTopo(req *restful.Request, resp *restful.Response) 
 	//sencecli.SetAddress(cli.CC.TopoAPI)
 	cli.CallResponse(
 		sencecli.ReForwardSelectMetaInstsTopo(func(url, method string) (string, error) {
+			return httpclient.ReqForward(req, url, method)
+		}, ownerID, objectID, instID),
+		resp)
+}
+
+// SelectTopo search inst topo
+func (cli *instAction)SelectInstAssociationTopo(req *restful.Request, resp *restful.Response) {
+
+	blog.Info("select inst topo")
+
+	ownerID := req.PathParameter("owner_id")
+	objectID := req.PathParameter("object_id")
+	instID := req.PathParameter("inst_id")
+
+	sencecli := api.NewClient(inst.CC.TopoAPI())
+	//sencecli.SetAddress(cli.CC.TopoAPI)
+	cli.CallResponse(
+		sencecli.ReForwardSelectInstAssociationTopo(func(url, method string) (string, error) {
 			return httpclient.ReqForward(req, url, method)
 		}, ownerID, objectID, instID),
 		resp)
