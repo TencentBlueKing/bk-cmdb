@@ -69,6 +69,7 @@
                 this.$parent.updateOption(this.optIndex, this)
             },
             label (label) {
+                this.localData.label = label
                 this.$parent.updateOption(this.optIndex, this)
             }
         },
