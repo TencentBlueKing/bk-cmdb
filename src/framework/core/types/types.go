@@ -30,6 +30,12 @@ type ContextKey string
 const (
 	// FrameworkKey the framework identifier
 	FrameworkKey ContextKey = "cmdb_v3_framework"
+
+	// EventHostType the host event
+	EventHostType = "cmdb_v3_event_host_type"
+
+	// EventObjectType the custom object event
+	EventObjectType = "cmdb_v3_event_object_type"
 )
 
 // Event the cmdb event definition
