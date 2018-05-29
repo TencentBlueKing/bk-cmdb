@@ -158,7 +158,8 @@
         "资源池": "Resource Pool",
         "主机": "Host",
         "收起": "Collapse",
-        "展开": "Expand"
+        "展开": "Expand",
+        "主机身份": "Host Identifier"
     },
     "Permission": {
         "权限管理": "Permission Manage",

@@ -168,25 +168,25 @@ func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
 	}
 	if !done {
 		// check previous running
-		running, err := checkFromRunning(priviousRunningkey)
-		if err != nil {
-			return err
+		running, checkErr := checkFromRunning(priviousRunningkey)
+		if checkErr != nil {
+			return checkErr
 		}
 		if !running {
 			// wait a second to ensure previous not in trouble
 			time.Sleep(time.Second * 5)
-			running, err = checkFromRunning(priviousRunningkey)
-			if err != nil {
-				return err
+			running, checkErr = checkFromRunning(priviousRunningkey)
+			if checkErr != nil {
+				return checkErr
 			}
 		}
 		if running {
 			// if previous running, wait it
 			blog.Infof("waitting previous id: " + priviousID)
-			if err = waitPreviousDone(types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); err != nil && err != ERR_WAIT_TIMEOUT {
-				return err
+			if checkErr = waitPreviousDone(types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ERR_WAIT_TIMEOUT {
+				return checkErr
 			}
-			if err == ERR_WAIT_TIMEOUT {
+			if checkErr == ERR_WAIT_TIMEOUT {
 				blog.Infof("wait timeout previous id: %v, begin send callback", priviousID)
 			}
 		}

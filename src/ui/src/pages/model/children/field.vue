@@ -1677,8 +1677,8 @@
                     }
                 }
                 if (this.newFieldInfo.propertyType === 'int') {
-                    this.isIntErrorShow.min = !/^[0-9]*$/.test(this.newFieldInfo.option.min)
-                    this.isIntErrorShow.max = !/^[0-9]*$/.test(this.newFieldInfo.option.max)
+                    this.isIntErrorShow.min = !/^(-)?[0-9]*$/.test(this.newFieldInfo.option.min)
+                    this.isIntErrorShow.max = !/^(-)?[0-9]*$/.test(this.newFieldInfo.option.max)
                     if (this.isIntErrorShow.min || this.isIntErrorShow.max) {
                         return false
                     }
@@ -1710,8 +1710,8 @@
                     }
                 }
                 if (item['bk_property_type'] === 'int') {
-                    this.isIntErrorShow.min = !/^[0-9]*$/.test(item.option.min)
-                    this.isIntErrorShow.max = !/^[0-9]*$/.test(item.option.max)
+                    this.isIntErrorShow.min = !/^(-)?[0-9]*$/.test(item.option.min)
+                    this.isIntErrorShow.max = !/^(-)?[0-9]*$/.test(item.option.max)
                     if (this.isIntErrorShow.min || this.isIntErrorShow.max) {
                         return false
                     }

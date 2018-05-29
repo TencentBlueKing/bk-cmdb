@@ -87,6 +87,7 @@
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
+                :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
                 @handleSortChange="setTableSort"
@@ -124,7 +125,7 @@
                             :isMultipleUpdate="sideslider.attribute.form.isMultipleUpdate"
                             :active="sideslider.isShow && sideslider.attribute.active === 'attribute'"
                             @submit="saveHostAttribute">
-                            <div slot="list" class="attribute-group">
+                            <div slot="list" class="attribute-group relation-list">
                                 <h3 class="title">{{$t("BusinessTopology['业务拓扑']")}}</h3>
                                 <ul class="attribute-list clearfix">
                                     <li class="attribute-item" v-for="item in sideslider.hostRelation">
@@ -243,6 +244,10 @@
             outerLoading: {
                 type: Boolean,
                 default: false
+            },
+            tableVisible: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -492,7 +497,7 @@
                 return this.$axios.post('usercustom/user/search', {}).then(res => {
                     if (res.result) {
                         let hostDisplayColumns = res.data['host_display_column'] || []
-                        let hostQueryColumns = res.data['host_query_column'] || []
+                        let hostQueryColumns = (res.data['host_query_column'] || []).filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                         let availableDisplayColumn = hostDisplayColumns.filter(column => {
                             return this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                         })
@@ -650,7 +655,7 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.attribute
+                this.sideslider.fields.fieldOptions = this.attribute.filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
             },
@@ -1051,5 +1056,13 @@
 }
 .attribute-tab{
     height: 100%;
+}
+.attribute-group.relation-list {
+    .attribute-item {
+        width: 100%;
+        .attribute-item-value {
+            max-width: 100%;
+        }
+    }
 }
 </style>

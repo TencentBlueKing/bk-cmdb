@@ -166,6 +166,10 @@
                 validator (width) {
                     return width > 102
                 }
+            },
+            visible: {
+                type: Boolean,
+                default: true
             }
 
         },
@@ -236,6 +240,11 @@
             },
             maxHeight (maxHeight) {
                 this.throttleLayout()
+            },
+            visible (visible) {
+                if (visible) {
+                    this.throttleLayout()
+                }
             }
         },
         created () {
