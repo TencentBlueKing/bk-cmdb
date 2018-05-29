@@ -63,7 +63,8 @@ func ParseCommonParams(input []interface{}, output map[string]interface{}) error
 			case reflect.Float32:
 				output[field] = value
 			case reflect.String:
-				output[field] = SpeceialCharChange(value)
+				valStr := value.(string)
+				output[field] = SpeceialCharChange(valStr)
 			default:
 				//d := make(map[string]interface{})
 				//d[common.BKDBLIKE] = value
