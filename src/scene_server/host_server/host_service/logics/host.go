@@ -97,7 +97,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 	}
 	//search mainline object by cond
 	if len(mainlineCond.Condition) > 0 {
-		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, mainlineCond.Condition)
+		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, data.AppID, mainlineCond.Condition)
 	}
 	//search set by appcond
 	if len(setCond.Condition) > 0 || len(mainlineCond.Condition) > 0 {

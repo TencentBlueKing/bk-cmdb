@@ -337,7 +337,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		innerBatchInfo := &struct {
 			// BatchInfo batch info
 			BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
-			InputType string                          `json:"InputType"`
+			InputType string                          `json:"input_type"`
 		}{}
 
 		if _, batchInfoOK := input["BatchInfo"]; batchInfoOK {

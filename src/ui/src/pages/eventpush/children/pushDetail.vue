@@ -139,7 +139,7 @@
                                             <label :for="'moduleall'" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
                                                 :value="'moduleall'"
-                                                :checked="tempEventData['subscription_form'][item.id].length == 2"
+                                                :checked="tempEventData['subscription_form'][item.id].length == 3"
                                                 :id="'moduleall'" @change="checkAll('module')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                             </label>
                                             <label :for="item.id+'update'" class="bk-form-checkbox bk-checkbox-small">
@@ -153,6 +153,12 @@
                                                 value="moduletransfer"
                                                 v-model="tempEventData['subscription_form'][item.id]"
                                                 id="moduletransfer"><i class="bk-checkbox-text" :title="$t('EventPush[\'模块转移\']')">{{$t('EventPush["模块转移"]')}}</i>
+                                            </label>
+                                            <label for="hostidentifier" class="bk-form-checkbox bk-checkbox-small">
+                                                <input type="checkbox"
+                                                value="hostidentifier"
+                                                v-model="tempEventData['subscription_form'][item.id]"
+                                                id="hostidentifier"><i class="bk-checkbox-text" :title="$t('EventPush[\'主机身份\']')">{{$t('EventPush["主机身份"]')}}</i>
                                             </label>
                                         </div>
                                     </template>
@@ -295,6 +301,12 @@
                                 } else {
                                     subscriptionForm['module'] = ['moduletransfer']
                                 }
+                            } else if (val === 'hostidentifier') {
+                                if (subscriptionForm.hasOwnProperty('module')) {
+                                    subscriptionForm['module'].push(val)
+                                } else {
+                                    subscriptionForm['module'] = [val]
+                                }
                             } else {
                                 let key = val.substr(0, val.length - 6)
                                 if (subscriptionForm.hasOwnProperty(key)) {
@@ -360,7 +372,7 @@
                     if (objId === 'host') {
                         this.tempEventData['subscription_form'][objId] = ['hostcreate', 'hostdelete']
                     } else if (objId === 'module') {
-                        this.tempEventData['subscription_form'][objId] = ['moduletransfer', 'moduleupdate']
+                        this.tempEventData['subscription_form'][objId] = ['moduletransfer', 'moduleupdate', 'hostidentifier']
                     } else {
                         this.tempEventData['subscription_form'][objId] = [`${objId}create`, `${objId}update`, `${objId}delete`]
                     }
