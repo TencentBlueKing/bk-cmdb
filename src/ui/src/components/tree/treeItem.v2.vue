@@ -77,6 +77,17 @@
                 return this.model.find(model => {
                     return model['bk_obj_id'] === this.treeData['bk_obj_id']
                 })
+            },
+            nodeOptions () {
+                return {
+                    parent: this.parent,
+                    rootNode: this.rootNode,
+                    level: this.level,
+                    nodeId: this.nodeId,
+                    treeId: this.treeId,
+                    isOpen: this.open,
+                    index: this.nodeIndex ? this.nodeIndex : 0
+                }
             }
         },
         watch: {
@@ -90,7 +101,7 @@
             },
             open (open) {
                 this.treeData.isOpen = open
-                bus.$emit('nodeToggle', this.open, this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                bus.$emit('nodeToggle', this.open, this.treeData, this.nodeOptions)
             }
         },
         methods: {
@@ -100,11 +111,11 @@
             nodeClick () {
                 if (!this.active) {
                     this.active = true
-                    bus.$emit('nodeClick', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                    bus.$emit('nodeClick', this.treeData, this.nodeOptions)
                 }
             },
             addNode () {
-                bus.$emit('addNode', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                bus.$emit('addNode', this.treeData, this.nodeOptions)
             },
             init () {
                 let {
@@ -117,7 +128,7 @@
                     this.open = open
                     this.active = active
                     if (active) {
-                        bus.$emit('nodeClick', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                        bus.$emit('nodeClick', this.treeData, this.nodeOptions)
                     }
                 }
             }
