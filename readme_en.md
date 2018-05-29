@@ -2,7 +2,7 @@
 ---
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE)
 [![Release Version](https://img.shields.io/badge/release-3.0.6-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
-[![Build Status](https://travis-ci.org/gmaclinuxer/bk-cmdb.svg?branch=master)](https://travis-ci.org/gmaclinuxer/bk-cmdb)
+[![Build Status](https://travis-ci.org/Tencent/bk-cmdb.svg?branch=master)](https://travis-ci.org/Tencent/bk-cmdb)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 
 **Note**: The `master` branch may be in an *unstable or even broken state* during development.
