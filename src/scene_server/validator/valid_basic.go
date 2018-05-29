@@ -16,51 +16,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
-	"encoding/json"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"regexp"
 	"strconv"
-	"strings"
 )
-
-var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
-
-type IntOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
-}
-
-type EnumVal struct {
-	ID        string `bson:"id"           json:"id"`
-	Name      string `bson:"name"         json:"name"`
-	Type      string `bson:"type"         json:"type"`
-	IsDefault bool   `bson:"is_default"   json:"is_default"`
-}
-
-type ValidMap struct {
-	ownerID      string
-	objID        string
-	objCtrl      string
-	IsRequireArr []string
-	IsOnlyArr    []string
-	KeyFileds    map[string]interface{}
-	PropertyKv   map[string]string
-	ccError      errors.DefaultCCErrorIf
-	forward      *api.ForwardParam
-}
-
-// InstRst define
-type InstRst struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
-}
 
 // NewValidMap returns new NewValidMap
 func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
@@ -96,7 +58,13 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	}
 
 	//set default value
-	valid.setEnumDefault(valData, valRule)
+	setEnumDefault(valData, valRule)
+
+	//valid create request
+	if validType == common.ValidCreate {
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+	}
+
 	for key, val := range valData {
 
 		if _, keyOk := valid.KeyFileds[key]; keyOk {
@@ -170,10 +138,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			return result, err
 		}
 	}
-	//valid create request
-	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
-	}
+
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
 	if validType == common.ValidCreate {
@@ -184,226 +149,6 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return result, err
 	}
 
-}
-
-func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes) {
-	for _, field := range fields {
-		_, ok := valData[field.PropertyID]
-		if !ok {
-			switch field.PropertyType {
-			case common.FieldTypeSingleChar:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeLongChar:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeInt:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeEnum:
-				enumOptions := ParseEnumOption(field.Option)
-				v := ""
-				if len(enumOptions) > 0 {
-					var defaultOption *EnumVal
-					for _, k := range enumOptions {
-						if k.IsDefault {
-							defaultOption = &k
-							break
-						}
-					}
-					if nil != defaultOption {
-						v = defaultOption.ID
-					}
-				}
-				valData[field.PropertyID] = v
-			case common.FieldTypeDate:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeTime:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeUser:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeMultiAsst:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeTimeZone:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeBool:
-				valData[field.PropertyID] = false
-			default:
-				valData[field.PropertyID] = nil
-			}
-		}
-	}
-}
-
-//valid create unique
-func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, error) {
-	isInner := false
-	objID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		objID = "object"
-	}
-
-	if 0 == len(valid.IsOnlyArr) {
-		blog.Debug("is only array is zero %+v", valid.IsOnlyArr)
-		return true, nil
-	}
-	searchCond := make(map[string]interface{})
-	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
-			searchCond[key] = val
-		}
-	}
-	if !isInner {
-		searchCond[common.BKObjIDField] = valid.objID
-	}
-
-	if 0 == len(searchCond) {
-		return true, nil
-	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Info("get insts by cond: %s", string(info))
-	url := fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, objID)
-	if !strings.HasPrefix(url, "http://") {
-		url = fmt.Sprintf("http://%s", url)
-	}
-	blog.Info("get insts by url : %s", url)
-	rst, err := httpCli.POST(url, nil, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
-	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, err
-	}
-
-	var rstRes InstRst
-	if jserr := json.Unmarshal(rst, &rstRes); nil != jserr {
-		blog.Error("can not unmarshal the result , error information is %v", jserr)
-		return false, jserr
-	}
-	if false == rstRes.Result {
-		blog.Error("get rst res error :%v", rstRes)
-		return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
-	}
-
-	data := rstRes.Data.(map[string]interface{})
-	count, err := util.GetIntByInterface(data["count"])
-	if nil != err {
-		blog.Error("get data error :%v", data)
-		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
-	}
-	if 0 != count {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-	}
-	return true, nil
-}
-
-//valid update unique
-func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
-	isInner := false
-	urlID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		urlID = "object"
-	}
-
-	if 0 == len(valid.IsOnlyArr) {
-		return true, nil
-	}
-	searchCond := make(map[string]interface{})
-	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
-			searchCond[key] = val
-		}
-	}
-
-	if 1 == len(searchCond) {
-		for key := range searchCond {
-			if key == common.BKAppIDField {
-				return true, nil
-			}
-		}
-	}
-
-	if !isInner {
-		searchCond[common.BKObjIDField] = valid.objID
-	}
-	if 0 == len(searchCond) {
-		return true, nil
-	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Info("get insts by cond: %s", string(info))
-	blog.Info("get insts by cond instID: %v", instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
-	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, valid.ccError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	var rstRes InstRst
-	if jserr := json.Unmarshal(rst, &rstRes); nil != jserr {
-		blog.Error("can not unmarshal the result , error information is %v", jserr)
-		return false, valid.ccError.Error(common.CCErrCommJSONUnmarshalFailed)
-	}
-	if false == rstRes.Result {
-		blog.Error("valid update unique false: %v", rstRes)
-		return false, valid.ccError.Error(common.CCErrCommUniqueCheckFailed)
-	}
-	data := rstRes.Data.(map[string]interface{})
-	count, err := util.GetIntByInterface(data["count"])
-	if nil != err {
-		err := "data false"
-		blog.Error("data struct false %v", err)
-		return false, valid.ccError.Error(common.CCErrCommParseDataFailed)
-	}
-	if 0 == count {
-		return true, nil
-	} else if 1 == count {
-		info, ok := data["info"]
-		if false == ok {
-			blog.Error("data struct false lack info %v", data)
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-		infoMap, ok := info.([]interface{})
-		if false == ok {
-			blog.Error("data struct false lack info is not array%v", data)
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-		for _, j := range infoMap {
-			i := j.(map[string]interface{})
-			objIDName := util.GetObjIDByType(objID)
-			instIDc, ok := i[objIDName]
-			if false == ok {
-				blog.Error("data struct false no objID%v", objIDName)
-				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-			}
-			instIDci, err := util.GetIntByInterface(instIDc)
-
-			if nil != err {
-				blog.Error("instID not int , error info is %s", err.Error())
-				return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-			}
-			if instIDci == instID {
-				return true, nil
-			}
-			blog.Error("duplicate data ")
-			return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-		}
-	} else {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
-	}
-	return true, nil
 }
 
 //valid char
@@ -443,21 +188,6 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) 
 	}
 
 	return true, nil
-}
-
-func parseIntOption(val interface{}) IntOption {
-	intOption := IntOption{}
-	if nil == val || "" == val {
-		return intOption
-	}
-	switch option := val.(type) {
-	case string:
-		json.Unmarshal([]byte(option), &intOption)
-	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	}
-	return intOption
 }
 
 // validInt valid int
@@ -545,79 +275,6 @@ func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedBool, key)
 	}
 	return true, nil
-}
-
-//valid enum
-func (valid *ValidMap) setEnumDefault(valData map[string]interface{}, valRule *ValRule) {
-
-	for key, val := range valData {
-		rule, ok := valRule.FieldRule[key]
-		if !ok {
-			continue
-		}
-		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField]
-		switch fieldType {
-		case common.FieldTypeEnum:
-			if nil != val {
-				valStr, ok := val.(string)
-				if false == ok {
-					return
-				}
-				if "" != valStr {
-					continue
-				}
-			}
-
-			enumOption := ParseEnumOption(option)
-			var defaultOption *EnumVal
-
-			for _, k := range enumOption {
-				if k.IsDefault {
-					defaultOption = &k
-					break
-				}
-			}
-			if nil != defaultOption {
-				valData[key] = defaultOption.ID
-			}
-
-		}
-
-	}
-
-	return
-}
-
-// ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) []EnumVal {
-	enumOptions := []EnumVal{}
-	if nil == val || "" == val {
-		return enumOptions
-	}
-	switch options := val.(type) {
-	case string:
-		json.Unmarshal([]byte(options), &enumOptions)
-	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			}
-		}
-	}
-	return enumOptions
 }
 
 // validEnum valid enum
@@ -720,23 +377,4 @@ func (valid *ValidMap) validTime(val interface{}, key string) (bool, error) {
 	}
 	return true, nil
 
-}
-
-func getString(val interface{}) string {
-	if val == nil {
-		return ""
-	}
-	if ret, ok := val.(string); ok {
-		return ret
-	}
-	return ""
-}
-func getBool(val interface{}) bool {
-	if val == nil {
-		return false
-	}
-	if ret, ok := val.(bool); ok {
-		return ret
-	}
-	return false
 }

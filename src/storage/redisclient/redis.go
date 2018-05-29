@@ -365,9 +365,14 @@ func (r *Redis) GetType() string {
 	return storage.DI_REDIS
 }
 
-//close con
+// Close close session
 func (r *Redis) Close() {
 	if r.session != nil {
 		r.session.Close()
 	}
+}
+
+// IsDuplicateErr returns whether err is duplicate error
+func (r *Redis) IsDuplicateErr(err error) bool {
+	return false
 }

@@ -2,13 +2,23 @@ language: go
 
 go:
   - "1.8.x"
-  - "1.10.x"  
+  - "1.10.x"
 
 # safelist
 branches:
   only:
   - master
-  
+  - travis_ci
+
+env:
+  global:
+    - REPO_NAME=bk-cmdb
+    - BUILD_DIR=configcenter
+
+cache:
+  directories:
+    - node_modules
+
 before_install:
   - go get -v github.com/golang/lint/golint
 
@@ -16,9 +26,10 @@ install: true
 
 script:
  - pwd && ls ./ && ls ../
- - cd ../ && mv bk-cmdb ../../configcenter
- - cd ../../configcenter/src
- - pwd && ls ./
+ - cd ../ && mv $REPO_NAME ../../$BUILD_DIR
+ - cd ../../$BUILD_DIR
+ - ./scripts/travis_ci.sh
+ - cd src
  - make
 
 notifications:

@@ -83,7 +83,7 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	nonExistsFiled := make([]api.ObjAttDes, 0)
 	ignorItems := make([]string, 0)
 	for _, item := range attDes {
-		if _, ok := targetInput[item.PropertyID]; !ok {
+		if _, ok := targetInput[item.PropertyID]; !ok && !item.IsRequired {
 			nonExistsFiled = append(nonExistsFiled, item)
 			ignorItems = append(ignorItems, item.PropertyID)
 		}
@@ -337,7 +337,7 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 		innerBatchInfo := &struct {
 			// BatchInfo batch info
 			BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
-			InputType string                          `json:"InputType"`
+			InputType string                          `json:"input_type"`
 		}{}
 
 		if _, batchInfoOK := input["BatchInfo"]; batchInfoOK {

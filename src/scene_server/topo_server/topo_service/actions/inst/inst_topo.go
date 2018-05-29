@@ -57,7 +57,9 @@ func (cli *instAction) getAsstParentObject(forward *api.ForwardParam, objID, own
 	}
 
 	for _, asstItem := range asstRst {
-		rstMap[asstItem.ObjectAttID] = asstItem.ObjectID
+		if common.BKChildStr != asstItem.ObjectAttID { // ingore the main line object
+			rstMap[asstItem.ObjectAttID] = asstItem.ObjectID
+		}
 	}
 
 	// rstmap: key is the bk_property_id  value is the association object id
@@ -268,13 +270,11 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 		// search the insts
 
 		// construct the object id
-
 		currInstID := instRes.Get(sourcecommon.GetIDNameByType(objID)).Int()
-		currObjectID := instRes.Get(common.BKObjIDField).String()
 
 		// search parent association inst id
 		objCondition = map[string]interface{}{}
-		objCondition[common.BKAsstObjIDField] = currObjectID
+		objCondition[common.BKAsstObjIDField] = objID
 		objCondition[common.BKAsstInstIDField] = currInstID
 		objCondition[common.BKObjIDField] = prevObjID
 
@@ -360,6 +360,13 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			targetpre = cli.CC.HostCtrl() + "/host/v1/hosts"
 			condition[common.BKHostIDField] = instID
 			instName = common.BKHostInnerIPField
+		case common.BKInnerObjIDPlat:
+			objType = common.BKInnerObjIDPlat
+			condition[common.BKCloudIDField] = instID
+			condition[common.BKOwnerIDField] = map[string]interface{}{
+				common.BKDBIN: []string{ownerID, ""},
+			}
+			instName = common.BKCloudNameField
 		case common.BKInnerObjIDModule:
 			objType = common.BKInnerObjIDModule
 			condition[common.BKModuleIDField] = instID
@@ -375,12 +382,13 @@ func (cli *instAction) SelectAssociationTopo(req *restful.Request, resp *restful
 			condition[common.BKSetIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
 			instName = common.BKSetNameField
+
 		default:
 			objType = common.BKINnerObjIDObject
 			condition[common.BKObjIDField] = objID
 			condition[common.BKInstIDField] = instID
 			condition[common.BKOwnerIDField] = ownerID
-			instName = common.BKObjNameField
+			instName = common.BKInstNameField
 		}
 
 		// construct the search params
