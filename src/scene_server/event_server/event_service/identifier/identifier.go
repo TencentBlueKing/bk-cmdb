@@ -128,7 +128,7 @@ func handleInst(e *types.EventInst) {
 			for index := range e.Data {
 				var curdata map[string]interface{}
 
-				if types.EventActionDelete == e.Action && len(e.Data) > 0 {
+				if types.EventActionDelete == e.Action {
 					curdata, ok = e.Data[index].PreData.(map[string]interface{})
 				} else {
 					curdata, ok = e.Data[index].CurData.(map[string]interface{})
