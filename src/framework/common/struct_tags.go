@@ -96,6 +96,10 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 			continue
 		}
 
+		if nil == tagVal {
+			continue
+		}
+
 		fieldValue := targetValue.FieldByName(structField.Name)
 		if !fieldValue.CanSet() {
 			continue

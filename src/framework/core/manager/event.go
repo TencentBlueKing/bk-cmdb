@@ -10,4 +10,24 @@
  * limitations under the License.
  */
 
-package input
+package manager
+
+import (
+	"configcenter/src/framework/core/types"
+)
+
+type eventSubscription struct {
+}
+
+func (cli *eventSubscription) run() error {
+	// TODO：启动CMDB 3.0 事件订阅，对读取到的数据做加工整理成真是的时间对象并投递
+	return nil
+}
+
+func (cli *eventSubscription) register(eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {
+	return types.EventKey("")
+}
+
+func (cli *eventSubscription) unregister(eventKey types.EventKey) {
+
+}

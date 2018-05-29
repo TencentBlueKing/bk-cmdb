@@ -13,7 +13,6 @@
 package input
 
 import (
-
 	"configcenter/src/framework/core/types"
 
 	"configcenter/src/framework/core/output"
@@ -81,7 +80,8 @@ type InputerResult struct {
 
 // InputerContext the inputer context
 type InputerContext interface {
-	RegisterEvent(event types.EventType)
+	RegisterEvent(eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey
+	UnRegisterEvent(eventKey types.EventKey)
 }
 
 // Manager is the interface that must be implemented by every input manager.
@@ -94,7 +94,7 @@ type Manager interface {
 	RemoveInputer(key InputerKey)
 
 	// Run start the business cycle until the stop method is called.
-	Run(ctx context.Context, cancel context.CancelFunc)
+	Run(ctx context.Context, inputerCtx InputerContext)
 
 	// Stop
 	Stop() error
@@ -106,6 +106,9 @@ type Inputer interface {
 	// Description the Inputer description.
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
+
+	// Init the Inputer's initialization method will only be executed
+	Init(ctx InputerContext) error
 
 	// Run execute the user logics
 	Run(ctx InputerContext) *InputerResult
