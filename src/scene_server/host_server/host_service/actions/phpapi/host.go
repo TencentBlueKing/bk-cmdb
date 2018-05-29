@@ -239,7 +239,7 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 				}
 			}
 			blog.Debug("procMap:%v", proMap)
-			proMap["import_from"] = common.HostAddMethodAPI
+			proMap["import_from"] = common.HostAddMethodAgent
 			hostIDNew, err := phpapilogic.AddHost(req, proMap, cli.CC.ObjCtrl())
 
 			if nil != err {
