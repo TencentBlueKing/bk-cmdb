@@ -455,14 +455,20 @@
         line-height: 20px;
         font-size: 12px;
         padding: 0 8px;
-        background-color: #30d878;
-        border-color: #30d878;
+        &-new{
+            background-color: #30d878;
+            border-color: #30d878;
+            &:hover{
+                background-color: #10ed6f;
+                border-color: #10ed6f;
+            }
+        }
         &-remove{
             background-color: #fff;
             color: #3c96ff;
             border-color: currentcolor;
             &:hover{
-                color: #30d878;
+                color: #0082ff;
             }
         }
     }
