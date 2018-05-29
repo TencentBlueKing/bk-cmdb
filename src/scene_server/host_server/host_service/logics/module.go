@@ -48,8 +48,8 @@ func GetModuleIDByCond(req *restful.Request, objURL string, cond []interface{}) 
 	output, _ := js.Map()
 	moduleData := output["data"]
 	moduleResult := moduleData.(map[string]interface{})
-	moduleInfo := moduleResult["info"].([]interface{})
-	if !false {
+	moduleInfo, ok := moduleResult["info"].([]interface{})
+	if !ok {
 		return moduleIDArr, nil
 	}
 	for _, i := range moduleInfo {
