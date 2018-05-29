@@ -52,7 +52,7 @@
             ...mapGetters('object', ['attribute']),
             hasAssociationProperty () {
                 if (this.objId) {
-                    (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                    return (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
                 }
                 return false
             },
