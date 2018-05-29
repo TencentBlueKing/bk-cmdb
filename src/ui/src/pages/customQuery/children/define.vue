@@ -270,7 +270,13 @@
                         // 多模块与多集群查询
                         if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
                             operator = operator === '$regex' ? '$in' : operator
-                            value = operator === '$in' ? [...value.replace('，', ',').split(','), value] : value
+                            if (operator === '$in') {
+                                let arr = value.replace('，', ',').split(',')
+                                let isExist = arr.findIndex(val => {
+                                    return val === value
+                                }) > -1
+                                value = isExist ? arr : [...arr, value]
+                            }
                         }
                         param['condition'].push({
                             field: property.bkPropertyId,
