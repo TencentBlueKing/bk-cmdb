@@ -212,7 +212,7 @@
             //  属性分组:根据formFields中各property.PropertyGroup 进行属性分组，为'隐藏分组(none)'时，放入更多属性中
             bkPropertyGroups () {
                 let bkPropertyGroups = {}
-                this.formFields.map(property => {
+                this.formFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
                     let {
                         bk_property_group: bkPropertyGroup,
                         bk_property_group_name: bkPropertyGroupName
