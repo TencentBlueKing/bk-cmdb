@@ -95,6 +95,7 @@ func (cli *objectAction) SelectObjectTopoGraphics(req *restful.Request, resp *re
 				node.SetScopeID("0")
 				node.SetBizID(0)
 				node.SetSupplierAccount("0")
+				node.SetIsPre(obj.IsPre)
 				node.SetIcon(obj.ObjIcon)
 				commondata.TranslateObjectName(defLang, &obj.ObjectDes)
 
