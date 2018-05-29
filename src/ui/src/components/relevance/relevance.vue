@@ -9,7 +9,11 @@
                     <i class="icon-cc-tree"></i>{{$t('Association["树形"]')}}
                 </li>
             </ul>
-            <bk-button type="primary" class="btn btn-add" @click="currentComponent = 'v-new-association'">{{$t('Association["新增关联"]')}}</bk-button>
+            <bk-button type="primary" class="btn btn-add"
+                :disabled="!hasAssociationProperty"
+                @click="currentComponent = 'v-new-association'">
+                {{$t('Association["新增关联"]')}}
+            </bk-button>
         </div>
         <component v-bind="componentProps"
             :is="currentComponent"
@@ -23,6 +27,7 @@
     import vTopo from './topo'
     import vTree from './tree'
     import vNewAssociation from './new-association'
+    import {mapGetters} from 'vuex'
     export default {
         props: {
             isShow: {
@@ -44,6 +49,13 @@
             }
         },
         computed: {
+            ...mapGetters('object', ['attribute']),
+            hasAssociationProperty () {
+                if (this.objId) {
+                    (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                }
+                return false
+            },
             componentProps () {
                 const component = this.currentComponent
                 const props = {
@@ -72,8 +84,18 @@
                     this.currentComponent = null
                 }
             },
+            objId (objId) {
+                if (this.objId && !this.attribute[this.objId]) {
+                    this.$store.dispatch('object/getAttribute', this.objId)
+                }
+            },
             currentComponent (currentComponent, prevComponent) {
                 this.prevComponent = prevComponent
+            }
+        },
+        created () {
+            if (this.objId && !this.attribute[this.objId]) {
+                this.$store.dispatch('object/getAttribute', this.objId)
             }
         },
         methods: {
@@ -127,6 +149,9 @@
         float: right;
         height: 24px;
         line-height: 24px;
+        &:disabled{
+            cursor: not-allowed !important;
+        }
     }
     .new-association{
         position: absolute;
