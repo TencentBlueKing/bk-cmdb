@@ -290,7 +290,7 @@
                         } else {
                             config.params.condition[this.objId] = [{
                                 field: this.filter.selected,
-                                operator: this.filter.type === 'enum' ? '$eq' : '$regex',
+                                operator: ['enum', 'int'].includes(this.filter.type) ? '$eq' : '$regex',
                                 value: this.filter.value
                             }]
                         }

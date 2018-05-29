@@ -56,7 +56,7 @@ func (m *MgoCli) Open() error {
 	// mgo.SetLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	dialInfo := &mgo.DialInfo{
-		Addrs:     []string{m.host},
+		Addrs:     []string{m.host + ":" + m.port},
 		Direct:    false,
 		Timeout:   time.Second * 5,
 		Database:  m.dbName,
@@ -333,4 +333,9 @@ func (m *MgoCli) DropColumn(tableName, field string) error {
 //GetType 获取操作db的类
 func (m *MgoCli) GetType() string {
 	return storage.DI_MONGO
+}
+
+// IsDuplicateErr returns whether err is duplicate error
+func (m *MgoCli) IsDuplicateErr(err error) bool {
+	return mgo.IsDup(err)
 }

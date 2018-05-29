@@ -229,6 +229,11 @@ const (
 	// CCErrTopoHasHost include host
 	CCErrTopoHasHost = 1101030
 
+	// CCErrTopoGetCloudErrStrFaild get cloud error
+	CCErrTopoGetCloudErrStrFaild = 1101031
+	//CCErrTopoCloudNotFound   cloud area not found
+	CCErrTopoCloudNotFound = 1101032
+
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033
@@ -248,6 +253,8 @@ const (
 	CCErrTopoRolePrivilegeCreateFailed             = 1001048
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
 	CCErrHostNotAllowedToMutiBiz                   = 1001050
+	CCErrTopoGraphicsSearchFailed                  = 1001051
+	CCErrTopoGraphicsUpdateFailed                  = 1001052
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
@@ -314,6 +321,7 @@ const (
 	CCErrHostFavouriteCreateFail         = 1106015
 	CCErrHostFavouriteUpdateFail         = 1106016
 	CCErrHostFavouriteDeleteFail         = 1106017
+	CCErrHostFavouriteDupFail            = 1106017
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module = 1107001

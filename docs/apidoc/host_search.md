@@ -367,16 +367,16 @@ data字段说明：
 | Cpu| int|  cpu个数 | cpu number|
 | Mem| int| 内存大小单位M | memory size|
 | bootTime| int| 系统启动时间时间戳 | boot time|
-| cpuUsage| float64| cpu利用率，这个是乘以100后的值，展示的时候为30.2% | cpu usage|
-| diskUsage| int| 磁盘利用率，这个是乘以100后的值，展示的时候为0% | disk usage|
+| cpuUsage| int| cpu利用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01% | cpu usage|
+| diskUsage| int| 磁盘利用率，这个是乘以100后的值，展示需要除以100 eg:1100 = 11% | disk usage|
 | hosts| 字符串数组| 系统hosts文件| server hosts info |
 | loadavg| string| 系统负载 | load avg|
-| memUsage| int| 内存使用率 | memory usage|
+| memUsage| int| 内存使用率，这个是乘以100后的值，展示需要除以100 eg:101 =1.01%  | memory usage|
 | memUsed| init| 已经用的内存大小，单位M | the mem used|
-| rcvRate| int| 系统总入流量 | receive rate|
+| rcvRate| int| 系统总入流量，这个是乘以100后的值，展示需要除以100 eg:101 =1.01 | receive rate|
 | route| 字符串数组| 路由信息|route info|
 | iptables| 字符串数组| iptable信息 | iptables array|
-| sendRate| int| 系统总流出 |send rate|
+| sendRate| int| 系统总流出，这个是乘以100后的值，展示需要除以100 eg:111=1.11 |send rate|
 | timezone_number| int | 数字时区 | time zone number|
 | upTime| string | 最近更新时间 |data update time|
 

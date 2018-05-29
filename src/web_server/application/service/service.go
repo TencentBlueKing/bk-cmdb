@@ -208,8 +208,8 @@ func (ccWeb *CCWebServer) Start() error {
 			if nil != err {
 				blog.Errorf("api server not start %s", err.Error())
 			}
-			userPriviApp, rolePrivilege, modelPrivi, sysPrivi := logics.GetUserAppPri(apiSite, userName, common.BKDefaultOwnerID, language)
-			var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi string
+			userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := logics.GetUserAppPri(apiSite, userName, common.BKDefaultOwnerID, language)
+			var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
 			if nil == userPriviApp {
 				strUserPriveApp = ""
 			} else {
@@ -236,11 +236,15 @@ func (ccWeb *CCWebServer) Start() error {
 				strSysPrivi = string(cstrSysPrivi)
 			}
 
+			mainLineObjIDB, _ := json.Marshal(mainLineObjIDArr)
+			mainLineObjIDStr = string(mainLineObjIDB)
+
 			session.Set("userPriviApp", string(strUserPriveApp))
 			session.Set("rolePrivilege", string(strRolePrivilege))
 
 			session.Set("modelPrivi", string(strModelPrivi))
 			session.Set("sysPrivi", string(strSysPrivi))
+			session.Set("mainLineObjID", string(mainLineObjIDStr))
 			session.Save()
 
 			c.HTML(200, "index.html", gin.H{
