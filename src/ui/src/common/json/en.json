@@ -84,7 +84,9 @@
         "复制失败": "Copy Fail",
         "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
         "内容不合法": "Illegal content",
-        "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first."
+        "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
+        "详情": "Detail",
+        "删除关联": "Delete Association"
     },
     "Index": {
         "首页": "Index",
@@ -462,6 +464,8 @@
         "取消关联成功": "Remove association success",
         "添加关联": "Add Association",
         "添加关联成功": "Add association success",
-        "条件筛选": "Filter"
+        "条件筛选": "Filter",
+        "树形": "Tree",
+        "拓扑": "Topo"
     }
 }
