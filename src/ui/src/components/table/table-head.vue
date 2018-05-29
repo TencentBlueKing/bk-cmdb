@@ -69,12 +69,18 @@
             },
             columns () {
                 return this.layout.columns
+            },
+            crossPageAllChecked () {
+                if (this.table.crossPageCheck) {
+                    return this.table.checked.length === this.table.pagination.count
+                }
+                return false
             }
         },
         watch: {
-            'table.checked' (checked) {
-                if (this.table.crossPageCheck && this.$refs.crossPageCheckbox) {
-                    this.$refs.crossPageCheckbox[0].checked = checked.length === this.table.pagination.count
+            crossPageAllChecked (checked) {
+                if (this.$refs.crossPageCheckbox) {
+                    this.$refs.crossPageCheckbox[0].checked = checked
                 }
             }
         },
