@@ -70,6 +70,7 @@
                     </span>
                     <span v-else>
                         <v-operator 
+                            :property="property"
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
