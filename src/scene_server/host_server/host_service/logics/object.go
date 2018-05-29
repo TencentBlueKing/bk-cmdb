@@ -37,10 +37,16 @@ type ObjectData struct {
 }
 
 //GetSetIDByObjectCond get set id by object condition
-func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []interface{}) []int {
+func GetSetIDByObjectCond(req *restful.Request, objURL string, appID int, objectCond []interface{}) []int {
 	objectIDArr := make([]int, 0)
 	conc := make(map[string]interface{})
+	appIDCond := make(map[string]interface{})
 	condition := make([]interface{}, 0)
+
+	appIDCond["field"] = common.BKAppIDField
+	appIDCond["operator"] = common.BKDBEQ
+	appIDCond["value"] = appID
+
 	for _, i := range objectCond {
 		condi := i.(map[string]interface{})
 		field, ok := condi["field"].(string)
@@ -57,6 +63,7 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, conc)
+	condition = append(condition, appIDCond)
 	for {
 		sSetIDArr, _ := GetSetIDByCond(req, objURL, condition)
 
@@ -75,6 +82,7 @@ func GetSetIDByObjectCond(req *restful.Request, objURL string, objectCond []inte
 		conc["operator"] = common.BKDBIN
 		conc["value"] = sObjectIDArr
 		condition = append(condition, conc)
+		condition = append(condition, appIDCond)
 	}
 
 }
