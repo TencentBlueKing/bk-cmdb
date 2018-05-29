@@ -15,7 +15,7 @@ package logics
 import (
 	"configcenter/src/common"
 	"fmt"
-	"github.com/tealeg/xlsx"
+	"github.com/rentiansheng/xlsx"
 	"strings"
 )
 

@@ -172,14 +172,14 @@ func getGseAgentStatus(hostDataArr []interface{}) ([]int64, error) {
 		return []int64{}, nil
 	}
 
-	client, err := getRedisSession()
-	if nil == client {
+	rdClient, err := getRedisSession()
+	if nil == rdClient {
 		blog.Error("getRedisSession error:%v", err)
 		return nil, err
 	}
 	length := len(hostDataArr)
 	data := make([]int64, length)
-	pipe := client.Pipeline()
+	pipe := rdClient.Pipeline()
 	for _, hostData := range hostDataArr {
 		hostDataMap := hostData.(map[string]interface{})
 		blog.Infof("get gse hostDataMap:%v", hostDataMap)

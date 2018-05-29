@@ -37,6 +37,7 @@ import (
 	"strings"
 
 	api "configcenter/src/source_controller/api/object"
+
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -52,6 +53,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/app/{owner_id}", Params: nil, Handler: app.CreateApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/app/{owner_id}/{app_id}", Params: nil, Handler: app.DeleteApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/app/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateApp})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/app/status/{flag}/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateAppDataStatus})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/app/search/{owner_id}", Params: nil, Handler: app.SearchApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/app/default/{owner_id}/search", Params: nil, Handler: app.GetDefaultApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/app/default/{owner_id}", Params: nil, Handler: app.CreateDefaultApp})
@@ -63,12 +65,17 @@ func init() {
 //delete application
 func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 
-	// 读取语系
+	// get the language
 	language := util.GetActionLanguage(req)
 
-	// 获取该语系下的错误码
+	// get error code in language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
+
+		//new feature, app not allow deletion
+		blog.Error("app not allow deletion")
+		return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppDeleteFailed)
+
 		forward := &api.ForwardParam{Header: req.Request.Header}
 		pathParams := req.PathParameters()
 		appID, _ := strconv.Atoi(pathParams["app_id"])
@@ -160,13 +167,84 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 	}, resp)
 }
 
+// update  application data status
+func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Response) {
+
+	// get the language
+	language := util.GetActionLanguage(req)
+
+	// get error code in language
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+
+	cli.CallResponseEx(func() (int, interface{}, error) {
+		forward := &api.ForwardParam{Header: req.Request.Header}
+		pathParams := req.PathParameters()
+		appID, _ := strconv.Atoi(pathParams["app_id"])
+		ownerID, _ := pathParams["owner_id"]
+		flag, _ := pathParams["flag"]
+		if flag != common.DataStatusDisabled && flag != common.DataStatusEnable {
+			blog.Error("input params error:")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+		user := sencecommon.GetUserFromHeader(req)
+		//update app
+		input := make(map[string]interface{})
+		data := make(map[string]interface{})
+		condition := make(map[string]interface{})
+		condition[common.BKAppIDField] = appID
+		condition[common.BKOwnerIDField] = ownerID
+		data[common.BKDataStatusField] = flag
+
+		// take snapshot before operation
+		preData, retStrErr := inst.getInstDetail(req, appID, common.BKInnerObjIDApp, ownerID)
+		if common.CCSuccess != retStrErr {
+			blog.Errorf("get inst detail error: %v", retStrErr)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
+		}
+
+		input["condition"] = condition
+		input["data"] = data
+		uAppURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDApp
+		inputJSON, _ := json.Marshal(input)
+		_, err := httpcli.ReqHttp(req, uAppURL, common.HTTPUpdate, []byte(inputJSON))
+		if nil != err {
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppUpdateFailed)
+		}
+
+		{
+			// save change log
+			instID, _ := strconv.Atoi(fmt.Sprint(appID))
+			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDApp)
+			if common.CCSuccess != attErr {
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditTakeSnapshotFaile)
+			}
+
+			curData, retStrErr := inst.getInstDetail(req, instID, common.BKInnerObjIDApp, ownerID)
+			if common.CCSuccess != retStrErr {
+				blog.Errorf("get inst detail error: %v", retStrErr)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAuditSaveLogFaile)
+			}
+
+			auditContent := metadata.Content{
+				PreData: preData,
+				CurData: curData,
+				Headers: headers,
+			}
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+		}
+
+		return http.StatusOK, nil, nil
+	}, resp)
+
+}
+
 //update application
 func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
 
-	// 获取该语系下的错误码
+	// get error code in language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -257,6 +335,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 	}, resp)
 
 }
+
 func (cli *appAction) getOwnerIDByAppID(req *restful.Request, appID int) (ownerID string) {
 	condition := map[string]interface{}{}
 	condition[common.BKAppIDField] = appID
@@ -479,8 +558,8 @@ func (cli *appAction) GetDefaultApp(req *restful.Request, resp *restful.Response
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
 		}
 		blog.Info("get default a app return %v", appInfo)
-		json, err := simplejson.NewJson([]byte(appInfo))
-		appResData, _ := json.Map()
+		appJson, err := simplejson.NewJson([]byte(appInfo))
+		appResData, _ := appJson.Map()
 		return http.StatusOK, appResData["data"], nil
 	}, resp)
 
