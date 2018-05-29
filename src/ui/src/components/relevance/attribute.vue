@@ -1,17 +1,19 @@
 <template>
     <div class="topo-attribute-wrapper" v-show="isShow">
         <div class="loading" v-bkloading="{isLoading: attr.isLoading}">
-            <div class="attr-title">{{objName}} {{instName}}</div>
             <i class="bk-icon icon-close" @click="closePop"></i>
-            <v-attribute 
-                ref="attribute"
-                :formFields="attr.formFields"
-                :formValues="attr.formValues"
-                :type="attr.type"
-                :showBtnGroup="false"
-                :active="isShow"
-                :objId="objId">
-            </v-attribute>
+            <div class="attr-title">{{objName}} {{instName}}</div>
+            <div class="attribute-box">
+                <v-attribute 
+                    ref="attribute"
+                    :formFields="attr.formFields"
+                    :formValues="attr.formValues"
+                    :type="attr.type"
+                    :showBtnGroup="false"
+                    :active="isShow"
+                    :objId="objId">
+                </v-attribute>
+            </div>
         </div>
     </div>
 </template>
@@ -164,7 +166,6 @@
 <style lang="scss" scoped>
     .topo-attribute-wrapper {
         position: absolute;
-        padding-bottom: 40px;
         background: #fff;
         width: 710px;
         max-height: 80%;
@@ -173,9 +174,9 @@
         left: 25px;
         box-shadow: 0px 2px 9.6px 0.4px rgba(0, 0, 0, 0.4);
         overflow: auto;
-        @include scrollbar;
         .loading {
             min-height: 200px;
+            height: 100%;
         }
         .attr-title {
             font-size: 16px;
@@ -185,14 +186,20 @@
         .icon-close {
             padding: 2px;
             font-size: 16px;
-            position: absolute;
-            right: 10px;
-            top: 10px;
+            position: fixed;
+            right: 50px;
+            top: 220px;
             cursor: pointer;
             transition: all .2s linear;
             &:hover {
                 transform: rotate(90deg);
             }
+        }
+        .attribute-box {
+            height: calc(100% - 40px);
+            overflow: auto;
+            @include scrollbar;
+            padding-bottom: 40px;
         }
     }
 </style>

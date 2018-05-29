@@ -3,13 +3,13 @@
         <div class="tab-wrapper clearfix">
             <ul class="relevance-tab">
                 <li :class="{'active': currentComponent === 'v-topo'}" @click="currentComponent = 'v-topo'">
-                    <i class="icon-cc-resources"></i>拓扑
+                    <i class="icon-cc-resources"></i>{{$t('Association["拓扑"]')}}
                 </li>
                 <li :class="{'active': currentComponent === 'v-tree'}" @click="currentComponent = 'v-tree'">
-                    <i class="icon-cc-tree"></i>树形
+                    <i class="icon-cc-tree"></i>{{$t('Association["树形"]')}}
                 </li>
             </ul>
-            <bk-button type="primary" class="btn btn-add" @click="currentComponent = 'v-new-association'">新增关联</bk-button>
+            <bk-button type="primary" class="btn btn-add" @click="currentComponent = 'v-new-association'">{{$t('Association["新增关联"]')}}</bk-button>
         </div>
         <component v-bind="componentProps"
             :is="currentComponent"
