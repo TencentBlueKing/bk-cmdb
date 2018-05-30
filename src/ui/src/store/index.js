@@ -22,6 +22,7 @@ import hostSnapshot from './modules/hostSnapshot'
 import usercustom from './modules/usercustom'
 import navigation from './modules/navigation'
 import object from './modules/object'
+import association from './modules/association'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -33,6 +34,7 @@ export default new Vuex.Store({
         hostSnapshot,
         usercustom,
         navigation,
-        object
+        object,
+        association
     }
 })

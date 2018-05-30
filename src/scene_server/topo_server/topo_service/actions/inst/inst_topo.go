@@ -181,7 +181,8 @@ func (cli *instAction) getCommonChildInstTopo(req *restful.Request, objID, owner
 
 		if 0 == len(objItems) {
 			blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, val)
-			return nil, common.CCErrTopoObjectSelectFailed
+			//return nil, common.CCErrTopoObjectSelectFailed
+			continue
 		}
 
 		// set common object name
@@ -257,7 +258,8 @@ func (cli *instAction) getCommonParentInstTopo(req *restful.Request, objID, owne
 
 		if 0 == len(objItems) {
 			blog.Error("failed to search the objsect by the condition ownerid(%s) objid(%s)", ownerID, prevObjID)
-			return nil, common.CCSuccess
+			//return nil, common.CCSuccess
+			continue
 		}
 
 		// set common object name
