@@ -250,7 +250,7 @@
                                     item['id'] = data['bk_inst_id']
                                 }
                             } else if (list.id === '$op_time') {
-                                item['$op_time'] = this.objId === 'biz' ? this.$formatTime(moment(item['last_time'])) : this.$formatTime(moment(item['$op_time']))
+                                item['$op_time'] = this.objId === 'biz' ? this.$formatTime(moment(item['last_time'])) : this.$formatTime(moment(item['op_time']))
                             } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
                                 let name = []
                                 if (data.hasOwnProperty(list.id)) {
