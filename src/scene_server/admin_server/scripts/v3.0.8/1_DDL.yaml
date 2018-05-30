@@ -1,0 +1,37 @@
+- action: createtable
+  error: abort 
+  data:
+    - tablename: cc_ApplicationBase
+      columns: []
+      index: 
+        - name: ""
+          keys: [bk_biz_id]
+          unique: false
+          backgroud: true
+        - name: ""
+          keys: [bk_biz_name]
+          unique: false
+          backgroud: true
+        - name: ""
+          keys: [default]
+          unique: false
+          backgroud: true
+    - tablename: cc_HostBase
+      columns: []
+      index: 
+        - name: ""
+          keys: [bk_host_id]
+          unique: false
+          backgroud: true
+        - name: ""
+          keys: [bk_host_name]
+          unique: false
+          backgroud: true
+        - name: ""
+          keys: [bk_host_innerip]
+          unique: false
+          backgroud: true
+        - name: ""
+          keys: [bk_host_outerip]
+          unique: false
+          backgroud: true
