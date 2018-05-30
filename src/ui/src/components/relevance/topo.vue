@@ -180,11 +180,11 @@
                         image: data.image,
                         level: LEVEL,
                         isLoad: data.isLoad,
-                        objId: data['bk_obj_id'],
-                        objName: data['bk_obj_name'],
-                        objIcon: data['bk_obj_icon'],
-                        instId: data['bk_inst_id'],
-                        instName: data['bk_inst_name'],
+                        bk_obj_id: data['bk_obj_id'],
+                        bk_obj_name: data['bk_obj_name'],
+                        bk_obj_icon: data['bk_obj_icon'],
+                        bk_inst_id: data['bk_inst_id'],
+                        bk_inst_name: data['bk_inst_name'],
                         selectedUrl: data.selectedUrl,
                         unselectedUrl: data.unselectedUrl
                     })
@@ -433,7 +433,7 @@
             initImg (image, color) {
                 let base64 = this.getBase64Img(image, this.parseColor(color))
                 let svg = `<svg xmlns="http://www.w3.org/2000/svg" stroke="" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
-                    <rect x="" height="100" width="100" style="fill: #fff; border: none"/>
+                    <rect x="" height="100" width="100" style="fill: #f9f9f9; border: none"/>
                     <image width="100%" xlink:href="${base64}"></image>
                 </svg>`
                 return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
@@ -546,16 +546,14 @@
             showInstDetail (objId, instId) {
                 this.attr.objId = objId
                 this.attr.instId = instId
-
                 let model = this.nodes.find(node => {
-                    return node.objId === objId
+                    return node['bk_obj_id'] === objId
                 })
-                this.attr.objName = model ? model.objName : ''
+                this.attr.objName = model ? model['bk_obj_name'] : ''
                 let inst = this.nodes.find(node => {
-                    return node.instId === instId
+                    return node['bk_inst_id'] === instId
                 })
-                this.attr.instName = inst ? inst.instName : ''
-
+                this.attr.instName = inst ? inst['bk_inst_name'] : ''
                 this.removePop()
                 this.attr.isShow = true
             },
@@ -627,15 +625,16 @@
     .relevance-topo-wrapper {
         position: relative;
         height: calc(100% - 64px);
+        background: #f9f9f9;
         .topo {
             height: 100%;
         }
         .model-list {
             position: absolute;
-            padding-left: 30px;
+            padding: 10px 0 0 10px;
             left: 0;
             top: 0;
-            background: #fff;
+            background: #f9f9f9;
             .model {
                 cursor: pointer;
                 &.unselected {
@@ -655,6 +654,9 @@
     .relevance-topo-wrapper {
         .attribute-group {
             width: 580px;
+            &:first-child {
+                padding-top: 8px;
+            }
         }
     }
 </style>
