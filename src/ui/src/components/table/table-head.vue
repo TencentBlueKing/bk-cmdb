@@ -65,7 +65,7 @@
                 return this.layout.table
             },
             allChecked () {
-                return this.table.pagination.count > 0 && this.table.checked.length === this.table.list.length
+                return this.table.list.length && this.table.checked.length === this.table.list.length
             },
             columns () {
                 return this.layout.columns
