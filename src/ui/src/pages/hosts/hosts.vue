@@ -87,6 +87,7 @@
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
+                :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
                 @handleSortChange="setTableSort"
@@ -135,10 +136,11 @@
                         </v-attribute>
                     </bk-tabpanel>
                     <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="!sideslider.attribute.form.isMultipleUpdate">
-                        <v-relevance style="padding: 30px 0;"
+                        <v-relevance
                             :isShow="sideslider.attribute.active==='relevance'"
                             :objId="'host'"
                             :ObjectID="sideslider.attribute.form.formValues['bk_host_id']"
+                            :instance="sideslider.attribute.form.formValues"
                         ></v-relevance>
                     </bk-tabpanel>
                     <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')"
@@ -242,6 +244,10 @@
             outerLoading: {
                 type: Boolean,
                 default: false
+            },
+            tableVisible: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
