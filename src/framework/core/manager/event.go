@@ -16,21 +16,52 @@ import (
 	"configcenter/src/framework/core/types"
 	"github.com/tidwall/gjson"
 
+	"context"
+	"errors"
+
 	"fmt"
 )
 
 type eventSubscription struct {
+	datas chan *gjson.Result
+
+	setMgr            *eventSet
+	moduleMgr         *eventModule
+	hostMgr           *eventHost
+	hostIdentifierMgr *eventHostIdentifier
+	businessMgr       *eventBusiness
 }
 
-func (cli *eventSubscription) run() error {
-	// TODO：启动CMDB 3.0 事件订阅，对读取到的数据做加工整理成真是的时间对象并投递
-	return nil
+func (cli *eventSubscription) run(ctx context.Context) error {
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case msg := <-cli.datas:
+			{
+				objID := msg.Get("obj_type").String()
+				switch objID {
+				case EventHost:
+				case EventBusiness:
+				case EventModule:
+				case EventSet:
+				case EventHostIdentifier:
+				}
+			}
+		}
+	}
 }
 
-func (cli *eventSubscription) puts(data gjson.Result) (types.MapStr, error) {
+func (cli *eventSubscription) puts(data *gjson.Result) (types.MapStr, error) {
 
 	fmt.Println("puts:", data.String())
-	return nil, nil
+	select {
+	default:
+		return nil, errors.New("the event queue is full")
+	case cli.datas <- data:
+		return nil, nil
+	}
 }
 
 func (cli *eventSubscription) register(eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {

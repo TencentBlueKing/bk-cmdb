@@ -17,11 +17,25 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+const (
+	EventHost           = "host"
+	EventHostIdentifier = "hostidentifier"
+	EventSet            = "set"
+	EventModule         = "module"
+	EventBusiness       = "biz"
+	EventPlat           = "plat"
+
+	EventModuleTransfer = "moduletransfer"
+	EventActionCreate   = "create"
+	EventActionDelete   = "delete"
+	EventActionUpdate   = "update"
+)
+
 // Action the http action
 type Action struct {
 	Method      string
 	Path        string
-	HandlerFunc func(data gjson.Result) (types.MapStr, error)
+	HandlerFunc func(data *gjson.Result) (types.MapStr, error)
 }
 
 // FrameworkContext definition the framework context
