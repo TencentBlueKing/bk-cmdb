@@ -14,7 +14,15 @@ package manager
 
 import (
 	"configcenter/src/framework/core/types"
+	"github.com/tidwall/gjson"
 )
+
+// Action the http action
+type Action struct {
+	Method      string
+	Path        string
+	HandlerFunc func(data gjson.Result) (types.MapStr, error)
+}
 
 // FrameworkContext definition the framework context
 type FrameworkContext interface {

@@ -12,10 +12,22 @@
 
 package manager
 
+import (
+	"net/http"
+)
+
 // New return a new  Manager instance
 func New() *Manager {
+	evn := &eventSubscription{}
 	return &Manager{
-		eventMgr: &eventSubscription{},
+		eventMgr: evn,
+		ms: []Action{
+			Action{
+				Method:      http.MethodPost,
+				Path:        "/api/v1/event/puts",
+				HandlerFunc: evn.puts,
+			},
+		},
 	}
 }
 
