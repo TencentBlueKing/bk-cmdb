@@ -22,6 +22,7 @@ const actions = {
             } else {
                 $alertMsg(res['bk_error_msg'])
             }
+            return res
         })
     }
 }
