@@ -51,7 +51,7 @@ func (m *Manager) Actions() []httpserver.Action {
 
 			gs := gjson.ParseBytes(value)
 
-			data, dataErr := a.HandlerFunc(gs)
+			data, dataErr := a.HandlerFunc(&gs)
 			if nil != dataErr {
 				log.Errorf("%s", dataErr.Error())
 			}

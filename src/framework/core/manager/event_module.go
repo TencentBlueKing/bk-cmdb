@@ -13,33 +13,13 @@
 package manager
 
 import (
+	//"configcenter/src/framework/core/types"
 	"github.com/tidwall/gjson"
-	"net/http"
 )
 
-// New return a new  Manager instance
-func New() *Manager {
-	evn := &eventSubscription{
-		datas: make(chan *gjson.Result, 4096),
-	}
-	return &Manager{
-		eventMgr: evn,
-		ms: []Action{
-			Action{
-				Method:      http.MethodPost,
-				Path:        "/api/v1/event/puts",
-				HandlerFunc: evn.puts,
-			},
-		},
-	}
+type eventModule struct {
 }
 
-// Delete delete the framework instance
-func Delete(mgr *Manager) error {
-
-	if nil != mgr {
-		return mgr.stop()
-	}
-
+func (cli *eventModule) parse(data *gjson.Result) error {
 	return nil
 }
