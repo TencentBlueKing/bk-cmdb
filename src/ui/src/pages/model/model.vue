@@ -13,7 +13,11 @@
         <div class="left-tap-contain">
             <div class="list-tap" v-bkloading="{isLoading: isClassifyLoading}">
                 <ul>
-                    <li :class="{'active': curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)">
+                    <li :class="{'active': topoView === 'GLOBAL_MODELS'}" @click="topoView = 'GLOBAL_MODELS'">
+                        <i class="icon-cc-networks"></i>
+                        <span class="text">全局模型</span>
+                    </li>
+                    <li :class="{'active': topoView === 'models' && curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)" @click.stop="topoView = 'models'">
                         <i :class="item['bk_classification_icon']"></i>
                         <span class="text">{{item['bk_classification_name']}}</span>
                     </li>
@@ -26,7 +30,8 @@
             </div>
         </div>
         <div class="right-contain clearfix">
-            <div class="model-box clearfix" v-bkloading="{isLoading: isTopoLoading}">
+            <v-global-models v-if="topoView === 'GLOBAL_MODELS'"></v-global-models>
+            <div class="model-box clearfix" v-bkloading="{isLoading: isTopoLoading}" v-else>
                 <div class="model-diagram" v-if="curClassify['bk_classification_id']">
                     <div class="model-topo-box" v-show="topoList.length != 0 && !isCreateShow">
                         <template v-if="curClassify['bk_classification_id'] !== 'bk_biz_topo'">
@@ -170,12 +175,14 @@
     import vField from './children/field'
     import vLayout from './children/layout'
     import vOther from './children/other'
+    import vGlobalModels from './children/global-models'
     import vTopo from '@/components/topo/topo'
     import {mapGetters, mapActions} from 'vuex'
     const iconList = require('@/common/json/classIcon.json')
     export default {
         data () {
             return {
+                topoView: 'GLOBAL_MODELS',
                 isShowDisableList: false,
                 isTopoLoading: false,           // 拓扑loading
                 isClassifyLoading: false,       // 分组列表loading
@@ -705,7 +712,7 @@
                         if (!index) {
                             index = 0
                         }
-                        this.curClassify = this.classifyList[index]
+                        // this.curClassify = this.classifyList[index]
                         this.curTempClassify = {
                             id: this.classifyList[index]['id'],
                             bk_classification_type: this.classifyList[index]['bk_classification_type'],
@@ -793,7 +800,8 @@
             vField,
             vLayout,
             vOther,
-            vPop
+            vPop,
+            vGlobalModels
         }
     }
 </script>

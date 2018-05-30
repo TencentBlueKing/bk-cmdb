@@ -68,7 +68,6 @@
             return {
                 filter: {
                     objId: '',
-                    instName: '',
                     property: {
                         id: '',
                         operator: '',
@@ -78,17 +77,7 @@
                 filterObjProperties: [],
                 table: {
                     loading: true,
-                    header: [{
-                        id: 'bk_inst_id',
-                        name: 'ID'
-                    }, {
-                        id: 'bk_inst_name',
-                        name: this.$t('Association["实例名"]')
-                    }, {
-                        id: 'options',
-                        name: this.$t('Association["操作"]'),
-                        sortable: false
-                    }],
+                    header: [],
                     list: [],
                     pagination: {
                         count: 0,
@@ -113,6 +102,22 @@
                 }
                 return 'bk_inst_id'
             },
+            instanceNameKey () {
+                const nameKey = {
+                    'bk_host_id': 'bk_host_innerip',
+                    'bk_biz_id': 'bk_biz_name',
+                    'bk_inst_id': 'bk_inst_name'
+                }
+                return nameKey[this.instanceIdKey]
+            },
+            instanceName () {
+                const name = {
+                    'bk_host_innerip': this.$t('Common["内网IP"]'),
+                    'bk_biz_name': this.$t('Association["业务名"]'),
+                    'bk_inst_name': this.$t('Association["实例名"]')
+                }
+                return name[this.instanceNameKey]
+            },
             dataIdKey () {
                 if (this.objId === 'host') {
                     return 'bk_host_id'
@@ -125,7 +130,8 @@
                 return this.attribute[this.objId] || []
             },
             associationOptions () {
-                return this.association.map(model => {
+                const validAssociation = this.association.filter(model => !['plat', 'process'].includes(model['bk_obj_id']))
+                return validAssociation.map(model => {
                     return {
                         value: model['bk_obj_id'],
                         label: this.getAssociationOptionLabel(model)
@@ -162,38 +168,21 @@
                     this.filter.objId = associationOptions.length ? associationOptions[0]['value'] : ''
                 }
             },
-            'filter.objId' (filterObjId) {
+            async 'filter.objId' (filterObjId) {
                 if (filterObjId) {
                     this.table.pagination.current = 1
                     this.table.pagination.count = 0
                     this.table.list = []
-                    this.table.header[0]['id'] = this.instanceIdKey
-                    if (filterObjId === 'host') {
-                        this.table.header[1]['id'] = 'bk_host_innerip'
-                        this.table.header[1]['name'] = this.$t('Common["内网IP"]')
-                    } else if (filterObjId === 'biz') {
-                        this.table.header[1]['id'] = 'bk_biz_name'
-                        this.table.header[1]['name'] = this.$t('Association["业务名"]')
-                    } else {
-                        this.table.header[1]['id'] = 'bk_inst_name'
-                        this.table.header[1]['name'] = this.$t('Association["实例名"]')
-                    }
-                    this.$store.dispatch('object/getAttribute', filterObjId)
+                    await this.$store.dispatch('object/getAttribute', filterObjId)
                     this.getInstance()
                 }
             },
             'filter.property.id' (id) {
-                if (id !== this.instanceIdKey) {
-                    const property = this.getFilterProperty()
-                    const spliceLength = this.table.header.length === 3 ? 0 : 1
-                    this.table.header.splice(2, spliceLength, {
-                        id: id,
-                        name: property['bk_property_name']
-                    })
-                }
+                this.setTableHeader()
             }
         },
-        created () {
+        async created () {
+            await this.$store.dispatch('object/getAttribute', this.objId)
             this.getAssociationTopo()
         },
         methods: {
@@ -210,6 +199,28 @@
             setCurrentSort (sort) {
                 this.table.sort = sort
                 this.search()
+            },
+            setTableHeader () {
+                const filterObjId = this.filter.objId
+                const filterPropertyId = this.filter.property.id
+                const header = [{
+                    id: this.instanceIdKey,
+                    name: 'ID'
+                }, {
+                    id: this.instanceNameKey,
+                    name: this.instanceName
+                }, {
+                    id: 'options',
+                    name: this.$t('Association["操作"]'),
+                    sortable: false
+                }]
+                if (filterPropertyId !== this.instanceNameKey) {
+                    header.splice(2, 0, {
+                        id: filterPropertyId,
+                        name: this.getProperty(filterPropertyId, filterObjId)['bk_property_name']
+                    })
+                }
+                this.table.header = header
             },
             getAssociationTopo () {
                 if (this.instance && this.instance.hasOwnProperty(this.dataIdKey)) {
@@ -234,7 +245,7 @@
                 }
                 if (this.objId === 'host') {
                     let params = {}
-                    params[this.instanceIdKey] = this.instance[this.instanceIdKey]
+                    params[this.dataIdKey] = this.instance[this.dataIdKey].toString()
                     payload['params'] = params
                 } else {
                     payload[this.dataIdKey] = this.instance[this.dataIdKey]
@@ -291,7 +302,7 @@
             },
             getHostCondition () {
                 let condition = [{'bk_obj_id': 'host', 'condition': [], fields: []}]
-                const property = this.getFilterProperty()
+                const property = this.getProperty(this.filter.property.id, this.filter.objId)
                 if (this.filter.property.value !== '' && property) {
                     if (['singleasst', 'multiasst'].includes(property['bk_property_type'])) {
                         condition.push({
@@ -313,17 +324,15 @@
                 return condition
             },
             getBizInstance (cancelToken, filterObjId) {
-                return this.$axios.post(`biz/search/${this.bkSupplierAccount}`, {
-                    condition: this.filter.property.value === '' ? {} : {
-                        'biz': [{
-                            'field': this.filter.property.id,
-                            'operator': this.filter.property.operator,
-                            'value': this.filter.property.value
-                        }]
-                    },
+                const params = {
+                    condition: {},
                     fields: [],
                     page: this.page
-                }, {cancelToken})
+                }
+                if (this.filter.property.value !== '') {
+                    params.condition[this.filter.property.id] = this.filter.property.value
+                }
+                return this.$axios.post(`biz/search/${this.bkSupplierAccount}`, params, {cancelToken})
             },
             getObjInstance (cancelToken, filterObjId) {
                 return this.$axios.post(`inst/association/search/owner/${this.bkSupplierAccount}/object/${filterObjId}`, {
@@ -334,7 +343,7 @@
             },
             getObjCondition () {
                 let condition = {}
-                const property = this.getFilterProperty()
+                const property = this.getProperty(this.filter.property.id, this.filter.objId)
                 if (this.filter.property.value !== '' && property) {
                     const objId = ['singleasst', 'multiasst'].includes(property['bk_property_type']) ? property['bk_asst_obj_id'] : this.filter.objId
                     condition[objId] = [{
@@ -389,10 +398,8 @@
                 }
                 return label
             },
-            getFilterProperty () {
-                const objId = this.filter.objId
-                const propertyId = this.filter.property.id
-                return (this.attribute[objId] || []).find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
+            getProperty (propertyId, objId) {
+                return this.attribute[objId].find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
             },
             handlePropertySelected (data) {
                 this.filter.property.id = data.value
@@ -448,14 +455,20 @@
         line-height: 20px;
         font-size: 12px;
         padding: 0 8px;
-        background-color: #30d878;
-        border-color: #30d878;
+        &-new{
+            background-color: #30d878;
+            border-color: #30d878;
+            &:hover{
+                background-color: #10ed6f;
+                border-color: #10ed6f;
+            }
+        }
         &-remove{
             background-color: #fff;
             color: #3c96ff;
             border-color: currentcolor;
             &:hover{
-                color: #30d878;
+                color: #0082ff;
             }
         }
     }
