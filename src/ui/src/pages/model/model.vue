@@ -1192,6 +1192,9 @@
                                 .content-name{
                                     margin-top: 10px;
                                     line-height: 1;
+                                    white-space: nowrap;
+                                    text-overflow: ellipsis;
+                                    overflow: hidden;
                                 }
                             }
                             &.locks-icon-content{
