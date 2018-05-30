@@ -170,6 +170,9 @@
                 this.displayType = 'list'
             },
             formValues () {
+                this.$validator.validateAll().then(() => {
+                    this.errors.clear()
+                })
                 this.initLocalValues()
             },
             active (active) {

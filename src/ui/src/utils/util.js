@@ -78,3 +78,39 @@ export function generateObjIcon (image, options) {
                 </svg>`
     }
 }
+
+/**
+ * 加载图片
+ * @param {String} src - 图片路径
+ * @param {Function} successFunc - 成功回调
+ * @param {Function} failFunc - 失败回调
+ */
+export function loadImage (src, successFunc, failFunc) {
+    const image = new Image()
+    image.onload = () => {
+        if ('naturalHeight' in image) {
+            if (image.naturalHeight + image.naturalWidth === 0) {
+                image.onerror()
+                return
+            }
+        } else if (image.width + image.height === 0) {
+            image.onerror()
+            return
+        }
+        successFunc(image)
+    }
+    image.onerror = () => {
+        failFunc(image)
+    }
+    image.src = src
+}
+
+/**
+ * 封装加载图片方法
+ * @param {String} url - 图片路径
+ */
+export function getImgUrl (url) {
+    return new Promise((resolve, reject) => {
+        loadImage(url, img => resolve(img), e => reject(e))
+    })
+}

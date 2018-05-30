@@ -1,9 +1,10 @@
 <template>
     <div class="filing-wrapper" v-show="isShow">
         <div class="title-contain clearfix">
-            <span class="title">{{$t('Common["已删除历史"]')}}</span>
+            <span class="title" v-if="objId !== 'biz'">{{$t('Common["已删除历史"]')}}</span>
+            <span class="title" v-else>{{$t('Common["归档历史"]')}}</span>
             <div class="fr operation-group">
-                <bk-daterangepicker
+                <bk-daterangepicker v-if="objId !== 'biz'"
                     ref="dateRangePicker"
                     class="datepicker"
                     :ranges="ranges"
@@ -28,6 +29,9 @@
                 @handleSizeChange="setCurrentSize"
                 @handleSortChange="setCurrentSort"
                 @handleRowClick="showDetails">
+                <template slot="$recovery" slot-scope="{ item }">
+                    <bk-button type="primary" size="mini" @click="recoveryBizConfirm(item)">{{$t('Inst["恢复业务"]')}}</bk-button>
+                </template>
             </v-table>
         </div>
         <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
@@ -75,25 +79,30 @@
         },
         computed: {
             ...mapGetters([
-                'language'
+                'language',
+                'bkSupplierAccount'
             ]),
             tableHeader () {
                 let header = this.$deepClone(this.objTableHeader)
-                // 为业务时删除第一列的ID
-                if (this.objId === 'biz') {
-                    header = header.slice(1)
-                }
                 if (header.length && header[0].hasOwnProperty('type') && header[0].type === 'checkbox') {
                     header.shift()
                 }
                 header.push({
-                    id: 'op_time',
+                    id: '$op_time',
                     name: this.$t('EventPush["更新时间"]')
                 })
                 header.unshift({
                     id: 'id',
                     name: 'ID'
                 })
+                // 为业务时删除第一列的ID
+                if (this.objId === 'biz') {
+                    header = header.slice(1)
+                    header.push({
+                        id: '$recovery',
+                        name: '操作'
+                    })
+                }
                 return header
             },
             /* 开始时间 */
@@ -104,21 +113,46 @@
             endDate () {
                 return this.$formatTime(moment(), 'YYYY-MM-DD')
             },
-            searchParams () {
+            axiosConfig () {
+                let config = {
+                    url: '',
+                    params: {}
+                }
                 if (!this.opTime.length) {
                     this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
                 }
-                let params = {
-                    condition: {
-                        op_type: 3, // delete
-                        op_time: this.opTime,
-                        op_target: this.objId
-                    },
-                    start: (this.pagination.current - 1) * this.pagination.size,
-                    limit: this.pagination.size,
-                    sort: this.sort
+                if (this.objId === 'biz') {
+                    config.url = `biz/search/${this.bkSupplierAccount}`
+                    config.params = {
+                        condition: {
+                            bk_data_status: 'disabled'
+                            // last_time: {
+                            //     '$gt': this.opTime[0],
+                            //     '$lt': this.opTime[1],
+                            //     'cc_time_type': 1
+                            // }
+                        },
+                        fields: [],
+                        page: {
+                            start: (this.pagination.current - 1) * this.pagination.size,
+                            limit: this.pagination.size,
+                            sort: this.sort
+                        }
+                    }
+                } else {
+                    config.url = 'audit/search/'
+                    config.params = {
+                        condition: {
+                            op_type: 3, // delete
+                            op_time: this.opTime,
+                            op_target: this.objId
+                        },
+                        start: (this.pagination.current - 1) * this.pagination.size,
+                        limit: this.pagination.size,
+                        sort: this.sort
+                    }
                 }
-                return params
+                return config
             }
         },
         watch: {
@@ -133,6 +167,23 @@
             }
         },
         methods: {
+            recoveryBizConfirm (item) {
+                this.$bkInfo({
+                    title: this.$t('Inst["是否确认恢复业务？"]'),
+                    content: this.$t('Inst["恢复业务提示"]', {bizName: item['bk_biz_name']}),
+                    confirmFn: () => {
+                        this.recoveryBiz(item)
+                    }
+                })
+            },
+            async recoveryBiz (item) {
+                try {
+                    await this.$axios.put(`biz/status/enable/${this.bkSupplierAccount}/${item['bk_biz_id']}`)
+                    this.getTableList()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
             resetDateRangePicker () {
                 this.$refs.dateRangePicker.selectedDateRange = [this.startDate, this.endDate]
                 this.$refs.dateRangePicker.selectedDateRangeTmp = [this.startDate, this.endDate]
@@ -168,11 +219,11 @@
             async getTableList () {
                 this.isLoading = true
                 try {
-                    let res = await this.$axios.post('audit/search/', this.searchParams)
+                    let res = await this.$axios.post(this.axiosConfig.url, this.axiosConfig.params)
                     this.initTableList(res.data.info)
                     this.pagination.count = res.data.count
                 } catch (e) {
-                    this.$alertMsg(e.message || e.statusText || e.data['bk_error_msg'])
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 } finally {
                     this.isLoading = false
                 }
@@ -180,22 +231,24 @@
             initTableList (list) {
                 list.forEach((item, index) => {
                     this.tableHeader.map((list, hIndex) => {
-                        if (item.content['pre_data'] !== null) {    // 如果该字段为null则不展示该行
+                        let data = this.objId === 'biz' ? item : item.content['pre_data']
+                        // 如果该字段为null则不展示该行
+                        if (data !== null && list.id !== '$recovery') {
                             if (hIndex === 0) {
                                 if (this.objId === 'host') {
-                                    item['id'] = item.content['pre_data']['bk_host_id']
+                                    item['id'] = data['bk_host_id']
                                 } else if (this.objId === 'biz') {
-                                    item['id'] = item.content['pre_data']['bk_biz_id']
+                                    item['id'] = data['bk_biz_id']
                                 } else {
-                                    item['id'] = item.content['pre_data']['bk_inst_id']
+                                    item['id'] = data['bk_inst_id']
                                 }
-                            } else if (hIndex === (this.tableHeader.length - 1)) {
-                                item['op_time'] = this.$formatTime(moment(item['op_time']))
+                            } else if (list.id === '$op_time') {
+                                item['$op_time'] = this.$formatTime(moment(item['$op_time']))
                             } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
                                 let name = []
-                                if (item.content['pre_data'].hasOwnProperty(list.id)) {
-                                    if (item.content['pre_data'][list.id]) {
-                                        item.content['pre_data'][list.id].map(({bk_inst_name: bkInstName}) => {
+                                if (data.hasOwnProperty(list.id)) {
+                                    if (data[list.id]) {
+                                        data[list.id].map(({bk_inst_name: bkInstName}) => {
                                             name.push(bkInstName)
                                         })
                                     } else {
@@ -204,13 +257,13 @@
                                 }
                                 item[list.id] = name.join(',')
                             } else if (list.property['bk_property_type'] === 'enum') {
-                                let option = (list.property.option || []).find(({id}) => id === item.content['pre_data'][list.id])
+                                let option = (list.property.option || []).find(({id}) => id === data[list.id])
                                 item[list.id] = option ? option.name : ''
                             } else if (['date', 'time'].includes(list.property['bk_property_type'])) {
                                 const format = list.property['bk_property_type'] === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'
-                                item[list.id] = this.$formatTime(item.content['pre_data'][list.id], format)
+                                item[list.id] = this.$formatTime(data[list.id], format)
                             } else {
-                                item[list.id] = item.content['pre_data'][list.id]
+                                item[list.id] = data[list.id]
                             }
                         }
                     })
@@ -221,8 +274,10 @@
                 this.$emit('update:isShow', false)
             },
             showDetails (item) {
-                this.details.data = item
-                this.details.isShow = true
+                if (this.objId !== 'biz') {
+                    this.details.data = item
+                    this.details.isShow = true
+                }
             }
         },
         created () {
