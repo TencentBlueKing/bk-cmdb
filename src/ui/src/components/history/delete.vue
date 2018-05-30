@@ -158,8 +158,12 @@
         watch: {
             isShow (isShow) {
                 if (isShow) {
-                    this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
-                    this.resetDateRangePicker()
+                    if (this.objId !== 'biz') {
+                        this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
+                        this.resetDateRangePicker()
+                    } else {
+                        this.getTableList()
+                    }
                 }
             },
             '$route.path' () {
