@@ -87,6 +87,7 @@ func handleInst(e *types.EventInst) {
 					hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 					d := types.EventData{CurData: inst.ident.fillIden()}
 					hostIdentify.Data = append(hostIdentify.Data, d)
+					// TODO handle error
 					redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 					blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 				} else {
@@ -114,6 +115,7 @@ func handleInst(e *types.EventInst) {
 							hostIdentify.Data = append(hostIdentify.Data, d)
 						}
 
+						// handle error
 						hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 						redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 						blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
@@ -156,6 +158,7 @@ func handleInst(e *types.EventInst) {
 
 				belong, ok := inst.data["associations"].(map[string]interface{})
 
+				// TODO 处理数据类型
 				moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
 				switch e.Action {
 				case types.EventActionCreate:
@@ -202,12 +205,14 @@ func findHost(objType string, instID int) (hostIDs []string) {
 		util.GetObjIDByType(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
+		// TODO handle error
 		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
 	} else {
 		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
 	}
 
 	for index := range relations {
+		// TODO 抽象拼key
 		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.Itoa(relations[index].HostID))
 	}
 	return hostIDs
@@ -332,6 +337,7 @@ func StartHandleInsts() error {
 			fetchHostCache()
 		}
 	}()
+	// TODO add
 	for {
 		event := popEventInst()
 		if nil == event {
@@ -345,6 +351,8 @@ func StartHandleInsts() error {
 func popEventInst() *types.EventInst {
 
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+
+	// TODO handle error
 	eventstr := redisCli.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
 	if 0 >= len(eventstr) || "nil" == eventstr[1] || "" == eventstr[1] {
@@ -369,6 +377,8 @@ func fetchHostCache() {
 	// fetch host cache
 	relations := []metadata.ModuleHostConfig{}
 	hosts := []*HostIdentifier{}
+
+	// TODO handle db error, handle not found
 	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, map[string]interface{}{}, &relations, "", -1, -1)
 	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, nil, map[string]interface{}{}, &hosts, "", -1, -1)
 
@@ -409,6 +419,8 @@ func fetchHostCache() {
 
 		blog.Infof("identifier: fetched %d %s", len(caches), objID)
 	}
+
+	// TODO compare data and build hostidentifier
 
 }
 
