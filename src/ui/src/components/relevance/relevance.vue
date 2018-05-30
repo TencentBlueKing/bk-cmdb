@@ -95,7 +95,7 @@
         height: 100%;
     }
     .tab-wrapper{
-        padding: 20px 30px;
+        padding: 20px 0 10px;
     }
     .relevance-tab{
         >li{
