@@ -4,7 +4,7 @@
             <span class="title" v-if="objId !== 'biz'">{{$t('Common["已删除历史"]')}}</span>
             <span class="title" v-else>{{$t('Common["归档历史"]')}}</span>
             <div class="fr operation-group">
-                <bk-daterangepicker
+                <bk-daterangepicker v-if="objId !== 'biz'"
                     ref="dateRangePicker"
                     class="datepicker"
                     :ranges="ranges"
@@ -125,12 +125,12 @@
                     config.url = `biz/search/${this.bkSupplierAccount}`
                     config.params = {
                         condition: {
-                            bk_data_status: 'disabled',
-                            last_time: {
-                                '$gt': this.opTime[0],
-                                '$lt': this.opTime[1],
-                                'cc_time_type': 1
-                            }
+                            bk_data_status: 'disabled'
+                            // last_time: {
+                            //     '$gt': this.opTime[0],
+                            //     '$lt': this.opTime[1],
+                            //     'cc_time_type': 1
+                            // }
                         },
                         fields: [],
                         page: {
