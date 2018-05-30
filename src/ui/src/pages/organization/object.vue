@@ -848,7 +848,7 @@
         float:left;
         .slide-content{
             height: calc(100% - 120px);
-            padding: 10px 20px;
+            padding: 0 20px;
             overflow: auto;
             &::-webkit-scrollbar{
                 width: 6px;
