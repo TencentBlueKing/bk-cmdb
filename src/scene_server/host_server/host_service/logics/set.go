@@ -45,7 +45,10 @@ func GetSetIDByCond(req *restful.Request, objURL string, cond []interface{}) ([]
 	js, _ := simplejson.NewJson([]byte(reply))
 	output, _ := js.Map()
 	setData := output["data"]
-	setResult := setData.(map[string]interface{})
+	setResult, ok := setData.(map[string]interface{})
+	if !ok {
+		return setIDArr, nil
+	}
 	setInfo, ok := setResult["info"].([]interface{})
 	if !ok {
 		return setIDArr, nil
