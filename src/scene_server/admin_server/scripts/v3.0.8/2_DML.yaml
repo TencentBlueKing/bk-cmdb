@@ -1,0 +1,69 @@
+- action: insert
+  tablename: cc_ObjAttDes
+  error: abort
+  data:
+    - id : ^^squence(cc_ObjAttDes)
+      bk_supplier_account : "0"
+      bk_obj_id : "biz",
+      bk_property_id : "bk_biz_productor"
+      bk_property_name : "产品人员"
+      bk_property_group : "role"
+      bk_property_index : 0
+      unit : ""
+      placeholder : ""
+      editable : true
+      ispre : true
+      isrequired : false
+      isreadonly : false
+      isonly : false
+      bk_issystem : false
+      bk_isapi : false
+      bk_property_type : "objuser"
+      option : ""
+      description : ""
+      creator : "cc_system"
+      create_time : ^^now()
+      last_time : ^^now()
+- action: update
+  tablename: cc_ObjAttDes
+  where: 
+    bk_obj_id: biz
+    bk_property_id: bk_biz_productor
+  data:
+    - ispre: false
+
+- action: delete
+  tablename: cc_ObjAttDes
+  where: 
+    bk_obj_id: biz
+    bk_property_id: bk_biz_productor
+  data:
+    - ispre: false
+
+- action: upsert
+  tablename: cc_ObjAttDes
+  keys: [bk_obj_id, bk_property_id]
+  data:
+    - id : ^^squence(cc_ObjAttDes)
+      bk_supplier_account : "0"
+      bk_obj_id : "biz",
+      bk_property_id : "bk_biz_productor"
+      bk_property_name : "产品人员"
+      bk_property_group : "role"
+      bk_property_index : 0
+      unit : ""
+      placeholder : ""
+      editable : true
+      ispre : true
+      isrequired : false
+      isreadonly : false
+      isonly : false
+      bk_issystem : false
+      bk_isapi : false
+      bk_property_type : "objuser"
+      option : ""
+      description : ""
+      creator : "cc_system"
+      create_time : ^^now()
+      last_time : ^^now()
+

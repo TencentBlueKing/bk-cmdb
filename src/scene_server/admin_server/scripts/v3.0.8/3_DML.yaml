@@ -1,0 +1,47 @@
+- action: process
+  vars: 
+    bizID: ^^sequence(biz)
+    setModuleKv:  
+      {"作业平台": {"job": "job_java"},
+        "配置平台": {
+          "adminserver":      "cmdb_adminserver",
+          "apiserver":        "cmdb_apiserver",
+          "auditcontroller":  "cmdb_auditcontroller",
+          "datacollection":   "cmdb_datacollection",
+          "eventserver":      "cmdb_eventserver",
+          "hostcontroller":   "cmdb_hostcontroller",
+          "hostserver":       "cmdb_hostserver",
+          "objectcontroller": "cmdb_objectcontroller",
+          "proccontroller":   "cmdb_proccontroller",
+          "procserver":       "cmdb_procserver",
+          "toposerver":       "cmdb_toposerver",
+          "webserver":        "cmdb_webserver",
+        },
+        "管控平台":   {"gse_api": "gse_api", "gse_data": "gse_data", "gse_dba": "gse_dba", "gse_task": "gse_task", "gse_transit": "gse_transit", "gse_proc": "gse_proc", "gse_btsvr": "gse_btsvr", "gse_ops": "gse_ops", "gse_opts": "", "gse_alarm": "gse_alarm", "gse_agent": "gse_agent", "license": "license_server"},
+        "故障自愈":   {"fta": "fta_py"},
+        "数据服务模块": {"dataapi": "dataapi_py", "databus": "databus_java", "monitor": "monitor_py"},
+        "公共组件": {"mysql": "common_mysql", "redis": "common_redis", "redis_cluster": "redis_cluster", "zookeeper": "zk_java", "kafka": "kafka_java", "elasticsearch": "es_java",
+          "rabbitmq": "beam.smp", "nginx": "common_nginx", "beanstalk": "beanstalkd", "influxdb": "influxdb", "etcd": "etcd", "consul": "consul", "mongodb": "mongodb"},
+        "集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi", "appo": "paas_agent", "appt": "paas_agent"},
+      }
+  after:
+    action: insert
+    tablename: cc_ApplicationBase
+    data: 
+      - bk_biz_id: $$bizID
+        name: ^^newname($$bk_biz)
+    after:
+      action: for
+      in: {
+        range: $$setModuleKv,
+        key: key,
+        value: value
+      }
+      do: 
+        action: insert
+        tablename:
+        data:
+          - dd: key
+          - xx: value
+      after:
+        
