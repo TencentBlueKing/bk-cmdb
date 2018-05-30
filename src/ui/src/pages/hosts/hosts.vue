@@ -136,7 +136,7 @@
                         </v-attribute>
                     </bk-tabpanel>
                     <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="!sideslider.attribute.form.isMultipleUpdate">
-                        <v-relevance style="padding: 30px 0;"
+                        <v-relevance
                             :isShow="sideslider.attribute.active==='relevance'"
                             :objId="'host'"
                             :ObjectID="sideslider.attribute.form.formValues['bk_host_id']"

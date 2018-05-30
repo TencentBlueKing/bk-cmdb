@@ -134,7 +134,14 @@
         <template v-if="showBtnGroup">
             <div class="attribute-btn-group" v-if="displayType==='list' && type === 'update'">
                 <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">{{$t("Common['属性编辑']")}}</bk-button>
-                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
+                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
+                    <template v-if="objId !== 'biz'">
+                        {{$t("Common['删除']")}}
+                    </template>
+                    <template v-else>
+                        {{$t("Inst['归档']")}}
+                    </template>
+                </button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
                 <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
@@ -382,7 +389,7 @@
                                 break
                             }
                         } else {
-                            if (this.formData[key].length) {
+                            if (this.formData[key] !== null && this.formData[key].length) {
                                 isConfirmShow = true
                                 break
                             }
@@ -570,7 +577,6 @@
                 }
                 if (property.hasOwnProperty('option') && option) {
                     if (bkPropertyType === 'int') {
-                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min') && option.min) {
                             rules['min_value'] = option.min
                         }

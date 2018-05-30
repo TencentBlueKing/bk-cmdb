@@ -38,8 +38,7 @@ func GetModuleIDByCond(req *restful.Request, objURL string, cond []interface{}) 
 	condition["condition"] = condc
 	bodyContent, _ := json.Marshal(condition)
 	url := objURL + "/object/v1/insts/module/search"
-	blog.Info("GetModuleIDByCond url :%s", url)
-	blog.Info("GetModuleIDByCond content :%s", string(bodyContent))
+	blog.Infof("GetModuleIDByCond url :%s content:%s", url, string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
 	blog.Info("GetModuleIDByCond return :%s", string(reply))
 	if err != nil {
@@ -49,7 +48,10 @@ func GetModuleIDByCond(req *restful.Request, objURL string, cond []interface{}) 
 	output, _ := js.Map()
 	moduleData := output["data"]
 	moduleResult := moduleData.(map[string]interface{})
-	moduleInfo := moduleResult["info"].([]interface{})
+	moduleInfo, ok := moduleResult["info"].([]interface{})
+	if !ok {
+		return moduleIDArr, nil
+	}
 	for _, i := range moduleInfo {
 		module := i.(map[string]interface{})
 		moduleID, _ := module[common.BKModuleIDField].(json.Number).Int64()
