@@ -24,7 +24,14 @@ var (
 	CCTag       = "2017-03-28 Release"
 	CCBuildTime = "2017-03-28 19:50:00"
 	CCGitHash   = "unknown"
-	CCDebug     = false
+	CCRunMode   = "product" // product, test, dev
+)
+
+// CCRunMode enumeration
+var (
+	CCRunModeProduct = "product"
+	CCRunModeTest    = "test"
+	CCRunModeDev     = "dev"
 )
 
 //ShowVersion is the default handler which match the --version flag
@@ -34,6 +41,6 @@ func ShowVersion() {
 
 // GetVersion return the version info
 func GetVersion() string {
-	version := fmt.Sprintf("Version  :%s\nTag      :%s\nBuildTime:  %s\nGitHash:  %s\n", CCVersion, CCTag, CCBuildTime, CCGitHash)
+	version := fmt.Sprintf("Version  :%s\nTag      :%s\nBuildTime:  %s\nGitHash:    %s\nRunMode:    %s\n", CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
 	return version
 }

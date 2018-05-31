@@ -43,7 +43,7 @@ func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	if !version.CCDebug {
+	if version.CCRunMode == version.CCRunModeProduct {
 		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
 		return
 	}
