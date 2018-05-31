@@ -13,8 +13,9 @@
 package manager
 
 import (
-	//"configcenter/src/framework/common"
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/types"
 
 	"fmt"
@@ -33,9 +34,33 @@ func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapSt
 
 	fmt.Println("hostid:", hostID, "data:", data, "host model:", hostModel)
 
-	//cond := common.CreateCondition()
-	//cond.Field("bk_host_id").Eq(hostID)
-	//hostIter cli.outputerMgr.FindInstsByCondition(hostModel, cond)
+	cond := common.CreateCondition()
+	cond.Field("bk_host_id").Eq(29)
+	hostIter, err := cli.outputerMgr.FindInstsByCondition(hostModel, cond)
+	if nil != err {
+		return nil, err
+	}
+
+	err = hostIter.ForEach(func(item inst.Inst) error {
+
+		vals, err := item.GetValues()
+		if nil != err {
+			return err
+		}
+
+		vals.ForEach(func(key string, value interface{}) {
+
+			if key == "biz" {
+				fmt.Println("host:", key, "val:", value)
+			}
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
 
 	return nil, nil
 }
