@@ -10,17 +10,16 @@
  * limitations under the License.
  */
 
-package manager
+package types
 
-import (
-	"configcenter/src/framework/core/types"
-	"configcenter/src/framework/core/output"
-)
-
-type eventHostIdentifier struct {
-	outputerMgr output.Manager
+// Event the cmdb event definition
+type Event struct {
+	eveKey  EventKey
+	eveType EventType
+	datas   MapStr
 }
 
-func (cli *eventHostIdentifier) parse(data types.MapStr) (types.MapStr, error) {
-	return nil, nil
+// SetData set the event data
+func (cli *Event) SetData(data MapStr) {
+	cli.datas = data
 }

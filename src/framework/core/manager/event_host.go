@@ -13,13 +13,61 @@
 package manager
 
 import (
-	//"configcenter/src/framework/core/types"
-	"github.com/tidwall/gjson"
+	//"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
+
+	"fmt"
 )
 
 type eventHost struct {
+	outputerMgr output.Manager
 }
 
-func (cli *eventHost) parse(data *gjson.Result) error {
-	return nil
+func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapStr, error) {
+
+	hostModel, err := cli.outputerMgr.GetModel("0", "bk_host_manage", "host")
+	if nil != err {
+		return nil, err
+	}
+
+	fmt.Println("hostid:", hostID, "data:", data, "host model:", hostModel)
+
+	//cond := common.CreateCondition()
+	//cond.Field("bk_host_id").Eq(hostID)
+	//hostIter cli.outputerMgr.FindInstsByCondition(hostModel, cond)
+
+	return nil, nil
+}
+
+func (cli *eventHost) parse(data types.MapStr) (types.MapStr, error) {
+
+	dataArr, err := data.MapStrArray("data")
+	if nil != err {
+		return nil, err
+	}
+
+	for _, dataItem := range dataArr {
+
+		curHost, err := dataItem.MapStr("cur_data")
+
+		if nil != err {
+			return nil, err
+		}
+
+		hostID, err := curHost.Int("bk_host_id")
+		if nil != err {
+			return nil, err
+		}
+
+		eventItem, err := cli.constructEvent(hostID, curHost)
+		if nil != err {
+			return nil, err
+		}
+
+		_ = eventItem
+
+	}
+
+	return nil, nil
 }

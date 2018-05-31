@@ -13,13 +13,14 @@
 package manager
 
 import (
-	//"configcenter/src/framework/core/types"
-	"github.com/tidwall/gjson"
+	"configcenter/src/framework/core/types"
+	"configcenter/src/framework/core/output"
 )
 
 type eventModule struct {
+	outputerMgr output.Manager
 }
 
-func (cli *eventModule) parse(data *gjson.Result) error {
-	return nil
+func (cli *eventModule) parse(data types.MapStr) (types.MapStr, error) {
+	return nil, nil
 }

@@ -13,6 +13,7 @@
 package manager
 
 import (
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/types"
 
@@ -22,7 +23,7 @@ import (
 	"configcenter/src/framework/core/log"
 	"github.com/emicklei/go-restful"
 
-	"github.com/tidwall/gjson"
+	"encoding/json"
 	"io/ioutil"
 
 	"context"
@@ -49,9 +50,13 @@ func (m *Manager) Actions() []httpserver.Action {
 				return
 			}
 
-			gs := gjson.ParseBytes(value)
+			mData := types.MapStr{}
+			if err := json.Unmarshal(value, &mData); nil != err {
+				log.Errorf("failed to unmarshal the data, error %s", err.Error())
+				return
+			}
 
-			data, dataErr := a.HandlerFunc(&gs)
+			data, dataErr := a.HandlerFunc(mData)
 			if nil != dataErr {
 				log.Errorf("%s", dataErr.Error())
 			}
@@ -95,5 +100,12 @@ func (cli *Manager) stop() error {
 func (cli *Manager) Run(ctx context.Context, cancel context.CancelFunc) {
 
 	cli.cancel = cancel
+
+	cli.eventMgr.setOutputer(cli.OutputerMgr)
+
+	common.GoRun(func() {
+		cli.eventMgr.run(ctx)
+	}, nil)
+
 	cli.InputerMgr.Run(ctx, cli)
 }
