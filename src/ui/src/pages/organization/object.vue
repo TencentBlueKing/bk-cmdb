@@ -32,7 +32,7 @@
                     <i class="icon-cc-history"></i>
                 </button>
                 <button v-else class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
-                    <i class="icon-cc-history"></i>
+                    <i class="icon-cc-history2"></i>
                 </button>
                 <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
