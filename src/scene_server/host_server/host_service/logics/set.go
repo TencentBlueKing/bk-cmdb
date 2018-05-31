@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package logics
 
 import (
@@ -36,8 +36,7 @@ func GetSetIDByCond(req *restful.Request, objURL string, cond []interface{}) ([]
 	condition["condition"] = condc
 	bodyContent, _ := json.Marshal(condition)
 	url := objURL + "/object/v1/insts/set/search"
-	blog.Info("GetSetIDByCond url :%s", url)
-	blog.Info("GetsetIDByCond content :%s", string(bodyContent))
+	blog.Infof("GetSetIDByCond url :%s content:%s", url, string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
 	blog.Info("GetsetIDByCond return :%s", string(reply))
 	if err != nil {
@@ -46,8 +45,14 @@ func GetSetIDByCond(req *restful.Request, objURL string, cond []interface{}) ([]
 	js, _ := simplejson.NewJson([]byte(reply))
 	output, _ := js.Map()
 	setData := output["data"]
-	setResult := setData.(map[string]interface{})
-	setInfo := setResult["info"].([]interface{})
+	setResult, ok := setData.(map[string]interface{})
+	if !ok {
+		return setIDArr, nil
+	}
+	setInfo, ok := setResult["info"].([]interface{})
+	if !ok {
+		return setIDArr, nil
+	}
 	for _, i := range setInfo {
 		set := i.(map[string]interface{})
 		setID, _ := set[common.BKSetIDField].(json.Number).Int64()
