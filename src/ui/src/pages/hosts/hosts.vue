@@ -87,6 +87,7 @@
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
+                :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
                 @handleSortChange="setTableSort"
@@ -242,6 +243,10 @@
             outerLoading: {
                 type: Boolean,
                 default: false
+            },
+            tableVisible: {
+                type: Boolean,
+                default: true
             }
         },
         data () {

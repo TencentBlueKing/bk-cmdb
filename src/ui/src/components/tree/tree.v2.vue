@@ -38,20 +38,20 @@
             }
         },
         created () {
-            bus.$on('nodeClick', (activeNode, activeParentNode, activeRootNode, activeLevel, nodeId, treeId) => {
-                if (this.treeId === treeId) {
-                    this.activeNodeId = nodeId
-                    this.$emit('nodeClick', activeNode, activeParentNode, activeRootNode, activeLevel)
+            bus.$on('nodeClick', (activeNode, nodeOptions) => {
+                if (this.treeId === nodeOptions.treeId) {
+                    this.activeNodeId = nodeOptions.nodeId
+                    this.$emit('nodeClick', activeNode, nodeOptions)
                 }
             })
-            bus.$on('nodeToggle', (isOpen, node, parentNode, rootNode, level, nodeId, treeId) => {
-                if (this.treeId === treeId) {
-                    this.$emit('nodeToggle', isOpen, node, parentNode, rootNode, level, nodeId)
+            bus.$on('nodeToggle', (isOpen, node, nodeOptions) => {
+                if (this.treeId === nodeOptions.treeId) {
+                    this.$emit('nodeToggle', isOpen, node, nodeOptions)
                 }
             })
-            bus.$on('addNode', (node, parentNode, rootNode, level, nodeId, treeId) => {
-                if (this.treeId === treeId) {
-                    this.$emit('addNode', node, parentNode, rootNode, level)
+            bus.$on('addNode', (node, nodeOptions) => {
+                if (this.treeId === nodeOptions.treeId) {
+                    this.$emit('addNode', node, nodeOptions)
                 }
             })
         },
