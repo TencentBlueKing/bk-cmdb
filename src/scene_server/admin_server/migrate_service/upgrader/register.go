@@ -15,36 +15,40 @@ package upgrader
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccversion "configcenter/src/common/version"
 	"configcenter/src/storage"
 	"sort"
 	"sync"
 )
 
-type Ctx struct{}
+// Config config for upgrader
+type Config struct{}
 
-type Version struct {
+// Upgrader define a version upgrader
+type Upgrader struct {
 	version string // v3.0.8-beta.11
-	do      func(storage.DI, *Ctx) error
+	do      func(storage.DI, *Config) error
 }
 
-var versionPool = []Version{}
+var upgraderPool = []Upgrader{}
 
 var registlock sync.Mutex
 
-func RegistVersion(version string, handlerFunc func(storage.DI, *Ctx) error) {
+// RegistUpgrader register upgrader
+func RegistUpgrader(version string, handlerFunc func(storage.DI, *Config) error) {
 	registlock.Lock()
 	defer registlock.Unlock()
-	v := Version{version: version, do: handlerFunc}
-	versionPool = append(versionPool, v)
+	v := Upgrader{version: version, do: handlerFunc}
+	upgraderPool = append(upgraderPool, v)
 }
 
 // Upgrade uprade the db datas to newest verison
 func Upgrade(db storage.DI) (err error) {
-	sort.Slice(versionPool, func(i, j int) bool {
-		return versionPool[i].version > versionPool[j].version
+	sort.Slice(upgraderPool, func(i, j int) bool {
+		return upgraderPool[i].version > upgraderPool[j].version
 	})
 
-	for _, v := range versionPool {
+	for _, v := range upgraderPool {
 		err = v.do(db, nil)
 		if err != nil {
 			blog.Errorf("upgrade version %s error: %s", v.version, err.Error())
@@ -67,12 +71,16 @@ func saveVesion(db storage.DI, version string) error {
 	data := map[string]interface{}{
 		"type":            "version",
 		"current_version": version,
+		"distro":          ccversion.CCDistro,
+		"distro_version":  ccversion.CCDistroVersion,
 	}
 	count, err := db.GetCntByCondition(common.SystemTableName, condition)
 	if err != nil {
 		return err
 	}
 	if count > 0 {
+		data["init_version"] = version
+		data["init_distro_version"] = ccversion.CCDistroVersion
 		_, err = db.Insert(common.SystemTableName, data)
 		if err != nil {
 			return err

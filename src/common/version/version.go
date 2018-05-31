@@ -20,11 +20,13 @@ import (
 //CCTag show the git tag for this version
 //CCBuildTime show the compile time
 var (
-	CCVersion   = "17.03.28"
-	CCTag       = "2017-03-28 Release"
-	CCBuildTime = "2017-03-28 19:50:00"
-	CCGitHash   = "unknown"
-	CCRunMode   = "product" // product, test, dev
+	CCVersion       = "17.03.28"
+	CCTag           = "2017-03-28 Release"
+	CCBuildTime     = "2017-03-28 19:50:00"
+	CCGitHash       = "unknown"
+	CCRunMode       = "product" // product, test, dev
+	CCDistro        = "enterprise"
+	CCDistroVersion = "9999.9999.9999"
 )
 
 // CCRunMode enumeration
