@@ -215,6 +215,8 @@
                 index > -1 && this.localOptions.splice(index, 1)
             },
             updateOption (optIndex, opt) {
+                this.model = opt.localData.label
+                this.curLabel = opt.localData.label
                 this.localOptions.splice(optIndex, 1, opt)
             },
             // 点击选项后的handler

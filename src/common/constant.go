@@ -23,3 +23,5 @@ const (
 )
 
 const BKDataStatusField = "bk_data_status"
+
+const BKBizRecovery = "recovery"

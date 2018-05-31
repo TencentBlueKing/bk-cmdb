@@ -59,13 +59,24 @@
                         <template v-else>
                             <!-- 判断条件选择 -->
                             <template v-if="typeOfChar.indexOf(column['bk_property_type']) !== -1 || typeOfAsst.indexOf(column['bk_property_type']) !== -1">
-                                <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
-                                    <bk-select-option v-for="(operator, index) in operators['char']"
-                                        :key="index"
-                                        :label="operator.label"
-                                        :value="operator.value">
-                                    </bk-select-option>
-                                </bk-select>
+                                <template v-if="column['bk_property_id'] === 'bk_module_name' || column['bk_property_id'] === 'bk_set_name'">
+                                    <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
+                                        <bk-select-option v-for="(operator, index) in operators['name']"
+                                            :key="index"
+                                            :label="operator.label"
+                                            :value="operator.value">
+                                        </bk-select-option>
+                                    </bk-select>
+                                </template>
+                                <template v-else>
+                                    <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
+                                        <bk-select-option v-for="(operator, index) in operators['char']"
+                                            :key="index"
+                                            :label="operator.label"
+                                            :value="operator.value">
+                                        </bk-select-option>
+                                    </bk-select>
+                                </template>
                             </template>
                             <template v-else>
                                 <bk-select class="screening-group-item-operator" :selected.sync="localQueryColumnData[column['bk_property_id']]['operator']">
@@ -166,6 +177,16 @@
                         value: '$ne',
                         label: this.$t('Common[\'不等于\']')
                     }],
+                    'name': [{
+                        value: '$regex',
+                        label: 'IN'
+                    }, {
+                        value: '$eq',
+                        label: this.$t('Common[\'等于\']')
+                    }, {
+                        value: '$ne',
+                        label: this.$t('Common[\'不等于\']')
+                    }],
                     'date': [{
                         value: '$in',
                         label: this.$t('Common[\'包含\']')
@@ -236,7 +257,13 @@
                             let value = column.value
                             if (property['bk_property_id'] === 'bk_module_name' || property['bk_property_id'] === 'bk_set_name') {
                                 operator = operator === '$regex' ? '$in' : operator
-                                value = operator === '$in' ? [...value.replace('，', ',').split(','), value] : value
+                                if (operator === '$in') {
+                                    let arr = value.replace('，', ',').split(',')
+                                    let isExist = arr.findIndex(val => {
+                                        return val === value
+                                    }) > -1
+                                    value = isExist ? arr : [...arr, value]
+                                }
                             }
                             condition.condition.push({
                                 field: column.field,
