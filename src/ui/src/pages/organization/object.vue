@@ -421,17 +421,10 @@
                     }
                 })
             },
-            sortProperty (properties) {
-                let attr = this.$deepClone(properties)
-                attr.sort((objA, objB) => {
-                    return objA['bk_property_index'] - objB['bk_property_index']
-                })
-                return attr
-            },
             // 初始化表格，先获取表格字段再获取表格列表
             initTable () {
                 this.getTableHeader().then(properties => {
-                    this.attr.formFields = [...this.sortProperty(properties)]
+                    this.attr.formFields = [...properties]
                     this.getTableList()
                 })
             },
