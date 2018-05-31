@@ -143,17 +143,9 @@
                     <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="curModel.type==='change'">
                         <v-layout ref="layout"
                         :isShow="curTabName==='layout'"
-                        :id="curModel['id']"
-                        :objId="curModel['bk_obj_id']"
-                        :isNewField="isNewField"
-                        ></v-layout>
-                    </bk-tabpanel>
-                    <bk-tabpanel name="layout2" title="字段分组2" :show="curModel.type==='change'">
-                        <v-layout2 ref="layout2"
-                        :isShow="curTabName==='layout2'"
                         :activeModel="curModel"
                         @cancel="cancel"
-                        ></v-layout2>
+                        ></v-layout>
                     </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
                         <v-other
@@ -181,7 +173,6 @@
     import vBaseInfo from './children/baseInfo'
     import vField from './children/field'
     import vLayout from './children/layout'
-    import vLayout2 from './children/layout2'
     import vOther from './children/other'
     import vGlobalModels from './children/global-models'
     import vTopo from '@/components/topo/topo'
@@ -807,7 +798,6 @@
             vBaseInfo,
             vField,
             vLayout,
-            vLayout2,
             vOther,
             vPop,
             vGlobalModels
