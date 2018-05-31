@@ -102,7 +102,7 @@ func (o *ObjQueryInput) convTimeItem(item interface{}) (interface{}, error) {
 				case map[string]interface{}:
 					arrItemVal, ok := value.(map[string]interface{})
 					if ok {
-						for key, value := range arrItem {
+						for key, value := range arrItemVal {
 							var err error
 							arrItemVal[key], err = o.convTimeItem(value)
 							if nil != err {
@@ -140,6 +140,7 @@ func (o *ObjQueryInput) convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 
 		}
+
 	}
 
 	return item, nil
