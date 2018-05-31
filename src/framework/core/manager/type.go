@@ -14,7 +14,7 @@ package manager
 
 import (
 	"configcenter/src/framework/core/types"
-	"github.com/tidwall/gjson"
+	
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 type Action struct {
 	Method      string
 	Path        string
-	HandlerFunc func(data *gjson.Result) (types.MapStr, error)
+	HandlerFunc func(data types.MapStr) (types.MapStr, error)
 }
 
 // FrameworkContext definition the framework context

@@ -12,6 +12,10 @@
 
 package types
 
+import (
+	"strings"
+)
+
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
@@ -20,6 +24,11 @@ type EventType string
 
 // EventKey the event key type
 type EventKey string
+
+// Compare compare the event key
+func (cli EventKey) Compare(target EventKey) int {
+	return strings.Compare(string(cli), string(target))
+}
 
 // EventCallbackFunc the event deal function
 type EventCallbackFunc func(evn Event) error
@@ -32,15 +41,23 @@ const (
 	FrameworkKey ContextKey = "cmdb_v3_framework"
 
 	// EventHostType the host event
-	EventHostType = "cmdb_v3_event_host_type"
+	EventHostType EventType = "cmdb_v3_event_host_type"
+
+	// EventBusinessType the business event
+	EventBusinessType EventType = "cmdb_v3_event_business_type"
+
+	// EventModuleType the module event
+	EventModuleType EventType = "cmdb_v3_event_module_type"
+
+	// EventHostIdentifierType the host identifier
+	EventHostIdentifierType EventType = "cmdb_v3_event_hostidentifier_type"
+
+	// EventSetType the set event
+	EventSetType EventType = "cmdb_v3_event_set_type"
 
 	// EventObjectType the custom object event
-	EventObjectType = "cmdb_v3_event_object_type"
+	EventObjectType EventType = "cmdb_v3_event_object_type"
 )
-
-// Event the cmdb event definition
-type Event struct {
-}
 
 // Saver the save interface
 type Saver interface {
