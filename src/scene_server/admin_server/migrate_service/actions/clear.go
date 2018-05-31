@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/scene_server/admin_server/migrate_service/logics"
 
+	"configcenter/src/common/version"
 	"github.com/emicklei/go-restful"
 )
 
@@ -41,6 +42,12 @@ func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+
+	if !version.CCDebug {
+		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
+		return
+	}
+
 	err := logics.Clear(cli.CC.InstCli)
 	if nil != err {
 		blog.Errorf("clear error: %v", err)
