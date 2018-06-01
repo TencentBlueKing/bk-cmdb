@@ -30,16 +30,30 @@ func init() {
 var eve = &eventInputer{}
 
 type eventInputer struct {
+	key types.EventKey
 }
 
 // Init initialization method
 func (cli *eventInputer) Init(ctx input.InputerContext) error {
 
-	key := ctx.RegisterEvent(types.EventHostType, func(evn *types.Event) error {
-		fmt.Println("the evn:", evn)
-		return nil
-	})
-	fmt.Println("key:", key)
+	cli.key = ctx.RegisterEvent(types.EventHostType, cli.eventCallback)
+
+	return nil
+}
+
+func (cli *eventInputer) eventCallback(eves []*types.Event) error {
+
+	for _, item := range eves {
+		curData := item.GetCurrData()
+		preData := item.GetPreData()
+		//fmt.Println("cur:", string(curData.ToJSON()))
+		//fmt.Println("pre:", string(preData.ToJSON()))
+		more, less, changes := curData.Different(preData)
+		fmt.Println("more:", string(more.ToJSON()))
+		fmt.Println("less:", string(less.ToJSON()))
+		fmt.Println("changes:", string(changes.ToJSON()))
+
+	}
 	return nil
 }
 
@@ -57,5 +71,6 @@ func (cli *eventInputer) Run(ctx input.InputerContext) *input.InputerResult {
 }
 
 func (cli *eventInputer) Stop() error {
+
 	return nil
 }

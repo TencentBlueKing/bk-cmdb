@@ -253,3 +253,40 @@ func (cli MapStr) Exists(key string) bool {
 	_, ok := cli[key]
 	return ok
 }
+
+// IsEmpty check the empty status
+func (cli MapStr) IsEmpty() bool {
+	return len(cli) == 0
+}
+
+// Different the current value is different from the content of the given data
+func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes MapStr) {
+
+	// init
+	more = make(MapStr)
+	less = make(MapStr)
+	changes = make(MapStr)
+
+	// check more
+	cli.ForEach(func(key string, val interface{}) {
+		if targetVal, ok := target[key]; ok {
+
+			if !reflect.DeepEqual(val, targetVal) {
+				changes[key] = val
+			}
+			return
+		}
+
+		more.Set(key, val)
+	})
+
+	// check less
+	target.ForEach(func(key string, val interface{}) {
+		if !cli.Exists(key) {
+			less[key] = val
+		}
+
+	})
+
+	return more, less, changes
+}

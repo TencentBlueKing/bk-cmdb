@@ -14,7 +14,6 @@ package manager
 
 import (
 	"configcenter/src/framework/core/types"
-	
 )
 
 const (
@@ -24,6 +23,7 @@ const (
 	EventModule         = "module"
 	EventBusiness       = "biz"
 	EventPlat           = "plat"
+	EventInst           = "inst"
 
 	EventModuleTransfer = "moduletransfer"
 	EventActionCreate   = "create"

@@ -20,15 +20,15 @@ import (
 	"errors"
 )
 
-type eventModule struct {
+type eventInst struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventModule) constructEvent(curModule, preModule types.MapStr) (types.MapStr, error) {
+func (cli *eventInst) constructEvent(curInst, preInst types.MapStr) (types.MapStr, error) {
 	return nil, nil
 }
 
-func (cli *eventModule) parse(data types.MapStr) ([]*types.Event, error) {
+func (cli *eventInst) parse(data types.MapStr) ([]*types.Event, error) {
 
 	dataArr, err := data.MapStrArray("data")
 	if nil != err {
@@ -50,14 +50,14 @@ func (cli *eventModule) parse(data types.MapStr) ([]*types.Event, error) {
 	eves := make([]*types.Event, 0)
 	for _, dataItem := range dataArr {
 
-		curModule, err := dataItem.MapStr("cur_data")
+		curInst, err := dataItem.MapStr("cur_data")
 
 		if nil != err {
 			log.Errorf("failed to get the curr data, %s", err.Error())
 			return nil, err
 		}
 
-		preModule, err := dataItem.MapStr("pre_data")
+		preInst, err := dataItem.MapStr("pre_data")
 
 		if nil != err {
 			log.Errorf("failed to get the curr data, %s", err.Error())
@@ -65,12 +65,11 @@ func (cli *eventModule) parse(data types.MapStr) ([]*types.Event, error) {
 		}
 
 		ev := &types.Event{}
-		ev.SetCurrData(curModule)
-		ev.SetPreData(preModule)
+		ev.SetCurrData(curInst)
+		ev.SetPreData(preInst)
 		ev.SetAction(action)
 		ev.SetActionTime(*tm)
 		eves = append(eves, ev)
-
 	}
 
 	return eves, nil

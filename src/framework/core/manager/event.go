@@ -37,6 +37,7 @@ type eventSubscription struct {
 	hostMgr           *eventHost
 	hostIdentifierMgr *eventHostIdentifier
 	businessMgr       *eventBusiness
+	instMgr           *eventInst
 }
 
 func (cli *eventSubscription) setOutputer(output output.Manager) {
@@ -49,7 +50,7 @@ func (cli *eventSubscription) setOutputer(output output.Manager) {
 
 }
 
-func (cli *eventSubscription) sendEvent(eveType types.EventType, eveData *types.Event) error {
+func (cli *eventSubscription) sendEvent(eveType types.EventType, eveData []*types.Event) error {
 	if items, ok := cli.registers[eveType]; ok {
 
 		for _, eveItem := range items {
@@ -114,6 +115,14 @@ func (cli *eventSubscription) run(ctx context.Context) {
 						log.Errorf("failed to parse hostindentifier, error %s", err.Error())
 					} else {
 						if err := cli.sendEvent(types.EventHostIdentifierType, dataEve); nil != err {
+							log.Errorf("failed to send event, %s", err.Error())
+						}
+					}
+				case EventInst:
+					if dataEve, err := cli.instMgr.parse(msg); nil != err {
+						log.Errorf("failed to parse inst event, error %s", err.Error())
+					} else {
+						if err := cli.sendEvent(types.EventInstType, dataEve); nil != err {
 							log.Errorf("failed to send event, %s", err.Error())
 						}
 					}
