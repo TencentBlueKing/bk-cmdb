@@ -1,0 +1,8 @@
+{
+    "test_key_val": "字符串",
+    "test_key_val1": "字符串1",
+    "test_key_val2": "字符串2",
+    "test_key_val3": "字符串3",
+    "test_key_format_str": "字符串带参数%s",
+    "test_key_format_int": "数字带参数%d"
+}

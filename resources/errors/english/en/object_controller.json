@@ -1,0 +1,11 @@
+{
+	"1102000": "Attribute grouping failed to store",
+	"1102001": "Delete Attribute Grouping Failed",
+	"1102002": "Query Attribute Grouping Failed",
+	"1102003": "Update Attribute Grouping Failed",
+	"1102004": "The new instance failed",
+	"1102005": "Failed to update instance",
+	"1102006": "Delete Instance Failed",
+	"1102007": "Query instance failed",
+	"": ""
+}

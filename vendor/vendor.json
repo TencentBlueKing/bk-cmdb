@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "cFz6PdLyqjSwv7wWrgkhZa4UM08=",
+			"path": "github.com/go-playground/validator",
+			"revision": "61caf9d3038e1af346dbf5c2e16f6678e1548364",
+			"revisionTime": "2017-11-13T04:58:10Z"
+		}
+	],
+	"rootPath": "configcenter"
+}
