@@ -13,14 +13,14 @@
 package manager
 
 import (
-	"configcenter/src/framework/core/types"
 	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
 )
 
 type eventHostIdentifier struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventHostIdentifier) parse(data types.MapStr) (types.MapStr, error) {
+func (cli *eventHostIdentifier) parse(data types.MapStr) (*types.Event, error) {
 	return nil, nil
 }

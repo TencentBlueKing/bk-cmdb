@@ -31,7 +31,7 @@ func (cli EventKey) Compare(target EventKey) int {
 }
 
 // EventCallbackFunc the event deal function
-type EventCallbackFunc func(evn Event) error
+type EventCallbackFunc func(evn *Event) error
 
 // ContextKey the context key type
 type ContextKey string

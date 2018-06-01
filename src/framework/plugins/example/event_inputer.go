@@ -35,7 +35,7 @@ type eventInputer struct {
 // Init initialization method
 func (cli *eventInputer) Init(ctx input.InputerContext) error {
 
-	key := ctx.RegisterEvent(types.EventHostType, func(evn types.Event) error {
+	key := ctx.RegisterEvent(types.EventHostType, func(evn *types.Event) error {
 		fmt.Println("the evn:", evn)
 		return nil
 	})

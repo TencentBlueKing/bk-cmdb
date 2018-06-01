@@ -136,7 +136,6 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		default:
 			operator = cccommon.BKDBEQ
 			value = val
-			fmt.Printf("val: %#v\n", val)
 		}
 		condition := map[string]interface{}{
 			"field":    key,
@@ -147,12 +146,35 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		conditions = append(conditions, condition)
 	}
 
-	params := map[string]interface{}{}
+	params := map[string]interface{}{
+		"bk_biz_id": -1,
+		"page": types.MapStr{
+			"start": cond.GetStart(),
+			"limit": cond.GetLimit(),
+			"sort":  cond.GetSort(),
+		},
+	}
 
 	params["condition"] = []map[string]interface{}{
 		map[string]interface{}{
 			"bk_obj_id": "host",
+			"fields":    []string{},
 			"condition": conditions,
+		},
+		map[string]interface{}{
+			"bk_obj_id": "set",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
+		},
+		map[string]interface{}{
+			"bk_obj_id": "module",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
+		},
+		map[string]interface{}{
+			"bk_obj_id": "biz",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
 		},
 	}
 
@@ -161,7 +183,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		log.Errorf("json error: %v", err)
 	}
 
-	fmt.Printf("search host param:%s\n", out)
+	//fmt.Printf("search host param:%s\n", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)
@@ -187,7 +209,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		return nil, err
 	}
 	resultMap := make([]types.MapStr, 0)
-	//fmt.Println("host:", dataStr)
+
 	for _, item := range hostMap {
 
 		biz, err := item.MapStrArray("biz")
@@ -222,6 +244,8 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		resultMap = append(resultMap, item)
 
 	}
+
+	//fmt.Println("host data:", resultMap)
 
 	return resultMap, err
 }

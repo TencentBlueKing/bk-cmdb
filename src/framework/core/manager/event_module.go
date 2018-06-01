@@ -21,6 +21,6 @@ type eventModule struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventModule) parse(data types.MapStr) (types.MapStr, error) {
+func (cli *eventModule) parse(data types.MapStr) (*types.Event, error) {
 	return nil, nil
 }

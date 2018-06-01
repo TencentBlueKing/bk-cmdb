@@ -13,15 +13,15 @@
 package manager
 
 import (
-	"configcenter/src/framework/core/types"
 	"configcenter/src/framework/core/output"
+	"configcenter/src/framework/core/types"
 )
 
 type eventSet struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventSet) parse(data types.MapStr) (types.MapStr, error) {
+func (cli *eventSet) parse(data types.MapStr) (*types.Event, error) {
 
 	return nil, nil
 }
