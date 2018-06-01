@@ -21,6 +21,6 @@ type eventBusiness struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventBusiness) parse(data types.MapStr) (types.MapStr, error) {
+func (cli *eventBusiness) parse(data types.MapStr) (*types.Event, error) {
 	return nil, nil
 }

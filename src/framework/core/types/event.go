@@ -16,10 +16,10 @@ package types
 type Event struct {
 	eveKey  EventKey
 	eveType EventType
-	datas   MapStr
+	datas   []MapStr
 }
 
-// SetData set the event data
-func (cli *Event) SetData(data MapStr) {
-	cli.datas = data
+// AddData set the event data
+func (cli *Event) AddData(data MapStr) {
+	cli.datas = append(cli.datas, data)
 }

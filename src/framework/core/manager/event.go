@@ -49,14 +49,12 @@ func (cli *eventSubscription) setOutputer(output output.Manager) {
 
 }
 
-func (cli *eventSubscription) sendEvent(eveType types.EventType, eveData types.MapStr) error {
+func (cli *eventSubscription) sendEvent(eveType types.EventType, eveData *types.Event) error {
 	if items, ok := cli.registers[eveType]; ok {
 
 		for _, eveItem := range items {
 			if nil != eveItem.callback {
-				eve := types.Event{}
-				eve.SetData(eveData)
-				if err := eveItem.callback(eve); nil != err {
+				if err := eveItem.callback(eveData); nil != err {
 					log.Errorf("failed to send the event, %s", err.Error())
 				}
 			}
