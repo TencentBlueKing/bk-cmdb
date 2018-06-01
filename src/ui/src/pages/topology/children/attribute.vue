@@ -86,7 +86,14 @@
         </ul>
         <div class="attribute-btn">
             <bk-button type="primary" class="bk-button main-btn" @click="doSubmit" :disabled="errors.any()" v-if="displayType === 'form'">{{$t('Common[\'保存\']')}}</bk-button>
-            <bk-button type="primary" class="bk-button main-btn" @click="toggleDisplayType('form')" v-if="editable && displayType === 'list'">{{$t('Common[\'编辑\']')}}</bk-button>
+            <template v-if="!editable">
+                <span class="tooltip-wrapper" v-tooltip="{content: $t('Common[\'关键业务不能够修改\']'), classes: 'topo-tip'}">
+                    <bk-button type="primary" class="bk-button main-btn" disabled v-if="displayType === 'list'">{{$t('Common[\'编辑\']')}}</bk-button>
+                </span>
+            </template>
+            <template v-else>
+                <bk-button type="primary" class="bk-button main-btn" @click="toggleDisplayType('form')" v-if="displayType === 'list'">{{$t('Common[\'编辑\']')}}</bk-button>
+            </template>
             <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="toggleDisplayType('list')" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'取消\']')}}</bk-button>
             <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="cancelCreate" v-if="type === 'create'">{{$t('Common[\'取消\']')}}</bk-button>
             <button class="del-btn" @click="doDelete" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'删除\']')}}</button>
@@ -450,14 +457,16 @@
         .bk-button,
         .del-btn{
             vertical-align: middle;
-            // width: 124px;
             font-size: 14px;
             height: 36px;
             line-height: 34px;
             margin: 0 15px 0 0;
         }
-        .cancel-btn {
-            // width: 124px;
+        .tooltip-wrapper{
+            display: inline-block;
+            .bk-button{
+                margin: 0;
+            }
         }
     }
     .bk-form-input{
