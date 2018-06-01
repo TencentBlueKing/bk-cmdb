@@ -10,29 +10,60 @@
 
 <template lang="html">
     <div class="img-403">
-        <img src="../common/images/403.png" alt="">
-        <p class="tips-403">Sorry，您的权限不足</p>
+        <div class="img-box">
+            <img src="../common/images/403.png" alt="">
+            <div class="tips-403">
+                {{$t('Common["Sorry，您没有业务管理的权限，请联系配置平台管理员"]')}}
+                <p :class="{'zh': language === 'zh-cn'}" class="name"></p>
+            </div>
+        </div>
     </div>
 </template>
+
+<script>
+    import { mapGetters } from 'vuex'
+    export default {
+        computed: {
+            ...mapGetters([
+                'language'
+            ])
+        }
+    }
+</script>
+
 
 <style media="screen" lang="scss">
     .img-403{
         position: relative;
-        min-height: calc(100% - 50px);
-        img{
+        height: 100%;
+        .img-box{
             position: absolute;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
+            width: 650px;
+            text-align: center;
+            font-size: 16px;
+        }
+        img{
+            display: block;
+            margin: 0 auto;
         }
         .tips-403{
+            margin-top: 10px;
             font-size: 20px;
             color: #979797;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            margin-top: 108px;
-            transform: translate(-50%, -50%);
+            .name{
+                margin: 10px auto 0;
+                width: 500px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: break-word;
+                white-space: nowrap;
+                &.zh {
+                    width: 400px;
+                }
+            }
         }
     }
 </style>
