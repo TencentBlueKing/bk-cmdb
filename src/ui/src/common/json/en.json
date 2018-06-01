@@ -13,7 +13,7 @@
         "取消": "Cancel",
         "确认": "Confirm",
         "暂时没有数据": "No Data",
-        "sorry，您的权限不足": "Sorry, your lack of permissions",
+        "Sorry，您没有业务管理的权限，请联系配置平台管理员": "You do not have permission to manage your business, please contact your configuration platform administrator",
         "内网IP": "Intranet IP",
         "等于": "Equal",
         "不等于": "Different",
@@ -89,7 +89,8 @@
         "内容不合法": "Illegal content",
         "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
         "详情": "Detail",
-        "删除关联": "Delete Association"
+        "删除关联": "Delete Association",
+        "关键业务不能够修改": "Key Business cannot be modified"
     },
     "Index": {
         "首页": "Index",
