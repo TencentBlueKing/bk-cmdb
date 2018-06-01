@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>配置平台 | 蓝鲸智云企业版</title>
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+    <script type="text/javascript">
+        window.siteUrl = {{.site}}
+        window.version = {{.version}}
+        window.loginUrl = {{.curl}}
+        window.isAdmin = {{.role}}  // 为1的时候是管理员
+        window.userName = {{.userName}}
+        window.agentAppUrl = {{.agentAppUrl}}
+    </script>
+  </body>
+</html>

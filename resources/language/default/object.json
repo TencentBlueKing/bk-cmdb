@@ -1,0 +1,16 @@
+{
+    "object_host": "主机",
+    "object_biz": "业务",
+    "object_set": "集群",
+    "object_module": "模块",
+    "object_process": "进程",
+    "object_plat": "子网区域",
+    "object_bk_switch": "交换机",
+    "object_bk_router": "路由器",
+    "object_bk_load_balance": "负载均衡",
+    "object_bk_firewall": "防火墙",
+    "object_bk_weblogic": "weblogic",
+    "object_bk_tomcat": "tomcat",
+    "object_bk_apache": "apache",
+    "": ""
+}
