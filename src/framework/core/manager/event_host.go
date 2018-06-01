@@ -18,6 +18,8 @@ import (
 	"configcenter/src/framework/core/output"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/types"
+
+	"errors"
 )
 
 type eventHost struct {
@@ -40,7 +42,6 @@ func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapSt
 		return nil, err
 	}
 
-	result := types.MapStr{}
 	err = hostIter.ForEach(func(item inst.Inst) error {
 
 		vals, err := item.GetValues()
@@ -120,7 +121,7 @@ func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapSt
 
 		}
 
-		result = vals
+		data.Set("biz", biz)
 
 		return nil
 	})
@@ -130,41 +131,69 @@ func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapSt
 		return nil, err
 	}
 
-	return result, nil
+	return data, nil
 }
 
-func (cli *eventHost) parse(data types.MapStr) (*types.Event, error) {
+func (cli *eventHost) getEvent(dataKey string, dataItem types.MapStr) (types.MapStr, error) {
+
+	curHost, err := dataItem.MapStr(dataKey)
+
+	if nil != err {
+		log.Errorf("failed to get the curr data, %s", err.Error())
+		return nil, err
+	}
+
+	hostID, err := curHost.Int("bk_host_id")
+	if nil != err {
+		log.Errorf("failed to get the host id, %s", err.Error())
+		return nil, err
+	}
+
+	return cli.constructEvent(hostID, curHost)
+}
+
+func (cli *eventHost) parse(data types.MapStr) ([]*types.Event, error) {
 
 	dataArr, err := data.MapStrArray("data")
 	if nil != err {
 		return nil, err
 	}
 
-	eve := &types.Event{}
+	tm, err := data.Time("action_time")
+	if nil != err {
+		log.Error("failed to get action time")
+		return nil, err
+	}
+
+	action := data.String("action")
+	if 0 == len(action) {
+		log.Error("the event action is not set")
+		return nil, errors.New("the event action is not set")
+	}
+
+	eves := make([]*types.Event, 0)
 	for _, dataItem := range dataArr {
 
-		curHost, err := dataItem.MapStr("cur_data")
-
+		currEvent, err := cli.getEvent("cur_data", dataItem)
 		if nil != err {
-			log.Errorf("failed to get the curr data, %s", err.Error())
+			log.Errorf("failed to get the current host event,%s", err.Error())
 			return nil, err
 		}
 
-		hostID, err := curHost.Int("bk_host_id")
+		prevEvent, err := cli.getEvent("pre_data", dataItem)
 		if nil != err {
-			log.Errorf("failed to get the host id, %s", err.Error())
+			log.Errorf("failed to get the prev host event,%s", err.Error())
 			return nil, err
 		}
 
-		eventItem, err := cli.constructEvent(hostID, curHost)
-		if nil != err {
-			log.Errorf("failed to construct the host event, %s", err.Error())
-			return nil, err
-		}
-
-		eve.AddData(eventItem)
+		ev := &types.Event{}
+		ev.SetCurrData(currEvent)
+		ev.SetPreData(prevEvent)
+		ev.SetActionTime(*tm)
+		ev.SetAction(action)
+		eves = append(eves, ev)
 
 	}
 
-	return eve, nil
+	return eves, nil
 }

@@ -31,7 +31,7 @@ func (cli EventKey) Compare(target EventKey) int {
 }
 
 // EventCallbackFunc the event deal function
-type EventCallbackFunc func(evn *Event) error
+type EventCallbackFunc func(evn []*Event) error
 
 // ContextKey the context key type
 type ContextKey string
@@ -55,8 +55,8 @@ const (
 	// EventSetType the set event
 	EventSetType EventType = "cmdb_v3_event_set_type"
 
-	// EventObjectType the custom object event
-	EventObjectType EventType = "cmdb_v3_event_object_type"
+	// EventInstType the custom inst event
+	EventInstType EventType = "cmdb_v3_event_inst_type"
 )
 
 // Saver the save interface
