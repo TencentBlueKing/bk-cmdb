@@ -13,6 +13,13 @@
 package plat
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/emicklei/go-restful"
+
+	v2 "configcenter/src/api_server/ccapi/actions/v2/phpapi"
 	logics "configcenter/src/api_server/ccapi/logics/v2"
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
@@ -22,13 +29,6 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	"configcenter/src/api_server/ccapi/actions/v2"
-
-	"github.com/emicklei/go-restful"
 )
 
 var plat *platAction = &platAction{}
