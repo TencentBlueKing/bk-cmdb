@@ -1,26 +1,305 @@
 package v3v0v8
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
+	"time"
 )
 
 func addPresetObjects(db storage.DI, conf *upgrader.Config) (err error) {
-	for tablename, indexs := range classificationRows {
-		if err = db.CreateTable(tablename); err != nil {
+	err = addClassifications(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPropertyGroupData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addObjDesData(db, conf)
+	if err != nil {
+		return err
+	}
+
+	err = addObjAttDescData(db, conf)
+	if err != nil {
+		return err
+	}
+
+	err = addAsstData(db, conf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addAsstData(db storage.DI, conf *upgrader.Config) error {
+	tablename := metadata.ObjectAsst{}.TableName()
+	blog.Errorf("add data for  %s table ", tablename)
+	rows := getAddAsstData(conf.OwnerID)
+	for _, row := range rows {
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}
-		for index := range indexs {
-			if err = db.Index(tablename, &indexs[index]); err != nil {
-				return err
-			}
+		row.ID = int(id)
+		err = storage.Upsert(db, tablename, row, []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id"})
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
 		}
 	}
+
+	blog.Errorf("add data for  %s table  ", tablename)
+	return nil
+}
+
+func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
+	tablename := metadata.ObjectAttDes{}.TableName()
+	blog.Infof("add data for  %s table ", tablename)
+	rows := getObjAttDescData(conf.OwnerID)
+	for _, row := range rows {
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		row.ID = int(id)
+		err = storage.Upsert(db, tablename, row, []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{"id"})
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+	}
+	selector := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			"$in": []string{"bk_switch",
+				"bk_router",
+				"bk_load_balance",
+				"bk_firewall",
+				"bk_weblogic",
+				"bk_tomcat",
+				"bk_apache",
+			},
+		},
+		common.BKPropertyIDField: "bk_name",
+	}
+
+	db.DelByCondition(tablename, selector)
+
+	return nil
+}
+
+func addObjDesData(db storage.DI, conf *upgrader.Config) error {
+	// TODO ensure column
+	tablename := metadata.ObjectDes{}.TableName()
+	blog.Errorf("add data for  %s table ", tablename)
+	rows := getObjectDesData(conf.OwnerID)
+	for _, row := range rows {
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		row.ID = int(id)
+		if err = storage.Upsert(db, tablename, row, []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+	}
+
+	blog.Errorf("add data for  %s table  ", tablename)
 	return nil
 }
 
 func addClassifications(db storage.DI, conf *upgrader.Config) (err error) {
+	tablename := metadata.PropertyGroup{}.TableName()
+	for _, row := range classificationRows {
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		row.ID = int(id)
+		if err = storage.Upsert(db, tablename, row, []string{common.BKClassificationIDField}, []string{"id"}); err != nil {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+	}
+	return
+}
+
+func addPropertyGroupData(db storage.DI, conf *upgrader.Config) error {
+	tablename := metadata.PropertyGroup{}.TableName()
+	blog.Errorf("add data for  %s table ", tablename)
+	rows := getPropertyGroupData(conf.OwnerID)
+	for _, row := range rows {
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		row.ID = int(id)
+		if err = storage.Upsert(db, tablename, row, []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+	}
+	return nil
+}
+func getObjectDesData(ownerID string) []*metadata.ObjectDes {
+
+	dataRows := []*metadata.ObjectDes{
+		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDHost, ObjectName: "主机", IsPre: true, ObjIcon: "icon-cc-host", Position: `{"bk_host_manage":{"x":-600,"y":-650}}`},
+		&metadata.ObjectDes{ObjCls: "bk_biz_topo", ObjectID: common.BKInnerObjIDModule, ObjectName: "模块", IsPre: true, ObjIcon: "icon-cc-module", Position: ``},
+		&metadata.ObjectDes{ObjCls: "bk_biz_topo", ObjectID: common.BKInnerObjIDSet, ObjectName: "集群", IsPre: true, ObjIcon: "icon-cc-set", Position: ``},
+		&metadata.ObjectDes{ObjCls: "bk_organization", ObjectID: common.BKInnerObjIDApp, ObjectName: "业务", IsPre: true, ObjIcon: "icon-cc-business", Position: `{"bk_organization":{"x":-100,"y":-100}}`},
+		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDProc, ObjectName: "进程", IsPre: true, ObjIcon: "icon-cc-process", Position: `{"bk_host_manage":{"x":-450,"y":-650}}`},
+		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDPlat, ObjectName: "子网区域", IsPre: true, ObjIcon: "icon-cc-subnet", Position: `{"bk_host_manage":{"x":-600,"y":-500}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDSwitch, ObjectName: "交换机", ObjIcon: "icon-cc-switch2", Position: `{"bk_network":{"x":-200,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDRouter, ObjectName: "路由器", ObjIcon: "icon-cc-router", Position: `{"bk_network":{"x":-350,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDBlance, ObjectName: "防火墙", ObjIcon: "icon-cc-balance", Position: `{"bk_network":{"x":-500,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDFirewall, ObjectName: "负载均衡", ObjIcon: "icon-cc-firewall", Position: `{"bk_network":{"x":-650,"y":-50}}`},
+
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDWeblogic, ObjectName: "weblogic", ObjIcon: "icon-cc-weblogic", Position: `{"bk_middleware":{"x":-200,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDApache, ObjectName: "apache", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDTomcat, ObjectName: "tomcat", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
+	}
+	t := time.Now()
+	for _, r := range dataRows {
+		r.CreateTime = &t
+		r.LastTime = &t
+		r.IsPaused = false
+		r.Creator = common.CCSystemOperatorUserName
+		r.OwnerID = ownerID
+		r.Description = ""
+		r.Modifier = ""
+	}
+
+	return dataRows
+}
+
+func getAddAsstData(ownerID string) []*metadata.ObjectAsst {
+
+	dataRows := []*metadata.ObjectAsst{
+		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
+		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
+		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
+		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
+	}
+	for _, r := range dataRows {
+		r.OwnerID = ownerID
+		//r.AsstObjType = 0
+	}
+
+	return dataRows
+
+}
+
+func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
+
+	predataRows := AppRow()
+	predataRows = append(predataRows, SetRow()...)
+	predataRows = append(predataRows, ModuleRow()...)
+	predataRows = append(predataRows, HostRow()...)
+	predataRows = append(predataRows, ProcRow()...)
+	predataRows = append(predataRows, PlatRow()...)
+
+	dataRows := SwitchRow()
+	dataRows = append(dataRows, RouterRow()...)
+	dataRows = append(dataRows, LoadBalanceRow()...)
+	dataRows = append(dataRows, FirewallRow()...)
+	dataRows = append(dataRows, WeblogicRow()...)
+	dataRows = append(dataRows, ApacheRow()...)
+	dataRows = append(dataRows, TomcatRow()...)
+
+	t := new(time.Time)
+	*t = time.Now()
+	for _, r := range predataRows {
+		r.OwnerID = ownerID
+		r.IsPre = true
+		if false != r.Editable {
+			r.Editable = true
+		}
+		r.IsReadOnly = false
+		r.CreateTime = t
+		r.Creator = common.CCSystemOperatorUserName
+		r.LastTime = r.CreateTime
+		r.Description = ""
+	}
+	for _, r := range dataRows {
+		r.OwnerID = ownerID
+		if false != r.Editable {
+			r.Editable = true
+		}
+		r.IsReadOnly = false
+		r.CreateTime = t
+		r.Creator = common.CCSystemOperatorUserName
+		r.LastTime = r.CreateTime
+		r.Description = ""
+	}
+
+	return append(predataRows, dataRows...)
+}
+
+func getPropertyGroupData(ownerID string) []*metadata.PropertyGroup {
+	objectIDs := make(map[string]map[string]string)
+
+	dataRows := []*metadata.PropertyGroup{
+		//app
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDApp, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDApp, GroupID: mCommon.AppRole, GroupName: mCommon.AppRoleName, GroupIndex: 2, OwnerID: ownerID, IsDefault: true},
+
+		//set
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDSet, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+
+		//module
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDModule, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+
+		//host
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDHost, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDHost, GroupID: mCommon.HostAutoFields, GroupName: mCommon.HostAutoFieldsName, GroupIndex: 3, OwnerID: ownerID, IsDefault: true},
+
+		//proc
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDProc, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDProc, GroupID: mCommon.ProcPort, GroupName: mCommon.ProcPortName, GroupIndex: 2, OwnerID: ownerID, IsDefault: true},
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDProc, GroupID: mCommon.ProcGsekitBaseInfo, GroupName: mCommon.ProcGsekitBaseInfoName, GroupIndex: 3, OwnerID: ownerID, IsDefault: true},
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDProc, GroupID: mCommon.ProcGsekitManageInfo, GroupName: mCommon.ProcGsekitManageInfoName, GroupIndex: 4, OwnerID: ownerID, IsDefault: true},
+
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDPlat, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+
+		//bk_switch
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDSwitch, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDRouter, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDBlance, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDFirewall, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDWeblogic, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDTomcat, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+		//plat
+		&metadata.PropertyGroup{ObjectID: common.BKInnerObjIDApache, GroupID: mCommon.BaseInfo, GroupName: mCommon.BaseInfoName, GroupIndex: 1, OwnerID: ownerID, IsDefault: true},
+	}
+	for objID, kv := range objectIDs {
+		index := 1
+		for id, name := range kv {
+			row := &metadata.PropertyGroup{ObjectID: objID, GroupID: id, GroupName: name, GroupIndex: index, OwnerID: ownerID, IsDefault: true}
+			dataRows = append(dataRows, row)
+			index++
+		}
+
+	}
+
+	return dataRows
 
 }
 

@@ -14,6 +14,18 @@ func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 	if err != nil {
 		return err
 	}
+	err = addPresetObjects(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPlatData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addSystemData(db, conf)
+	if err != nil {
+		return err
+	}
 
 	return
 }
