@@ -10,23 +10,33 @@
  * limitations under the License.
  */
 
-package metadata
+package main
 
-// PropertyGroupCondition used to reflect the property group json
-type PropertyGroupCondition struct {
-	Condition map[string]interface{} `json:"condition"`
-	Data      map[string]interface{} `json:"data"`
-}
+import (
+	"context"
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
+    "fmt"
+)
 
-// PropertyGroupObjectAtt uset to update or delete the property group object attribute
-type PropertyGroupObjectAtt struct {
-	Condition struct {
-		OwnerID    string `json:"bk_supplier_account"`
-		ObjectID   string `json:"bk_obj_id"`
-		PropertyID string `json:"bk_property_id"`
-	} `json:"condition"`
-	Data struct {
-		PropertyGroupID string `json:"bk_property_group"`
-		PropertyIndex   int    `json:"bk_property_index"`
-	} `json:"data"`
+func main() {
+    c := util.APIMachineryConfig{
+        ZkAddr: "127.0.0.1:2181",
+        QPS: 100,
+        Burst: 200,
+        TLSConfig: &util.TLSClientConfig{
+            InsecureSkipVerify: false,
+            CertFile: "",
+            KeyFile: "",
+            CAFile: "",
+            Password: "",
+        },
+    }
+	
+	clientset, err := apimachinery.NewApiMachinery(&c)
+	if err != nil {
+	    fmt.Println(err)
+	    return 
+    }
+	clientset.TopoServer().Instance().CreateApp(context.Background(), util.Headers{})
 }
