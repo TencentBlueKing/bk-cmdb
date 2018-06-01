@@ -78,7 +78,7 @@
                         this.$alertMsg(response['bk_error_msg'])
                     }
                 } catch (e) {
-                    this.$alertMsg(e)
+                    this.$alertMsg(e.message)
                 }
             },
             // 设置节点数据
