@@ -22,7 +22,9 @@ import (
 )
 
 // Config config for upgrader
-type Config struct{}
+type Config struct {
+	OwnerID string
+}
 
 // Upgrader define a version upgrader
 type Upgrader struct {
