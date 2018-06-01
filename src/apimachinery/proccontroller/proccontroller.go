@@ -10,23 +10,26 @@
  * limitations under the License.
  */
 
-package metadata
+package proccontroller
 
-// PropertyGroupCondition used to reflect the property group json
-type PropertyGroupCondition struct {
-	Condition map[string]interface{} `json:"condition"`
-	Data      map[string]interface{} `json:"data"`
+import (
+    "fmt"
+
+    "configcenter/src/apimachinery/util"
+    "configcenter/src/apimachinery/rest"
+)
+
+type ProcCtrlClientInterface interface {
+
 }
 
-// PropertyGroupObjectAtt uset to update or delete the property group object attribute
-type PropertyGroupObjectAtt struct {
-	Condition struct {
-		OwnerID    string `json:"bk_supplier_account"`
-		ObjectID   string `json:"bk_obj_id"`
-		PropertyID string `json:"bk_property_id"`
-	} `json:"condition"`
-	Data struct {
-		PropertyGroupID string `json:"bk_property_group"`
-		PropertyIndex   int    `json:"bk_property_index"`
-	} `json:"data"`
+func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
+    base := fmt.Sprintf("/process/%s", version)
+    return &procctrl{
+        client: rest.NewRESTClient(c, base),
+    }
+}
+
+type procctrl struct {
+    client rest.ClientInterface
 }
