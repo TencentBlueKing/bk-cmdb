@@ -6,7 +6,9 @@
                 'active': classify.id === activeClassify
             }]"
             :key="classifyIndex"
-            :data-classify-id="classify.id">
+            :data-classify-id="classify.id"
+            @mouseenter="showClassifyModels($event, classify)"
+            @mouseleave="hideClassifyModels($event, classify)">
             <router-link exact class="classify-info classify-info-index"
                 v-if="classify.id === 'bk_index'"
                 :to="classify.path"
@@ -49,14 +51,36 @@
             highlightClassify (highlightClassify) {
                 this.$nextTick(() => {
                     const highlightId = highlightClassify['bk_classification_id']
-                    const highlightItem = this.$el.querySelector(`[data-classify-id="${highlightId}"]`)
-                    if (highlightItem) {
-                        highlightItem.classList.add('highlight')
+                    const $highlightItem = this.$el.querySelector(`[data-classify-id="${highlightId}"]`)
+                    if ($highlightItem) {
+                        $highlightItem.classList.add('highlight')
                         setTimeout(() => {
-                            highlightItem.classList.remove('highlight')
+                            $highlightItem.classList.remove('highlight')
                         }, 1000)
                     }
                 })
+            },
+            showClassifyModels (event, classify) {
+                if (classify.children.length) {
+                    const $classifyItem = event.currentTarget
+                    const classifyItemRect = $classifyItem.getBoundingClientRect()
+                    const documentRect = document.body.getBoundingClientRect()
+                    const modelsHeight = classify.children.length * 36
+                    const $classifyModels = $classifyItem.querySelector('.classify-models')
+                    if (classifyItemRect.top + classifyItemRect.height + modelsHeight > documentRect.bottom) {
+                        $classifyModels.classList.add('classify-models-top')
+                    } else {
+                        $classifyModels.classList.add('classify-models-bottom')
+                    }
+                }
+            },
+            hideClassifyModels (event, classify) {
+                if (classify.children.length) {
+                    const $classifyItem = event.currentTarget
+                    const $classifyModels = $classifyItem.querySelector('.classify-models')
+                    $classifyModels.classList.remove('classify-models-top')
+                    $classifyModels.classList.remove('classify-models-bottom')
+                }
             }
         }
     }
@@ -74,11 +98,6 @@
                 vertical-align: middle;
                 width: 0;
                 height: 100%;
-            }
-            &:hover{
-                .classify-models{
-                    display: block;
-                }
             }
             &.active,
             &:hover{
@@ -111,16 +130,35 @@
     .classify-models{
         display: none;
         position: absolute;
-        left: 100%;
-        top: 0;
+        left: 95px;
         width: 126px;
         background-color: #ffffff;
         box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.1);
         border-radius: 2px;
         border: solid 1px #dfecfc;
         z-index: 2;
-        &:hover{
+        &-top {
             display: block;
+            bottom: 0;
+        }
+        &-top:before{
+            bottom: 8px;
+        }
+        &-bottom{
+            display: block;
+            top: 21px;
+        }
+        &-bottom:before{
+            top: 12px;
+        }
+        &:before{
+            content: '';
+            position: absolute;
+            right: 100%;
+            width: 0;
+            height: 0;
+            border: 9px solid transparent;
+            border-right-color: #fff;
         }
         .model-link{
             display: block;
