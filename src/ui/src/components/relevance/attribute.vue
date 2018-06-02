@@ -3,8 +3,9 @@
         <div class="loading" v-bkloading="{isLoading: attr.isLoading}">
             <i class="bk-icon icon-close" @click="closePop"></i>
             <div class="attr-title">{{objName}} {{instName}}</div>
-            <div class="attribute-box">
+            <div class="attribute-box" id="box">
                 <v-attribute 
+                    id="attribute"
                     ref="attribute"
                     :formFields="attr.formFields"
                     :formValues="attr.formValues"
@@ -139,6 +140,18 @@
             closePop () {
                 this.$emit('update:isShow', false)
             },
+            resetAttributeBox () {
+                let box = document.getElementById('box')
+                let attribute = document.getElementById('attribute')
+                let topo = document.getElementById('topo')
+                if (topo.offsetHeight < box.offsetHeight * 0.8) {
+                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
+                } else if (box.offsetHeight > attribute.offsetHeight) {
+                    box.style.height = `${attribute.offsetHeight + 40}px`
+                } else {
+                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
+                }
+            },
             async initData () {
                 this.attr.isLoading = true
                 await Promise.all([
@@ -147,6 +160,9 @@
                 ])
                 this.attr.formFields = this.attribute[this.objId]
                 this.attr.isLoading = false
+                this.$nextTick(() => {
+                    this.resetAttributeBox()
+                })
             },
             async getFormValues () {
                 try {
@@ -155,6 +171,11 @@
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
+            }
+        },
+        created () {
+            window.onresize = () => {
+                this.resetAttributeBox()
             }
         },
         components: {
@@ -173,7 +194,6 @@
         top: 20px;
         left: 25px;
         box-shadow: 0px 2px 9.6px 0.4px rgba(0, 0, 0, 0.4);
-        overflow: auto;
         .loading {
             min-height: 200px;
             height: 100%;
@@ -186,9 +206,9 @@
         .icon-close {
             padding: 2px;
             font-size: 16px;
-            position: fixed;
-            right: 50px;
-            top: 220px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
             cursor: pointer;
             transition: all .2s linear;
             &:hover {
@@ -200,6 +220,7 @@
             overflow: auto;
             @include scrollbar;
             padding-bottom: 40px;
+            margin: 20px 0;
         }
     }
 </style>
