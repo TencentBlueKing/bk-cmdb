@@ -158,8 +158,12 @@
         watch: {
             isShow (isShow) {
                 if (isShow) {
-                    this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
-                    this.resetDateRangePicker()
+                    if (this.objId !== 'biz') {
+                        this.setFilterTime(null, `${this.startDate} - ${this.endDate}`)
+                        this.resetDateRangePicker()
+                    } else {
+                        this.getTableList()
+                    }
                 }
             },
             '$route.path' () {
@@ -178,7 +182,10 @@
             },
             async recoveryBiz (item) {
                 try {
-                    await this.$axios.put(`biz/status/enable/${this.bkSupplierAccount}/${item['bk_biz_id']}`)
+                    const res = await this.$axios.put(`biz/status/enable/${this.bkSupplierAccount}/${item['bk_biz_id']}`)
+                    if (!res.result) {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
                     this.getTableList()
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
@@ -243,7 +250,7 @@
                                     item['id'] = data['bk_inst_id']
                                 }
                             } else if (list.id === '$op_time') {
-                                item['$op_time'] = this.$formatTime(moment(item['$op_time']))
+                                item['$op_time'] = this.objId === 'biz' ? this.$formatTime(moment(item['last_time'])) : this.$formatTime(moment(item['op_time']))
                             } else if (list.property['bk_property_type'] === 'singleasst' || list.property['bk_property_type'] === 'multiasst') {
                                 let name = []
                                 if (data.hasOwnProperty(list.id)) {
