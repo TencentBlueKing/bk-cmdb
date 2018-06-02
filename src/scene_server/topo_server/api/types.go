@@ -10,22 +10,18 @@
  * limitations under the License.
  */
 
-package core
+package api
 
 import (
-	"configcenter/src/scene_server/topo_server/core/inst"
-	"configcenter/src/scene_server/topo_server/core/model"
+	//frcommon "configcenter/src/framework/common"
+	//frtypes "configcenter/src/framework/core/types"
+
+	"configcenter/src/scene_server/topo_server/core"
 )
 
-// New create a core manager
-func New() Core {
-	return &core{
-		modelFactory: model.New(),
-		instFactory:  inst.New(),
-	}
-}
-
-type core struct {
-	modelFactory model.Factory
-	instFactory  inst.Factory
+// Action the http action
+type Action struct {
+	Method      string
+	Path        string
+	HandlerFunc core.LogicFunc
 }
