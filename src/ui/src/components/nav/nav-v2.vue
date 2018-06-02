@@ -75,7 +75,7 @@
 </script>
 <style lang="scss" scoped>
     .nav-wrapper{
-        padding: 50px 0 7px 0;
+        padding: 43px 0 7px 0;
         width: 110px;
         height: 100%;
         color: #fff;
