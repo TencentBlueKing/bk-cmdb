@@ -197,9 +197,6 @@
     }
 </script>
 <style lang="scss" scoped>
-    .search-container{
-        padding: 40px 0;
-    }
     .search-box{
         width: 900px;
         margin: 0 auto;
