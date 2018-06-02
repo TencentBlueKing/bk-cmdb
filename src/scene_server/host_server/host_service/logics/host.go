@@ -239,7 +239,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 	blog.Info("get modulehostconfig map:%v", mhconfig)
 	for _, mh := range mhconfig {
 		hostID := mh[common.BKHostIDField]
-		hostAppConfig[hostID] = append(hostSetConfig[hostID], mh[common.BKAppIDField])
+		hostAppConfig[hostID] = append(hostAppConfig[hostID], mh[common.BKAppIDField])
 		hostSetConfig[hostID] = append(hostSetConfig[hostID], mh[common.BKSetIDField])
 		hostModuleConfig[hostID] = append(hostModuleConfig[hostID], mh[common.BKModuleIDField])
 

@@ -32,7 +32,7 @@
                     <i class="icon-cc-history"></i>
                 </button>
                 <button v-else class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
-                    <i class="icon-cc-history"></i>
+                    <i class="icon-cc-history2"></i>
                 </button>
                 <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
@@ -109,6 +109,7 @@
                                 :active="slider.isShow && tab.activeName === 'attr'"
                                 :objId="objId"
                                 :isBatchUpdate="false"
+                                @closeSlider="closeObjectSlider"
                                 @submit="saveObjectAttr"
                                 @delete="confirmDelete">
                             </v-object-attr>
@@ -848,7 +849,7 @@
         float:left;
         .slide-content{
             height: calc(100% - 120px);
-            padding: 10px 20px;
+            padding: 0 20px;
             overflow: auto;
             &::-webkit-scrollbar{
                 width: 6px;

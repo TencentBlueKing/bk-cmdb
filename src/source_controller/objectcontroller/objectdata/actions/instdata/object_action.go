@@ -178,7 +178,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 
 		}
-		dat.ConvTime()
+		//dat.ConvTime()
 		fields := dat.Fields
 		condition := dat.Condition
 

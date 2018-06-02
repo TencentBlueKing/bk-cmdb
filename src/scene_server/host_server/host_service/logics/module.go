@@ -47,7 +47,10 @@ func GetModuleIDByCond(req *restful.Request, objURL string, cond []interface{}) 
 	js, _ := simplejson.NewJson([]byte(reply))
 	output, _ := js.Map()
 	moduleData := output["data"]
-	moduleResult := moduleData.(map[string]interface{})
+	moduleResult, ok := moduleData.(map[string]interface{})
+	if !ok {
+		return moduleIDArr, nil
+	}
 	moduleInfo, ok := moduleResult["info"].([]interface{})
 	if !ok {
 		return moduleIDArr, nil
