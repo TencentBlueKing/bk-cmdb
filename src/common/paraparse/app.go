@@ -73,7 +73,12 @@ func ParseCommonParams(input []interface{}, output map[string]interface{}) error
 
 		default:
 			d := make(map[string]interface{})
-			d[operator] = value
+			valStr, ok := value.(string)
+			if ok {
+				d[operator] = SpeceialCharChange(valStr)
+			} else {
+				d[operator] = value
+			}
 			output[field] = d
 		}
 

@@ -8,7 +8,12 @@
                 <i v-if="treeData['default'] === 1" class="tree-icon fl icon-cc-host-free-pool"></i>
                 <i v-else-if="treeData['default'] === 2" class="tree-icon fl icon-cc-host-breakdown"></i>
                 <i v-else class="tree-icon tree-icon-name fl">{{treeData['default'] ? treeData['bk_inst_name'][0]: treeData['bk_obj_name'][0]}}</i>
-                <i class="tree-icon tree-icon-add fr" v-if="isShowAdd && active" @click.stop="addNode" :title="`${$t('Common[\'新增\']')}-${optionModel['bk_next_name']}`">{{$t('Common[\'新增\']')}}</i>
+                <template v-if="rootNode['bk_inst_name'] === '蓝鲸'">
+                    <i v-tooltip="{content: $t('Common[\'关键业务不能够修改\']'), classes: 'topo-tip'}" class="tree-icon tree-icon-add fr disabled" v-if="isShowAdd && active">{{$t('Common[\'新增\']')}}</i>
+                </template>
+                <template v-else>
+                    <i class="tree-icon tree-icon-add fr" :class="{'disabled': rootNode['bk_inst_name'] === '蓝鲸'}" v-if="isShowAdd && active" @click.stop="addNode" :title="`${$t('Common[\'新增\']')}-${optionModel['bk_next_name']}`">{{$t('Common[\'新增\']')}}</i>
+                </template>
                 <div class="node-name" :title="treeData['bk_inst_name']">{{treeData['bk_inst_name']}}</div>
             </div>  
         </div>
@@ -221,6 +226,11 @@
                 background: #3c96ff;
                 color:#fff;
                 border-radius: 4px;
+                &.disabled{
+                    background: #fafafa;
+                    color: #ccc;
+                    cursor: default;
+                }
             }
         }
         .node-info{
