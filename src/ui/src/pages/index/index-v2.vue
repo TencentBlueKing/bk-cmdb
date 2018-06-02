@@ -52,9 +52,11 @@
 </template>
  <script>
     import vSearch from './children/search'
-    import { bk_host_manage as bkHostManage } from '@/common/json/static_navigation.json'
     import bus from '@/eventbus/bus'
+    import throttle from 'lodash.throttle'
+    import { bk_host_manage as bkHostManage } from '@/common/json/static_navigation.json'
     import { mapGetters } from 'vuex'
+    import {addResizeListener, removeResizeListener} from '@/utils/resize-event.js'
     export default {
         components: {
             vSearch
@@ -81,7 +83,8 @@
                 modelsPerCol: 5,
                 openedClassify: null,
                 staticClassify: ['bk_host_manage', 'bk_organization'],
-                notModelClassify: ['bk_host_manage', 'bk_back_config']
+                notModelClassify: ['bk_host_manage', 'bk_back_config'],
+                throttleLayout: null
             }
         },
         computed: {
@@ -105,7 +108,37 @@
                 return classifications
             }
         },
+        watch: {
+            sortedClassifications () {
+                this.throttleLayout()
+            }
+        },
+        mounted () {
+            this.initResizeListener()
+        },
+        beforeDestory () {
+            if (this.throttleLayout) {
+                removeResizeListener(this.$el, this.throttleLayout)
+            }
+        },
         methods: {
+            initResizeListener () {
+                this.throttleLayout = throttle(() => {
+                    this.doLayout()
+                }, 500, {leading: false})
+                addResizeListener(this.$el, this.throttleLayout)
+            },
+            doLayout () {
+                const classifyItemSpace = 230
+                const wrapperWidth = this.$el.getBoundingClientRect().width
+                const maxItemInRow = Math.floor(wrapperWidth / classifyItemSpace)
+                const $classifyList = this.$refs.classifyList
+                if (this.sortedClassifications.length > maxItemInRow) {
+                    $classifyList.style.width = maxItemInRow * classifyItemSpace + 'px'
+                } else {
+                    $classifyList.style.width = 'auto'
+                }
+            },
             getModelSequence (classify, model) {
                 if (this.classifyModelSequence.hasOwnProperty(classify['bk_classification_id'])) {
                     const sequence = this.classifyModelSequence[classify['bk_classification_id']]
