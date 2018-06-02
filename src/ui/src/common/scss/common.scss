@@ -652,6 +652,12 @@ input.parsley-error {
     display: block !important;
     z-index: 10000;
 
+    &.topo-tip {
+        .tooltip-inner {
+            max-width: 300px;
+        }
+    }
+
     .tooltip-inner {
         background: #333;
         color: white;
