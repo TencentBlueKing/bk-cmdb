@@ -143,9 +143,8 @@
                     <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="curModel.type==='change'">
                         <v-layout ref="layout"
                         :isShow="curTabName==='layout'"
-                        :id="curModel['id']"
-                        :objId="curModel['bk_obj_id']"
-                        :isNewField="isNewField"
+                        :activeModel="curModel"
+                        @cancel="cancel"
                         ></v-layout>
                     </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
