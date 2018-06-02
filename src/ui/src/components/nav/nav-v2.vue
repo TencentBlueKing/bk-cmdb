@@ -1,10 +1,10 @@
 <template>
     <div class="nav-wrapper">
-        <v-nav-classify-list 
+        <v-nav-classify-list
             :classifications="staticNavigationClassify"
             :activeClassify="activeClassify">
         </v-nav-classify-list>
-        <v-nav-classify-list class="classify-list-custom" v-if="customNavigationClassify.length"
+        <v-nav-classify-list class="classify-list-custom" v-show="customNavigationClassify.length"
             :classifications="customNavigationClassify"
             :activeClassify="activeClassify">
         </v-nav-classify-list>
@@ -19,8 +19,7 @@
         },
         data () {
             return {
-                staticClassify: ['bk_index', 'bk_host_manage', 'bk_organization', 'bk_back_config'],
-                hoverClassify: null
+                staticClassify: ['bk_index', 'bk_host_manage', 'bk_organization', 'bk_back_config']
             }
         },
         computed: {
@@ -54,7 +53,6 @@
                 })
                 return classifies
             },
-            hoverClassifyModels () {},
             activeClassify () {
                 const path = this.$route.fullPath
                 const activeClassify = this.authorizedNavigation.find(classify => classify.children.some(model => model.path === path))
@@ -75,7 +73,7 @@
 </script>
 <style lang="scss" scoped>
     .nav-wrapper{
-        padding: 43px 0 7px 0;
+        padding: 43px 0 0 0;
         width: 110px;
         height: 100%;
         color: #fff;

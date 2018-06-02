@@ -229,8 +229,8 @@
         position: relative;
     }
     .classify-layout{
-        margin: 55px 0 0;
-        height: calc(100% - 220px);
+        margin: 15px 0 0;
+        height: calc(100% - 120px);
         overflow: auto;
         @include scrollbar;
     }
@@ -244,7 +244,7 @@
             font-size: 14px;
             width: 180px;
             height: 286px;
-            margin: 0 25px 40px;
+            margin: 40px 25px 0;
             position: relative;
         }
     }
@@ -361,6 +361,8 @@
         width: 100%;
         bottom: 0;
         left: auto;
+        padding: 0;
+        margin: 0;
         font-size: 14px;
         color: rgba(116, 120, 131, 0.5);
     }
