@@ -36,7 +36,7 @@ import (
 
 	api "configcenter/src/source_controller/api/object"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
@@ -196,22 +196,60 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 		searchParams["start"] = page["start"]
 		searchParams["limit"] = page["limit"]
 		searchParams["sort"] = page["sort"]
-		procInfoJson, _ := json.Marshal(searchParams)
+
+		// query process by module name
+		if _, ok := condition["bk_module_name"]; ok {
+
+			procIdUrl := cli.CC.ProcCtrl() + "/process/v1/module/process/"
+			qJ, _ := json.Marshal(searchParams)
+
+			blog.Info("get process arr by module: %s(%v)", procIdUrl, qJ)
+			if res, err := httpcli.ReqHttp(req, procIdUrl, common.HTTPSelectPost, qJ); err == nil {
+
+				var procIdRes ProcessResult
+
+				err = json.Unmarshal([]byte(res), &procIdRes)
+				if err != nil || !procIdRes.Result {
+					blog.Error("get process arr failed: %v", res)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
+
+				}
+
+				// update condition
+				condition[common.BKProcIDField] = map[string]interface{}{
+					"$in": procIdRes.Data,
+				}
+				delete(condition, common.BKModuleNameField)
+				searchParams["condition"] = condition
+
+			}else{
+				blog.Error("get process arr err: %v, %v", res, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
+			}
+		}
+
 		cProcURL := cli.CC.ObjCtrl() + "/object/v1/insts/process/search"
-		blog.Info("search process url:%v", cProcURL)
-		blog.Info("search process data:%s", string(procInfoJson))
+		procInfoJson, _ := json.Marshal(searchParams)
+		blog.Info("search process url:%v, data: %s", cProcURL, string(procInfoJson))
 		sProcRes, err := httpcli.ReqHttp(req, cProcURL, common.HTTPSelectPost, []byte(procInfoJson))
 		blog.Info("search process return:%s", string(sProcRes))
 		if nil != err {
 			blog.Error("search process error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
 		}
+
 		var sResult ProcessResult
 		err = json.Unmarshal([]byte(sProcRes), &sResult)
 		if nil != err {
 			blog.Error("search process error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
 		}
+
+		// query fail
+		if !sResult.Result {
+			return http.StatusOK, sResult.Data, defErr.Error(sResult.Code)
+		}
+
 		return http.StatusOK, sResult.Data, nil
 	}, resp)
 }
