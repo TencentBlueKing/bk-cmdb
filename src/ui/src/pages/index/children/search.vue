@@ -105,7 +105,7 @@
                     this.cancelSource = this.$Axios.CancelToken.source()
                     this.loading = true
                     this.$axios.post('hosts/search', this.searchParams, {cancelToken: this.cancelSource.token}).then(res => {
-                        this.searchList = res.data.info
+                        this.searchList = this.initSearchList(res.data.info)
                         this.loading = false
                         this.cancelSource = null
                     }).catch((e) => {
@@ -116,6 +116,17 @@
                     })
                 }
             }, 500, {leading: false, trailing: true}),
+            initSearchList (data) {
+                let list = []
+                data.forEach(item => {
+                    item.biz.forEach(biz => {
+                        let uniqueItem = {...item}
+                        uniqueItem['biz'] = [biz]
+                        list.push(uniqueItem)
+                    })
+                })
+                return list
+            },
             // 点击搜索结果，进行路由跳转
             handleRoute (index) {
                 this.highlightIndex = index

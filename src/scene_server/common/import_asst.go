@@ -114,6 +114,7 @@ func (a *AsstObjectInst) SetObjAsstPropertyVal(inst map[string]interface{}) erro
 				}
 				strIds = append(strIds, fmt.Sprintf("%d", id))
 			}
+
 			inst[key] = strings.Join(strIds, common.InstAsstIDSplit)
 
 		}

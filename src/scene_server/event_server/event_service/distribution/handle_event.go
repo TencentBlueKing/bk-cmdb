@@ -1,21 +1,21 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package distribution
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
@@ -55,6 +55,7 @@ func StartHandleInsts() (err error) {
 		// pod one event from cache
 		event := popEventInst()
 		if event == nil {
+			time.Sleep(time.Second * 2)
 			continue
 		}
 		if err := handleInst(event); err != nil {
@@ -73,14 +74,6 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		}
 		blog.Infof("save runtime error: %v, raw = %s", err, event.Raw)
 		return err
-	}
-
-	// selete members
-	origindist := event.GetDistInst()
-	subscribers := findEventTypeSubscribers(origindist.GetType())
-	if len(subscribers) <= 0 || "nil" == subscribers[0] {
-		blog.Infof("%v no subscriber，continue", origindist.GetType())
-		return SaveEventDone(event)
 	}
 
 	// check previout done
@@ -120,52 +113,58 @@ func handleInst(event *types.EventInstCtx) (err error) {
 		}
 		err = SaveEventDone(event)
 	}()
-	// prepare dist event
-	for _, subscriber := range subscribers {
-		var dstbID, subscribeID int64
 
-		distinst := *origindist
-		dstbID, err = nextDistID(subscriber)
-		if err != nil {
-			return err
+	// selete members
+
+	origindists := GetDistInst(&event.EventInst)
+
+	for _, origindist := range origindists {
+		subscribers := findEventTypeSubscribers(origindist.GetType())
+		if len(subscribers) <= 0 || "nil" == subscribers[0] {
+			blog.Infof("%v no subscriber，continue", origindist.GetType())
+			return SaveEventDone(event)
 		}
-		subscribeID, err = strconv.ParseInt(subscriber, 10, 64)
-		if err != nil {
-			return err
+		// prepare dist event
+		for _, subscriber := range subscribers {
+			var dstbID, subscribeID int64
+			distinst := origindist
+			dstbID, err = nextDistID(subscriber)
+			if err != nil {
+				return err
+			}
+			subscribeID, err = strconv.ParseInt(subscriber, 10, 64)
+			if err != nil {
+				return err
+			}
+			distinst.DstbID = dstbID
+			distinst.SubscriptionID = subscribeID
+			distByte, _ := json.Marshal(distinst)
+			pushToQueue(types.EventCacheDistQueuePrefix+subscriber, string(distByte))
 		}
-		distinst.DstbID = dstbID
-		distinst.SubscriptionID = subscribeID
-		distByte, _ := json.Marshal(distinst)
-		pushToQueue(types.EventCacheDistQueuePrefix+subscriber, string(distByte))
 	}
 
 	return
 }
 
-func prepareDistInst(subscriber string, event types.EventInstCtx) *types.DistInst {
-	dstbID, err := nextDistID(subscriber)
-	if err != nil {
-		return nil
-	}
-	subscribeID, err := strconv.ParseInt(subscriber, 10, 64)
-	if err != nil {
-		return nil
-	}
+func GetDistInst(e *types.EventInst) []types.DistInst {
 	distinst := types.DistInst{
-		EventInst:      event.EventInst,
-		DstbID:         dstbID,
-		SubscriptionID: subscribeID,
+		EventInst: *e,
 	}
-
-	if event.EventType == types.EventTypeInstData && event.ObjType == "object" {
-		var m map[string]interface{}
+	distinst.ID = 0
+	var ds []types.DistInst
+	var m map[string]interface{}
+	if e.EventType == types.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
 		var ok bool
 
-		if event.Action == "delete" {
-			m, ok = event.PreData.(map[string]interface{})
-		} else {
-			m, ok = event.CurData.(map[string]interface{})
+		if len(e.Data) <= 0 {
+			return nil
 		}
+		if e.Action == types.EventActionDelete {
+			m, ok = e.Data[0].PreData.(map[string]interface{})
+		} else {
+			m, ok = e.Data[0].CurData.(map[string]interface{})
+		}
+
 		if !ok {
 			return nil
 		}
@@ -173,8 +172,11 @@ func prepareDistInst(subscriber string, event types.EventInstCtx) *types.DistIns
 		if m[common.BKObjIDField] != nil {
 			distinst.ObjType = m[common.BKObjIDField].(string)
 		}
+
 	}
-	return &distinst
+	ds = append(ds, distinst)
+
+	return ds
 }
 
 func pushToQueue(key, value string) (err error) {
@@ -258,24 +260,22 @@ func findEventTypeSubscribers(eventtype string) []string {
 }
 
 func popEventInst() *types.EventInstCtx {
-	eventseletor := common.KvMap{
-		"expire": time.Second * 60,
-		"key":    []string{types.EventCacheEventQueueKey},
-	}
-	eventslice := []string{}
-	api.GetAPIResource().CacheCli.GetOneByCondition("blpop", nil, eventseletor, &eventslice)
+	var eventstr string
 
-	if len(eventslice) <= 0 || eventslice[1] == "nil" {
+	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+	redisCli.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
+
+	if eventstr == "" || eventstr == "nil" {
 		return nil
 	}
 
 	// Unmarshal event
-	eventbytes := []byte(eventslice[1])
+	eventbytes := []byte(eventstr)
 	event := types.EventInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
 
-	return &types.EventInstCtx{EventInst: event, Raw: eventslice[1]}
+	return &types.EventInstCtx{EventInst: event, Raw: eventstr}
 }

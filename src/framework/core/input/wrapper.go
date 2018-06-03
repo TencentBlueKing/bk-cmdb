@@ -43,6 +43,9 @@ func (cli *wrapInputer) GetFrequency() time.Duration {
 func (cli *wrapInputer) Name() string {
 	return cli.inputer.Name()
 }
+func (cli *wrapInputer) Init(ctx InputerContext) error {
+	return cli.inputer.Init(ctx)
+}
 
 func (cli *wrapInputer) Run(ctx InputerContext) *InputerResult {
 	return cli.inputer.Run(ctx)

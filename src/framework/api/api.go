@@ -14,6 +14,7 @@ package api
 
 import (
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/manager"
 	"configcenter/src/framework/core/output"
@@ -49,6 +50,11 @@ func Init() {
 		mgr.Run(ctx, cancel)
 	}, nil)
 
+}
+
+// Actions return the framework actions
+func Actions() []httpserver.Action {
+	return mgr.Actions()
 }
 
 // UnInit destory the framework

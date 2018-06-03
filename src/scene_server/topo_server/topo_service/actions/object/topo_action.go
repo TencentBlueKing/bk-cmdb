@@ -812,7 +812,16 @@ func (cli *topoAction) SelectInst(req *restful.Request, resp *restful.Response) 
 		blog.Info("select model inst ")
 		ownerID := req.PathParameter("owner_id")
 		appID, _ := strconv.Atoi(req.PathParameter("app_id"))
-		rst, rstErr := cli.SelectInstTopo(forward, ownerID, common.BKInnerObjIDApp, appID, 0, 2, req)
+		level := req.QueryParameter("level")
+		iLevel := 2
+		if 0 != len(level) {
+			if tmp, err := strconv.Atoi(level); nil != err {
+				blog.Errorf("the level(%s) is error,  error info is %s", level, err.Error())
+			} else {
+				iLevel = tmp
+			}
+		}
+		rst, rstErr := cli.SelectInstTopo(forward, ownerID, common.BKInnerObjIDApp, appID, 0, iLevel, req)
 		if nil != rstErr {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoTopoSelectFailed)
 		}

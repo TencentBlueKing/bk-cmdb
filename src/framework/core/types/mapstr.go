@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package types
 
 import (
@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -193,7 +194,19 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 
 	switch t := cli[key].(type) {
 	default:
-		return nil, errors.New("the data is not a map[string]interface{} type")
+		val := reflect.ValueOf(cli[key])
+		switch val.Kind() {
+		default:
+			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+		case reflect.Slice:
+			tmpval, ok := val.Interface().([]MapStr)
+			if ok {
+				return tmpval, nil
+			}
+
+			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+		}
+
 	case nil:
 		return nil, errors.New("the key is invalid")
 	case []map[string]interface{}:
@@ -239,4 +252,41 @@ func (cli MapStr) Remove(key string) interface{} {
 func (cli MapStr) Exists(key string) bool {
 	_, ok := cli[key]
 	return ok
+}
+
+// IsEmpty check the empty status
+func (cli MapStr) IsEmpty() bool {
+	return len(cli) == 0
+}
+
+// Different the current value is different from the content of the given data
+func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes MapStr) {
+
+	// init
+	more = make(MapStr)
+	less = make(MapStr)
+	changes = make(MapStr)
+
+	// check more
+	cli.ForEach(func(key string, val interface{}) {
+		if targetVal, ok := target[key]; ok {
+
+			if !reflect.DeepEqual(val, targetVal) {
+				changes[key] = val
+			}
+			return
+		}
+
+		more.Set(key, val)
+	})
+
+	// check less
+	target.ForEach(func(key string, val interface{}) {
+		if !cli.Exists(key) {
+			less[key] = val
+		}
+
+	})
+
+	return more, less, changes
 }

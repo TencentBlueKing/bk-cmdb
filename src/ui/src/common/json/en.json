@@ -61,6 +61,7 @@
         "确定删除": "Are you sure to delete",
         "至少选择N个字段": "Please select at least {N} field(s)",
         "确认要删除": "Confirm to delete {name} ?",
+        "确认要归档": "Confirm to archive {name} ?",
         "确定": "Confirm",
         "查询": "Query",
         "正则验证": "Regex",
@@ -74,8 +75,10 @@
         "创建": "Create",
         "您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果": "Your browser is not Chrome, we recommend using the latest version of Chrome for the best experience",
         "已删除历史": "Deleted History",
+        "归档历史": "Archive History",
         "返回": "Back",
         "查看删除历史": "Deleted History",
+        "查看归档历史": "Archive History",
         "中文名": "Description",
         "跨业务导入": "Cross Business Import",
         "导入成功": "Imported Successfully",
@@ -84,7 +87,9 @@
         "复制失败": "Copy Fail",
         "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
         "内容不合法": "Illegal content",
-        "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first."
+        "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
+        "详情": "Detail",
+        "删除关联": "Delete Association"
     },
     "Index": {
         "首页": "Index",
@@ -158,7 +163,8 @@
         "资源池": "Resource Pool",
         "主机": "Host",
         "收起": "Collapse",
-        "展开": "Expand"
+        "展开": "Expand",
+        "主机身份": "Host Identifier"
     },
     "Permission": {
         "权限管理": "Permission Manage",
@@ -447,6 +453,26 @@
         "文件格式非法": "The file format is illegal and only {allowType} files can be uploaded!",
         "部分成功": "Partially successful",
         "失败": "failure",
-        "成功": "Successful"
+        "成功": "Successful",
+        "恢复业务": "Recovery",
+        "是否确认恢复业务？": "Are you sure you want to recovery business?",
+        "恢复业务提示": "Business recovery will be renamed to “{bizName}(recovery)”",
+        "归档": "Archive"
+    },
+    "Association": {
+        "实例名": "Instance Name",
+        "业务名": "Business Name",
+        "新增关联": "New Association",
+        "解除选中关联": "Remove Selected Association",
+        "关联列表": "Model",
+        "搜索": "Search",
+        "操作": "operation",
+        "取消关联": "Remove Association",
+        "取消关联成功": "Remove association success",
+        "添加关联": "Add Association",
+        "添加关联成功": "Add association success",
+        "条件筛选": "Filter",
+        "树形": "Tree",
+        "拓扑": "Topo"
     }
 }

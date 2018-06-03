@@ -70,6 +70,7 @@
                     </span>
                     <span v-else>
                         <v-operator 
+                            :property="property"
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
@@ -121,7 +122,7 @@
             <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">
                 {{$t("Common['取消']")}}
             </bk-button>
-            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm">
+            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm" v-if="type === 'update'">
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
@@ -188,11 +189,6 @@
                 isPropertiesShow: false, // 自定义条件下拉列表展示与否
                 isPreviewShow: false, // 显示预览
                 object: {
-                    'biz': {
-                        id: 'biz',
-                        name: this.$t("Common['业务']"),
-                        properties: []
-                    },
                     'host': {
                         id: 'host',
                         name: this.$t("Hosts['主机']"),
@@ -275,7 +271,13 @@
                         // 多模块与多集群查询
                         if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
                             operator = operator === '$regex' ? '$in' : operator
-                            value = value.replace('，', ',').split(',')
+                            if (operator === '$in') {
+                                let arr = value.replace('，', ',').split(',')
+                                let isExist = arr.findIndex(val => {
+                                    return val === value
+                                }) > -1
+                                value = isExist ? arr : [...arr, value]
+                            }
                         }
                         param['condition'].push({
                             field: property.bkPropertyId,
@@ -355,7 +357,7 @@
             },
             deleteUserAPIConfirm () {
                 this.$bkInfo({
-                    title: this.$t("CustomQuery['确认要删除']", {name: self.apiParams.name}),
+                    title: this.$t("CustomQuery['确认要删除']", {name: this.apiParams.name}),
                     confirmFn: () => {
                         this.deleteUserAPI()
                     }
@@ -375,12 +377,11 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('biz'), this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((bizRes, hostRes, setRes, moduleRes) => {
-                    this.object['biz']['properties'] = bizRes.result ? bizRes.data : []
-                    this.object['host']['properties'] = hostRes.result ? hostRes.data : []
-                    this.object['set']['properties'] = setRes.result ? setRes.data : []
-                    this.object['module']['properties'] = moduleRes.result ? moduleRes.data : []
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
+                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                    this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
