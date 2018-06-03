@@ -20,11 +20,11 @@ import (
 	"errors"
 )
 
-type eventModule struct {
+type eventModuleTransfer struct {
 	outputerMgr output.Manager
 }
 
-func (cli *eventModule) parse(data types.MapStr) ([]*types.Event, error) {
+func (cli *eventModuleTransfer) parse(data types.MapStr) ([]*types.Event, error) {
 
 	dataArr, err := data.MapStrArray("data")
 	if nil != err {
