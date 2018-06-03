@@ -15,7 +15,7 @@ import Router from 'vue-router'
 
 Vue.use(Router)
 
-const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index')
+const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index-v2')
 const pageHosts = () => import(/* webpackChunkName: "page-hosts" */ '@/pages/hosts/hosts')
 const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
 const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
@@ -38,7 +38,7 @@ var routerVue = new Vue({
             await this.$store.dispatch('navigation/getAuthority')
             await Promise.all([this.$store.dispatch('navigation/getClassifications'), this.$store.dispatch('usercustom/getUserCustom')])
             let isAuthorized = false
-            let authorizedPath = ['/', '/403', '/404']
+            let authorizedPath = ['/index', '/403', '/404']
             if (authorizedPath.includes(to.path)) {
                 isAuthorized = true
             } else {
@@ -61,6 +61,9 @@ var router = new Router({
         components: require('@/pages/403')
     }, {
         path: '/',
+        redirect: '/index'
+    }, {
+        path: '/index',
         component: pageIndex
     }, {
         path: '/hosts',

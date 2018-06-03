@@ -1,6 +1,6 @@
 <template>
-    <div class="search-container" v-click-outside="handleClickOutside">
-        <div class="search-box">
+    <div class="search-container">
+        <div class="search-box" v-click-outside="handleClickOutside">
             <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
                 @focus="focus = true"
@@ -197,9 +197,6 @@
     }
 </script>
 <style lang="scss" scoped>
-    .search-container{
-        padding: 40px 0;
-    }
     .search-box{
         width: 900px;
         margin: 0 auto;
