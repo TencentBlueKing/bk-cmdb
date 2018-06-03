@@ -21,8 +21,8 @@ type ProcessCResult struct {
 
 type ProcessResult struct {
 	Result  bool        `json:"result"`
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
+	Code    int         `json:"bk_error_code"`
+	Message interface{} `json:"bk_error_msg"`
 	Data    interface{} `json:"data"`
 }
 
