@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except 
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-
+ 
 package manager
 
 import (
@@ -144,9 +144,11 @@ func (cli *eventSubscription) puts(data types.MapStr) (types.MapStr, error) {
 	}
 }
 
-func (cli *eventSubscription) register(eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {
+func (cli *eventSubscription) register(key types.EventKey, eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {
 
-	key := common.UUID()
+	if 0 == len(key) {
+		key = types.EventKey(common.UUID())
+	}
 
 	regEve := &eventRegister{
 		eventType: eventType,
@@ -165,7 +167,7 @@ func (cli *eventSubscription) register(eventType types.EventType, eventFunc type
 	regs = append(regs, regEve)
 	cli.registers[eventType] = regs
 
-	return types.EventKey(key)
+	return key
 }
 
 func (cli *eventSubscription) unregister(eventKey types.EventKey) {
