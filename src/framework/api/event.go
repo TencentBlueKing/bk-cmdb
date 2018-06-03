@@ -10,40 +10,35 @@
  * limitations under the License.
  */
  
-package client
+package api
 
 import (
-	"configcenter/src/framework/core/config"
-	"configcenter/src/framework/core/discovery"
-	"configcenter/src/framework/core/output/module/client/v3"
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/types"
 )
 
-var _ Interface = &Clientset{}
+var (
+	events = make([]eventWrapper, 0)
+)
 
-type Interface interface {
-	CCV3() v3.CCV3Interface
+type eventWrapper struct {
+	key             types.EventKey
+	eveType         types.EventType
+	eveCallbackFunc types.EventCallbackFunc
 }
 
-type Clientset struct {
-	ccv3 *v3.Client
+// RegisterEvent register the event
+func RegisterEvent(eventType types.EventType, eventFunc types.EventCallbackFunc) types.EventKey {
+	key := types.EventKey(common.UUID())
+	events = append(events, eventWrapper{
+		key:             key,
+		eveType:         eventType,
+		eveCallbackFunc: eventFunc,
+	})
+	return key
 }
 
-func (c *Clientset) CCV3() v3.CCV3Interface {
-	if c == nil {
-		return nil
-	}
-	return c.ccv3
-}
-
-func NewForConfig(c config.Config, disc discovery.DiscoverInterface) *Clientset {
-	var cs Clientset
-	cs.ccv3 = v3.New(c, disc)
-	client = &cs
-	return &cs
-}
-
-var client *Clientset
-
-func GetClient() *Clientset {
-	return client
+// UnRegisterEvent unregister event
+func UnRegisterEvent(eventKey types.EventKey) {
+	mgr.UnRegisterEvent(eventKey)
 }
