@@ -34,6 +34,12 @@ var host = &hostInputer{}
 type hostInputer struct {
 }
 
+// Init initialization method
+func (cli *hostInputer) Init(ctx input.InputerContext) error {
+
+	return nil
+}
+
 // Name the Inputer name.
 // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 func (cli *hostInputer) Name() string {

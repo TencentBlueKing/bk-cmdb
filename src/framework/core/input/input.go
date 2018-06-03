@@ -22,7 +22,7 @@ import (
 
 // manager implements the Manager interface
 type manager struct {
-	cancel      context.CancelFunc
+	ctx         InputerContext
 	inputerLock sync.RWMutex
 	inputers    MapInputer
 	inputerChan chan *wrapInputer
@@ -66,10 +66,6 @@ func (cli *manager) RemoveInputer(key InputerKey) {
 // Stop used to stop the business cycles.
 func (cli *manager) Stop() error {
 
-	// stop the main loop
-	if nil != cli.cancel {
-		cli.cancel()
-	}
 	// stop the all Inputers
 	cli.inputerLock.Lock()
 	for _, inputer := range cli.inputers {
@@ -81,10 +77,10 @@ func (cli *manager) Stop() error {
 }
 
 // Run start the business cycle until the stop method is called.
-func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
+func (cli *manager) Run(ctx context.Context, inputerCtx InputerContext) {
 
-	// set the cancel function
-	cli.cancel = cancel
+	// catch the framework context
+	cli.ctx = inputerCtx
 
 	// check the stat of the Inputer regularly, and start it if there is any new
 	for {
@@ -95,6 +91,11 @@ func (cli *manager) Run(ctx context.Context, cancel context.CancelFunc) {
 
 		case target := <-cli.inputerChan:
 			common.GoRun(func() {
+				if err := target.Init(cli.ctx); nil != err {
+					log.Infof("failed to init the inputer, %s", err.Error())
+					target.SetStatus(ExceptionExitStatus)
+					return
+				}
 				cli.executeInputer(ctx, target)
 			}, func() {
 				target.SetStatus(ExceptionExitStatus)

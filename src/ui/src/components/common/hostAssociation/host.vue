@@ -43,7 +43,7 @@
                                             <input type="checkbox"
                                                 :value="item['host']['bk_host_id']"
                                                 :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
-                                                v-model="table.chooseId">
+                                                @change="setChoose(item['host']['bk_host_id'])">
                                         </label>
                                         <template v-else>{{getCellValue(property, item)}}</template>
                                     </template>

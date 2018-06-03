@@ -21,9 +21,10 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/emicklei/go-restful"
 )
 
 var host *hostAction = &hostAction{}
@@ -67,7 +68,7 @@ func (cli *hostAction) HostSearch(req *restful.Request, resp *restful.Response) 
 	}, resp)
 }
 
-// HostSearch search host by multi condition
+// HostSearchWithAsstDetail search host by multi condition
 func (cli *hostAction) HostSearchWithAsstDetail(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language

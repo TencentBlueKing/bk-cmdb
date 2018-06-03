@@ -182,14 +182,44 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 		appID, _ := strconv.Atoi(pathParams["app_id"])
 		ownerID, _ := pathParams["owner_id"]
 		flag, _ := pathParams["flag"]
+		data := make(map[string]interface{})
+		var appName string
 		if flag != common.DataStatusDisabled && flag != common.DataStatusEnable {
 			blog.Error("input params error:")
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
+		if flag == common.DataStatusEnable {
+			condition := make(map[string]interface{})
+			searchParams := make(map[string]interface{})
+			condition[common.BKAppIDField] = appID
+			searchParams["condition"] = condition
+
+			//get app by appid
+			sAppURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
+			inputJSON, _ := json.Marshal(searchParams)
+			appInfo, err := httpcli.ReqHttp(req, sAppURL, common.HTTPSelectPost, []byte(inputJSON))
+			blog.Infof("get app params: %s", string(inputJSON))
+			if nil != err {
+				blog.Errorf("get app error: %v", err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppSearchFailed)
+			}
+			blog.Infof("get app return %s", string(appInfo))
+			appName = gjson.Get(string(appInfo), "data.info.0.bk_biz_name").String()
+
+			//valid update name
+			data[common.BKAppNameField] = appName + "(" + common.BKBizRecovery + ")"
+			valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDApp, cli.CC.ObjCtrl(), forward, defErr)
+			_, err = valid.ValidMap(data, common.ValidUpdate, appID)
+			if nil != err {
+				blog.Errorf("update app vaild error:%s", err.Error())
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
+			}
+
+		}
 		user := sencecommon.GetUserFromHeader(req)
+
 		//update app
 		input := make(map[string]interface{})
-		data := make(map[string]interface{})
 		condition := make(map[string]interface{})
 		condition[common.BKAppIDField] = appID
 		condition[common.BKOwnerIDField] = ownerID
