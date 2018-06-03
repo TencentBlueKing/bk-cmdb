@@ -2,8 +2,6 @@
 IMAGE?=image_placeholder
 NPM?=npm
 
-INSTALL_DIR=/data/cmdb
-
 include $(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts/Makefile)
 
 .PHONY:default
@@ -55,27 +53,6 @@ enterprise:
 	cp -R ${RESOURCE_DIR}/errors/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
 	cp -R ${RESOURCE_DIR}/language/  $(SOURCE_ROOT)/bin/enterprise/cmdb/
 	cp  ${BIN_PATH}/cmdb_*/cmdb_*  $(SOURCE_ROOT)/bin/enterprise/cmdb/server/bin/
-
-.PHONY:
-update:proc
-	sudo $(INSTALL_DIR)/stop.sh
-	for p in `find $(BIN_PATH)/* -maxdepth 0 -type d | grep cmdb_`; do \
-	 p=`basename $$p`; \
-	 echo "cp -rf $$p to $(INSTALL_DIR) ..."; \
-	 sudo rm -rf $(INSTALL_DIR)/$$p/logs; \
-	 cp -rf $(BIN_PATH)/$$p/$$p $(INSTALL_DIR)/$$p/$$p; \
-	done
-	sudo $(INSTALL_DIR)/start.sh
-
-.PHONY:localhost
-localhost:
-	for d in `find $(INSTALL_DIR) -name "ip.py"|grep cmdb_`; do sed -in '$$s/ip/"127.0.0.1"/g' $$d; done
-
-.PHONY:proc
-proc:
-	cd scene_server/proc_server/ && make
-	cd source_controller/proccontroller && make
-
 
 .PHONY:clean
 clean:
