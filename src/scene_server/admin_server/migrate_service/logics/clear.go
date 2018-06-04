@@ -44,6 +44,7 @@ var (
 		"cc_PropertyGroup",
 		"cc_InstAsst",
 		"cc_System",
+		"cc_TopoGraphics",
 	}
 )
 
