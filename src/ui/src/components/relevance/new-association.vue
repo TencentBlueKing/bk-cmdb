@@ -280,7 +280,7 @@
                             await this.getObjInstance(cancelToken, filterObjId).then(res => this.setTableList(res, filterObjId))
                     }
                 } catch (e) {
-                    this.$alertMsg(e)
+                    this.$alertMsg(e.message)
                 } finally {
                     this.table.loading = false
                     this.cancelSource = null
