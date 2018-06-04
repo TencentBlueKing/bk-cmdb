@@ -1,17 +1,36 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except 
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+ 
 package v3v0v8
 
 import (
 	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
 	"configcenter/src/storage"
+	"gopkg.in/mgo.v2"
 )
 
 func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
-		if err = db.CreateTable(tablename); err != nil {
+		exists, err := db.HasTable(tablename)
+		if err != nil {
 			return err
 		}
+		if !exists {
+			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+				return err
+			}
+		}
 		for index := range indexs {
-			if err = db.Index(tablename, &indexs[index]); err != nil {
+			if err = db.Index(tablename, &indexs[index]); err != nil && !mgo.IsDup(err) {
 				return err
 			}
 		}
@@ -73,7 +92,7 @@ var tables = map[string][]storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	},
 	"cc_OperationLog": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"op_target", "inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	},
 	"cc_PlatBase": []storage.Index{
