@@ -552,7 +552,6 @@
     }
     .biz-selector-ctn{
         padding: 20px;
-        background: #606e8e;
     }
     .topo-options-ctn{
         height: 44px;
@@ -581,7 +580,7 @@
         border: none;
     }
     .tree-list-ctn{
-        padding: 20px 0 0 20px;
+        padding: 0 0 0 20px;
         max-height: calc(100% - 120px);
         overflow: auto;
         @include scrollbar;
