@@ -132,6 +132,7 @@
         position: absolute;
         left: 95px;
         width: 126px;
+        text-align: left;
         background-color: #ffffff;
         box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.1);
         border-radius: 2px;
@@ -139,17 +140,17 @@
         z-index: 999;
         &-top {
             display: block;
-            bottom: 0;
+            bottom: -2px;
         }
         &-top:before{
-            bottom: 8px;
+            bottom: 9px;
         }
         &-bottom{
             display: block;
-            top: 21px;
+            top: 24px;
         }
         &-bottom:before{
-            top: 12px;
+            top: 9px;
         }
         &:before{
             content: '';
