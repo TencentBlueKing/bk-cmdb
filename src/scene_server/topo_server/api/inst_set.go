@@ -19,7 +19,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 )
 
-
 func init() {
 	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initSet)
 }
