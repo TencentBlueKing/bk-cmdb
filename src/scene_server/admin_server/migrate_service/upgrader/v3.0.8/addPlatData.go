@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except 
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+ 
 package v3v0v8
 
 import (
@@ -21,7 +33,6 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 		},
 	}
 	for _, row := range rows {
-
 		// ensure id plug > 1, 1Reserved
 		platID, err := db.GetIncID(tablename)
 		if err != nil {
@@ -33,7 +44,7 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 		}
 
 		row[common.BKCloudIDField] = platID
-		err = storage.Upsert(db, tablename, row, []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
+		_, _, err = upgrader.Upsert(db, tablename, row, common.BKCloudIDField, []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
