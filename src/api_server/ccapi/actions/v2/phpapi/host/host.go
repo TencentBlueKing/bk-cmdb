@@ -13,25 +13,24 @@
 package host
 
 import (
-	"configcenter/src/common"
-
-	logics "configcenter/src/api_server/ccapi/logics/v2"
-	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
-	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	httpcli "configcenter/src/common/http/httpclient"
-	"configcenter/src/common/util"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"configcenter/src/api_server/ccapi/actions/v2"
-
 	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
+
+	v2 "configcenter/src/api_server/ccapi/actions/v2/phpapi"
+	logics "configcenter/src/api_server/ccapi/logics/v2"
+	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
+	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 )
 
 var host *hostAction = &hostAction{}
