@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package main
+package app
 
 import (
 	"configcenter/src/common"
