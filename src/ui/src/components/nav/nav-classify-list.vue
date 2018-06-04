@@ -139,17 +139,17 @@
         z-index: 999;
         &-top {
             display: block;
-            bottom: 0;
+            bottom: -2px;
         }
         &-top:before{
-            bottom: 8px;
+            bottom: 9px;
         }
         &-bottom{
             display: block;
-            top: 21px;
+            top: 24px;
         }
         &-bottom:before{
-            top: 12px;
+            top: 9px;
         }
         &:before{
             content: '';
