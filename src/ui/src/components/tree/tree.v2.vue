@@ -39,7 +39,6 @@
         },
         created () {
             bus.$on('nodeClick', (activeNode, nodeOptions) => {
-                console.log(activeNode, nodeOptions)
                 if (this.treeId === nodeOptions.treeId) {
                     this.activeNodeId = nodeOptions.nodeId
                     this.$emit('nodeClick', activeNode, nodeOptions)
