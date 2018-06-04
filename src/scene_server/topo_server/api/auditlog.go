@@ -10,12 +10,25 @@
  * limitations under the License.
  */
 
-package main
+package api
 
 import (
-	//_ "configcenter/src/scene_server/topo_server/actions/inst"   // import inst
-	//_ "configcenter/src/scene_server/topo_server/actions/object" // import object actions
-	//_ "configcenter/src/scene_server/topo_server/logics/object"
-	_ "configcenter/src/scene_server/topo_server/actions/openapi"
-	_ "configcenter/src/scene_server/topo_server/actions/privilege"
+	"net/http"
+
+	frtypes "configcenter/src/framework/core/types"
+	"configcenter/src/scene_server/topo_server/core"
 )
+
+func init() {
+	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initAuditLog)
+}
+
+func (cli *topoAPI) initAuditLog() {
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.CreateBusiness})
+}
+
+// SearchAuditLog search audit logs
+func (cli *topoAPI) SearchAuditLog(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	return nil, nil
+}
