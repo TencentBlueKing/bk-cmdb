@@ -128,7 +128,8 @@ func (cli *eventSubscription) run(ctx context.Context) {
 							log.Errorf("failed to send event, %s", err.Error())
 						}
 					}
-				case EventInst:
+
+				default:
 					if dataEve, err := cli.instMgr.parse(msg); nil != err {
 						log.Errorf("failed to parse inst event, error %s", err.Error())
 					} else {
@@ -136,8 +137,6 @@ func (cli *eventSubscription) run(ctx context.Context) {
 							log.Errorf("failed to send event, %s", err.Error())
 						}
 					}
-				default:
-					log.Infof("unsupport the object(%s) event", objID)
 				}
 			}
 		}

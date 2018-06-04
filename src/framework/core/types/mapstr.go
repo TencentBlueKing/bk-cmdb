@@ -211,7 +211,7 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		}
 
 	case nil:
-		return nil, errors.New("the key is invalid")
+		return nil, fmt.Errorf("the key(%s) is invalid", key)
 	case []map[string]interface{}:
 		items := make([]MapStr, 0)
 		for _, item := range t {
