@@ -97,6 +97,8 @@ func ParseEnumOption(val interface{}) []EnumVal {
 		return enumOptions
 	}
 	switch options := val.(type) {
+	case []EnumVal:
+		return options
 	case string:
 		json.Unmarshal([]byte(options), &enumOptions)
 	case []interface{}:
