@@ -11,3 +11,9 @@ import (
 func addBKBiz(db storage.DI, conf *upgrader.Config) error {
 	return nil
 }
+
+func createBiz(db storage.DI, data map[string]interface{}) error {
+	tablename := "cc_ApplicationBase"
+
+	return storage.Upsert(db, tablename, data, []string{common.BKOwnerIDField, common.BKDefaultField}, []string{})
+}
