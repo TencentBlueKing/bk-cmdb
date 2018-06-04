@@ -275,7 +275,8 @@
             right: 8px;
             color: rgba(110, 169, 249, 0.4);
             cursor: pointer;
-            &.highlight{
+            &.highlight,
+            &:hover{
                 color: #3c80dc;
             }
         }
@@ -329,7 +330,6 @@
         .model-item{
             width: 120px;
             height: 30px;
-            color: $modelColor;
             .model-name{
                 border-radius: 10px;
                 padding: 0 10px;
@@ -343,7 +343,12 @@
             .model-stick{
                 margin-left: 3px;
                 cursor: pointer;
+                color: $modelColor;
                 display: none;
+                opacity: .6;
+                &:hover{
+                    opacity: 1;
+                }
             }
             &:hover{
                 .model-name{
