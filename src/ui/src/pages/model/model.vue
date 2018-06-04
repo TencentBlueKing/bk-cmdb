@@ -26,8 +26,8 @@
             </div>
             <div :class="['global-models', {'active': topoView === 'GLOBAL_MODELS'}]">
                 <button class="btn-global" @click="topoView = 'GLOBAL_MODELS'">
-                    <i class="icon-cc-networks"></i>
-                    <span class="text">全局模型</span>
+                    <i class="icon-cc-fullscreen"></i>
+                    <span class="text">{{$t("ModelManagement['全局视图']")}}</span>
                 </button>
             </div>
         </div>
@@ -817,6 +817,13 @@
         line-height: 50px;
         text-align: center;
         background-color: #f7fafe;
+        &.active{
+            background-color: #e2efff;
+            .btn-global{
+                color: #3578da;
+                border-color: currentColor;
+            }
+        }
         .btn-global{
             width: 120px;
             height: 32px;
@@ -827,6 +834,12 @@
             font-size: 14px;
             color: $textColor;
             outline: 0;
+            padding: 0;
+            .icon-cc-fullscreen,
+            .text{
+                display: inline-block;
+                vertical-align: middle;
+            }
         }
     }
 </style>
@@ -877,10 +890,10 @@
             border-top: none;
             height: 100%;
             position: relative;
+            border-right: 1px solid #dde4eb;
             .list-tap{
                 height: calc(100% - 50px);
                 overflow-y: auto;
-                border-right: 1px solid #dde4eb;
                 &::-webkit-scrollbar{
                     width: 6px;
                     height: 5px;

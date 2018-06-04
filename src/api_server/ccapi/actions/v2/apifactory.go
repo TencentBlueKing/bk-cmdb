@@ -10,13 +10,12 @@
  * limitations under the License.
  */
 
-package ccapi
+package v2
 
 import (
-	_ "configcenter/src/api_server/ccapi/actions/v2"
-	_ "configcenter/src/api_server/ccapi/actions/v3/audit"   // import audit log(operationlog)
-	_ "configcenter/src/api_server/ccapi/actions/v3/event"   // import event
-	_ "configcenter/src/api_server/ccapi/actions/v3/host"    // import host
-	_ "configcenter/src/api_server/ccapi/actions/v3/process" // import topo
-	_ "configcenter/src/api_server/ccapi/actions/v3/topo"    // import process
+	_ "configcenter/src/api_server/ccapi/actions/v2/phpapi/application" // import audit log(operationlog)
+	_ "configcenter/src/api_server/ccapi/actions/v2/phpapi/host"        // import host
+	_ "configcenter/src/api_server/ccapi/actions/v2/phpapi/plat"        // import event
+	_ "configcenter/src/api_server/ccapi/actions/v2/phpapi/process"     // import topo
+	_ "configcenter/src/api_server/ccapi/actions/v2/phpapi/property"    // import process"
 )

@@ -13,14 +13,6 @@
 package application
 
 import (
-	logics "configcenter/src/api_server/ccapi/logics/v2"
-	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
-	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	httpcli "configcenter/src/common/http/httpclient"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -29,7 +21,15 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/ccapi/actions/v2"
+	v2 "configcenter/src/api_server/ccapi/actions/v2/phpapi"
+	logics "configcenter/src/api_server/ccapi/logics/v2"
+	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
+	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 )
 
