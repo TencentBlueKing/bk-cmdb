@@ -161,14 +161,7 @@
                         }
                     }
                 })
-                headerLead.unshift({
-                    id: 'bk_process_id',
-                    name: 'bk_process_id',
-                    type: 'checkbox',
-                    width: 50
-                })
-                this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 7)
-                // this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 6)
+                this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 6)
             },
             'filter.bkBizId' (bkBizId) {
                 this.$nextTick(() => {
