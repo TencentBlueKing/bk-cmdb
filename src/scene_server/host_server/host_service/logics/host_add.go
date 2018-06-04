@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
+	ccError "configcenter/src/common/errors"
+	lang "configcenter/src/common/language"
 	"configcenter/src/common/util"
 	scenecommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/validator"
@@ -33,74 +35,32 @@ import (
 
 //AddHost, return error info
 func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
-	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	user := scenecommon.GetUserFromHeader(req)
 
-	hostAddr := cc.HostCtrl()
-	ObjAddr := cc.ObjCtrl()
-	auditAddr := cc.AuditCtrl()
-	addHostURL := hostAddr + "/host/v1/insts/"
-	uHostURL := ObjAddr + "/object/v1/insts/host"
-
-	language := util.GetActionLanguage(req)
-	errHandle := cc.Error.CreateDefaultCCErrorIf(language)
-	langHandle := cc.Lang.CreateDefaultCCLanguageIf(language)
-
-	addParams := make(map[string]interface{})
-	addParams[common.BKAppIDField] = appID
-	addParams[common.BKModuleIDField] = []int{moduleID}
-	addModulesURL := hostAddr + "/host/v1/meta/hosts/modules/"
-
-	allHostList, err := GetHostInfoByConds(req, hostAddr, nil, langHandle)
+	hostsInst, err := NewHostsInstance(req, ownerID, inputType, common.BKDefaultDirSubArea, cc)
 	if nil != err {
-		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
+		blog.Errorf("get host map by hostinfos error, errror:%s", err.Error())
+
+		return err, nil, nil, nil
 	}
 
-	//get asst field
-	objCli := sourceAPI.NewClient("")
-	objCli.SetAddress(ObjAddr)
-	asst := map[string]interface{}{}
-	asst[common.BKOwnerIDField] = ownerID
-	asst[common.BKObjIDField] = common.BKInnerObjIDHost
-	searchData, _ := json.Marshal(asst)
-	objCli.SetAddress(ObjAddr)
-	asstDes, err := objCli.SearchMetaObjectAsst(&sourceAPI.ForwardParam{Header: req.Request.Header}, searchData)
+	hostMap, err := hostsInst.GetAddHostIDMap(hostInfos)
 	if nil != err {
-		return errors.New(langHandle.Language("host_search_fail")), nil, nil, nil
+		blog.Errorf("get host map by hostinfos error, errror:%s", err.Error())
+
+		return err, nil, nil, nil
 	}
-
-	hostMap := convertHostInfo(allHostList)
-	input := make(map[string]interface{}, 2)     //更新主机数据
-	condInput := make(map[string]interface{}, 1) //更新主机条件
-	var errMsg, succMsg, updateErrMsg []string   //新加错误， 成功，  更新失败
-	iSubArea := common.BKDefaultDirSubArea
-
-	defaultFields, err := getHostFields(forward, ownerID, ObjAddr)
+	_, _, err = hostsInst.GetHostAsstHande(hostInfos)
 	if nil != err {
-		return errors.New("get host property failure"), nil, nil, nil
+		blog.Errorf("get host assocate info  error, errror:%s", err.Error())
+		return err, nil, nil, nil
 	}
 
-	var assObjectInt *scenecommon.AsstObjectInst
-	var rowErr map[int]error
-	if common.InputTypeExcel == inputType {
-		assObjectInt = scenecommon.NewAsstObjectInst(req, ownerID, ObjAddr, defaultFields, langHandle)
-		err = assObjectInt.GetObjAsstObjectPrimaryKey()
-		if nil != err {
-			return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error()), nil, nil, nil
-		}
-		var err error
-		rowErr, err = assObjectInt.InitInstFromData(hostInfos)
-		if nil != err {
-			return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
-		}
-
-	}
+	var errMsg, updateErrMsg, succMsg []string
 
 	ts := time.Now().UTC()
 	//operator log
 	var logConents []auditoplog.AuditLogExt
-	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
-	filterFields := []string{common.CreateTimeField}
+	hostLogFields, _ := GetHostLogFields(req, ownerID, cc.ObjCtrl())
 	for index, host := range hostInfos {
 		if nil == host {
 			continue
@@ -108,133 +68,42 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
 		if isOk == false || "" == innerIP {
-			errMsg = append(errMsg, langHandle.Languagef("host_import_innerip_empty", index))
+			errMsg = append(errMsg, hostsInst.langHandle.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 
-		valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, filterFields, forward, errHandle)
+		var iSubArea interface{}
+		iSubArea, ok := host[common.BKCloudIDField]
+		if false == ok {
+			iSubArea = host[common.BKCloudIDField]
+		}
+		if nil == iSubArea {
+			iSubArea = common.BKDefaultDirSubArea
+		}
 		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
 		iHost, isOk := hostMap[key]
 
 		//生产日志
 		if isOk {
-			if common.InputTypeExcel == inputType {
-				if err, ok := rowErr[index]; true == ok {
-					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error())) //fmt.Sprintf("%d行%s", index, err.Error()))
-					continue
-				}
-				err := assObjectInt.SetObjAsstPropertyVal(host)
-				if nil != err {
-					blog.Error("host assocate property error %d %s", index, err.Error())
-					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-
-					continue
-				}
-
-			}
-			//delete(host, common.BKCloudIDField)
-			delete(host, "import_from")
-			delete(host, common.CreateTimeField)
-
 			hostID, _ := util.GetIntByInterface(iHost[common.BKHostIDField])
-			cloudID, err := util.GetIntByInterface(iHost[common.BKCloudIDField])
-			if nil != err {
-				blog.Error("get cloud id error %d %s", index, err.Error())
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, "cloud id "+err.Error()))
-
-				continue
-			}
-			host[common.BKCloudIDField] = cloudID
-
-			_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
-			if nil != err {
-				blog.Error("host valid error %v %v", index, err)
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-
-				continue
-			}
-			//update host asst attr
-			err = scenecommon.UpdateInstAssociation(ObjAddr, req, hostID, ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
-			if nil != err {
-				blog.Error("update host asst attr error : %v", err)
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				continue
-			}
 			//prepare the log
 			strHostID := fmt.Sprintf("%d", hostID)
-			logObj := NewHostLog(req, common.BKDefaultOwnerID, strHostID, hostAddr, ObjAddr, hostLogFields)
+			logObj := NewHostLog(req, common.BKDefaultOwnerID, strHostID, cc.HostCtrl(), cc.ObjCtrl(), hostLogFields)
 
-			condInput[common.BKHostIDField] = hostID
-			input["condition"] = condInput
-			input["data"] = host
-			isSuccess, message, _ := GetHttpResult(req, uHostURL, common.HTTPUpdate, input)
-			innerIP := host[common.BKHostInnerIPField].(string)
-			if !isSuccess {
-				blog.Error("host update error %v %v", index, message)
-				updateErrMsg = append(updateErrMsg, langHandle.Languagef("host_import_update_fail", index, innerIP, message))
+			err := hostsInst.UpdateHostInstance(index, host, iHost)
+			if nil != err {
+				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
 			logContent, _ := logObj.GetHostLog(strHostID, false)
 			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
 
 		} else {
-
-			if common.InputTypeExcel == inputType {
-				if err, ok := rowErr[index]; true == ok {
-					errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-					continue
-				}
-
-				err := assObjectInt.SetObjAsstPropertyVal(host)
-				if nil != err {
-					blog.Error("host assocate property error %v %v", index, err)
-					updateErrMsg = append(updateErrMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-					continue
-				}
-			}
-
-			_, ok := host[common.BKCloudIDField]
-			if false == ok {
-				host[common.BKCloudIDField] = iSubArea
-			}
-
-			_, err = valid.ValidMap(host, common.ValidCreate, 0)
-			host[common.CreateTimeField] = ts
-
-			if nil != err {
-				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				continue
-			}
-
 			//prepare the log
-			logObj := NewHostLog(req, common.BKDefaultOwnerID, "", hostAddr, ObjAddr, hostLogFields)
-
-			isSuccess, message, retData := GetHttpResult(req, addHostURL, common.HTTPCreate, host)
-			if !isSuccess {
-				ip, _ := host["InnerIP"].(string)
-				errMsg = append(errMsg, langHandle.Languagef("host_import_add_fail", index, ip, message))
-				continue
-			}
-
-			retHost := retData.(map[string]interface{})
-			hostID, _ := util.GetIntByInterface(retHost[common.BKHostIDField])
-
-			//add host asst attr
-			hostAsstData := scenecommon.ExtractDataFromAssociationField(int64(hostID), host, asstDes)
-			err = scenecommon.CreateInstAssociation(ObjAddr, req, hostAsstData)
+			logObj := NewHostLog(req, common.BKDefaultOwnerID, "", cc.HostCtrl(), cc.ObjCtrl(), hostLogFields)
+			hostID, err := hostsInst.AddHostInstance(index, appID, moduleID, host, ts)
 			if nil != err {
-				blog.Error("add host asst attr error : %v", err)
-				errMsg = append(errMsg, langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-				continue
-			}
-
-			addParams[common.BKHostIDField] = hostID
-			innerIP := host[common.BKHostInnerIPField].(string)
-
-			isSuccess, message, _ = GetHttpResult(req, addModulesURL, common.HTTPCreate, addParams)
-			if !isSuccess {
-				blog.Error("add hosthostconfig error, params:%v, error:%s", addParams, message)
-				errMsg = append(errMsg, langHandle.Languagef("host_import_add_host_module", index, innerIP))
+				errMsg = append(errMsg, err.Error())
 				continue
 			}
 			strHostID := fmt.Sprintf("%d", hostID)
@@ -248,8 +117,9 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	}
 
 	if 0 < len(logConents) {
-		logAPIClient := sourceAuditAPI.NewClient(auditAddr)
-		_, err := logAPIClient.AuditHostsLog(logConents, "import host", ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
+
+		logAPIClient := sourceAuditAPI.NewClient(cc.AuditCtrl())
+		_, err := logAPIClient.AuditHostsLog(logConents, "import host", ownerID, fmt.Sprintf("%d", appID), hostsInst.user, auditoplog.AuditOpTypeAdd)
 		//addAuditLogs(req, logAdd, "新加主机", ownerID, appID, user, auditAddr)
 		if nil != err {
 			blog.Errorf("add audit log error %s", err.Error())
@@ -257,7 +127,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return errors.New(langHandle.Language("host_import_err")), succMsg, updateErrMsg, errMsg
+		return errors.New(hostsInst.langHandle.Language("host_import_err")), succMsg, updateErrMsg, errMsg
 	}
 
 	return nil, succMsg, updateErrMsg, errMsg
@@ -323,7 +193,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 			}
 		}
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
-		_, hasErr = valid.ValidMap(host, "update", 0)
+		_, hasErr = valid.ValidMap(host, "create", 0)
 
 		if nil != hasErr {
 			return hasErr
@@ -393,4 +263,222 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
 	return nil
 
+}
+
+type hostsInstance struct {
+	forward       *sourceAPI.ForwardParam
+	user          string
+	hostAddr      string
+	objAddr       string
+	auditAddr     string
+	inputType     string
+	ownerID       string
+	cloudID       int
+	rowErr        map[int]error
+	defaultFields map[string]*sourceAPI.ObjAttDes
+	langHandle    lang.DefaultCCLanguageIf
+	errHandle     ccError.DefaultCCErrorIf
+	req           *restful.Request
+	cc            *api.APIResource
+	assObjectInt  *scenecommon.AsstObjectInst
+	asstDes       []sourceAPI.ObjAsstDes
+}
+
+func NewHostsInstance(req *restful.Request, ownerID, inputType string, cloudID int, cc *api.APIResource) (*hostsInstance, error) {
+	language := util.GetActionLanguage(req)
+
+	h := &hostsInstance{
+		req:        req,
+		inputType:  inputType,
+		ownerID:    ownerID,
+		forward:    &sourceAPI.ForwardParam{Header: req.Request.Header},
+		user:       scenecommon.GetUserFromHeader(req),
+		hostAddr:   cc.HostCtrl(),
+		objAddr:    cc.ObjCtrl(),
+		auditAddr:  cc.AuditCtrl(),
+		errHandle:  cc.Error.CreateDefaultCCErrorIf(language),
+		langHandle: cc.Lang.CreateDefaultCCLanguageIf(language),
+		cc:         cc,
+		cloudID:    cloudID,
+	}
+	var err error
+	h.defaultFields, err = getHostFields(h.forward, ownerID, h.objAddr)
+	if nil != err {
+		return nil, errors.New("get host property failure")
+	}
+
+	//get asst field
+	objCli := sourceAPI.NewClient("")
+	objCli.SetAddress(h.objAddr)
+	asst := map[string]interface{}{}
+	asst[common.BKOwnerIDField] = ownerID
+	asst[common.BKObjIDField] = common.BKInnerObjIDHost
+	searchData, _ := json.Marshal(asst)
+	objCli.SetAddress(h.objAddr)
+	h.asstDes, err = objCli.SearchMetaObjectAsst(h.forward, searchData)
+	if nil != err {
+		return nil, errors.New(h.langHandle.Language("host_search_fail"))
+	}
+
+	return h, nil
+}
+
+func (h *hostsInstance) UpdateHostInstance(index int, host, oldHost map[string]interface{}) error {
+	if common.InputTypeExcel == h.inputType {
+		if err, ok := h.rowErr[index]; true == ok {
+			return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+		}
+		err := h.assObjectInt.SetObjAsstPropertyVal(host)
+		if nil != err {
+			blog.Error("host assocate property error %d %s", index, err.Error())
+			return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+		}
+
+	}
+	//delete(host, common.BKCloudIDField)
+	delete(host, "import_from")
+	delete(host, common.CreateTimeField)
+
+	hostID, _ := util.GetIntByInterface(oldHost[common.BKHostIDField])
+	cloudID, err := util.GetIntByInterface(oldHost[common.BKCloudIDField])
+	if nil != err {
+		blog.Error("get cloud id error %d %s", index, err.Error())
+		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, "cloud id "+err.Error()))
+	}
+	host[common.BKCloudIDField] = cloudID
+	filterFields := []string{common.CreateTimeField}
+
+	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, h.objAddr, filterFields, h.forward, h.errHandle)
+	_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
+	if nil != err {
+		blog.Error("host valid error %v %v", index, err)
+		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+
+	}
+	//update host asst attr
+	err = scenecommon.UpdateInstAssociation(h.objAddr, h.req, hostID, h.ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
+	if nil != err {
+		blog.Error("update host asst attr error : %v", err)
+		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+	}
+
+	uHostURL := h.objAddr + "/object/v1/insts/host"
+
+	condInput := make(map[string]interface{}, 1) //更新主机条件
+	input := make(map[string]interface{}, 2)     //更新主机数据
+
+	condInput[common.BKHostIDField] = hostID
+	input["condition"] = condInput
+	input["data"] = host
+	isSuccess, message, _ := GetHttpResult(h.req, uHostURL, common.HTTPUpdate, input)
+	innerIP := host[common.BKHostInnerIPField].(string)
+	if !isSuccess {
+		blog.Error("host update error %v %v", index, message)
+		return fmt.Errorf(h.langHandle.Languagef("host_import_update_fail", index, innerIP, message))
+	}
+	return nil
+}
+
+func (h *hostsInstance) AddHostInstance(index, appID, moduleID int, host map[string]interface{}, ts time.Time) (int, error) {
+	if common.InputTypeExcel == h.inputType {
+		if err, ok := h.rowErr[index]; true == ok {
+			return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+		}
+
+		err := h.assObjectInt.SetObjAsstPropertyVal(host)
+		if nil != err {
+			blog.Error("host assocate property error %v %v", index, err)
+			return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+		}
+	}
+
+	_, ok := host[common.BKCloudIDField]
+	if false == ok {
+		host[common.BKCloudIDField] = h.cloudID
+	}
+	filterFields := []string{common.CreateTimeField}
+	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, h.objAddr, filterFields, h.forward, h.errHandle)
+	_, err := valid.ValidMap(host, common.ValidCreate, 0)
+
+	if nil != err {
+		return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+	}
+	host[common.CreateTimeField] = ts
+
+	addHostURL := h.hostAddr + "/host/v1/insts/"
+	isSuccess, message, retData := GetHttpResult(h.req, addHostURL, common.HTTPCreate, host)
+	if !isSuccess {
+		ip, _ := host["InnerIP"].(string)
+		return 0, fmt.Errorf(h.langHandle.Languagef("host_import_add_fail", index, ip, message))
+	}
+
+	retHost := retData.(map[string]interface{})
+	hostID, _ := util.GetIntByInterface(retHost[common.BKHostIDField])
+
+	//add host asst attr
+	hostAsstData := scenecommon.ExtractDataFromAssociationField(int64(hostID), host, h.asstDes)
+	err = scenecommon.CreateInstAssociation(h.objAddr, h.req, hostAsstData)
+	if nil != err {
+		blog.Error("add host asst attr error : %v", err)
+		return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+	}
+
+	addParams := make(map[string]interface{})
+	addParams[common.BKAppIDField] = appID
+	addParams[common.BKModuleIDField] = []int{moduleID}
+	addModulesURL := h.hostAddr + "/host/v1/meta/hosts/modules/"
+	addParams[common.BKHostIDField] = hostID
+	innerIP := host[common.BKHostInnerIPField].(string)
+
+	isSuccess, message, _ = GetHttpResult(h.req, addModulesURL, common.HTTPCreate, addParams)
+	if !isSuccess {
+		blog.Error("add hosthostconfig error, params:%v, error:%s", addParams, message)
+		return 0, fmt.Errorf(h.langHandle.Languagef("host_import_add_host_module", index, innerIP))
+	}
+
+	return hostID, nil
+}
+
+// getAddHostIDMap   InnerIP+SubArea key map[string]interface
+func (h *hostsInstance) GetAddHostIDMap(hostInfos map[int]map[string]interface{}) (map[string]map[string]interface{}, error) {
+	var ipArr []string
+	for _, host := range hostInfos {
+		innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		if isOk && "" != innerIP {
+			ipArr = append(ipArr, innerIP)
+		}
+	}
+
+	var conds map[string]interface{}
+	if 0 < len(ipArr) {
+		conds = map[string]interface{}{common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr}}
+
+	}
+
+	allHostList, err := GetHostInfoByConds(h.req, h.hostAddr, conds, h.langHandle)
+	if nil != err {
+		return nil, errors.New(h.langHandle.Language("host_search_fail"))
+	}
+
+	hostMap := convertHostInfo(allHostList)
+
+	return hostMap, nil
+}
+
+// getHostAsstHande get assocate object handle interface
+func (h *hostsInstance) GetHostAsstHande(hostInfos map[int]map[string]interface{}) (*scenecommon.AsstObjectInst, map[int]error, error) {
+
+	if common.InputTypeExcel == h.inputType {
+		h.assObjectInt = scenecommon.NewAsstObjectInst(h.req, h.ownerID, h.objAddr, h.defaultFields, h.langHandle)
+		err := h.assObjectInt.GetObjAsstObjectPrimaryKey()
+		if nil != err {
+			return nil, nil, fmt.Errorf("get host assocate object  property failure, error:%s", err.Error())
+		}
+		h.rowErr, err = h.assObjectInt.InitInstFromData(hostInfos)
+		if nil != err {
+			return nil, nil, fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error())
+		}
+
+	}
+	return h.assObjectInt, h.rowErr, nil
 }

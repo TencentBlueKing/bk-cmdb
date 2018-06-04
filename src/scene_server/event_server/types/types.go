@@ -95,8 +95,8 @@ type EventInstCtx struct {
 
 type DistInst struct {
 	EventInst
-	DstbID         int64
-	SubscriptionID int64
+	DstbID         int64 `json:"distribution_id"`
+	SubscriptionID int64 `json:"subscription_id"`
 }
 
 type DistInstCtx struct {
