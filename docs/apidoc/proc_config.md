@@ -71,6 +71,7 @@
     "condition":{
         "bk_biz_id":"12233",
         "bk_process_name":"nginx"
+        "bk_module_name":"nginx"
     }
 }
 
