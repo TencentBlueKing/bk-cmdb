@@ -14,25 +14,26 @@ package core
 
 import (
 	frcommon "configcenter/src/framework/common"
+	"configcenter/src/scene_server/topo_server/core/types"
 	//frtypes "configcenter/src/framework/core/types"
 
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
-func (cli *core) FindClassification(cond frcommon.Condition) ([]model.Classification, error) {
+func (cli *core) FindClassification(params types.LogicParams, cond frcommon.Condition) ([]model.Classification, error) {
 	return nil, nil
 }
-func (cli *core) FindObject(cond frcommon.Condition) ([]model.Object, error) {
+func (cli *core) FindObject(params types.LogicParams, cond frcommon.Condition) ([]model.Object, error) {
 	return nil, nil
 }
-func (cli *core) FindObjectAttribute(cond frcommon.Condition) ([]model.Attribute, error) {
+func (cli *core) FindObjectAttribute(params types.LogicParams, cond frcommon.Condition) ([]model.Attribute, error) {
 	return nil, nil
 }
-func (cli *core) FindObjectGroup(cond frcommon.Condition) ([]model.Group, error) {
+func (cli *core) FindObjectGroup(params types.LogicParams, cond frcommon.Condition) ([]model.Group, error) {
 	return nil, nil
 }
 
-func (cli *core) FindInst(cond frcommon.Condition) ([]inst.Inst, error) {
+func (cli *core) FindInst(params types.LogicParams, cond frcommon.Condition) ([]inst.Inst, error) {
 	return nil, nil
 }
