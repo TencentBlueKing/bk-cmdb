@@ -12,11 +12,18 @@
 
 package api
 
+import (
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+)
+
 var (
 	apiInst = &topoAPI{}
 )
 
 // New create a new API instance
-func New() API {
+func New(err errors.CCErrorIf, lang language.CCLanguageIf) API {
+	apiInst.err = err
+	apiInst.lang = lang
 	return apiInst
 }
