@@ -13,10 +13,6 @@
         <div class="left-tap-contain">
             <div class="list-tap" v-bkloading="{isLoading: isClassifyLoading}">
                 <ul>
-                    <li :class="{'active': topoView === 'GLOBAL_MODELS'}" @click="topoView = 'GLOBAL_MODELS'">
-                        <i class="icon-cc-networks"></i>
-                        <span class="text">全局模型</span>
-                    </li>
                     <li :class="{'active': topoView === 'models' && curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)" @click.stop="topoView = 'models'">
                         <i :class="item['bk_classification_icon']"></i>
                         <span class="text">{{item['bk_classification_name']}}</span>
@@ -27,6 +23,12 @@
                         <span>{{$t('Common["新增"]')}}</span>
                     </a>
                 </div>
+            </div>
+            <div :class="['global-models', {'active': topoView === 'GLOBAL_MODELS'}]">
+                <button class="btn-global" @click="topoView = 'GLOBAL_MODELS'">
+                    <i class="icon-cc-networks"></i>
+                    <span class="text">全局模型</span>
+                </button>
             </div>
         </div>
         <div class="right-contain clearfix">
@@ -143,9 +145,8 @@
                     <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="curModel.type==='change'">
                         <v-layout ref="layout"
                         :isShow="curTabName==='layout'"
-                        :id="curModel['id']"
-                        :objId="curModel['bk_obj_id']"
-                        :isNewField="isNewField"
+                        :activeModel="curModel"
+                        @cancel="cancel"
                         ></v-layout>
                     </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
@@ -182,7 +183,7 @@
     export default {
         data () {
             return {
-                topoView: 'GLOBAL_MODELS',
+                topoView: 'models',
                 isShowDisableList: false,
                 isTopoLoading: false,           // 拓扑loading
                 isClassifyLoading: false,       // 分组列表loading
@@ -806,6 +807,29 @@
     }
 </script>
 
+<style lang="scss" scoped>
+    .global-models{
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        background-color: #f7fafe;
+        .btn-global{
+            width: 120px;
+            height: 32px;
+            line-height: 30px;
+            background-color: #ffffff;
+            border-radius: 2px;
+            border: solid 1px #d6d8df;
+            font-size: 14px;
+            color: $textColor;
+            outline: 0;
+        }
+    }
+</style>
 <style media="screen" lang="scss" scoped>
     $borderColor: #bec6de; //边框色
     $defaultColor: #ffffff; //默认
@@ -852,8 +876,9 @@
             border-left: none;
             border-top: none;
             height: 100%;
+            position: relative;
             .list-tap{
-                height: 100%;
+                height: calc(100% - 50px);
                 overflow-y: auto;
                 border-right: 1px solid #dde4eb;
                 &::-webkit-scrollbar{
