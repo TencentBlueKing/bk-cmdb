@@ -25,7 +25,6 @@ import (
 
 	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var proc *proc2moduleAction = &proc2moduleAction{}
@@ -38,7 +37,6 @@ type proc2moduleAction struct {
 func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/module", Params: nil, Handler: proc.CreateProc2Module})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/module/search", Params: nil, Handler: proc.GetProc2Module})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/module/process", Params: nil, Handler: proc.GetModule2Proc})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/module", Params: nil, Handler: proc.DeleteProc2Module})
 	proc.CreateAction()
 }
@@ -172,84 +170,6 @@ func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful
 		return http.StatusOK, result, nil
 	}, resp)
 }
-
-// GetModule2Proc get process's id which bind to a module name
-func (cli *proc2moduleAction) GetModule2Proc(req *restful.Request, resp *restful.Response) {
-
-	// get the language
-	language := util.GetActionLanguage(req)
-
-	// get the error factory by language
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
-	cli.CallResponseEx(func() (int, interface{}, error) {
-
-		// read param
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("GetModule2Proc read param err: %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-
-		// parse json param
-		js, err := simplejson.NewJson(value)
-		if err != nil {
-			blog.Error("GetModule2Proc parse json err: %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		// map json data
-		input, err := js.Map()
-		if err != nil {
-			blog.Error("GetModule2Proc map json err: %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
-		}
-
-		// get module name
-		inputCond := input["condition"]
-		condition, ok := inputCond.(map[string]interface{})
-		if !ok {
-			blog.Error("GetModule2Proc get module name failed")
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
-		}
-
-		// get module bind procid list
-		var records []interface{}
-
-		query := make(map[string]interface{})
-		query[common.BKAppIDField] = condition[common.BKAppIDField]
-		query[common.BKModuleNameField] = condition[common.BKModuleNameField]
-		fields := []string{common.BKProcIDField}
-		blog.Info("GetModule2Proc: query=%v, fields=%v", query, fields)
-
-		err = cli.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, fields, query, &records, "", 0, 0)
-		if err != nil {
-			blog.Error("GetModule2Proc query err: %v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBSelectFailed)
-		}
-
-		// parse procid array
-		procIdArr := make([]int, 0)
-		for _, item := range records {
-			itemMap, ok := item.(bson.M)
-			if !ok {
-				blog.Error("GetModule2Proc item %v is not bson.M", item)
-				continue
-			}
-			procID, err := util.GetIntByInterface(itemMap[common.BKProcessIDField])
-			if err != nil {
-				blog.Error("GetModule2Proc convert id err： %v", err)
-				continue
-			}
-			procIdArr = append(procIdArr, procID)
-		}
-
-		return http.StatusOK, procIdArr, nil
-	}, resp)
-
-}
-
-
 
 
 

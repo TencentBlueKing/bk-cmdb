@@ -41,12 +41,12 @@ type ModuleData struct {
 type ProcModuleConfig struct {
 	ApplicationID int    `json:"bk_biz_id"`
 	ModuleName    string `json:"bk_module_name"`
-	processID     int    `json:"bk_process_id"`
+	ProcessID     int    `json:"bk_process_id"`
 }
 
 type ProcModuleResult struct {
 	Result  bool               `json:"result"`
-	Code    int                `json:"code"`
-	Message interface{}        `json:"message"`
+	Code    int				   `json:"bk_error_code"`
+	Message interface{} 	   `json:"bk_error_msg"`
 	Data    []ProcModuleConfig `json:"data"`
 }
