@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	frtypes "configcenter/src/framework/core/types"
-	"configcenter/src/scene_server/topo_server/core"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 
@@ -34,31 +34,31 @@ func (cli *topoAPI) initObjectGroup() {
 }
 
 // CreateObjectGroup create a new object group
-func (cli *topoAPI) CreateObjectGroup(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateObjectGroup update the object group information
-func (cli *topoAPI) UpdateObjectGroup(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // DeleteObjectGroup delete the object group
-func (cli *topoAPI) DeleteObjectGroup(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (cli *topoAPI) UpdateObjectAttributeGroup(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
-func (cli *topoAPI) DeleteObjectAttributeGroup(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchGroupByObject search the groups by the object
-func (cli *topoAPI) SearchGroupByObject(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

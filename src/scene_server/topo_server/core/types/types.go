@@ -10,25 +10,16 @@
  * limitations under the License.
  */
 
-package api
+package types
 
 import (
-	"net/http"
-
-	frtypes "configcenter/src/framework/core/types"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 )
 
-func init() {
-	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initAuditLog)
-}
-
-func (cli *topoAPI) initAuditLog() {
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.CreateBusiness})
-}
-
-// SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
-
-	return nil, nil
+// LogicParams the logic function params
+type LogicParams struct {
+	OwnerID string
+	Err     errors.DefaultCCErrorIf
+	Lang    language.DefaultCCLanguageIf
 }

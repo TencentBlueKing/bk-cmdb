@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	frtypes "configcenter/src/framework/core/types"
-	"configcenter/src/scene_server/topo_server/core"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 func init() {
@@ -32,21 +32,21 @@ func (cli *topoAPI) initObjectAttribute() {
 }
 
 // CreateObjectAttribute create a new object attribute
-func (cli *topoAPI) CreateObjectAttribute(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchObjectAttribute search the object attributes
-func (cli *topoAPI) SearchObjectAttribute(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateObjectAttribute update the object attribute
-func (cli *topoAPI) UpdateObjectAttribute(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (cli *topoAPI) DeleteObjectAttribute(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

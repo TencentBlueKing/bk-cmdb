@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/types"
 
 	"github.com/emicklei/go-restful"
 
@@ -116,7 +117,7 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 				return
 			}
 
-			data, dataErr := a.HandlerFunc(core.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, mData)
+			data, dataErr := a.HandlerFunc(types.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, mData)
 			if nil != dataErr {
 				blog.Errorf("%s", dataErr.Error())
 				switch e := dataErr.(type) {
