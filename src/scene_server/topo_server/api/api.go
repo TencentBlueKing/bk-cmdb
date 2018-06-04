@@ -82,11 +82,11 @@ func (cli *topoAPI) SetCore(coreMgr core.Core) {
 }
 
 // Actions return the all actions
-func (cli *topoAPI) Actions() []httpserver.Action {
+func (cli *topoAPI) Actions() []*httpserver.Action {
 
-	var httpactions []httpserver.Action
+	var httpactions []*httpserver.Action
 	for _, a := range cli.actions {
-		httpactions = append(httpactions, httpserver.Action{Verb: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+		httpactions = append(httpactions, &httpserver.Action{Verb: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 			ownerID := util.GetActionOnwerID(req)
 
@@ -116,7 +116,7 @@ func (cli *topoAPI) Actions() []httpserver.Action {
 				return
 			}
 
-			data, dataErr := a.HandlerFunc(core.LogicParams{Err: cli.err, Lang: cli.lang}, mData)
+			data, dataErr := a.HandlerFunc(core.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, mData)
 			if nil != dataErr {
 				blog.Errorf("%s", dataErr.Error())
 				switch e := dataErr.(type) {

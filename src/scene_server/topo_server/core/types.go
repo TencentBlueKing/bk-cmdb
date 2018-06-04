@@ -25,8 +25,9 @@ import (
 
 // LogicParams the logic function params
 type LogicParams struct {
-	Err  errors.CCErrorIf
-	Lang language.CCLanguageIf
+	OwnerID string
+	Err     errors.DefaultCCErrorIf
+	Lang    language.DefaultCCLanguageIf
 }
 
 // LogicFunc the core logic function definition

@@ -29,7 +29,7 @@ func (cli *topoAPI) initAssociation() {
 	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/model/{owner_id}", HandlerFunc: cli.SearchMainLineOBjectTopo})
 	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: cli.SearchObjectByClassificationID})
 	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/inst/{owner_id}/{app_id}", HandlerFunc: cli.SearchBusinessTopo})
-	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: cli.SearchInstTopo})
+	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: cli.SearchMainLineChildInstTopo})
 }
 
 // CreateMainLineObject create a new object in the main line topo
@@ -58,7 +58,7 @@ func (cli *topoAPI) SearchBusinessTopo(params core.LogicParams, data frtypes.Map
 	return nil, nil
 }
 
-// SearchInstTopo search the inst topo by a inst
-func (cli *topoAPI) SearchInstTopo(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+// SearchMainLineChildInstTopo search the child inst topo by a inst
+func (cli *topoAPI) SearchMainLineChildInstTopo(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
