@@ -95,6 +95,7 @@
     $navTextColor: #c9d0e6;
     $navActiveColor: #283556;
     .nav-wrapper{
+        padding-top: 50px;
         height: 100%;
         width: 220px;
         background-color: #334162;

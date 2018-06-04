@@ -9,13 +9,19 @@
                     <i class="icon-cc-tree"></i>{{$t('Association["树形"]')}}
                 </li>
             </ul>
-            <bk-button type="primary" class="btn btn-add"
-                :disabled="!hasAssociationProperty"
-                @click="currentComponent = 'v-new-association'">
-                {{$t('Association["新增关联"]')}}
-            </bk-button>
+            <div class="btn-group">
+                <span class="resize-btn" @click="resizeFull()" v-if="currentComponent === 'v-topo'" :title="$t('Common[\'全屏\']')">
+                    <i class="icon-cc-resize-full"></i>
+                </span>
+                <bk-button type="primary" class="btn btn-add"
+                    :disabled="!hasAssociationProperty"
+                    @click="currentComponent = 'v-new-association'">
+                    {{$t('Association["新增关联"]')}}
+                </bk-button>
+            </div>
         </div>
         <component v-bind="componentProps"
+            ref="component"
             :is="currentComponent"
             :class="{'new-association': currentComponent === 'v-new-association'}"
             @handleNewAssociationClose="handleNewAssociationClose">
@@ -101,6 +107,9 @@
         methods: {
             handleNewAssociationClose () {
                 this.currentComponent = this.prevComponent
+            },
+            resizeFull () {
+                this.$refs.component.resizeCanvas(true)
             }
         },
         components: {
@@ -145,13 +154,24 @@
     .btn{
         padding: 0 10px;
     }
-    .btn-add {
+    .btn-group {
         float: right;
+        font-size: 0;
+    }
+    .btn-add {
         height: 24px;
         line-height: 24px;
         &:disabled{
             cursor: not-allowed !important;
         }
+    }
+    .resize-btn {
+        width: 24px;
+        height: 24px;
+        line-height: 22px;
+        font-size: 14px;
+        vertical-align: bottom;
+        margin-right: 10px;
     }
     .new-association{
         position: absolute;
