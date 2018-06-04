@@ -1,19 +1,26 @@
 <template>
-    <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
-        <div id="topo" class="topo"></div>
-        <ul class="model-list" v-if="filterList.length">
-            <li class="model" :class="{'unselected': !filter.isShow}" v-for="(filter, index) in filterList" @click="changeModelDisplay(filter)" v-if="filter.count" :key="index">
-                <i class="icon" :class="filter['bk_obj_icon']"></i>
-                {{filter['bk_obj_name']}} {{filter.count}}
-            </li>
-        </ul>
-        <v-attribute 
-            :isShow.sync="attr.isShow"
-            :instId="attr.instId"
-            :objId="attr.objId"
-            :instName="attr.instName"
-            :objName="attr.objName"
-        ></v-attribute>
+    <div class="relevance-topo-wrapper" :class="{'full-screen': isFullScreen}">
+        <div class="loading-box" v-bkloading="{isLoading: isLoading}">
+            <div id="topo" class="topo" ref="topo"></div>
+            <ul class="model-list" v-if="filterList.length">
+                <li class="model" :class="{'unselected': !filter.isShow}" v-for="(filter, index) in filterList" @click="changeModelDisplay(filter)" v-if="filter.count" :key="index">
+                    <i class="icon" :class="filter['bk_obj_icon']"></i>
+                    {{filter['bk_obj_name']}} {{filter.count}}
+                </li>
+            </ul>
+            <span class="resize-btn" v-if="isFullScreen" @click="resizeCanvas(false)">
+                <i class="icon-cc-resize-small"></i>{{$t('Common["退出"]')}}
+            </span>
+            <div class="mask" v-if="attr.isShow" @click="attr.isShow = false"></div>
+            <v-attribute
+                ref="attribute"
+                :isShow.sync="attr.isShow"
+                :instId="attr.instId"
+                :objId="attr.objId"
+                :instName="attr.instName"
+                :objName="attr.objName"
+            ></v-attribute>
+        </div>
     </div>
 </template>
 
@@ -36,7 +43,7 @@
             return {
                 topoStruct: {},
                 nodeId: 0,                  // 前端节点ID 递增
-
+                isFullScreen: false,        // 是否全屏显示
                 network: {},
                 attr: {
                     isShow: false,
@@ -133,6 +140,12 @@
             }
         },
         methods: {
+            resizeCanvas (isFullScreen) {
+                this.isFullScreen = isFullScreen
+                this.$nextTick(() => {
+                    this.$refs.attribute.resetAttributeBox()
+                })
+            },
             /**
              * 获取模型Id对应的key
              * @param objId {String} - 模型id
@@ -573,9 +586,9 @@
                 let div = document.createElement('div')
                 div.setAttribute('class', 'topo-pop-box')
                 div.setAttribute('id', this.popBox.rand)
-                div.style.top = `${Y - 40}px`
-                div.style.left = `${X}px`
-                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span> | <span class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</span>` : `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span>`
+                div.style.top = `${Y}px`
+                div.style.left = `${X + 60}px`
+                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div><div class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</div>` : `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div>`
                 document.body.appendChild(div)
 
                 // 监听事件
@@ -610,7 +623,7 @@
             }
         },
         mounted () {
-            this.container = document.getElementById('topo')
+            this.container = this.$refs.topo
         },
         created () {
             this.getRelationInfo(this.objId, this.instId, true)
@@ -626,6 +639,17 @@
         position: relative;
         height: calc(100% - 64px);
         background: #f9f9f9;
+        &.full-screen {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            height: 100%;
+        }
+        .loading-box {
+            height: 100%;
+        }
         .topo {
             height: 100%;
         }
@@ -646,6 +670,26 @@
                 top: 1px;
                 vertical-align: bottom;
             }
+        }
+        .resize-btn {
+            position: absolute;
+            width: auto;
+            top: 30px;
+            right: 30px;
+            height: 36px;
+            line-height: 34px;
+            padding: 0 20px;
+            i {
+                margin-right: 5px;
+            }
+        }
+        .mask {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
         }
     }
 </style>
