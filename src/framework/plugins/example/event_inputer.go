@@ -24,9 +24,15 @@ import (
 func init() {
 
 	api.RegisterInputer(eve)
+
 	api.RegisterEventHost(eve.eventCallback)
 	api.RegisterEventHostIdentifier(eve.eventCallback)
-	//api.RegisterFrequencyInputer(business, time.Minute)
+	api.RegisterEventBusiness(eve.eventCallback)
+	api.RegisterEventModule(eve.eventCallback)
+	api.RegisterEventModuleTransfer(eve.eventCallback)
+	api.RegisterEventSet(eve.eventCallback)
+	api.RegisterEventInst(eve.eventCallback)
+
 }
 
 var eve = &eventInputer{}
