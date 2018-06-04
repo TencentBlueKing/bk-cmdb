@@ -30,7 +30,7 @@
                                         {{getModelObject(classify, col, modelColIndex)['bk_obj_name']}}
                                     </router-link>
                                     <i class="model-stick icon-cc-stick"
-                                        v-if="getModelIndex(col, modelColIndex)"
+                                        v-if="!['bk_host_manage'].includes(classify['bk_classification_id']) && getModelIndex(col, modelColIndex)"
                                         @click.stop.prevent="stickModel(classify, col, modelColIndex)">
                                     </i>
                                 </li>
@@ -97,7 +97,7 @@
                 return this.usercustom[this.classifyModelSequenceKey] || {}
             },
             sortedClassifications () {
-                const classifications = [this.hostManageClassification, ...this.$deepClone(this.authorizedClassifications)]
+                const classifications = this.$deepClone(this.authorizedClassifications)
                 classifications.forEach((classify, index) => {
                     if (this.classifyModelSequence.hasOwnProperty(classify['bk_classification_id'])) {
                         classify['bk_objects'].sort((modelA, modelB) => {
@@ -105,7 +105,7 @@
                         })
                     }
                 })
-                return classifications
+                return [this.hostManageClassification, ...classifications]
             }
         },
         watch: {
@@ -125,7 +125,7 @@
             initResizeListener () {
                 this.throttleLayout = throttle(() => {
                     this.doLayout()
-                }, 500, {leading: false})
+                }, 50, {leading: false})
                 addResizeListener(this.$el, this.throttleLayout)
             },
             doLayout () {
