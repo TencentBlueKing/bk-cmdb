@@ -79,7 +79,7 @@
         },
         watch: {
             crossPageAllChecked (checked) {
-                if (this.$refs.crossPageCheckbox) {
+                if (this.$refs.crossPageCheckbox && this.$refs.crossPageCheckbox.length) {
                     this.$refs.crossPageCheckbox[0].checked = checked
                 }
             }

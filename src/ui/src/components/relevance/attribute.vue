@@ -191,8 +191,9 @@
         width: 710px;
         max-height: 80%;
         min-height: 200px;
-        top: 20px;
-        left: 25px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         box-shadow: 0px 2px 9.6px 0.4px rgba(0, 0, 0, 0.4);
         .loading {
             min-height: 200px;
@@ -210,10 +211,6 @@
             right: 10px;
             top: 10px;
             cursor: pointer;
-            transition: all .2s linear;
-            &:hover {
-                transform: rotate(90deg);
-            }
         }
         .attribute-box {
             height: calc(100% - 40px);

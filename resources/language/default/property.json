@@ -52,6 +52,7 @@
     "host_property_bk_state_name": "所在国家",
     "host_property_bk_province_name": "所在省份",
     "host_property_bk_isp_name": "所属运营商",
+    "process_property_bk_biz_id": "业务ID",
     "process_property_bk_process_name": "进程名称",
     "process_property_description": "进程描述",
     "process_property_bind_ip": "绑定IP",
