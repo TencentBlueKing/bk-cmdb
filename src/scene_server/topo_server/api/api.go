@@ -30,14 +30,16 @@ import (
 	"io/ioutil"
 )
 
-// API the topo server api
-type API struct {
-	actions []Action
-	err     errors.CCErrorIf
-	lang    language.CCLanguageIf
+// topoAPI the topo server api
+type topoAPI struct {
+	initFuncs []func()
+	core      core.Core
+	actions   []action
+	err       errors.CCErrorIf
+	lang      language.CCLanguageIf
 }
 
-func (cli *API) createAPIRspStr(errcode int, info interface{}) (string, error) {
+func (cli *topoAPI) createAPIRspStr(errcode int, info interface{}) (string, error) {
 	rsp := api.BKAPIRsp{
 		Result:  true,
 		Code:    0,
@@ -59,15 +61,28 @@ func (cli *API) createAPIRspStr(errcode int, info interface{}) (string, error) {
 	return string(s), err
 }
 
-func (cli *API) sendResponse(resp *restful.Response, dataMsg interface{}) {
+func (cli *topoAPI) sendResponse(resp *restful.Response, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := cli.createAPIRspStr(common.CCSuccess, dataMsg); nil == rspErr {
 		io.WriteString(resp, rsp)
 	}
 }
 
+// SetCore set the core instance
+func (cli *topoAPI) SetCore(coreMgr core.Core) {
+
+	// set core
+	cli.core = coreMgr
+
+	// init
+	for _, targetInitFunc := range cli.initFuncs {
+		targetInitFunc()
+	}
+
+}
+
 // Actions return the all actions
-func (cli *API) Actions() []httpserver.Action {
+func (cli *topoAPI) Actions() []httpserver.Action {
 
 	var httpactions []httpserver.Action
 	for _, a := range cli.actions {

@@ -23,7 +23,9 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	topoAPI "configcenter/src/scene_server/topo_server/api"
 	confCenter "configcenter/src/scene_server/topo_server/config"
+	topoCore "configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/manager"
 	"configcenter/src/scene_server/topo_server/rdiscover"
 
@@ -191,7 +193,13 @@ func (ccAPI *CCAPIServer) Start() error {
 // InitHttpServ init http server
 func (ccAPI *CCAPIServer) InitHttpServ() error {
 	a := api.NewAPIResource()
-	ccAPI.httpServ.RegisterWebServer("/topo/{version}", rdapi.AllGlobalFilter(), a.Actions)
+
+	topo := topoAPI.New()
+	core := topoCore.New()
+	topo.SetCore(core)
+
+	ccAPI.httpServ.RegisterWebServer("/topo/{version}", rdapi.AllGlobalFilter(), topo.Actions())
+
 	// MetricServer
 	conf := metric.Config{
 		ModuleName:    types.CC_MODULE_TOPO,

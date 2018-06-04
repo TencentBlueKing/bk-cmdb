@@ -13,15 +13,19 @@
 package api
 
 import (
-	//frcommon "configcenter/src/framework/common"
-	//frtypes "configcenter/src/framework/core/types"
-
+	"configcenter/src/common/http/httpserver"
 	"configcenter/src/scene_server/topo_server/core"
 )
 
 // Action the http action
-type Action struct {
+type action struct {
 	Method      string
 	Path        string
 	HandlerFunc core.LogicFunc
+}
+
+// API the API interface
+type API interface {
+	SetCore(coreMgr core.Core)
+	Actions() []httpserver.Action
 }
