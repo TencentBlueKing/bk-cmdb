@@ -199,26 +199,36 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 		searchParams["sort"] = page["sort"]
 
 		// query process by module name
-		if _, ok := condition["bk_module_name"]; ok {
+		if moduleName, ok := condition["bk_module_name"]; ok {
 
-			procIdUrl := cli.CC.ProcCtrl() + "/process/v1/module/process/"
-			qJ, _ := json.Marshal(searchParams)
+			procIdUrl := cli.CC.ProcCtrl() + "/process/v1/module/search/"
 
-			blog.Info("get process arr by module: %s(%v)", procIdUrl, qJ)
+			qJ, _ := json.Marshal(map[string]interface{}{
+				common.BKAppIDField:      appID,
+				common.BKModuleNameField: moduleName,
+			})
+
+			blog.Info("get process arr by module: %s(%s)", procIdUrl, qJ)
 			if res, err := httpcli.ReqHttp(req, procIdUrl, common.HTTPSelectPost, qJ); err == nil {
 
-				var procIdRes ProcessResult
+				var resMap ProcModuleResult
 
-				err = json.Unmarshal([]byte(res), &procIdRes)
-				if err != nil || !procIdRes.Result {
+				err = json.Unmarshal([]byte(res), &resMap)
+				if err != nil || !resMap.Result {
 					blog.Error("get process arr failed: %v", res)
 					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
 
 				}
 
+				// parse procid array
+				procIdArr := make([]int, 0)
+				for _, item := range resMap.Data {
+					procIdArr = append(procIdArr, item.ProcessID)
+				}
+
 				// update condition
 				condition[common.BKProcIDField] = map[string]interface{}{
-					"$in": procIdRes.Data,
+					"$in": procIdArr,
 				}
 				delete(condition, common.BKModuleNameField)
 				searchParams["condition"] = condition
@@ -229,6 +239,7 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 			}
 		}
 
+		// search process
 		cProcURL := cli.CC.ObjCtrl() + "/object/v1/insts/process/search"
 		procInfoJson, _ := json.Marshal(searchParams)
 		blog.Info("search process url:%v, data: %s", cProcURL, string(procInfoJson))
