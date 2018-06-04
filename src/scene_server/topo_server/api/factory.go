@@ -10,12 +10,13 @@
  * limitations under the License.
  */
 
-package main
+package api
 
-import (
-	//_ "configcenter/src/scene_server/topo_server/actions/inst"   // import inst
-	//_ "configcenter/src/scene_server/topo_server/actions/object" // import object actions
-	//_ "configcenter/src/scene_server/topo_server/logics/object"
-	_ "configcenter/src/scene_server/topo_server/actions/openapi"
-	_ "configcenter/src/scene_server/topo_server/actions/privilege"
+var (
+	apiInst = &topoAPI{}
 )
+
+// New create a new API instance
+func New() API {
+	return apiInst
+}
