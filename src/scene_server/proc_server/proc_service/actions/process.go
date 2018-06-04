@@ -52,6 +52,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}", Params: nil, Handler: process.DeleteProcess})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/search/{bk_supplier_account}/{bk_biz_id}", Params: nil, Handler: process.SearchProcess})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}", Params: nil, Handler: process.UpdateProcess})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/{bk_supplier_account}/{bk_biz_id}", Params: nil, Handler: process.BatchUpdateProcess})
 	process.CreateAction()
 	process.objcli = api.NewClient("")
 }
@@ -222,7 +223,7 @@ func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Respons
 				delete(condition, common.BKModuleNameField)
 				searchParams["condition"] = condition
 
-			}else{
+			} else {
 				blog.Error("get process arr err: %v, %v", res, err)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSearchProcessFaile)
 			}
@@ -400,5 +401,169 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 		result[common.BKProcIDField] = data[common.BKProcIDField]
 
 		return http.StatusOK, result, nil
+	}, resp)
+}
+
+// BatchUpdateProcess batch update process
+func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Response) {
+	user := util.GetActionUser(req)
+	language := util.GetActionLanguage(req)
+	// get the error factory by the language
+	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+
+	blog.Info("BatchUpdateProcess: start process")
+	cli.CallResponseEx(func() (int, interface{}, error) {
+
+		pathParams := req.PathParameters()
+		ownerID := pathParams[common.BKOwnerIDField]
+		appIDStr := pathParams[common.BKAppIDField]
+		appID, _ := strconv.Atoi(appIDStr)
+
+		value, err := ioutil.ReadAll(req.Request.Body)
+		if nil != err {
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		}
+
+		blog.Info("BatchUpdateProcess read body: %s", value)
+
+		data, err := simplejson.NewJson([]byte(value))
+		if nil != err {
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		procData, err := data.Map()
+		if nil != err {
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		// split process str by comma
+		var procIDArr []string
+		if procIDStr, ok := procData[common.BKProcessIDField].(string); !ok {
+			return http.StatusInternalServerError, nil, defErr.Error(common.CC_Err_Comm_PROC_Field_VALID_FAIL)
+		} else {
+			procIDArr = strings.Split(procIDStr, ",")
+		}
+
+		// update condition
+		procData[common.BKAppIDField] = appID
+		delete(procData, common.BKProcessIDField)
+
+		// forbidden edit process name and func id
+		delete(procData, common.BKProcessNameField)
+		delete(procData, common.BKFuncIDField)
+
+		// parse process id and valid
+		var iProcIDArr []int
+		auditContentArr := make([]metadata.Content, 1)
+
+		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
+
+		blog.Info("BatchUpdateProcess read body: %s", value)
+
+		for _, pidStr := range procIDArr {
+
+			procID, _ := strconv.Atoi(pidStr)
+
+			blog.Info("validate procID = %v", procID)
+
+			_, err = valid.ValidMap(procData, common.ValidUpdate, procID)
+			if nil != err {
+				blog.Error("valid procID = %v err: %v", err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
+			}
+
+			iProcIDArr = append(iProcIDArr, procID)
+
+			// take snapshot before operation
+			details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
+			if err != nil {
+				blog.Errorf("get inst detail error: %v", err)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+			}
+
+			// save change log
+			headers := []metadata.Header{}
+
+			curData := map[string]interface{}{}
+			for _, detail := range details {
+				curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+				headers = append(headers,
+					metadata.Header{
+						PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField].(string)),
+						PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
+					})
+			}
+
+			// save proc info before modify
+			auditContentArr = append(auditContentArr, metadata.Content{
+				CurData: curData,
+				PreData: make(map[string]interface{}),
+				Headers: headers,
+			})
+
+		}
+
+		// update processes
+		input := make(map[string]interface{})
+		condition := make(map[string]interface{})
+		condition[common.BKOwnerIDField] = ownerID
+		condition[common.BKAppIDField] = appID
+		condition[common.BKProcIDField] = map[string]interface{}{
+			common.BKDBIN: iProcIDArr,
+		}
+
+		input["condition"] = condition
+		input["data"] = procData
+
+		procInfoJson, _ := json.Marshal(input)
+		cProcURL := cli.CC.ObjCtrl() + "/object/v1/insts/process"
+
+		blog.Info("update process url:%v", cProcURL)
+		blog.Info("update process data:%s", string(procInfoJson))
+		sProcRes, err := httpcli.ReqHttp(req, cProcURL, common.HTTPUpdate, []byte(procInfoJson))
+		blog.Info("update process return:%s", string(sProcRes))
+		if nil != err {
+			blog.Error("update process error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcUpdateProcessFaile)
+		}
+
+		// fetch and return data
+		js, err := simplejson.NewJson([]byte(sProcRes))
+		procResData, _ := js.Map()
+
+		// update audit log content after modify
+		for index, procID := range iProcIDArr {
+
+			// take snapshot before operation
+			details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
+
+			detailsJson, _ := json.Marshal(details)
+			blog.Info("update process details: %v", detailsJson)
+
+			if err != nil {
+				blog.Errorf("get inst detail error: %v", err)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
+			}
+
+			// save change log
+			curData := map[string]interface{}{}
+			for _, detail := range details {
+				curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
+			}
+
+			curDataJson, _ := json.Marshal(curData)
+			blog.Info("update process curData: %v", curDataJson)
+
+			// save proc info before modify
+			auditContentArr[index].CurData = curData
+
+			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContentArr[index], "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+
+			blog.Info("update process with: %v", auditContentArr[index])
+		}
+
+		return http.StatusOK, procResData["data"], nil
+
 	}, resp)
 }
