@@ -12,10 +12,6 @@
 
 package storage
 
-import (
-	"gopkg.in/mgo.v2/bson"
-)
-
 // DI define storage interface
 type DI interface {
 	GetIncID(cName string) (int64, error)
@@ -93,47 +89,3 @@ const (
 	DI_MONGO string = "mongodb"
 	DI_REDIS string = "redis"
 )
-
-// Upsert inset row but updata it whitout ignores key if exists same value with keys
-func Upsert(db DI, tablename string, row interface{}, keys []string, ignores []string) error {
-	data := map[string]interface{}{}
-	switch value := row.(type) {
-	case map[string]interface{}:
-		data = value
-	default:
-		out, err := bson.Marshal(row)
-		if err != nil {
-			return err
-		}
-		if err = bson.Unmarshal(out, data); err != nil {
-			return err
-		}
-	}
-
-	condition := map[string]interface{}{}
-	for _, key := range keys {
-		condition[key] = data[key]
-	}
-
-	isExist, err := db.GetCntByCondition(tablename, condition)
-	if nil != err {
-		return err
-	}
-
-	if isExist > 0 {
-		ignoreset := map[string]bool{}
-		for _, key := range ignores {
-			ignoreset[key] = true
-		}
-		newData := map[string]interface{}{}
-		for key, value := range data {
-			if ignoreset[key] == true {
-				continue
-			}
-			newData[key] = value
-		}
-		return db.UpdateByCondition(tablename, newData, condition)
-	}
-	_, err = db.Insert(tablename, row)
-	return err
-}
