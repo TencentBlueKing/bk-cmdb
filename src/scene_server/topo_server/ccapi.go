@@ -108,23 +108,11 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	}
 
-	//http server
-	ccAPI.InitHttpServ()
-
-	go func() {
-		err := ccAPI.httpServ.ListenAndServe()
-		blog.Error("http listen and serve failed! err:%s", err.Error())
-		chErr <- err
-	}()
-
-	a.AddrSrv = ccAPI.rd
-	a.HostCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_HOSTCONTROLLER, a.AddrSrv)
-
 	// load the errors resource
 	if errorres, ok := config["errors.res"]; ok {
 		if errif, err := errors.New(errorres); nil != err {
 			blog.Error("failed to create errors object, error info is  %s ", err.Error())
-			chErr <- err
+			return err
 		} else {
 			a.Error = errif
 		}
@@ -148,7 +136,7 @@ func (ccAPI *CCAPIServer) Start() error {
 	if langres, ok := config["language.res"]; ok {
 		if langif, err := language.New(langres); nil != err {
 			blog.Error("failed to create errors object, error info is  %s ", err.Error())
-			chErr <- err
+			return err
 		} else {
 			a.Lang = langif
 		}
@@ -167,6 +155,18 @@ func (ccAPI *CCAPIServer) Start() error {
 			}
 		}
 	}
+
+	//http server
+	ccAPI.InitHttpServ(a.Error, a.Lang)
+
+	go func() {
+		err := ccAPI.httpServ.ListenAndServe()
+		blog.Error("http listen and serve failed! err:%s", err.Error())
+		chErr <- err
+	}()
+
+	a.AddrSrv = ccAPI.rd
+	a.HostCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_HOSTCONTROLLER, a.AddrSrv)
 
 	//check object controller server
 	a.ObjCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_OBJECTCONTROLLER, a.AddrSrv)
@@ -191,12 +191,11 @@ func (ccAPI *CCAPIServer) Start() error {
 }
 
 // InitHttpServ init http server
-func (ccAPI *CCAPIServer) InitHttpServ() error {
-	a := api.NewAPIResource()
+func (ccAPI *CCAPIServer) InitHttpServ(err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
-	topo := topoAPI.New()
-	core := topoCore.New()
-	topo.SetCore(core)
+	topo := topoAPI.New(err, lang)
+
+	topo.SetCore(topoCore.New())
 
 	ccAPI.httpServ.RegisterWebServer("/topo/{version}", rdapi.AllGlobalFilter(), topo.Actions())
 

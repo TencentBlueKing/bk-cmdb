@@ -27,5 +27,5 @@ type action struct {
 // API the API interface
 type API interface {
 	SetCore(coreMgr core.Core)
-	Actions() []httpserver.Action
+	Actions() []*httpserver.Action
 }
