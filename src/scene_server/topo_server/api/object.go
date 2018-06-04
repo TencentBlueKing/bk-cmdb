@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	frtypes "configcenter/src/framework/core/types"
-	"configcenter/src/scene_server/topo_server/core"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 func init() {
@@ -34,36 +34,36 @@ func (cli *topoAPI) initObject() {
 }
 
 // CreateObjectBatch batch to create some objects
-func (cli *topoAPI) CreateObjectBatch(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
-func (cli *topoAPI) SearchObjectBatch(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // CreateObject create a new object
-func (cli *topoAPI) CreateObject(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchObject search some objects by condition
-func (cli *topoAPI) SearchObject(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchObjectTopo search the object topo
-func (cli *topoAPI) SearchObjectTopo(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateObject update the object
-func (cli *topoAPI) UpdateObject(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // DeleteObject delete the object
-func (cli *topoAPI) DeleteObject(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
