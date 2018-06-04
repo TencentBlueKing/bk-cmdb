@@ -57,6 +57,7 @@
     "host_property_bk_province_name": "province name",
     "host_property_bk_isp_name": "isp name",
 
+    "process_property_bk_biz_id": "business id",
     "process_property_bk_process_name": "process name",
     "process_property_description": "description",
     "process_property_bind_ip": "bind ip",
