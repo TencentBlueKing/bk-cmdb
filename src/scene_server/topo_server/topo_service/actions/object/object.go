@@ -198,6 +198,19 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		}
 	}
 
+	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_group"); ok {
+		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
+			if "" == tmp {
+				blog.Error("bk_property_group_name could not be empty")
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_group_name")
+			}
+			tmpItem.PropertyGroup = tmp
+		} else {
+			blog.Error("can not parse the bk_property_group_name, error info is %s", tmpErr.Error())
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name")
+		}
+	}
+
 	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
 		switch tmpItem.PropertyType {
 		case common.FieldTypeEnum:
