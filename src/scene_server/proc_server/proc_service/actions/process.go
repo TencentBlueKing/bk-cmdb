@@ -412,7 +412,6 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
 
-	blog.Info("BatchUpdateProcess: start process")
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		pathParams := req.PathParameters()
@@ -424,8 +423,6 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 		if nil != err {
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
-
-		blog.Info("BatchUpdateProcess read body: %s", value)
 
 		data, err := simplejson.NewJson([]byte(value))
 		if nil != err {
@@ -455,17 +452,13 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 
 		// parse process id and valid
 		var iProcIDArr []int
-		auditContentArr := make([]metadata.Content, 1)
+		auditContentArr := make([]metadata.Content, len(procIDArr))
 
 		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, cli.CC.ObjCtrl(), forward, defErr)
 
-		blog.Info("BatchUpdateProcess read body: %s", value)
-
-		for _, pidStr := range procIDArr {
+		for index, pidStr := range procIDArr {
 
 			procID, _ := strconv.Atoi(pidStr)
-
-			blog.Info("validate procID = %v", procID)
 
 			_, err = valid.ValidMap(procData, common.ValidUpdate, procID)
 			if nil != err {
@@ -495,12 +488,14 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 					})
 			}
 
+			curData["bk_process_id"] = procID
+
 			// save proc info before modify
-			auditContentArr = append(auditContentArr, metadata.Content{
-				CurData: curData,
-				PreData: make(map[string]interface{}),
+			auditContentArr[index] = metadata.Content{
+				CurData: make(map[string]interface{}),
+				PreData: curData,
 				Headers: headers,
-			})
+			}
 
 		}
 
@@ -538,9 +533,6 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 			// take snapshot before operation
 			details, err := cli.getProcDetail(req, ownerID, appID, int(procID))
 
-			detailsJson, _ := json.Marshal(details)
-			blog.Info("update process details: %v", detailsJson)
-
 			if err != nil {
 				blog.Errorf("get inst detail error: %v", err)
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrAuditSaveLogFaile)
@@ -552,15 +544,14 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 				curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
 			}
 
-			curDataJson, _ := json.Marshal(curData)
-			blog.Info("update process curData: %v", curDataJson)
+			curData["bk_process_id"] = procID
 
 			// save proc info before modify
 			auditContentArr[index].CurData = curData
 
 			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContentArr[index], "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 
-			blog.Info("update process with: %v", auditContentArr[index])
+			blog.Info("update process with: %s", auditContentArr[index])
 		}
 
 		return http.StatusOK, procResData["data"], nil
