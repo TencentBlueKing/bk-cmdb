@@ -16,49 +16,40 @@ import (
 	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
 
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// LogicParams the logic function params
-type LogicParams struct {
-	OwnerID string
-	Err     errors.DefaultCCErrorIf
-	Lang    language.DefaultCCLanguageIf
-}
-
 // LogicFunc the core logic function definition
-type LogicFunc func(params LogicParams, data frtypes.MapStr) (frtypes.MapStr, error)
+type LogicFunc func(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error)
 
 // Core Provides management interfaces for models and instances
 type Core interface {
-	CreateClassification(data frtypes.MapStr) (model.Classification, error)
-	CreateObject(data frtypes.MapStr) (model.Object, error)
-	CreateObjectAttribute(data frtypes.MapStr) (model.Attribute, error)
-	CreateObjectGroup(data frtypes.MapStr) (model.Group, error)
-	CreateInst(obj model.Object, data frtypes.MapStr) (inst.Inst, error)
-	CreateAssociation(data frtypes.MapStr) (model.Association, error)
+	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)
+	CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error)
+	CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error)
+	CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error)
+	CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
+	CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error)
 
-	DeleteClassification(cond frcommon.Condition) error
-	DeleteObject(cond frcommon.Condition) error
-	DeleteObjectAttribute(cond frcommon.Condition) error
-	DeleteObjectGroup(cond frcommon.Condition) error
-	DeleteInst(cond frcommon.Condition) error
-	DeleteAssociation(cond frcommon.Condition) error
+	DeleteClassification(params types.LogicParams, cond frcommon.Condition) error
+	DeleteObject(params types.LogicParams, cond frcommon.Condition) error
+	DeleteObjectAttribute(params types.LogicParams, cond frcommon.Condition) error
+	DeleteObjectGroup(params types.LogicParams, cond frcommon.Condition) error
+	DeleteInst(params types.LogicParams, cond frcommon.Condition) error
+	DeleteAssociation(params types.LogicParams, cond frcommon.Condition) error
 
-	FindClassification(cond frcommon.Condition) ([]model.Classification, error)
-	FindObject(cond frcommon.Condition) ([]model.Object, error)
-	FindObjectAttribute(cond frcommon.Condition) ([]model.Attribute, error)
-	FindObjectGroup(cond frcommon.Condition) ([]model.Group, error)
-	FindInst(cond frcommon.Condition) ([]inst.Inst, error)
+	FindClassification(params types.LogicParams, cond frcommon.Condition) ([]model.Classification, error)
+	FindObject(params types.LogicParams, cond frcommon.Condition) ([]model.Object, error)
+	FindObjectAttribute(params types.LogicParams, cond frcommon.Condition) ([]model.Attribute, error)
+	FindObjectGroup(params types.LogicParams, cond frcommon.Condition) ([]model.Group, error)
+	FindInst(params types.LogicParams, cond frcommon.Condition) ([]inst.Inst, error)
 
-	UpdateClassification(data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObject(data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObjectAttribute(data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObjectGroup(data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateInst(data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateAssociation(data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateObject(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateInst(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
 }

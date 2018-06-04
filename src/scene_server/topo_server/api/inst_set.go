@@ -15,8 +15,12 @@ package api
 import (
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
-	"configcenter/src/scene_server/topo_server/core"
+
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 func init() {
@@ -32,23 +36,47 @@ func (cli *topoAPI) initSet() {
 }
 
 // CreateSet create a new set
-func (cli *topoAPI) CreateSet(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
+
+	objItems, err := cli.core.FindObject(params, cond)
+
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return nil, err
+	}
+
+	for _, item := range objItems {
+		setInst, err := cli.core.CreateInst(params, item, data)
+		if nil != err {
+			blog.Errorf("failed to create a new set, %s", err.Error())
+			return nil, err
+		}
+
+		err = setInst.Save()
+		if nil != err {
+			blog.Errorf("failed to create a new set, %s", err.Error())
+			return nil, err
+		}
+	}
 
 	return nil, nil
 }
 
 // DeleteSet delete the set
-func (cli *topoAPI) DeleteSet(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // UpdateSet update the set
-func (cli *topoAPI) UpdateSet(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchSet search the set
-func (cli *topoAPI) SearchSet(params core.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

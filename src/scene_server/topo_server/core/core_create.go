@@ -15,12 +15,13 @@ package core
 import (
 	//frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
-func (cli *core) CreateClassification(data frtypes.MapStr) (model.Classification, error) {
+func (cli *core) CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error) {
 
 	cls := cli.modelFactory.CreaetClassification()
 
@@ -37,7 +38,7 @@ func (cli *core) CreateClassification(data frtypes.MapStr) (model.Classification
 	return cls, nil
 }
 
-func (cli *core) CreateObject(data frtypes.MapStr) (model.Object, error) {
+func (cli *core) CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error) {
 
 	obj := cli.modelFactory.CreaetObject()
 
@@ -54,7 +55,7 @@ func (cli *core) CreateObject(data frtypes.MapStr) (model.Object, error) {
 	return obj, nil
 }
 
-func (cli *core) CreateObjectAttribute(data frtypes.MapStr) (model.Attribute, error) {
+func (cli *core) CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error) {
 
 	att := cli.modelFactory.CreateAttribute()
 
@@ -71,7 +72,7 @@ func (cli *core) CreateObjectAttribute(data frtypes.MapStr) (model.Attribute, er
 	return att, nil
 }
 
-func (cli *core) CreateObjectGroup(data frtypes.MapStr) (model.Group, error) {
+func (cli *core) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error) {
 
 	grp := cli.modelFactory.CreateGroup()
 
@@ -88,7 +89,7 @@ func (cli *core) CreateObjectGroup(data frtypes.MapStr) (model.Group, error) {
 	return grp, nil
 }
 
-func (cli *core) CreateInst(obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
+func (cli *core) CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	item := cli.instFactory.CreateInst(obj)
 
@@ -105,6 +106,6 @@ func (cli *core) CreateInst(obj model.Object, data frtypes.MapStr) (inst.Inst, e
 	return item, nil
 }
 
-func (cli *core) CreateAssociation(data frtypes.MapStr) (model.Association, error) {
+func (cli *core) CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error) {
 	return nil, nil
 }
