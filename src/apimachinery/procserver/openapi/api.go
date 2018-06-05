@@ -10,23 +10,25 @@
  * limitations under the License.
  */
 
-package metadata
+package openapi
 
-// PropertyGroupCondition used to reflect the property group json
-type PropertyGroupCondition struct {
-	Condition map[string]interface{} `json:"condition"`
-	Data      map[string]interface{} `json:"data"`
+import (
+    "context"
+
+    "configcenter/src/apimachinery/rest"
+    "configcenter/src/apimachinery/util"
+    "configcenter/src/common/core/cc/api"
+)
+
+type OpenAPIClientInterface interface {
+    GetProcessPortByApplicationID(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+    GetProcessPortByIP(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 }
 
-// PropertyGroupObjectAtt uset to update or delete the property group object attribute
-type PropertyGroupObjectAtt struct {
-	Condition struct {
-		OwnerID    string `json:"bk_supplier_account"`
-		ObjectID   string `json:"bk_obj_id"`
-		PropertyID string `json:"bk_property_id"`
-	} `json:"condition"`
-	Data struct {
-		PropertyGroupID string `json:"bk_property_group"`
-		PropertyIndex   int    `json:"bk_property_index"`
-	} `json:"data"`
+func NewOpenApiClientInterface(client rest.ClientInterface) OpenAPIClientInterface {
+    return &openapi{client: client}
+}
+
+type openapi struct {
+    client rest.ClientInterface
 }
