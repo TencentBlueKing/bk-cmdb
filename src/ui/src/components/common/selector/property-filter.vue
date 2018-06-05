@@ -110,6 +110,9 @@
                 this.localSelected.operator = operatorOptions.length ? operatorOptions[0]['value'] : ''
                 this.$emit('handleOperatorSelected', this.localSelected.operator)
             },
+            'localSelected.id' (id) {
+                this.localSelected.value = ''
+            },
             'localSelected.value' (value) {
                 this.$emit('handleValueChange', value)
             },
