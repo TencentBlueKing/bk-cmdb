@@ -34,7 +34,7 @@
             staticNavigationClassify () {
                 const classifies = this.$deepClone(this.authorizedNavigation.filter(classify => this.staticClassify.includes(classify.id)))
                 classifies.forEach((classify, index) => {
-                    if (this.classifyModelSequence.hasOwnProperty(classify.id)) {
+                    if (this.classifyModelSequence.hasOwnProperty(classify.id) && !['bk_host_manage'].includes(classify.id)) {
                         classify['children'].sort((modelA, modelB) => {
                             return this.getModelSequence(classify, modelA) - this.getModelSequence(classify, modelB)
                         })
