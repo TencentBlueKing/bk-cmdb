@@ -362,7 +362,7 @@
                     }
                 }
 
-                this.model = this.curLabel || this.curValue
+                this.model = this.curLabel
             },
             clear () {
                 this.$emit('update:selected', '')
