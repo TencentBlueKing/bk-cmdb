@@ -478,51 +478,14 @@
                 this.view.crossImport.isShow = true
             },
             tabChanged (active) {
-                if (active === this.view.tab.active) {
-                    return
-                }
+                this.view.tab.active = active
+                this.view.attribute.formValues = {}
                 if (active === 'host') {
-                    let isConfirmShow = this.$refs.topoAttribute.isCloseConfirmShow()
-                    if (isConfirmShow) {
-                        this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                            confirmFn: () => {
-                                this.view.tab.active = active
-                                this.view.attribute.formValues = {}
-                                if (active === 'host') {
-                                    this.view.attribute.type = 'update'
-                                }
-                            }
-                        })
-                    } else {
-                        this.view.tab.active = active
-                        this.view.attribute.formValues = {}
-                        if (active === 'host') {
-                            this.view.attribute.type = 'update'
-                        }
-                    }
-                } else {
-                    this.view.tab.active = active
-                    this.view.attribute.formValues = {}
-                    if (active === 'host') {
-                        this.view.attribute.type = 'update'
-                    }
+                    this.view.attribute.type = 'update'
                 }
             },
             cancelCreate () {
                 this.tabChanged('host')
-            }
-        },
-        beforeRouteLeave (to, from, next) {
-            if (this.$refs.topoAttribute.isCloseConfirmShow()) {
-                this.$bkInfo({
-                    title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                    confirmFn: () => {
-                        next(true)
-                    }
-                })
-            } else {
-                next(true)
             }
         },
         created () {
