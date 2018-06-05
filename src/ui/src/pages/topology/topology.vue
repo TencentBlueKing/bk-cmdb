@@ -2,7 +2,7 @@
     <div class="topo-wrapper clearfix">
         <div class="topo-tree-ctn fl">
             <div class="biz-selector-ctn">
-                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected"></v-application-selector>
+                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected" :filterable="true"></v-application-selector>
             </div>
             <div class="topo-options-ctn" hidden>
                 <i class="topo-option-del icon-cc-del fr" v-if="isShowOptionDel && Object.keys(tree.treeData).length" @click="deleteNode"></i>
