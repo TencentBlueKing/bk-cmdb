@@ -1,20 +1,19 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package main
 
 import (
 	"flag"
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"log"
 	"time"
@@ -73,6 +72,9 @@ func processCompare(srccli, tarcli *mgo.Database) error {
 	tablenames, err := srccli.CollectionNames()
 	assertNotErr(err)
 	for _, tablename := range tablenames {
+		if ignoreTable[tablename] {
+			continue
+		}
 		srcDatas := []map[string]interface{}{}
 		err = srccli.C(tablename).Find(empty).All(&srcDatas)
 		assertNotErr(err)
@@ -90,6 +92,11 @@ func processCompare(srccli, tarcli *mgo.Database) error {
 	return nil
 }
 
+var ignoreTable = map[string]bool{
+	"cc_OperationLog": true,
+	"cc_System":       true,
+}
+
 func compare(tablename string, srcData, tarData map[string]interface{}, ignores []string) {
 	ignore := map[string]bool{}
 	for _, key := range ignores {
@@ -99,10 +106,34 @@ func compare(tablename string, srcData, tarData map[string]interface{}, ignores 
 		if ignore[key] {
 			continue
 		}
-		if fmt.Sprint(tarData[key]) != fmt.Sprint(srcData[key]) {
+		equal := true
+		switch val := srcData[key].(type) {
+		case int, int64:
+			if toInt64(tarData[key]) != toInt64(val) {
+				equal = false
+			}
+		case []interface{}:
+		case map[string]interface{}:
+
+		default:
+			if tarData[key] != srcData[key] {
+				equal = false
+			}
+		}
+		if !equal {
 			log.Fatalf("not equal!! tablename: %s, key %s , expect %#v, actual %#v", tablename, key, tarData[key], srcData[key])
 		}
 	}
+}
+
+func toInt64(val interface{}) int64 {
+	switch v := val.(type) {
+	case int:
+		return int64(v)
+	case int64:
+		return int64(v)
+	}
+	return 0
 }
 
 func copyMap(data map[string]interface{}, keys []string) map[string]interface{} {
@@ -126,16 +157,17 @@ type tableKey struct {
 
 var tableKeysCache = map[string]*tableKey{
 	"cc_ApplicationBase":   &tableKey{[]string{"bk_biz_name"}, []string{"bk_biz_id"}},
-	"cc_ModuleBase":        &tableKey{[]string{"bk_module_name" /*"bk_biz_id", "bk_set_id"*/}, []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
-	"cc_ObjAttDes":         &tableKey{[]string{"bk_obj_id", "bk_property_id"}, []string{}},
-	"cc_ObjClassification": &tableKey{[]string{"bk_classification_id"}, []string{}},
-	"cc_ObjDes":            &tableKey{[]string{"bk_obj_id"}, []string{}},
+	"cc_ModuleBase":        &tableKey{[]string{"bk_module_name"}, []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
+	"cc_ObjAttDes":         &tableKey{[]string{"bk_obj_id", "bk_property_id"}, []string{"id"}},
+	"cc_ObjClassification": &tableKey{[]string{"bk_classification_id"}, []string{"id"}},
+	"cc_ObjDes":            &tableKey{[]string{"bk_obj_id"}, []string{"id"}},
 	"cc_PlatBase":          &tableKey{[]string{"bk_cloud_name"}, []string{}},
 	"cc_Proc2Module":       &tableKey{[]string{"bk_module_name", "bk_process_id", "bk_biz_id"}, []string{}},
 	"cc_Process":           &tableKey{[]string{"bk_process_name"}, []string{}},
 	"cc_PropertyGroup":     &tableKey{[]string{"bk_obj_id", "bk_group_id"}, []string{}},
 	"cc_SetBase":           &tableKey{[]string{"bk_set_name", "bk_biz_id"}, []string{"bk_set_id"}},
-	"cc_OperationLog":      &tableKey{[]string{"op_type", "inst_id"}, []string{}},
+	"cc_OperationLog":      &tableKey{[]string{"op_type", "inst_id"}, []string{"op_time"}},
+	"cc_ObjAsst":           &tableKey{[]string{"bk_obj_id", "bk_object_att_id", "bk_asst_obj_id"}, []string{"id"}},
 }
 
 func tableKeys(tablename string) *tableKey {
