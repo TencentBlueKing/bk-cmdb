@@ -874,3 +874,119 @@ GetChildren() ([]Topo, error)
 >> - model.Classification：模型分类对象，通过此对象可以对该分类下的模型进行管理。
 >> - error: 如果创建实例失败会返回错误。
 
+
+### 事件订阅 API
+
+#### 事件回调方法声明
+
+```` golang
+// EventCallbackFunc the event deal function
+type EventCallbackFunc func(evn []*Event) error
+````
+
+#### 取消事件订阅
+
+> 方法：UnRegisterEvent(eventKey types.EventKey)
+> 
+> 参数：
+> 
+>> - eventKey：注册事件后返回的Key
+
+>> 
+> 返回值：
+> 
+>> 无
+
+#### 订阅主机信息变更事件
+
+> 方法：RegisterEventHost(eventFunc types.EventCallbackFunc) types.EventKey
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+
+#### 订阅业务信息变更事件
+
+> 方法：RegisterEventBusiness(eventFunc types.EventCallbackFunc) types.EventKey
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+#### 订阅模块信息变更事件
+
+> 方法：RegisterEventModule(eventFunc types.EventCallbackFunc) types.EventKey 
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+
+#### 订阅主机身份信息变更事件
+
+> 方法：RegisterEventHostIdentifier(eventFunc types.EventCallbackFunc) types.EventKey 
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+
+#### 订阅集群信息变更事件
+
+> 方法：RegisterEventSet(eventFunc types.EventCallbackFunc) types.EventKey
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+#### 订阅通用模型实例信息变更事件
+
+> 方法：RegisterEventInst(eventFunc types.EventCallbackFunc) types.EventKey
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
+
+#### 订阅模块转移信息变更事件
+
+> 方法：RegisterEventModuleTransfer(eventFunc types.EventCallbackFunc) types.EventKey 
+> 
+> 参数：
+> 
+>> - eventFunc：事件回调方法
+
+>> 
+> 返回值：
+> 
+>> - 注册事件关联的Key
