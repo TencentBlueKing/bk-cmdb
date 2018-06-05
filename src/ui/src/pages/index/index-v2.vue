@@ -351,11 +351,10 @@
             .model-stick{
                 margin-left: 3px;
                 cursor: pointer;
-                color: $modelColor;
+                color: rgba(110, 169, 249, 0.4);
                 display: none;
-                opacity: .6;
                 &:hover{
-                    opacity: 1;
+                   color: $modelColor;
                 }
             }
             &:hover{
