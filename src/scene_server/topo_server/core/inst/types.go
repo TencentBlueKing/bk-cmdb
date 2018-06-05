@@ -32,6 +32,8 @@ type Inst interface {
 	SetValues(values frtypes.MapStr) error
 
 	GetValues() (frtypes.MapStr, error)
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Factory used to all inst

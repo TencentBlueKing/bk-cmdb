@@ -33,32 +33,32 @@ func (cli *topoAPI) initAssociation() {
 }
 
 // CreateMainLineObject create a new object in the main line topo
-func (cli *topoAPI) CreateMainLineObject(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // DeleteMainLineObject delete a object int the main line topo
-func (cli *topoAPI) DeleteMainLineObject(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchMainLineOBjectTopo search the main line topo
-func (cli *topoAPI) SearchMainLineOBjectTopo(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchMainLineOBjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchObjectByClassificationID search the object by classification ID
-func (cli *topoAPI) SearchObjectByClassificationID(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectByClassificationID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchBusinessTopo search the business topo
-func (cli *topoAPI) SearchBusinessTopo(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchBusinessTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
-func (cli *topoAPI) SearchMainLineChildInstTopo(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchMainLineChildInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
