@@ -50,6 +50,8 @@ type Association interface {
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
 	GetTopo(obj Object) (Topo, error)
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Group group opeartion interface declaration
@@ -78,6 +80,8 @@ type Group interface {
 
 	SetIsPre(isPre bool)
 	GetIsPre() bool
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Attribute attribute opeartion interface declaration
@@ -138,6 +142,8 @@ type Attribute interface {
 
 	SetCreator(attributeCreator string)
 	GetCreator() string
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Classification classification operation interface declaration
@@ -161,6 +167,8 @@ type Classification interface {
 
 	SetIcon(classificationIcon string)
 	GetIcon() string
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Object model operation interface declaration
@@ -206,6 +214,8 @@ type Object interface {
 
 	SetModifier(modifier string)
 	GetModifier() string
+
+	ToMapStr() (frtypes.MapStr, error)
 }
 
 // Factory used to create object  classification attribute etd.

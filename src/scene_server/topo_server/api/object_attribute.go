@@ -15,6 +15,9 @@ package api
 import (
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -32,20 +35,49 @@ func (cli *topoAPI) initObjectAttribute() {
 
 // CreateObjectAttribute create a new object attribute
 func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	attr, err := cli.core.CreateObjectAttribute(params, data)
+	if nil != err {
+		return nil, err
+	}
+	return attr.ToMapStr(), nil
 }
 
 // SearchObjectAttribute search the object attributes
 func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	attrs, err := cli.core.FindObjectAttribute(params, data)
+
+	if nil != err {
+		return nil, err
+	}
+
+	result := frtypes.MapStr{}
+	items := make([]frtypes.MapStr, 0)
+	for _, item := range attrs {
+		items = append(items, item)
+	}
+
+	result.Set("data", items)
+
+	return result, nil
 }
 
 // UpdateObjectAttribute update the object attribute
 func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cond := frcommon.CreateCondition()
+
+	cond.Field("id")
+
+	err := cli.core.UpdateObjectAttribute(params, data)
+
+	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
 func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	
+	
 	return nil, nil
 }
