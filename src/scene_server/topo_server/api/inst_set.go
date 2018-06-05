@@ -36,7 +36,7 @@ func (cli *topoAPI) initSet() {
 }
 
 // CreateSet create a new set
-func (cli *topoAPI) CreateSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
@@ -47,6 +47,8 @@ func (cli *topoAPI) CreateSet(params types.LogicParams, parthParams, queryParams
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
 	}
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
 
 	for _, item := range objItems {
 		setInst, err := cli.core.CreateInst(params, item, data)
@@ -60,25 +62,70 @@ func (cli *topoAPI) CreateSet(params types.LogicParams, parthParams, queryParams
 			blog.Errorf("failed to create a new set, %s", err.Error())
 			return nil, err
 		}
+
+		return setInst.ToMapStr() // only one item
 	}
 
 	return nil, nil
 }
 
 // DeleteSet delete the set
-func (cli *topoAPI) DeleteSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	//cli.core.DeleteInst
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
+		Field(common.BKAppIDField).Eq(pathParams("app_id")).
+		Field(common.BKSetIDField).Eq(pathParams("set_id"))
 
-	return nil, nil
+	err := cli.core.DeleteInst(params, cond)
+
+	return nil, err
 }
 
 // UpdateSet update the set
-func (cli *topoAPI) UpdateSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+func (cli *topoAPI) UpdateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
+		Field(common.BKAppIDField).Eq(pathParams("app_id")).
+		Field(common.BKSetIDField).Eq(pathParams("set_id"))
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
+	data.Set(common.BKSetIDField, pathParams("set_id"))
+
+	err := cli.core.UpdateInst(params, data, cond)
+
+	return nil, err
 }
 
 // SearchSet search the set
-func (cli *topoAPI) SearchSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+func (cli *topoAPI) SearchSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
+		Field(common.BKAppIDField).Eq(pathParams("app_id"))
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
+	data.Set(common.BKOwnerIDField, pathParams("owner_id"))
+
+	items, err := cli.core.FindInst(params, cond)
+	if nil != err {
+		return nil, err
+	}
+
+	results := make([]frtypes.MapStr, 0)
+	for _, item := range items {
+		toMapStr, err := item.ToMapStr()
+		if nil != err {
+			return nil, err
+		}
+		results = append(results, toMapStr)
+	}
+
+	resultData := frtypes.MapStr{}
+	resultData.Set("data", results)
+	return resultData, nil
 }

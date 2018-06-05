@@ -24,11 +24,11 @@ func init() {
 }
 
 func (cli *topoAPI) initAuditLog() {
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.CreateBusiness})
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.SearchAuditLog})
 }
 
 // SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
