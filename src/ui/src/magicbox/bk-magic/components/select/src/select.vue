@@ -162,6 +162,11 @@
 
                     this.setSelected(value)
                 })
+            },
+            localOptions (localOptions) {
+                this.$nextTick(() => {
+                    this.setSelected(this.selected)
+                })
             }
         },
         computed: {
