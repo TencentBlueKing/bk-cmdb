@@ -15,6 +15,8 @@ package model
 import (
 	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
+
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Group = (*group)(nil)
@@ -27,6 +29,8 @@ type group struct {
 	OwnerID    string `field:"bk_supplier_account"`
 	IsDefault  bool   `field:"bk_isdefault"`
 	IsPre      bool   `field:"ispre"`
+
+	params types.LogicParams
 }
 
 func (cli *group) Parse(data frtypes.MapStr) error {

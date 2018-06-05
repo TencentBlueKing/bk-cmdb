@@ -15,6 +15,8 @@ package model
 import (
 	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
+
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Object = (*object)(nil)
@@ -32,6 +34,7 @@ type object struct {
 	Creator     string `field:"creator"`
 	Modifier    string `field:"modifier"`
 	isNew       bool
+	params      types.LogicParams
 }
 
 func (cli *object) create() error {

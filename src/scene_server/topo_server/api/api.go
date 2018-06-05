@@ -117,7 +117,7 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 				return
 			}
 
-			data, dataErr := a.HandlerFunc(types.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, mData)
+			data, dataErr := a.HandlerFunc(types.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, req.PathParameter, req.QueryParameter, mData)
 			if nil != dataErr {
 				blog.Errorf("%s", dataErr.Error())
 				switch e := dataErr.(type) {

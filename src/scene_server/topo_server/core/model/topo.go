@@ -12,11 +12,16 @@
 
 package model
 
-import frtypes "configcenter/src/framework/core/types"
+import (
+	frtypes "configcenter/src/framework/core/types"
+
+	"configcenter/src/scene_server/topo_server/core/types"
+)
 
 var _ Topo = (*topo)(nil)
 
 type topo struct {
+	params types.LogicParams
 }
 
 func (cli *topo) Current() Object {

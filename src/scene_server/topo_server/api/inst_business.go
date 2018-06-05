@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	frtypes "configcenter/src/framework/core/types"
-    "configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 func init() {
@@ -34,37 +34,37 @@ func (cli *topoAPI) initBusiness() {
 }
 
 // CreateBusiness create a new business
-func (cli *topoAPI) CreateBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // DeleteBusiness delete the business
-func (cli *topoAPI) DeleteBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateBusiness update the business
-func (cli *topoAPI) UpdateBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateBusinessStatus update the business status
-func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchBusiness search the business by condition
-func (cli *topoAPI) SearchBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchDefaultBusiness search the business by condition
-func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // CreateDefaultBusiness create the default business
-func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

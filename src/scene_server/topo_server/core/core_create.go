@@ -23,7 +23,7 @@ import (
 
 func (cli *core) CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error) {
 
-	cls := cli.modelFactory.CreaetClassification()
+	cls := cli.modelFactory.CreaetClassification(params)
 
 	err := cls.Parse(data)
 	if nil != err {
@@ -40,7 +40,7 @@ func (cli *core) CreateClassification(params types.LogicParams, data frtypes.Map
 
 func (cli *core) CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error) {
 
-	obj := cli.modelFactory.CreaetObject()
+	obj := cli.modelFactory.CreaetObject(params)
 
 	err := obj.Parse(data)
 	if nil != err {
@@ -57,7 +57,7 @@ func (cli *core) CreateObject(params types.LogicParams, data frtypes.MapStr) (mo
 
 func (cli *core) CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error) {
 
-	att := cli.modelFactory.CreateAttribute()
+	att := cli.modelFactory.CreateAttribute(params)
 
 	err := att.Parse(data)
 	if nil != err {
@@ -74,7 +74,7 @@ func (cli *core) CreateObjectAttribute(params types.LogicParams, data frtypes.Ma
 
 func (cli *core) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error) {
 
-	grp := cli.modelFactory.CreateGroup()
+	grp := cli.modelFactory.CreateGroup(params)
 
 	err := grp.Parse(data)
 	if nil != err {
@@ -91,7 +91,7 @@ func (cli *core) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr
 
 func (cli *core) CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
-	item := cli.instFactory.CreateInst(obj)
+	item := cli.instFactory.CreateInst(params, obj)
 
 	err := item.SetValues(data)
 	if nil != err {
