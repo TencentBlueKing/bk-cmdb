@@ -15,6 +15,9 @@ package api
 import (
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -32,23 +35,103 @@ func (cli *topoAPI) initModule() {
 }
 
 // CreateModule create a new module
-func (cli *topoAPI) CreateModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+
+	objItems, err := cli.core.FindObject(params, cond)
+
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return nil, err
+	}
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
+	data.Set(common.BKSetIDField, pathParams("set_id"))
+
+	for _, item := range objItems {
+		setInst, err := cli.core.CreateInst(params, item, data)
+		if nil != err {
+			blog.Errorf("failed to create a new set, %s", err.Error())
+			return nil, err
+		}
+
+		err = setInst.Save()
+		if nil != err {
+			blog.Errorf("failed to create a new set, %s", err.Error())
+			return nil, err
+		}
+
+		return setInst.ToMapStr() // only one item
+	}
 
 	return nil, nil
 }
 
 // DeleteModule delete the module
-func (cli *topoAPI) DeleteModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	return nil, nil
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
+		Field(common.BKAppIDField).Eq(pathParams("app_id")).
+		Field(common.BKSetIDField).Eq(pathParams("set_id")).
+		Field(common.BKModuleIDField).Eq(pathParams("module_id"))
+
+	err := cli.core.DeleteInst(params, cond)
+
+	return nil, err
 }
 
 // UpdateModule update the module
-func (cli *topoAPI) UpdateModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
+		Field(common.BKAppIDField).Eq(pathParams("app_id")).
+		Field(common.BKModuleIDField).Eq(pathParams("module_id"))
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
+	data.Set(common.BKSetIDField, pathParams("set_id"))
+	data.Set(common.BKModuleIDField, pathParams("module_id"))
+
+	err := cli.core.UpdateInst(params, data, cond)
+
+	return nil, err
 }
 
 // SearchModule search the modules
-func (cli *topoAPI) SearchModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	// {owner_id}/{app_id}/{set_id}
+
+	cond := frcommon.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
+		Field(common.BKAppIDField).Eq(pathParams("app_id")).
+		Field(common.BKSetIDField).Eq(pathParams("set_id"))
+
+	data.Set(common.BKAppIDField, pathParams("app_id"))
+	data.Set(common.BKInnerObjIDSet, pathParams("set_id"))
+	data.Set(common.BKOwnerIDField, pathParams("owner_id"))
+
+	items, err := cli.core.FindInst(params, cond)
+	if nil != err {
+		return nil, err
+	}
+
+	results := make([]frtypes.MapStr, 0)
+	for _, item := range items {
+		toMapStr, err := item.ToMapStr()
+		if nil != err {
+			return nil, err
+		}
+		results = append(results, toMapStr)
+	}
+
+	resultData := frtypes.MapStr{}
+	resultData.Set("data", results)
+	return resultData, nil
 }
