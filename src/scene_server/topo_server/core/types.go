@@ -21,9 +21,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// LogicFunc the core logic function definition
-type LogicFunc func(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error)
-
 // Core Provides management interfaces for models and instances
 type Core interface {
 	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)

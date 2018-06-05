@@ -32,23 +32,23 @@ func (cli *topoAPI) initModule() {
 }
 
 // CreateModule create a new module
-func (cli *topoAPI) CreateModule(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // DeleteModule delete the module
-func (cli *topoAPI) DeleteModule(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // UpdateModule update the module
-func (cli *topoAPI) UpdateModule(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchModule search the modules
-func (cli *topoAPI) SearchModule(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchModule(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

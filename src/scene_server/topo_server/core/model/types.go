@@ -15,6 +15,7 @@ package model
 import (
 	//frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // AssociationType the association type
@@ -209,9 +210,9 @@ type Object interface {
 
 // Factory used to create object  classification attribute etd.
 type Factory interface {
-	CreaetObject() Object
-	CreaetClassification() Classification
-	CreateAttribute() Attribute
-	CreateGroup() Group
-	CreateAssociation() Association
+	CreaetObject(params types.LogicParams) Object
+	CreaetClassification(params types.LogicParams) Classification
+	CreateAttribute(params types.LogicParams) Attribute
+	CreateGroup(params types.LogicParams) Group
+	CreateAssociation(params types.LogicParams) Association
 }

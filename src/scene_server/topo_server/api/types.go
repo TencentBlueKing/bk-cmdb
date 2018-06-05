@@ -13,15 +13,21 @@
 package api
 
 import (
+	frtypes "configcenter/src/framework/core/types"
+
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+// LogicFunc the core logic function definition
+type LogicFunc func(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error)
 
 // Action the http action
 type action struct {
 	Method      string
 	Path        string
-	HandlerFunc core.LogicFunc
+	HandlerFunc LogicFunc
 }
 
 // API the API interface
