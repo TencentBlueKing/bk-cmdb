@@ -18,6 +18,8 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"io"
+
+	"fmt"
 )
 
 var _ Iterator = (*hostIterator)(nil)
@@ -56,7 +58,7 @@ func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) (err error)
 
 		item, err = cli.Next()
 		if nil != err {
-			if io.EOF == err{
+			if io.EOF == err {
 				err = nil
 			}
 			break
@@ -80,11 +82,11 @@ func (cli *hostIterator) Next() (Inst, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Module().SearchModules(cli.cond)
+		existItems, err := client.GetClient().CCV3().Host().SearchHost(cli.cond)
 		if nil != err {
 			return nil, err
 		}
-
+		fmt.Println("the err:", err)
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
 			return nil, io.EOF
