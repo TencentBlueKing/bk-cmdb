@@ -173,7 +173,7 @@
                     this.table.pagination.current = 1
                     this.table.pagination.count = 0
                     this.table.list = []
-                    await this.$store.dispatch('object/getAttribute', filterObjId)
+                    await this.$store.dispatch('object/getAttribute', {objId: filterObjId})
                     this.getInstance()
                 }
             },
@@ -182,7 +182,7 @@
             }
         },
         async created () {
-            await this.$store.dispatch('object/getAttribute', this.objId)
+            await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             this.getAssociationTopo()
         },
         methods: {

@@ -9,7 +9,7 @@ const getters = {
 }
 
 const actions = {
-    getAttribute ({commit, state, rootGetters}, objId, force = false) {
+    getAttribute ({commit, state, rootGetters}, {objId, force}) {
         if (!force && state.attribute.hasOwnProperty(objId)) {
             return Promise.resolve({result: true, data: state.attribute[objId]})
         }

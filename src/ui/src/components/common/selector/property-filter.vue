@@ -114,7 +114,7 @@
                 this.$emit('handleValueChange', value)
             },
             async objId (objId) {
-                await this.$store.dispatch('object/getAttribute', objId)
+                await this.$store.dispatch('object/getAttribute', {objId})
                 this.filteredProperties = this.attribute[objId].filter(property => {
                     const {
                         bk_isapi: bkIsapi,
