@@ -36,7 +36,7 @@ func (cli *topoAPI) initSet() {
 }
 
 // CreateSet create a new set
-func (cli *topoAPI) CreateSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
@@ -66,17 +66,19 @@ func (cli *topoAPI) CreateSet(params types.LogicParams, data frtypes.MapStr) (fr
 }
 
 // DeleteSet delete the set
-func (cli *topoAPI) DeleteSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	//cli.core.DeleteInst
 
 	return nil, nil
 }
 
 // UpdateSet update the set
-func (cli *topoAPI) UpdateSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchSet search the set
-func (cli *topoAPI) SearchSet(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchSet(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

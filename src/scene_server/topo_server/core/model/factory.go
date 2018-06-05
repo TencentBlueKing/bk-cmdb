@@ -14,6 +14,8 @@ package model
 
 import (
 	frcommon "configcenter/src/framework/common"
+
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // New create a new model factory instance
@@ -24,27 +26,27 @@ func New() Factory {
 type factory struct {
 }
 
-func (cli *factory) CreaetObject() Object {
+func (cli *factory) CreaetObject(params types.LogicParams) Object {
 	return &object{}
 }
 
-func (cli *factory) CreaetClassification() Classification {
+func (cli *factory) CreaetClassification(params types.LogicParams) Classification {
 	return nil
 }
 
-func (cli *factory) CreateAttribute() Attribute {
+func (cli *factory) CreateAttribute(params types.LogicParams) Attribute {
 	return nil
 }
 
-func (cli *factory) CreateGroup() Group {
+func (cli *factory) CreateGroup(params types.LogicParams) Group {
 	return nil
 }
 
-func (cli *factory) CreateAssociation() Association {
+func (cli *factory) CreateAssociation(params types.LogicParams) Association {
 
 	return nil
 }
 
-func (cli *factory) FindGroup(cond frcommon.Condition) ([]Group, error) {
+func (cli *factory) FindGroup(params types.LogicParams, cond frcommon.Condition) ([]Group, error) {
 	return nil, nil
 }
