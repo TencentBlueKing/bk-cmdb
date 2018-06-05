@@ -134,7 +134,7 @@
         width: 126px;
         text-align: left;
         background-color: #ffffff;
-        box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.1);
+        box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.3);
         border-radius: 2px;
         border: solid 1px #dfecfc;
         z-index: 999;

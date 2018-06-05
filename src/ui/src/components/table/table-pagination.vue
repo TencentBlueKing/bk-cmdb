@@ -119,6 +119,7 @@
         background-color: #fafbfd;
         font-size: 12px;
         color: #c3cdd7;
+        border-top: 1px solid $tableBorderColor;
     }
     .pagination-info{
         &:before{
