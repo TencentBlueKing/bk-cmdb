@@ -57,7 +57,7 @@ func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
 
 func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface, throttle flowctrl.RateLimiter) ClientSetInterface {
 	return &ClientSet{
-		version:  "v1",
+		version:  "v3",
 		client:   client,
 		discover: discover,
 		throttle: throttle,
