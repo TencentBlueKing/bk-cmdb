@@ -184,11 +184,11 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 		flag, _ := pathParams["flag"]
 		data := make(map[string]interface{})
 		var appName string
-		if flag != common.DataStatusDisabled && flag != common.DataStatusEnable {
+		if common.DataStatusFlag(flag) != common.DataStatusDisabled && common.DataStatusFlag(flag) != common.DataStatusEnable {
 			blog.Error("input params error:")
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
-		if flag == common.DataStatusEnable {
+		if common.DataStatusFlag(flag) == common.DataStatusEnable {
 			condition := make(map[string]interface{})
 			searchParams := make(map[string]interface{})
 			condition[common.BKAppIDField] = appID
