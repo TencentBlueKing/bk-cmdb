@@ -9,7 +9,7 @@
             @handlePageChange="setCurrentPage"
             @handleSizeChange="setCurrentSize"
             @handleSortChange="setCurrentSort">
-            <!-- <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }">
+            <template v-for="({property, id, name}) in table.header" :slot="id" slot-scope="{ item }">
                 <template v-if="property['bk_property_type'] === 'enum'">
                     {{getEnumCell(item[id], property)}}
                 </template>
@@ -17,7 +17,7 @@
                     {{getAssociateCell(item[id])}}
                 </template>
                 <template v-else>{{item[id]}}</template>
-            </template> -->
+            </template>
         </v-table>
     </div>
 </template>
@@ -122,6 +122,26 @@
             }
         },
         methods: {
+            getEnumCell (data, property) {
+                let obj = property.option.find(({id}) => {
+                    return id === data
+                })
+                if (obj) {
+                    return obj.name
+                }
+            },
+            // 计算关联属性单元格显示的值
+            getAssociateCell (data) {
+                let label = []
+                if (Array.isArray(data)) {
+                    data.map(({bk_inst_name: bkInstName}) => {
+                        if (bkInstName) {
+                            label.push(bkInstName)
+                        }
+                    })
+                }
+                return label.join(',')
+            },
             async getProcessAttribute () {
                 let params = {
                     'bk_obj_id': 'process',
