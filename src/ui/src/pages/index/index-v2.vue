@@ -234,7 +234,8 @@
     .classify-layout{
         margin: 15px 0 0;
         height: calc(100% - 120px);
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
         @include scrollbar;
     }
     .classify-list{
