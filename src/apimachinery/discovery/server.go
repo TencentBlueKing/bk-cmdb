@@ -121,6 +121,9 @@ func (s *server) updateServer(svrs []string) {
 		host := fmt.Sprintf("%s://%s:%d", scheme, server.IP, server.Port)
 		newSvr = append(newSvr, host)
 	}
+	
+	s.Lock()
+	defer s.Unlock()
 
 	if len(newSvr) != 0 {
 		s.servers = newSvr
