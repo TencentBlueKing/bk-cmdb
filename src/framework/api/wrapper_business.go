@@ -14,7 +14,6 @@ package api
 
 import (
 	"configcenter/src/framework/core/output/module/inst"
-	"strconv"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
@@ -120,6 +119,7 @@ func (cli *BusinessWrapper) GetTester() (string, error) {
 	return vals.String(fieldBizTester), nil
 }
 
+/* TODO need to delete the follow code
 // SetSupplierAccount set the supplier account
 func (cli *BusinessWrapper) SetSupplierAccount(supplierAccount string) error {
 	id, _ := strconv.Atoi(supplierAccount)
@@ -135,6 +135,7 @@ func (cli *BusinessWrapper) GetSupplierAccount() (string, error) {
 	}
 	return vals.String(fieldSupplierAccount), nil
 }
+*/
 
 // SetLifeCycle set the life cycle
 func (cli *BusinessWrapper) SetLifeCycle(lifeCycle string) error {
