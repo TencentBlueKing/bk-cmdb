@@ -16,13 +16,12 @@ import (
 	"net/http"
 
 	frtypes "configcenter/src/framework/core/types"
-    "configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 func init() {
 	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initInst)
 }
-
 
 func (cli *topoAPI) initInst() {
 	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/inst/{owner_id}/{obj_id}", HandlerFunc: cli.CreateInst})
@@ -38,52 +37,52 @@ func (cli *topoAPI) initInst() {
 }
 
 // CreateInst create a new inst
-func (cli *topoAPI) CreateInst(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateInst(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
 
 // DeleteInst delete the inst
-func (cli *topoAPI) DeleteInst(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteInst(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // UpdateInst update the inst
-func (cli *topoAPI) UpdateInst(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateInst(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInst search the inst
-func (cli *topoAPI) SearchInst(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInst(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstAndAssociationDetail search the inst with association details
-func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstByObject search the inst of the object
-func (cli *topoAPI) SearchInstByObject(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstByObject(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstByAssociation search inst by the association inst
-func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstByInstID search the inst by inst ID
-func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstChildTopo search the child inst topo for a inst
-func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }
 
 // SearchInstTopo search the inst topo
-func (cli *topoAPI) SearchInstTopo(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchInstTopo(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 	return nil, nil
 }

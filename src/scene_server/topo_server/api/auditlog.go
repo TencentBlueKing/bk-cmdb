@@ -28,7 +28,7 @@ func (cli *topoAPI) initAuditLog() {
 }
 
 // SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchAuditLog(params types.LogicParams, parthParams, queryParams func(name string) string, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	return nil, nil
 }
