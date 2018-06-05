@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3v0v8
 
 import (
@@ -86,15 +86,10 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	appModelData[common.BKOwnerIDField] = conf.OwnerID
 	appModelData[common.BKDefaultField] = 0
 	appModelData[common.BKSupplierIDField] = conf.SupplierID
-
-	bizID, err := db.GetIncID("cc_ApplicationBase")
-	if err != nil {
-		return err
-	}
-	appModelData[common.BKAppIDField] = bizID
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
-	if bizID, preData, err = upgrader.Upsert(db, "cc_ApplicationBase", appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField)); err != nil {
+	bizID, preData, err := upgrader.Upsert(db, "cc_ApplicationBase", appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField))
+	if err != nil {
 		blog.Error("add addBKApp error ", err.Error())
 		return err
 	}
@@ -140,12 +135,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputSetInfo[common.BKDefaultField] = common.DefaultResSetFlag
 	inputSetInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputSetInfo, SetRow())
-	setID, err := db.GetIncID("cc_SetBase")
-	if err != nil {
-		return err
-	}
-	inputSetInfo[common.BKSetIDField] = setID
-	setID, _, err = upgrader.Upsert(db, "cc_SetBase", inputSetInfo, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKAppIDField, common.BKSetNameField}, append(filled, common.BKSetIDField))
+	setID, _, err := upgrader.Upsert(db, "cc_SetBase", inputSetInfo, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKAppIDField, common.BKSetNameField}, append(filled, common.BKSetIDField))
 	if err != nil {
 		blog.Error("add defaultSet error ", err.Error())
 		return err
@@ -160,12 +150,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputResModuleInfo[common.BKDefaultField] = common.DefaultResModuleFlag
 	inputResModuleInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputResModuleInfo, ModuleRow())
-	defaultResModuleID, err := db.GetIncID("cc_ModuleBase")
-	if err != nil {
-		return err
-	}
-	inputResModuleInfo[common.BKModuleIDField] = defaultResModuleID
-	defaultResModuleID, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputResModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputResModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultResModule error ", err.Error())
 		return err
@@ -179,12 +164,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputFaultModuleInfo[common.BKDefaultField] = common.DefaultFaultModuleFlag
 	inputFaultModuleInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputFaultModuleInfo, ModuleRow())
-	defaultFaultModuleID, err := db.GetIncID("cc_ModuleBase")
-	if err != nil {
-		return err
-	}
-	inputFaultModuleInfo[common.BKModuleIDField] = defaultFaultModuleID
-	defaultFaultModuleID, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputFaultModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputFaultModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultFaultModule error ", err.Error())
 		return err
@@ -231,14 +211,10 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 			procModelData[common.BKProtocol] = "1"
 		}
 
-		processID, err := db.GetIncID("cc_Process")
-		if err != nil {
-			return err
-		}
-		procModelData[common.BKProcessIDField] = processID
 		filled := fillEmptyFields(procModelData, ProcRow())
 		var preData map[string]interface{}
-		if processID, preData, err = upgrader.Upsert(db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField)); err != nil {
+		processID, preData, err := upgrader.Upsert(db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
+		if err != nil {
 			blog.Error("add addBKProcess error ", err.Error())
 			return err
 		}
@@ -293,15 +269,10 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		setModelData[common.BKDefaultField] = 0
 		setModelData[common.CreateTimeField] = time.Now()
 		setModelData[common.LastTimeField] = time.Now()
-
-		setID, err := db.GetIncID("cc_SetBase")
-		if err != nil {
-			return err
-		}
-		setModelData[common.BKSetIDField] = setID
 		filled := fillEmptyFields(setModelData, SetRow())
 		var preData map[string]interface{}
-		if setID, preData, err = upgrader.Upsert(db, "cc_SetBase", setModelData, common.BKSetIDField, []string{common.BKSetNameField, common.BKOwnerIDField, common.BKAppIDField}, append(filled, common.BKSetIDField)); err != nil {
+		setID, preData, err := upgrader.Upsert(db, "cc_SetBase", setModelData, common.BKSetIDField, []string{common.BKSetNameField, common.BKOwnerIDField, common.BKAppIDField}, append(filled, common.BKSetIDField))
+		if err != nil {
 			blog.Error("add addSetInBKApp error ", err.Error())
 			return err
 		}
@@ -357,16 +328,11 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 		moduleModelData[common.BKOwnerIDField] = conf.OwnerID
 		moduleModelData[common.BKInstParentStr] = setID
 		moduleModelData[common.BKDefaultField] = 0
-
-		moduleID, err := db.GetIncID("cc_ModuleBase")
-		if err != nil {
-			return err
-		}
-		moduleModelData[common.BKModuleIDField] = moduleID
 		var preData map[string]interface{}
 		filled := fillEmptyFields(moduleModelData, ModuleRow())
-		if moduleID, preData, err = upgrader.Upsert(db, "cc_ModuleBase", moduleModelData, common.BKModuleIDField, []string{common.BKModuleNameField, common.BKOwnerIDField, common.BKAppIDField, common.BKSetIDField},
-			append(filled, common.BKModuleIDField)); err != nil {
+		moduleID, preData, err := upgrader.Upsert(db, "cc_ModuleBase", moduleModelData, common.BKModuleIDField, []string{common.BKModuleNameField, common.BKOwnerIDField, common.BKAppIDField, common.BKSetIDField},
+			append(filled, common.BKModuleIDField))
+		if err != nil {
 			blog.Error("add addModuleInSet error ", err.Error())
 			return err
 		}

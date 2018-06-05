@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3v0v8
 
 import (
@@ -54,13 +54,7 @@ func addAsstData(db storage.DI, conf *upgrader.Config) error {
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getAddAsstData(conf.OwnerID)
 	for _, row := range rows {
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-		row.ID = int(id)
-		_, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id"})
+		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id"})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -76,13 +70,7 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 	blog.Infof("add data for  %s table ", tablename)
 	rows := getObjAttDescData(conf.OwnerID)
 	for _, row := range rows {
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-		row.ID = int(id)
-		_, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{"id"})
+		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{"id"})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -113,13 +101,7 @@ func addObjDesData(db storage.DI, conf *upgrader.Config) error {
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getObjectDesData(conf.OwnerID)
 	for _, row := range rows {
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-		row.ID = int(id)
-		if _, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
+		if _, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}
@@ -130,14 +112,9 @@ func addObjDesData(db storage.DI, conf *upgrader.Config) error {
 }
 
 func addClassifications(db storage.DI, conf *upgrader.Config) (err error) {
-	tablename := metadata.PropertyGroup{}.TableName()
+	tablename := metadata.ObjClassification{}.TableName()
+	blog.Infof("add %s rows", tablename)
 	for _, row := range classificationRows {
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-		row.ID = int(id)
 		if _, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKClassificationIDField}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -151,13 +128,7 @@ func addPropertyGroupData(db storage.DI, conf *upgrader.Config) error {
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getPropertyGroupData(conf.OwnerID)
 	for _, row := range rows {
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
-			return err
-		}
-		row.ID = int(id)
-		if _, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
+		if _, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}
