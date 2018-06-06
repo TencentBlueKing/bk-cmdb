@@ -1504,7 +1504,7 @@
                 }
                 this.isAddFieldShow = false
                 this.isLoading = true
-                this.$axios.post('object/attr/search', params).then(res => {
+                this.$store.dispatch('object/getAttribute', {objId: this.objId, force: true}).then(res => {
                     if (res.result) {
                         this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
