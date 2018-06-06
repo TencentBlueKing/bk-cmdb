@@ -471,8 +471,8 @@
                 this.table.chooseId = []
             },
             async setTopoAttribute () {
-                await this.$store.dispatch('object/getTopo')
-                this.attribute = this.topo.reverse().map(model => {
+                await this.$store.dispatch('object/getTopo', true)
+                this.attribute = this.topo.filter(model => ['biz', 'set', 'module', 'host'].includes(model['bk_obj_id'])).reverse().map(model => {
                     return {
                         'bk_obj_id': model['bk_obj_id'],
                         'bk_obj_name': model['bk_obj_name'],
