@@ -500,6 +500,8 @@
                 let parentNode = this.getActiveNode(activeNode.parentId)
                 let toNode = activeNode.fromId === activeNode.id ? parentNode : activeNode
                 let fromNode = activeNode.fromId === activeNode.id ? activeNode : parentNode
+                this.removePop()
+                this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${toNode['bk_obj_id']}/inst/${toNode['bk_inst_id']}`)
                     for (let key in res.data[0]) {
@@ -550,6 +552,7 @@
                     }
                 }
                 this.initTopo()
+                this.isLoading = false
             },
             /**
              * 显示详情
