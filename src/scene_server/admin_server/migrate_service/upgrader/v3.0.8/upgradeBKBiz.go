@@ -213,7 +213,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 
 		filled := fillEmptyFields(procModelData, ProcRow())
 		var preData map[string]interface{}
-		processID, preData, err := upgrader.Upsert(db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
+		processID, preData, err := upgrader.Upsert(db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKAppIDField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
 		if err != nil {
 			blog.Error("add addBKProcess error ", err.Error())
 			return err
@@ -393,7 +393,7 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 		module2Process[common.BKModuleNameField] = moduleName
 		module2Process[common.BKProcessIDField] = processID
 
-		if _, _, err = upgrader.Upsert(db, "cc_Proc2Module", module2Process, "", []string{common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, nil); err != nil {
+		if _, _, err = upgrader.Upsert(db, "cc_Proc2Module", module2Process, "", []string{common.BKModuleNameField, common.BKAppIDField, common.BKProcessIDField}, nil); err != nil {
 			blog.Error("add addModuleInSet error ", err.Error())
 			return err
 		}
