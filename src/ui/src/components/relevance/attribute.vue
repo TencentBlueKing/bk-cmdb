@@ -72,11 +72,10 @@
                 }
                 if (this.objId === 'biz') {
                     config.url = `biz/search/${this.bkSupplierAccount}`
-                    config.params.condition[this.objId] = [{
-                        field: 'bk_biz_id',
-                        operator: '$eq',
-                        value: this.instId
-                    }]
+                    config.params.fields = []
+                    config.params.condition = {
+                        bk_biz_id: this.instId
+                    }
                 } else if (this.objId === 'host') {
                     config.url = 'hosts/search'
                     config.params = {
