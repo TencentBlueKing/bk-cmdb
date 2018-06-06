@@ -54,7 +54,33 @@ func addAsstData(db storage.DI, conf *upgrader.Config) error {
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getAddAsstData(conf.OwnerID)
 	for _, row := range rows {
-		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id"})
+
+		selector := map[string]interface{}{
+			common.BKObjIDField:    row.ObjectID,
+			common.BKObjAttIDField: row.ObjectAttID,
+			common.BKOwnerIDField:  row.OwnerID,
+		}
+		isExist, err := db.GetCntByCondition(tablename, selector)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		if isExist > 0 {
+			continue
+		}
+		id, err := db.GetIncID(tablename)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+		row.ID = int(id)
+		_, err = db.Insert(tablename, row)
+		if nil != err {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+
+		_, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id", "bk_asst_obj_id"})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
