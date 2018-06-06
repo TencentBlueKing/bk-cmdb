@@ -14,7 +14,7 @@
                     <i class="icon-cc-resize-full"></i>
                 </span>
                 <bk-button type="primary" class="btn btn-add"
-                    :disabled="!instanceAssociation.length"
+                    :disabled="!hasAssociation"
                     @click="currentComponent = 'v-new-association'">
                     {{$t('Association["新增关联"]')}}
                 </bk-button>
@@ -24,7 +24,8 @@
             ref="component"
             :is="currentComponent"
             :class="{'new-association': currentComponent === 'v-new-association'}"
-            @handleNewAssociationClose="handleNewAssociationClose">
+            @handleNewAssociationClose="handleNewAssociationClose"
+            @handleAssociationLoaded="checkAssociation">
         </component>
     </div>
 </template>
@@ -52,7 +53,8 @@
             return {
                 currentComponent: null,
                 prevComponent: null,
-                instanceAssociation: []
+                hasAssociation: false,
+                invalidAssociation: ['plat', 'process']
             }
         },
         computed: {
@@ -92,6 +94,7 @@
                     this.currentComponent = 'v-topo'
                 } else {
                     this.currentComponent = null
+                    this.hasAssociation = false
                 }
             },
             objId (objId) {
@@ -101,19 +104,6 @@
             },
             currentComponent (currentComponent, prevComponent) {
                 this.prevComponent = prevComponent
-            },
-            instance (instance) {
-                if (Object.keys(instance).length) {
-                    const topoUrl = `inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${instance[this.dataIdKey]}`
-                    this.$axios.post(topoUrl).then(res => {
-                        if (res.result) {
-                            this.instanceAssociation = res.data.length ? res.data[0]['next'] : []
-                        } else {
-                            this.instanceAssociation = []
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
-                }
             }
         },
         async created () {
@@ -124,6 +114,9 @@
         methods: {
             handleNewAssociationClose () {
                 this.currentComponent = this.prevComponent
+            },
+            checkAssociation (association) {
+                this.hasAssociation = association.next.some(model => !this.invalidAssociation.includes(model['bk_obj_id']))
             },
             resizeFull () {
                 this.$refs.component.resizeCanvas(true)
