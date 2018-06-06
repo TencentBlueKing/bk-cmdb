@@ -143,12 +143,14 @@
                 let box = document.getElementById('box')
                 let attribute = document.getElementById('attribute')
                 let topo = document.getElementById('topo')
-                if (topo.offsetHeight < box.offsetHeight * 0.8) {
-                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
-                } else if (box.offsetHeight > attribute.offsetHeight) {
-                    box.style.height = `${attribute.offsetHeight + 40}px`
+                if (attribute.offsetHeight > box.offsetHeight) {
+                    if (attribute.offsetHeight < topo.offsetHeight - 102) {
+                        box.style.height = `${attribute.offsetHeight + 40}px`
+                    } else {
+                        box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
+                    }
                 } else {
-                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
+                    box.style.height = `${attribute.offsetHeight + 40}px`
                 }
             },
             async initData () {
