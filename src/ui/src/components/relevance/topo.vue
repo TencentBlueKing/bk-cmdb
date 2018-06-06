@@ -88,6 +88,9 @@
                         scaling: {
                             min: 15,
                             max: 25
+                        },
+                        widthConstraint: {
+                            maximum: 100
                         }
                     },
                     layout: {
