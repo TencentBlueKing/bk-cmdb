@@ -274,27 +274,7 @@
                     queryColumns: [],
                     queryColumnData: {}
                 },
-                attribute: [{
-                    'bk_obj_id': 'host',
-                    'bk_obj_name': this.$t('Hosts[\'主机\']'),
-                    'properties': [],
-                    'loaded': false
-                }, {
-                    'bk_obj_id': 'module',
-                    'bk_obj_name': this.$t('Hosts[\'模块\']'),
-                    'properties': [],
-                    'loaded': false
-                }, {
-                    'bk_obj_id': 'set',
-                    'bk_obj_name': this.$t('Hosts[\'集群\']'),
-                    'properties': [],
-                    'loaded': false
-                }, {
-                    'bk_obj_id': 'biz',
-                    'bk_obj_name': this.$t('Common[\'业务\']'),
-                    'properties': [],
-                    'loaded': false
-                }],
+                attribute: [],
                 historyParams: {
                     'bk_content': ''
                 },
