@@ -650,7 +650,7 @@
                 if (this.curModel.type === 'new') {
                     this.$store.dispatch('navigation/getClassifications', true)
                     this.curModel['id'] = obj['id']
-                    this.sliderTitle.text = `${obj['bk_obj_name']})`
+                    this.sliderTitle.text = `${obj['bk_obj_name']}`
                     this.curModel['bk_obj_id'] = obj['bk_obj_id']
                     this.curModel.type = 'change'
                     this.curTabName = 'host'
