@@ -17,9 +17,11 @@ const (
 	TransDataStatusPreDelete = "pre_delete"
 )
 
+type DataStatusFlag string
+
 const (
-	DataStatusDisabled = "disabled"
-	DataStatusEnable   = "enable"
+	DataStatusDisabled DataStatusFlag = "disabled"
+	DataStatusEnable   DataStatusFlag = "enable"
 )
 
 const BKDataStatusField = "bk_data_status"
