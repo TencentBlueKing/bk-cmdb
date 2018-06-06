@@ -137,7 +137,7 @@
         box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.3);
         border-radius: 2px;
         border: solid 1px #dfecfc;
-        z-index: 999;
+        z-index: 9999;
         &-top {
             bottom: 0;
         }

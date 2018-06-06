@@ -173,7 +173,7 @@
                     this.table.pagination.current = 1
                     this.table.pagination.count = 0
                     this.table.list = []
-                    await this.$store.dispatch('object/getAttribute', filterObjId)
+                    await this.$store.dispatch('object/getAttribute', {objId: filterObjId})
                     this.getInstance()
                 }
             },
@@ -182,7 +182,7 @@
             }
         },
         async created () {
-            await this.$store.dispatch('object/getAttribute', this.objId)
+            await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             this.getAssociationTopo()
         },
         methods: {
@@ -381,7 +381,7 @@
                             const option = property.option.find(({id}) => id === item[key])
                             item[key] = option ? option.name : ''
                         } else if (['date', 'time'].includes(type)) {
-                            item[key] = this.$formatTime(item['key'], type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+                            item[key] = this.$formatTime(item[key], type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
                         }
                     }
                 }

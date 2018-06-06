@@ -374,7 +374,7 @@
                         bk_obj_id: this.activeModel['bk_obj_id'],
                         bk_supplier_account: this.bkSupplierAccount
                     }
-                    let res = await this.$axios.post(`/object/attr/search`, params)
+                    let res = await this.$store.dispatch('object/getAttribute', {objId: this.activeModel['bk_obj_id'], force: true})
                     this.attrList = res.data
                 } catch (e) {
                     this.isLoading = false
