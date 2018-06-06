@@ -10,10 +10,18 @@
  * limitations under the License.
  */
 
-package common
+package user
 
-var ResourcePath string = "/tmp"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-const API_VERSION = "v3"
+type User interface {
+	LoginUser(c *gin.Context, checkUrl string, isMultiOwner bool) bool
+	GetUserList(c *gin.Context, accountURL string) (int, interface{})
+}
 
-const IsSkipLogin = "skiplogin"
+//NewUser return user instance by type
+func NewUser() User {
+	return &publicUser{}
+}
