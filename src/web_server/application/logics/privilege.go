@@ -15,12 +15,12 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/web_server/application/middleware"
+	"configcenter/src/web_server/application/middleware/privilege"
 )
 
 //GetUserAppPri get user privilege
 func GetUserAppPri(apiAddr string, userName string, ownerID, lang string) (userPriveApp map[int64][]string, rolePrivi map[string][]string, modelConfigPrivi map[string][]string, sysPrivi []string, mainLineObjIDArr []string) {
-	p, _ := middleware.NewPrivilege(userName, apiAddr, ownerID, lang)
+	p, _ := privilege.NewPrivilege(userName, apiAddr, ownerID, lang)
 	appRole := p.GetAppRole()
 	rolePrivi = make(map[string][]string)
 	blog.Info("get app role result:%v", appRole)

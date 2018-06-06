@@ -17,8 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
-	"configcenter/src/common/http/httpclient"
-	"encoding/json"
+	"configcenter/src/web_server/application/middleware/user"
 	"fmt"
 
 	"github.com/gin-gonic/contrib/sessions"
@@ -32,98 +31,28 @@ func init() {
 
 }
 
-//GetUserList get user list
-func GetUserList(c *gin.Context) {
-	session := sessions.Default(c)
-	skiplogin := session.Get("skiplogin")
-	skiplogins, ok := skiplogin.(string)
-	if ok && "1" == skiplogins {
-		admindata := make([]interface{}, 0)
-		admincell := make(map[string]interface{})
-		admincell["chinese_name"] = "admin"
-		admincell["english_name"] = "admin"
-		admindata = append(admindata, admincell)
-		c.JSON(200, gin.H{
-			"result":        true,
-			"bk_error_msg":  "get user list ok",
-			"bk_error_code": "00",
-			"data":          admindata,
-		})
-		return
-	}
+type userResult struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+	Code    string      `json:"code"`
+	Result  bool        `json:"result"`
+}
 
+var getUserFailData = map[string]interface{}{
+	"result":        false,
+	"bk_error_msg":  "get user list false",
+	"bk_error_code": "",
+	"data":          nil,
+}
+
+// GetUserList get user list
+func GetUserList(c *gin.Context) {
 	a := api.NewAPIResource()
 	config, _ := a.ParseConfig()
 	accountURL := config["site.bk_account_url"]
-
-	token := session.Get("bk_token")
-	getURL := fmt.Sprintf(accountURL, token)
-	blog.Info("get user list url：%s", getURL)
-	httpClient := httpclient.NewHttpClient()
-	type userResult struct {
-		Message string      `json:"message"`
-		Data    interface{} `json:"data"`
-		Code    string      `json:"code"`
-		Result  bool        `json:"result"`
-	}
-	reply, err := httpClient.GET(getURL, nil, nil)
-	if nil != err {
-		blog.Error("get user list error：%v", err)
-		c.JSON(200, gin.H{
-			"result":        false,
-			"bk_error_msg":  "get user list false",
-			"bk_error_code": "",
-			"data":          nil,
-		})
-		return
-	}
-	blog.Info("get user list return：%s", reply)
-	var result userResult
-	err = json.Unmarshal([]byte(reply), &result)
-	if nil != err || false == result.Result {
-		c.JSON(200, gin.H{
-			"result":        false,
-			"bk_error_msg":  "get user list false",
-			"bk_error_code": "",
-			"data":          nil,
-		})
-		return
-	}
-	data, ok := result.Data.([]interface{})
-	if false == ok {
-		c.JSON(200, gin.H{
-			"result":        false,
-			"bk_error_msg":  "get user list false",
-			"bk_error_code": "",
-			"data":          nil,
-		})
-		return
-	}
-	info := make([]interface{}, 0)
-	for _, i := range data {
-		j, ok := i.(map[string]interface{})
-		if false == ok {
-			continue
-		}
-		name, ok := j["username"]
-		if false == ok {
-			continue
-		}
-		chname, ok := j["chname"]
-		if false == ok {
-			continue
-		}
-		cellData := make(map[string]interface{})
-		cellData["chinese_name"] = chname
-		cellData["english_name"] = name
-		info = append(info, cellData)
-	}
-	c.JSON(200, gin.H{
-		"result":        true,
-		"bk_error_msg":  "get user list ok",
-		"bk_error_code": "00",
-		"data":          info,
-	})
+	user := user.NewUser()
+	code, data := user.GetUserList(c, accountURL)
+	c.JSON(code, data)
 	return
 }
 

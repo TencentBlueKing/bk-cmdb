@@ -10,13 +10,14 @@
  * limitations under the License.
  */
 
-package middleware
+package privilege
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/web_server/application/middleware/types"
 	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"fmt"
@@ -45,32 +46,6 @@ func NewPrivilege(userName, APIAddr, ownerID, language string) (*Privilege, erro
 	return privi, nil
 }
 
-type RolePriResult struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"bk_error_code"`
-	Message interface{} `json:"bk_error_msg"`
-	Data    []string    `json:"data"`
-}
-
-type RoleAppResult struct {
-	Result  bool                     `json:"result"`
-	Code    int                      `json:"bk_error_code"`
-	Message interface{}              `json:"bk_error_msg"`
-	Data    []map[string]interface{} `json:"data"`
-}
-
-type SearchAppResult struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"bk_error_code"`
-	Message interface{} `json:"bk_error_msg"`
-	Data    AppResult   `json:"data"`
-}
-
-type AppResult struct {
-	Count int                      `json:"count"`
-	Info  []map[string]interface{} `json:"info"`
-}
-
 func ValidPrivilege() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -82,14 +57,13 @@ func ValidPrivilege() gin.HandlerFunc {
 // GetRolePrivilege get role privilege
 func (p *Privilege) GetRolePrivilege(objID string, role string) []string {
 	url := fmt.Sprintf("%s/api/%s/topo/privilege/%s/%s/%s", p.APIAddr, webCommon.API_VERSION, p.OwnerID, objID, role)
-	blog.Info("get role pri url: %s", url)
 	getResult, err := p.httpCli.GET(url, nil, nil)
 	if nil != err {
 		blog.Error("get role privilege return error: %v", err)
 		return nil
 	}
-	blog.Info("get role privilege return: %s", string(getResult))
-	var resultData RolePriResult
+	blog.Info("get role privilege url: %s, return: %s", url, string(getResult))
+	var resultData types.RolePriResult
 	err = json.Unmarshal([]byte(getResult), &resultData)
 	if nil != err || false == resultData.Result {
 		blog.Error("get role privilege json error: %v", err)
@@ -106,15 +80,13 @@ func (p *Privilege) GetAppRole() []string {
 	cond[common.BKPropertyTypeField] = "objuser"
 	cond[common.BKObjIDField] = common.BKInnerObjIDApp
 	data, _ := json.Marshal(cond)
-	blog.Info("get app role  url: %s", url)
-	blog.Info("get app role  content: %s", data)
 	getResult, err := p.httpCli.POST(url, nil, data)
 	if nil != err {
 		blog.Error("get app role return error: %v", err)
 		return nil
 	}
-	blog.Info("get app role return: %s", string(getResult))
-	var resultData RoleAppResult
+	blog.Info("get app role url: %s,content: %s,  return: %s", url, data, string(getResult))
+	var resultData types.RoleAppResult
 	err = json.Unmarshal([]byte(getResult), &resultData)
 	if nil != err || false == resultData.Result {
 		blog.Error("get role privilege json error: %v", err)
@@ -147,20 +119,16 @@ func (p *Privilege) GetUserPrivilegeApp(appRole []string) map[int64][]string {
 	condition["condition"] = allCond
 	condition["native"] = 1
 	data, _ := json.Marshal(condition)
-	blog.Info("search app role  url: %s", url)
-	blog.Info("search app role  content: %s", data)
 	getResult, err := p.httpCli.POST(url, nil, data)
-	blog.Info("search app role  return: %s", string(getResult))
+	blog.Info("search app role  url: %s ,content:%s, return: %s", url, data, string(getResult))
 	if nil != err {
 		blog.Error("search app role return error: %v", err)
 		return nil
 	}
-	var resultData SearchAppResult
+	var resultData types.SearchAppResult
 	err = json.Unmarshal([]byte(getResult), &resultData)
 	if nil != err || false == resultData.Result || 0 == resultData.Data.Count {
-		blog.Error("search role privilege json error: %v", err)
-		blog.Error("search role privilege result error: %v", resultData.Result)
-		blog.Error("search role privilege data error: %v", resultData.Data.Count)
+		blog.Error("search role privilege json:%v result:%v data:%v", err, resultData.Result, resultData.Data.Count)
 		return nil
 	}
 	userRole := make(map[int64][]string)
