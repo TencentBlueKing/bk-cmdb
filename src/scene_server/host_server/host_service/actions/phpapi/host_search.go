@@ -684,3 +684,44 @@ func (cli *hostAction) GetGitServerIp(req *restful.Request, resp *restful.Respon
 
 	cli.ResponseSuccess(hostArr, resp)
 }
+
+// HostSearchByConds: 根据condition查询主机
+func (cli *hostAction) HostSearchByConds(req *restful.Request, resp *restful.Response) {
+
+	value, err := ioutil.ReadAll(req.Request.Body)
+	if nil != err {
+		blog.Error("read request body failed, error:%v", err)
+		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
+		return
+	}
+
+	input := make(map[string]interface{})
+	err = json.Unmarshal(value, &input)
+	if nil != err {
+		blog.Error("Unmarshal json failed, error:%v", err)
+		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
+		return
+	}
+
+	hostMap, hostIDArr, err := phpapilogic.GetHostMapByCond(req, input)
+	if err != nil {
+		blog.Error("getHostMapByCond error : %v", err)
+		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
+		return
+	}
+
+	configCond := map[string]interface{}{
+		common.BKHostIDField: hostIDArr,
+	}
+
+	configData, err := logics.GetConfigByCond(req, host.CC.HostCtrl(), configCond)
+
+	hostData, err := phpapilogic.SetHostData(req, configData, hostMap)
+	if nil != err {
+		blog.Error("HostSearchByIP error : %v", err)
+		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
+		return
+	}
+
+	cli.ResponseSuccess(hostData, resp)
+}

@@ -110,11 +110,14 @@
                 this.localSelected.operator = operatorOptions.length ? operatorOptions[0]['value'] : ''
                 this.$emit('handleOperatorSelected', this.localSelected.operator)
             },
+            'localSelected.id' (id) {
+                this.localSelected.value = ''
+            },
             'localSelected.value' (value) {
                 this.$emit('handleValueChange', value)
             },
             async objId (objId) {
-                await this.$store.dispatch('object/getAttribute', objId)
+                await this.$store.dispatch('object/getAttribute', {objId})
                 this.filteredProperties = this.attribute[objId].filter(property => {
                     const {
                         bk_isapi: bkIsapi,
