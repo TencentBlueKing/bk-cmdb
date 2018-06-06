@@ -36,7 +36,7 @@
                                 :showClear="true"
                                 :selected.sync="filter.classify"
                                 :filterable="true">   
-                                <template v-for="(classifyGroup, groupIndex) in activeClassifications">
+                                <template v-for="(classifyGroup, groupIndex) in filterClassifications">
                                     <bk-option-group v-if="classifyGroup['bk_objects'].length"
                                             :label="classifyGroup['bk_classification_name']"
                                             :key="groupIndex">
@@ -209,6 +209,19 @@
                 'language'
             ]),
             ...mapGetters('navigation', ['activeClassifications']),
+            filterClassifications () {
+                return [{
+                    'bk_classification_id': 'bk_biz_topo',
+                    'bk_classification_name': this.$t('BusinessTopology["业务拓扑"]'),
+                    'bk_objects': [{
+                        'bk_obj_id': 'set',
+                        'bk_obj_name': this.$t('Hosts["集群"]')
+                    }, {
+                        'bk_obj_id': 'module',
+                        'bk_obj_name': this.$t('Hosts["模块"]')
+                    }]
+                }, ...this.activeClassifications]
+            },
             /* 开始时间 */
             startDate () {
                 return this.$formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD')

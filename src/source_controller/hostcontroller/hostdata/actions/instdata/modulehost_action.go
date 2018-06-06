@@ -29,7 +29,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-type moduleHostConfigParams struct {
+type ModuleHostConfigParams struct {
 	ApplicationID int   `json:"bk_biz_id"`
 	HostID        int   `json:"bk_host_id"`
 	ModuleID      []int `json:"bk_module_id"`
@@ -62,7 +62,7 @@ func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, res
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		params := moduleHostConfigParams{}
+		params := ModuleHostConfigParams{}
 		if err := json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -99,7 +99,7 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		params := moduleHostConfigParams{}
+		params := ModuleHostConfigParams{}
 		if err = json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -142,7 +142,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		params := moduleHostConfigParams{}
+		params := ModuleHostConfigParams{}
 		if err = json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -183,7 +183,7 @@ func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp 
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		params := moduleHostConfigParams{}
+		params := ModuleHostConfigParams{}
 		if err = json.Unmarshal([]byte(value), &params); nil != err {
 			blog.Error("fail to unmarshal json, error information is %v", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)

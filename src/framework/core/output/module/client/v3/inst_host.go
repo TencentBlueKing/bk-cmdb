@@ -136,7 +136,6 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		default:
 			operator = cccommon.BKDBEQ
 			value = val
-			fmt.Printf("val: %#v\n", val)
 		}
 		condition := map[string]interface{}{
 			"field":    key,
@@ -147,12 +146,35 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		conditions = append(conditions, condition)
 	}
 
-	params := map[string]interface{}{}
+	params := map[string]interface{}{
+		"bk_biz_id": -1,
+		"page": types.MapStr{
+			"start": cond.GetStart(),
+			"limit": cond.GetLimit(),
+			"sort":  cond.GetSort(),
+		},
+	}
 
 	params["condition"] = []map[string]interface{}{
 		map[string]interface{}{
 			"bk_obj_id": "host",
+			"fields":    []string{},
 			"condition": conditions,
+		},
+		map[string]interface{}{
+			"bk_obj_id": "set",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
+		},
+		map[string]interface{}{
+			"bk_obj_id": "module",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
+		},
+		map[string]interface{}{
+			"bk_obj_id": "biz",
+			"fields":    []string{},
+			"condition": make([]map[string]interface{}, 0),
 		},
 	}
 
@@ -161,7 +183,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		log.Errorf("json error: %v", err)
 	}
 
-	fmt.Printf("search host param:%s\n", out)
+	//fmt.Printf("search host param:%s\n", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)
@@ -176,12 +198,54 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
-	dataStr := gs.Get("data.info.#.host").String()
+	dataStr := gs.Get("data.info").String()
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
 
+	hostMap := make([]types.MapStr, 0)
+	err = json.Unmarshal([]byte(dataStr), &hostMap)
+	if nil != err {
+		return nil, err
+	}
 	resultMap := make([]types.MapStr, 0)
-	err = json.Unmarshal([]byte(dataStr), &resultMap)
+
+	for _, item := range hostMap {
+
+		biz, err := item.MapStrArray("biz")
+		if nil != err {
+			return nil, err
+		}
+
+		set, err := item.MapStrArray("set")
+		if nil != err {
+			return nil, err
+		}
+
+		module, err := item.MapStrArray("module")
+		if nil != err {
+			return nil, err
+		}
+
+		host, err := item.MapStr("host")
+		if nil != err {
+			return nil, err
+		}
+
+		host.Set("biz", biz)
+		host.Set("set", set)
+		host.Set("module", module)
+
+		item, err = item.MapStr("host")
+		if nil != err {
+			return nil, err
+		}
+
+		resultMap = append(resultMap, item)
+
+	}
+
+	//fmt.Println("host data:", resultMap)
+
 	return resultMap, err
 }

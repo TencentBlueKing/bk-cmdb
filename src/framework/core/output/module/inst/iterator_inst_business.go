@@ -95,7 +95,10 @@ func (cli *iteratorInstBusiness) ForEach(callbackItem func(item Inst) error) err
 			return nil
 		}
 
-		callbackItem(item)
+		err = callbackItem(item)
+		if nil != err {
+			return err
+		}
 	}
 
 }

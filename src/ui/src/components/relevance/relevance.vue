@@ -92,7 +92,7 @@
             },
             objId (objId) {
                 if (this.objId && !this.attribute[this.objId]) {
-                    this.$store.dispatch('object/getAttribute', this.objId)
+                    this.$store.dispatch('object/getAttribute', {objId})
                 }
             },
             currentComponent (currentComponent, prevComponent) {
@@ -101,7 +101,7 @@
         },
         created () {
             if (this.objId && !this.attribute[this.objId]) {
-                this.$store.dispatch('object/getAttribute', this.objId)
+                this.$store.dispatch('object/getAttribute', {objId: this.objId})
             }
         },
         methods: {

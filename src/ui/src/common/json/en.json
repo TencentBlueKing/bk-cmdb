@@ -89,6 +89,7 @@
         "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
         "内容不合法": "Illegal content",
         "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
+        "请先转移其下所有的主机": "Please transfer all the hosts under it first.",
         "详情": "Detail",
         "删除关联": "Delete Association",
         "退出": "Exit",
@@ -309,7 +310,8 @@
         "编辑分组": "Modify Group",
         "单击选择对应图标": "Click to select the corresponding icon",
         "设置为默认值": "Set as default",
-        "请输入ID": "Enter ID"
+        "请输入ID": "Enter ID",
+        "全局视图": "Global View"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",

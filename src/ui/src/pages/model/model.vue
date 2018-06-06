@@ -26,8 +26,8 @@
             </div>
             <div :class="['global-models', {'active': topoView === 'GLOBAL_MODELS'}]">
                 <button class="btn-global" @click="topoView = 'GLOBAL_MODELS'">
-                        <i class="icon-cc-fullscreen"></i>
-                        <span class="text">全局模型</span>
+                    <i class="icon-cc-fullscreen"></i>
+                    <span class="text">{{$t("ModelManagement['全局视图']")}}</span>
                 </button>
             </div>
         </div>
@@ -835,6 +835,11 @@
             color: $textColor;
             outline: 0;
             padding: 0;
+            .icon-cc-fullscreen,
+            .text{
+                display: inline-block;
+                vertical-align: middle;
+            }
         }
     }
 </style>

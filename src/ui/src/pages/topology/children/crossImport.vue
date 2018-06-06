@@ -264,6 +264,7 @@
                                 this.hostRelation = getHostRelation(res.data.info[0])
                             } else {
                                 this.noResult = true
+                                this.showTips = true
                                 this.result = {}
                                 this.hostRelation = []
                             }
