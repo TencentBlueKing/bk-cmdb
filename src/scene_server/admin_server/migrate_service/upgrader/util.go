@@ -63,10 +63,14 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 		switch id := existOne[idfieldname].(type) {
 		case nil:
 			return 0, nil, errors.New("there is no " + idfieldname + " field in table " + tablename)
-		case int, int16, int32, int64:
-			instID = id.(int64)
-		case uint, uint8, uint16, uint32:
-			instID = id.(int64)
+		case int:
+			instID = int64(id)
+		case int16:
+			instID = int64(id)
+		case int32:
+			instID = int64(id)
+		case int64:
+			instID = int64(id)
 		}
 	}
 
