@@ -346,6 +346,7 @@
                 'bkSupplierAccount': 'bkSupplierAccount',
                 'hostSnapshot': 'getHostSnapshot'
             }),
+            ...mapGetters('object', ['topo']),
             allProperties () {
                 let allProperties = []
                 this.attribute.map(({properties}) => {
@@ -469,6 +470,17 @@
             clearChooseId () {
                 this.table.chooseId = []
             },
+            async setTopoAttribute () {
+                await this.$store.dispatch('object/getTopo')
+                this.attribute = this.topo.reverse().map(model => {
+                    return {
+                        'bk_obj_id': model['bk_obj_id'],
+                        'bk_obj_name': model['bk_obj_name'],
+                        'properties': [],
+                        'loaded': false
+                    }
+                })
+            },
             async getAllAttribute () {
                 return this.$Axios.all(this.bkObjIds.map((bkObjId, index) => {
                     return this.getAttribute(bkObjId, index)
@@ -494,10 +506,11 @@
                 })
             },
             async getUserCustomColumn () {
+                const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
                 return this.$axios.post('usercustom/user/search', {}).then(res => {
                     if (res.result) {
                         let hostDisplayColumns = res.data['host_display_column'] || []
-                        let hostQueryColumns = (res.data['host_query_column'] || []).filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
+                        let hostQueryColumns = (res.data[`${customPrefix}_query_column`] || []).filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                         let availableDisplayColumn = hostDisplayColumns.filter(column => {
                             return this.getColumnProperty(column['bk_property_id'], column['bk_obj_id'])
                         })
@@ -624,7 +637,9 @@
                     bk_obj_id: 'module',
                     bk_isapi: false
                 }]
-                let properties = [...this.attribute[0]['properties'], ...extraProperty].sort((propertyA, propertyB) => {
+                const hostAttribute = this.attribute.find(({bk_obj_id: bkObjId}) => bkObjId === 'host') || {}
+                const hostProperties = hostAttribute.properties || []
+                let properties = [...hostProperties, ...extraProperty].sort((propertyA, propertyB) => {
                     return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'])
                 })
                 this.sideslider.width = 600
@@ -655,9 +670,15 @@
                 this.sideslider.title.text = this.$t('HostResourcePool[\'主机筛选项设置\']')
                 this.sideslider.fields.type = 'queryColumns'
                 this.sideslider.fields.isShowExclude = false
-                this.sideslider.fields.fieldOptions = this.attribute.filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
                 this.sideslider.fields.minField = 0
                 this.sideslider.fields.shownFields = this.filter.queryColumns.slice(0)
+                let fieldOptions = []
+                if (this.$route.path === '/hosts') {
+                    fieldOptions = this.attribute.filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
+                } else if (this.$route.path === '/resource') {
+                    fieldOptions = this.attribute.filter(({bk_obj_id: bkObjId}) => bkObjId === 'host')
+                }
+                this.sideslider.fields.fieldOptions = fieldOptions
             },
             applyField (fields) {
                 if (this.sideslider.fields.type === 'displayColumns') {
@@ -737,12 +758,12 @@
                 })
             },
             updateUserCustomDisplayColumn (fields) {
-                let updateParams = JSON.stringify({
-                    'host_display_column': fields.map(({bk_property_id, bk_property_name, bk_obj_id}) => {
-                        return {bk_property_id, bk_property_name, bk_obj_id}
-                    })
+                const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
+                let updateParams = {}
+                updateParams['host_display_column'] = fields.map(({bk_property_id, bk_property_name, bk_obj_id}) => {
+                    return {bk_property_id, bk_property_name, bk_obj_id}
                 })
-                this.$axios.post('usercustom', updateParams).then(res => {
+                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -769,9 +790,10 @@
                     return column
                 })
                 this.filter.queryColumns = columns
-                this.$axios.post('usercustom', JSON.stringify({
-                    'host_query_column': columns
-                })).then(res => {
+                const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
+                let updateParams = {}
+                updateParams[`${customPrefix}_query_column`] = columns
+                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -962,17 +984,13 @@
                 return mergedParams
             },
             async init () {
+                await this.setTopoAttribute()
                 await this.getAllAttribute()
                 this.getUserCustomColumn()
             }
         },
         created () {
             this.init()
-            bus.$on('quickSearch', () => {
-                this.$nextTick(() => {
-                    this.setTableCurrentPage(1)
-                })
-            })
             this.$nextTick(() => {
                 let clipboard = new Clipboard('.copy')
                 clipboard.on('success', () => {

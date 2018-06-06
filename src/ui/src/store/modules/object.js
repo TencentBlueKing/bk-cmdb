@@ -1,11 +1,13 @@
 import {$axios, $alertMsg} from '@/api/axios'
 
 const state = {
-    attribute: {}
+    attribute: {},
+    topo: []
 }
 
 const getters = {
-    attribute: state => state.attribute
+    attribute: state => state.attribute,
+    topo: state => state.topo
 }
 
 const actions = {
@@ -18,7 +20,19 @@ const actions = {
                 let attribute = {}
                 attribute[objId] = res.data
                 commit('setAttribute', attribute)
-                attribute[objId] = res.data
+            } else {
+                $alertMsg(res['bk_error_msg'])
+            }
+            return res
+        })
+    },
+    getTopo ({commit, state, rootGetters}, force = false) {
+        if (!force && state.topo.length) {
+            return Promise.resolve({result: true, data: state.topo})
+        }
+        return $axios.get(`topo/model/${rootGetters.bkSupplierAccount}`).then(res => {
+            if (res.result) {
+                commit('setTopo', res.data)
             } else {
                 $alertMsg(res['bk_error_msg'])
             }
@@ -30,6 +44,9 @@ const actions = {
 const mutations = {
     setAttribute (state, attribute) {
         state.attribute = Object.assign({}, state.attribute, attribute)
+    },
+    setTopo (state, topo) {
+        state.topo = topo
     }
 }
 
