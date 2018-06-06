@@ -14,7 +14,7 @@
                     <i class="icon-cc-resize-full"></i>
                 </span>
                 <bk-button type="primary" class="btn btn-add"
-                    :disabled="!hasAssociationProperty"
+                    :disabled="!instanceAssociation.length"
                     @click="currentComponent = 'v-new-association'">
                     {{$t('Association["新增关联"]')}}
                 </bk-button>
@@ -51,17 +51,13 @@
         data () {
             return {
                 currentComponent: null,
-                prevComponent: null
+                prevComponent: null,
+                instanceAssociation: []
             }
         },
         computed: {
+            ...mapGetters(['bkSupplierAccount']),
             ...mapGetters('object', ['attribute']),
-            hasAssociationProperty () {
-                if (this.objId) {
-                    return (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                }
-                return false
-            },
             componentProps () {
                 const component = this.currentComponent
                 const props = {
@@ -80,6 +76,14 @@
                     }
                 }
                 return component ? props[component] : {}
+            },
+            dataIdKey () {
+                if (this.objId === 'host') {
+                    return 'bk_host_id'
+                } else if (this.objId === 'biz') {
+                    return 'bk_biz_id'
+                }
+                return 'bk_inst_id'
             }
         },
         watch: {
@@ -97,11 +101,24 @@
             },
             currentComponent (currentComponent, prevComponent) {
                 this.prevComponent = prevComponent
+            },
+            instance (instance) {
+                if (Object.keys(instance).length) {
+                    const topoUrl = `inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${instance[this.dataIdKey]}`
+                    this.$axios.post(topoUrl).then(res => {
+                        if (res.result) {
+                            this.instanceAssociation = res.data.length ? res.data[0]['next'] : []
+                        } else {
+                            this.instanceAssociation = []
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
+                    })
+                }
             }
         },
-        created () {
+        async created () {
             if (this.objId && !this.attribute[this.objId]) {
-                this.$store.dispatch('object/getAttribute', {objId: this.objId})
+                await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             }
         },
         methods: {
