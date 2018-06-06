@@ -469,6 +469,9 @@
                 this.network.on('blurNode', () => {
                     networkCanvas.style.cursor = 'default'
                 })
+                this.network.on('dragStart', () => {
+                    this.removePop()
+                })
                 this.network.on('click', (params) => {
                     // 点击了具体某个节点
                     if (params.nodes.length) {
