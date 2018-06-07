@@ -597,7 +597,7 @@
                 let div = document.createElement('div')
                 div.setAttribute('class', 'topo-pop-box')
                 div.setAttribute('id', this.popBox.rand)
-                div.style.top = `${Y}px`
+                div.style.top = `${Y + 12}px`
                 div.style.left = `${X + 60}px`
                 div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div><div class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</div>` : `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div>`
                 document.body.appendChild(div)
