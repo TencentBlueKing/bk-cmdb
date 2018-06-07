@@ -170,7 +170,7 @@
             async initData () {
                 this.attr.isLoading = true
                 await Promise.all([
-                    this.$store.dispatch('object/getAttribute', this.objId),
+                    this.$store.dispatch('object/getAttribute', {objId: this.objId}),
                     this.getFormValues()
                 ])
                 this.attr.formFields = this.attribute[this.objId]

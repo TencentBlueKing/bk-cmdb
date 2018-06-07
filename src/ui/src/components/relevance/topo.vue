@@ -527,7 +527,7 @@
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
 
-                await this.$store.dispatch('object/getAttribute', toNode['bk_obj_id'])
+                await this.$store.dispatch('object/getAttribute', {objId: toNode['bk_obj_id']})
                 let toNodeAttr = this.attribute[toNode['bk_obj_id']].find(({bk_asst_obj_id: bkAsstObjId}) => {
                     return fromNode['bk_obj_id'] === bkAsstObjId
                 })

@@ -42,7 +42,7 @@ type moduleHostConfigParams struct {
 	IsIncrement   bool  `json:"is_increment"`
 }
 
-type defaultModuleHostConfigParams struct {
+type DefaultModuleHostConfigParams struct {
 	ApplicationID int   `json:"bk_biz_id"`
 	HostID        []int `json:"bk_host_id"`
 }
@@ -149,7 +149,7 @@ func (m *hostModuleConfigAction) MoveHost2FaultModule(req *restful.Request, resp
 //MoveHostToResourcePool move host to resource pool
 func (m *hostModuleConfigAction) MoveHostToResourcePool(req *restful.Request, resp *restful.Response) {
 	value, err := ioutil.ReadAll(req.Request.Body)
-	var data defaultModuleHostConfigParams
+	var data DefaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
 	m.CallResponseEx(func() (int, interface{}, error) {
@@ -173,7 +173,7 @@ func (m *hostModuleConfigAction) MoveHostToResourcePool(req *restful.Request, re
 //AssignHostToApp assign host to app
 func (m *hostModuleConfigAction) AssignHostToApp(req *restful.Request, resp *restful.Response) {
 	value, err := ioutil.ReadAll(req.Request.Body)
-	var data defaultModuleHostConfigParams
+	var data DefaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
@@ -349,7 +349,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 //moveHostToModuleName translate module to idle and fault module relation
 func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
 	value, err := ioutil.ReadAll(req.Request.Body)
-	var data defaultModuleHostConfigParams
+	var data DefaultModuleHostConfigParams
 	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
 
