@@ -36,6 +36,10 @@ func (cli *association) GetTopo(obj Object) (Topo, error) {
 	return nil, nil
 }
 
+func (cli *association) ToMapStr() (frtypes.MapStr, error) {
+	return nil, nil
+}
+
 func (cli *association) Parse(data frtypes.MapStr) error {
 	return nil
 }
