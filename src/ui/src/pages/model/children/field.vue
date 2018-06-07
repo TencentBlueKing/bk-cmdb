@@ -27,10 +27,10 @@
                 <bk-button type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="addField" v-if="!isReadOnly">
                     {{$t('ModelManagement["新增字段"]')}}
                 </bk-button>
-                <div class="btn-group">
-                    <bk-button type="default" :title="$t('ModelManagement[\'导入\']')" class="btn mr10">
+                <div class="btn-group" :class="{'disabled': isReadOnly}">
+                    <bk-button type="default" :title="$t('ModelManagement[\'导入\']')" :disabled="isReadOnly" class="btn mr10">
                         {{$t('ModelManagement["导入"]')}}
-                        <input ref="fileInput" type="file" @change.prevent="handleFile">
+                        <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                     </bk-button>
                     <form :action="exportUrl" method="POST" class="form">
                         <bk-button type="default" :title="$t('ModelManagement[\'导出\']')" class="btn">
@@ -1504,7 +1504,7 @@
                 }
                 this.isAddFieldShow = false
                 this.isLoading = true
-                this.$axios.post('object/attr/search', params).then(res => {
+                this.$store.dispatch('object/getAttribute', {objId: this.objId, force: true}).then(res => {
                     if (res.result) {
                         this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {

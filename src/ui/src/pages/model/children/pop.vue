@@ -20,6 +20,7 @@
                             <input type="text" class="bk-form-input fr" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
+                            :disabled="classification['bk_classification_type'] === 'inner'"
                             @blur="validate"
                             :data-vv-name="$t('Common[\'中文名\']')"
                             v-validate="'required|name'">

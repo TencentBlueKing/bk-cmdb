@@ -8,7 +8,12 @@
                 <i v-if="treeData['default'] === 1" class="tree-icon fl icon-cc-host-free-pool"></i>
                 <i v-else-if="treeData['default'] === 2" class="tree-icon fl icon-cc-host-breakdown"></i>
                 <i v-else class="tree-icon tree-icon-name fl">{{treeData['default'] ? treeData['bk_inst_name'][0]: treeData['bk_obj_name'][0]}}</i>
-                <i class="tree-icon tree-icon-add fr" v-if="isShowAdd && active" @click.stop="addNode" :title="`${$t('Common[\'新增\']')}-${optionModel['bk_next_name']}`">{{$t('Common[\'新增\']')}}</i>
+                <template v-if="rootNode['bk_inst_name'] === '蓝鲸'">
+                    <i v-tooltip="{content: $t('Common[\'关键业务不能够修改\']'), classes: 'topo-tip'}" class="tree-icon tree-icon-add fr disabled" v-if="isShowAdd && active">{{$t('Common[\'新增\']')}}</i>
+                </template>
+                <template v-else>
+                    <i class="tree-icon tree-icon-add fr" :class="{'disabled': rootNode['bk_inst_name'] === '蓝鲸'}" v-if="isShowAdd && active" @click.stop="addNode" :title="`${$t('Common[\'新增\']')}-${optionModel['bk_next_name']}`">{{$t('Common[\'新增\']')}}</i>
+                </template>
                 <div class="node-name" :title="treeData['bk_inst_name']">{{treeData['bk_inst_name']}}</div>
             </div>  
         </div>
@@ -77,6 +82,17 @@
                 return this.model.find(model => {
                     return model['bk_obj_id'] === this.treeData['bk_obj_id']
                 })
+            },
+            nodeOptions () {
+                return {
+                    parent: this.parent,
+                    rootNode: this.rootNode,
+                    level: this.level,
+                    nodeId: this.nodeId,
+                    treeId: this.treeId,
+                    isOpen: this.open,
+                    index: this.nodeIndex ? this.nodeIndex : 0
+                }
             }
         },
         watch: {
@@ -90,7 +106,7 @@
             },
             open (open) {
                 this.treeData.isOpen = open
-                bus.$emit('nodeToggle', this.open, this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                bus.$emit('nodeToggle', this.open, this.treeData, this.nodeOptions)
             }
         },
         methods: {
@@ -100,11 +116,11 @@
             nodeClick () {
                 if (!this.active) {
                     this.active = true
-                    bus.$emit('nodeClick', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                    bus.$emit('nodeClick', this.treeData, this.nodeOptions)
                 }
             },
             addNode () {
-                bus.$emit('addNode', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                bus.$emit('addNode', this.treeData, this.nodeOptions)
             },
             init () {
                 let {
@@ -117,7 +133,7 @@
                     this.open = open
                     this.active = active
                     if (active) {
-                        bus.$emit('nodeClick', this.treeData, this.parent, this.rootNode, this.level, this.nodeId, this.treeId)
+                        bus.$emit('nodeClick', this.treeData, this.nodeOptions)
                     }
                 }
             }
@@ -210,6 +226,11 @@
                 background: #3c96ff;
                 color:#fff;
                 border-radius: 4px;
+                &.disabled{
+                    background: #fafafa;
+                    color: #ccc;
+                    cursor: default;
+                }
             }
         }
         .node-info{

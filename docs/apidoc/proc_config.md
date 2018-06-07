@@ -71,6 +71,7 @@
     "condition":{
         "bk_biz_id":"12233",
         "bk_process_name":"nginx"
+        "bk_module_name":"nginx"
     }
 }
 
@@ -274,6 +275,58 @@ body 字段为进程属性
 | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
 | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
 | data | string | 请求返回的数据 |the data response|
+
+
+
+### 批量更新进程
+* API:  PUT  /api/{version}/proc/{bk_supplier_account}/{bk_biz_id}
+* API名称： batch_update_process
+* 功能说明：
+	* 中文：批量更新进程
+	* English ：update process
+* input body:
+```
+{
+    "bk_process_id" : "44,45,46,47,48",
+	"start_cmd": "./start.sh 8080",
+	"port": "1000"
+	...
+    // "bk_process_name": "assdfasdfasf", // 不允许批量编辑
+    // "bk_func_id" : "111", // 不允许批量编辑
+}    
+}
+```
+
+* input字段说明：
+
+| 名称  | 类型 |必填| 默认值 | 说明 | Description|
+| ---  | ---  | --- |---  | --- | ---|
+| bk_supplier_account| string| 是|无|开发商 code |supplier account code|
+| bk_biz_id| int | 是| 无|业务 id|business id |
+| bk_process_id|  string| 是| 无|逗号分隔的进程id列表|process id|
+body 字段为进程属性
+
+
+* output:
+
+```
+{
+    "result":true,
+    "bk_error_code":0,
+    "bk_error_msg":"",
+    "data":"success"
+}
+```
+
+* output字段说明：
+
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | string | 请求返回的数据 |the data response|
+
 
 ### 获取进程绑定模块
 * API: GET    /api/{version}/proc/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}

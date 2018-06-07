@@ -70,6 +70,7 @@
                     </span>
                     <span v-else>
                         <v-operator 
+                            :property="property"
                             :type="property.bkPropertyType"
                             :selected.sync="property.operator">
                         </v-operator>
@@ -232,6 +233,13 @@
                         fields: this.attribute.selected ? this.attribute.selected.split(',') : []
                     }
                 ]
+                const specialObj = {
+                    'host': 'bk_host_innerip',
+                    'biz': 'bk_biz_name',
+                    'plat': 'bk_cloud_name',
+                    'module': 'bk_module_name',
+                    'set': 'bk_set_name'
+                }
                 this.userProperties.forEach((property, index) => {
                     let param = paramsMap.find(({bk_obj_id: bkObjId}) => {
                         return bkObjId === property.bkObjId
@@ -241,7 +249,7 @@
                             'bk_obj_id': property.bkAsstObjId,
                             fields: [],
                             condition: [{
-                                field: 'bk_inst_name',
+                                field: specialObj.hasOwnProperty(property.bkAsstObjId) ? specialObj[property.bkAsstObjId] : 'bk_inst_name',
                                 operator: property.operator,
                                 value: property.value
                             }]
@@ -270,7 +278,13 @@
                         // 多模块与多集群查询
                         if (property.bkPropertyId === 'bk_module_name' || property.bkPropertyId === 'bk_set_name') {
                             operator = operator === '$regex' ? '$in' : operator
-                            value = operator === '$in' ? [...value.replace('，', ',').split(','), value] : value
+                            if (operator === '$in') {
+                                let arr = value.replace('，', ',').split(',')
+                                let isExist = arr.findIndex(val => {
+                                    return val === value
+                                }) > -1
+                                value = isExist ? arr : [...arr, value]
+                            }
                         }
                         param['condition'].push({
                             field: property.bkPropertyId,

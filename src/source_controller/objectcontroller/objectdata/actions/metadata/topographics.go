@@ -62,6 +62,8 @@ func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restfu
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
+		blog.Infof("search param %s", value)
+
 		selector := metadata.TopoGraphics{}
 		if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
 			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
@@ -103,7 +105,7 @@ func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restfu
 		}
 
 		for index := range datas {
-			blog.InfoJSON("%s", datas[index])
+			blog.InfoJSON("update graphic %s", datas[index])
 			_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index].FillBlank())
 			if cli.CC.InstCli.IsDuplicateErr(err) {
 				condition := metadata.TopoGraphics{}

@@ -530,12 +530,12 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
-		module, ok := itemMap[common.BKInnerObjIDModule].(map[string]interface{})
+		modules, ok := itemMap[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
-		set, ok := itemMap[common.BKInnerObjIDSet].(map[string]interface{})
+		sets, ok := itemMap[common.BKInnerObjIDSet].([]interface{})
 		if !ok {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
@@ -546,8 +546,32 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 			return nil, 0, errors.New("data format errors")
 		}
 		hostName, _ := host[common.BKHostNameField]
-		moduleName, _ := module[common.BKModuleNameField]
-		setName, _ := set[common.BKSetNameField]
+		moduleName := "" // module[common.BKModuleNameField]
+		setName := ""    //set[common.BKSetNameField]
+		if 0 < len(modules) {
+			for _, module := range modules {
+				moduleMap, ok := module.(map[string]interface{})
+				if false == ok {
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+					return nil, 0, errors.New("data format errors")
+				}
+				moduleName, _ = moduleMap[common.BKModuleNameField].(string)
+				break
+
+			}
+		}
+		if 0 < len(sets) {
+			for _, set := range sets {
+				setMap, ok := set.(map[string]interface{})
+				if false == ok {
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+					return nil, 0, errors.New("data format errors")
+				}
+				setName, _ = setMap[common.BKSetNameField].(string)
+				break
+
+			}
+		}
 		subArea, _ := host[common.BKSubAreaField].([]interface{}) //host["SubArea"].([]interface{})
 		var source int64 = -1
 		if nil != subArea && len(subArea) > 0 {

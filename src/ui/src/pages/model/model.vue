@@ -13,7 +13,7 @@
         <div class="left-tap-contain">
             <div class="list-tap" v-bkloading="{isLoading: isClassifyLoading}">
                 <ul>
-                    <li :class="{'active': curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)">
+                    <li :class="{'active': topoView === 'models' && curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)" @click.stop="topoView = 'models'">
                         <i :class="item['bk_classification_icon']"></i>
                         <span class="text">{{item['bk_classification_name']}}</span>
                     </li>
@@ -24,9 +24,16 @@
                     </a>
                 </div>
             </div>
+            <div :class="['global-models', {'active': topoView === 'GLOBAL_MODELS'}]">
+                <button class="btn-global" @click="topoView = 'GLOBAL_MODELS'">
+                    <i class="icon-cc-fullscreen"></i>
+                    <span class="text">{{$t("ModelManagement['全局视图']")}}</span>
+                </button>
+            </div>
         </div>
         <div class="right-contain clearfix">
-            <div class="model-box clearfix" v-bkloading="{isLoading: isTopoLoading}">
+            <v-global-models v-if="topoView === 'GLOBAL_MODELS'"></v-global-models>
+            <div class="model-box clearfix" v-bkloading="{isLoading: isTopoLoading}" v-else>
                 <div class="model-diagram" v-if="curClassify['bk_classification_id']">
                     <div class="model-topo-box" v-show="topoList.length != 0 && !isCreateShow">
                         <template v-if="curClassify['bk_classification_id'] !== 'bk_biz_topo'">
@@ -50,7 +57,7 @@
                         </template>
                         <template v-else>
                             <div class="model-content" v-if="topoList.length != 0">
-                                <bk-button type="primary" class="topo-btn edit" @click="popShow('edit')">
+                                <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
                                     <i class="icon icon-cc-edit"></i>
                                 </bk-button>
                                 <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -72,7 +79,7 @@
                         </template>
                     </div>
                     <div class="no-model-prompting tc" v-show="topoList.length == 0 || isCreateShow">
-                        <bk-button type="primary" class="topo-btn edit" @click="popShow('edit')">
+                        <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
                             <i class="icon icon-cc-edit"></i>
                         </bk-button>
                         <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -138,9 +145,8 @@
                     <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="curModel.type==='change'">
                         <v-layout ref="layout"
                         :isShow="curTabName==='layout'"
-                        :id="curModel['id']"
-                        :objId="curModel['bk_obj_id']"
-                        :isNewField="isNewField"
+                        :activeModel="curModel"
+                        @cancel="cancel"
                         ></v-layout>
                     </bk-tabpanel>
                     <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="curModel.type==='change'">
@@ -170,12 +176,14 @@
     import vField from './children/field'
     import vLayout from './children/layout'
     import vOther from './children/other'
+    import vGlobalModels from './children/global-models'
     import vTopo from '@/components/topo/topo'
     import {mapGetters, mapActions} from 'vuex'
     const iconList = require('@/common/json/classIcon.json')
     export default {
         data () {
             return {
+                topoView: 'models',
                 isShowDisableList: false,
                 isTopoLoading: false,           // 拓扑loading
                 isClassifyLoading: false,       // 分组列表loading
@@ -405,6 +413,9 @@
                             this.isEditClassify = false
                             this.isPopShow = false
                             this.isChoose = true
+                            this.curClassify['bk_classification_name'] = classification['bk_classification_name']
+                            this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
+                            this.curTempClassify = this.$deepClone(this.curClassify)
                             this.$store.commit('navigation/updateClassification', {
                                 bk_classification_id: classification['bk_classification_id'],
                                 bk_classification_name: classification['bk_classification_name'],
@@ -642,7 +653,7 @@
                 if (this.curModel.type === 'new') {
                     this.$store.dispatch('navigation/getClassifications', true)
                     this.curModel['id'] = obj['id']
-                    this.sliderTitle.text = `${obj['bk_obj_name']})`
+                    this.sliderTitle.text = `${obj['bk_obj_name']}`
                     this.curModel['bk_obj_id'] = obj['bk_obj_id']
                     this.curModel.type = 'change'
                     this.curTabName = 'host'
@@ -705,7 +716,7 @@
                         if (!index) {
                             index = 0
                         }
-                        this.curClassify = this.classifyList[index]
+                        // this.curClassify = this.classifyList[index]
                         this.curTempClassify = {
                             id: this.classifyList[index]['id'],
                             bk_classification_type: this.classifyList[index]['bk_classification_type'],
@@ -793,11 +804,49 @@
             vField,
             vLayout,
             vOther,
-            vPop
+            vPop,
+            vGlobalModels
         }
     }
 </script>
 
+<style lang="scss" scoped>
+    .global-models{
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        background-color: #f7fafe;
+        &.active{
+            background-color: #e2efff;
+            .btn-global{
+                color: #3578da;
+                border-color: currentColor;
+            }
+        }
+        .btn-global{
+            width: 120px;
+            height: 32px;
+            padding: 0;
+            line-height: 30px;
+            background-color: #ffffff;
+            border-radius: 2px;
+            border: solid 1px #d6d8df;
+            font-size: 14px;
+            color: $textColor;
+            outline: 0;
+            padding: 0;
+            .icon-cc-fullscreen,
+            .text{
+                display: inline-block;
+                vertical-align: middle;
+            }
+        }
+    }
+</style>
 <style media="screen" lang="scss" scoped>
     $borderColor: #bec6de; //边框色
     $defaultColor: #ffffff; //默认
@@ -844,10 +893,11 @@
             border-left: none;
             border-top: none;
             height: 100%;
+            position: relative;
+            border-right: 1px solid #dde4eb;
             .list-tap{
-                height: 100%;
+                height: calc(100% - 50px);
                 overflow-y: auto;
-                border-right: 1px solid #dde4eb;
                 &::-webkit-scrollbar{
                     width: 6px;
                     height: 5px;
@@ -1192,6 +1242,9 @@
                                 .content-name{
                                     margin-top: 10px;
                                     line-height: 1;
+                                    white-space: nowrap;
+                                    text-overflow: ellipsis;
+                                    overflow: hidden;
                                 }
                             }
                             &.locks-icon-content{

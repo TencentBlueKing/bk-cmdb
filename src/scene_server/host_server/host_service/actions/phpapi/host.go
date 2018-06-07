@@ -45,6 +45,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/host/updateHostByAppID/{appid}", Params: nil, Handler: host.UpdateHostByAppID})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}", Params: nil, Handler: host.GetHostListByAppidAndField})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/gethostlistbyip", Params: nil, Handler: host.HostSearchByIP})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/gethostlistbyconds", Params: nil, Handler: host.HostSearchByConds})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/getmodulehostlist", Params: nil, Handler: host.HostSearchByModuleID})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/getsethostlist", Params: nil, Handler: host.HostSearchBySetID})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/getapphostlist", Params: nil, Handler: host.HostSearchByAppID})
@@ -239,6 +240,7 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 				}
 			}
 			blog.Debug("procMap:%v", proMap)
+			proMap["import_from"] = common.HostAddMethodAgent
 			hostIDNew, err := phpapilogic.AddHost(req, proMap, cli.CC.ObjCtrl())
 
 			if nil != err {
