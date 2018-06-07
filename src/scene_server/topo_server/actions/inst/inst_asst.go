@@ -173,7 +173,7 @@ func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, o
 
 func (cli *instAction) searchAssociationInst(req *restful.Request, objID string, searchParams map[string]interface{}) ([]int64, error) {
 	// search the association object insts
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/object/search"
+	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + util.GetObjByType(objID) + "/search"
 	inputJSON, jsErr := json.Marshal(searchParams)
 
 	if nil != jsErr {
@@ -208,7 +208,7 @@ func (cli *instAction) searchAssociationInst(req *restful.Request, objID string,
 
 				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
 
-					instID, keyItemOk := dataItem[common.BKInstIDField]
+					instID, keyItemOk := dataItem[util.GetObjIDByType(objID)]
 					if keyItemOk {
 						id, idErr := util.GetInt64ByInterface(instID)
 						if nil != idErr {
@@ -271,8 +271,10 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 			// Extract the ID of the instance according to the associated object.
 			condition := map[string]interface{}{}
-			condition[common.BKObjIDField] = keyObjID
-			condition[common.BKOwnerIDField] = ownerID
+			if util.GetObjByType(keyObjID) == common.BKINnerObjIDObject {
+				condition[common.BKObjIDField] = keyObjID
+				condition[common.BKOwnerIDField] = ownerID
+			}
 
 			for _, objCondition := range objs {
 
