@@ -102,10 +102,15 @@
             ...mapGetters('object', ['attribute']),
             ...mapGetters('navigation', ['classifications']),
             instanceIdKey () {
-                if (this.filter.objId === 'host') {
-                    return 'bk_host_id'
-                } else if (this.filter.objId === 'biz') {
-                    return 'bk_biz_id'
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.filter.objId)) {
+                    return specialObj[this.filter.objId]
                 }
                 return 'bk_inst_id'
             },
@@ -113,6 +118,9 @@
                 const nameKey = {
                     'bk_host_id': 'bk_host_innerip',
                     'bk_biz_id': 'bk_biz_name',
+                    'bk_cloud_id': 'bk_cloud_name',
+                    'bk_module_id': 'bk_module_name',
+                    'bk_set_id': 'bk_set_name',
                     'bk_inst_id': 'bk_inst_name'
                 }
                 return nameKey[this.instanceIdKey]
@@ -121,15 +129,23 @@
                 const name = {
                     'bk_host_innerip': this.$t('Common["内网IP"]'),
                     'bk_biz_name': this.$t('Association["业务名"]'),
+                    'bk_cloud_name': this.$t('Hosts["云区域"]'),
+                    'bk_module_name': this.$t('Hosts["模块名"]'),
+                    'bk_set_name': this.$t('Hosts["集群名"]'),
                     'bk_inst_name': this.$t('Association["实例名"]')
                 }
                 return name[this.instanceNameKey]
             },
             dataIdKey () {
-                if (this.objId === 'host') {
-                    return 'bk_host_id'
-                } else if (this.objId === 'biz') {
-                    return 'bk_biz_id'
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
                 }
                 return 'bk_inst_id'
             },
@@ -426,6 +442,7 @@
 <style lang="scss" scoped>
     .new-association{
         background-color: #fff;
+        font-size: 14px;
         .association-close-handle{
             display: block;
             height: 35px;

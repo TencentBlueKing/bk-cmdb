@@ -81,10 +81,15 @@
                 return component ? props[component] : {}
             },
             dataIdKey () {
-                if (this.objId === 'host') {
-                    return 'bk_host_id'
-                } else if (this.objId === 'biz') {
-                    return 'bk_biz_id'
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
                 }
                 return 'bk_inst_id'
             }
