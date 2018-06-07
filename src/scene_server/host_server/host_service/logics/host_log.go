@@ -205,7 +205,6 @@ func NewHostModuleConfigLog(req *restful.Request, instID []int, hostCtl, objCtrl
 		h.hostInfos = h.getInnerIP()
 		if len(h.hostInfos) != len(h.instID) {
 			blog.Infof("NewHostModuleConfigLog get hostinfo error, hostID:%v, replay:%v", instID, h.hostInfos)
-			return nil, errors.New("initialization log error, Host  not found")
 		}
 	}
 
