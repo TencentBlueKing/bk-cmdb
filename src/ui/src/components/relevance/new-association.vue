@@ -332,7 +332,9 @@
             },
             getBizInstance (cancelToken, filterObjId) {
                 const params = {
-                    condition: {},
+                    condition: {
+                        'bk_data_status': {'$ne': 'disabled'}
+                    },
                     fields: [],
                     page: this.page
                 }
