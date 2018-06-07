@@ -141,6 +141,7 @@
                             :objId="'host'"
                             :ObjectID="sideslider.attribute.form.formValues['bk_host_id']"
                             :instance="sideslider.attribute.form.formValues"
+                            @handleUpdate="getTableList"
                         ></v-relevance>
                     </bk-tabpanel>
                     <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')"

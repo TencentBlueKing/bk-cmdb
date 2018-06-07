@@ -24,6 +24,7 @@
             ref="component"
             :is="currentComponent"
             :class="{'new-association': currentComponent === 'v-new-association'}"
+            @handleUpdate="handleUpdate"
             @handleNewAssociationClose="handleNewAssociationClose"
             @handleAssociationLoaded="checkAssociation">
         </component>
@@ -117,6 +118,9 @@
             },
             checkAssociation (association) {
                 this.hasAssociation = association.next.some(model => !this.invalidAssociation.includes(model['bk_obj_id']))
+            },
+            handleUpdate () {
+                this.$emit('handleUpdate')
             },
             resizeFull () {
                 this.$refs.component.resizeCanvas(true)

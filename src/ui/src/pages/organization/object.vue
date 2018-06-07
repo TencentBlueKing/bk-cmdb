@@ -118,7 +118,8 @@
                             <v-relevance :isShow="tab.activeName==='relevance'"
                                 :objId="objId"
                                 :ObjectID="objId !== 'biz' ? attr.formValues['bk_inst_id'] : attr.formValues['bk_biz_id']"
-                                :instance="attr.formValues">
+                                :instance="attr.formValues"
+                                @handleUpdate="getTableList">
                             </v-relevance>
                         </bk-tabpanel>
                         <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
