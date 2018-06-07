@@ -876,10 +876,10 @@ input.parsley-error {
         content: '';
         position: absolute;
         display: inline-block;
-        left: -17px;
+        left: -18px;
         top: 50%;
         border: 8px solid transparent;
-        border-right-color: rgba(0, 0, 0, 0.3);
+        border-right-color: #aeaeae;
         transform: translate(0, -50%);
     }
     &::after {
