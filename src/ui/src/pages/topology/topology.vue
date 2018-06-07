@@ -2,7 +2,7 @@
     <div class="topo-wrapper clearfix">
         <div class="topo-tree-ctn fl">
             <div class="biz-selector-ctn">
-                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected"></v-application-selector>
+                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected" :filterable="true"></v-application-selector>
             </div>
             <div class="topo-options-ctn" hidden>
                 <i class="topo-option-del icon-cc-del fr" v-if="isShowOptionDel && Object.keys(tree.treeData).length" @click="deleteNode"></i>
@@ -372,7 +372,9 @@
             deleteNode () {
                 this.$bkInfo({
                     title: `${this.$t('Common[\'确定删除\']')} ${this.tree.activeNode['bk_inst_name']}?`,
-                    content: `${this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']')}`,
+                    content: this.tree.activeNode['bk_obj_id'] === 'module'
+                        ? this.$t('Common["请先转移其下所有的主机"]')
+                        : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
                     confirmFn: () => {
                         let url
                         let {
@@ -476,51 +478,14 @@
                 this.view.crossImport.isShow = true
             },
             tabChanged (active) {
-                if (active === this.view.tab.active) {
-                    return
-                }
+                this.view.tab.active = active
+                this.view.attribute.formValues = {}
                 if (active === 'host') {
-                    let isConfirmShow = this.$refs.topoAttribute.isCloseConfirmShow()
-                    if (isConfirmShow) {
-                        this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                            confirmFn: () => {
-                                this.view.tab.active = active
-                                this.view.attribute.formValues = {}
-                                if (active === 'host') {
-                                    this.view.attribute.type = 'update'
-                                }
-                            }
-                        })
-                    } else {
-                        this.view.tab.active = active
-                        this.view.attribute.formValues = {}
-                        if (active === 'host') {
-                            this.view.attribute.type = 'update'
-                        }
-                    }
-                } else {
-                    this.view.tab.active = active
-                    this.view.attribute.formValues = {}
-                    if (active === 'host') {
-                        this.view.attribute.type = 'update'
-                    }
+                    this.view.attribute.type = 'update'
                 }
             },
             cancelCreate () {
                 this.tabChanged('host')
-            }
-        },
-        beforeRouteLeave (to, from, next) {
-            if (this.$refs.topoAttribute.isCloseConfirmShow()) {
-                this.$bkInfo({
-                    title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                    confirmFn: () => {
-                        next(true)
-                    }
-                })
-            } else {
-                next(true)
             }
         },
         created () {
@@ -552,7 +517,6 @@
     }
     .biz-selector-ctn{
         padding: 20px;
-        background: #606e8e;
     }
     .topo-options-ctn{
         height: 44px;
@@ -581,7 +545,7 @@
         border: none;
     }
     .tree-list-ctn{
-        padding: 20px 0 0 20px;
+        padding: 0 0 0 20px;
         max-height: calc(100% - 120px);
         overflow: auto;
         @include scrollbar;

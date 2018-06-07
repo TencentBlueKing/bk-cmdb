@@ -150,6 +150,9 @@
                         bk_supplier_account: this.bkSupplierAccount
                     }).then(res => {
                         if (res.result) {
+                            res.data.sort((objA, objB) => {
+                                return objA['bk_property_index'] - objB['bk_property_index']
+                            })
                             this.attribute[hostObjId] = res.data
                         } else {
                             this.$alertMsg(res['bk_error_msg'])
@@ -261,6 +264,7 @@
                                 this.hostRelation = getHostRelation(res.data.info[0])
                             } else {
                                 this.noResult = true
+                                this.showTips = true
                                 this.result = {}
                                 this.hostRelation = []
                             }
@@ -296,7 +300,6 @@
                 })
             },
             cancelCrossImport () {
-                this.reset()
                 this.$emit('update:isShow', false)
             }
         }

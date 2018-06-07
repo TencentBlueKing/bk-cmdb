@@ -135,10 +135,14 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 		return asstErr
 	}
 
-	err := cli.deleteInstAssociation(req, instID, ownerID, objID)
-	if nil != err {
-		blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
-		return err
+	for _, asst := range asstDes {
+		if _, ok := input[asst.ObjectAttID]; ok {
+			err := cli.deleteInstAssociation(req, instID, ownerID, objID, asst.AsstObjID)
+			if nil != err {
+				blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
+				return err
+			}
+		}
 	}
 
 	asstFieldVal := cli.extractDataFromAssociationField(int64(instID), input, asstDes)
@@ -147,12 +151,15 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 
 }
 
-func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID string) error {
+func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID, asstObjID string) error {
 
 	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
 	input := map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
+	}
+	if "" != asstObjID {
+		input[common.BKAsstObjIDField] = asstObjID
 	}
 	inputJSON, err := json.Marshal(input)
 	if nil != err {
@@ -173,7 +180,7 @@ func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, o
 
 func (cli *instAction) searchAssociationInst(req *restful.Request, objID string, searchParams map[string]interface{}) ([]int64, error) {
 	// search the association object insts
-	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/object/search"
+	sURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + util.GetObjByType(objID) + "/search"
 	inputJSON, jsErr := json.Marshal(searchParams)
 
 	if nil != jsErr {
@@ -208,7 +215,7 @@ func (cli *instAction) searchAssociationInst(req *restful.Request, objID string,
 
 				if dataItem, dataItemOk := infoItem.(map[string]interface{}); dataItemOk {
 
-					instID, keyItemOk := dataItem[common.BKInstIDField]
+					instID, keyItemOk := dataItem[util.GetObjIDByType(objID)]
 					if keyItemOk {
 						id, idErr := util.GetInt64ByInterface(instID)
 						if nil != idErr {
@@ -271,8 +278,10 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 			// Extract the ID of the instance according to the associated object.
 			condition := map[string]interface{}{}
-			condition[common.BKObjIDField] = keyObjID
-			condition[common.BKOwnerIDField] = ownerID
+			if util.GetObjByType(keyObjID) == common.BKINnerObjIDObject {
+				condition[common.BKObjIDField] = keyObjID
+				condition[common.BKOwnerIDField] = ownerID
+			}
 
 			for _, objCondition := range objs {
 

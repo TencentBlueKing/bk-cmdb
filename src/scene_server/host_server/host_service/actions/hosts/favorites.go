@@ -33,8 +33,8 @@ type hostAction struct {
 	base.BaseAction
 }
 
-// favouriteParms user request params
-type favouriteParms struct {
+// FavouriteParms user request params
+type FavouriteParms struct {
 	ID          string `json:"id"`
 	Info        string `json:"info"`
 	QueryParams string `json:"query_params"`
@@ -62,7 +62,7 @@ func (cli *hostAction) AddHostFavourite(req *restful.Request, resp *restful.Resp
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		user := util.GetActionUser(req)
 		value, err := ioutil.ReadAll(req.Request.Body)
-		data := favouriteParms{}
+		data := FavouriteParms{}
 		err = json.Unmarshal([]byte(value), &data)
 
 		if err != nil {

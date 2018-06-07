@@ -17,6 +17,40 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 )
 
+// GetModel get the model
+func (cli *manager) GetModel(supplierAccount, classificationID, objID string) (model.Model, error) {
+	condInner := common.CreateCondition().Field(model.ClassificationID).Eq(classificationID)
+	clsIter, err := cli.FindClassificationsByCondition(condInner)
+	if nil != err {
+		return nil, err
+	}
+	var targetModel model.Model
+	err = clsIter.ForEach(func(item model.Classification) error {
+
+		condInner = common.CreateCondition().Field(model.ObjectID).Eq(objID).
+			Field(model.SupplierAccount).Eq(supplierAccount).
+			Field(model.ClassificationID).Eq(item.GetID())
+
+		modelIter, err := item.FindModelsByCondition(condInner)
+		if nil != err {
+			return err
+		}
+
+		err = modelIter.ForEach(func(modelItem model.Model) error {
+			targetModel = modelItem
+			return nil
+		})
+
+		return nil
+	})
+
+	if nil != err {
+		return nil, err
+	}
+
+	return targetModel, err
+}
+
 // CreateClassification create a new classification
 func (cli *manager) CreateClassification(name string) model.Classification {
 	return model.CreateClassification(name)
