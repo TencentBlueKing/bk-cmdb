@@ -44,6 +44,10 @@ func (cli *classification) Parse(data frtypes.MapStr) error {
 	return err
 }
 
+func (cli *classification) ToMapStr() (frtypes.MapStr, error) {
+	return nil, nil
+}
+
 func (cli *classification) GetObjects() ([]Object, error) {
 	return nil, nil
 }
