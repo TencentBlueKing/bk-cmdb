@@ -104,7 +104,10 @@
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
         "返回上级": "Return",
-        "开始查询": "Please enter at least 3 characters to start the query"
+        "开始查询": "Please enter at least 3 characters to start the query",
+        "固定到导航": "Collections to navigation",
+        "置顶": "Top",
+        "更多": "More"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

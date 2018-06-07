@@ -194,7 +194,14 @@
                 },
                 typeOfChar: ['singlechar', 'longchar'],
                 typeOfDate: ['date', 'time'],
-                typeOfAsst: ['singleasst', 'multiasst']
+                typeOfAsst: ['singleasst', 'multiasst'],
+                specialObj: {
+                    'host': 'bk_host_innerip',
+                    'biz': 'bk_biz_name',
+                    'plat': 'bk_cloud_name',
+                    'module': 'bk_module_name',
+                    'set': 'bk_set_name'
+                }
             }
         },
         computed: {
@@ -247,7 +254,7 @@
                                 'bk_obj_id': property['bk_asst_obj_id'],
                                 fields: [],
                                 condition: [{
-                                    field: 'bk_inst_name',
+                                    field: this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : 'bk_inst_name',
                                     operator: column.operator,
                                     value: column.value
                                 }]

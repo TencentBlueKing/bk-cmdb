@@ -14,7 +14,7 @@
                     <i class="icon-cc-resize-full"></i>
                 </span>
                 <bk-button type="primary" class="btn btn-add"
-                    :disabled="!hasAssociationProperty"
+                    :disabled="!hasAssociation"
                     @click="currentComponent = 'v-new-association'">
                     {{$t('Association["新增关联"]')}}
                 </bk-button>
@@ -24,7 +24,9 @@
             ref="component"
             :is="currentComponent"
             :class="{'new-association': currentComponent === 'v-new-association'}"
-            @handleNewAssociationClose="handleNewAssociationClose">
+            @handleUpdate="handleUpdate"
+            @handleNewAssociationClose="handleNewAssociationClose"
+            @handleAssociationLoaded="checkAssociation">
         </component>
     </div>
 </template>
@@ -51,17 +53,14 @@
         data () {
             return {
                 currentComponent: null,
-                prevComponent: null
+                prevComponent: null,
+                hasAssociation: false,
+                invalidAssociation: ['plat', 'process']
             }
         },
         computed: {
+            ...mapGetters(['bkSupplierAccount']),
             ...mapGetters('object', ['attribute']),
-            hasAssociationProperty () {
-                if (this.objId) {
-                    return (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                }
-                return false
-            },
             componentProps () {
                 const component = this.currentComponent
                 const props = {
@@ -80,6 +79,19 @@
                     }
                 }
                 return component ? props[component] : {}
+            },
+            dataIdKey () {
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
+                }
+                return 'bk_inst_id'
             }
         },
         watch: {
@@ -88,6 +100,7 @@
                     this.currentComponent = 'v-topo'
                 } else {
                     this.currentComponent = null
+                    this.hasAssociation = false
                 }
             },
             objId (objId) {
@@ -99,14 +112,20 @@
                 this.prevComponent = prevComponent
             }
         },
-        created () {
+        async created () {
             if (this.objId && !this.attribute[this.objId]) {
-                this.$store.dispatch('object/getAttribute', {objId: this.objId})
+                await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             }
         },
         methods: {
             handleNewAssociationClose () {
                 this.currentComponent = this.prevComponent
+            },
+            checkAssociation (association) {
+                this.hasAssociation = association.next.some(model => !this.invalidAssociation.includes(model['bk_obj_id']))
+            },
+            handleUpdate () {
+                this.$emit('handleUpdate')
             },
             resizeFull () {
                 this.$refs.component.resizeCanvas(true)

@@ -3,11 +3,13 @@
         <div class="screening-group">
             <label class="screening-group-label">{{$t('Hosts[\'选择业务\']')}}</label>
             <div class="screening-group-item screening-group-item-app">
-                <v-application-selector
-                    :filterable="true"
-                    @on-selected="bkBizSelected"
-                    :selected.sync="bkBizId">
-                </v-application-selector>
+                <bk-select :filterable="true" :selected.sync="bkBizId" @on-selected="bkBizSelected">
+                    <bk-select-option v-for="biz in bkBizList"
+                        :key="biz['bk_biz_id']"
+                        :value="biz['bk_biz_id']"
+                        :label="biz['bk_biz_name']">
+                    </bk-select-option>
+                </bk-select>
             </div>
         </div>
         <div class="screening-group">
@@ -136,6 +138,7 @@
             }
         },
         computed: {
+            ...mapGetters(['bkBizList']),
             ipData () {
                 let ipData = []
                 this['ip']['text'].split(/\n|;|；|,|，/).map(ip => {
@@ -226,6 +229,9 @@
         },
         created () {
             this.initLocalQuery()
+            if (this.bkBizList.length) {
+                this.bkBizId = this.bkBizList[0]['bk_biz_id']
+            }
         },
         methods: {
             initLocalQuery () {
