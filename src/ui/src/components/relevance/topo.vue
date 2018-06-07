@@ -432,6 +432,7 @@
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
+                    this.$emit('handleAssociationLoaded', res.data[0])
                     await this.setTopoStruct(res.data[0], isRoot)
                 } catch (e) {
                     this.isLoading = false
