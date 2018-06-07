@@ -16,9 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -38,7 +38,7 @@ func (cli *topoAPI) initModule() {
 func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 
 	objItems, err := cli.core.FindObject(params, cond)
 
@@ -73,7 +73,7 @@ func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryPara
 func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
 		Field(common.BKSetIDField).Eq(pathParams("set_id")).
@@ -88,7 +88,7 @@ func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryPara
 func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
 		Field(common.BKModuleIDField).Eq(pathParams("module_id"))
@@ -108,7 +108,7 @@ func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryPara
 	// {owner_id}/{app_id}/{set_id}
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
 		Field(common.BKSetIDField).Eq(pathParams("set_id"))

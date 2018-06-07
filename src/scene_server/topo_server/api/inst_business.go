@@ -16,9 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -40,7 +40,7 @@ func (cli *topoAPI) initBusiness() {
 func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := cli.core.FindObject(params, cond)
@@ -50,7 +50,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 		return nil, err
 	}
 
-	data.Set(common.BKOwnerIDField, params.OwnerID)
+	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	for _, item := range objItems {
 		setInst, err := cli.core.CreateInst(params, item, data)
@@ -75,7 +75,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -88,7 +88,7 @@ func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryPa
 func (cli *topoAPI) UpdateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -104,7 +104,7 @@ func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, pathParams, q
 	// /app/status/{flag}/{owner_id}/{app_id}
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -120,10 +120,10 @@ func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryPa
 	// "/app/search/{owner_id}
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	data.Set(common.BKOwnerIDField, params.OwnerID)
+	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	items, err := cli.core.FindInst(params, cond)
 	if nil != err {
@@ -148,10 +148,10 @@ func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryPa
 func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	data.Set(common.BKOwnerIDField, params.OwnerID)
+	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	items, err := cli.core.FindInst(params, cond)
 	if nil != err {
@@ -176,7 +176,7 @@ func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, 
 func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := cli.core.FindObject(params, cond)
@@ -186,7 +186,7 @@ func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, 
 		return nil, err
 	}
 
-	data.Set(common.BKOwnerIDField, params.OwnerID)
+	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	for _, item := range objItems {
 		setInst, err := cli.core.CreateInst(params, item, data)

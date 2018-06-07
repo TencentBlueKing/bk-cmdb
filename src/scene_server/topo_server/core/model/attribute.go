@@ -13,9 +13,9 @@
 package model
 
 import (
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
-
+	"configcenter/src/apimachinery"
+	frcommon "configcenter/src/common"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -43,7 +43,8 @@ type attribute struct {
 	Description   string      `field:"description"`
 	Creator       string      `field:"creator"`
 
-	params types.LogicParams
+	params    types.LogicParams
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *attribute) Parse(data frtypes.MapStr) error {

@@ -13,6 +13,12 @@
 package app
 
 import (
+	"time"
+
+	"github.com/emicklei/go-restful"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -28,10 +34,6 @@ import (
 	topoCore "configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/manager"
 	"configcenter/src/scene_server/topo_server/rdiscover"
-
-	"github.com/emicklei/go-restful"
-
-	"time"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -157,7 +159,25 @@ func (ccAPI *CCAPIServer) Start() error {
 	}
 
 	//http server
-	ccAPI.InitHttpServ(a.Error, a.Lang)
+	clientset, err := apimachinery.NewApiMachinery(&util.APIMachineryConfig{
+		ZkAddr: ccAPI.conf.RegDiscover,
+		QPS:    100,
+		Burst:  200,
+		TLSConfig: &util.TLSClientConfig{
+			InsecureSkipVerify: false,
+			CertFile:           "",
+			KeyFile:            "",
+			CAFile:             "",
+			Password:           "",
+		},
+	})
+
+	if err != nil {
+		blog.Errorf("failed to create client set, %s", err.Error())
+		return err
+	}
+
+	ccAPI.InitHTTPServ(a.Error, a.Lang, clientset)
 
 	go func() {
 		err := ccAPI.httpServ.ListenAndServe()
@@ -190,12 +210,12 @@ func (ccAPI *CCAPIServer) Start() error {
 
 }
 
-// InitHttpServ init http server
-func (ccAPI *CCAPIServer) InitHttpServ(err errors.CCErrorIf, lang language.CCLanguageIf) error {
+// InitHTTPServ init http server
+func (ccAPI *CCAPIServer) InitHTTPServ(err errors.CCErrorIf, lang language.CCLanguageIf, clientSet apimachinery.ClientSetInterface) error {
 
 	topo := topoAPI.New(err, lang)
 
-	topo.SetCore(topoCore.New())
+	topo.SetCore(topoCore.New(clientSet))
 
 	ccAPI.httpServ.RegisterWebServer("/topo/{version}", rdapi.AllGlobalFilter(), topo.Actions())
 

@@ -13,9 +13,9 @@
 package model
 
 import (
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
-
+	"configcenter/src/apimachinery"
+	frcommon "configcenter/src/common"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -28,7 +28,8 @@ type classification struct {
 	ClassificationType string `field:"bk_classification_type"`
 	ClassificationIcon string `field:"bk_classification_icon"`
 
-	params types.LogicParams
+	params    types.LogicParams
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *classification) Parse(data frtypes.MapStr) error {

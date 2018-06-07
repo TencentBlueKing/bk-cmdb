@@ -13,10 +13,16 @@
 package model
 
 import (
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
+	"context"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	frtypes "configcenter/src/common/types"
 
 	"configcenter/src/scene_server/topo_server/core/types"
+	metadata "configcenter/src/source_controller/api/metadata"
 )
 
 var _ Object = (*object)(nil)
@@ -33,26 +39,108 @@ type object struct {
 	Description string `field:"description"`
 	Creator     string `field:"creator"`
 	Modifier    string `field:"modifier"`
-	isNew       bool
-	params      types.LogicParams
+
+	isNew     bool
+	params    types.LogicParams
+	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *object) isExists() (bool, error) {
+
+	cond := common.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.ObjectID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), util.Headers{
+		Language: cli.params.Header.Language,
+		OwnerID:  cli.params.Header.OwnerID,
+	}, cond.ToMapStr().ToJSON())
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		return false, cli.params.Err.Error(rsp.Code)
+	}
+
+	// TODO: check the result
+
+	return true, nil
 }
 
 func (cli *object) create() error {
+
+	obj := &metadata.ObjectDes{}
+
+	obj.Creator = cli.Creator
+	obj.Description = cli.Description
+	obj.IsPaused = cli.IsPaused
+	obj.IsPre = cli.IsPre
+	obj.ObjCls = cli.ObjCls
+	obj.Modifier = cli.Modifier
+	obj.ObjectID = cli.ObjectID
+	obj.ObjectName = cli.ObjectName
+	obj.ObjIcon = cli.ObjIcon
+	obj.OwnerID = cli.params.Header.OwnerID
+
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), util.Headers{
+		Language: cli.params.Header.Language,
+		OwnerID:  cli.params.Header.OwnerID,
+	}, obj)
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		return cli.params.Err.Error(rsp.Code)
+	}
+
+	// TODO: check the result
+
 	return nil
 }
 
 func (cli *object) update() error {
+
+	data := common.SetValueToMapStrByTags(cli)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.ObjectID, util.Headers{
+		Language: cli.params.Header.Language,
+		OwnerID:  cli.params.Header.OwnerID,
+	}, data)
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		return cli.params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
 func (cli *object) Parse(data frtypes.MapStr) error {
 
-	err := frcommon.SetValueToStructByTags(cli, data)
+	err := common.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return err
 	}
 
-	// TODO 增加校验
+	if 0 == len(cli.ObjectID) {
+		return cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, "bk_obj_id")
+	}
+
+	if 0 == len(cli.ObjCls) {
+		return cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, "bk_classification_id")
+	}
 
 	return err
 }
@@ -62,7 +150,7 @@ func (cli *object) ToMapStr() (frtypes.MapStr, error) {
 }
 
 func (cli *object) Save() error {
-	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
+	dataMapStr := common.SetValueToMapStrByTags(cli)
 
 	if cli.isNew {
 		cli.create()
