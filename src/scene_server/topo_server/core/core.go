@@ -13,19 +13,22 @@
 package core
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // New create a core manager
-func New() Core {
+func New(client apimachinery.ClientSetInterface) Core {
 	return &core{
-		modelFactory: model.New(),
-		instFactory:  inst.New(),
+		clientSet:    client,
+		modelFactory: model.New(client),
+		instFactory:  inst.New(client),
 	}
 }
 
 type core struct {
+	clientSet    apimachinery.ClientSetInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
 }

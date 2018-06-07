@@ -13,18 +13,25 @@
 package inst
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // New create a new inst factory
-func New() Factory {
-	return &factory{}
+func New(clientSet apimachinery.ClientSetInterface) Factory {
+	return &factory{
+		clientSet: clientSet,
+	}
 }
 
 type factory struct {
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *factory) CreateInst(params types.LogicParams, obj model.Object) Inst {
-	return &inst{}
+	return &inst{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }

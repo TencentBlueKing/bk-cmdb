@@ -13,7 +13,7 @@
 package inst
 
 import (
-	frtypes "configcenter/src/framework/core/types"
+	frtypes "configcenter/src/common/types"
 
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"

@@ -16,9 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -47,7 +47,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
 	objItems, err := cli.core.FindObject(params, cond)
@@ -57,7 +57,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, params.OwnerID)
+	data.Set(common.BKAppIDField, params.Header.OwnerID)
 	data.Set(common.BKObjIDField, objID)
 
 	for _, item := range objItems {
@@ -83,7 +83,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 func (cli *topoAPI) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(pathParams("obj_id")).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
@@ -99,7 +99,7 @@ func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
@@ -115,7 +115,7 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
 	items, err := cli.core.FindInst(params, cond)
@@ -146,7 +146,7 @@ func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pat
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
 	items, err := cli.core.FindInst(params, cond)
@@ -176,7 +176,7 @@ func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, que
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
 	items, err := cli.core.FindInst(params, cond)
@@ -206,7 +206,7 @@ func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
 	items, err := cli.core.FindInst(params, cond)
@@ -235,7 +235,7 @@ func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, que
 	objID := pathParams("obj_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
@@ -266,7 +266,7 @@ func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, qu
 	objID := pathParams("object_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq("inst_id")
 
@@ -298,7 +298,7 @@ func (cli *topoAPI) SearchInstTopo(params types.LogicParams, pathParams, queryPa
 	objID := pathParams("object_id")
 
 	cond := frcommon.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.OwnerID).
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 

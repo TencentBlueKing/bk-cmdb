@@ -13,40 +13,54 @@
 package model
 
 import (
-	frcommon "configcenter/src/framework/common"
-
+	"configcenter/src/apimachinery"
+	//frcommon "configcenter/src/framework/common"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // New create a new model factory instance
-func New() Factory {
-	return &factory{}
+func New(clientSet apimachinery.ClientSetInterface) Factory {
+	return &factory{
+		clientSet: clientSet,
+	}
 }
 
 type factory struct {
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *factory) CreaetObject(params types.LogicParams) Object {
-	return &object{}
+	return &object{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }
 
 func (cli *factory) CreaetClassification(params types.LogicParams) Classification {
-	return nil
+	return &classification{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }
 
 func (cli *factory) CreateAttribute(params types.LogicParams) Attribute {
-	return nil
+	return &attribute{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }
 
 func (cli *factory) CreateGroup(params types.LogicParams) Group {
-	return nil
+	return &group{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }
 
 func (cli *factory) CreateAssociation(params types.LogicParams) Association {
 
-	return nil
-}
-
-func (cli *factory) FindGroup(params types.LogicParams, cond frcommon.Condition) ([]Group, error) {
-	return nil, nil
+	return &association{
+		params:    params,
+		clientSet: cli.clientSet,
+	}
 }

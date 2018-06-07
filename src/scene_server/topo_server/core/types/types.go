@@ -13,13 +13,14 @@
 package types
 
 import (
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 )
 
 // LogicParams the logic function params
 type LogicParams struct {
-	OwnerID string
-	Err     errors.DefaultCCErrorIf
-	Lang    language.DefaultCCLanguageIf
+	Header util.Headers
+	Err    errors.DefaultCCErrorIf
+	Lang   language.DefaultCCLanguageIf
 }
