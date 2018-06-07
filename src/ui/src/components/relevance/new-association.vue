@@ -87,7 +87,14 @@
                     sort: '',
                     cancelSource: null
                 },
-                association: []
+                association: [],
+                specialObj: {
+                    'host': 'bk_host_innerip',
+                    'biz': 'bk_biz_name',
+                    'plat': 'bk_cloud_name',
+                    'module': 'bk_module_name',
+                    'set': 'bk_set_name'
+                }
             }
         },
         computed: {
@@ -308,7 +315,7 @@
                         condition.push({
                             'bk_obj_id': property['bk_asst_obj_id'],
                             'condition': [{
-                                'field': 'bk_inst_name',
+                                'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : 'bk_inst_name',
                                 'operator': this.filter.property.operator,
                                 'value': this.filter.property.value
                             }]
@@ -347,7 +354,7 @@
                 if (this.filter.property.value !== '' && property) {
                     const objId = ['singleasst', 'multiasst'].includes(property['bk_property_type']) ? property['bk_asst_obj_id'] : this.filter.objId
                     condition[objId] = [{
-                        'field': this.filter.property.id,
+                        'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : this.filter.property.id,
                         'operator': this.filter.property.operator,
                         'value': this.filter.property.value
                     }]

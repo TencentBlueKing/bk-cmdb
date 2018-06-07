@@ -42,7 +42,7 @@
                 <div class="fl left-select">
                     <bk-select :selected.sync="filter.selected" ref="filterSelector" @on-selected="setFilterType">
                         <bk-select-option
-                            v-for="(option, index) of filteredList"
+                            v-for="(option, index) of filterList"
                             :key="option.id"
                             :value="option.id"
                             :label="option.name">
@@ -317,14 +317,6 @@
             },
             exportUrl () {
                 return `${window.siteUrl}insts/owner/${this.bkSupplierAccount}/object/${this.objId}/export`
-            },
-            filteredList () {
-                return this.filterList.filter(({id, type}) => {
-                    if (this.objId === 'biz') {
-                        return !['singleasst', 'multiasst'].includes(type)
-                    }
-                    return true
-                })
             }
         },
         watch: {
@@ -342,10 +334,10 @@
                 // 初始化表格
                 this.initTable()
             },
-            filteredList (filteredList) {
-                if (filteredList.length) {
-                    this.filter.type = this.getProperty(filteredList[0]['id'])['bk_property_type']
-                    this.filter.selected = filteredList.length ? filteredList[0]['id'] : ''
+            filterList (filterList) {
+                if (filterList.length) {
+                    this.filter.type = this.getProperty(filterList[0]['id'])['bk_property_type']
+                    this.filter.selected = filterList.length ? filterList[0]['id'] : ''
                 } else {
                     this.filter.type = ''
                     this.filter.selected = ''
