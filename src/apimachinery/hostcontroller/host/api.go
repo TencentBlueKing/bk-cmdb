@@ -13,68 +13,64 @@
 package host
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"fmt"
+
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/common/commondata"
 )
 
-func(t *hostctrl) GetHostByID(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/host/%s", hostID)
+func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h util.Headers) (resp *metadata.Response, err error) {
+	subPath := fmt.Sprintf("/host/%s", hostID)
 
-        err = t.client.Get().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h.ToHeader()).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *hostctrl) GetHosts(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/hosts/search"
+func (t *hostctrl) GetHosts(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *metadata.GetHostsResult, err error) {
+	subPath := "/hosts/search"
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(opt).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResource(subPath).
+		WithHeaders(h.ToHeader()).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *hostctrl) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/insts"
+func (t *hostctrl) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+	resp = new(api.BKAPIRsp)
+	subPath := "/insts"
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h.ToHeader()).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *hostctrl) GetHostSnap(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
+func (t *hostctrl) GetHostSnap(ctx context.Context, hostID string, h util.Headers) (resp *metadata.GetHostSnapResult, err error) {
+	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
 
-        err = t.client.Get().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h.ToHeader()).
+		Do().
+		Into(resp)
+	return
 }
-
-
