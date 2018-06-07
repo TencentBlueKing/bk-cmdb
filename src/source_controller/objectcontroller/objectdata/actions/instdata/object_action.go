@@ -54,6 +54,7 @@ func init() {
 func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -65,6 +66,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 		value, _ := ioutil.ReadAll(req.Request.Body)
 		js, _ := simplejson.NewJson([]byte(value))
 		input, _ := js.Map()
+		util.SetModOwner(input, ownerID)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
@@ -99,6 +101,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -113,6 +116,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 		data := input["data"].(map[string]interface{})
 		data[common.LastTimeField] = time.Now()
 		condition := input["condition"]
+		util.SetModOwner(condition, ownerID)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
@@ -162,6 +166,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -180,7 +185,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 		}
 		//dat.ConvTime()
 		fields := dat.Fields
-		condition := dat.Condition
+		condition := util.SetQueryOwner(dat.Condition, ownerID)
 
 		skip := dat.Start
 		limit := dat.Limit
@@ -209,6 +214,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -221,6 +227,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 		input, _ := js.Map()
 		input[common.CreateTimeField] = time.Now()
 		input[common.LastTimeField] = time.Now()
+		util.SetModOwner(input, ownerID)
 		blog.Info("create object type:%s,data:%v", objType, input)
 		var idName string
 		id, err := instdata.CreateObject(objType, input, &idName)

@@ -58,6 +58,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -82,6 +83,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 		*obj.CreateTime = time.Now()
 		obj.LastTime = new(time.Time)
 		*obj.LastTime = time.Now()
+		obj.OwnerID = ownerID
 
 		if obj.IsPre {
 			if obj.PropertyID == common.BKInstNameField {
@@ -118,6 +120,7 @@ func (cli *objectAttAction) DeleteObjectAttByID(req *restful.Request, resp *rest
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -145,6 +148,7 @@ func (cli *objectAttAction) DeleteObjectAttByID(req *restful.Request, resp *rest
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
 		}
+		condition = util.SetModOwner(condition, ownerID)
 		cnt, cntErr := cli.CC.InstCli.GetCntByCondition(metadata.ObjectAttDes{}.TableName(), condition)
 		if nil != cntErr {
 			blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
@@ -172,6 +176,7 @@ func (cli *objectAttAction) UpdateObjectAttByID(req *restful.Request, resp *rest
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -199,8 +204,9 @@ func (cli *objectAttAction) UpdateObjectAttByID(req *restful.Request, resp *rest
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		condition := util.SetModOwner(map[string]interface{}{"id": appID}, ownerID)
 		// update object into storage
-		updateErr := cli.CC.InstCli.UpdateByCondition(metadata.ObjectAttDes{}.TableName(), data, map[string]interface{}{"id": appID})
+		updateErr := cli.CC.InstCli.UpdateByCondition(metadata.ObjectAttDes{}.TableName(), data, condition)
 		if nil != updateErr {
 			blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
@@ -219,6 +225,7 @@ func (cli *objectAttAction) SelectObjectAttByID(req *restful.Request, resp *rest
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -232,9 +239,10 @@ func (cli *objectAttAction) SelectObjectAttByID(req *restful.Request, resp *rest
 			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsInvalid, "id")
 		}
 
+		condition := util.SetQueryOwner(map[string]interface{}{"id": id}, ownerID)
 		// select from storage
 		result := make([]metadata.ObjectAttDes, 0)
-		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectAttDes{}.TableName(), nil, map[string]interface{}{"id": id}, &result, "", 0, 0); nil != selErr {
+		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectAttDes{}.TableName(), nil, condition, &result, "", 0, 0); nil != selErr {
 			blog.Error("find object by selector failed, error:%s", selErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
@@ -259,6 +267,7 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -282,6 +291,7 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 		results := make([]metadata.ObjectAttDes, 0)
 		// select from storage
 		selector, _ := js.Map()
+		selector = util.SetQueryOwner(selector, ownerID)
 		blog.Debug("the condition: %+v the page:%+v", selector, page)
 		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectAttDes{}.TableName(), nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 			blog.Error("find object by selector failed, error information is %s", selErr.Error())

@@ -1,23 +1,23 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	"encoding/json"
@@ -52,6 +52,7 @@ func (cli *objectAssociationAction) CreateObjectAssociation(req *restful.Request
 	blog.Info("create obj-association")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -68,6 +69,7 @@ func (cli *objectAssociationAction) CreateObjectAssociation(req *restful.Request
 			blog.Error("fail to unmarshal json, error information is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+		obj.OwnerID = ownerID
 
 		// save to the storage
 		id, err := cli.CC.InstCli.GetIncID(obj.TableName())
@@ -94,6 +96,7 @@ func (cli *objectAssociationAction) DeleteObjectAssociation(req *restful.Request
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -120,6 +123,7 @@ func (cli *objectAssociationAction) DeleteObjectAssociation(req *restful.Request
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
 		}
+		util.SetModOwner(condition, ownerID)
 
 		cnt, cntErr := cli.CC.InstCli.GetCntByCondition(metadata.ObjectAsst{}.TableName(), condition)
 		if nil != cntErr {
@@ -148,6 +152,7 @@ func (cli *objectAssociationAction) UpdateObjectAssociation(req *restful.Request
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -174,7 +179,8 @@ func (cli *objectAssociationAction) UpdateObjectAssociation(req *restful.Request
 		}
 		blog.Debug("update:%+v", data)
 		// update object into storage
-		if updateErr := cli.CC.InstCli.UpdateByCondition(metadata.ObjectAsst{}.TableName(), data, map[string]interface{}{"id": id}); nil != updateErr {
+		condition := util.SetModOwner(map[string]interface{}{"id": id}, ownerID)
+		if updateErr := cli.CC.InstCli.UpdateByCondition(metadata.ObjectAsst{}.TableName(), data, condition); nil != updateErr {
 			blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
@@ -193,6 +199,7 @@ func (cli *objectAssociationAction) SelectObjectAssociations(req *restful.Reques
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -214,6 +221,7 @@ func (cli *objectAssociationAction) SelectObjectAssociations(req *restful.Reques
 
 		results := make([]metadata.ObjectAsst, 0)
 		selector, _ := js.Map()
+		selector = util.SetQueryOwner(selector, ownerID)
 		// select from storage
 		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectAsst{}.TableName(), nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 			blog.Error("select data failed, error information is %s", selErr.Error())

@@ -50,7 +50,7 @@ func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restfu
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -71,7 +71,7 @@ func (cli *graphicsAction) SearchTopoGraphics(req *restful.Request, resp *restfu
 		}
 
 		results := []metadata.TopoGraphics{}
-		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.TopoGraphics{}.TableName(), nil, selector, &results, "", -1, -1); nil != selErr {
+		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.TopoGraphics{}.TableName(), nil, util.SetModOwner(selector, ownerID), &results, "", -1, -1); nil != selErr {
 			blog.Error("select data failed, error information is %s", selErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBSelectFailed)
 		}
@@ -86,7 +86,7 @@ func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restfu
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -106,6 +106,7 @@ func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restfu
 
 		for index := range datas {
 			blog.InfoJSON("update graphic %s", datas[index])
+			datas[index].OwnerID = ownerID
 			_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index].FillBlank())
 			if cli.CC.InstCli.IsDuplicateErr(err) {
 				condition := metadata.TopoGraphics{}
@@ -114,6 +115,7 @@ func (cli *graphicsAction) UpdateTopoGraphics(req *restful.Request, resp *restfu
 				condition.SetNodeType(*datas[index].NodeType)
 				condition.SetObjID(*datas[index].ObjID)
 				condition.SetInstID(*datas[index].InstID)
+				condition.OwnerID = ownerID
 				if err = cli.CC.InstCli.UpdateByCondition(metadata.TopoGraphics{}.TableName(), datas[index], condition); err != nil {
 					blog.Error("update data failed, error information is %s", err.Error())
 					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBUpdateFailed)

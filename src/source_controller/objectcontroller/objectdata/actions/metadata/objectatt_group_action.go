@@ -57,6 +57,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -88,6 +89,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectPropertyGroupInsertFailed)
 		}
 		propertyGroup.ID = int(id)
+		propertyGroup.OwnerID = ownerID
 
 		_, err = cli.CC.InstCli.Insert(propertyGroup.TableName(), propertyGroup)
 		if nil == err {
@@ -108,6 +110,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
@@ -128,6 +131,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		propertyGroup.Condition = util.SetModOwner(propertyGroup.Condition, ownerID)
 		blog.Debug("property group:%+v", propertyGroup)
 		if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNamePropertyGroup, propertyGroup.Data, propertyGroup.Condition); nil != updateerr {
 			blog.Error("fail update object by condition, error:%v", updateerr.Error())
@@ -145,7 +149,7 @@ func (cli *objectAttGroupAction) SelectGroup(req *restful.Request, resp *restful
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -168,6 +172,7 @@ func (cli *objectAttGroupAction) SelectGroup(req *restful.Request, resp *restful
 		page := metadata.ParsePage(condition["page"])
 		delete(condition, "page")
 
+		condition = util.SetQueryOwner(condition, ownerID)
 		results := make([]metadata.PropertyGroup, 0)
 		if selerr := cli.CC.InstCli.GetMutilByCondition(common.BKTableNamePropertyGroup, nil, condition, &results, page.Sort, page.Start, page.Limit); nil != selerr {
 			blog.Error("find object by selector failed, error information is %s", selerr.Error())
@@ -189,7 +194,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroup(req *restful.Request, resp 
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -211,6 +216,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroup(req *restful.Request, resp 
 		if 0 == cnt {
 			return http.StatusOK, nil, nil
 		}
+		condition = util.SetModOwner(condition, ownerID)
 		if delErr := cli.CC.InstCli.DelByCondition(common.BKTableNamePropertyGroup, condition); nil != delErr {
 			blog.Error("failed to delete property group  by condition, error:%v", delErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectPropertyGroupDeleteFailed)
@@ -226,7 +232,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -266,6 +272,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 				"bk_property_group": objAtt.Data.PropertyGroupID,
 			}
 
+			objectAttSelector = util.SetModOwner(objectAttSelector, ownerID)
 			// update the object attribute
 			if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjAttDes, objectAttValue, objectAttSelector); nil != updateerr {
 				blog.Error("fail update object by condition, error:%v", updateerr.Error())
@@ -283,7 +290,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroupObjectAtt(req *restful.Reque
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -311,6 +318,7 @@ func (cli *objectAttGroupAction) DeletePropertyGroupObjectAtt(req *restful.Reque
 		if 0 == cnt {
 			return http.StatusOK, nil, nil
 		}
+		objectAttSelector = util.SetModOwner(objectAttSelector, ownerID)
 		blog.Debug("group property selector %+v, value %+v", objectAttSelector, objectAttValue)
 		// update the object attribute
 		if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjAttDes, objectAttValue, objectAttSelector); nil != updateerr {
@@ -329,7 +337,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -353,6 +361,7 @@ func (cli *objectAttGroupAction) SelectPropertyGroupByObjectID(req *restful.Requ
 		}
 		delete(groupSelector, "page")
 
+		groupSelector = util.SetQueryOwner(groupSelector, ownerID)
 		blog.Debug("group property selector %+v", groupSelector)
 		results := make([]metadata.PropertyGroup, 0)
 		// select the object group
