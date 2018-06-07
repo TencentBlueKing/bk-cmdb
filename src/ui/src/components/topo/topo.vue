@@ -9,9 +9,9 @@
  */
 
 <template>
-    <div class="topo-wrapper model" id="topo-wrapper">
+    <div class="topo-wrapper model" :class="{'no-edit': curClassify === 'bk_host_manage'}" id="topo-wrapper">
         <div id="topo" class="topo"></div>
-        <button class="bk-button vis-button vis-setup" @click="editModel">
+        <button v-if="curClassify !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editModel">
             <i class="icon icon-cc-edit"></i>
         </button>
         <bk-button type="primary" class="bk-button vis-button vis-create" v-if="addModelAvailable && curClassify && modelNodes.length" @click="createModel">
@@ -540,6 +540,17 @@
         }
         .vis-up,.vis-down,.vis-left,.vis-right{
             display: none;
+        }
+        &.no-edit {
+            .vis-zoomIn{
+                left: 54px;
+            }
+            .vis-zoomOut{
+                left: 92px;
+            }
+            .vis-zoomExtends{
+                left: 15px;
+            }
         }
         .vis-zoomIn{
             left: 92px;
