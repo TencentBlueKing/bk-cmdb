@@ -17,8 +17,8 @@ import (
 
 	// "configcenter/src/common"
 	// "configcenter/src/common/blog"
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
+	frcommon "configcenter/src/common"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 

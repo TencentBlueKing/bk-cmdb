@@ -13,7 +13,7 @@
 package api
 
 import (
-	frtypes "configcenter/src/framework/core/types"
+	frtypes "configcenter/src/common/types"
 
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/scene_server/topo_server/core"

@@ -13,7 +13,7 @@
 package core
 
 import (
-	frcommon "configcenter/src/framework/common"
+	frcommon "configcenter/src/common"
 	"configcenter/src/scene_server/topo_server/core/types"
 	//frtypes "configcenter/src/framework/core/types"
 	//"configcenter/src/scene_server/core/inst"
