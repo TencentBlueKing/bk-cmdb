@@ -29,7 +29,7 @@ import (
 	"github.com/rs/xid"
 )
 
-var history *historyAction = &historyAction{}
+var history = &historyAction{}
 
 // ObjectAction
 type historyAction struct {
@@ -40,6 +40,7 @@ type historyAction struct {
 func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -66,6 +67,7 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 		id := xid.New()
 		data["id"] = id.String()
 
+		data = util.SetModOwner(data, ownerID)
 		_, err = history.CC.InstCli.Insert("cc_History", data)
 		if nil != err {
 			blog.Error("Create  history fail, error information is %s, params:%v", err.Error(), data)
@@ -83,6 +85,7 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -96,6 +99,7 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 		//GetMutilByCondition(cName string, fields []string, s interface{}, result interface{}, sort string, skip, limit int) error
 		var result []interface{}
 		sort := "-" + common.LastTimeField
+		conds = util.SetModOwner(conds, ownerID)
 		err := history.CC.InstCli.GetMutilByCondition("cc_History", fields, conds, &result, sort, start, limit)
 		if nil != err {
 			blog.Error("query  history fail, error information is %s, params:%v", err.Error(), conds)

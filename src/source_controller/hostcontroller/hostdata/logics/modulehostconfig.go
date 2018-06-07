@@ -37,7 +37,7 @@ type moduleHostConfigParams struct {
 }
 
 //DelSingleHostModuleRelation delete single host module relation
-func DelSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource, hostID, moduleID, appID int) (bool, error) {
+func DelSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource, hostID, moduleID, appID int, ownerID string) (bool, error) {
 
 	//get host info
 	hostFieldArr := []string{common.BKHostInnerIPField}
@@ -64,6 +64,7 @@ func DelSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 	delCondition[common.BKAppIDField] = appID
 	delCondition[common.BKHostIDField] = hostID
 	delCondition[common.BKModuleIDField] = moduleID
+	delCondition = util.SetModOwner(delCondition, ownerID)
 	num, numError := cc.InstCli.GetCntByCondition(tableName.TableName(), delCondition)
 	blog.Infof("DelSingleHostModuleRelation  get module host relation condition:%v", delCondition)
 	if numError != nil {
@@ -102,7 +103,7 @@ func DelSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 }
 
 //AddSingleHostModuleRelation add single host module relation
-func AddSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource, hostID, moduleID, appID int) (bool, error) {
+func AddSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource, hostID, moduleID, appID int, ownerID string) (bool, error) {
 	//get host info
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{})
@@ -134,6 +135,7 @@ func AddSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 	moduleHostConfig[common.BKAppIDField] = appID
 	moduleHostConfig[common.BKHostIDField] = hostID
 	moduleHostConfig[common.BKModuleIDField] = moduleID
+	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 
 	num, numError := cc.InstCli.GetCntByCondition(tableName.TableName(), moduleHostConfig)
 	if numError != nil {
@@ -161,10 +163,11 @@ func AddSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 }
 
 //GetDefaultModuleIDs get default module ids
-func GetDefaultModuleIDs(cc *api.APIResource, appID int) ([]int, error) {
+func GetDefaultModuleIDs(cc *api.APIResource, appID int, ownerID string) ([]int, error) {
 	defaultModuleCond := make(map[string]interface{}, 2)
 	defaultModuleCond[common.BKDefaultField] = common.KvMap{common.BKDBIN: []int{common.DefaultFaultModuleFlag, common.DefaultResModuleFlag}}
 	defaultModuleCond[common.BKAppIDField] = appID
+	defaultModuleCond = util.SetModOwner(defaultModuleCond, ownerID)
 	result := make([]interface{}, 0)
 	var ret []int
 
