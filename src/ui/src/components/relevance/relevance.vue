@@ -180,6 +180,8 @@
     .btn-add {
         height: 24px;
         line-height: 24px;
+        font-size: 12px;
+        border: none;
         &:disabled{
             cursor: not-allowed !important;
         }
