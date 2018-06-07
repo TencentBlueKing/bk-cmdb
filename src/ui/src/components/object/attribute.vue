@@ -594,8 +594,11 @@
                         rules['regex'] = option
                     }
                 }
-                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['char'] = true
+                if (bkPropertyType === 'singlechar') {
+                    rules['singlechar'] = true
+                }
+                if (bkPropertyType === 'longchar') {
+                    rules['longchar'] = true
                 }
                 if (bkPropertyType === 'int') {
                     rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
