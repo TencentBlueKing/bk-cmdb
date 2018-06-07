@@ -1,12 +1,11 @@
 <template>
-    <div class="topo-attribute-wrapper" :class="{'full-screen': isFullScreen}" v-show="isShow">
+    <div class="topo-attribute-wrapper" id="wrapper" :class="{'full-screen': isFullScreen}" v-show="isShow">
         <div class="loading" v-bkloading="{isLoading: attr.isLoading}">
             <i class="bk-icon icon-close" @click="closePop"></i>
             <div class="attr-title">{{objName}} {{instName}}</div>
             <div class="attribute-padding">
                 <div class="attribute-box" id="box">
                     <v-attribute 
-                        id="attribute"
                         ref="attribute"
                         :formFields="attr.formFields"
                         :formValues="attr.formValues"
@@ -147,25 +146,8 @@
             },
             resetAttributeBox () {
                 let box = document.getElementById('box')
-                let attribute = document.getElementById('attribute')
                 let topo = document.getElementById('topo')
-                let maxHeight = topo.offsetHeight * 0.8 - 89
-                let curHeight = box.offsetHeight
-                let attrHeight = attribute.offsetHeight + 40
-
-                if (attrHeight > curHeight) {
-                    if (attrHeight < maxHeight) {
-                        box.style.height = `${attrHeight}px`
-                    } else {
-                        box.style.height = `${maxHeight}px`
-                    }
-                } else {
-                    if (curHeight < maxHeight) {
-                        box.style.height = `${attrHeight}px`
-                    } else {
-                        box.style.height = `${maxHeight}px`
-                    }
-                }
+                box.style.maxHeight = `${topo.offsetHeight * 0.8}px`
             },
             async initData () {
                 this.attr.isLoading = true
@@ -176,7 +158,9 @@
                 this.attr.formFields = this.attribute[this.objId]
                 this.attr.isLoading = false
                 this.$nextTick(() => {
-                    this.resetAttributeBox()
+                    setTimeout(() => {
+                        this.resetAttributeBox()
+                    }, 100)
                 })
             },
             async getFormValues () {
@@ -204,7 +188,6 @@
         position: absolute;
         background: #fff;
         width: 710px;
-        max-height: 80%;
         min-height: 200px;
         top: 30px;
         left: 50%;
@@ -245,7 +228,7 @@
             padding-right: 2px;
         }
         .attribute-box {
-            height: calc(100% - 40px);
+            max-height: 300px;
             overflow: auto;
             @include scrollbar;
             padding-bottom: 40px;
