@@ -20,12 +20,10 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/metric"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	confCenter "configcenter/src/scene_server/admin_server/migrate_service/config"
 	"configcenter/src/scene_server/admin_server/migrate_service/rdiscover"
 	"github.com/emicklei/go-restful"
-	"sync"
 	"time"
 )
 
@@ -114,9 +112,6 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	}
 
-	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
-	a.ProcAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_PROC, a.AddrSrv)
-
 	err = a.GetDataCli(config, "mongodb")
 	if err != nil {
 		blog.Error("connect mongodb error exit! err:%s", err.Error())
@@ -129,28 +124,7 @@ func (ccAPI *CCAPIServer) Start() error {
 		chErr <- err
 	}()
 
-	waitfunc := func(f func() string, wg *sync.WaitGroup) {
-		for {
-			if f() != "" {
-				wg.Done()
-				return
-			}
-			time.Sleep(time.Second)
-		}
-	}
-	all := []string{
-		types.CC_MODULE_PROC,
-		types.CC_MODULE_TOPO,
-	}
-
-	wg := &sync.WaitGroup{}
-	for _, module := range all {
-		wg.Add(1)
-		go waitfunc(rdapi.GetRdAddrSrvHandle(module, a.AddrSrv), wg)
-	}
-
 	go func() {
-		wg.Wait()
 		err := ccAPI.httpServ.ListenAndServe()
 		blog.Error("http listen and serve failed! err:%s", err.Error())
 		chErr <- err
@@ -166,7 +140,7 @@ func (ccAPI *CCAPIServer) Start() error {
 func (ccAPI *CCAPIServer) initHttpServ() error {
 	a := api.NewAPIResource()
 
-	ccAPI.httpServ.RegisterWebServer("/migrate/{version}", rdapi.GlobalFilter(types.CC_MODULE_PROC, types.CC_MODULE_TOPO), a.Actions)
+	ccAPI.httpServ.RegisterWebServer("/migrate/{version}", nil, a.Actions)
 
 	// MetricServer
 	conf := metric.Config{
@@ -196,10 +170,6 @@ func (ccAPI *CCAPIServer) HealthMetric() metric.HealthMeta {
 
 	// check zk
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, ccAPI.rd.Ping()))
-
-	// check dependence
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_TOPO, metric.CheckHealthy(a.TopoAPI())))
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CC_MODULE_PROC, metric.CheckHealthy(a.ProcAPI())))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

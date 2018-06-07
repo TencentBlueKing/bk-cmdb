@@ -18,12 +18,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
-
-	"configcenter/src/scene_server/admin_server/migrate_service/logics"
+	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
 
 	"github.com/emicklei/go-restful"
-
-	"configcenter/src/scene_server/admin_server/migrate_service/data"
 )
 
 var migrate *migrateAction = &migrateAction{}
@@ -55,37 +52,12 @@ func (cli *migrateAction) migrate(req *restful.Request, resp *restful.Response) 
 		ownerID = common.BKDefaultOwnerID
 	}
 
-	data.Distribution = pathParameters["distribution"]
+	err := upgrader.Upgrade(migrate.CC.InstCli, &upgrader.Config{
+		OwnerID:    ownerID,
+		SupplierID: common.BKDefaultSupplierID,
+		User:       "migrate",
+	})
 
-	err := logics.DBMigrate(ownerID)
-	if nil != err {
-		blog.Errorf("db migrate error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.DefaultAppMigrate(req, migrate.CC, ownerID)
-	if nil != err {
-		blog.Errorf("add default app error: %s", err.Error())
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.BKAppInit(req, migrate.CC, ownerID)
-	if nil != err {
-		blog.Errorf("add default app errror: %s", err.Error())
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.CreateIndex()
-	if nil != err {
-		blog.Errorf("db create index error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
-		return
-	}
-
-	err = logics.Upgrade(migrate.CC.InstCli)
 	if nil != err {
 		blog.Errorf("db upgrade error: %v", err)
 		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
