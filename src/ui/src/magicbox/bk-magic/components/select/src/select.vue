@@ -162,6 +162,11 @@
 
                     this.setSelected(value)
                 })
+            },
+            localOptions (localOptions) {
+                this.$nextTick(() => {
+                    this.setSelected(this.selected)
+                })
             }
         },
         computed: {
@@ -215,6 +220,8 @@
                 index > -1 && this.localOptions.splice(index, 1)
             },
             updateOption (optIndex, opt) {
+                this.model = opt.localData.label
+                this.curLabel = opt.localData.label
                 this.localOptions.splice(optIndex, 1, opt)
             },
             // 点击选项后的handler
@@ -355,7 +362,7 @@
                     }
                 }
 
-                this.model = this.curLabel || this.curValue
+                this.model = this.curLabel
             },
             clear () {
                 this.$emit('update:selected', '')

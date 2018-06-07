@@ -134,7 +134,14 @@
         <template v-if="showBtnGroup">
             <div class="attribute-btn-group" v-if="displayType==='list' && type === 'update'">
                 <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">{{$t("Common['属性编辑']")}}</bk-button>
-                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">{{$t("Common['删除']")}}</button>
+                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
+                    <template v-if="objId !== 'biz'">
+                        {{$t("Common['删除']")}}
+                    </template>
+                    <template v-else>
+                        {{$t("Inst['归档']")}}
+                    </template>
+                </button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
                 <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
@@ -209,10 +216,17 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            localFormFields () {
+                let formFields = this.$deepClone(this.formFields)
+                formFields.sort((objA, objB) => {
+                    return objA['bk_property_index'] - objB['bk_property_index']
+                })
+                return formFields
+            },
             //  属性分组:根据formFields中各property.PropertyGroup 进行属性分组，为'隐藏分组(none)'时，放入更多属性中
             bkPropertyGroups () {
                 let bkPropertyGroups = {}
-                this.formFields.map(property => {
+                this.localFormFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
                     let {
                         bk_property_group: bkPropertyGroup,
                         bk_property_group_name: bkPropertyGroupName
@@ -257,7 +271,7 @@
                     'enum': null,
                     'timezone': null
                 }
-                this.formFields.map(property => {
+                this.localFormFields.map(property => {
                     let {
                         bk_property_id: bkPropertyId,
                         bk_property_type: bkPropertyType,
@@ -336,7 +350,7 @@
             },
             isMultipleUpdate (isMultipleUpdate) {
                 if (isMultipleUpdate) {
-                    this.formFields.map(property => {
+                    this.localFormFields.map(property => {
                         let {
                             bk_property_type: bkPropertyType,
                             bk_property_id: bkPropertyId
@@ -370,7 +384,7 @@
                 }
                 if (this.type === 'create') {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         if (property['bk_property_type'] === 'enum') {
@@ -382,7 +396,7 @@
                                 break
                             }
                         } else {
-                            if (this.formData[key].length) {
+                            if (this.formData[key] !== null && this.formData[key].length) {
                                 isConfirmShow = true
                                 break
                             }
@@ -390,7 +404,7 @@
                     }
                 } else {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         let value = this.formValues[key]
@@ -532,7 +546,7 @@
             filterValues () {
                 let filteredValues = {}
                 Object.keys(this.formValues).map(formPropertyId => {
-                    let fieldProperty = this.formFields.find(property => {
+                    let fieldProperty = this.localFormFields.find(property => {
                         return formPropertyId === property['bk_property_id']
                     })
                     if (fieldProperty) {
@@ -570,7 +584,6 @@
                 }
                 if (property.hasOwnProperty('option') && option) {
                     if (bkPropertyType === 'int') {
-                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min') && option.min) {
                             rules['min_value'] = option.min
                         }
@@ -581,8 +594,11 @@
                         rules['regex'] = option
                     }
                 }
-                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['char'] = true
+                if (bkPropertyType === 'singlechar') {
+                    rules['singlechar'] = true
+                }
+                if (bkPropertyType === 'longchar') {
+                    rules['longchar'] = true
                 }
                 if (bkPropertyType === 'int') {
                     rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
@@ -654,7 +670,7 @@
                 }
             }
             .attribute-item-value{
-                max-width: 250px;
+                max-width: calc(100% - 130px);
                 display: inline-block;
                 overflow: hidden;
                 text-overflow: ellipsis;

@@ -61,7 +61,8 @@
             favoriteList: {
                 type: Array,
                 required: true
-            }
+            },
+            active: Boolean
         },
         data () {
             return {
@@ -86,19 +87,21 @@
             ...mapGetters(['bkBizList'])
         },
         watch: {
-            favoriteList (favoriteList) {
+            active () {
                 this.filter.text = ''
+            },
+            favoriteList (favoriteList) {
                 this.localFavoriteList = this.favoriteList.map(favorite => {
                     return Object.assign({
                         edit: false,
-                        isShow: true,
+                        isShow: favorite.name.toLowerCase().indexOf(this.filter.text.toLowerCase()) !== -1,
                         isShowDeleteConfirm: false
                     }, favorite)
                 })
             },
             'filter.text' (filterText) {
                 this.localFavoriteList.map((item, index) => {
-                    item.isShow = item.name.indexOf(filterText) !== -1
+                    item.isShow = item.name.toLowerCase().indexOf(filterText.toLowerCase()) !== -1
                 })
             },
             'filter.sort' (sort) {
@@ -143,6 +146,7 @@
             },
             updateCollectName (item) {
                 let updateItem = Object.assign({}, item)
+                delete updateItem.isShow
                 delete updateItem.edit
                 delete updateItem.isShowDeleteConfirm
                 this.$axios.put(`hosts/favorites/${updateItem['id']}`, updateItem).then(res => {

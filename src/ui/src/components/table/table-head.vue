@@ -7,8 +7,8 @@
         <tr :class="{'has-gutter': layout.scrollY}">
             <template v-for="(column, index) in columns">
                 <th v-if="column.type === 'checkbox'" class="header-checkbox">
-                    <label :for="getCheckboxId(column)" class="bk-form-checkbox bk-checkbox-small">
-                        <input type="checkbox" v-if="table.crossPageCheck"
+                    <label :for="getCheckboxId(column)" class="bk-form-checkbox bk-checkbox-small" v-if="table.multipleCheck && table.list.length">
+                        <input type="checkbox" v-if="table.crossPageCheck" ref="crossPageCheckbox"
                             :id="getCheckboxId(column)"
                             :disabled="!table.list.length"
                             @change="handleCheckAll($event, column)">
@@ -65,10 +65,23 @@
                 return this.layout.table
             },
             allChecked () {
-                return this.table.pagination.count > 0 && this.table.checked.length === this.table.list.length
+                return this.table.list.length && this.table.checked.length === this.table.list.length
             },
             columns () {
                 return this.layout.columns
+            },
+            crossPageAllChecked () {
+                if (this.table.crossPageCheck) {
+                    return this.table.checked.length === this.table.pagination.count
+                }
+                return false
+            }
+        },
+        watch: {
+            crossPageAllChecked (checked) {
+                if (this.$refs.crossPageCheckbox && this.$refs.crossPageCheckbox.length) {
+                    this.$refs.crossPageCheckbox[0].checked = checked
+                }
             }
         },
         created () {
@@ -210,6 +223,7 @@
                 padding: 0 16px;
                 border: 1px solid $tableBorderColor;
                 border-left: none;
+                line-height: normal;
                 &:last-child{
                     border-right: none;
                 }

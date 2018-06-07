@@ -33,7 +33,7 @@
                                     :checked.sync="table.chooseId"
                                     :loading="table.isLoading"
                                     :multipleCheck="multiple"
-                                    :maxHeight="200"
+                                    :maxHeight="202"
                                     @handlePageChange="setCurrentPage"
                                     @handleSizeChange="setCurrentSize"
                                     @handleSortChange="setCurrentSort"
@@ -43,7 +43,7 @@
                                             <input type="checkbox"
                                                 :value="item['host']['bk_host_id']"
                                                 :checked="table.chooseId.indexOf(item['host']['bk_host_id']) !== -1"
-                                                v-model="table.chooseId">
+                                                @change="setChoose(item['host']['bk_host_id'])">
                                         </label>
                                         <template v-else>{{getCellValue(property, item)}}</template>
                                     </template>
@@ -418,11 +418,12 @@
         z-index: 999;
         .selectbox-box{
             position: absolute;
-            right: 32px;
+            left: 50%;
             top: 50%;
-            width: 735px;
+            width: 736px;
             height: 526px;
-            transform: translate(0, -50%);
+            line-height: normal;
+            transform: translate3d(-50%, -50%, 0);
             box-shadow: 0 2px 9.6px 0.4px rgba(0, 0, 0, .4);
             background: $white;
         }

@@ -1,38 +1,40 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
 <template>
-    <div class="relevance-wrapper" v-bkloading="{isLoading: isLoading}">
-        <ul class="relevance-box" v-show="!isLoading">
-            <template v-if="ztreeDataSourceList.length">
-                <v-tree :list="ztreeDataSourceList"
-                    :treeType="'list'"
-                    :callback='nodeClick'
-                    :expand="expandClick"
-                    :is-open="false"
-                    :pageTurning="pageTurning"
-                    :pageSize="pageSize"
-                    ref="tree"
-                ></v-tree>
-            </template>
-            <template v-else>
-                <div class="relevance-none">
-                    <img src="../../common/images/no-relevance.png" alt="">
-                    <div>{{$t("Common['当前还未有关联项']")}}</div>
-                </div>
-            </template>
-        </ul>
+    <div class="relevance-content-wrapper">
+        <div class="tab-wrapper clearfix">
+            <ul class="relevance-tab">
+                <li :class="{'active': currentComponent === 'v-topo'}" @click="currentComponent = 'v-topo'">
+                    <i class="icon-cc-resources"></i>{{$t('Association["拓扑"]')}}
+                </li>
+                <li :class="{'active': currentComponent === 'v-tree'}" @click="currentComponent = 'v-tree'">
+                    <i class="icon-cc-tree"></i>{{$t('Association["树形"]')}}
+                </li>
+            </ul>
+            <div class="btn-group">
+                <span class="resize-btn" @click="resizeFull()" v-if="currentComponent === 'v-topo'" :title="$t('Common[\'全屏\']')">
+                    <i class="icon-cc-resize-full"></i>
+                </span>
+                <bk-button type="primary" class="btn btn-add"
+                    :disabled="!hasAssociation"
+                    @click="currentComponent = 'v-new-association'">
+                    {{$t('Association["新增关联"]')}}
+                </bk-button>
+            </div>
+        </div>
+        <component v-bind="componentProps"
+            ref="component"
+            :is="currentComponent"
+            :class="{'new-association': currentComponent === 'v-new-association'}"
+            @handleUpdate="handleUpdate"
+            @handleNewAssociationClose="handleNewAssociationClose"
+            @handleAssociationLoaded="checkAssociation">
+        </component>
     </div>
 </template>
 
 <script>
-    import vTree from '@/components/tree/tree'
+    import vTopo from './topo'
+    import vTree from './tree'
+    import vNewAssociation from './new-association'
     import {mapGetters} from 'vuex'
     export default {
         props: {
@@ -40,192 +42,163 @@
                 type: Boolean,
                 default: false
             },
-            // 当前实例ID
             objId: {
-                default: ''
+                required: true
             },
-            // 具体某一项的ID
             ObjectID: {
-                default: ''
-            }
+                required: true
+            },
+            instance: Object
         },
         data () {
             return {
-                isLoading: true,
-                curNode: {},
-                treeItemId: 1,                  // 树形图具体某一项的id 用于区分点击的哪一项 前端递增
-                ztreeDataSourceList: []
+                currentComponent: null,
+                prevComponent: null,
+                hasAssociation: false,
+                invalidAssociation: ['plat', 'process']
             }
         },
         computed: {
-            ...mapGetters(['bkSupplierAccount'])
+            ...mapGetters(['bkSupplierAccount']),
+            ...mapGetters('object', ['attribute']),
+            componentProps () {
+                const component = this.currentComponent
+                const props = {
+                    'v-topo': {
+                        isShow: component === 'v-topo',
+                        objId: this.objId,
+                        instId: this.ObjectID
+                    },
+                    'v-tree': {
+                        objId: this.objId,
+                        ObjectID: this.ObjectID
+                    },
+                    'v-new-association': {
+                        objId: this.objId,
+                        instance: this.instance
+                    }
+                }
+                return component ? props[component] : {}
+            },
+            dataIdKey () {
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
+                }
+                return 'bk_inst_id'
+            }
         },
         watch: {
-            isShow (val) {
-                if (val) {
-                    this.getRelationInfo()
+            isShow (isShow) {
+                if (isShow) {
+                    this.currentComponent = 'v-topo'
+                } else {
+                    this.currentComponent = null
+                    this.hasAssociation = false
                 }
+            },
+            objId (objId) {
+                if (this.objId && !this.attribute[this.objId]) {
+                    this.$store.dispatch('object/getAttribute', {objId})
+                }
+            },
+            currentComponent (currentComponent, prevComponent) {
+                this.prevComponent = prevComponent
+            }
+        },
+        async created () {
+            if (this.objId && !this.attribute[this.objId]) {
+                await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             }
         },
         methods: {
-            /*
-                树形图点击回调
-                node: 当前点击的节点
-                parent: 当前点击节点的父节点
-                list: 树形图列表
-            */
-            nodeClick (node, parent, list) {
+            handleNewAssociationClose () {
+                this.currentComponent = this.prevComponent
             },
-            /*
-                节点展开与收起回调事件
-            */
-            expandClick (node) {
-                this.curNode = node
-                this.$set(node, 'isFolder', true)
-                this.$set(node, 'isExpand', true)
-                if (node.hasOwnProperty('bk_obj_icon') && node['bk_obj_icon'] === '') {
-                    this.getInstChild(node)
-                }
+            checkAssociation (association) {
+                this.hasAssociation = association.next.some(model => !this.invalidAssociation.includes(model['bk_obj_id']))
             },
-            getInstChild (node) {
-                node.loadNode = 1
-                this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${node['bk_obj_id']}/inst/${node['bk_inst_id']}`, {
-                    page: {
-                        start: 0,
-                        limit: 10
-                    }
-                }).then(res => {
-                    if (res.result) {
-                        this.$set(node, 'children', [])
-                        res.data.map(model => {
-                            // 加入分页相关信息 默认是第一页 每页10条
-                            model.page = 1
-                            model.pageSize = 10
-                            
-                            model.isExpand = false
-                            model.isFolder = false
-                            model.level = node.level + 1
-                            model.id = this.treeItemId++
-                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                                model.children.map(inst => {
-                                    inst.level = node.level + 2
-                                    inst.id = this.treeItemId++
-                                    inst.children = []
-                                })
-                            } else {
-                                model.children = []
-                            }
-                            model.loadNode = 2
-                        })
-                        this.$set(node, 'children', res.data)
-                        node.loadNode = 2
-                    }
-                })
+            handleUpdate () {
+                this.$emit('handleUpdate')
             },
-            pageSize (node) {
-                this.getInstByPage(node)
-            },
-            pageTurning (node) {
-                this.getInstByPage(node)
-            },
-            getInstByPage (node) {
-                let method = 'post'
-                this.$axios({
-                    url: `inst/search/${this.bkSupplierAccount}/${node['bk_obj_id']}`,
-                    method: method,
-                    data: {
-                        condition: {},
-                        fields: [],
-                        page: {
-                            start: (node.page - 1) * node.pageSize,
-                            limit: parseInt(node.pageSize)
-                        }
-                    }
-                }).then(res => {
-                    if (res.result) {
-                        let children = []
-                        res.data.info.map(inst => {
-                            children.push({
-                                bk_obj_id: inst['bk_obj_id'],
-                                bk_inst_id: inst['bk_inst_id'],
-                                id: this.treeItemId++,
-                                name: inst['bk_inst_name'],
-                                pageSize: node.pageSize,
-                                page: node.page,
-                                level: node.level + 1,
-                                isExpand: false,
-                                isFolder: false,
-                                children: []
-                            })
-                        })
-                        node.children = children
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-            },
-            /*
-                获取树形图信息
-            */
-            async getRelationInfo (ObjId, ObjectID) {
-                try {
-                    this.isLoading = true
-                    let params = {
-                        fields: [],
-                        page: {
-                            limit: 10
-                        },
-                        condition: {
-                        }
-                    }
-                    let res = await this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params)
-                    res.data.map(model => {
-                        model.level = 1
-                        model.page = 1
-                        model.pageSize = 10
-                        model.loadNode = 2
-                        model.id = this.treeItemId++
-                        if (!model.count) {
-                            model.children = []
-                        }
-                        if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                            model.children.map(inst => {
-                                // 插入层级
-                                inst.level = 2
-                                // 根据添加唯一性id
-                                inst.id = this.treeItemId++
-                            })
-                        }
-                    })
-                    this.ztreeDataSourceList = res.data
-                } catch (e) {
-                    this.$alertMsg(e.data['bk_error_msg'])
-                } finally {
-                    this.isLoading = false
-                }
+            resizeFull () {
+                this.$refs.component.resizeCanvas(true)
             }
         },
         components: {
-            vTree
+            vTopo,
+            vTree,
+            vNewAssociation
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .relevance-wrapper{
-        padding: 30px 20px;
-        min-height: 300px;
-        .relevance-box{
-            height: 100%;
-        }
-        .relevance-none{
-            margin-top: 50px;
+    .relevance-content-wrapper {
+        position: relative;
+        height: 100%;
+    }
+    .tab-wrapper{
+        padding: 20px 0 10px;
+    }
+    .relevance-tab{
+        >li{
+            float: left;
+            margin-right: 2px;
+            width: 80px;
+            height: 24px;
+            line-height: 24px;
+            font-size: 12px;
             text-align: center;
-            color: #656b81;
-            img{
-                margin-bottom: 20px;
-                width: 131px;
+            background: #ebf0f5;
+            color: #737987;
+            cursor: pointer;
+            &.active{
+                background: #3c96ff;
+                color: #fff;
+            }
+            i{
+                position: relative;
+                top: -1px;
+                margin-right: 5px;
             }
         }
+    }
+    .btn{
+        padding: 0 10px;
+    }
+    .btn-group {
+        float: right;
+        font-size: 0;
+    }
+    .btn-add {
+        height: 24px;
+        line-height: 24px;
+        font-size: 12px;
+        border: none;
+        &:disabled{
+            cursor: not-allowed !important;
+        }
+    }
+    .resize-btn {
+        width: 24px;
+        height: 24px;
+        line-height: 22px;
+        font-size: 14px;
+        vertical-align: bottom;
+        margin-right: 10px;
+    }
+    .new-association{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 </style>

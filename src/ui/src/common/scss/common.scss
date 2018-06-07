@@ -112,16 +112,17 @@ textarea {
         color: #bec6de!important;
     }
 }
-
-.bk-select-input {
-    border: 1px solid #c3cdd7;
-    padding-right: 25px;
-    color: $textColor; // color: #6b7baa;
-    &:hover {
-        border-color: #6b7baa;
-    }
-    &.placeholder {
-        color: #bec6de!important;
+.bk-select-wrapper {
+    .bk-select-input {
+        border: 1px solid #c3cdd7;
+        padding-right: 25px;
+        color: $textColor; // color: #6b7baa;
+        &:hover {
+            border-color: #6b7baa;
+        }
+        &.placeholder {
+            color: #bec6de!important;
+        }
     }
 }
 
@@ -385,6 +386,17 @@ textarea {
         }
     }
 }
+.business-wrapper {
+    .bk-tab2 {
+        height: 100%;
+        .bk-tab2-content {
+            height: calc(100% - 58px);
+            section {
+                height: 100%;
+            }
+        }
+    }
+}
 
 .management-wrapper {
     /*进程管理页面表格样式覆盖*/
@@ -640,6 +652,12 @@ input.parsley-error {
     display: block !important;
     z-index: 10000;
 
+    &.topo-tip {
+        .tooltip-inner {
+            max-width: 300px;
+        }
+    }
+
     .tooltip-inner {
         background: #333;
         color: white;
@@ -836,5 +854,68 @@ input.parsley-error {
     .tooltip-arrow{
         border-color: #ffeaea;
         color: #ff5656;
+    }
+}
+
+.topo-pop-box {
+    position: fixed;
+    color: #737987;
+    font-size: 12px;
+    line-height: 22px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid #b0becc;
+    background: #fff;
+    left: 500px;
+    top: 500px;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    text-align: center;
+    &::before {
+        content: '';
+        background: url(common/images/tip.png);
+        width: 6px;
+        height: 10px;
+        position: absolute;
+        display: inline-block;
+        left: -6px;
+        top: 12px;
+        transform: translate(0, -50%);
+    }
+    .detail {
+        cursor: pointer;
+        &:hover {
+            color: #3c96ff;
+        }
+    }
+    .color-danger{
+        cursor: pointer;
+        border-top: 1px solid #dde3e9;
+        &:hover {
+            color: #ff5656;
+        }
+    }
+}
+
+.vis-network {
+    outline: none;
+}
+
+.relevance-content-wrapper {
+    .resize-btn {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border: 1px solid #c3cdd7;
+        background: #fff;
+        border-radius: 2px;
+        text-align: center;
+        line-height: 22px;
+        font-size: 14px;
+        vertical-align: bottom;
+        cursor: pointer;
+        &:hover {
+            background: #fafafa;
+        }
     }
 }
