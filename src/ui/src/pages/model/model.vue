@@ -57,7 +57,7 @@
                         </template>
                         <template v-else>
                             <div class="model-content" v-if="topoList.length != 0">
-                                <bk-button type="primary" class="topo-btn edit" @click="popShow('edit')">
+                                <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
                                     <i class="icon icon-cc-edit"></i>
                                 </bk-button>
                                 <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -79,7 +79,7 @@
                         </template>
                     </div>
                     <div class="no-model-prompting tc" v-show="topoList.length == 0 || isCreateShow">
-                        <bk-button type="primary" class="topo-btn edit" @click="popShow('edit')">
+                        <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
                             <i class="icon icon-cc-edit"></i>
                         </bk-button>
                         <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -413,6 +413,9 @@
                             this.isEditClassify = false
                             this.isPopShow = false
                             this.isChoose = true
+                            this.curClassify['bk_classification_name'] = classification['bk_classification_name']
+                            this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
+                            this.curTempClassify = this.$deepClone(this.curClassify)
                             this.$store.commit('navigation/updateClassification', {
                                 bk_classification_id: classification['bk_classification_id'],
                                 bk_classification_name: classification['bk_classification_name'],
@@ -650,7 +653,7 @@
                 if (this.curModel.type === 'new') {
                     this.$store.dispatch('navigation/getClassifications', true)
                     this.curModel['id'] = obj['id']
-                    this.sliderTitle.text = `${obj['bk_obj_name']})`
+                    this.sliderTitle.text = `${obj['bk_obj_name']}`
                     this.curModel['bk_obj_id'] = obj['bk_obj_id']
                     this.curModel.type = 'change'
                     this.curTabName = 'host'
@@ -827,6 +830,7 @@
         .btn-global{
             width: 120px;
             height: 32px;
+            padding: 0;
             line-height: 30px;
             background-color: #ffffff;
             border-radius: 2px;
