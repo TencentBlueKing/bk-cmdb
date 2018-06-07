@@ -13,15 +13,16 @@
 package model
 
 import (
-	frtypes "configcenter/src/framework/core/types"
-
+	"configcenter/src/apimachinery"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Topo = (*topo)(nil)
 
 type topo struct {
-	params types.LogicParams
+	params    types.LogicParams
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *topo) Current() Object {

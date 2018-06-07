@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/topo_service/actions/inst"
+	"configcenter/src/scene_server/topo_server/actions/inst"
 	"configcenter/src/source_controller/common/commondata"
 )
 

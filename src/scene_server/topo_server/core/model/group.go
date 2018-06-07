@@ -13,9 +13,9 @@
 package model
 
 import (
-	frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/framework/core/types"
-
+	"configcenter/src/apimachinery"
+	frcommon "configcenter/src/common"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -30,7 +30,8 @@ type group struct {
 	IsDefault  bool   `field:"bk_isdefault"`
 	IsPre      bool   `field:"ispre"`
 
-	params types.LogicParams
+	params    types.LogicParams
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *group) Parse(data frtypes.MapStr) error {

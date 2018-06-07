@@ -13,22 +13,23 @@
 package api
 
 import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
+
+	"github.com/emicklei/go-restful"
+
+	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
+	frtypes "configcenter/src/common/types"
 	"configcenter/src/common/util"
-	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
-
-	"github.com/emicklei/go-restful"
-
-	"encoding/json"
-	"io"
-	"io/ioutil"
 )
 
 // topoAPI the topo server api
@@ -90,6 +91,7 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 		httpactions = append(httpactions, &httpserver.Action{Verb: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 			ownerID := util.GetActionOnwerID(req)
+			user := util.GetActionUser(req)
 
 			// get the language
 			language := util.GetActionLanguage(req)
@@ -117,7 +119,19 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 				return
 			}
 
-			data, dataErr := a.HandlerFunc(types.LogicParams{OwnerID: ownerID, Err: defErr, Lang: defLang}, req.PathParameter, req.QueryParameter, mData)
+			data, dataErr := a.HandlerFunc(types.LogicParams{
+				Err:  defErr,
+				Lang: defLang,
+				Header: apiutil.Headers{
+					Language: language,
+					User:     user,
+					OwnerID:  ownerID,
+				},
+			},
+				req.PathParameter,
+				req.QueryParameter,
+				mData)
+
 			if nil != dataErr {
 				blog.Errorf("%s", dataErr.Error())
 				switch e := dataErr.(type) {
