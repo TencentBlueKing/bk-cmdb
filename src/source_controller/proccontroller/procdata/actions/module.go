@@ -44,6 +44,7 @@ func init() {
 //DeleteProc2Module delete proc module config
 func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -63,6 +64,7 @@ func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *rest
 			blog.Error("DeleteProc2Module json not array", err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
 		}
+		input = util.SetModOwner(input, ownerID)
 
 		// retrieve original data
 		var originals []interface{}
@@ -96,6 +98,7 @@ func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *rest
 func (cli *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -120,6 +123,7 @@ func (cli *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *rest
 		blog.Info("create proc module config ", input)
 		ec := eventdata.NewEventContextByReq(req)
 		for _, i := range input {
+			i = util.SetModOwner(i, ownerID)
 			_, err = proc.CC.InstCli.Insert(common.BKTableNameProcModule, i)
 			if err != nil {
 				blog.Error("create proc module config error:%v", err)
@@ -140,6 +144,7 @@ func (cli *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *rest
 func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -160,6 +165,7 @@ func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
 		}
 
+		input = util.SetQueryOwner(input, ownerID)
 		blog.Info("get proc module config condition ", input)
 		var result []interface{}
 		err = proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &result, "", 0, 0)
@@ -170,7 +176,3 @@ func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful
 		return http.StatusOK, result, nil
 	}, resp)
 }
-
-
-
-
