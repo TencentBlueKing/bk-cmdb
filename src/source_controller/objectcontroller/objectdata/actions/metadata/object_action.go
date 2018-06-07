@@ -55,6 +55,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -77,6 +78,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 		*obj.CreateTime = time.Now()
 		obj.LastTime = new(time.Time)
 		*obj.LastTime = time.Now()
+		obj.OwnerID = ownerID
 
 		// get id
 		id, err := cli.CC.InstCli.GetIncID(obj.TableName())
@@ -103,6 +105,7 @@ func (cli *objectAction) DeleteObject(req *restful.Request, resp *restful.Respon
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -131,6 +134,7 @@ func (cli *objectAction) DeleteObject(req *restful.Request, resp *restful.Respon
 			}
 
 		}
+		util.SetModOwner(condition, ownerID)
 		cnt, cntErr := cli.CC.InstCli.GetCntByCondition(metadata.ObjectDes{}.TableName(), condition)
 		if nil != cntErr {
 			blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
@@ -157,6 +161,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -184,7 +189,8 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 			blog.Error("unmarshal json failed, error information is %v", jsErr)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-		err = cli.CC.InstCli.UpdateByCondition(metadata.ObjectDes{}.TableName(), data, map[string]interface{}{"id": appID})
+		condition := util.SetModOwner(map[string]interface{}{"id": appID}, ownerID)
+		err = cli.CC.InstCli.UpdateByCondition(metadata.ObjectDes{}.TableName(), data, condition)
 		if nil != err {
 			blog.Error("fail update object by condition, error information is %s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
@@ -203,6 +209,7 @@ func (cli *objectAction) SelectObjects(req *restful.Request, resp *restful.Respo
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -233,6 +240,7 @@ func (cli *objectAction) SelectObjects(req *restful.Request, resp *restful.Respo
 		// select from storage
 		//blog.Debug("selector:%+v", selector)
 		selector, _ := js.Map()
+		selector = util.SetQueryOwner(selector, ownerID)
 		if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.ObjectDes{}.TableName(), nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 			blog.Error("select data failed, error information is %s", selErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)

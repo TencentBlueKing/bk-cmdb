@@ -14,6 +14,7 @@ package metadata
 
 // TopoGraphics define
 type TopoGraphics struct {
+	OwnerID         string                 `bson:"bk_supplier_account"     json:"bk_supplier_account"`
 	ScopeType       *string                `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
 	ScopeID         *string                `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
 	NodeType        *string                `json:"node_type,omitempty" bson:"node_type,omitempty"`   // obj inst
