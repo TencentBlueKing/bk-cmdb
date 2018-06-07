@@ -15,6 +15,9 @@ package api
 import (
 	"net/http"
 
+	// "configcenter/src/common"
+	// "configcenter/src/common/blog"
+	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -33,25 +36,88 @@ func (cli *topoAPI) initObjectClassification() {
 
 // CreateClassification create a new object classification
 func (cli *topoAPI) CreateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cls, err := cli.core.CreateClassification(params, data)
+	if nil != err {
+		return nil, err
+	}
+	return cls.ToMapStr()
 }
 
 // SearchClassificationWithObjects search the classification with objects
 func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cond := frcommon.CreateCondition()
+
+	// TODO: data => cond
+
+	clsItems, err := cli.core.FindClassification(params, cond)
+
+	if nil != err {
+		return nil, err
+	}
+
+	result := frtypes.MapStr{}
+	items := make([]frtypes.MapStr, 0)
+	for _, item := range clsItems {
+		obj, err := item.ToMapStr()
+		if nil != err {
+			return nil, err
+		}
+		items = append(items, obj)
+	}
+
+	result.Set("data", items)
+
+	return result, nil
 }
 
 // SearchClassification search the classifications
 func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cond := frcommon.CreateCondition()
+
+	// TODO: data => cond
+
+	clsItems, err := cli.core.FindClassification(params, cond)
+
+	if nil != err {
+		return nil, err
+	}
+
+	result := frtypes.MapStr{}
+	items := make([]frtypes.MapStr, 0)
+	for _, item := range clsItems {
+		obj, err := item.ToMapStr()
+		if nil != err {
+			return nil, err
+		}
+		items = append(items, obj)
+	}
+
+	result.Set("data", items)
+
+	return result, nil
 }
 
 // UpdateClassification update the object classification
 func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+	cond := frcommon.CreateCondition()
+
+	cond.Field("id")
+
+	err := cli.core.UpdateClassification(params, data, cond)
+
+	return nil, err
 }
 
 // DeleteClassification delete the object classification
 func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+	cond := frcommon.CreateCondition()
+
+	cond.Field("id")
+
+	err := cli.core.DeleteClassification(params, cond)
+
+	return nil, err
 }

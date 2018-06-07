@@ -57,6 +57,10 @@ func (cli *object) Parse(data frtypes.MapStr) error {
 	return err
 }
 
+func (cli *object) ToMapStr() (frtypes.MapStr, error) {
+	return nil, nil
+}
+
 func (cli *object) Save() error {
 	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
 

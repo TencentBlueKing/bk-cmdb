@@ -15,8 +15,8 @@ package api
 import (
 	"net/http"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	// "configcenter/src/common"
+	// "configcenter/src/common/blog"
 	frcommon "configcenter/src/framework/common"
 	frtypes "configcenter/src/framework/core/types"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -40,13 +40,18 @@ func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, 
 	if nil != err {
 		return nil, err
 	}
-	return attr.ToMapStr(), nil
+
+	return attr.ToMapStr()
 }
 
 // SearchObjectAttribute search the object attributes
 func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	attrs, err := cli.core.FindObjectAttribute(params, data)
+	cond := frcommon.CreateCondition()
+
+	// TODO: data => cond
+
+	attrs, err := cli.core.FindObjectAttribute(params, cond)
 
 	if nil != err {
 		return nil, err
@@ -55,7 +60,12 @@ func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, 
 	result := frtypes.MapStr{}
 	items := make([]frtypes.MapStr, 0)
 	for _, item := range attrs {
-		items = append(items, item)
+
+		obj, err := item.ToMapStr()
+		if nil != err {
+			return nil, err
+		}
+		items = append(items, obj)
 	}
 
 	result.Set("data", items)
@@ -70,14 +80,19 @@ func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, 
 
 	cond.Field("id")
 
-	err := cli.core.UpdateObjectAttribute(params, data)
+	err := cli.core.UpdateObjectAttribute(params, data, cond)
 
 	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
 func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	
-	
-	return nil, nil
+
+	cond := frcommon.CreateCondition()
+
+	cond.Field("id")
+
+	err := cli.core.DeleteObjectAttribute(params, cond)
+
+	return nil, err
 }
