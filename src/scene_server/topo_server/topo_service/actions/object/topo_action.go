@@ -36,7 +36,7 @@ import (
 var topo = &topoAction{}
 
 // MainLineObject main line object definition
-type mainLineObject struct {
+type MainLineObject struct {
 	api.ObjDes    `json:",inline"`
 	AssociationID string `json:"bk_asst_obj_id"`
 }
@@ -321,7 +321,7 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 		}
 
 		// deal data
-		var obj mainLineObject
+		var obj MainLineObject
 		if jsErr := json.Unmarshal(val, &obj); nil != jsErr {
 			blog.Error("unmarshal json failed, error information is %v", jsErr)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)

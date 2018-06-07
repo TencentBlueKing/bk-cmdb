@@ -11,3 +11,33 @@
  */
  
 package manager
+
+import (
+	"configcenter/src/framework/core/types"
+)
+
+const (
+	EventHost           = "host"
+	EventHostIdentifier = "hostidentifier"
+	EventSet            = "set"
+	EventModule         = "module"
+	EventBusiness       = "biz"
+	EventPlat           = "plat"
+	EventInst           = "inst"
+
+	EventModuleTransfer = "moduletransfer"
+	EventActionCreate   = "create"
+	EventActionDelete   = "delete"
+	EventActionUpdate   = "update"
+)
+
+// Action the http action
+type Action struct {
+	Method      string
+	Path        string
+	HandlerFunc func(data types.MapStr) (types.MapStr, error)
+}
+
+// FrameworkContext definition the framework context
+type FrameworkContext interface {
+}

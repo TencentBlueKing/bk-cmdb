@@ -233,6 +233,13 @@
                         fields: this.attribute.selected ? this.attribute.selected.split(',') : []
                     }
                 ]
+                const specialObj = {
+                    'host': 'bk_host_innerip',
+                    'biz': 'bk_biz_name',
+                    'plat': 'bk_cloud_name',
+                    'module': 'bk_module_name',
+                    'set': 'bk_set_name'
+                }
                 this.userProperties.forEach((property, index) => {
                     let param = paramsMap.find(({bk_obj_id: bkObjId}) => {
                         return bkObjId === property.bkObjId
@@ -242,7 +249,7 @@
                             'bk_obj_id': property.bkAsstObjId,
                             fields: [],
                             condition: [{
-                                field: 'bk_inst_name',
+                                field: specialObj.hasOwnProperty(property.bkAsstObjId) ? specialObj[property.bkAsstObjId] : 'bk_inst_name',
                                 operator: property.operator,
                                 value: property.value
                             }]

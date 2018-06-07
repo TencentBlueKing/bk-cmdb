@@ -9,16 +9,24 @@
                     <i class="icon-cc-tree"></i>{{$t('Association["树形"]')}}
                 </li>
             </ul>
-            <bk-button type="primary" class="btn btn-add"
-                :disabled="!hasAssociationProperty"
-                @click="currentComponent = 'v-new-association'">
-                {{$t('Association["新增关联"]')}}
-            </bk-button>
+            <div class="btn-group">
+                <span class="resize-btn" @click="resizeFull()" v-if="currentComponent === 'v-topo'" :title="$t('Common[\'全屏\']')">
+                    <i class="icon-cc-resize-full"></i>
+                </span>
+                <bk-button type="primary" class="btn btn-add"
+                    :disabled="!hasAssociation"
+                    @click="currentComponent = 'v-new-association'">
+                    {{$t('Association["新增关联"]')}}
+                </bk-button>
+            </div>
         </div>
         <component v-bind="componentProps"
+            ref="component"
             :is="currentComponent"
             :class="{'new-association': currentComponent === 'v-new-association'}"
-            @handleNewAssociationClose="handleNewAssociationClose">
+            @handleUpdate="handleUpdate"
+            @handleNewAssociationClose="handleNewAssociationClose"
+            @handleAssociationLoaded="checkAssociation">
         </component>
     </div>
 </template>
@@ -45,17 +53,14 @@
         data () {
             return {
                 currentComponent: null,
-                prevComponent: null
+                prevComponent: null,
+                hasAssociation: false,
+                invalidAssociation: ['plat', 'process']
             }
         },
         computed: {
+            ...mapGetters(['bkSupplierAccount']),
             ...mapGetters('object', ['attribute']),
-            hasAssociationProperty () {
-                if (this.objId) {
-                    return (this.attribute[this.objId] || []).some(property => ['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                }
-                return false
-            },
             componentProps () {
                 const component = this.currentComponent
                 const props = {
@@ -74,6 +79,19 @@
                     }
                 }
                 return component ? props[component] : {}
+            },
+            dataIdKey () {
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
+                }
+                return 'bk_inst_id'
             }
         },
         watch: {
@@ -82,25 +100,35 @@
                     this.currentComponent = 'v-topo'
                 } else {
                     this.currentComponent = null
+                    this.hasAssociation = false
                 }
             },
             objId (objId) {
                 if (this.objId && !this.attribute[this.objId]) {
-                    this.$store.dispatch('object/getAttribute', this.objId)
+                    this.$store.dispatch('object/getAttribute', {objId})
                 }
             },
             currentComponent (currentComponent, prevComponent) {
                 this.prevComponent = prevComponent
             }
         },
-        created () {
+        async created () {
             if (this.objId && !this.attribute[this.objId]) {
-                this.$store.dispatch('object/getAttribute', this.objId)
+                await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             }
         },
         methods: {
             handleNewAssociationClose () {
                 this.currentComponent = this.prevComponent
+            },
+            checkAssociation (association) {
+                this.hasAssociation = association.next.some(model => !this.invalidAssociation.includes(model['bk_obj_id']))
+            },
+            handleUpdate () {
+                this.$emit('handleUpdate')
+            },
+            resizeFull () {
+                this.$refs.component.resizeCanvas(true)
             }
         },
         components: {
@@ -145,13 +173,26 @@
     .btn{
         padding: 0 10px;
     }
-    .btn-add {
+    .btn-group {
         float: right;
+        font-size: 0;
+    }
+    .btn-add {
         height: 24px;
         line-height: 24px;
+        font-size: 12px;
+        border: none;
         &:disabled{
             cursor: not-allowed !important;
         }
+    }
+    .resize-btn {
+        width: 24px;
+        height: 24px;
+        line-height: 22px;
+        font-size: 14px;
+        vertical-align: bottom;
+        margin-right: 10px;
     }
     .new-association{
         position: absolute;

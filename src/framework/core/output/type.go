@@ -45,6 +45,10 @@ type Outputer interface {
 
 // ModelOutputer the interface which used to maintence the model
 type ModelOutputer interface {
+
+	// GetModel return the model
+	GetModel(supplierAccount, classificationID, objID string) (model.Model, error)
+
 	// CreateClassification create a new classification
 	CreateClassification(name string) model.Classification
 
