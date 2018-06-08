@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 

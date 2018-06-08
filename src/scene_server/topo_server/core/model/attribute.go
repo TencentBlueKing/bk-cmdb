@@ -14,8 +14,9 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+	frcommon "configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -23,40 +24,16 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
-	OwnerID       string      `field:"bk_supplier_account"`
-	ObjectID      string      `field:"bk_obj_id"`
-	PropertyID    string      `field:"bk_property_id"`
-	PropertyName  string      `field:"bk_property_name"`
-	PropertyGroup string      `field:"bk_property_group"`
-	PropertyIndex int         `field:"bk_property_index"`
-	Unit          string      `field:"unit"`
-	Placeholder   string      `field:"placeholder"`
-	IsEditable    bool        `field:"editable"`
-	IsPre         bool        `field:"ispre"`
-	IsRequired    bool        `field:"isrequired"`
-	IsReadOnly    bool        `field:"isreadonly"`
-	IsOnly        bool        `field:"isonly"`
-	IsSystem      bool        `field:"bk_issystem"`
-	IsAPI         bool        `field:"bk_isapi"`
-	PropertyType  string      `field:"bk_property_type"`
-	Option        interface{} `field:"option"`
-	Description   string      `field:"description"`
-	Creator       string      `field:"creator"`
+	attr metadata.Attribute
 
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *attribute) Parse(data frtypes.MapStr) error {
-	err := frcommon.SetValueToStructByTags(cli, data)
+func (cli *attribute) Parse(data frtypes.MapStr) (metadata.Attribute, error) {
 
-	if nil != err {
-		return err
-	}
+	return cli.attr.Parse(data)
 
-	// TODO 实现数据校验
-
-	return err
 }
 
 func (cli *attribute) ToMapStr() (frtypes.MapStr, error) {
