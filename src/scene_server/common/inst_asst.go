@@ -133,10 +133,14 @@ func UpdateInstAssociation(objAddr string, req *restful.Request, instID int, own
 		return asstErr
 	}
 
-	err := DeleteInstAssociation(objAddr, req, instID, ownerID, objID)
-	if nil != err {
-		blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
-		return err
+	for _, asst := range asstDes {
+		if _, ok := input[asst.ObjectAttID]; ok {
+			err := DeleteInstAssociation(objAddr, req, instID, ownerID, objID, asst.AsstObjID)
+			if nil != err {
+				blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
+				return err
+			}
+		}
 	}
 
 	asstFieldVal := ExtractDataFromAssociationField(int64(instID), input, asstDes)
@@ -145,12 +149,15 @@ func UpdateInstAssociation(objAddr string, req *restful.Request, instID int, own
 
 }
 
-func DeleteInstAssociation(objAddr string, req *restful.Request, instID int, ownerID, objID string) error {
+func DeleteInstAssociation(objAddr string, req *restful.Request, instID int, ownerID, objID, asstObjID string) error {
 
 	uURL := objAddr + "/object/v1/insts/" + common.BKTableNameInstAsst
 	input := map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
+	}
+	if "" != asstObjID {
+		input[common.BKAsstObjIDField] = asstObjID
 	}
 	inputJSON, err := json.Marshal(input)
 	if nil != err {
