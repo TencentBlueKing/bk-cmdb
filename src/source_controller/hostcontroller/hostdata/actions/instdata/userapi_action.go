@@ -13,12 +13,6 @@
 package instdata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -26,9 +20,25 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	. "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
+
+func init() {
+	userAPI.CreateAction()
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/userapi", Params: nil, Handler: userAPI.Add})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Update})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Delete})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/userapi/search", Params: nil, Handler: userAPI.Get})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/userapi/detail/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Detail})
+}
 
 var userAPI *userAPIAction = &userAPIAction{tableName: "cc_UserAPI"}
 
@@ -39,16 +49,13 @@ type userAPIAction struct {
 
 //Add add new user api
 func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
-
-	value, _ := ioutil.ReadAll(req.Request.Body)
-
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	params := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(value), &params); nil != err {
-		blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("add user config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
 		return
 	}
 
@@ -114,21 +121,18 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 //Update update user api content
 func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
-
 	language := util.GetActionLanguage(req)
-
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
-
 	ID := req.PathParameter("id")
 	appID, err := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
 
-	value, _ := ioutil.ReadAll(req.Request.Body)
 	data := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(value), &data); nil != err {
-		blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("del module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
 		return
 	}
+
 	data[common.LastTimeField] = time.Now()
 
 	params := make(map[string]interface{})
@@ -312,13 +316,4 @@ func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
 	io.WriteString(resp, rsp)
 	return
 
-}
-
-func init() {
-	userAPI.CreateAction()
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/userapi", Params: nil, Handler: userAPI.Add})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Update})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Delete})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/userapi/search", Params: nil, Handler: userAPI.Get})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/userapi/detail/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Detail})
 }

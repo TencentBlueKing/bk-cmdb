@@ -13,26 +13,31 @@
 package instdata
 
 import (
+	"encoding/json"
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
+	. "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/source_controller/hostcontroller/hostdata/logics"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 )
 
-type ModuleHostConfigParams struct {
-	ApplicationID int   `json:"bk_biz_id"`
-	HostID        int   `json:"bk_host_id"`
-	ModuleID      []int `json:"bk_module_id"`
+func init() {
+	moduleHostConfigActionCli.CreateAction()
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/meta/hosts/modules/search", Params: nil, Handler: moduleHostConfigActionCli.GetHostModulesIDs})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/meta/hosts/modules", Params: nil, Handler: moduleHostConfigActionCli.AddModuleHostConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/meta/hosts/modules", Params: nil, Handler: moduleHostConfigActionCli.DelModuleHostConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/meta/hosts/defaultmodules", Params: nil, Handler: moduleHostConfigActionCli.DelDefaultModuleHostConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/meta/hosts/resource", Params: nil, Handler: moduleHostConfigActionCli.MoveHost2ResourcePool})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/meta/hosts/assign", Params: nil, Handler: moduleHostConfigActionCli.AssignHostToApp})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/meta/hosts/module/config/search", Params: nil, Handler: moduleHostConfigActionCli.GetModulesHostConfig})
 }
 
 var (
@@ -48,333 +53,269 @@ type moduleHostConfigAction struct {
 
 //AddModuleHostConfig add module host config
 func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	params := ModuleHostConfigParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("add module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		//instdata.DataH = cc.InstCli
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+	ec := eventdata.NewEventContextByReq(req)
+	for _, moduleID := range params.ModuleID {
+		_, err := logics.AddSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
+		if nil != err {
+			resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostTransferModule).Error()})
+			return
 		}
+	}
 
-		params := ModuleHostConfigParams{}
-		if err := json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		hostID := params.HostID
-
-		//add new relation ship
-		ec := eventdata.NewEventContextByReq(req)
-		for _, moduleID := range params.ModuleID {
-			_, err := logics.AddSingleHostModuleRelation(ec, cc, hostID, moduleID, params.ApplicationID)
-			if nil != err {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostTransferModule)
-			}
-		}
-
-		return http.StatusOK, nil, nil
-	}, resp)
+	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
 }
 
 //DelDefaultModuleHostConfig delete default module host config
 func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	params := ModuleHostConfigParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("del default module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		//instdata.DataH = cc.InstCli
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
+	cc := api.NewAPIResource()
+	defaultModuleIDs, err := logics.GetDefaultModuleIDs(cc, params.ApplicationID)
+	if nil != err {
+		blog.Errorf("defaultModuleIds appID:%d, error:%v", params.ApplicationID, err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		return
+	}
 
-		params := ModuleHostConfigParams{}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		defaultModuleIDs, err := logics.GetDefaultModuleIDs(cc, params.ApplicationID)
+	//delete default host module relation
+	ec := eventdata.NewEventContextByReq(req)
+	for _, defaultModuleID := range defaultModuleIDs {
+		_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, defaultModuleID, params.ApplicationID)
 		if nil != err {
-			blog.Errorf("defaultModuleIds appID:%d, error:%v", params.ApplicationID, err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
+			blog.Errorf("del default module host config failed, with relation, err:%v", err)
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrDelDefaultModuleHostConfig).Error()})
+			return
 		}
+	}
 
-		hostID := params.HostID
-
-		//delete default host module relation
-		ec := eventdata.NewEventContextByReq(req)
-		for _, defaultModuleID := range defaultModuleIDs {
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, defaultModuleID, params.ApplicationID)
-			if nil != err {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrDelDefaultModuleHostConfig)
-			}
-		}
-
-		return http.StatusOK, nil, nil
-	}, resp)
+	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
 }
 
 //DelModuleHostConfig delete module host config
 func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	params := ModuleHostConfigParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("del module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		//instdata.DataH = cc.InstCli
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
+	getModuleParams := make(map[string]interface{}, 2)
+	getModuleParams[common.BKHostIDField] = params.HostID
+	getModuleParams[common.BKAppIDField] = params.ApplicationID
+	moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
+	if nil != err {
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetOriginHostModuelRelationship).Error()})
+		return
+	}
 
-		params := ModuleHostConfigParams{}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		getModuleParams := make(map[string]interface{}, 2)
-		getModuleParams[common.BKHostIDField] = params.HostID
-		getModuleParams[common.BKAppIDField] = params.ApplicationID
-		moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
+	ec := eventdata.NewEventContextByReq(req)
+	for _, moduleID := range moduleIDs {
+		_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
 		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetOriginHostModuelRelationship)
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrDelOriginHostModuelRelationship).Error()})
+			return
 		}
+	}
 
-		ec := eventdata.NewEventContextByReq(req)
-		for _, moduleID := range moduleIDs {
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
-			if nil != err {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrDelOriginHostModuelRelationship)
-			}
-		}
-
-		return http.StatusOK, nil, nil
-	}, resp)
+	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
 }
 
 //GetHostModulesIDs get host module ids
 func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	params := ModuleHostConfigParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Error("get host module id failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
+	moduleIDs, err := logics.GetModuleIDsByHostID(cc, map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}) //params.HostID, params.ApplicationID)
+	if nil != err {
+		blog.Errorf("get host module id failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		return
+	}
 
-		params := ModuleHostConfigParams{}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		moduleIDs, err := logics.GetModuleIDsByHostID(cc, map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}) //params.HostID, params.ApplicationID)
-		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
-		}
-		return http.StatusOK, moduleIDs, nil
-	}, resp)
+	resp.WriteAsJson(GetHostModuleIDsResult{
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
+		Data:     moduleIDs,
+	})
 }
 
 //AssignHostToApp assign host to app
 func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	ec := eventdata.NewEventContextByReq(req)
+	params := new(AssignHostToAppParams)
 
-		type paramsStruct struct {
-			ApplicationID      int   `json:"bk_biz_id"`
-			HostID             []int `json:"bk_host_id"`
-			ModuleID           int   `json:"bk_module_id"`
-			OwnerApplicationID int   `json:"bk_owner_biz_id"`
-			OwnerModuleID      int   `json:"bk_owner_module_id"`
+	if err := json.NewDecoder(req.Request.Body).Decode(params); err != nil {
+		blog.Errorf("assign host to app failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
+
+	getModuleParams := make(map[string]interface{})
+	for _, hostID := range params.HostID {
+		// delete relation in default app module
+		_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerApplicationID)
+		if nil != err {
+			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransferHostFromPool).Error()})
+			return
 		}
 
-		cc := api.NewAPIResource()
-		ec := eventdata.NewEventContextByReq(req)
-		//instdata.DataH = cc.InstCli
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+		getModuleParams[common.BKHostIDField] = hostID
+		moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams)
+		if nil != err {
+			blog.Errorf("assign host to app, but get module failed, err: %v", err)
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+			return
 		}
 
-		params := paramsStruct{}
-		if err := json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		// delete from empty module, no relation
+		if 0 < len(moduleIDs) {
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrAlreadyAssign).Error()})
+			return
 		}
-		getModuleParams := make(map[string]interface{})
-		for _, hostID := range params.HostID {
-			//delete relation in default app module
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerApplicationID)
-			if nil != err {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTransferHostFromPool)
-			}
-			getModuleParams[common.BKHostIDField] = hostID
-			moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams)
-			if nil != err {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
-			}
-			//delete from empty module, no relation
-			if 0 < len(moduleIDs) {
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrAlreadyAssign)
-			}
 
-			//add new host
-			_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.ModuleID, params.ApplicationID)
-			if nil != err {
-			}
+		// add new host
+		_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.ModuleID, params.ApplicationID)
+		if nil != err {
+			blog.Errorf("assign host to app, but add single host module relation failed, err: %v", err)
+			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransferHostFromPool).Error()})
 		}
-		return http.StatusOK, nil, nil
-	}, resp)
-	return
+	}
 
+	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
 }
 
 //GetModulesHostConfig  get module host config
 func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, resp *restful.Response) {
-
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	var params = make(map[string][]int)
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("del module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		var params = make(map[string][]int)
-		cc := api.NewAPIResource()
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+	query := make(map[string]interface{})
+	for key, val := range params {
+		conditon := make(map[string]interface{})
+		conditon[common.BKDBIN] = val
+		query[key] = conditon
+	}
 
-		query := make(map[string]interface{})
-		for key, val := range params {
-			conditon := make(map[string]interface{})
-			conditon[common.BKDBIN] = val
-			query[key] = conditon
-		}
-		fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
-		var result []interface{}
-		err = cc.InstCli.GetMutilByCondition("cc_ModuleHostConfig", fields, query, &result, common.BKHostIDField, 0, 100000)
-		if err != nil {
-			blog.Error("fail to get module host config %v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBSelectFailed)
-		}
-		return http.StatusOK, result, nil
-	}, resp)
+	fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
+	cc := api.NewAPIResource()
+	var result []interface{}
+	err := cc.InstCli.GetMutilByCondition("cc_ModuleHostConfig", fields, query, &result, common.BKHostIDField, 0, 100000)
+	if err != nil {
+		blog.Error("get module host config failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrCommDBSelectFailed).Error()})
+		return
+	}
+
+	resp.WriteAsJson(HostConfig{
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
+		Data:     result,
+	})
 }
 
 //MoveHostToSourcePool move host 2 resource pool
 func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	ec := eventdata.NewEventContextByReq(req)
+	instdata.DataH = cc.InstCli
+	params := new(ParamData)
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
+		blog.Errorf("move host to resourece pool failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		type paramsStruct struct {
-			ApplicationID       int   `json:"bk_biz_id"`
-			HostID              []int `json:"bk_host_id"`
-			OwnerModuleID       int   `json:"bk_owner_module_id"`
-			OwnerAppplicationID int   `json:"bk_owner_biz_id"`
-		}
+	idleModuleID, err := logics.GetIDleModuleID(cc, params.ApplicationID)
+	if nil != err {
+		blog.Error("get default module failed, error:%s", err.Error())
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		ec := eventdata.NewEventContextByReq(req)
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		instdata.DataH = cc.InstCli
-		params := paramsStruct{}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		idleModuleID, err := logics.GetIDleModuleID(cc, params.ApplicationID)
-		if nil != err {
-			blog.Error("获取业务默认模块失败 error:%s", err.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
-		}
-		errHostIDs, faultHostIDs, err := logics.CheckHostInIDle(cc, params.ApplicationID, idleModuleID, params.HostID)
-		if nil != err {
-			blog.Error("获取主机模块关系失败， error:%s", err.Error())
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
-		}
-		if 0 != len(errHostIDs) {
-			data := common.KvMap{common.BKHostIDField: errHostIDs}
-			blog.Errorf("主机属于空闲机以外的模块 %v", data)
-			return http.StatusInternalServerError, data, defErr.Error(common.CCErrNotBelongToIdleModule)
-		}
-		var succ, addErr, delErr []int
-		for _, hostID := range params.HostID {
+	errHostIDs, faultHostIDs, err := logics.CheckHostInIDle(cc, params.ApplicationID, idleModuleID, params.HostID)
+	if nil != err {
+		blog.Error("get host relationship failed, err: %s", err.Error())
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		return
+	}
 
-			//host not belong to other biz, add new host
-			if !util.ContainsInt(faultHostIDs, hostID) {
-				_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
-				if nil != err {
-					addErr = append(addErr, hostID)
-					continue
-				}
-			}
+	if 0 != len(errHostIDs) {
+		blog.Errorf("move host to resource pool, but it does not belongs to free module, hostid: %v", errHostIDs)
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrNotBelongToIdleModule).Error()})
+		return
+	}
 
-			//delete origin relation
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, idleModuleID, params.ApplicationID)
+	var succ, addErr, delErr []int
+	for _, hostID := range params.HostID {
+		//host not belong to other biz, add new host
+		if !util.ContainsInt(faultHostIDs, hostID) {
+			_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
 			if nil != err {
-				delErr = append(delErr, hostID)
+				addErr = append(addErr, hostID)
 				continue
 			}
-
-			succ = append(succ, hostID)
-		}
-		if 0 != len(addErr) || 0 != len(delErr) {
-			addErr = append(addErr, delErr...)
-			data := common.KvMap{"成功": succ, "失败": addErr}
-			blog.Errorf("主机属于空闲机以外的模块 %v", data)
-			return http.StatusInternalServerError, data, defErr.Error(common.CCErrTransfer2ResourcePool)
 		}
 
-		return http.StatusOK, nil, nil
-	}, resp)
-}
+		//delete origin relation
+		_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, idleModuleID, params.ApplicationID)
+		if nil != err {
+			delErr = append(delErr, hostID)
+			continue
+		}
+		succ = append(succ, hostID)
+	}
 
-func init() {
-	moduleHostConfigActionCli.CreateAction()
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/meta/hosts/modules/search", Params: nil, Handler: moduleHostConfigActionCli.GetHostModulesIDs})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/meta/hosts/modules", Params: nil, Handler: moduleHostConfigActionCli.AddModuleHostConfig})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/meta/hosts/modules", Params: nil, Handler: moduleHostConfigActionCli.DelModuleHostConfig})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/meta/hosts/defaultmodules", Params: nil, Handler: moduleHostConfigActionCli.DelDefaultModuleHostConfig})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/meta/hosts/resource", Params: nil, Handler: moduleHostConfigActionCli.MoveHost2ResourcePool})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/meta/hosts/assign", Params: nil, Handler: moduleHostConfigActionCli.AssignHostToApp})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/meta/hosts/module/config/search", Params: nil, Handler: moduleHostConfigActionCli.GetModulesHostConfig})
+	if 0 != len(addErr) || 0 != len(delErr) {
+		addErr = append(addErr, delErr...)
+		blog.Errorf("move host to resource pool, success: %v, failed: %v", succ, addErr)
+		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransfer2ResourcePool).Error()})
+		return
+	}
+
+	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
 }
