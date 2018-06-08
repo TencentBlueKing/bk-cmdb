@@ -19,7 +19,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
 
 	"configcenter/src/scene_server/topo_server/core/types"
 	metadata "configcenter/src/source_controller/api/metadata"
