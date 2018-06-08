@@ -76,8 +76,8 @@
         width: 100%;
         z-index: 1200;
         .logo{
-            height: 100%;
-            margin: 0 0 0 7px;
+            height: 27px;
+            margin: 8px;
             cursor: pointer;
         }
         .header-right-contain{
