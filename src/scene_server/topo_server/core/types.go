@@ -13,8 +13,8 @@
 package core
 
 import (
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -30,23 +30,23 @@ type Core interface {
 	CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
 	CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error)
 
-	DeleteClassification(params types.LogicParams, cond frcommon.Condition) error
-	DeleteObject(params types.LogicParams, cond frcommon.Condition) error
-	DeleteObjectAttribute(params types.LogicParams, cond frcommon.Condition) error
-	DeleteObjectGroup(params types.LogicParams, cond frcommon.Condition) error
-	DeleteInst(params types.LogicParams, cond frcommon.Condition) error
-	DeleteAssociation(params types.LogicParams, cond frcommon.Condition) error
+	DeleteClassification(params types.LogicParams, cond condition.Condition) error
+	DeleteObject(params types.LogicParams, cond condition.Condition) error
+	DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error
+	DeleteObjectGroup(params types.LogicParams, cond condition.Condition) error
+	DeleteInst(params types.LogicParams, cond condition.Condition) error
+	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
 
-	FindClassification(params types.LogicParams, cond frcommon.Condition) ([]model.Classification, error)
-	FindObject(params types.LogicParams, cond frcommon.Condition) ([]model.Object, error)
-	FindObjectAttribute(params types.LogicParams, cond frcommon.Condition) ([]model.Attribute, error)
-	FindObjectGroup(params types.LogicParams, cond frcommon.Condition) ([]model.Group, error)
-	FindInst(params types.LogicParams, cond frcommon.Condition) ([]inst.Inst, error)
+	FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error)
+	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
+	FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error)
+	FindObjectGroup(params types.LogicParams, cond condition.Condition) ([]model.Group, error)
+	FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error)
 
-	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObject(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateInst(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
-	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error
+	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateObject(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateInst(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
 }

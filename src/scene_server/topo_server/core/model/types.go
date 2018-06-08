@@ -13,8 +13,8 @@
 package model
 
 import (
-	//frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -29,9 +29,12 @@ const (
 	CommonAssociation AssociationType = "commonasso"
 )
 
-// Saver the saver interface method
-type Saver interface {
-	// Save update or insert
+// Operation the saver interface method
+type Operation interface {
+	Create() error
+	Update() error
+	Delete() error
+	IsExists() (bool, error)
 	Save() error
 }
 
@@ -45,7 +48,6 @@ type Topo interface {
 
 // Association association operation interface declaration
 type Association interface {
-	Saver
 	Parse(data frtypes.MapStr) error
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
@@ -56,9 +58,9 @@ type Association interface {
 
 // Group group opeartion interface declaration
 type Group interface {
-	Saver
+	Operation
 
-	Parse(data frtypes.MapStr) error
+	Parse(data frtypes.MapStr) (*metadata.Group, error)
 	CreateAttribute() Attribute
 
 	GetAttributes() ([]Attribute, error)
@@ -86,8 +88,8 @@ type Group interface {
 
 // Attribute attribute opeartion interface declaration
 type Attribute interface {
-	Saver
-	Parse(data frtypes.MapStr) error
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
 
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
@@ -148,8 +150,8 @@ type Attribute interface {
 
 // Classification classification operation interface declaration
 type Classification interface {
-	Saver
-	Parse(data frtypes.MapStr) error
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Classification, error)
 
 	GetObjects() ([]Object, error)
 
@@ -173,8 +175,9 @@ type Classification interface {
 
 // Object model operation interface declaration
 type Object interface {
-	Saver
-	Parse(data frtypes.MapStr) error
+	Operation
+
+	Parse(data frtypes.MapStr) (*metadata.Object, error)
 
 	CreateGroup() Group
 	CreateAttribute() Attribute

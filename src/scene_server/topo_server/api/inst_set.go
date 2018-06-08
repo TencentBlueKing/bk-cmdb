@@ -16,9 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -38,7 +38,7 @@ func (cli *topoAPI) initSet() {
 // CreateSet create a new set
 func (cli *topoAPI) CreateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 
 	objItems, err := cli.core.FindObject(params, cond)
@@ -72,7 +72,7 @@ func (cli *topoAPI) CreateSet(params types.LogicParams, pathParams, queryParams 
 // DeleteSet delete the set
 func (cli *topoAPI) DeleteSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
@@ -86,7 +86,7 @@ func (cli *topoAPI) DeleteSet(params types.LogicParams, pathParams, queryParams 
 // UpdateSet update the set
 func (cli *topoAPI) UpdateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
@@ -103,7 +103,7 @@ func (cli *topoAPI) UpdateSet(params types.LogicParams, pathParams, queryParams 
 // SearchSet search the set
 func (cli *topoAPI) SearchSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))

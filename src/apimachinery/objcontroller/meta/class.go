@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
+	metatype "configcenter/src/common/metadata"
 )
 
 func (t *meta) SelectClassificationWithObject(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
@@ -35,8 +35,8 @@ func (t *meta) SelectClassificationWithObject(ctx context.Context, h util.Header
 	return
 }
 
-func (t *meta) SelectClassifications(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectClassifications(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationResult, err error) {
+	resp = new(metatype.QueryObjectClassificationResult)
 	subPath := "/meta/object/classification/search"
 
 	err = t.client.Post().
@@ -63,8 +63,8 @@ func (t *meta) DeleteClassification(ctx context.Context, id string, h util.Heade
 	return
 }
 
-func (t *meta) CreateClassification(ctx context.Context, h util.Headers, dat *metadata.ObjClassification) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateClassification(ctx context.Context, h util.Headers, dat *metatype.Classification) (resp *metatype.CreateObjectClassificationResult, err error) {
+	resp = new(metatype.CreateObjectClassificationResult)
 	subPath := "/meta/object/classification"
 
 	err = t.client.Post().

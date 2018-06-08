@@ -14,7 +14,7 @@ package core
 
 import (
 	//frcommon "configcenter/src/framework/common"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -25,7 +25,7 @@ func (cli *core) CreateClassification(params types.LogicParams, data frtypes.Map
 
 	cls := cli.modelFactory.CreaetClassification(params)
 
-	err := cls.Parse(data)
+	_, err := cls.Parse(data)
 	if nil != err {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (cli *core) CreateObject(params types.LogicParams, data frtypes.MapStr) (mo
 
 	obj := cli.modelFactory.CreaetObject(params)
 
-	err := obj.Parse(data)
+	_, err := obj.Parse(data)
 	if nil != err {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (cli *core) CreateObjectAttribute(params types.LogicParams, data frtypes.Ma
 
 	att := cli.modelFactory.CreateAttribute(params)
 
-	err := att.Parse(data)
+	_, err := att.Parse(data)
 	if nil != err {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (cli *core) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr
 
 	grp := cli.modelFactory.CreateGroup(params)
 
-	err := grp.Parse(data)
+	_, err := grp.Parse(data)
 	if nil != err {
 		return nil, err
 	}

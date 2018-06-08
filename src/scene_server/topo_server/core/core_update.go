@@ -13,34 +13,32 @@
 package core
 
 import (
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
-	//"configcenter/src/scene_server/core/inst"
-	//"configcenter/src/scene_server/core/model"
 )
 
-func (cli *core) UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 
 	return nil
 }
 
-func (cli *core) UpdateObject(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateObject(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) UpdateInst(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateInst(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond frcommon.Condition) error {
+func (cli *core) UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }

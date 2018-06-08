@@ -13,9 +13,14 @@
 package model
 
 import (
+	"context"
+
 	"configcenter/src/apimachinery"
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -23,65 +28,98 @@ var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
-	ClassificationID   string `field:"bk_classification_id"`
-	ClassificationName string `field:"bk_classification_name"`
-	ClassificationType string `field:"bk_classification_type"`
-	ClassificationIcon string `field:"bk_classification_icon"`
-
+	cls       metadata.Classification
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *classification) Parse(data frtypes.MapStr) error {
-
-	err := frcommon.SetValueToStructByTags(cli, data)
-
-	if nil != err {
-		return err
-	}
-
-	// TODO 增加校验逻辑
-
-	return err
+func (cli *classification) Parse(data frtypes.MapStr) (*metadata.Classification, error) {
+	return cli.cls.Parse(data)
 }
 
 func (cli *classification) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+	rst := metadata.SetValueToMapStrByTags(cli)
+	return rst, nil
 }
 
 func (cli *classification) GetObjects() ([]Object, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the classification(%s) object, error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Object, 0)
+	for _, item := range rsp.Data {
+
+		tmpObj := &object{
+			isNew: false,
+		}
+
+		err := metadata.SetValueToStructByTags(tmpObj.obj, item.ToMapStr())
+		if nil != err {
+			return nil, err
+		}
+
+		rstItems = append(rstItems, tmpObj)
+	}
+
+	return rstItems, nil
+}
+
+func (cli *classification) Create() error {
+	return nil
+}
+
+func (cli *classification) Update() error {
+	return nil
+}
+
+func (cli *classification) Delete() error {
+	return nil
+}
+
+func (cli *classification) IsExists() (bool, error) {
+	return false, nil
 }
 
 func (cli *classification) Save() error {
-	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
 
-	_ = dataMapStr
 	return nil
 }
 
 func (cli *classification) SetID(classificationID string) {
-	cli.ClassificationID = classificationID
+	cli.cls.ClassificationID = classificationID
 }
 
 func (cli *classification) GetID() string {
-	return cli.ClassificationID
+	return cli.cls.ClassificationID
 }
 
 func (cli *classification) SetName(classificationName string) {
-	cli.ClassificationName = classificationName
+	cli.cls.ClassificationName = classificationName
 }
 
 func (cli *classification) GetName() string {
-	return cli.ClassificationName
+	return cli.cls.ClassificationName
 }
 
 func (cli *classification) SetType(classificationType string) {
-	cli.ClassificationType = classificationType
+	cli.cls.ClassificationType = classificationType
 }
 
 func (cli *classification) GetType() string {
-	return cli.ClassificationType
+	return cli.cls.ClassificationType
 }
 
 func (cli *classification) SetSupplierAccount(supplierAccount string) {
@@ -94,9 +132,9 @@ func (cli *classification) GetSupplierAccount() string {
 }
 
 func (cli *classification) SetIcon(classificationIcon string) {
-	cli.ClassificationIcon = classificationIcon
+	cli.cls.ClassificationIcon = classificationIcon
 }
 
 func (cli *classification) GetIcon() string {
-	return cli.ClassificationIcon
+	return cli.cls.ClassificationIcon
 }

@@ -14,37 +14,46 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Group = (*group)(nil)
 
 type group struct {
-	GroupID    string `field:"bk_group_id"`
-	GroupName  string `field:"bk_group_name"`
-	GroupIndex int    `field:"bk_group_index"`
-	ObjectID   string `field:"bk_obj_id"`
-	OwnerID    string `field:"bk_supplier_account"`
-	IsDefault  bool   `field:"bk_isdefault"`
-	IsPre      bool   `field:"ispre"`
-
+	grp       metadata.Group
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *group) Parse(data frtypes.MapStr) error {
+func (cli *group) Create() error {
+	return nil
+}
 
-	err := frcommon.SetValueToStructByTags(cli, data)
+func (cli *group) Update() error {
+	return nil
+}
+
+func (cli *group) Delete() error {
+	return nil
+}
+
+func (cli *group) IsExists() (bool, error) {
+	return false, nil
+}
+
+func (cli *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
+
+	err := metadata.SetValueToStructByTags(cli, data)
 
 	if nil != err {
-		return err
+		return nil, err
 	}
 
 	// TODO 实现校验逻辑
 
-	return err
+	return nil, err
 }
 func (cli *group) ToMapStr() (frtypes.MapStr, error) {
 	return nil, nil
@@ -55,7 +64,7 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 }
 
 func (cli *group) Save() error {
-	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
+	dataMapStr := metadata.SetValueToMapStrByTags(cli)
 
 	_ = dataMapStr
 	return nil
@@ -63,55 +72,57 @@ func (cli *group) Save() error {
 
 func (cli *group) CreateAttribute() Attribute {
 	return &attribute{
-		OwnerID:  cli.OwnerID,
-		ObjectID: cli.ObjectID,
+		attr: metadata.Attribute{
+			OwnerID:  cli.grp.OwnerID,
+			ObjectID: cli.grp.ObjectID,
+		},
 	}
 }
 
 func (cli *group) SetID(groupID string) {
-	cli.GroupID = groupID
+	cli.grp.GroupID = groupID
 }
 
 func (cli *group) GetID() string {
-	return cli.GroupID
+	return cli.grp.GroupID
 }
 
 func (cli *group) SetName(groupName string) {
-	cli.GroupName = groupName
+	cli.grp.GroupName = groupName
 }
 
 func (cli *group) GetName() string {
-	return cli.GroupName
+	return cli.grp.GroupName
 }
 
 func (cli *group) SetIndex(groupIndex int64) {
-	cli.GroupIndex = int(groupIndex)
+	cli.grp.GroupIndex = int(groupIndex)
 }
 
 func (cli *group) GetIndex() int64 {
-	return int64(cli.GroupIndex)
+	return int64(cli.grp.GroupIndex)
 }
 
 func (cli *group) SetSupplierAccount(supplierAccount string) {
-	cli.OwnerID = supplierAccount
+	cli.grp.OwnerID = supplierAccount
 }
 
 func (cli *group) GetSupplierAccount() string {
-	return cli.OwnerID
+	return cli.grp.OwnerID
 }
 
 func (cli *group) SetDefault(isDefault bool) {
-	cli.IsDefault = isDefault
+	cli.grp.IsDefault = isDefault
 }
 
 func (cli *group) GetDefault() bool {
-	return cli.IsDefault
+	return cli.grp.IsDefault
 }
 
 func (cli *group) SetIsPre(isPre bool) {
-	cli.IsPre = isPre
+	cli.grp.IsPre = isPre
 }
 
 func (cli *group) GetIsPre() bool {
-	return cli.IsPre
+	return cli.grp.IsPre
 }

@@ -13,7 +13,7 @@
 package inst
 
 import (
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
 
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -21,7 +21,7 @@ import (
 
 // Inst the inst interface
 type Inst interface {
-	model.Saver
+	model.Operation
 	GetObject() model.Object
 
 	GetInstID() int

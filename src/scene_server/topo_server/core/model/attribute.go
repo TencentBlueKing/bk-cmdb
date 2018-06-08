@@ -14,8 +14,9 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+
+	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -23,90 +24,76 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
-	OwnerID       string      `field:"bk_supplier_account"`
-	ObjectID      string      `field:"bk_obj_id"`
-	PropertyID    string      `field:"bk_property_id"`
-	PropertyName  string      `field:"bk_property_name"`
-	PropertyGroup string      `field:"bk_property_group"`
-	PropertyIndex int         `field:"bk_property_index"`
-	Unit          string      `field:"unit"`
-	Placeholder   string      `field:"placeholder"`
-	IsEditable    bool        `field:"editable"`
-	IsPre         bool        `field:"ispre"`
-	IsRequired    bool        `field:"isrequired"`
-	IsReadOnly    bool        `field:"isreadonly"`
-	IsOnly        bool        `field:"isonly"`
-	IsSystem      bool        `field:"bk_issystem"`
-	IsAPI         bool        `field:"bk_isapi"`
-	PropertyType  string      `field:"bk_property_type"`
-	Option        interface{} `field:"option"`
-	Description   string      `field:"description"`
-	Creator       string      `field:"creator"`
-
+	attr      metadata.Attribute
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *attribute) Parse(data frtypes.MapStr) error {
-	err := frcommon.SetValueToStructByTags(cli, data)
-
-	if nil != err {
-		return err
-	}
-
-	// TODO 实现数据校验
-
-	return err
+func (cli *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
+	return cli.attr.Parse(data)
 }
 
 func (cli *attribute) ToMapStr() (frtypes.MapStr, error) {
 	return nil, nil
 }
 
+func (cli *attribute) Create() error {
+	return nil
+}
+
+func (cli *attribute) Update() error {
+	return nil
+}
+
+func (cli *attribute) IsExists() (bool, error) {
+	return false, nil
+}
+
+func (cli *attribute) Delete() error {
+	return nil
+}
+
 func (cli *attribute) Save() error {
 
-	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
-
-	_ = dataMapStr
 	return nil
 }
 
 func (cli *attribute) SetSupplierAccount(supplierAccount string) {
 
-	cli.OwnerID = supplierAccount
+	cli.attr.OwnerID = supplierAccount
 
 }
 
 func (cli *attribute) GetSupplierAccount() string {
-	return cli.OwnerID
+	return cli.attr.OwnerID
 }
 
 func (cli *attribute) SetObjectID(objectID string) {
-	cli.ObjectID = objectID
+	cli.attr.ObjectID = objectID
 }
 
 func (cli *attribute) GetObjectID() string {
-	return cli.ObjectID
+	return cli.attr.ObjectID
 }
 
 func (cli *attribute) SetID(attributeID string) {
-	cli.PropertyID = attributeID
+	cli.attr.PropertyID = attributeID
 }
 
 func (cli *attribute) GetID() string {
-	return cli.PropertyID
+	return cli.attr.PropertyID
 }
 
 func (cli *attribute) SetName(attributeName string) {
-	cli.PropertyName = attributeName
+	cli.attr.PropertyName = attributeName
 }
 
 func (cli *attribute) GetName() string {
-	return cli.PropertyName
+	return cli.attr.PropertyName
 }
 
 func (cli *attribute) SetGroup(grp Group) {
-	cli.PropertyGroup = grp.GetID()
+	cli.attr.PropertyGroup = grp.GetID()
 }
 
 func (cli *attribute) GetGroup() (Group, error) {
@@ -114,105 +101,105 @@ func (cli *attribute) GetGroup() (Group, error) {
 }
 
 func (cli *attribute) SetGroupIndex(attGroupIndex int64) {
-	cli.PropertyIndex = int(attGroupIndex)
+	cli.attr.PropertyIndex = int(attGroupIndex)
 }
 
 func (cli *attribute) GetGroupIndex() int64 {
-	return int64(cli.PropertyIndex)
+	return int64(cli.attr.PropertyIndex)
 }
 
 func (cli *attribute) SetUnint(unit string) {
-	cli.Unit = unit
+	cli.attr.Unit = unit
 }
 
 func (cli *attribute) GetUnint() string {
-	return cli.Unit
+	return cli.attr.Unit
 }
 
 func (cli *attribute) SetPlaceholder(placeHolder string) {
-	cli.Placeholder = placeHolder
+	cli.attr.Placeholder = placeHolder
 }
 
 func (cli *attribute) GetPlaceholder() string {
-	return cli.Placeholder
+	return cli.attr.Placeholder
 }
 
 func (cli *attribute) SetIsEditable(isEditable bool) {
-	cli.IsEditable = isEditable
+	cli.attr.IsEditable = isEditable
 }
 
 func (cli *attribute) GetIsEditable() bool {
-	return cli.IsEditable
+	return cli.attr.IsEditable
 }
 
 func (cli *attribute) SetIsPre(isPre bool) {
-	cli.IsPre = isPre
+	cli.attr.IsPre = isPre
 }
 
 func (cli *attribute) GetIsPre() bool {
-	return cli.IsPre
+	return cli.attr.IsPre
 }
 
 func (cli *attribute) SetIsReadOnly(isReadOnly bool) {
-	cli.IsReadOnly = isReadOnly
+	cli.attr.IsReadOnly = isReadOnly
 }
 
 func (cli *attribute) GetIsReadOnly() bool {
-	return cli.IsReadOnly
+	return cli.attr.IsReadOnly
 }
 
 func (cli *attribute) SetIsOnly(isOnly bool) {
-	cli.IsOnly = isOnly
+	cli.attr.IsOnly = isOnly
 }
 
 func (cli *attribute) GetIsOnly() bool {
-	return cli.IsOnly
+	return cli.attr.IsOnly
 }
 
 func (cli *attribute) SetIsSystem(isSystem bool) {
-	cli.IsSystem = isSystem
+	cli.attr.IsSystem = isSystem
 }
 
 func (cli *attribute) GetIsSystem() bool {
-	return cli.IsSystem
+	return cli.attr.IsSystem
 }
 
 func (cli *attribute) SetIsAPI(isAPI bool) {
-	cli.IsAPI = isAPI
+	cli.attr.IsAPI = isAPI
 }
 
 func (cli *attribute) GetIsAPI() bool {
-	return cli.IsAPI
+	return cli.attr.IsAPI
 }
 
 func (cli *attribute) SetType(attributeType string) {
-	cli.PropertyType = attributeType
+	cli.attr.PropertyType = attributeType
 }
 
 func (cli *attribute) GetType() string {
-	return cli.PropertyType
+	return cli.attr.PropertyType
 }
 
 func (cli *attribute) SetOption(attributeOption interface{}) {
-	cli.Option = attributeOption
+	cli.attr.Option = attributeOption
 }
 
 func (cli *attribute) GetOption() interface{} {
-	return cli.Option
+	return cli.attr.Option
 }
 
 func (cli *attribute) SetDescription(attributeDescription string) {
-	cli.Description = attributeDescription
+	cli.attr.Description = attributeDescription
 }
 
 func (cli *attribute) GetDescription() string {
-	return cli.Description
+	return cli.attr.Description
 }
 
 func (cli *attribute) SetCreator(attributeCreator string) {
-	cli.Creator = attributeCreator
+	cli.attr.Creator = attributeCreator
 }
 
 func (cli *attribute) GetCreator() string {
-	return cli.Creator
+	return cli.attr.Creator
 }
