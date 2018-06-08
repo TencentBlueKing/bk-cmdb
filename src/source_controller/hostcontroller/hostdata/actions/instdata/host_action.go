@@ -14,7 +14,6 @@ package instdata
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,7 +30,6 @@ import (
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
-	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
@@ -53,42 +51,44 @@ type hostAction struct {
 
 //AddHost add host to resource
 func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		objType := common.BKInnerObjIDHost
-		instdata.DataH = cli.CC.InstCli
-		value, _ := ioutil.ReadAll(req.Request.Body)
-		js, _ := simplejson.NewJson([]byte(value))
-		input, _ := js.Map()
-		blog.Info("create object type:%s,data:%v", objType, input)
-		input[common.CreateTimeField] = time.Now()
-		var idName string
-		ID, err := instdata.CreateObject(objType, input, &idName)
+	objType := common.BKInnerObjIDHost
+	instdata.DataH = cli.CC.InstCli
+
+	input := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("add host failed with decode body err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
+
+	input[common.CreateTimeField] = time.Now()
+	var idName string
+	ID, err := instdata.CreateObject(objType, input, &idName)
+	if err != nil {
+		blog.Errorf("create object type:%s ,data: %v error: %v", objType, input, err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostCreateInst).Error()})
+		return
+	}
+
+	// record event
+	originData := map[string]interface{}{}
+	if err := instdata.GetObjectByID(objType, nil, ID, originData, ""); err != nil {
+		blog.Error("create event error:%v", err)
+	} else {
+		ec := eventdata.NewEventContextByReq(req)
+		err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
 		if err != nil {
-			blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostCreateInst)
-		}
-
-		// record event
-		originData := map[string]interface{}{}
-		if err := instdata.GetObjectByID(objType, nil, ID, originData, ""); err != nil {
 			blog.Error("create event error:%v", err)
-		} else {
-			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
-			if err != nil {
-				blog.Error("create event error:%v", err)
-			}
 		}
+	}
 
-		info := make(map[string]int)
-		info[idName] = ID
-		return http.StatusOK, info, nil
-	}, resp)
+	resp.WriteAsJson(Response{
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
+		Data:     map[string]int{idName: ID},
+	})
 }
 
 //GetHostByID get host detail
@@ -115,7 +115,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 	}
 
 	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data:     resp,
 	})
 
@@ -155,7 +155,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	resp.WriteAsJson(GetHostsResult{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data: HostInfo{
 			Count: count,
 			Info:  result,
@@ -180,7 +180,7 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 	}
 
 	resp.WriteAsJson(GetHostSnapResult{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data: HostSnap{
 			Data: result,
 		},

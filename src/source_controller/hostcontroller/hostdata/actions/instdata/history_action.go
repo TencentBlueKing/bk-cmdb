@@ -69,7 +69,7 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 	}
 
 	resp.WriteAsJson(HostFavorite{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data:     ID{ID: id.String()},
 	})
 
@@ -110,7 +110,7 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 	}
 
 	resp.WriteAsJson(GetHistoryResult{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data: HistoryResult{
 			Count: nums,
 			Info:  result,
