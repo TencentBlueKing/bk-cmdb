@@ -22,6 +22,7 @@ import (
 	"configcenter/src/source_controller/common/instdata"
 	"fmt"
 	"gopkg.in/redis.v5"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	dccommon.Rediscli = rediscli
 	chanName := ""
 	for {
-		chanName, err = getChanName()
+		chanName, err = getChanName(config)
 		if nil == err {
 			break
 		}
@@ -70,7 +71,11 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	return nil
 }
 
-func getChanName() (string, error) {
+func getChanName(config map[string]string) (string, error) {
+	if config["snap-redis.snapchan"] != "" {
+		return config["snap-redis.snapchan"], nil
+	}
+
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
 	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
@@ -79,11 +84,17 @@ func getChanName() (string, error) {
 	if len(results) <= 0 {
 		return "", fmt.Errorf("default app not found")
 	}
-	defaultAppID := fmt.Sprint(results[0][common.BKAppIDField])
-	if len(defaultAppID) == 0 {
-		return "", fmt.Errorf("default app not found")
+
+	var defaultAppID string
+	switch id := results[0][common.BKAppIDField].(type) {
+	case int:
+		defaultAppID = strconv.Itoa(id)
+	case int64:
+		defaultAppID = strconv.FormatInt(id, 10)
+	default:
+		return "", fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
-	return defaultAppID + "_snapshot", nil
+	return "snapshot" + defaultAppID, nil
 }
 
 func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
