@@ -24,7 +24,7 @@ import (
 )
 
 // MapStr the common event data definition
-type MapStr map[string]basetype.Type
+type MapStr map[string]interface{}
 
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
@@ -55,14 +55,28 @@ func (cli MapStr) Reset() {
 }
 
 // Bool get the value as bool
-func (cli MapStr) Bool(key string) bool {
+func (cli MapStr) Bool(key string) (bool, error) {
 	switch t := cli[key].(type) {
 	case nil:
-		return false
+		return false, fmt.Errorf("the key (%s) is invalid", key)
 	default:
-		return false
+		return false, fmt.Errorf("the key (%s) is invalid", key)
 	case bool:
-		return t
+		return t, nil
+	}
+}
+
+// BaseType get the value as BaseType.Type
+func (cli MapStr) BaseType(key string) (*basetype.Type, error) {
+	switch t := cli[key].(type) {
+	case nil:
+		return nil, fmt.Errorf("the key (%s) is invalid", key)
+	default:
+		return nil, fmt.Errorf("the key (%s) is invalid", key)
+	case *basetype.Type:
+		return t, nil
+	case basetype.Type:
+		return &t, nil
 	}
 }
 
@@ -119,19 +133,22 @@ func (cli MapStr) Float(key string) (float64, error) {
 }
 
 // String get the value as string
-func (cli MapStr) String(key string) string {
+func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
-		return ""
+		return "", fmt.Errorf("the key(%s) is invalid", key)
 	default:
-		return fmt.Sprintf("%v", t)
+		return fmt.Sprintf("%v", t), nil
 	case map[string]interface{}, []interface{}:
-		rest, _ := json.Marshal(t)
-		return string(rest)
+		rest, err := json.Marshal(t)
+		if nil != err {
+			return "", err
+		}
+		return string(rest), nil
 	case json.Number:
-		return t.String()
+		return t.String(), nil
 	case string:
-		return t
+		return t, nil
 	}
 }
 
