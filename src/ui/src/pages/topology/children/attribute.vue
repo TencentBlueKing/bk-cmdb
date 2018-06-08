@@ -205,38 +205,6 @@
             }
         },
         methods: {
-            isCloseConfirmShow () {
-                let isConfirmShow = false
-                if (this.displayType === 'list') {
-                    return false
-                }
-                if (this.type === 'create') {
-                    isConfirmShow = Object.values(this.localValues).some(val => {
-                        return val.length
-                    })
-                } else {
-                    for (let key in this.localValues) {
-                        let property = this.attribute[this.bkObjId].find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
-                            return bkPropertyId === key
-                        })
-                        let value = this.formValues[key]
-                        if (property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst') {
-                            value = []
-                            if (this.formValues.hasOwnProperty(key)) {
-                                this.formValues[key].map(formValue => {
-                                    value.push(formValue['bk_inst_id'])
-                                })
-                            }
-                            value = value.join(',')
-                        }
-                        if (value !== this.localValues[key] && !(this.localValues[key] === '' && !this.formValues.hasOwnProperty(key))) {
-                            isConfirmShow = true
-                            break
-                        }
-                    }
-                }
-                return isConfirmShow
-            },
             toggleDisplayType (displayType) {
                 this.displayType = displayType
             },
@@ -338,8 +306,14 @@
                         rules['regex'] = option
                     }
                 }
-                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['char'] = true
+                if (bkPropertyType === 'singlechar') {
+                    rules['singlechar'] = true
+                }
+                if (bkPropertyType === 'longchar') {
+                    rules['longchar'] = true
+                }
+                if (bkPropertyType === 'int') {
+                    rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
                 }
                 return rules
             },

@@ -162,6 +162,11 @@
 
                     this.setSelected(value)
                 })
+            },
+            localOptions (localOptions) {
+                this.$nextTick(() => {
+                    this.setSelected(this.selected)
+                })
             }
         },
         computed: {
@@ -357,7 +362,7 @@
                     }
                 }
 
-                this.model = this.curLabel || this.curValue
+                this.model = this.curLabel
             },
             clear () {
                 this.$emit('update:selected', '')
