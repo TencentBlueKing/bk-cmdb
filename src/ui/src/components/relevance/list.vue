@@ -59,7 +59,7 @@
         },
         watch: {
             objId (objId) {
-                this.$store.dispatch('object/getAttribute', objId)
+                this.$store.dispatch('object/getAttribute', {objId})
             },
             associations (associations) {
                 associations.forEach(association => {
@@ -70,7 +70,7 @@
             }
         },
         created () {
-            this.$store.dispatch('object/getAttribute', this.objId)
+            this.$store.dispatch('object/getAttribute', {objId: this.objId})
         },
         methods: {
             handleCheck (checked, property) {

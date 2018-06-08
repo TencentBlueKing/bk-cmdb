@@ -42,7 +42,7 @@
                 <div class="fl left-select">
                     <bk-select :selected.sync="filter.selected" ref="filterSelector" @on-selected="setFilterType">
                         <bk-select-option
-                            v-for="(option, index) of filteredList"
+                            v-for="(option, index) of filterList"
                             :key="option.id"
                             :value="option.id"
                             :label="option.name">
@@ -118,7 +118,8 @@
                             <v-relevance :isShow="tab.activeName==='relevance'"
                                 :objId="objId"
                                 :ObjectID="objId !== 'biz' ? attr.formValues['bk_inst_id'] : attr.formValues['bk_biz_id']"
-                                :instance="attr.formValues">
+                                :instance="attr.formValues"
+                                @handleUpdate="getTableList">
                             </v-relevance>
                         </bk-tabpanel>
                         <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attr.type==='update'">
@@ -278,10 +279,17 @@
                             config.params.condition[this.filter.selected] = this.filter.value
                         }
                     } else {
+                        const specialObj = {
+                            'host': 'bk_host_innerip',
+                            'biz': 'bk_biz_name',
+                            'plat': 'bk_cloud_name',
+                            'module': 'bk_module_name',
+                            'set': 'bk_set_name'
+                        }
                         if (this.filter.type === 'singleasst' || this.filter.type === 'multiasst') {
                             let bkAsstObjId = this.getProperty(this.filter.selected)['bk_asst_obj_id']
                             config.params.condition[bkAsstObjId] = [{
-                                field: 'bk_inst_name',
+                                field: specialObj.hasOwnProperty(bkAsstObjId) ? specialObj[bkAsstObjId] : 'bk_inst_name',
                                 operator: '$regex',
                                 value: this.filter.value
                             }]
@@ -310,19 +318,6 @@
             },
             exportUrl () {
                 return `${window.siteUrl}insts/owner/${this.bkSupplierAccount}/object/${this.objId}/export`
-            },
-            filteredList () {
-                return this.filterList.filter(({id}) => {
-                    let property = this.getProperty(id)
-                    if (property) {
-                        if (this.objId === 'biz') {
-                            return property['bk_property_type'] !== 'singleasst' && property['bk_property_type'] !== 'multiasst'
-                        } else {
-                            return property['bk_asst_obj_id'] !== 'biz'
-                        }
-                    }
-                    return false
-                })
             }
         },
         watch: {
@@ -340,25 +335,13 @@
                 // 初始化表格
                 this.initTable()
             },
-            filteredList (filteredList) {
-                if (filteredList.length) {
-                    this.filter.type = this.getProperty(filteredList[0]['id'])['bk_property_type']
-                    this.filter.selected = filteredList.length ? filteredList[0]['id'] : ''
+            filterList (filterList) {
+                if (filterList.length) {
+                    this.filter.type = this.getProperty(filterList[0]['id'])['bk_property_type']
+                    this.filter.selected = filterList.length ? filterList[0]['id'] : ''
                 } else {
                     this.filter.type = ''
                     this.filter.selected = ''
-                }
-            },
-            usercustom (usercustom) {
-                let columnKey = `${this.objId}DisplayColumn`
-                if (usercustom.hasOwnProperty(columnKey) && usercustom[columnKey].length) {
-                    this.filterList = usercustom[columnKey].map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name'],
-                            type: property['bk_property_type']
-                        }
-                    })
                 }
             },
             'slider.isShow' (isShow) {
@@ -425,6 +408,13 @@
             initTable () {
                 this.getTableHeader().then(properties => {
                     this.attr.formFields = [...properties]
+                    this.filterList = properties.map(property => {
+                        return {
+                            id: property['bk_property_id'],
+                            name: property['bk_property_name'],
+                            type: property['bk_property_type']
+                        }
+                    })
                     this.getTableList()
                 })
             },
@@ -450,7 +440,6 @@
                     let header = []
                     let headerLead = []
                     let headerTail = []
-                    let filterList = []
                     if (res.result) {
                         await this.getUsercustom()
                         if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
@@ -469,13 +458,6 @@
                                     let property = res.data.find(({bk_property_id: bkPropertyId}) => {
                                         return bkPropertyId === val['bk_property_id']
                                     })
-                                    if (property) {
-                                        filterList.push({
-                                            id: val['bk_property_id'],
-                                            name: property['bk_property_name'],
-                                            type: val['bk_property_type']
-                                        })
-                                    }
                                 }
                             })
                         } else { // 没有时则显示前六
@@ -491,13 +473,6 @@
                                     header.push(headerObj)
                                 } else {
                                     headerTail.push(headerObj)
-                                }
-                                if (attr['bk_property_type'] !== 'singleasst' && attr['bk_property_type'] !== 'multiasst') {
-                                    filterList.push({
-                                        id: attr['bk_property_id'],
-                                        name: attr['bk_property_name'],
-                                        type: attr['bk_property_type']
-                                    })
                                 }
                             })
                         }
@@ -523,10 +498,6 @@
                             this.setUsercustom(header.slice(1, 7))
                             this.table.header = header.slice(0, 7)
                         }
-
-                        this.filter.list = filterList
-                        // this.filter.selected = filterList.length ? filterList[0]['id'] : ''
-                        this.filterList = filterList
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }

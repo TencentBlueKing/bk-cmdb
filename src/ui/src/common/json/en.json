@@ -89,7 +89,8 @@
         "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
         "内容不合法": "Illegal content",
         "下属层级都会被删除，请先转移其下所有的主机": "The subordinate hierarchy will be deleted. Please transfer all the hosts under it first.",
-        "详情": "Detail",
+        "详情信息": "Detail",
+        "请先转移其下所有的主机": "Please transfer all the hosts under it first.",
         "删除关联": "Delete Association",
         "退出": "Exit",
         "全屏": "Full Screen",
@@ -103,7 +104,10 @@
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
         "返回上级": "Return",
-        "开始查询": "Please enter at least 3 characters to start the query"
+        "开始查询": "Please enter at least 3 characters to start the query",
+        "固定到导航": "Collections to navigation",
+        "置顶": "Top",
+        "更多": "More"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

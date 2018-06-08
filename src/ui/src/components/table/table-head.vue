@@ -223,6 +223,7 @@
                 padding: 0 16px;
                 border: 1px solid $tableBorderColor;
                 border-left: none;
+                line-height: normal;
                 &:last-child{
                     border-right: none;
                 }

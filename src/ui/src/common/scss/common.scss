@@ -864,32 +864,22 @@ input.parsley-error {
     line-height: 22px;
     padding: 2px 8px;
     border-radius: 2px;
+    border: 1px solid #b0becc;
     background: #fff;
-    // left: 600px;
     left: 500px;
     top: 500px;
     transform: translate(-50%, -50%);
     z-index: 9999;
-    box-shadow: 0 2px 2px 2px rgba(0, 0, 0, 0.3);
     text-align: center;
     &::before {
         content: '';
+        background: url(common/images/tip.png);
+        width: 6px;
+        height: 10px;
         position: absolute;
         display: inline-block;
-        left: -17px;
-        top: 50%;
-        border: 8px solid transparent;
-        border-right-color: rgba(0, 0, 0, 0.3);
-        transform: translate(0, -50%);
-    }
-    &::after {
-        content: '';
-        position: absolute;
-        display: inline-block;
-        left: -16px;
-        top: 50%;
-        border: 8px solid transparent;
-        border-right-color: #fff;
+        left: -6px;
+        top: 12px;
         transform: translate(0, -50%);
     }
     .detail {
@@ -900,6 +890,7 @@ input.parsley-error {
     }
     .color-danger{
         cursor: pointer;
+        border-top: 1px solid #dde3e9;
         &:hover {
             color: #ff5656;
         }

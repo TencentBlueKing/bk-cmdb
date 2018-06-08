@@ -1,5 +1,5 @@
 <template>
-    <ul class="classify-list">
+    <ul :class="['classify-list', $i18n.locale]">
         <li ref="classifyItem" v-for="(classify, classifyIndex) in classifications"
             :class="['classify-item', {
                 'classify-item-backconfig': classify.id === 'bk_back_config',
@@ -7,8 +7,7 @@
             }]"
             :key="classifyIndex"
             :data-classify-id="classify.id"
-            @mouseenter="showClassifyModels($event, classify)"
-            @mouseleave="hideClassifyModels($event, classify)">
+            @mouseenter="showClassifyModels($event, classify)">
             <router-link exact class="classify-info classify-info-index"
                 v-if="classify.id === 'bk_index'"
                 :to="classify.path"
@@ -21,7 +20,7 @@
                     <i :class="['classify-icon', classify.icon]"></i>
                     <span class="classify-name">{{classify.i18n ? $t(classify.i18n) : classify.name}}</span>
                 </div>
-                <div class="classify-models" v-if="classify.children.length">
+                <div class="classify-models" v-if="classify.children.length" @click.stop.prevent>
                     <router-link exact class="model-link"
                         v-for="(model, modelIndex) in classify.children"
                         :key="modelIndex"
@@ -56,7 +55,7 @@
                         $highlightItem.classList.add('highlight')
                         setTimeout(() => {
                             $highlightItem.classList.remove('highlight')
-                        }, 1000)
+                        }, 2000)
                     }
                 })
             },
@@ -68,18 +67,12 @@
                     const modelsHeight = classify.children.length * 36
                     const $classifyModels = $classifyItem.querySelector('.classify-models')
                     if (classifyItemRect.top + classifyItemRect.height + modelsHeight > documentRect.bottom) {
+                        $classifyModels.classList.remove('classify-models-bottom')
                         $classifyModels.classList.add('classify-models-top')
                     } else {
+                        $classifyModels.classList.remove('classify-models-top')
                         $classifyModels.classList.add('classify-models-bottom')
                     }
-                }
-            },
-            hideClassifyModels (event, classify) {
-                if (classify.children.length) {
-                    const $classifyItem = event.currentTarget
-                    const $classifyModels = $classifyItem.querySelector('.classify-models')
-                    $classifyModels.classList.remove('classify-models-top')
-                    $classifyModels.classList.remove('classify-models-bottom')
                 }
             }
         }
@@ -99,15 +92,17 @@
                 width: 0;
                 height: 100%;
             }
-            &.active,
-            &:hover{
+            &:hover {
+                background-color: rgba(0, 83, 193, .6);
+            }
+            &.active {
                 background-color: #0053c1;
             }
             &.classify-item-backconfig{
                 border-top: 1px solid rgba(228, 231, 234, 0.3);
             }
             &.highlight {
-                animation: highlight 1s ease-in-out;
+                animation: highlight 1s ease-in-out 2;
             }
             .classify-info{
                 display: inline-block;
@@ -127,39 +122,27 @@
             }
         }
     }
+    .classify-item:hover{
+        .classify-models{
+            display: block;
+        }
+    }
     .classify-models{
         display: none;
         position: absolute;
-        left: 95px;
+        left: 100%;
         width: 126px;
         text-align: left;
         background-color: #ffffff;
-        box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.1);
+        box-shadow: 0px 3px 8px 0px rgba(37, 81, 140, 0.3);
         border-radius: 2px;
         border: solid 1px #dfecfc;
-        z-index: 999;
+        z-index: 9999;
         &-top {
-            display: block;
-            bottom: -2px;
-        }
-        &-top:before{
-            bottom: 9px;
+            bottom: 0;
         }
         &-bottom{
-            display: block;
-            top: 24px;
-        }
-        &-bottom:before{
-            top: 9px;
-        }
-        &:before{
-            content: '';
-            position: absolute;
-            right: 100%;
-            width: 0;
-            height: 0;
-            border: 9px solid transparent;
-            border-right-color: #fff;
+            top: 0;
         }
         .model-link{
             display: block;
@@ -185,6 +168,14 @@
         }
         100% {
             background-color: transprent;
+        }
+    }
+    .classify-list.en{
+        .classify-models{
+            width: 150px;
+            .model-link{
+                padding: 0 17px;
+            }
         }
     }
 </style>

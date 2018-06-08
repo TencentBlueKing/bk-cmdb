@@ -184,11 +184,11 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 		flag, _ := pathParams["flag"]
 		data := make(map[string]interface{})
 		var appName string
-		if flag != common.DataStatusDisabled && flag != common.DataStatusEnable {
+		if common.DataStatusFlag(flag) != common.DataStatusDisabled && common.DataStatusFlag(flag) != common.DataStatusEnable {
 			blog.Error("input params error:")
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
-		if flag == common.DataStatusEnable {
+		if common.DataStatusFlag(flag) == common.DataStatusEnable {
 			condition := make(map[string]interface{})
 			searchParams := make(map[string]interface{})
 			condition[common.BKAppIDField] = appID
@@ -404,6 +404,12 @@ func (cli *appAction) SearchApp(req *restful.Request, resp *restful.Response) {
 			condition = params.ParseAppSearchParams(js.Condition)
 		}
 
+		//search app in enable status default
+		_, ok := condition[common.BKDataStatusField]
+		if !ok {
+			condition[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
+		}
+
 		condition[common.BKOwnerIDField] = ownerID
 		condition[common.BKDefaultField] = 0
 		page := js.Page
@@ -466,7 +472,6 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 			}
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommFieldNotValid)
 		}
-
 		input[common.BKOwnerIDField] = ownerID
 		input[common.BKDefaultField] = 0
 		input[common.BKSupplierIDField] = common.BKDefaultSupplierID
