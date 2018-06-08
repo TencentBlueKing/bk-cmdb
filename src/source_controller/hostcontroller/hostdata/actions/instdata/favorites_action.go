@@ -13,19 +13,20 @@
 package instdata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
+	. "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -42,250 +43,249 @@ type hostFavourite struct {
 
 //AddHostFavourite add host favorites
 func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.Response) {
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	cc := api.NewAPIResource()
+	value, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		blog.Errorf("add host favourite failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommHTTPReadBodyFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
+	params := make(map[string]interface{})
+	if err = json.Unmarshal([]byte(value), &params); nil != err {
+		blog.Errorf("add host favourite failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		params := make(map[string]interface{}) //favouriteParms{}
-		if err = json.Unmarshal([]byte(value), &params); nil != err {
-			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+	queryParams := make(map[string]interface{})
+	queryParams["user"] = req.PathParameter("user")
+	queryParams["name"] = params["name"]
 
-		queryParams := make(map[string]interface{})
-		queryParams["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		queryParams["name"] = params["name"]
+	rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, queryParams)
+	if nil != err {
+		blog.Error("query host favorites fail, err: %v, params:%v", err, queryParams)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
+	if 0 != rowCount {
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteCreateFail).Error()})
+		return
+	}
+	//mogo 需要使用生产的id
+	xidDevice := xid.New()
+	params["id"] = xidDevice.String()
+	params["count"] = 1
+	params[common.CreateTimeField] = time.Now()
+	params["user"] = req.PathParameter("user")
+	_, err = cc.InstCli.Insert(TABLENAME, params)
+	if err != nil {
+		blog.Errorf("create host favorites failed, data:%v error:%v", params, err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteCreateFail).Error()})
+		return
+	}
 
-		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, queryParams)
-		if nil != err {
-			blog.Error("query host favorites fail, error information is %s, params:%v", err.Error(), queryParams)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
-		}
-		if 0 != rowCount {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteCreateFail)
-		}
-		//mogo 需要使用生产的id
-		xidDevice := xid.New()
-		params["id"] = xidDevice.String()
-		params["count"] = 1
-		params[common.CreateTimeField] = time.Now()
-		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		_, err = cc.InstCli.Insert(TABLENAME, params)
-
-		if err != nil {
-			blog.Error("create host favorites type:data:%v error:%v", params, err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteCreateFail)
-		}
-
-		info := make(map[string]interface{})
-		info["id"] = xidDevice.String()
-
-		return http.StatusOK, info, nil
-	}, resp)
-
+	resp.WriteAsJson(HostFavorite{
+		BaseResp: BaseResp{true, http.StatusOK, ""},
+		Data:     ID{ID: xidDevice.String()},
+	})
+	return
 }
 
 //UpdateHostFavouriteByID  update host fav
 func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Response) {
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	cc := api.NewAPIResource()
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+	ID := req.PathParameter("id")
+	value, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		blog.Errorf("update host favourite failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommHTTPReadBodyFailed).Error()})
+		return
+	}
 
-		cc := api.NewAPIResource()
+	data := make(map[string]interface{})
+	if err = json.Unmarshal([]byte(value), &data); nil != err {
+		blog.Errorf("update host favourite failed, err: %v, msg:%s", err, string(value))
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		ID := req.PathParameter("id")
+	data[common.LastTimeField] = time.Now()
 
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		data := make(map[string]interface{})
-		if err = json.Unmarshal([]byte(value), &data); nil != err {
-			blog.Error("fail to unmarshal json, error information is %s, msg:%s", err.Error(), string(value))
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		data[common.LastTimeField] = time.Now()
+	params := make(map[string]interface{})
+	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+	params["id"] = ID
+	rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
+	if nil != err {
+		blog.Error("query host favorites fail, err: %v, params:%v", err, params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
 
-		params := make(map[string]interface{})
-		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		params["id"] = ID
-		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
+	if 1 != rowCount {
+		blog.Info("host favorites not permissions or not exists, params:%v", params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteUpdateFail).Error()})
+		return
+	}
+
+	//edit new not duplicate
+	newName, ok := data["name"]
+	if ok {
+		dupParams := make(map[string]interface{})
+		dupParams["name"] = newName
+		dupParams[common.BKUser] = req.PathParameter("user")
+		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
 		if nil != err {
-			blog.Error("query host favorites fail, error information is %s, params:%v", err.Error(), params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
+			blog.Error("query user api validate name duplicatie fail, err: %v, params:%v", err, dupParams)
+			resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDBSelectFailed).Error()})
+			return
 		}
-		if 1 != rowCount {
-			blog.Info("host favorites not permissions or not exists, params:%v", params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteUpdateFail)
+		if 0 < rowCount {
+			blog.Info("host user api  name duplicatie , params:%v", dupParams)
+			resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDuplicateItem).Error()})
+			return
 		}
+	}
 
-		//edit new not duplicate
-		newName, ok := data["name"]
-		if ok {
-			dupParams := make(map[string]interface{})
-			dupParams["name"] = newName
-			dupParams[common.BKUser] = req.PathParameter("user")
-			dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
-
-			rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
-			if nil != err {
-				blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", err.Error(), dupParams)
-				return http.StatusBadGateway, nil, defErr.Error(common.CCErrCommDBSelectFailed)
-			}
-			if 0 < rowCount {
-				blog.Info("host user api  name duplicatie , params:%v", dupParams)
-				return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommDuplicateItem)
-			}
-		}
-
-		err = cc.InstCli.UpdateByCondition(TABLENAME, data, params)
-		if nil != err {
-			blog.Error("updata host favorites fail, error information is %s, params:%v", err.Error(), params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteUpdateFail)
-		}
-		return http.StatusOK, nil, nil
-	}, resp)
-
+	err = cc.InstCli.UpdateByCondition(TABLENAME, data, params)
+	if nil != err {
+		blog.Error("update host favorites fail, err: %v, params:%v", err, params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteUpdateFail).Error()})
+		return
+	}
+	resp.WriteAsJson(BaseResp{Result: true, Code: http.StatusOK})
 }
 
 //DeleteHostFavouriteByID  delete host fav
 func (cli *hostFavourite) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Response) {
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		cc := api.NewAPIResource()
-		ID := req.PathParameter("id")
-		params := make(map[string]interface{})
-		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		params["id"] = ID
+	cc := api.NewAPIResource()
+	ID := req.PathParameter("id")
+	params := make(map[string]interface{})
+	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+	params["id"] = ID
 
-		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
-		if nil != err {
-			blog.Error("query host favorites fail, error information is %s, params:%v", err.Error(), params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
-		}
-		if 1 != rowCount {
-			blog.Info("host favorites not permissions or not exists, params:%v", params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteDeleteFail)
-		}
-		err = cc.InstCli.DelByCondition(TABLENAME, params)
-		if nil != err {
-			blog.Error("query host favourite fail, error information is %s, params:%v", err.Error(), params)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteDeleteFail)
-		}
-		return http.StatusOK, nil, nil
-	}, resp)
+	rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
+	if nil != err {
+		blog.Error("query host favorites fail, err: %v, params:%v", err, params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
+	if 1 != rowCount {
+		blog.Info("host favorites not permissions or not exists, params:%v", params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteDeleteFail).Error()})
+		return
+	}
+	err = cc.InstCli.DelByCondition(TABLENAME, params)
+	if nil != err {
+		blog.Error("query host favourite fail, err: %v, params:%v", err, params)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteDeleteFail).Error()})
+		return
+	}
+	resp.WriteAsJson(BaseResp{Result: true, Code: http.StatusOK})
 }
 
 //GetHostFavourites get host favorites
 func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.Response) {
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-	cli.CallResponseEx(func() (int, interface{}, error) {
 
-		cc := api.NewAPIResource()
+	cc := api.NewAPIResource()
+	value, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		blog.Errorf("update host favourite failed, err: %v", err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommHTTPReadBodyFailed).Error()})
+		return
+	}
 
-		var dat commondata.ObjQueryInput
-		value, err := ioutil.ReadAll(req.Request.Body)
+	var dat commondata.ObjQueryInput
+	err = json.Unmarshal([]byte(value), &dat)
+	if err != nil {
+		blog.Errorf("get host favourite failed, err: %v, msg:%s", err, string(value))
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		return
+	}
 
-		//if no params use default
-		if nil == err && nil == value {
-			value = []byte("{}")
-		}
-		err = json.Unmarshal([]byte(value), &dat)
-		if err != nil {
-			blog.Error("fail to unmarshal json, error information is,input:%v error:%v", string(value), err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+	condition := make(map[string]interface{})
+	if nil != dat.Condition {
+		condition = dat.Condition.(map[string]interface{})
+	}
 
-		fields := dat.Fields
+	fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count"}
+	if "" != dat.Fields {
+		fieldArr = strings.Split(dat.Fields, ",")
+	}
 
-		condition := make(map[string]interface{})
-		if nil != dat.Condition {
-			condition = dat.Condition.(map[string]interface{})
-		}
+	skip, limit, sort := dat.Start, dat.Limit, dat.Sort
+	if 0 == limit {
+		limit = 20
+	}
 
-		skip := dat.Start
-		limit := dat.Limit
-		sort := dat.Sort
+	if "" == sort {
+		sort = common.CreateTimeField
+	}
 
-		fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count"}
-		if "" != fields {
-			fieldArr = strings.Split(fields, ",")
-		}
+	condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+	result := make([]interface{}, 0)
+	count, err := cc.InstCli.GetCntByCondition(TABLENAME, condition)
+	if err != nil {
+		blog.Error("get host favorites failed,input:%v error:%v", string(value), err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
 
-		if 0 == limit {
-			limit = 20
-		}
-		if "" == sort {
-			sort = common.CreateTimeField
-		}
+	err = cc.InstCli.GetMutilByCondition(TABLENAME, fieldArr, condition, &result, sort, skip, limit)
+	if err != nil {
+		blog.Error("get host favorites failed,input:%v error:%v", string(value), err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
 
-		condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		result := make([]interface{}, 0)
-		count, err := cc.InstCli.GetCntByCondition(TABLENAME, condition)
-		if err != nil {
-			blog.Error("get host favorites infomation error,input:%v error:%v", string(value), err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
-		}
-		err = cc.InstCli.GetMutilByCondition(TABLENAME, fieldArr, condition, &result, sort, skip, limit)
-		if err != nil {
-			blog.Error("get host favorites infomation error,input:%v error:%v", string(value), err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
-		}
-		info := make(map[string]interface{})
-		info["count"] = count
-		info["info"] = result
-		return http.StatusOK, info, nil
-	}, resp)
-	return
+	info := make(map[string]interface{})
+	info["count"] = count
+	info["info"] = result
+	resp.WriteAsJson(Response{
+		BaseResp: BaseResp{true, http.StatusOK, ""},
+		Data:     info,
+	})
 }
 
 //GetHostFavouriteByID get host favourite detail
 func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restful.Response) {
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		cc := api.NewAPIResource()
-		ID := req.PathParameter("id")
+	cc := api.NewAPIResource()
+	ID := req.PathParameter("id")
 
-		if "" == ID || "0" == ID {
-			blog.Error("get host favourite id  emtpy")
-			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsNeedSet, "id")
-		}
-		params := make(map[string]interface{})
-		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-		params["id"] = ID
+	if "" == ID || "0" == ID {
+		blog.Error("get host favourite id  emtpy")
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsNeedSet).Error()})
+		return
+	}
+	params := make(map[string]interface{})
+	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+	params["id"] = ID
 
-		result := make(map[string]interface{})
-		err := cc.InstCli.GetOneByCondition(TABLENAME, nil, params, &result)
-		if err != nil && mgo_on_not_found_error != err.Error() {
-			blog.Error("get host favourite infomation error,input:%v error:%v", ID, err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostFavouriteQueryFail)
-		}
-
-		return http.StatusOK, result, nil
-	}, resp)
-
+	result := make(map[string]interface{})
+	err := cc.InstCli.GetOneByCondition(TABLENAME, nil, params, &result)
+	if err != nil && mgo_on_not_found_error != err.Error() {
+		blog.Error("get host favourite failed,input: %v error: %v", ID, err)
+		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
+		return
+	}
+	resp.WriteAsJson(Response{
+		BaseResp: BaseResp{true, http.StatusOK, ""},
+		Data:     result,
+	})
 }
 
 func init() {
