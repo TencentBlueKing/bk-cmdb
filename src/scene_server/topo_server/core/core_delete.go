@@ -13,34 +13,31 @@
 package core
 
 import (
-	frcommon "configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/scene_server/topo_server/core/types"
-	//frtypes "configcenter/src/framework/core/types"
-	//"configcenter/src/scene_server/core/inst"
-	//"configcenter/src/scene_server/core/model"
 )
 
-func (cli *core) DeleteClassification(params types.LogicParams, cond frcommon.Condition) error {
+func (cli *core) DeleteClassification(params types.LogicParams, cond condition.Condition) error {
 	return nil
 }
-func (cli *core) DeleteObject(params types.LogicParams, cond frcommon.Condition) error {
-	return nil
-}
-
-func (cli *core) DeleteObjectAttribute(params types.LogicParams, cond frcommon.Condition) error {
+func (cli *core) DeleteObject(params types.LogicParams, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) DeleteObjectGroup(params types.LogicParams, cond frcommon.Condition) error {
+func (cli *core) DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error {
+	return nil
+}
+
+func (cli *core) DeleteObjectGroup(params types.LogicParams, cond condition.Condition) error {
 
 	return nil
 }
 
-func (cli *core) DeleteInst(params types.LogicParams, cond frcommon.Condition) error {
+func (cli *core) DeleteInst(params types.LogicParams, cond condition.Condition) error {
 	return nil
 }
 
-func (cli *core) DeleteAssociation(params types.LogicParams, cond frcommon.Condition) error {
+func (cli *core) DeleteAssociation(params types.LogicParams, cond condition.Condition) error {
 
 	return nil
 }

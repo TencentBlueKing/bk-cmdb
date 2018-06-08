@@ -18,11 +18,12 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
+	metatype "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/api/metadata"
 )
 
-func (t *meta) SelectObjects(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectObjects(ctx context.Context, h util.Headers, dat interface{}) (resp *metatype.QueryObjectResult, err error) {
+	resp = new(metatype.QueryObjectResult)
 	subPath := "/meta/objects"
 
 	err = t.client.Post().
@@ -49,8 +50,8 @@ func (t *meta) DeleteObject(ctx context.Context, objID string, h util.Headers, d
 	return
 }
 
-func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metatype.Object) (resp *metatype.CreateObjectResult, err error) {
+	resp = new(metatype.CreateObjectResult)
 	subPath := "/meta/object"
 
 	err = t.client.Post().

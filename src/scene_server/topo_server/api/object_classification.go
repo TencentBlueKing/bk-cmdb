@@ -17,8 +17,9 @@ import (
 
 	// "configcenter/src/common"
 	// "configcenter/src/common/blog"
-	frcommon "configcenter/src/common"
-	frtypes "configcenter/src/common/types"
+
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -47,7 +48,7 @@ func (cli *topoAPI) CreateClassification(params types.LogicParams, pathParams, q
 // SearchClassificationWithObjects search the classification with objects
 func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 
 	// TODO: data => cond
 
@@ -75,7 +76,7 @@ func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pa
 // SearchClassification search the classifications
 func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 
 	// TODO: data => cond
 
@@ -102,7 +103,7 @@ func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, q
 
 // UpdateClassification update the object classification
 func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 
 	cond.Field("id")
 
@@ -113,7 +114,7 @@ func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, q
 
 // DeleteClassification delete the object classification
 func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 
 	cond.Field("id")
 

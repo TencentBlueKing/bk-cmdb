@@ -16,9 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -37,7 +37,7 @@ func (cli *topoAPI) initModule() {
 // CreateModule create a new module
 func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 
 	objItems, err := cli.core.FindObject(params, cond)
@@ -72,7 +72,7 @@ func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryPara
 // DeleteModule delete the module
 func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
@@ -87,7 +87,7 @@ func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryPara
 // UpdateModule update the module
 func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).
@@ -107,7 +107,7 @@ func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryPara
 
 	// {owner_id}/{app_id}/{set_id}
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id")).

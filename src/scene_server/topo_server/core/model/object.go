@@ -19,41 +19,35 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
+	meta "configcenter/src/common/metadata"
 
 	"configcenter/src/scene_server/topo_server/core/types"
-	metadata "configcenter/src/source_controller/api/metadata"
 )
 
 var _ Object = (*object)(nil)
 
 type object struct {
-	ObjCls      string `field:"bk_classification_id"`
-	ObjIcon     string `field:"bk_obj_icon"`
-	ObjectID    string `field:"bk_obj_id"`
-	ObjectName  string `field:"bk_obj_name"`
-	IsPre       bool   `field:"ispre"`
-	IsPaused    bool   `field:"bk_ispaused"`
-	Position    string `field:"position"`
-	OwnerID     string `field:"bk_supplier_account"`
-	Description string `field:"description"`
-	Creator     string `field:"creator"`
-	Modifier    string `field:"modifier"`
-
+	obj       meta.Object
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *object) isExists() (bool, error) {
+func (cli *object) IsExists() (bool, error) {
 
-	cond := common.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.ObjectID)
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.obj.ObjectID)
 
+	condStr, err := cond.ToMapStr().ToJSON()
+	if nil != err {
+		return false, err
+	}
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), util.Headers{
 		Language: cli.params.Header.Language,
 		OwnerID:  cli.params.Header.OwnerID,
-	}, cond.ToMapStr().ToJSON())
+	}, condStr)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -61,7 +55,7 @@ func (cli *object) isExists() (bool, error) {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
 		return false, cli.params.Err.Error(rsp.Code)
 	}
 
@@ -70,25 +64,9 @@ func (cli *object) isExists() (bool, error) {
 	return true, nil
 }
 
-func (cli *object) create() error {
+func (cli *object) Create() error {
 
-	obj := &metadata.ObjectDes{}
-
-	obj.Creator = cli.Creator
-	obj.Description = cli.Description
-	obj.IsPaused = cli.IsPaused
-	obj.IsPre = cli.IsPre
-	obj.ObjCls = cli.ObjCls
-	obj.Modifier = cli.Modifier
-	obj.ObjectID = cli.ObjectID
-	obj.ObjectName = cli.ObjectName
-	obj.ObjIcon = cli.ObjIcon
-	obj.OwnerID = cli.params.Header.OwnerID
-
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), util.Headers{
-		Language: cli.params.Header.Language,
-		OwnerID:  cli.params.Header.OwnerID,
-	}, obj)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header, &cli.obj)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -96,7 +74,7 @@ func (cli *object) create() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
@@ -105,14 +83,11 @@ func (cli *object) create() error {
 	return nil
 }
 
-func (cli *object) update() error {
+func (cli *object) Update() error {
 
-	data := common.SetValueToMapStrByTags(cli)
+	data := meta.SetValueToMapStrByTags(cli)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.ObjectID, util.Headers{
-		Language: cli.params.Header.Language,
-		OwnerID:  cli.params.Header.OwnerID,
-	}, data)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ObjectID, cli.params.Header, data)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -120,29 +95,33 @@ func (cli *object) update() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.ObjectID, rsp.Message)
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.Message)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
 	return nil
 }
 
-func (cli *object) Parse(data frtypes.MapStr) error {
+func (cli *object) Delete() error {
+	return nil
+}
 
-	err := common.SetValueToStructByTags(cli, data)
+func (cli *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
+
+	err := meta.SetValueToStructByTags(&cli.obj, data)
 	if nil != err {
-		return err
+		return nil, err
 	}
 
-	if 0 == len(cli.ObjectID) {
-		return cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, "bk_obj_id")
+	if 0 == len(cli.obj.ObjectID) {
+		return nil, cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjectID)
 	}
 
-	if 0 == len(cli.ObjCls) {
-		return cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, "bk_classification_id")
+	if 0 == len(cli.obj.ObjCls) {
+		return nil, cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjCls)
 	}
 
-	return err
+	return nil, err
 }
 
 func (cli *object) ToMapStr() (frtypes.MapStr, error) {
@@ -150,28 +129,32 @@ func (cli *object) ToMapStr() (frtypes.MapStr, error) {
 }
 
 func (cli *object) Save() error {
-	dataMapStr := common.SetValueToMapStrByTags(cli)
+	dataMapStr := meta.SetValueToMapStrByTags(&cli.obj)
 
 	if cli.isNew {
-		cli.create()
-	} else {
-		cli.update()
+		return cli.Create()
 	}
+
 	_ = dataMapStr
-	return nil
+	return cli.Update()
+
 }
 
 func (cli *object) CreateGroup() Group {
 	return &group{
-		OwnerID:  cli.OwnerID,
-		ObjectID: cli.ObjectID,
+		grp: meta.Group{
+			OwnerID:  cli.obj.OwnerID,
+			ObjectID: cli.obj.ObjectID,
+		},
 	}
 }
 
 func (cli *object) CreateAttribute() Attribute {
 	return &attribute{
-		OwnerID:  cli.OwnerID,
-		ObjectID: cli.ObjectID,
+		attr: meta.Attribute{
+			OwnerID:  cli.obj.OwnerID,
+			ObjectID: cli.obj.ObjectID,
+		},
 	}
 }
 
@@ -184,7 +167,7 @@ func (cli *object) GetGroups() ([]Group, error) {
 }
 
 func (cli *object) SetClassification(class Classification) {
-	cli.ObjCls = class.GetID()
+	cli.obj.ObjCls = class.GetID()
 }
 
 func (cli *object) GetClassification() (Classification, error) {
@@ -192,81 +175,81 @@ func (cli *object) GetClassification() (Classification, error) {
 }
 
 func (cli *object) SetIcon(objectIcon string) {
-	cli.ObjIcon = objectIcon
+	cli.obj.ObjIcon = objectIcon
 }
 
 func (cli *object) GetIcon() string {
-	return cli.ObjIcon
+	return cli.obj.ObjIcon
 }
 
 func (cli *object) SetID(objectID string) {
-	cli.ObjectID = objectID
+	cli.obj.ObjectID = objectID
 }
 
 func (cli *object) GetID() string {
-	return cli.ObjectID
+	return cli.obj.ObjectID
 }
 
 func (cli *object) SetName(objectName string) {
-	cli.ObjectName = objectName
+	cli.obj.ObjectName = objectName
 }
 
 func (cli *object) GetName() string {
-	return cli.ObjectName
+	return cli.obj.ObjectName
 }
 
 func (cli *object) SetIsPre(isPre bool) {
-	cli.IsPre = isPre
+	cli.obj.IsPre = isPre
 }
 
 func (cli *object) GetIsPre() bool {
-	return cli.IsPre
+	return cli.obj.IsPre
 }
 
 func (cli *object) SetIsPaused(isPaused bool) {
-	cli.IsPaused = isPaused
+	cli.obj.IsPaused = isPaused
 }
 
 func (cli *object) GetIsPaused() bool {
-	return cli.IsPaused
+	return cli.obj.IsPaused
 }
 
 func (cli *object) SetPosition(position string) {
-	cli.Position = position
+	cli.obj.Position = position
 }
 
 func (cli *object) GetPosition() string {
-	return cli.Position
+	return cli.obj.Position
 }
 
 func (cli *object) SetSupplierAccount(supplierAccount string) {
-	cli.OwnerID = supplierAccount
+	cli.obj.OwnerID = supplierAccount
 }
 
 func (cli *object) GetSupplierAccount() string {
-	return cli.OwnerID
+	return cli.obj.OwnerID
 }
 
 func (cli *object) SetDescription(description string) {
-	cli.Description = description
+	cli.obj.Description = description
 }
 
 func (cli *object) GetDescription() string {
-	return cli.Description
+	return cli.obj.Description
 }
 
 func (cli *object) SetCreator(creator string) {
-	cli.Creator = creator
+	cli.obj.Creator = creator
 }
 
 func (cli *object) GetCreator() string {
-	return cli.Creator
+	return cli.obj.Creator
 }
 
 func (cli *object) SetModifier(modifier string) {
-	cli.Modifier = modifier
+	cli.obj.Modifier = modifier
 }
 
 func (cli *object) GetModifier() string {
-	return cli.Modifier
+	return cli.obj.Modifier
 }

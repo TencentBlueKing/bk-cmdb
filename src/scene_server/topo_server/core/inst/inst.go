@@ -14,7 +14,7 @@ package inst
 
 import (
 	"configcenter/src/apimachinery"
-	frtypes "configcenter/src/common/types"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -24,6 +24,18 @@ type inst struct {
 	params    types.LogicParams
 }
 
+func (cli *inst) Create() error {
+	return nil
+}
+func (cli *inst) Update() error {
+	return nil
+}
+func (cli *inst) Delete() error {
+	return nil
+}
+func (cli *inst) IsExists() (bool, error) {
+	return false, nil
+}
 func (cli *inst) Save() error {
 	return nil
 }

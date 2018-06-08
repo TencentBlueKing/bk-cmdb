@@ -27,6 +27,7 @@ import (
 	. "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
+
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -101,7 +102,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cc := api.NewAPIResource()
 
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		blog.Errorf("update host favourite failed, err: %v", err)
@@ -120,7 +121,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 
 	params := make(map[string]interface{})
 	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-	params["id"] = ID
+	params["id"] = id
 	rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
 	if nil != err {
 		blog.Error("query host favorites fail, err: %v, params:%v", err, params)
@@ -140,7 +141,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 		dupParams := make(map[string]interface{})
 		dupParams["name"] = newName
 		dupParams[common.BKUser] = req.PathParameter("user")
-		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: id}
 		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
 		if nil != err {
 			blog.Error("query user api validate name duplicatie fail, err: %v, params:%v", err, dupParams)
@@ -168,10 +169,10 @@ func (cli *hostFavourite) DeleteHostFavouriteByID(req *restful.Request, resp *re
 	language := util.GetActionLanguage(req)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cc := api.NewAPIResource()
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 	params := make(map[string]interface{})
 	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-	params["id"] = ID
+	params["id"] = id
 
 	rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
 	if nil != err {
@@ -264,21 +265,21 @@ func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restf
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cc := api.NewAPIResource()
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 
-	if "" == ID || "0" == ID {
+	if "" == id || "0" == id {
 		blog.Error("get host favourite id  emtpy")
 		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsNeedSet).Error()})
 		return
 	}
 	params := make(map[string]interface{})
 	params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-	params["id"] = ID
+	params["id"] = id
 
 	result := make(map[string]interface{})
 	err := cc.InstCli.GetOneByCondition(TABLENAME, nil, params, &result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
-		blog.Error("get host favourite failed,input: %v error: %v", ID, err)
+		blog.Error("get host favourite failed,input: %v error: %v", id, err)
 		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostFavouriteQueryFail).Error()})
 		return
 	}
