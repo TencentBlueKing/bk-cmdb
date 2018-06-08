@@ -18,12 +18,12 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
+	metatype "configcenter/src/common/metadata"
 	metadata2 "configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
 )
 
-func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metadata.PropertyGroup) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error) {
+	resp = new(metatype.CreateObjectGroupResult)
 	subPath := "/meta/objectatt/group/new"
 
 	err = t.client.Post().
@@ -106,8 +106,8 @@ func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, objID string, 
 	return
 }
 
-func (t *meta) SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
+	resp = new(metatype.QueryObjectGroupResult)
 	subPath := "/meta/objectatt/group/search"
 
 	err = t.client.Post().

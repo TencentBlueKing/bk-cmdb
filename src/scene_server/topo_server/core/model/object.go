@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
+	meta "configcenter/src/common/metadata"
 
 	"configcenter/src/scene_server/topo_server/core/types"
 	metadata "configcenter/src/source_controller/api/metadata"
@@ -28,24 +29,13 @@ import (
 var _ Object = (*object)(nil)
 
 type object struct {
-	ObjCls      string `field:"bk_classification_id"`
-	ObjIcon     string `field:"bk_obj_icon"`
-	ObjectID    string `field:"bk_obj_id"`
-	ObjectName  string `field:"bk_obj_name"`
-	IsPre       bool   `field:"ispre"`
-	IsPaused    bool   `field:"bk_ispaused"`
-	Position    string `field:"position"`
-	OwnerID     string `field:"bk_supplier_account"`
-	Description string `field:"description"`
-	Creator     string `field:"creator"`
-	Modifier    string `field:"modifier"`
-
+	obj       meta.Object
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *object) isExists() (bool, error) {
+func (cli *object) IsExists() (bool, error) {
 
 	cond := common.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.ObjectID)
@@ -70,25 +60,22 @@ func (cli *object) isExists() (bool, error) {
 	return true, nil
 }
 
-func (cli *object) create() error {
+func (cli *object) Create() error {
 
 	obj := &metadata.ObjectDes{}
 
-	obj.Creator = cli.Creator
-	obj.Description = cli.Description
-	obj.IsPaused = cli.IsPaused
-	obj.IsPre = cli.IsPre
-	obj.ObjCls = cli.ObjCls
-	obj.Modifier = cli.Modifier
-	obj.ObjectID = cli.ObjectID
-	obj.ObjectName = cli.ObjectName
-	obj.ObjIcon = cli.ObjIcon
+	obj.Creator = cli.obj.Creator
+	obj.Description = cli.obj.Description
+	obj.IsPaused = cli.obj.IsPaused
+	obj.IsPre = cli.obj.IsPre
+	obj.ObjCls = cli.obj.ObjCls
+	obj.Modifier = cli.obj.Modifier
+	obj.ObjectID = cli.obj.ObjectID
+	obj.ObjectName = cli.obj.ObjectName
+	obj.ObjIcon = cli.obj.ObjIcon
 	obj.OwnerID = cli.params.Header.OwnerID
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), util.Headers{
-		Language: cli.params.Header.Language,
-		OwnerID:  cli.params.Header.OwnerID,
-	}, obj)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header, obj)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -105,7 +92,7 @@ func (cli *object) create() error {
 	return nil
 }
 
-func (cli *object) update() error {
+func (cli *object) Update() error {
 
 	data := common.SetValueToMapStrByTags(cli)
 
@@ -124,6 +111,10 @@ func (cli *object) update() error {
 		return cli.params.Err.Error(rsp.Code)
 	}
 
+	return nil
+}
+
+func (cli *object) Delete() error {
 	return nil
 }
 

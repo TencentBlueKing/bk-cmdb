@@ -10,12 +10,13 @@
  * limitations under the License.
  */
  
-package main
+package metadata
 
-import (
-	//_ "configcenter/src/scene_server/topo_server/actions/inst"   // import inst
-	//_ "configcenter/src/scene_server/topo_server/actions/object" // import object actions
-	//_ "configcenter/src/scene_server/topo_server/logics/object"
-	_ "configcenter/src/scene_server/topo_server/actions/openapi"
-	_ "configcenter/src/scene_server/topo_server/actions/privilege"
-)
+// BasePage for paging query
+type BasePage struct {
+	Sort  string `json:"sort,omitempty"`
+	Limit int    `json:"limit,omitempty"`
+	Start int    `json:"start,omitempty"`
+}
+
+

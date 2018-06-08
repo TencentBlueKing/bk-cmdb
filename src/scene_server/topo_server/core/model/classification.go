@@ -13,9 +13,14 @@
 package model
 
 import (
+	"context"
+
 	"configcenter/src/apimachinery"
-	frcommon "configcenter/src/common"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -23,40 +28,63 @@ var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
-	ClassificationID   string `field:"bk_classification_id"`
-	ClassificationName string `field:"bk_classification_name"`
-	ClassificationType string `field:"bk_classification_type"`
-	ClassificationIcon string `field:"bk_classification_icon"`
-
+	cls       metadata.Classification
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *classification) Parse(data frtypes.MapStr) error {
-
-	err := frcommon.SetValueToStructByTags(cli, data)
-
-	if nil != err {
-		return err
-	}
-
-	// TODO 增加校验逻辑
-
-	return err
+	return cli.cls.Parse(data)
 }
 
 func (cli *classification) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+	rst := metadata.SetValueToMapStrByTags(cli)
+	return rst, nil
 }
 
 func (cli *classification) GetObjects() ([]Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the classification(%s) object, error info is %s", cli.cls.ClassificationID, rsp.Message)
+		return false, cli.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Object, 0)
+	for _, item := range rsp.Data {
+
+	}
+
 	return nil, nil
 }
 
-func (cli *classification) Save() error {
-	dataMapStr := frcommon.SetValueToMapStrByTags(cli)
+func (cli *classification) Create() error {
+	return nil
+}
 
-	_ = dataMapStr
+func (cli *classification) Update() error {
+	return nil
+}
+
+func (cli *classification) Delete() error {
+	return nil
+}
+
+func (cli *classification) IsExists() (bool, error) {
+	return false, nil
+}
+
+func (cli *classification) Save() error {
+
 	return nil
 }
 
