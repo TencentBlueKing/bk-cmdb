@@ -462,7 +462,6 @@
              */
             initTopo () {
                 this.network = new vis.Network(this.container, this.graphData, this.options)
-                window.network = this.network
                 this.network.focus(this.activeNode.id)
                 this.network.moveTo({scale: 0.8})
                 // 绑定事件
