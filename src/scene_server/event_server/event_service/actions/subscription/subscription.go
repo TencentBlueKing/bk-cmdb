@@ -48,6 +48,7 @@ type subscriptionAction struct {
 func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -75,6 +76,7 @@ func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Res
 		}
 		sub.LastTime = &now
 		sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+		sub.OwnerID = ownerID
 
 		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
 		if err != nil || count > 0 {
@@ -114,6 +116,7 @@ func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Res
 func (cli *subscriptionAction) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -128,7 +131,7 @@ func (cli *subscriptionAction) UnSubscribe(req *restful.Request, resp *restful.R
 
 		// query old Subscription
 		sub := types.Subscription{}
-		condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
+		condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
 		if err := instdata.GetOneSubscriptionByCondition(condiction, &sub); err != nil {
 			blog.Error("fail to get subscription by id %v, error information is %v", id, err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeDeleteFailed)
@@ -164,6 +167,7 @@ func (cli *subscriptionAction) UnSubscribe(req *restful.Request, resp *restful.R
 func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -189,7 +193,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 
 		// query old Subscription
 		oldsub := types.Subscription{}
-		condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
+		condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
 		if err := instdata.GetOneSubscriptionByCondition(condiction, &oldsub); err != nil {
 			blog.Error("fail to get subscription by id %v, error information is %v", id, err)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeUpdateFailed)
@@ -214,7 +218,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 		sub.LastTime = &now
 		sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 		sub.Operator = sencecommon.GetUserFromHeader(req)
-		if updateerr := instdata.UpdateSubscriptionByCondition(sub, util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()); nil != updateerr {
+		if updateerr := instdata.UpdateSubscriptionByCondition(sub, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()); nil != updateerr {
 			blog.Error("fail update subscription by condition, error information is %s", updateerr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribeUpdateFailed)
 		}
@@ -257,6 +261,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 func (cli *subscriptionAction) Query(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -279,6 +284,7 @@ func (cli *subscriptionAction) Query(req *restful.Request, resp *restful.Respons
 
 		fields := dat.Fields
 		condition := dat.Condition
+		condition = util.SetModOwner(condition, ownerID)
 
 		skip := dat.Page.Start
 		limit := dat.Page.Limit
