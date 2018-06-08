@@ -135,10 +135,14 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 		return asstErr
 	}
 
-	err := cli.deleteInstAssociation(req, instID, ownerID, objID)
-	if nil != err {
-		blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
-		return err
+	for _, asst := range asstDes {
+		if _, ok := input[asst.ObjectAttID]; ok {
+			err := cli.deleteInstAssociation(req, instID, ownerID, objID, asst.AsstObjID)
+			if nil != err {
+				blog.Errorf("faild to delete the old inst association, error info is %s", err.Error())
+				return err
+			}
+		}
 	}
 
 	asstFieldVal := cli.extractDataFromAssociationField(int64(instID), input, asstDes)
@@ -147,12 +151,15 @@ func (cli *instAction) updateInstAssociation(req *restful.Request, instID int, o
 
 }
 
-func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID string) error {
+func (cli *instAction) deleteInstAssociation(req *restful.Request, instID int, ownerID, objID, asstObjID string) error {
 
 	uURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKTableNameInstAsst
 	input := map[string]interface{}{
 		common.BKInstIDField: instID,
 		common.BKObjIDField:  objID,
+	}
+	if "" != asstObjID {
+		input[common.BKAsstObjIDField] = asstObjID
 	}
 	inputJSON, err := json.Marshal(input)
 	if nil != err {

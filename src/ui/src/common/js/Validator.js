@@ -49,17 +49,31 @@ const isHttp = {
 }
 Validator.extend('http', isHttp)
 /*
-    宽松字符
+    长字符
 */
-const isChar = {
+const longchar = {
     getMessage (field, args) { // 错误提示
         return '请输入' + field
     },
     validate: value => { // 验证规则
-        return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[\(\)+-《》,，；;“”‘’。."' \\\/])*$/.test(value)
+        return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；;“”‘’。\."'\\\/])*$/.test(value)
     }
 }
-Validator.extend('char', isChar)
+Validator.extend('longchar', longchar)
+
+/*
+    短字符
+*/
+const singlechar = {
+    getMessage (field, args) { // 错误提示
+        return '请输入' + field
+    },
+    validate: value => { // 验证规则
+        return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_，；;“”‘’。\."'\\\/])*$/.test(value)
+    }
+}
+Validator.extend('singlechar', singlechar)
+
 /*
     更新Validator
 */
@@ -67,7 +81,8 @@ const dictionary = {
     zh_CN: {
         messages: {
             name: () => '请输入正确的内容',
-            char: () => '请输入正确的内容',
+            longchar: () => '请输入正确的内容',
+            singlechar: () => '请输入正确的内容',
             id: () => '格式不正确，只能包含下划线，数字，英文小写',
             http: () => '请输入以http://开头的URL',
             required: (field) => '请输入' + field,
@@ -89,7 +104,8 @@ const dictionary = {
     en: {
         messages: {
             name: () => 'Please enter the correct content',
-            char: () => 'Please enter the correct content',
+            longchar: () => 'Please enter the correct content',
+            singlechar: () => 'Please enter the correct content',
             id: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase English',
             http: () => 'Please enter a URL beginning with http://',
             // lifeCycle: () => '请输入格式为 yyyy-MM-dd 的生命周期',
