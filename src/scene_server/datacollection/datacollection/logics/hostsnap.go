@@ -203,7 +203,10 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
 			return nil
 		default:
-			data := gjson.Get(msg, "data").String()
+			var data = msg
+			if gjson.Get(msg, "dataid").Exists() {
+				data = gjson.Get(msg, "data").String()
+			}
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
