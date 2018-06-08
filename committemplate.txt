@@ -1,0 +1,22 @@
+[type]{scope}(module) subject #issue
+# example: [fixes]{backend}(toposerver) 解决关联搜索失败问题 #315
+#
+# 添加git commit 模板命令: git config commit.template committemplate.txt
+#
+# type和subject为必填项, 其他选填
+# [type]: 
+#    feature  新功能
+#    modify   功能调整
+#    fixes    解决问题
+#    optimize 优化
+#
+# {scope}:
+#    backend 后端
+#    frontend 前端
+#
+# (module)
+#    toposerver,objectcontroller,hostserver等
+# subject 一句话解释做了什么
+# #issue issue号必须放最后
+#
+# body 详细信息另起空行分隔
