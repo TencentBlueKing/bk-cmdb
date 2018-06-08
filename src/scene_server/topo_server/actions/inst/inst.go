@@ -582,7 +582,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			ids[delItem.instID] = struct{}{}
 
 			// delete the association
-			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID); nil != err {
+			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID, ""); nil != err {
 				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
 			}
 

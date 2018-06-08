@@ -10,6 +10,7 @@
                     <div ref="classifyItemLayout" class="item-layout">
                         <i class="classify-pin icon-cc-pin" v-if="!staticClassify.includes(classify['bk_classification_id'])"
                             :class="{highlight: classifyNavigation.includes(classify['bk_classification_id'])}"
+                            :title="classifyNavigation.includes(classify['bk_classification_id']) ? $t('Index[\'取消导航\']') : $t('Index[\'固定到导航\']')"
                             @click.stop.prevent="pinClassify(classify)">
                         </i>
                         <div class="classify-info">
@@ -17,7 +18,7 @@
                             <p class="classify-name">{{classify['bk_classification_name']}}</p>
                         </div>
                         <transition-group tag="div" name="fade" class="classify-models" :duration="300" @afterLeave="removeToggleAttribute(classifyIndex)">
-                            <ul class="model-list"
+                            <ul :class="['model-list', $i18n.locale]"
                                 v-for="col in Math.ceil(classify['bk_objects'].length / modelsPerCol)"
                                 v-show="col === 1 || openedClassify === classify['bk_classification_id']"
                                 :key="col">
@@ -38,15 +39,14 @@
                         </transition-group>
                         <a href="javascript:void(0)" class="model-more"
                             v-if="openedClassify !== classify['bk_classification_id'] && classify['bk_objects'].length > 5"
-                            @click.stop.prevent="toggleClassify(classify, classifyIndex, 'open')">更多</a>
+                            :title="$t('Index[\'更多\']')"
+                            @click.stop.prevent="toggleClassify(classify, classifyIndex, 'open')">{{$t("Index['更多']")}}</a>
                     </div>
                 </li>
             </ul>
         </div>
         <p class="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved.
-            <br>
-            腾讯蓝鲸 版权所有
+            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
         </p>
     </div>
 </template>
@@ -192,6 +192,9 @@
                 if (isPin && pinResult.result) {
                     bus.$emit('handlePinClassify', classify)
                 }
+                if (pinResult.result) {
+                    this.$alertMsg(isPin ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'), 'success')
+                }
             },
             toggleClassify (classify, index, type = 'open') {
                 const classifyItemLayout = this.$refs.classifyItemLayout[index]
@@ -199,7 +202,7 @@
                     const wrapperRect = this.$el.getBoundingClientRect()
                     const classifyItemLayoutRect = classifyItemLayout.getBoundingClientRect()
                     const columns = Math.ceil(classify['bk_objects'].length / this.modelsPerCol)
-                    const openWidth = columns * 120 + 60
+                    const openWidth = columns * (this.$i18n.locale === 'en' ? 150 : 120) + 60
                     const openDirection = classifyItemLayoutRect.left + openWidth < wrapperRect.width ? 'item-layout-open-right' : 'item-layout-open-left'
                     classifyItemLayout.classList.add('item-layout-open')
                     classifyItemLayout.classList.add(openDirection)
@@ -231,7 +234,8 @@
     .classify-layout{
         margin: 15px 0 0;
         height: calc(100% - 120px);
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
         @include scrollbar;
     }
     .classify-list{
@@ -312,6 +316,9 @@
             right: 8px;
             font-size: 12px;
             color: rgba(71, 156, 249, 0.5);
+            &:hover{
+                color: rgb(71, 156, 249);
+            }
         }
     }
     .classify-models{
@@ -338,16 +345,16 @@
                 line-height: 22px;
                 cursor: pointer;
                 color: $modelColor;
+                transition: none !important;
                 @include ellipsis;
             }
             .model-stick{
                 margin-left: 3px;
                 cursor: pointer;
-                color: $modelColor;
+                color: rgba(110, 169, 249, 0.4);
                 display: none;
-                opacity: .6;
                 &:hover{
-                    opacity: 1;
+                   color: $modelColor;
                 }
             }
             &:hover{
@@ -360,13 +367,21 @@
             }
         }
     }
+    .model-list.en{
+        .model-item{
+            width: 150px;
+            .model-name{
+                max-width: 133px;
+            }
+        }
+    }
     .copyright{
         text-align: center;
         position: absolute;
         width: 100%;
         bottom: 0;
         left: auto;
-        padding: 0;
+        padding: 0 0 10px 0;
         margin: 0;
         font-size: 14px;
         color: rgba(116, 120, 131, 0.5);

@@ -9,11 +9,12 @@
                 </li>
             </ul>
             <span class="resize-btn" v-if="isFullScreen" @click="resizeCanvas(false)">
-                <i class="icon-cc-resize-small"></i>{{$t('Common["退出"]')}}
+                <i class="icon-cc-resize-small"></i><span>{{$t('Common["退出"]')}}</span>
             </span>
             <div class="mask" v-if="attr.isShow" @click="attr.isShow = false"></div>
             <v-attribute
                 ref="attribute"
+                :isFullScreen="isFullScreen"
                 :isShow.sync="attr.isShow"
                 :instId="attr.instId"
                 :objId="attr.objId"
@@ -88,6 +89,9 @@
                         scaling: {
                             min: 15,
                             max: 25
+                        },
+                        widthConstraint: {
+                            maximum: 100
                         }
                     },
                     layout: {
@@ -432,6 +436,7 @@
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
+                    this.$emit('handleAssociationLoaded', res.data[0])
                     await this.setTopoStruct(res.data[0], isRoot)
                 } catch (e) {
                     this.isLoading = false
@@ -469,7 +474,11 @@
                 this.network.on('blurNode', () => {
                     networkCanvas.style.cursor = 'default'
                 })
+                this.network.on('dragStart', () => {
+                    this.removePop()
+                })
                 this.network.on('click', (params) => {
+                    this.removePop()
                     // 点击了具体某个节点
                     if (params.nodes.length) {
                         let id = params.nodes[0]
@@ -500,6 +509,8 @@
                 let parentNode = this.getActiveNode(activeNode.parentId)
                 let toNode = activeNode.fromId === activeNode.id ? parentNode : activeNode
                 let fromNode = activeNode.fromId === activeNode.id ? activeNode : parentNode
+                this.removePop()
+                this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${toNode['bk_obj_id']}/inst/${toNode['bk_inst_id']}`)
                     for (let key in res.data[0]) {
@@ -550,6 +561,7 @@
                     }
                 }
                 this.initTopo()
+                this.isLoading = false
             },
             /**
              * 显示详情
@@ -586,7 +598,7 @@
                 let div = document.createElement('div')
                 div.setAttribute('class', 'topo-pop-box')
                 div.setAttribute('id', this.popBox.rand)
-                div.style.top = `${Y}px`
+                div.style.top = `${Y + 12}px`
                 div.style.left = `${X + 60}px`
                 div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div><div class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</div>` : `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div>`
                 document.body.appendChild(div)
@@ -646,6 +658,9 @@
             bottom: 0;
             right: 0;
             height: 100%;
+            .model-list {
+                padding: 20px 0 0 20px;
+            }
         }
         .loading-box {
             height: 100%;
@@ -674,13 +689,18 @@
         .resize-btn {
             position: absolute;
             width: auto;
-            top: 30px;
-            right: 30px;
-            height: 36px;
-            line-height: 34px;
-            padding: 0 20px;
+            top: 20px;
+            right: 20px;
+            height: 24px;
+            line-height: 22px;
+            padding: 0 10px;
             i {
                 margin-right: 5px;
+                font-size: 12px;
+            }
+            span {
+                font-size: 12px;
+                vertical-align: bottom;
             }
         }
         .mask {
