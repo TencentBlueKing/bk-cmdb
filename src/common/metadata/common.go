@@ -10,25 +10,27 @@
  * limitations under the License.
  */
 
-package history
+package metadata
 
-import (
-	"context"
+import "configcenter/src/common/basetype"
 
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/metadata"
-)
-
-type HistoryInterface interface {
-	AddHistory(ctx context.Context, user string, h util.Headers, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error)
-	GetHistorys(ctx context.Context, user string, start string, limit string, h util.Headers) (resp *metadata.GetHistoryResult, err error)
+type BaseResp struct {
+	Result bool   `json:"result"`
+	Code   int    `json:"bk_error_code"`
+	ErrMsg string `json:"bk_error_msg"`
 }
 
-func NewHistoryInterface(client rest.ClientInterface) HistoryInterface {
-	return &history{client: client}
+type Response struct {
+	BaseResp `json:",inline"`
+	Data     interface{} `json:"data"`
 }
 
-type history struct {
-	client rest.ClientInterface
+type MapResponse struct {
+	BaseResp `json:",inline"`
+	Data     map[string]*basetype.Type `json:"data"`
+}
+
+type RecursiveMapResponse struct {
+	BaseResp `json:",inline"`
+	Data     map[string]map[string]*basetype.Type `json:"data"`
 }
