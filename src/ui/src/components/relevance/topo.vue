@@ -145,6 +145,7 @@
         },
         methods: {
             resizeCanvas (isFullScreen) {
+                this.isLoading = true
                 this.isFullScreen = isFullScreen
                 this.$nextTick(() => {
                     this.$refs.attribute.resetAttributeBox()
@@ -463,7 +464,6 @@
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 this.network.focus(this.activeNode.id)
                 this.network.moveTo({scale: 0.8})
-
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
                 this.network.on('hoverNode', (params) => {
@@ -476,6 +476,9 @@
                 })
                 this.network.on('dragStart', () => {
                     this.removePop()
+                })
+                this.network.on('resize', () => {
+                    this.isLoading = false
                 })
                 this.network.on('click', (params) => {
                     this.removePop()
