@@ -14,97 +14,97 @@ package module
 
 import (
 	"context"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
 )
 
-func (m *mod) GetHostModulesIDs(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
+func (m *mod) GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
 	subPath := "/meta/hosts/modules/search"
 
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) AddModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+func (m *mod) AddModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
 	subPath := "/meta/hosts/modules"
 
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) DelModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+func (m *mod) DelModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
 	subPath := "/meta/hosts/modules"
 
 	err = m.client.Delete().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) DelDefaultModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+func (m *mod) DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
 	subPath := "/meta/hosts/defaultmodules"
 
 	err = m.client.Delete().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) MoveHost2ResourcePool(ctx context.Context, h util.Headers, dat *metadata.ParamData) (resp *metadata.BaseResp, err error) {
+func (m *mod) MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error) {
 	subPath := "/meta/hosts/resource"
 
 	err = m.client.Put().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) AssignHostToApp(ctx context.Context, h util.Headers, dat interface{}) (resp *metadata.BaseResp, err error) {
+func (m *mod) AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error) {
 	subPath := "/meta/hosts/assign"
 
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (m *mod) GetModulesHostConfig(ctx context.Context, h util.Headers, dat map[string][]int) (resp *metadata.HostConfig, err error) {
+func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int) (resp *metadata.HostConfig, err error) {
 	subPath := "/meta/hosts/module/config/search"
 
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
