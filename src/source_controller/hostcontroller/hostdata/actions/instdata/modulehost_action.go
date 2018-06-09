@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
-	. "configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
@@ -40,10 +40,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/meta/hosts/module/config/search", Params: nil, Handler: moduleHostConfigActionCli.GetModulesHostConfig})
 }
 
-var (
-	moduleBaseTaleName = "cc_ModuleBase"
-)
-
+var moduleBaseTaleName = "cc_ModuleBase"
 var moduleHostConfigActionCli *moduleHostConfigAction = &moduleHostConfigAction{}
 
 // HostAction
@@ -56,24 +53,24 @@ func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, res
 	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cc := api.NewAPIResource()
-	params := ModuleHostConfigParams{}
+	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("add module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
+	cc := api.NewAPIResource()
 	ec := eventdata.NewEventContextByReq(req)
 	for _, moduleID := range params.ModuleID {
 		_, err := logics.AddSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
 		if nil != err {
-			resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostTransferModule).Error()})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostTransferModule)})
 			return
 		}
 	}
 
-	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 //DelDefaultModuleHostConfig delete default module host config
@@ -81,10 +78,10 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	params := ModuleHostConfigParams{}
+	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("del default module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -92,7 +89,7 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 	defaultModuleIDs, err := logics.GetDefaultModuleIDs(cc, params.ApplicationID)
 	if nil != err {
 		blog.Errorf("defaultModuleIds appID:%d, error:%v", params.ApplicationID, err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
@@ -102,12 +99,12 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 		_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, defaultModuleID, params.ApplicationID)
 		if nil != err {
 			blog.Errorf("del default module host config failed, with relation, err:%v", err)
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrDelDefaultModuleHostConfig).Error()})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelDefaultModuleHostConfig)})
 			return
 		}
 	}
 
-	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 //DelModuleHostConfig delete module host config
@@ -116,10 +113,10 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cc := api.NewAPIResource()
-	params := ModuleHostConfigParams{}
+	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("del module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -128,7 +125,8 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 	getModuleParams[common.BKAppIDField] = params.ApplicationID
 	moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
 	if nil != err {
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetOriginHostModuelRelationship).Error()})
+		blog.Errorf("delete module host config failed, %v", err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetOriginHostModuelRelationship)})
 		return
 	}
 
@@ -136,12 +134,13 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 	for _, moduleID := range moduleIDs {
 		_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
 		if nil != err {
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrDelOriginHostModuelRelationship).Error()})
+			blog.Errorf("delete module host config, but delete module relation failed, err: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelOriginHostModuelRelationship)})
 			return
 		}
 	}
 
-	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
+	resp.WriteAsJson(meta.NewSuccessResp(nil))
 }
 
 //GetHostModulesIDs get host module ids
@@ -150,22 +149,22 @@ func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp 
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cc := api.NewAPIResource()
-	params := ModuleHostConfigParams{}
+	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Error("get host module id failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	moduleIDs, err := logics.GetModuleIDsByHostID(cc, map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}) //params.HostID, params.ApplicationID)
 	if nil != err {
 		blog.Errorf("get host module id failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
-	resp.WriteAsJson(GetHostModuleIDsResult{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
+	resp.WriteAsJson(meta.GetHostModuleIDsResult{
+		BaseResp: meta.SuccessBaseResp,
 		Data:     moduleIDs,
 	})
 }
@@ -177,11 +176,10 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 
 	cc := api.NewAPIResource()
 	ec := eventdata.NewEventContextByReq(req)
-	params := new(AssignHostToAppParams)
-
+	params := new(meta.AssignHostToAppParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("assign host to app failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -191,7 +189,7 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 		_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerApplicationID)
 		if nil != err {
 			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransferHostFromPool).Error()})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
 			return
 		}
 
@@ -199,13 +197,13 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 		moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams)
 		if nil != err {
 			blog.Errorf("assign host to app, but get module failed, err: %v", err)
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 			return
 		}
 
 		// delete from empty module, no relation
 		if 0 < len(moduleIDs) {
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrAlreadyAssign).Error()})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrAlreadyAssign)})
 			return
 		}
 
@@ -213,11 +211,11 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 		_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.ModuleID, params.ApplicationID)
 		if nil != err {
 			blog.Errorf("assign host to app, but add single host module relation failed, err: %v", err)
-			resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransferHostFromPool).Error()})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
 		}
 	}
 
-	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
+	resp.WriteAsJson(meta.SuccessBaseResp)
 }
 
 //GetModulesHostConfig  get module host config
@@ -228,7 +226,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 	var params = make(map[string][]int)
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("del module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -245,12 +243,12 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 	err := cc.InstCli.GetMutilByCondition("cc_ModuleHostConfig", fields, query, &result, common.BKHostIDField, 0, 100000)
 	if err != nil {
 		blog.Error("get module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrCommDBSelectFailed).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	resp.WriteAsJson(HostConfig{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
+	resp.WriteAsJson(meta.HostConfig{
+		BaseResp: meta.SuccessBaseResp,
 		Data:     result,
 	})
 }
@@ -263,30 +261,30 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 	cc := api.NewAPIResource()
 	ec := eventdata.NewEventContextByReq(req)
 	instdata.DataH = cc.InstCli
-	params := new(ParamData)
+	params := new(meta.ParamData)
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("move host to resourece pool failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	idleModuleID, err := logics.GetIDleModuleID(cc, params.ApplicationID)
 	if nil != err {
 		blog.Error("get default module failed, error:%s", err.Error())
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
 	errHostIDs, faultHostIDs, err := logics.CheckHostInIDle(cc, params.ApplicationID, idleModuleID, params.HostID)
 	if nil != err {
 		blog.Error("get host relationship failed, err: %s", err.Error())
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrGetModule).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
 	if 0 != len(errHostIDs) {
 		blog.Errorf("move host to resource pool, but it does not belongs to free module, hostid: %v", errHostIDs)
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrNotBelongToIdleModule).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrNotBelongToIdleModule)})
 		return
 	}
 
@@ -313,9 +311,9 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 	if 0 != len(addErr) || 0 != len(delErr) {
 		addErr = append(addErr, delErr...)
 		blog.Errorf("move host to resource pool, success: %v, failed: %v", succ, addErr)
-		resp.WriteAsJson(BaseResp{Code: http.StatusInternalServerError, ErrMsg: defErr.Error(common.CCErrTransfer2ResourcePool).Error()})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransfer2ResourcePool)})
 		return
 	}
 
-	resp.WriteAsJson(BaseResp{true, http.StatusOK, common.CCSuccessStr})
+	resp.WriteAsJson(meta.NewSuccessResp(nil))
 }

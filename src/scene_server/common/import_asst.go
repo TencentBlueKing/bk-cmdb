@@ -138,7 +138,7 @@ func (a *AsstObjectInst) InitInstFromData(infos map[int]map[string]interface{}) 
 	return nil, nil
 }
 
-// GetIDsByExcelStr Get a string of data based on multiple primary key values (multiple primary key values are sorted by field name, separated by ##)
+// GetIDsByExcelStr GetUserConfig a string of data based on multiple primary key values (multiple primary key values are sorted by field name, separated by ##)
 func (a *AsstObjectInst) GetIDsByExcelStr(objID, key string) (int64, error) {
 	if nil == a.instPrimayIDMap {
 		return 0, fmt.Errorf("%s primary %s not found", objID, key)

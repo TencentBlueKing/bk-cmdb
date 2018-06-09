@@ -23,11 +23,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
-	. "configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
+
+func init() {
+	history.CC = api.NewAPIResource()
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/history/{user}", Params: nil, Handler: history.AddHistory})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/history/{user}/{start}/{limit}", Params: nil, Handler: history.GetHistorys})
+}
 
 var history *historyAction = &historyAction{}
 
@@ -41,16 +47,16 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 	language := util.GetActionLanguage(req)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
-	bodyData := new(HistoryContent)
+	bodyData := new(meta.HistoryContent)
 	if err := json.NewDecoder(req.Request.Body).Decode(bodyData); err != nil {
 		blog.Errorf("add history, but decode body failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommHTTPReadBodyFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPReadBodyFailed)})
 		return
 	}
 
 	if bodyData.Content == "" {
 		blog.Errorf("add history, but history content is empty.")
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsNeedSet).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
 
@@ -64,13 +70,13 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 	_, err := history.CC.InstCli.Insert("cc_History", data)
 	if nil != err {
 		blog.Error("add history failed, err: %v, params:%v", err, data)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDBInsertFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 
-	resp.WriteAsJson(HostFavorite{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data:     ID{ID: id.String()},
+	resp.WriteAsJson(meta.IDResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.ID{ID: id.String()},
 	})
 
 }
@@ -81,12 +87,12 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 
 	start, err := strconv.Atoi(req.PathParameter("start"))
 	if err != nil {
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsIsInvalid).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
 	limit, err := strconv.Atoi(req.PathParameter("limit"))
 	if err != nil {
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsIsInvalid).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
 
@@ -98,29 +104,19 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 	err = history.CC.InstCli.GetMutilByCondition("cc_History", fields, conds, &result, sort, start, limit)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params: %v", err, conds)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDBSelectFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
 	nums, err := history.CC.InstCli.GetCntByCondition("cc_History", conds)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params:%v", err, conds)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDBInsertFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 
-	resp.WriteAsJson(GetHistoryResult{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data: HistoryResult{
-			Count: nums,
-			Info:  result,
-		},
+	resp.WriteAsJson(meta.GetHistoryResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.HistoryResult{Count: nums, Info: result},
 	})
-}
-
-func init() {
-	history.CC = api.NewAPIResource()
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/history/{user}", Params: nil, Handler: history.AddHistory})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/history/{user}/{start}/{limit}", Params: nil, Handler: history.GetHistorys})
-
 }
