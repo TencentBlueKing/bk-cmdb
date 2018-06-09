@@ -13,9 +13,9 @@
         <div class="error-message-content is-chrome" v-show="isChromeShow">
             <span>{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
         </div>
-        <v-navigation class="fl"></v-navigation>
+        <v-header></v-header>
+        <v-nav class="fl"></v-nav>
         <div class="main-container">
-            <v-header></v-header>
             <div class="main-wrapper">
                 <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
                     <router-view/>
@@ -27,12 +27,14 @@
 <script>
     import vHeader from '@/components/header/header'
     import vNavigation from '@/components/nav/nav'
+    import vNav from '@/components/nav/nav-v2'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
         components: {
             vHeader,
-            vNavigation
+            vNavigation,
+            vNav
         },
         data () {
             return {
@@ -61,7 +63,7 @@
         position: relative;
         .main-wrapper{
             height: 100%;
-            padding-top: 50px;
+            padding-top: 43px;
             overflow: auto;
             position: relative;
             .content-wrapper{

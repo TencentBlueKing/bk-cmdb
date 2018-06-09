@@ -158,7 +158,7 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)
 
 			}
-			err = sceneCommon.DeleteInstAssociation(cli.CC.ObjCtrl(), req, hostID, ownerID, common.BKInnerObjIDHost)
+			err = sceneCommon.DeleteInstAssociation(cli.CC.ObjCtrl(), req, hostID, ownerID, common.BKInnerObjIDHost, "")
 			if nil != err {
 				blog.Error("delete host batch fail:%v", err)
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)

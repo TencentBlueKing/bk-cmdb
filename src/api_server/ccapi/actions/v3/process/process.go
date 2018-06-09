@@ -63,6 +63,16 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 	io.WriteString(resp, rsp)
 }
 
+// BatchUpdateProcess batch update process
+func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams["owner_id"]
+	appID := pathParams["app_id"]
+	url := cli.CC.ProcAPI() + "/process/v1/" + ownerID + "/" + appID
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
+	io.WriteString(resp, rsp)
+}
+
 // SearchProcess search process
 func (cli *procAction) SearchProcess(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
@@ -122,6 +132,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/proc/{owner_id}/{app_id}", Params: nil, Handler: proc.CreateProcess, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/proc/{owner_id}/{app_id}/{proc_id}", Params: nil, Handler: proc.DeleteProcess, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/proc/{owner_id}/{app_id}/{proc_id}", Params: nil, Handler: proc.UpdateProcess, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/proc/{owner_id}/{app_id}", Params: nil, Handler: proc.BatchUpdateProcess, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/proc/search/{owner_id}/{app_id}", Params: nil, Handler: proc.SearchProcess, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/proc/{owner_id}/{app_id}/{proc_id}", Params: nil, Handler: proc.GetProcess, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/proc/module/{owner_id}/{app_id}/{proc_id}/{module_name}", Params: nil, Handler: proc.BindProcModule, Version: v3.APIVersion})

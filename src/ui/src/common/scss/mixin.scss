@@ -25,11 +25,3 @@
         }
     }
 }
-
-@mixin verticalHack{
-    display: inline-block;
-    vertical-align: middle;
-    content: '';
-    width: 0;
-    height: 100%;
-}
