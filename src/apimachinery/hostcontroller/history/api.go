@@ -15,32 +15,32 @@ package history
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
 )
 
-func (hi *history) AddHistory(ctx context.Context, user string, h util.Headers, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error) {
+func (hi *history) AddHistory(ctx context.Context, user string, h http.Header, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error) {
 	subPath := fmt.Sprintf("/history/%s", user)
 
 	err = hi.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hi *history) GetHistorys(ctx context.Context, user string, start string, limit string, h util.Headers) (resp *metadata.GetHistoryResult, err error) {
+func (hi *history) GetHistorys(ctx context.Context, user string, start string, limit string, h http.Header) (resp *metadata.GetHistoryResult, err error) {
 	subPath := fmt.Sprintf("/history/%s/%s/%s", user, start, limit)
 
 	err = hi.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
