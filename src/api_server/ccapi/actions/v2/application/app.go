@@ -407,7 +407,7 @@ func (cli *appAction) AddApp(req *restful.Request, resp *restful.Response) {
 		param[common.BKTimeZoneField] = "Asia/Shanghai"
 	}
 
-	//param[common.CreatorField] = formData.Get("Creator")
+	//param[common.CreatorField] = formData.GetUserConfig("Creator")
 	param[common.BKLifeCycleField] = lifeCycle
 	param[common.BKProductPMField] = formData.Get("ProductPm")
 	param[common.BKDeveloperField] = formData.Get("Developer")

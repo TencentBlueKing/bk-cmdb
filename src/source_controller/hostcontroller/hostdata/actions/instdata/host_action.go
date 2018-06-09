@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
-	. "configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	dcCommon "configcenter/src/scene_server/datacollection/common"
 	eventtypes "configcenter/src/scene_server/event_server/types"
@@ -38,8 +38,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search", Params: nil, Handler: host.GetHosts})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/insts", Params: nil, Handler: host.AddHost})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/host/snapshot/{bk_host_id}", Params: nil, Handler: host.GetHostSnap})
-
-	// create cc object
 	host.CreateAction()
 }
 
@@ -60,7 +58,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	input := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("add host failed with decode body err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -69,7 +67,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	ID, err := instdata.CreateObject(objType, input, &idName)
 	if err != nil {
 		blog.Errorf("create object type:%s ,data: %v error: %v", objType, input, err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostCreateInst).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostCreateInst)})
 		return
 	}
 
@@ -81,14 +79,11 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		ec := eventdata.NewEventContextByReq(req)
 		err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
 		if err != nil {
-			blog.Error("create event error:%v", err)
+			blog.Errorf("add host success, but create event failed, err: %v", err)
 		}
 	}
 
-	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data:     map[string]int{idName: ID},
-	})
+	resp.WriteEntity(meta.NewSuccessResp(map[string]int{idName: ID}))
 }
 
 //GetHostByID get host detail
@@ -99,7 +94,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 	pathParams := req.PathParameters()
 	hostID, err := strconv.Atoi(pathParams["bk_host_id"])
 	if err != nil {
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommParamsIsInvalid).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
 
@@ -110,15 +105,11 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 	err = cli.CC.InstCli.GetOneByCondition("cc_HostBase", fields, condition, &result)
 	if err != nil {
 		blog.Error("get host by id failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommDBSelectFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data:     resp,
-	})
-
+	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
 //GetHosts batch search host
@@ -133,7 +124,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 	var dat commondata.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
 		blog.Errorf("get host failed with decode body err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -144,22 +135,20 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 	err := instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
 		blog.Error("get object failed type:%s,input:%v error:%v", objType, dat, err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostSelectInst).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
 
 	count, err := instdata.GetCntByCondition(objType, condition)
 	if err != nil {
 		blog.Error("get object failed type:%s ,input: %v error: %v", objType, dat, err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostSelectInst).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
-	resp.WriteAsJson(GetHostsResult{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data: HostInfo{
-			Count: count,
-			Info:  result,
-		},
+
+	resp.WriteEntity(meta.GetHostsResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.HostInfo{Count: count, Info: result},
 	})
 }
 
@@ -171,18 +160,15 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 	hostID := req.PathParameter("bk_host_id")
 	data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
 	result := ""
-	err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
-
+	err := cli.CC.CacheCli.GetOneByCondition("GetUserConfig", nil, data, &result)
 	if err != nil {
 		blog.Error("get host snapshot failed, hostid: %v, err: %v ", hostID, err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostGetSnapshot).Error()})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
 		return
 	}
 
-	resp.WriteAsJson(GetHostSnapResult{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data: HostSnap{
-			Data: result,
-		},
+	resp.WriteAsJson(meta.GetHostSnapResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.HostSnap{Data: result},
 	})
 }

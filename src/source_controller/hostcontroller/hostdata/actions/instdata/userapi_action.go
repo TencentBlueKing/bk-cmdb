@@ -14,8 +14,6 @@ package instdata
 
 import (
 	"encoding/json"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -24,20 +22,21 @@ import (
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
-	. "configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
+	"strconv"
 )
 
 func init() {
 	userAPI.CreateAction()
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/userapi", Params: nil, Handler: userAPI.Add})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Update})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Delete})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/userapi/search", Params: nil, Handler: userAPI.Get})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/userapi/detail/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.Detail})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/userapi", Params: nil, Handler: userAPI.AddUserConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.UpdateUserConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/userapi/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.DeleteUserConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/userapi/search", Params: nil, Handler: userAPI.GetUserConfig})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/userapi/detail/{bk_biz_id}/{id}", Params: nil, Handler: userAPI.GetUserConfigDetail})
 }
 
 var userAPI *userAPIAction = &userAPIAction{tableName: "cc_UserAPI"}
@@ -47,107 +46,95 @@ type userAPIAction struct {
 	tableName string
 }
 
-//Add add new user api
-func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
+//AddUserConfig add new user api
+func (u *userAPIAction) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
-	params := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("add user config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+	c := new(meta.UserConfig)
+	if err := json.NewDecoder(req.Request.Body).Decode(c); err != nil {
+		blog.Errorf("add user config failed, decode err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	name, _ := params["name"]
-	if "" == name {
-		blog.Error("parameter Name is required")
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "Name").Error(), resp)
-		return
-	}
-
-	appID, _ := util.GetInt64ByInterface(params[common.BKAppIDField])
-	if 0 >= appID {
-		blog.Error("parameter ApplicationID is required")
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField).Error(), resp)
-		return
-	}
-	user, _ := params["create_user"].(string)
-	if "" == user {
-		blog.Error("parameter CreateUser is required")
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "create_user").Error(), resp)
-		return
+	if len(c.Name) == 0 || c.AppID == 0 || len(c.CreateUser) == 0 {
+		blog.Errorf("add user config failed, err: invalid user config. name , appid and create user can not be empty.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 	}
 
 	queryParams := make(map[string]interface{})
-	//queryParams["CreateUser"] = params["User"] //libraries.GetOperateUser(req)
-	queryParams[common.BKAppIDField] = appID
-	queryParams["name"] = name
+	queryParams[common.BKAppIDField] = c.AppID
+	queryParams["name"] = c.Name
 
 	rowCount, err := userAPI.CC.InstCli.GetCntByCondition(u.tableName, queryParams)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), queryParams)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	if 0 != rowCount {
-		blog.Error("[%s] user api is exist", name)
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
+		blog.Error("[%s] user api is exist", c.Name)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 		return
 	}
 	//mogo generate id for product
 	xidDevice := xid.New()
 
-	params[common.BKAppIDField] = appID
-	params[common.BKFieldID] = xidDevice.String()
-	params[common.CreateTimeField] = time.Now()
-	params["modify_user"] = ""
-	params[common.LastTimeField] = ""
-	_, err = u.CC.InstCli.Insert(u.tableName, params)
-
+	conf := make(map[string]interface{})
+	conf[common.BKAppIDField] = c.AppID
+	conf[common.BKFieldID] = xidDevice.String()
+	conf[common.CreateTimeField] = time.Now().UTC()
+	conf["modify_user"] = ""
+	conf[common.LastTimeField] = ""
+	_, err = u.CC.InstCli.Insert(u.tableName, conf)
 	if err != nil {
-		blog.Error("create user api  error:data:%v error:%v", params, err)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBInsertFailed, defErr.Error(common.CCErrCommDBInsertFailed).Error(), resp)
+		blog.Error("create user api failed, data:%v error:%v", conf, err)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 
-	info := make(map[string]interface{})
-	info["id"] = xidDevice.String()
-
-	rsp, _ := u.CC.CreateAPIRspStr(common.CCSuccess, info)
-	io.WriteString(resp, rsp)
-
+	resp.WriteEntity(meta.IDResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.ID{ID: xidDevice.String()},
+	})
 }
 
-//Update update user api content
-func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
+//UpdateUserConfig update user api content
+func (u *userAPIAction) UpdateUserConfig(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 	ID := req.PathParameter("id")
-	appID, err := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
 
-	data := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("del module host config failed, err: %v", err)
-		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
+	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("update user config failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
 
-	data[common.LastTimeField] = time.Now()
+	data := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("del module host config failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	data[common.LastTimeField] = time.Now().UTC()
 
 	params := make(map[string]interface{})
 	params[common.BKFieldID] = ID
 	params[common.BKAppIDField] = appID
-
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
 	if nil != err {
-		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+		blog.Errorf("query user api fail, error information is %s, params: %v", err.Error(), params)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
+
 	if 1 != rowCount {
-		blog.Info("host user api not permissions or not exists, params:%v", params)
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommNotFound, defErr.Error(common.CCErrCommNotFound).Error(), resp)
+		blog.Errorf("host user api not permissions or not exists, params: %v", params)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
 	//edit new not duplicate
@@ -160,38 +147,40 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 
 		rowCount, getErr := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
 		if nil != getErr {
-			blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", getErr.Error(), dupParams)
-			userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+			blog.Error("query user api validate name duplicate fail, error information is %s, params:%v", getErr.Error(), dupParams)
+			resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
 		if 0 < rowCount {
-			blog.Info("host user api  name duplicatie , params:%v", dupParams)
-			userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
+			blog.Errorf("host user api  name duplicate , params: %v", dupParams)
+			resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 			return
 		}
 	}
 
-	//json 中的数字会被转换未doubule， 转换未int64
+	//json 中的数字会被转换为double， 转换未int64
 	data[common.BKAppIDField] = appID
 	err = u.CC.InstCli.UpdateByCondition(u.tableName, data, params)
 	if nil != err {
-		blog.Error("updata user api fail, error information is %s, params:%v", err.Error(), params)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBUpdateFailed, defErr.Errorf(common.CCErrCommDBUpdateFailed).Error(), resp)
+		blog.Errorf("update user api fail, error information is %s, params:%v", err.Error(), params)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
-	rsp, _ := u.CC.CreateAPIRspStr(common.CCSuccess, nil)
-	io.WriteString(resp, rsp)
-	return
-
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-//Delete delete user api
-func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+//DeleteUserConfig delete user api
+func (u *userAPIAction) DeleteUserConfig(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	ID := req.PathParameter("id")
-	appID, _ := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
+	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("update user config failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
+		return
+	}
 
 	params := make(map[string]interface{})
 	params[common.BKAppIDField] = appID
@@ -199,42 +188,35 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
 	if nil != err {
-		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+		blog.Errorf("query user api fail, err: %v, params: %v", err, params)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	if 1 != rowCount {
-		blog.Info("host user api not permissions or not exists, params:%v", params)
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommNotFound, defErr.Error(common.CCErrCommNotFound).Error(), resp)
+		blog.Errorf("host user api not permissions or not exists, params:%v", params)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
 	err = u.CC.InstCli.DelByCondition(u.tableName, params)
 	if nil != err {
-		blog.Error("delete user api fail, error information is %s, params:%v", err.Error(), params)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBDeleteFailed, defErr.Errorf(common.CCErrCommDBDeleteFailed).Error(), resp)
+		blog.Errorf("delete user api fail, err: %v, params:%v", err, params)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBDeleteFailed)})
 		return
 	}
-	rsp, _ := u.CC.CreateAPIRspStr(common.CCSuccess, nil)
-	io.WriteString(resp, rsp)
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 	return
 }
 
-//Get get user api
-func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
-
-	language := util.GetActionLanguage(req)
+//GetUserConfig get user api
+func (u *userAPIAction) GetUserConfig(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	var dat commondata.ObjQueryInput
-	value, err := ioutil.ReadAll(req.Request.Body)
-	//
-	if nil == err && nil == value {
-		value = []byte("{}")
-	}
-	err = json.Unmarshal([]byte(value), &dat)
-	if err != nil {
-		blog.Error("fail to unmarshal json, error information is,input:%v error:%v", string(value), err)
-		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
+		blog.Errorf("get user config, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -243,23 +225,32 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 		condition = dat.Condition.(map[string]interface{})
 	}
 
-	appID, _ := util.GetInt64ByInterface(condition[common.BKAppIDField])
+	appID, err := util.GetInt64ByInterface(condition[common.BKAppIDField])
+	if err != nil {
+		blog.Errorf("get user config, but parse appid failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
+		return
+	}
 
 	if 0 >= appID {
 		blog.Error("The ApplicationID of the Condition parameter is required")
 		userAPI.ResponseFailedEx(http.StatusBadRequest, common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField).Error(), resp)
 		return
 	}
+	count, err := u.CC.InstCli.GetCntByCondition(u.tableName, condition)
+	if err != nil {
+		blog.Error("get user api information failed, err:%v", err)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
 
-	skip := dat.Start
-	limit := dat.Limit
-	sort := dat.Sort
 	var fieldArr []string
 	if "" != dat.Fields {
 		fieldArr = strings.Split(",", dat.Fields)
 
 	}
 
+	skip, limit, sort := dat.Start, dat.Limit, dat.Sort
 	if 0 == limit {
 		limit = 20
 	}
@@ -267,53 +258,48 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 		sort = common.CreateTimeField
 	}
 
-	condition[common.BKAppIDField] = appID
-	//result := make([]interface{}, 0)
-	count, err := u.CC.InstCli.GetCntByCondition(u.tableName, condition)
-	if err != nil {
-		blog.Error("get user api infomation error,input:%v error:%v", string(value), err)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
-		return
-	}
 	var result []interface{}
 	err = u.CC.InstCli.GetMutilByCondition(u.tableName, fieldArr, condition, &result, sort, skip, limit)
 	if err != nil {
-		blog.Error("get user api infomation error,input:%v error:%v", string(value), err)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+		blog.Error("get user api information failed, err: %v", err)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
-	info := make(map[string]interface{})
-	info["count"] = count
-	info["info"] = result
-	rsp, _ := u.CC.CreateAPIRspStr(common.CCSuccess, info)
-	io.WriteString(resp, rsp)
-	return
+
+	resp.WriteEntity(meta.GetUserConfigResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     meta.UserConfigResult{Count: count, Info: result},
+	})
 }
 
 //Detail use api detail
-func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
-
-	language := util.GetActionLanguage(req)
+func (u *userAPIAction) GetUserConfigDetail(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
-	appID, _ := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
-	ID := req.PathParameter("id")
-
-	params := make(map[string]interface{})
-	params[common.BKAppIDField] = appID
-	params["id"] = ID
-	var fieldArr []string
-
-	result := make(map[string]interface{})
-	err := u.CC.InstCli.GetOneByCondition(u.tableName, fieldArr, params, &result)
-	if err != nil && mgo_on_not_found_error != err.Error() {
-		blog.Error("get user api infomation error,input:%v error:%v", ID, err)
-		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
+	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("get user config detail failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
 
-	rsp, _ := u.CC.CreateAPIRspStr(common.CCSuccess, result)
-	io.WriteString(resp, rsp)
-	return
+	ID := req.PathParameter("id")
+	params := make(map[string]interface{})
+	params[common.BKAppIDField] = appID
+	params["id"] = ID
 
+	var fieldArr []string
+	result := make(map[string]interface{})
+	err = u.CC.InstCli.GetOneByCondition(u.tableName, fieldArr, params, &result)
+	if err != nil && mgo_on_not_found_error != err.Error() {
+		blog.Errorf("get user api detail failed, id: %v err: %v", ID, err)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	resp.WriteEntity(meta.GetUserConfigDetailResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
 }

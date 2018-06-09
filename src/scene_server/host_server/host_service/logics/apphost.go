@@ -30,10 +30,10 @@ func GetHostIDByCond(req *restful.Request, hostURL string, cond interface{}) ([]
 	hostIDArr := make([]int, 0)
 	bodyContent, _ := json.Marshal(cond)
 	url := hostURL + "/host/v1/meta/hosts/module/config/search"
-	blog.Info("Get ModuleHostConfig url :%s", url)
-	blog.Info("Get ModuleHostConfig content :%s", string(bodyContent))
+	blog.Info("GetUserConfig ModuleHostConfig url :%s", url)
+	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("Get ModuleHostConfig return :%s", string(reply))
+	blog.Info("GetUserConfig ModuleHostConfig return :%s", string(reply))
 	if err != nil {
 		return hostIDArr, err
 	}
@@ -60,10 +60,10 @@ func GetConfigByCond(req *restful.Request, hostURL string, cond map[string]inter
 	}
 	bodyContent, _ := json.Marshal(cond)
 	url := hostURL + "/host/v1/meta/hosts/module/config/search"
-	blog.Info("Get ModuleHostConfig url :%s", url)
-	blog.Info("Get ModuleHostConfig content :%s", string(bodyContent))
+	blog.Info("GetUserConfig ModuleHostConfig url :%s", url)
+	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("Get ModuleHostConfig content :%s", string(reply))
+	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(reply))
 	if err != nil {
 		return configArr, err
 	}

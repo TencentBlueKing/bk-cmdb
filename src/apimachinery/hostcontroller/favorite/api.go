@@ -22,7 +22,7 @@ import (
 )
 
 type FavoriteInterface interface {
-	AddHostFavourite(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *metadata.HostFavorite, err error)
+	AddHostFavourite(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *metadata.IDResult, err error)
 	UpdateHostFavouriteByID(ctx context.Context, user string, id string, h util.Headers, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
 	DeleteHostFavouriteByID(ctx context.Context, user string, id string, h util.Headers) (resp *metadata.BaseResp, err error)
 	GetHostFavourites(ctx context.Context, user string, h util.Headers, dat commondata.ObjQueryInput) (resp *metadata.GetHostFavoriteResult, err error)

@@ -21,7 +21,7 @@ import (
 	"configcenter/src/source_controller/common/commondata"
 )
 
-func (f *favorites) AddHostFavourite(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *metadata.HostFavorite, err error) {
+func (f *favorites) AddHostFavourite(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *metadata.IDResult, err error) {
 	subPath := fmt.Sprintf("/hosts/favorites/%s", user)
 
 	err = f.client.Post().

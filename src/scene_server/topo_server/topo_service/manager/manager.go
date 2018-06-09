@@ -41,7 +41,7 @@ func (cli *topoMgr) setLogic(logicName string, logic interface{}) error {
 	return nil
 }
 
-// Get implement Configer interface
+// GetUserConfig implement Configer interface
 func (cli *topoMgr) Get(target interface{}) string {
 	/**
 	TODO:need to enable , when all server implement the rdiscover interface
