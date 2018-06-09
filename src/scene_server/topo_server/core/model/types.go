@@ -34,7 +34,6 @@ type Operation interface {
 	Create() error
 	Update() error
 	Delete() error
-	IsExists() (bool, error)
 	Save() error
 }
 

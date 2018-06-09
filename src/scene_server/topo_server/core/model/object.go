@@ -14,6 +14,8 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
@@ -35,14 +37,14 @@ type object struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *object) IsExists() (bool, error) {
+func (cli *object) IsExists() ([]meta.Object, bool, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.obj.ObjectID)
 
 	condStr, err := cond.ToMapStr().ToJSON()
 	if nil != err {
-		return false, err
+		return nil, false, err
 	}
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), util.Headers{
 		Language: cli.params.Header.Language,
@@ -51,17 +53,15 @@ func (cli *object) IsExists() (bool, error) {
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return false, cli.params.Err.Error(rsp.Code)
+		return nil, false, cli.params.Err.Error(rsp.Code)
 	}
 
-	// TODO: check the result
-
-	return true, nil
+	return rsp.Data, 0 != len(rsp.Data), nil
 }
 
 func (cli *object) Create() error {
@@ -78,7 +78,11 @@ func (cli *object) Create() error {
 		return cli.params.Err.Error(rsp.Code)
 	}
 
-	// TODO: check the result
+	cli.obj.ID, err = strconv.Atoi(rsp.Data.ID)
+	if nil != err {
+		blog.Errorf("the object controller return the id(%s) is not int type", rsp.Data.ID)
+		return err
+	}
 
 	return nil
 }
@@ -87,7 +91,7 @@ func (cli *object) Update() error {
 
 	data := meta.SetValueToMapStrByTags(cli)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ObjectID, cli.params.Header, data)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ID, cli.params.Header, data)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -103,6 +107,21 @@ func (cli *object) Update() error {
 }
 
 func (cli *object) Delete() error {
+
+	cond := condition.CreateCondition()
+	cond.Field(meta.ModelFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.ModelFieldObjCls).Eq(cli.obj.ObjCls)
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.Message)
+		return cli.params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
@@ -125,17 +144,16 @@ func (cli *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
 }
 
 func (cli *object) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+	rst := meta.SetValueToMapStrByTags(&cli.obj)
+	return rst, nil
 }
 
 func (cli *object) Save() error {
-	dataMapStr := meta.SetValueToMapStrByTags(&cli.obj)
 
 	if cli.isNew {
 		return cli.Create()
 	}
 
-	_ = dataMapStr
 	return cli.Update()
 
 }
@@ -159,11 +177,63 @@ func (cli *object) CreateAttribute() Attribute {
 }
 
 func (cli *object) GetAttributes() ([]Attribute, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(meta.AttributeFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Attribute, 0)
+	for _, item := range rsp.Data {
+
+		attr := &attribute{
+			attr:      item,
+			params:    cli.params,
+			clientSet: cli.clientSet,
+		}
+
+		rstItems = append(rstItems, attr)
+	}
+
+	return rstItems, nil
 }
 
 func (cli *object) GetGroups() ([]Group, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+
+	cond.Field(meta.GroupFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Group, 0)
+	for _, item := range rsp.Data {
+		grp := &group{
+			grp:       item,
+			params:    cli.params,
+			clientSet: cli.clientSet,
+		}
+		rstItems = append(rstItems, grp)
+	}
+
+	return rstItems, nil
 }
 
 func (cli *object) SetClassification(class Classification) {
@@ -171,7 +241,31 @@ func (cli *object) SetClassification(class Classification) {
 }
 
 func (cli *object) GetClassification() (Classification, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(meta.ClassFieldClassificationID).Eq(cli.obj.ObjCls)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	for _, item := range rsp.Data {
+
+		return &classification{
+			cls:       item,
+			params:    cli.params,
+			clientSet: cli.clientSet,
+		}, nil // only one classification
+	}
+
+	return nil, fmt.Errorf("invalid classification(%s) for the object(%s)", cli.obj.ObjCls, cli.obj.ObjectID)
 }
 
 func (cli *object) SetIcon(objectIcon string) {

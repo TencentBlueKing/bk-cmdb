@@ -36,9 +36,9 @@ func (t *meta) SelectObjects(ctx context.Context, h util.Headers, dat interface{
 	return
 }
 
-func (t *meta) DeleteObject(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) DeleteObject(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+	subPath := fmt.Sprintf("/meta/object/%d", id)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -64,9 +64,9 @@ func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metatype.O
 	return
 }
 
-func (t *meta) UpdateObject(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) UpdateObject(ctx context.Context, id int, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+	subPath := fmt.Sprintf("/meta/object/%d", id)
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -148,8 +148,8 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h util.Hea
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
+	resp = new(metatype.QueryObjectAttributeResult)
 	subPath := "/meta/objectatts"
 
 	err = t.client.Post().
