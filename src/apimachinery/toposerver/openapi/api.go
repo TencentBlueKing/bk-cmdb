@@ -14,22 +14,22 @@ package openapi
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 )
 
 type OpenApiInterface interface {
-	SearchAllApp(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateMultiModule(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SearchModuleByApp(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SearchModuleByProperty(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	AddMultiModule(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteMultiModule(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateMultiSet(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteMultiSet(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteSetHost(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	SearchAllApp(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error)
+	UpdateMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	AddMultiModule(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	DeleteMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	UpdateMultiSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	DeleteMultiSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	DeleteSetHost(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 }
 
 func NewOpenApiInterface(client rest.ClientInterface) OpenApiInterface {

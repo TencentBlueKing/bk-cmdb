@@ -13,17 +13,17 @@
 package hostserver
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/common/paraparse"
-    "configcenter/src/scene_server/host_server/host_service/actions/hosts"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/paraparse"
+	"configcenter/src/scene_server/host_server/host_service/actions/hosts"
+	"configcenter/src/source_controller/common/commondata"
 )
 
-func (hs *hostServer) DeleteHostBatch(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/host/batch"
 
@@ -31,27 +31,27 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h util.Headers, dat i
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostDetailByID(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/hosts/%s/%s", h.OwnerID, hostID)
+	subPath := fmt.Sprintf("/hosts/%s/%s", ownerID, hostID)
 
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
 
@@ -59,13 +59,13 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h util.He
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/addhost"
 
@@ -73,13 +73,13 @@ func (hs *hostServer) AddHost(ctx context.Context, h util.Headers, dat interface
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostFromAgent(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/host/add/agent"
 
@@ -87,13 +87,13 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h util.Headers, dat 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "hosts/favorites/search"
 
@@ -101,13 +101,13 @@ func (hs *hostServer) GetHostFavourites(ctx context.Context, h util.Headers, dat
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostFavourite(ctx context.Context, h util.Headers, dat *hosts.FavouriteParms) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *hosts.FavouriteParms) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "hosts/favorites"
 
@@ -115,13 +115,13 @@ func (hs *hostServer) AddHostFavourite(ctx context.Context, h util.Headers, dat 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("hosts/favorites/%s", id)
 
@@ -129,13 +129,13 @@ func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h 
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("hosts/favorites/%s", id)
 
@@ -143,13 +143,13 @@ func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h 
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/hosts/favorites/%s/incr", id)
 
@@ -157,13 +157,13 @@ func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h 
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHistory(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/history"
 
@@ -171,13 +171,13 @@ func (hs *hostServer) AddHistory(ctx context.Context, h util.Headers, dat map[st
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/history/%s/%s", start, limit)
 
@@ -185,13 +185,13 @@ func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit strin
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h util.Headers, dat *hosts.CloudHostModuleParams) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *hosts.CloudHostModuleParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/modules/biz/mutiple"
 
@@ -199,13 +199,13 @@ func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h util
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/modules"
 
@@ -213,13 +213,13 @@ func (hs *hostServer) HostModuleRelation(ctx context.Context, h util.Headers) (r
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/emptymodule"
 
@@ -227,13 +227,13 @@ func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/faultmodule"
 
@@ -241,13 +241,13 @@ func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/resource"
 
@@ -255,13 +255,13 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h util.Headers
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AssignHostToApp(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/hosts/assgin"
 
@@ -269,13 +269,13 @@ func (hs *hostServer) AssignHostToApp(ctx context.Context, h util.Headers, dat *
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/host/add/module"
 
@@ -283,13 +283,13 @@ func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h util.Headers,
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) SaveUserCustom(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/usercustom"
 
@@ -297,13 +297,13 @@ func (hs *hostServer) SaveUserCustom(ctx context.Context, h util.Headers, dat in
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustom(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetUserCustom(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/usercustom/user/search"
 
@@ -311,13 +311,13 @@ func (hs *hostServer) GetUserCustom(ctx context.Context, h util.Headers) (resp *
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetDefaultCustom(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/usercustom/default/search"
 
@@ -325,13 +325,13 @@ func (hs *hostServer) GetDefaultCustom(ctx context.Context, h util.Headers) (res
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("getAgentStatus/%s", appID)
 
@@ -339,13 +339,13 @@ func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h util.H
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/host/%s", appID)
 
@@ -353,13 +353,13 @@ func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h util.Heade
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/host/updateHostByAppID/%s", appID)
 
@@ -367,13 +367,13 @@ func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h uti
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID string, field string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/host/getHostListByAppidAndField/%s/%s", appID, field)
 
@@ -381,13 +381,13 @@ func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID stri
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchByIP(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/gethostlistbyip"
 
@@ -395,13 +395,13 @@ func (hs *hostServer) HostSearchByIP(ctx context.Context, h util.Headers, dat in
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/getmodulehostlist"
 
@@ -409,13 +409,13 @@ func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchBySetID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchBySetID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/getsethostlist"
 
@@ -423,13 +423,13 @@ func (hs *hostServer) HostSearchBySetID(ctx context.Context, h util.Headers, dat
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchByAppID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchByAppID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/getapphostlist"
 
@@ -437,13 +437,13 @@ func (hs *hostServer) HostSearchByAppID(ctx context.Context, h util.Headers, dat
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchByProperty(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchByProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/gethostsbyproperty"
 
@@ -451,13 +451,13 @@ func (hs *hostServer) HostSearchByProperty(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/getIPAndProxyByCompany"
 
@@ -465,13 +465,13 @@ func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h util.Headers
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/updatecustomproperty"
 
@@ -479,13 +479,13 @@ func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "openapi/host/clonehostproperty"
 
@@ -493,13 +493,13 @@ func (hs *hostServer) CloneHostProperty(ctx context.Context, h util.Headers) (re
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/host/getHostAppByCompanyId"
 
@@ -507,13 +507,13 @@ func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h util.Headers,
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DelHostInApp(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/host/delhostinapp"
 
@@ -521,13 +521,13 @@ func (hs *hostServer) DelHostInApp(ctx context.Context, h util.Headers, dat inte
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetGitServerIp(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/host/getGitServerIp"
 
@@ -535,13 +535,13 @@ func (hs *hostServer) GetGitServerIp(ctx context.Context, h util.Headers, dat in
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetPlat(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/plat"
 
@@ -549,13 +549,13 @@ func (hs *hostServer) GetPlat(ctx context.Context, h util.Headers) (resp *api.BK
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) CreatePlat(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/plat"
 
@@ -563,13 +563,13 @@ func (hs *hostServer) CreatePlat(ctx context.Context, h util.Headers, dat map[st
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/plat/%s", cloudID)
 
@@ -577,13 +577,13 @@ func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h util.Header
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearch(ctx context.Context, h util.Headers, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/search"
 
@@ -591,13 +591,13 @@ func (hs *hostServer) HostSearch(ctx context.Context, h util.Headers, dat *param
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h util.Headers, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/search/asstdetail"
 
@@ -605,13 +605,13 @@ func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h util.Heade
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostBatch(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/host/batch"
 
@@ -619,13 +619,13 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h util.Headers, dat i
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/userapi"
 
@@ -633,13 +633,13 @@ func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h util.Headers, da
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
@@ -647,13 +647,13 @@ func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID stri
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
@@ -661,13 +661,13 @@ func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID stri
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h util.Headers, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/userapi/search/%s", businessID)
 
@@ -675,13 +675,13 @@ func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string,
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
 
@@ -689,13 +689,13 @@ func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID s
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/userapi/data/%s/%s/%s/%s", businessID, id, start, limit)
 
@@ -703,7 +703,7 @@ func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, 
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

@@ -15,13 +15,13 @@ package object
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	obj "configcenter/src/scene_server/topo_server/topo_service/actions/object"
 )
 
-func (t *object) CreateModel(ctx context.Context, h util.Headers, model *obj.MainLineObject) (resp *api.BKAPIRsp, err error) {
+func (t *object) CreateModel(ctx context.Context, h http.Header, model *obj.MainLineObject) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/model/mainline"
 
@@ -29,72 +29,72 @@ func (t *object) CreateModel(ctx context.Context, h util.Headers, model *obj.Mai
 		WithContext(ctx).
 		Body(model).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) DeleteModel(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/mainline/owners/%s/objectids/%s", h.OwnerID, objID)
+	subPath := fmt.Sprintf("/model/mainline/owners/%s/objectids/%s", ownerID, objID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectModel(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/%s", h.OwnerID)
+	subPath := fmt.Sprintf("/model/%s", ownerID)
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectModelByClsID(ctx context.Context, clsID string, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/%s/%s/%s", h.OwnerID, clsID, objID)
+	subPath := fmt.Sprintf("/model/%s/%s/%s", ownerID, clsID, objID)
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectInst(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/%s/%s", h.OwnerID, appID)
+	subPath := fmt.Sprintf("/inst/%s/%s", ownerID, appID)
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectInstChild(ctx context.Context, objID string, appID string, instID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/child/%s/%s/%s/%s", h.OwnerID, objID, appID, instID)
+	subPath := fmt.Sprintf("/inst/child/%s/%s/%s/%s", ownerID, objID, appID, instID)
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

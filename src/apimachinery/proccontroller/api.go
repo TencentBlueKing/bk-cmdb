@@ -13,53 +13,50 @@
 package proccontroller
 
 import (
-    "context"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"net/http"
+
+	"configcenter/src/common/core/cc/api"
 )
 
+func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
+	resp = new(api.BKAPIRsp)
+	subPath := "/module"
 
-
-func(p *procctrl) CreateProc2Module(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/module"
-
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(p *procctrl) GetProc2Module(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/module/search"
+func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
+	resp = new(api.BKAPIRsp)
+	subPath := "/module/search"
 
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(p *procctrl) DeleteProc2Module(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/module"
+func (p *procctrl) DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
+	resp = new(api.BKAPIRsp)
+	subPath := "/module"
 
-    err = p.client.Delete().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = p.client.Delete().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
-

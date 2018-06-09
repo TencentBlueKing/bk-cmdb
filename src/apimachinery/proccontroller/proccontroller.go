@@ -13,23 +13,22 @@
 package proccontroller
 
 import (
-    "fmt"
+	"fmt"
 
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
 )
 
 type ProcCtrlClientInterface interface {
-
 }
 
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
-    base := fmt.Sprintf("/process/%s", version)
-    return &procctrl{
-        client: rest.NewRESTClient(c, base),
-    }
+	base := fmt.Sprintf("/process/%s", version)
+	return &procctrl{
+		client: rest.NewRESTClient(c, base),
+	}
 }
 
 type procctrl struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

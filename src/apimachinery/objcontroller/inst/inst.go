@@ -15,13 +15,13 @@ package inst
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/source_controller/common/commondata"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Headers, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
+func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
 
@@ -29,13 +29,13 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Hea
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -43,13 +43,13 @@ func (t *instance) CreateObject(ctx context.Context, objType string, h util.Head
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -57,13 +57,13 @@ func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *instance) UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -71,7 +71,7 @@ func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Head
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

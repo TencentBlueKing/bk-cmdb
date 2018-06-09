@@ -145,12 +145,12 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
 		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
 		if nil != err {
-			blog.Error("query user api validate name duplicatie fail, err: %v, params:%v", err, dupParams)
+			blog.Error("query user api validate name duplicate fail, err: %v, params:%v", err, dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
 		if 0 < rowCount {
-			blog.Info("host user api  name duplicatie , params:%v", dupParams)
+			blog.Errorf("host user api  name duplicate , params:%v", dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 			return
 		}
@@ -240,14 +240,14 @@ func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.
 	result := make([]interface{}, 0)
 	count, err := cc.InstCli.GetCntByCondition(TABLENAME, condition)
 	if err != nil {
-		blog.Error("get host favorites failed,input:%v error:%v", string(value), err)
+		blog.Errorf("get host favorites failed,input:%v error:%v", string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
 	}
 
 	err = cc.InstCli.GetMutilByCondition(TABLENAME, fieldArr, condition, &result, sort, skip, limit)
 	if err != nil {
-		blog.Error("get host favorites failed,input:%v error:%v", string(value), err)
+		blog.Errorf("get host favorites failed,input:%v error:%v", string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
 	}
@@ -267,7 +267,7 @@ func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restf
 	ID := req.PathParameter("id")
 
 	if "" == ID || "0" == ID {
-		blog.Error("get host favourite id  emtpy")
+		blog.Errorf("get host favourite, but id is emtpy")
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
@@ -278,7 +278,7 @@ func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restf
 	result := make(map[string]interface{})
 	err := cc.InstCli.GetOneByCondition(TABLENAME, nil, params, &result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
-		blog.Error("get host favourite failed,input: %v error: %v", ID, err)
+		blog.Errorf("get host favourite failed,input: %v error: %v", ID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
 	}
