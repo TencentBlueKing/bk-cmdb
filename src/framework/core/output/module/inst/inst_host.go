@@ -85,6 +85,19 @@ func (cli *host) SetValue(key string, value interface{}) error {
 }
 
 func (cli *host) Save() error {
+
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return err
+	}
+
+	// clear the invalid data
+	for _, attrItem := range attrs {
+		if !cli.datas.Exists(attrItem.GetID()) {
+			cli.datas.Remove(attrItem.GetID())
+		}
+	}
+
 	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.datas)
 	if err != nil {
 		return err

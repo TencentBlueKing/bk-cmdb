@@ -216,10 +216,17 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            localFormFields () {
+                let formFields = this.$deepClone(this.formFields)
+                formFields.sort((objA, objB) => {
+                    return objA['bk_property_index'] - objB['bk_property_index']
+                })
+                return formFields
+            },
             //  属性分组:根据formFields中各property.PropertyGroup 进行属性分组，为'隐藏分组(none)'时，放入更多属性中
             bkPropertyGroups () {
                 let bkPropertyGroups = {}
-                this.formFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
+                this.localFormFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
                     let {
                         bk_property_group: bkPropertyGroup,
                         bk_property_group_name: bkPropertyGroupName
@@ -264,7 +271,7 @@
                     'enum': null,
                     'timezone': null
                 }
-                this.formFields.map(property => {
+                this.localFormFields.map(property => {
                     let {
                         bk_property_id: bkPropertyId,
                         bk_property_type: bkPropertyType,
@@ -343,7 +350,7 @@
             },
             isMultipleUpdate (isMultipleUpdate) {
                 if (isMultipleUpdate) {
-                    this.formFields.map(property => {
+                    this.localFormFields.map(property => {
                         let {
                             bk_property_type: bkPropertyType,
                             bk_property_id: bkPropertyId
@@ -377,7 +384,7 @@
                 }
                 if (this.type === 'create') {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         if (property['bk_property_type'] === 'enum') {
@@ -397,7 +404,7 @@
                     }
                 } else {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         let value = this.formValues[key]
@@ -539,7 +546,7 @@
             filterValues () {
                 let filteredValues = {}
                 Object.keys(this.formValues).map(formPropertyId => {
-                    let fieldProperty = this.formFields.find(property => {
+                    let fieldProperty = this.localFormFields.find(property => {
                         return formPropertyId === property['bk_property_id']
                     })
                     if (fieldProperty) {
@@ -587,8 +594,11 @@
                         rules['regex'] = option
                     }
                 }
-                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['char'] = true
+                if (bkPropertyType === 'singlechar') {
+                    rules['singlechar'] = true
+                }
+                if (bkPropertyType === 'longchar') {
+                    rules['longchar'] = true
                 }
                 if (bkPropertyType === 'int') {
                     rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
