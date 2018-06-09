@@ -14,9 +14,13 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"context"
 )
 
 var _ Group = (*group)(nil)
@@ -60,7 +64,35 @@ func (cli *group) ToMapStr() (frtypes.MapStr, error) {
 }
 
 func (cli *group) GetAttributes() ([]Attribute, error) {
-	return nil, nil
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldObjectID).Eq(cli.grp.ObjectID).
+		Field(metadata.AttributeFieldPropertyGroup).Eq(cli.grp.GroupID).
+		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.grp.ObjectID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Attribute, 0)
+	for _, item := range rsp.Data {
+
+		attr := &attribute{
+			attr:      item,
+			params:    cli.params,
+			clientSet: cli.clientSet,
+		}
+
+		rstItems = append(rstItems, attr)
+	}
+
+	return rstItems, nil
 }
 
 func (cli *group) Save() error {
