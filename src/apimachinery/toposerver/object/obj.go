@@ -15,13 +15,13 @@ package object
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	sencapi "configcenter/src/scene_server/api"
 )
 
-func (t *object) CreateObjectBatch(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/object/batch"
 
@@ -29,12 +29,12 @@ func (t *object) CreateObjectBatch(ctx context.Context, h util.Headers, data map
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SearchObjectBatch(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/object/search/batch"
 
@@ -42,12 +42,12 @@ func (t *object) SearchObjectBatch(ctx context.Context, h util.Headers, data map
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) CreateObject(ctx context.Context, h util.Headers, obj sencapi.ObjectDes) (resp *api.BKAPIRsp, err error) {
+func (t *object) CreateObject(ctx context.Context, h http.Header, obj sencapi.ObjectDes) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/object"
 
@@ -55,12 +55,12 @@ func (t *object) CreateObject(ctx context.Context, h util.Headers, obj sencapi.O
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectObjectWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/objects"
 
@@ -68,12 +68,12 @@ func (t *object) SelectObjectWithParams(ctx context.Context, h util.Headers, dat
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectObjectTopo(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/objects/topo"
 
@@ -81,12 +81,12 @@ func (t *object) SelectObjectTopo(ctx context.Context, h util.Headers, data map[
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) UpdateObject(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/object/%s", objID)
 
@@ -94,12 +94,12 @@ func (t *object) UpdateObject(ctx context.Context, objID string, h util.Headers,
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) DeleteObject(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/object/%s", objID)
 
@@ -107,7 +107,7 @@ func (t *object) DeleteObject(ctx context.Context, objID string, h util.Headers,
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

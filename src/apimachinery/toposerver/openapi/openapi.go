@@ -15,12 +15,12 @@ package openapi
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 )
 
-func (t *openapi) SearchAllApp(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) SearchAllApp(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/app/searchAll"
 
@@ -28,13 +28,13 @@ func (t *openapi) SearchAllApp(ctx context.Context, h util.Headers) (resp *api.B
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) UpdateMultiModule(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) UpdateMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/module/multi/%s", appID)
 
@@ -42,13 +42,13 @@ func (t *openapi) UpdateMultiModule(ctx context.Context, appID string, h util.He
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/module/searchByApp/%s", appID)
 
@@ -56,13 +56,13 @@ func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h util.He
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) SearchModuleByProperty(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/module/searchByProperty/%s", appID)
 
@@ -70,13 +70,13 @@ func (t *openapi) SearchModuleByProperty(ctx context.Context, appID string, h ut
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) AddMultiModule(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) AddMultiModule(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/module/multi"
 
@@ -84,13 +84,13 @@ func (t *openapi) AddMultiModule(ctx context.Context, h util.Headers, dat map[st
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) DeleteMultiModule(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) DeleteMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/module/multi/%s", appID)
 
@@ -98,13 +98,13 @@ func (t *openapi) DeleteMultiModule(ctx context.Context, appID string, h util.He
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) UpdateMultiSet(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) UpdateMultiSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/set/multi/%s", appID)
 
@@ -112,13 +112,13 @@ func (t *openapi) UpdateMultiSet(ctx context.Context, appID string, h util.Heade
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) DeleteMultiSet(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) DeleteMultiSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/set/multi/%s", appID)
 
@@ -126,13 +126,13 @@ func (t *openapi) DeleteMultiSet(ctx context.Context, appID string, h util.Heade
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openapi) DeleteSetHost(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openapi) DeleteSetHost(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/openapi/set/setHost/%s", appID)
 
@@ -140,7 +140,7 @@ func (t *openapi) DeleteSetHost(ctx context.Context, appID string, h util.Header
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

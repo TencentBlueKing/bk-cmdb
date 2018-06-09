@@ -15,13 +15,13 @@ package object
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	obj "configcenter/src/source_controller/api/object"
 )
 
-func (t *object) CreateObjectAtt(ctx context.Context, h util.Headers, obj *obj.ObjAttDes) (resp *api.BKAPIRsp, err error) {
+func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *obj.ObjAttDes) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/objectattr"
 
@@ -29,13 +29,13 @@ func (t *object) CreateObjectAtt(ctx context.Context, h util.Headers, obj *obj.O
 		WithContext(ctx).
 		Body(obj).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) SelectObjectAttWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/objectattr/search"
 
@@ -43,13 +43,13 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
@@ -57,13 +57,13 @@ func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h util.Heade
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
@@ -71,7 +71,7 @@ func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h util.Heade
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

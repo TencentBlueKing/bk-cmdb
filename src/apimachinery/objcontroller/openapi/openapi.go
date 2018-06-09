@@ -14,12 +14,12 @@ package openapi
 
 import (
 	"context"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 )
 
-func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/proc/getProcModule"
 
@@ -27,13 +27,13 @@ func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h util.Headers, 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *openAPI) DeleteSetHost(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *openAPI) DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/openapi/set/delhost"
 
@@ -41,7 +41,7 @@ func (t *openAPI) DeleteSetHost(ctx context.Context, h util.Headers, dat map[str
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

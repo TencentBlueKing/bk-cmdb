@@ -15,13 +15,13 @@ package object
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	sencapi "configcenter/src/scene_server/api"
 )
 
-func (t *object) CreateClassification(ctx context.Context, h util.Headers, obj *sencapi.ObjectClsDes) (resp *api.BKAPIRsp, err error) {
+func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *sencapi.ObjectClsDes) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/object/classification"
 
@@ -29,26 +29,26 @@ func (t *object) CreateClassification(ctx context.Context, h util.Headers, obj *
 		WithContext(ctx).
 		Body(obj).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) SelectClassificationWithObjects(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectClassificationWithObjects(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/object/classification/%s/objects", h.OwnerID)
+	subPath := fmt.Sprintf("/object/classification/%s/objects", ownerID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectClassificationWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/object/classifications"
 
@@ -56,12 +56,12 @@ func (t *object) SelectClassificationWithParams(ctx context.Context, h util.Head
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) UpdateClassification(ctx context.Context, classID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/object/classification/%s", classID)
 
@@ -69,12 +69,12 @@ func (t *object) UpdateClassification(ctx context.Context, classID string, h uti
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) DeleteClassification(ctx context.Context, classID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *object) DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/object/classification/%s", classID)
 
@@ -82,7 +82,7 @@ func (t *object) DeleteClassification(ctx context.Context, classID string, h uti
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

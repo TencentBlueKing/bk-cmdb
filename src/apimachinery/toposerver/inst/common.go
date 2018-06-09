@@ -15,27 +15,27 @@ package inst
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/source_controller/common/commondata"
 )
 
-func (t *instanceClient) QueryAudit(ctx context.Context, h util.Headers, input *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s", h.OwnerID)
+	subPath := fmt.Sprintf("/app/%s", ownerID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/topo/internal/%s/%s", ownerID, appID)
 
@@ -43,7 +43,7 @@ func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID s
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

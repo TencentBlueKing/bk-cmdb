@@ -15,12 +15,12 @@ package privilege
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 )
 
-func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/%s", supplierAcct)
 
@@ -28,13 +28,13 @@ func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
 
@@ -42,13 +42,13 @@ func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, gr
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, groupID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
 
@@ -56,13 +56,13 @@ func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, gr
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/%s/search", supplierAcct)
 
@@ -70,14 +70,14 @@ func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h 
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
 // TODO: confirm body
-func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
@@ -85,13 +85,13 @@ func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct strin
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
@@ -99,13 +99,13 @@ func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, 
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/user/detail/%s/%s", supplierAcct, userName)
 
@@ -113,13 +113,13 @@ func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userN
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
@@ -127,13 +127,13 @@ func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, ob
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
@@ -141,7 +141,7 @@ func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

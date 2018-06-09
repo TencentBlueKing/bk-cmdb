@@ -15,13 +15,13 @@ package inst
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
 )
 
-func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/module/%s/%s", appID, setID)
 
@@ -29,13 +29,13 @@ func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID s
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
 
@@ -43,13 +43,13 @@ func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID s
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
 
@@ -57,21 +57,21 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID s
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SearchModule(ctx context.Context, appID string, setID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
+func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/module/search/%s/%s/%s", h.OwnerID, appID, setID)
+	subPath := fmt.Sprintf("/module/search/%s/%s/%s", ownerID, appID, setID)
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(s).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
