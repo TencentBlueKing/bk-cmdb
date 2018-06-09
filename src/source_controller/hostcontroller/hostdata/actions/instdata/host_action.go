@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
-
 	. "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	dcCommon "configcenter/src/scene_server/datacollection/common"
