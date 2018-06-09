@@ -140,7 +140,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 		}
 	}
 
-	resp.WriteAsJson(meta.NewSuccessResp(nil))
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 //GetHostModulesIDs get host module ids
@@ -163,7 +163,7 @@ func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp 
 		return
 	}
 
-	resp.WriteAsJson(meta.GetHostModuleIDsResult{
+	resp.WriteEntity(meta.GetHostModuleIDsResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     moduleIDs,
 	})
@@ -215,7 +215,7 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 		}
 	}
 
-	resp.WriteAsJson(meta.SuccessBaseResp)
+	resp.WriteEntity(meta.SuccessBaseResp)
 }
 
 //GetModulesHostConfig  get module host config
@@ -247,7 +247,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 		return
 	}
 
-	resp.WriteAsJson(meta.HostConfig{
+	resp.WriteEntity(meta.HostConfig{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     result,
 	})
@@ -315,5 +315,5 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 		return
 	}
 
-	resp.WriteAsJson(meta.NewSuccessResp(nil))
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }

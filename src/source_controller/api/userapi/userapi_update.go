@@ -17,7 +17,7 @@ import (
 	"fmt"
 )
 
-//UpdateUserConfig  更新user api列表
+//Update  更新user api列表
 func (cli *Client) Update(input interface{}, appID, id string) (int, *common.APIRsp, error) {
 	url := fmt.Sprintf("%s/host/v1/userapi/%s/%s", cli.GetAddress(), appID, id)
 	return cli.GetRequestInfoEx(common.HTTPUpdate, input, url)

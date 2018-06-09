@@ -49,7 +49,7 @@ func init() {
 
 }
 
-//AddUserConfig add new user api
+//Add add new user api
 func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 	value, _ := ioutil.ReadAll(req.Request.Body)
@@ -101,7 +101,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 }
 
-//UpdateUserConfig update user api content
+//Update update user api content
 func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
@@ -138,7 +138,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 
 }
 
-//DeleteUserConfig delete user api
+//Delete delete user api
 func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
@@ -169,7 +169,7 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 
 }
 
-//GetUserConfig get user api
+//Get get user api
 func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)

@@ -30,7 +30,7 @@ type userAPIAction struct {
 	base.BaseAction
 }
 
-//AddUserConfig 新加userapi
+//Add 新加userapi
 func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 
 	url := userAPI.CC.HostAPI() + "/host/v1/userapi"
@@ -40,7 +40,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	return
 }
 
-//UpdateUserConfig 更新user api 内容
+//Update 更新user api 内容
 func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 
 	url := userAPI.CC.HostAPI() + fmt.Sprintf("/host/v1/userapi/%s/%s", req.PathParameter("app_id"), req.PathParameter("id"))

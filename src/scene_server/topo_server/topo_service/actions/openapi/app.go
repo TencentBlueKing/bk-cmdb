@@ -302,10 +302,10 @@ func GetHostIdByCond(req *restful.Request, hostUrl string, cond interface{}) ([]
 	hostIdArr := make([]int, 0)
 	bodyContent, _ := json.Marshal(cond)
 	url := "http://" + hostUrl + "/host/v1/meta/hosts/module/config/search"
-	blog.Info("GetUserConfig ModuleHostConfig url :%s", url)
-	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(bodyContent))
+	blog.Info("Get ModuleHostConfig url :%s", url)
+	blog.Info("Get ModuleHostConfig content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("GetUserConfig ModuleHostConfig return :%s", string(reply))
+	blog.Info("Get ModuleHostConfig return :%s", string(reply))
 	if err != nil {
 		return hostIdArr, err
 	}

@@ -183,10 +183,10 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 	hostParse.ParseHostIPParams(data.Ip, condition)
 	body["condition"] = condition
 	bodyContent, _ := json.Marshal(body)
-	blog.Info("GetUserConfig Host By Cond url :%s", url)
-	blog.Info("GetUserConfig Host By Cond content :%s", string(bodyContent))
+	blog.Info("Get Host By Cond url :%s", url)
+	blog.Info("Get Host By Cond content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("GetUserConfig Host By Cond return :%s", string(reply))
+	blog.Info("Get Host By Cond return :%s", string(reply))
 	if err != nil {
 		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
 		return nil, errors.New(common.CC_Err_Comm_Host_Get_FAIL_STR)

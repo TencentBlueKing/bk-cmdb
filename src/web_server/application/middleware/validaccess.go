@@ -184,7 +184,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 		if util.InArray(path3, BK_CC_AUDIT_PRE) {
 			//valid event config privilege
 			return true
-			//			sysPrivi := session.GetUserConfig("sysPrivi")
+			//			sysPrivi := session.Get("sysPrivi")
 			//			return validSysConfigPrivi(sysPrivi, BK_CC_AUDIT)
 		}
 

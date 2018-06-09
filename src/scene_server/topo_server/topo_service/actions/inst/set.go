@@ -367,7 +367,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 
 		{
 			// save change log
-			instID := setID //gjson.GetUserConfig(moduleRes, "data.bk_set_id").Int()
+			instID := setID //gjson.Get(moduleRes, "data.bk_set_id").Int()
 			//ownerID := fmt.Sprint(input[common.BKOwnerIDField])
 			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
 			if common.CCSuccess != attErr {

@@ -14,7 +14,7 @@ package config
 
 var config Config
 
-// GetUserConfig returns the parsed config
+// Get returns the parsed config
 func Get() Config {
 	return config
 }
