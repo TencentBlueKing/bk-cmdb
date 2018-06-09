@@ -505,10 +505,10 @@ func GetConfigByCond(req *restful.Request, hostUrl string, cond interface{}) ([]
 	bodyContent, _ := json.Marshal(cond)
 	fmt.Println(string(bodyContent))
 	url := hostUrl + "/host/v1/meta/hosts/module/config/search"
-	blog.Info("GetUserConfig ModuleHostConfig url :%s", url)
-	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(bodyContent))
+	blog.Info("Get ModuleHostConfig url :%s", url)
+	blog.Info("Get ModuleHostConfig content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("GetUserConfig ModuleHostConfig content :%s", string(reply))
+	blog.Info("Get ModuleHostConfig content :%s", string(reply))
 	fmt.Println("get moduleHostConfig", url, reply)
 	if err != nil {
 		return configArr, err

@@ -15,10 +15,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
-	"net/http"
 )
 
 func main() {

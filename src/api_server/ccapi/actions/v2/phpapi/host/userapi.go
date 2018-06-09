@@ -59,7 +59,7 @@ func (cli *userAPIAction) getCustomerGroupList(req *restful.Request, resp *restf
 
 	formData := req.Request.Form
 	strAppIDs := formData.Get("ApplicationIDs")
-	//userAPIType := formData.GetUserConfig("Type")
+	//userAPIType := formData.Get("Type")
 
 	if "" == strAppIDs {
 		blog.Error("getCustomerGroupList error: param ApplicationIDs is empty!")

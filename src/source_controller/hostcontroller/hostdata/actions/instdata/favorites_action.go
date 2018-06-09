@@ -90,7 +90,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		return
 	}
 
-	resp.WriteAsJson(meta.IDResult{
+	resp.WriteEntity(meta.IDResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     meta.ID{ID: xidDevice.String()},
 	})

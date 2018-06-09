@@ -17,7 +17,7 @@ import (
 	"fmt"
 )
 
-//DeleteUserConfig  删除user api列表
+//Delete  删除user api列表
 func (cli *Client) Delete(appID, id string) (int, *common.APIRsp, error) {
 	url := fmt.Sprintf("%s/host/v1/userapi/%s/%s", cli.GetAddress(), appID, id)
 	return cli.GetRequestInfoEx(common.HTTPDelete, nil, url)

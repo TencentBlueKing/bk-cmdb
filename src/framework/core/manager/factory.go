@@ -41,7 +41,7 @@ func New() *Manager {
 	}
 }
 
-// DeleteUserConfig delete the framework instance
+// Delete delete the framework instance
 func Delete(mgr *Manager) error {
 
 	if nil != mgr {

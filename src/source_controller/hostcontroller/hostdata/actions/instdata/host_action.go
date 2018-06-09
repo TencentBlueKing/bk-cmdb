@@ -160,14 +160,14 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 	hostID := req.PathParameter("bk_host_id")
 	data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
 	result := ""
-	err := cli.CC.CacheCli.GetOneByCondition("GetUserConfig", nil, data, &result)
+	err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 	if err != nil {
 		blog.Error("get host snapshot failed, hostid: %v, err: %v ", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
 		return
 	}
 
-	resp.WriteAsJson(meta.GetHostSnapResult{
+	resp.WriteEntity(meta.GetHostSnapResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     meta.HostSnap{Data: result},
 	})

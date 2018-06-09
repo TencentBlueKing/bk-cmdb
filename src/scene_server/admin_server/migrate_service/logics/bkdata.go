@@ -376,34 +376,34 @@ func BKAppIsExist(req *restful.Request) (bool, error) {
 
 	byteParams, _ := json.Marshal(params)
 	url := topoAPI + "/topo/v1/app/search/" + ownerID
-	blog.Info("GetUserConfig bk app url :%s", url)
-	blog.Info("GetUserConfig bk app content :%s", string(byteParams))
+	blog.Info("Get bk app url :%s", url)
+	blog.Info("Get bk app content :%s", string(byteParams))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, byteParams)
 	if err != nil {
-		blog.Error("GetUserConfig bk app error :%v", err)
+		blog.Error("Get bk app error :%v", err)
 		return false, err
 	}
-	blog.Info("GetUserConfig bk app return :%s", string(reply))
+	blog.Info("Get bk app return :%s", string(reply))
 	js, err := simplejson.NewJson([]byte(reply))
 	if nil != err {
-		blog.Error("GetUserConfig bk app data not json error :%v", err)
+		blog.Error("Get bk app data not json error :%v", err)
 	}
 	output, err := js.Map()
 	if nil != err {
-		blog.Error("GetUserConfig bk app data not map error :%v", err)
+		blog.Error("Get bk app data not map error :%v", err)
 	}
 	code, err := util.GetIntByInterface(output["bk_error_code"])
 	if err != nil {
-		blog.Error("GetUserConfig bk app data not map error :%v", err)
+		blog.Error("Get bk app data not map error :%v", err)
 		return false, errors.New(reply)
 	}
 	if 0 != code {
-		blog.Error("GetUserConfig bk app data not map error :%v", err)
+		blog.Error("Get bk app data not map error :%v", err)
 		return false, errors.New(output["message"].(string))
 	}
 	cnt, err := js.Get("data").Get("count").Int()
 	if err != nil {
-		blog.Error("GetUserConfig bk app data not count error :%v", err)
+		blog.Error("Get bk app data not count error :%v", err)
 		return false, errors.New(reply)
 	}
 	if 0 == cnt {

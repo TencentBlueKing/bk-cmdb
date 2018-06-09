@@ -74,7 +74,7 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	resp.WriteAsJson(meta.IDResult{
+	resp.WriteEntity(meta.IDResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     meta.ID{ID: id.String()},
 	})
@@ -115,7 +115,7 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	resp.WriteAsJson(meta.GetHistoryResult{
+	resp.WriteEntity(meta.GetHistoryResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     meta.HistoryResult{Count: nums, Info: result},
 	})
