@@ -13,6 +13,7 @@
 package delete
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -32,7 +33,6 @@ import (
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"configcenter/src/source_controller/api/auditlog"
 	"configcenter/src/source_controller/common/commondata"
-	"context"
 	"github.com/emicklei/go-restful"
 )
 
@@ -55,7 +55,6 @@ type DataInfo struct {
 }
 
 func init() {
-
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/host/batch", Params: nil, Handler: host.DeleteHostBatch})
 	host.CreateAction()
 }
