@@ -31,6 +31,8 @@ import (
 	sceneCommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"configcenter/src/source_controller/api/auditlog"
+	"configcenter/src/source_controller/common/commondata"
+	"context"
 	"github.com/emicklei/go-restful"
 )
 
@@ -74,35 +76,41 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 			return
 		}
 
-		gAppURL := objCtrl + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
 		cond, condition := make(map[string]interface{}), make(map[string]interface{})
 		cond[common.BKDefaultField] = 1
 		cond[common.BKOwnerIDField] = ownerID
 		condition["condition"] = cond
-		conditionStr, _ := json.Marshal(condition)
-		appResult, err := httpcli.ReqHttp(req, gAppURL, common.HTTPSelectPost, []byte(conditionStr))
-		if nil != err {
-			blog.Error("request failed:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
-		}
+		// conditionStr, _ := json.Marshal(condition)
+		// appResult, err := httpcli.ReqHttp(req, gAppURL, common.HTTPSelectPost, []byte(conditionStr))
+		// if nil != err {
+		// 	blog.Error("request failed:%v", err)
+		// 	resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommHTTPReadBodyFailed))
+		// 	return
+		//
+		// }
+		query := commondata.ObjQueryInput{Condition: condition}
+		appResult, err := cli.CC.APIMachinery.ObjectController().Instance().SearchObjects(
+			context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
 
 		var appData AppResult
 		err = json.Unmarshal([]byte(appResult), &appData)
 		if nil != err {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommHTTPReadBodyFailed))
+			return
 
 		}
 		appInfo := appData.Data.Info
 		if len(appInfo) == 0 {
-			blog.Error("not found failed:%s", appResult)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			blog.Error("not found failed: %s", appResult)
+			resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommHTTPReadBodyFailed))
+			return
 
 		}
 		var appID int
 		appCellInfo, ok := appInfo[0][common.BKAppIDField]
 		if false == ok {
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommHTTPReadBodyFailed))
+			return
 
 		}
 		appID64, _ := appCellInfo.(float64)
@@ -130,13 +138,15 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 			blog.Info("delete module host config return:%s", string(result))
 			if nil != err {
 				blog.Error("delete host batch fail:%v", err)
-				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)
+				resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrHostDeleteFail))
+				return
 
 			}
 			err = sceneCommon.DeleteInstAssociation(cli.CC.ObjCtrl(), req, hostID, ownerID, common.BKInnerObjIDHost, "")
 			if nil != err {
 				blog.Error("delete host batch fail:%v", err)
-				return http.StatusBadRequest, nil, defErr.Error(common.CCErrHostDeleteFail)
+				resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrHostDeleteFail))
+				return
 
 			}
 			logContent, _ := logObj.GetHostLog(strHostID, true)
@@ -157,7 +167,8 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 		_, err = httpcli.ReqHttp(req, dHostURL, common.HTTPDelete, []byte(inputJson))
 		if nil != err {
 			blog.Error("delete host batch fail:%v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostDeleteFail)
+			resp.WriteError(http.StatusInternalServerError, defErr.Error(common.CCErrHostDeleteFail))
+			return
 
 		}
 		opClient := auditlog.NewClient(cli.CC.AuditCtrl())

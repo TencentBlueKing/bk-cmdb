@@ -13,6 +13,10 @@
 package ccapi
 
 import (
+	"time"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -23,13 +27,11 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"github.com/emicklei/go-restful"
-
 	myCommon "configcenter/src/scene_server/host_server/common"
 	confCenter "configcenter/src/scene_server/host_server/host_service/config"
 	"configcenter/src/scene_server/host_server/host_service/rdiscover"
-
-	"time"
+	"fmt"
+	"github.com/emicklei/go-restful"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -51,9 +53,21 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 	//http server
 	s.httpServ = httpserver.NewHttpServer(port, addr, "")
 
+	c := &util.APIMachineryConfig{
+		ZkAddr:    s.conf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
+	}
+
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
+	}
 	a := api.NewAPIResource()
 	a.SetConfig(s.conf)
 	a.InitAction()
+	a.APIMachinery = machinery
 
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)

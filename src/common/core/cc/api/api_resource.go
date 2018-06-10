@@ -57,7 +57,7 @@ type BKAPIRsp struct {
 }
 
 type APIResource struct {
-	ApiMachinery apimachinery.ClientSetInterface
+	APIMachinery apimachinery.ClientSetInterface
 	ConfigData   []byte
 	Config       string
 	URL          string
