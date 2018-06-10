@@ -49,9 +49,9 @@ func (t *meta) SelectClassifications(ctx context.Context, h util.Headers, dat ma
 	return
 }
 
-func (t *meta) DeleteClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) DeleteClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/classification/%s", id)
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -77,9 +77,9 @@ func (t *meta) CreateClassification(ctx context.Context, h util.Headers, dat *me
 	return
 }
 
-func (t *meta) UpdateClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) UpdateClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/classification/%s", id)
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
 
 	err = t.client.Put().
 		WithContext(ctx).

@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
@@ -78,11 +77,7 @@ func (cli *object) Create() error {
 		return cli.params.Err.Error(rsp.Code)
 	}
 
-	cli.obj.ID, err = strconv.Atoi(rsp.Data.ID)
-	if nil != err {
-		blog.Errorf("the object controller return the id(%s) is not int type", rsp.Data.ID)
-		return err
-	}
+	cli.obj.ID = rsp.Data.ID
 
 	return nil
 }

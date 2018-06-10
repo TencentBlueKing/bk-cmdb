@@ -12,6 +12,10 @@
 
 package metadata
 
+type RspID struct {
+	ID int `json:"id"`
+}
+
 // QueryObjectResult query object result
 type QueryObjectResult struct {
 	BaseResp `json:",inline"`
@@ -21,13 +25,13 @@ type QueryObjectResult struct {
 // CreateObjectResult create object result
 type CreateObjectResult struct {
 	BaseResp `json:",inline"`
-	Data     ID
+	Data     RspID
 }
 
 // CreateObjectAttributeResult create object attribute result
 type CreateObjectAttributeResult struct {
 	BaseResp `json:",inline"`
-	Data     ID
+	Data     RspID
 }
 
 // AttributeWrapper  wrapper, expansion field
@@ -37,6 +41,18 @@ type AttributeWrapper struct {
 	AsstForward       string `json:"bk_asst_forward"`
 	AssociationID     string `json:"bk_asst_obj_id"`
 	PropertyGroupName string `json:"bk_property_group_name"`
+}
+
+// UpdateGroupCondition update group condition struct
+type UpdateGroupCondition struct {
+	Condition struct {
+		ID string `json:"bk_group_id"`
+	} `json:"condition"`
+
+	Data struct {
+		Name  string `json:"bk_group_name"`
+		Index int    `json:"bk_group_index"`
+	} `json:"data"`
 }
 
 // QueryObjectAttributeWrapperResult query object attribute with association info result
@@ -54,7 +70,7 @@ type QueryObjectAttributeResult struct {
 // CreateObjectGroupResult create the object group result
 type CreateObjectGroupResult struct {
 	BaseResp `json:",inline"`
-	Data     ID
+	Data     RspID
 }
 
 // QueryObjectGroupResult query the object group result
@@ -66,7 +82,7 @@ type QueryObjectGroupResult struct {
 // CreateObjectClassificationResult create the object classification result
 type CreateObjectClassificationResult struct {
 	BaseResp `json:",inline"`
-	Data     ID
+	Data     RspID
 }
 
 // QueryObjectClassificationResult query the object classification result
