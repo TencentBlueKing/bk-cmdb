@@ -12,8 +12,24 @@
 
 package metadata
 
+// RspID response id
 type RspID struct {
 	ID int `json:"id"`
+}
+
+// CreateResult create result
+type CreateResult struct {
+	BaseResp `json:",inline"`
+}
+
+// UpdateResult update result
+type UpdateResult struct {
+	BaseResp `json:",inline"`
+}
+
+// DeleteResult delete result
+type DeleteResult struct {
+	BaseResp `json:",inline"`
 }
 
 // QueryObjectResult query object result
@@ -89,4 +105,22 @@ type CreateObjectClassificationResult struct {
 type QueryObjectClassificationResult struct {
 	BaseResp `json:",inline"`
 	Data     []Classification `json:"data"`
+}
+
+// ClassificationWithObject classification with object
+type ClassificationWithObject struct {
+	Classification `json:",inline"`
+	Objects        []Object `json:"bk_objects"`
+}
+
+// QueryObjectClassificationWithObjectsResult query the object classification with objects result
+type QueryObjectClassificationWithObjectsResult struct {
+	BaseResp `json:",inline"`
+	Data     []ClassificationWithObject `json:"data"`
+}
+
+// QueryObjectAssociationResult query object association result
+type QueryObjectAssociationResult struct {
+	BaseResp `json:",inline"`
+	Data     []Association `json:"data"`
 }

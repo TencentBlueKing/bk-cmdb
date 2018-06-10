@@ -80,7 +80,7 @@ func (cli *group) Delete() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.Message)
+		blog.Errorf("failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 

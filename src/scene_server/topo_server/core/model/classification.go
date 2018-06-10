@@ -104,7 +104,7 @@ func (cli *classification) Update() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.Message)
+		blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
