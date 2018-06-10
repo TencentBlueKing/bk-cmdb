@@ -13,26 +13,25 @@
 package delete
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sceneCommon "configcenter/src/scene_server/common"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	"configcenter/src/source_controller/api/auditlog"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"strings"
-
-	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
-
-	"fmt"
 )
 
 var host *hostAction = &hostAction{}
@@ -56,53 +55,29 @@ type DataInfo struct {
 func init() {
 
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/host/batch", Params: nil, Handler: host.DeleteHostBatch})
-	// create CC object
 	host.CreateAction()
 }
 
 //DeleteHostBatch batch delete host
 func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
-
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		objCtrl := cli.CC.ObjCtrl()
 		hostCtrl := cli.CC.HostCtrl()
-
-		ownerID, user := util.GetActionOnwerIDAndUser(req)
-		//delete host
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if nil != err {
-			blog.Error("read input error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
-		}
-		js, err := simplejson.NewJson([]byte(value))
-		if nil != err {
-			blog.Error("params can not be decode error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
-		}
-		data, err := js.Map()
-		if nil != err {
-			blog.Error("params can not be decode to map error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
-		}
-		hostIDStr, ok := data["bk_host_id"].(string)
-		if false == ok {
-			blog.Error("params do not hava host id:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-
+		ownerID, user := util.GetOwnerIDAndUser(req.Request.Header)
+		opt := new(meta.DeleteHostBatchOpt)
+		if err := json.NewDecoder(req.Request.Body).Decode(opt); err != nil {
+			blog.Errorf("delete host batch , but decode body failed, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+			return
 		}
 
-		//gAppURL := "http://" + cli.CC.ObjCtrl + "/object/v1/insts/"+common.BKInnerObjIDApp+"/search"
 		gAppURL := objCtrl + "/object/v1/insts/" + common.BKInnerObjIDApp + "/search"
-		cond := make(map[string]interface{})
+		cond, condition := make(map[string]interface{}), make(map[string]interface{})
 		cond[common.BKDefaultField] = 1
 		cond[common.BKOwnerIDField] = ownerID
-		condition := make(map[string]interface{})
 		condition["condition"] = cond
 		conditionStr, _ := json.Marshal(condition)
 		appResult, err := httpcli.ReqHttp(req, gAppURL, common.HTTPSelectPost, []byte(conditionStr))
@@ -132,7 +107,7 @@ func (cli *hostAction) DeleteHostBatch(req *restful.Request, resp *restful.Respo
 		}
 		appID64, _ := appCellInfo.(float64)
 		appID = int(appID64)
-		hostIDArr := strings.Split(hostIDStr, ",")
+		hostIDArr := strings.Split(opt.HostID, ",")
 		var iHostIDArr []int
 		for _, i := range hostIDArr {
 			iHostID, _ := strconv.Atoi(i)
