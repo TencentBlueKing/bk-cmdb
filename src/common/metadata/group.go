@@ -26,6 +26,19 @@ const (
 	GroupFieldIsPre           = "ispre"
 )
 
+// PropertyGroupObjectAtt uset to update or delete the property group object attribute
+type PropertyGroupObjectAtt struct {
+	Condition struct {
+		OwnerID    string `json:"bk_supplier_account"`
+		ObjectID   string `json:"bk_obj_id"`
+		PropertyID string `json:"bk_property_id"`
+	} `json:"condition"`
+	Data struct {
+		PropertyGroupID string `json:"bk_property_group"`
+		PropertyIndex   int    `json:"bk_property_index"`
+	} `json:"data"`
+}
+
 // Group group metadata definition
 type Group struct {
 	ID         int    `field:"id"`

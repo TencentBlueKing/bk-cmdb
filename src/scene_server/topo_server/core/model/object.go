@@ -94,7 +94,7 @@ func (cli *object) Update() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.Message)
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
@@ -113,7 +113,7 @@ func (cli *object) Delete() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.Message)
+		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 

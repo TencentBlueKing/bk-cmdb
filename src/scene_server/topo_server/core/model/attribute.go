@@ -73,7 +73,7 @@ func (cli *attribute) Update() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to update the object attribute(%s), error info is %s", cli.attr.PropertyID, rsp.Message)
+		blog.Errorf("failed to update the object attribute(%s), error info is %s", cli.attr.PropertyID, rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
 
@@ -125,7 +125,7 @@ func (cli *attribute) Delete() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete attribute,error info is is %s", rsp.Message)
+		blog.Errorf("failed to delete attribute,error info is is %s", rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoObjectAttributeDeleteFailed)
 	}
 
