@@ -84,6 +84,7 @@ func (cli *host) SetValue(key string, value interface{}) error {
 	return nil
 }
 func (cli *host) search() ([]model.Attribute, []types.MapStr, error) {
+
 	return nil, nil, nil
 }
 func (cli *host) IsExists() (bool, error) {
