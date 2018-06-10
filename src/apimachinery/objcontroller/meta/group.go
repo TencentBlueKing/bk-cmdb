@@ -36,7 +36,7 @@ func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *met
 	return
 }
 
-func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metadata2.PropertyGroupCondition) (resp *api.BKAPIRsp, err error) {
+func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.UpdateGroupCondition) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
 	subPath := "/meta/objectatt/group/update"
 

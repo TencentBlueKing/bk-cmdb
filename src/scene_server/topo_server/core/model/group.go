@@ -27,40 +27,94 @@ var _ Group = (*group)(nil)
 
 type group struct {
 	grp       metadata.Group
+	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *group) Create() error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header, &cli.grp)
+
+	if nil != err {
+		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to create the group(%s), error info is is %s", cli.grp.GroupID, rsp.ErrMsg)
+		return cli.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
+	}
+
+	cli.grp.ID = rsp.Data.ID
+
 	return nil
 }
 
 func (cli *group) Update() error {
+
+	cond := &metadata.UpdateGroupCondition{}
+	cond.Condition.ID = cli.grp.GroupID
+	cond.Data.Index = cli.grp.GroupIndex
+	cond.Data.Name = cli.grp.GroupName
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header, cond)
+	if nil != err {
+		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		return err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to update the group(%s), error info is %s", cli.grp.GroupID, err.Error())
+		return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+	}
 	return nil
 }
 
 func (cli *group) Delete() error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header)
+	if nil != err {
+		blog.Error("failed to request object controller, error info is %s", err.Error())
+		return err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.Message)
+		return cli.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
+	}
+
 	return nil
 }
 
 func (cli *group) IsExists() (bool, error) {
-	return false, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request object controller ,error info is %s", err.Error())
+		return false, err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to query group, error info is  %s", rsp.ErrMsg)
+		return false, cli.params.Err.Error(common.CCErrTopoObjectGroupSelectFailed)
+	}
+
+	return 0 != len(rsp.Data), nil
 }
 
 func (cli *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
 
-	err := metadata.SetValueToStructByTags(cli, data)
-
-	if nil != err {
-		return nil, err
-	}
-
-	// TODO 实现校验逻辑
-
-	return nil, err
+	err := metadata.SetValueToStructByTags(&cli.grp, data)
+	return &cli.grp, err
 }
 func (cli *group) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+
+	rst := metadata.SetValueToMapStrByTags(&cli.grp)
+	return rst, nil
 }
 
 func (cli *group) GetAttributes() ([]Attribute, error) {
@@ -96,7 +150,7 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 }
 
 func (cli *group) Save() error {
-	dataMapStr := metadata.SetValueToMapStrByTags(cli)
+	dataMapStr := metadata.SetValueToMapStrByTags(&cli.grp)
 
 	_ = dataMapStr
 	return nil

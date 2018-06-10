@@ -13,8 +13,12 @@
 package model
 
 import (
-	"configcenter/src/apimachinery"
+	"configcenter/src/common/condition"
+	"context"
 
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -25,6 +29,7 @@ var _ Attribute = (*attribute)(nil)
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
 	attr      metadata.Attribute
+	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
@@ -34,34 +39,111 @@ func (cli *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
 }
 
 func (cli *attribute) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+
+	rst := metadata.SetValueToMapStrByTags(&cli.attr)
+	return rst, nil
+
 }
 
 func (cli *attribute) Create() error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), cli.params.Header, &cli.attr)
+
+	if nil != err {
+		blog.Errorf("faield to request the object controller, the error info is %s", err.Error())
+		return err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		return err
+	}
+
+	cli.attr.ID = rsp.Data.ID
+
 	return nil
 }
 
 func (cli *attribute) Update() error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header, cli.attr.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		return err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to update the object attribute(%s), error info is %s", cli.attr.PropertyID, rsp.Message)
+		return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+	}
+
 	return nil
 }
+func (cli *attribute) search() ([]metadata.Attribute, error) {
 
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).
+		Field(metadata.AttributeFieldObjectID).Eq(cli.attr.ObjectID).
+		Field(metadata.AttributeFieldPropertyID).Eq(cli.attr.PropertyName)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request to object controller, error info is %s", err.Error())
+		return nil, err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to query the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
+	}
+
+	return rsp.Data, nil
+}
 func (cli *attribute) IsExists() (bool, error) {
-	return false, nil
+
+	items, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(items), nil
 }
 
 func (cli *attribute) Delete() error {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldObjectID).Eq(cli.attr.ObjectID).
+		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID).
+		Field(metadata.AttributeFieldPropertyID).Eq(cli.attr.PropertyID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header, cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("failed to request object, error info is %s", err.Error())
+		return err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to delete attribute,error info is is %s", rsp.Message)
+		return cli.params.Err.Error(common.CCErrTopoObjectAttributeDeleteFailed)
+	}
+
 	return nil
 }
 
 func (cli *attribute) Save() error {
 
-	return nil
+	if cli.isNew {
+		return cli.Create()
+	}
+
+	return cli.Update()
 }
 
 func (cli *attribute) SetSupplierAccount(supplierAccount string) {
 
 	cli.attr.OwnerID = supplierAccount
-
 }
 
 func (cli *attribute) GetSupplierAccount() string {

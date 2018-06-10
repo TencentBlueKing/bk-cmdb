@@ -148,7 +148,7 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h util.Hea
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
 	resp = new(metatype.QueryObjectAttributeResult)
 	subPath := "/meta/objectatts"
 
@@ -162,9 +162,9 @@ func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, da
 	return
 }
 
-func (t *meta) DeleteObjectAttByID(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) DeleteObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+	subPath := fmt.Sprintf("/meta/objectatt/%d", id)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -176,8 +176,8 @@ func (t *meta) DeleteObjectAttByID(ctx context.Context, objID string, h util.Hea
 	return
 }
 
-func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metatype.Attribute) (resp *metatype.CreateObjectAttributeResult, err error) {
+	resp = new(metatype.CreateObjectAttributeResult)
 	subPath := "/meta/objectatt"
 
 	err = t.client.Post().
@@ -190,9 +190,9 @@ func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metadat
 	return
 }
 
-func (t *meta) UpdateObjectAttByID(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
+func (t *meta) UpdateObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
 	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+	subPath := fmt.Sprintf("/meta/objectatt/%d", id)
 
 	err = t.client.Put().
 		WithContext(ctx).

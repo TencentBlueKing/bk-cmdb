@@ -26,15 +26,15 @@ import (
 type MetaInterface interface {
 	SelectClassificationWithObject(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 	SelectClassifications(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationResult, err error)
-	DeleteClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	DeleteClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 	CreateClassification(ctx context.Context, h util.Headers, dat *metatype.Classification) (resp *metatype.CreateObjectClassificationResult, err error)
-	UpdateClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	UpdateClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 
 	SearchTopoGraphics(ctx context.Context, h util.Headers, dat *metadata.TopoGraphics) (resp *api.BKAPIRsp, err error)
 	UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *api.BKAPIRsp, err error)
 
 	CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error)
-	UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metadata2.PropertyGroupCondition) (resp *api.BKAPIRsp, err error)
+	UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.UpdateGroupCondition) (resp *api.BKAPIRsp, err error)
 	DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error)
 	UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, dat []metadata2.PropertyGroupObjectAtt) (resp *api.BKAPIRsp, err error)
 	DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error)
@@ -51,10 +51,10 @@ type MetaInterface interface {
 	CreateObjectAssociation(ctx context.Context, h util.Headers, dat *metadata.ObjectAsst) (resp *api.BKAPIRsp, err error)
 	UpdateObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 	SelectObjectAttByID(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat interface{}) (resp *metatype.QueryObjectAttributeResult, err error)
-	DeleteObjectAttByID(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-	CreateObjectAtt(ctx context.Context, h util.Headers, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error)
-	UpdateObjectAttByID(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error)
+	DeleteObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	CreateObjectAtt(ctx context.Context, h util.Headers, dat *metatype.Attribute) (resp *metatype.CreateObjectAttributeResult, err error)
+	UpdateObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
 }
 
 func NewmetaInterface(client rest.ClientInterface) MetaInterface {
