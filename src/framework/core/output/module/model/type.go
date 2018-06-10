@@ -155,6 +155,8 @@ type Group interface {
 	SetNonDefault()
 	GetDefault() bool
 
+	GetRecordID() int
+
 	CreateAttribute() Attribute
 	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
 	FindAttributesByCondition(cond common.Condition) (AttributeIterator, error)
