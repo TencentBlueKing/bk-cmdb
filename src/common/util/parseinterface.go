@@ -31,7 +31,7 @@ func NewParseInterface(data interface{}) *ParseInterface {
 	}
 }
 
-// GetUserConfig  get key from interface to ParseInterface
+// Get get key from interface to ParseInterface
 func (p *ParseInterface) Get(key string) *ParseInterface {
 	err := p.err
 	if nil != err {
