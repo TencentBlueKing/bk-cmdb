@@ -64,7 +64,7 @@ func UpdateHostMain(req *restful.Request, hostCondition, data map[string]interfa
 
 	language := util.GetActionLanguage(req)
 	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
-	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr}, forward, errIf.CreateDefaultCCErrorIf(language))
+	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, objCtrl, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr, common.BKOwnerIDField}, forward, errIf.CreateDefaultCCErrorIf(language))
 	ok, validErr := valid.ValidMap(data, common.ValidUpdate, hostIDArr[0])
 	if false == ok && nil != validErr {
 		blog.Error("updateHostMain error: %v", validErr)
@@ -122,17 +122,22 @@ func UpdateHostMain(req *restful.Request, hostCondition, data map[string]interfa
 	return res, err
 }
 
-func AddHost(req *restful.Request, data map[string]interface{}, objURL string) (int, error) {
+func AddHost(req *restful.Request, data map[string]interface{}, objURL string) (int64, error) {
 	return addObj(req, data, common.BKInnerObjIDHost, objURL)
 }
 
-func AddModuleHostConfig(req *restful.Request, data map[string]interface{}, hostCtrl string) error {
+func AddModuleHostConfig(req *restful.Request, hostID, appID int64, moduleIDs []int64, hostCtrl string) error {
+	data := common.KvMap{
+		common.BKAppIDField:    appID,
+		common.BKHostIDField:   hostID,
+		common.BKModuleIDField: moduleIDs,
+	}
 	blog.Debug("addModuleHostConfig start, data: %v", data)
 
 	resMap := make(map[string]interface{})
 	inputJson, _ := json.Marshal(data)
 	addModulesURL := hostCtrl + "/host/v1/meta/hosts/modules"
-	blog.Info(string(inputJson))
+	blog.Info("addModuleHostconfig params", string(inputJson))
 	res, err := httpcli.ReqHttp(req, addModulesURL, common.HTTPCreate, []byte(inputJson))
 	if nil != err {
 		blog.Errorf("http do error:url:%s, error:%s", addModulesURL, err.Error())
@@ -140,19 +145,19 @@ func AddModuleHostConfig(req *restful.Request, data map[string]interface{}, host
 	}
 
 	err = json.Unmarshal([]byte(res), &resMap)
-	blog.Info(res)
+	blog.Info("addModuleHostConfig reply:%s", res)
 	if nil != err {
 		blog.Errorf("http do error:url:%s, respone not json params:%s, reply:%s", addModulesURL, string(inputJson), res)
 		return err
 	}
 	if !resMap["result"].(bool) {
-		return errors.New(resMap["message"].(string))
+		return errors.New(resMap[common.HTTPBKAPIErrorMessage].(string))
 	}
 	blog.Debug("addModuleHostConfig success, res: %v", resMap)
 	return nil
 }
 
-func addObj(req *restful.Request, data map[string]interface{}, objType, objURL string) (int, error) {
+func addObj(req *restful.Request, data map[string]interface{}, objType, objURL string) (int64, error) {
 	resMap := make(map[string]interface{})
 
 	url := objURL + "/object/v1/insts/" + objType
@@ -168,13 +173,20 @@ func addObj(req *restful.Request, data map[string]interface{}, objType, objURL s
 	}
 
 	if !resMap["result"].(bool) {
-		return 0, errors.New(resMap["message"].(string))
+		return 0, errors.New(resMap[common.HTTPBKAPIErrorMessage].(string))
 	}
 
 	blog.Debug("add object result : %v", resMap)
+	dataMap, ok := resMap["data"].(map[string]interface{})
+	if false == ok {
+		return 0, fmt.Errorf("add host reply error; reply:%s", res)
+	}
 
-	objID := (resMap["data"].(map[string]interface{}))[common.BKHostIDField].(float64)
-	return int(objID), nil
+	objID, err := util.GetInt64ByInterface(dataMap[common.BKHostIDField])
+	if nil != err {
+		return 0, fmt.Errorf("add host reply error, not found host id")
+	}
+	return objID, nil
 }
 
 //search host helpers
