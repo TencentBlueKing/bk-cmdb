@@ -321,7 +321,9 @@ const (
 	CCErrHostFavouriteCreateFail         = 1106015
 	CCErrHostFavouriteUpdateFail         = 1106016
 	CCErrHostFavouriteDeleteFail         = 1106017
-	CCErrHostFavouriteDupFail            = 1106017
+	CCErrHostFavouriteDupFail            = 1106018
+	CCErrHostGetSnapshotChannelEmpty     = 1106019
+	CCErrHostGetSnapshotChannelClose     = 1106020
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module = 1107001
