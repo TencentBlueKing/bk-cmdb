@@ -1046,12 +1046,12 @@
                             </form>
                             <!-- 保存取消按钮 -->
                             <div class="button-wraper">
-                                <a class="save-btn main-btn mr10" @click="saveNewField">
+                                <bk-button type="primary" class="save-btn main-btn mr10" @click="saveNewField">
                                     {{$t('Common["保存"]')}}
-                                </a>
-                                <a class="cancel-btn vice-btn" @click="closeAddFieldBox">
+                                </bk-button>
+                                <bk-button type="default" class="cancel-btn vice-btn" @click="closeAddFieldBox">
                                     {{$t('Common["取消"]')}}
-                                </a>
+                                </bk-button>
                             </div>
                         </div>
                     </div>
@@ -2391,7 +2391,7 @@
             }
             .button-wraper{
                 margin-left: 70px;
-                a{
+                .bk-button{
                     height: 30px;
                     line-height: 28px;
                     border-radius: 2px;
