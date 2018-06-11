@@ -13,42 +13,42 @@
 package backbone
 
 import (
-    "fmt"
+	"fmt"
 
-    "configcenter/src/apimachinery"
-    "configcenter/src/common/language"
+	"configcenter/src/apimachinery"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 )
 
-
 func NewBackbone(zkAddr string, c Config) (*Engine, error) {
-    disc, err := NewServcieDiscovery(zkAddr)
-    if err != nil {
-        return nil, fmt.Errorf("new service discover failed, err:%v", err)
-    }
+	disc, err := NewServcieDiscovery(zkAddr)
+	if err != nil {
+		return nil, fmt.Errorf("new service discover failed, err:%v", err)
+	}
 
-    if err := ListenServer(c.Server); err != nil {
-        return nil, err
-    }
-    
-    return New(c, disc)    
+	if err := ListenServer(c.Server); err != nil {
+		return nil, err
+	}
+
+	return New(c, disc)
 }
 
-func New(c Config, disc ServiceDiscoverInterface)(*Engine, error) {
-    if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
-        return nil, err
-    }
-    
-    return &Engine{
-        CoreAPI: c.CoreAPI,
-        SvcDisc: disc,
-        Language: c.Language,
-    }, nil   
+func New(c Config, disc ServiceDiscoverInterface) (*Engine, error) {
+	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
+		return nil, err
+	}
+
+	return &Engine{
+		CoreAPI:  c.CoreAPI,
+		SvcDisc:  disc,
+		Language: c.Language,
+		CCErr:    c.CCErr,
+	}, nil
 }
 
 type Engine struct {
-    CoreAPI apimachinery.ClientSetInterface
-    SvcDisc ServiceDiscoverInterface
-    Language language.CCLanguageIf
+	CoreAPI  apimachinery.ClientSetInterface
+	SvcDisc  ServiceDiscoverInterface
+	Language language.CCLanguageIf
+	CCErr    errors.CCErrorIf
 }
-
-
