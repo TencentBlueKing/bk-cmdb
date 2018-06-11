@@ -9,9 +9,9 @@
  */
 
 <template>
-    <div class="topo-wrapper model" id="topo-wrapper">
+    <div class="topo-wrapper model" :class="{'no-edit': curClassify === 'bk_host_manage'}" id="topo-wrapper">
         <div id="topo" class="topo"></div>
-        <button class="bk-button vis-button vis-setup" @click="editModel">
+        <button v-if="curClassify !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editModel">
             <i class="icon icon-cc-edit"></i>
         </button>
         <bk-button type="primary" class="bk-button vis-button vis-create" v-if="addModelAvailable && curClassify && modelNodes.length" @click="createModel">
@@ -110,9 +110,9 @@
                     },
                     edges: {
                         color: {
-                            color: '#6b7baa',
-                            highlight: '#6b7baa',
-                            hover: '#6b7baa'
+                            color: '#c3cdd7',
+                            highlight: '#3c96ff',
+                            hover: '#3c96ff'
                         },
                         smooth: {           // 线的动画
                             type: 'curvedCW',
@@ -273,18 +273,18 @@
                         curTypeNum++
                         let svgForUser = {
                             bgColor: '#fff',
-                            iconColor: '#498fe0',
-                            color: '#6b7baa'
+                            iconColor: '#868b97',
+                            color: '#868b97'
                         }
                         let svgForPre = {
-                            bgColor: '#6b7baa',
-                            iconColor: '#fff',
-                            color: '#fff'
+                            bgColor: '#fff',
+                            iconColor: '#6894c8',
+                            color: '#6894c8'
                         }
                         let svgForOther = {
                             bgColor: '#fff',
-                            iconColor: '#d6d8df',
-                            color: '#d6d8df'
+                            iconColor: '#c3cdd7',
+                            color: '#c3cdd7'
                         }
                         let svgColor = {}
                         if (node['ispre']) {
@@ -304,7 +304,7 @@
                         let image = new Image()
                         image.onload = () => {
                             var base64 = this.getBase64Img(image, this.parseColor(svgColor.iconColor))
-                            let svg = `<svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, .1)" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+                            let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
                             <circle cx="50" cy="50" r="49" fill="${svgColor.bgColor}"/>
                                 <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="35" y="-12" fill="${svgColor.iconColor}" width="35" >
                                 <image width="15" xlink:href="${base64}"></image>
@@ -540,6 +540,17 @@
         }
         .vis-up,.vis-down,.vis-left,.vis-right{
             display: none;
+        }
+        &.no-edit {
+            .vis-zoomIn{
+                left: 54px;
+            }
+            .vis-zoomOut{
+                left: 92px;
+            }
+            .vis-zoomExtends{
+                left: 15px;
+            }
         }
         .vis-zoomIn{
             left: 92px;

@@ -90,7 +90,7 @@ type Manager interface {
 	RemoveInputer(key InputerKey)
 
 	// Run start the business cycle until the stop method is called.
-	Run(ctx context.Context, cancel context.CancelFunc)
+	Run(ctx context.Context, inputerCtx InputerContext)
 
 	// Stop
 	Stop() error

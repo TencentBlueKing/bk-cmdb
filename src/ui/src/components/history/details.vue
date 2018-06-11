@@ -156,7 +156,7 @@
             async objId (objId) {
                 if (objId && !this.attribute.hasOwnProperty(objId)) {
                     this.loadingAttribute = true
-                    await this.$store.dispatch('object/getAttribute', objId)
+                    await this.$store.dispatch('object/getAttribute', {objId})
                     this.loadingAttribute = false
                 } else {
                     this.loadingAttribute = false

@@ -53,6 +53,7 @@ func (cli *businessInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	business.SetProductor("test_productor")
 	business.SetLifeCycle(api.BusinessLifeCycleOnLine)
 	business.SetTester("test_tester")
+	business.SetValue("time_zone", "Asia/Shanghai")
 
 	err = business.Save()
 	if nil != err {

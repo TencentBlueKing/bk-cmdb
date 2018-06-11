@@ -35,6 +35,12 @@ func (cli *platInputer) Name() string {
 	return "plat_inputer"
 }
 
+// Init initialization method
+func (cli *platInputer) Init(ctx input.InputerContext) error {
+
+	return nil
+}
+
 // Run the input should not be blocked
 func (cli *platInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
@@ -42,6 +48,7 @@ func (cli *platInputer) Run(ctx input.InputerContext) *input.InputerResult {
 
 	if nil != err {
 		fmt.Println("err:", err)
+		return nil
 	}
 	plat.SetName("plat(test)")
 

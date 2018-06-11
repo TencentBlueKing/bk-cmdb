@@ -79,7 +79,7 @@
         },
         watch: {
             crossPageAllChecked (checked) {
-                if (this.$refs.crossPageCheckbox) {
+                if (this.$refs.crossPageCheckbox && this.$refs.crossPageCheckbox.length) {
                     this.$refs.crossPageCheckbox[0].checked = checked
                 }
             }
@@ -223,6 +223,7 @@
                 padding: 0 16px;
                 border: 1px solid $tableBorderColor;
                 border-left: none;
+                line-height: normal;
                 &:last-child{
                     border-right: none;
                 }

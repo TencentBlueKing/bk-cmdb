@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // NewValidMap returns new NewValidMap
@@ -166,6 +167,10 @@ func (valid *ValidMap) validChar(val interface{}, key string) (bool, error) {
 	if isIn && 0 == len(value) {
 		blog.Error("params can not be empty")
 		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+	}
+	if strings.Contains(value, common.BKCharSpecilChar1) {
+		blog.Error("params include specil string")
+		return false, valid.ccError.Error(common.CCErrCommFieldNotValid)
 	}
 	return true, nil
 }
