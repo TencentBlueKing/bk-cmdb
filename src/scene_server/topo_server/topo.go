@@ -20,9 +20,10 @@ import (
 	"configcenter/src/scene_server/topo_server/app"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"fmt"
-	"github.com/spf13/pflag"
 	"os"
 	"runtime"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
