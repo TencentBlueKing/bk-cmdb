@@ -13,6 +13,7 @@
 package ccapi
 
 import (
+	"fmt"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -30,7 +31,6 @@ import (
 	myCommon "configcenter/src/scene_server/host_server/common"
 	confCenter "configcenter/src/scene_server/host_server/host_service/config"
 	"configcenter/src/scene_server/host_server/host_service/rdiscover"
-	"fmt"
 	"github.com/emicklei/go-restful"
 )
 
