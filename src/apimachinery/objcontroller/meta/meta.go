@@ -13,192 +13,192 @@
 package meta
 
 import (
-	"context"
-	"fmt"
-	"net/http"
+    "context"
+    "fmt"
+    "net/http"
 
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
+    "configcenter/src/common/core/cc/api"
+    "configcenter/src/source_controller/api/metadata"
 )
 
 func (t *meta) SelectObjects(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/objects"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/objects"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) DeleteObject(ctx context.Context, objID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/object/%s", objID)
 
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Delete().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) CreateObject(ctx context.Context, h http.Header, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/object"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/object"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) UpdateObject(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/object/%s", objID)
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) SelectObjectAssociations(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/objectassts"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/objectassts"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) DeleteObjectAssociation(ctx context.Context, objID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
 
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Delete().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metadata.ObjectAsst) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/objectasst"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/objectasst"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) UpdateObjectAssociation(ctx context.Context, objID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(nil).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/objectatts"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/objectatts"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) DeleteObjectAttByID(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
 
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Delete().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) CreateObjectAtt(ctx context.Context, h http.Header, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/meta/objectatt"
+    resp = new(api.BKAPIRsp)
+    subPath := "/meta/objectatt"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
 func (t *meta) UpdateObjectAttByID(ctx context.Context, objID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+    resp = new(api.BKAPIRsp)
+    subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }

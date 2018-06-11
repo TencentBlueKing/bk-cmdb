@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/core/cc/api"
-	obj "configcenter/src/scene_server/topo_server/topo_service/actions/object"
+	obj "configcenter/src/scene_server/topo_server/actions/object"
 )
 
 func (t *object) CreateModel(ctx context.Context, h http.Header, model *obj.MainLineObject) (resp *api.BKAPIRsp, err error) {
