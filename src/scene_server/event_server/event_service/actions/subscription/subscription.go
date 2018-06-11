@@ -92,7 +92,7 @@ func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Res
 		events := strings.Split(sub.SubscriptionForm, ",")
 		for _, event := range events {
 			cacheValue := common.KvMap{
-				"key":    types.EventCacheSubscribeformKey + event,
+				"key":    types.EventCacheSubscribeformKey + ownerID + ":" + event,
 				"values": []string{fmt.Sprint(sub.SubscriptionID)},
 			}
 			if _, err := cli.CC.CacheCli.Insert("sadd", cacheValue); err != nil {
@@ -147,7 +147,7 @@ func (cli *subscriptionAction) UnSubscribe(req *restful.Request, resp *restful.R
 		eventTypes := strings.Split(sub.SubscriptionForm, ",")
 		for _, eventType := range eventTypes {
 			eventType = strings.TrimSpace(eventType)
-			if err := redisCli.SRem(types.EventCacheSubscribeformKey+eventType, subID).Err(); err != nil {
+			if err := redisCli.SRem(types.EventCacheSubscribeformKey+ownerID+":"+eventType, subID).Err(); err != nil {
 				blog.Error("delete subscription failed, error:%s", err.Error())
 				return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeDeleteFailed)
 			}
@@ -231,7 +231,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 		for _, eventType := range subs {
 			eventType = strings.TrimSpace(eventType)
 			cacheValue := common.KvMap{
-				"key":    types.EventCacheSubscribeformKey + eventType,
+				"key":    types.EventCacheSubscribeformKey + ownerID + ":" + eventType,
 				"values": []interface{}{fmt.Sprint(id)},
 			}
 			if err := cli.CC.CacheCli.DelByCondition("srem", cacheValue); err != nil {
@@ -241,7 +241,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 		}
 		for _, event := range plugs {
 			cacheValue := common.KvMap{
-				"key":    types.EventCacheSubscribeformKey + event,
+				"key":    types.EventCacheSubscribeformKey + ownerID + ":" + event,
 				"values": []string{fmt.Sprint(sub.SubscriptionID)},
 			}
 			if _, err := cli.CC.CacheCli.Insert("sadd", cacheValue); err != nil {
