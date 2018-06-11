@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 

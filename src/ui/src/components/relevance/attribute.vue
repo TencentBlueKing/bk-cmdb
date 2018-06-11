@@ -1,19 +1,20 @@
 <template>
-    <div class="topo-attribute-wrapper" v-show="isShow">
+    <div class="topo-attribute-wrapper" id="wrapper" :class="{'full-screen': isFullScreen}" v-show="isShow">
         <div class="loading" v-bkloading="{isLoading: attr.isLoading}">
             <i class="bk-icon icon-close" @click="closePop"></i>
             <div class="attr-title">{{objName}} {{instName}}</div>
-            <div class="attribute-box" id="box">
-                <v-attribute 
-                    id="attribute"
-                    ref="attribute"
-                    :formFields="attr.formFields"
-                    :formValues="attr.formValues"
-                    :type="attr.type"
-                    :showBtnGroup="false"
-                    :active="isShow"
-                    :objId="objId">
-                </v-attribute>
+            <div class="attribute-padding">
+                <div class="attribute-box" id="box">
+                    <v-attribute 
+                        ref="attribute"
+                        :formFields="attr.formFields"
+                        :formValues="attr.formValues"
+                        :type="attr.type"
+                        :showBtnGroup="false"
+                        :active="isShow"
+                        :objId="objId">
+                    </v-attribute>
+                </div>
             </div>
         </div>
     </div>
@@ -42,6 +43,10 @@
             instName: {
                 type: String,
                 default: ''
+            },
+            isFullScreen: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -72,11 +77,10 @@
                 }
                 if (this.objId === 'biz') {
                     config.url = `biz/search/${this.bkSupplierAccount}`
-                    config.params.condition[this.objId] = [{
-                        field: 'bk_biz_id',
-                        operator: '$eq',
-                        value: this.instId
-                    }]
+                    config.params.fields = []
+                    config.params.condition = {
+                        bk_biz_id: this.instId
+                    }
                 } else if (this.objId === 'host') {
                     config.url = 'hosts/search'
                     config.params = {
@@ -142,26 +146,21 @@
             },
             resetAttributeBox () {
                 let box = document.getElementById('box')
-                let attribute = document.getElementById('attribute')
                 let topo = document.getElementById('topo')
-                if (topo.offsetHeight < box.offsetHeight * 0.8) {
-                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
-                } else if (box.offsetHeight > attribute.offsetHeight) {
-                    box.style.height = `${attribute.offsetHeight + 40}px`
-                } else {
-                    box.style.height = `${topo.offsetHeight * 0.8 - 102}px`
-                }
+                box.style.maxHeight = `${topo.offsetHeight * 0.8}px`
             },
             async initData () {
                 this.attr.isLoading = true
                 await Promise.all([
-                    this.$store.dispatch('object/getAttribute', this.objId),
+                    this.$store.dispatch('object/getAttribute', {objId: this.objId}),
                     this.getFormValues()
                 ])
                 this.attr.formFields = this.attribute[this.objId]
                 this.attr.isLoading = false
                 this.$nextTick(() => {
-                    this.resetAttributeBox()
+                    setTimeout(() => {
+                        this.resetAttributeBox()
+                    }, 100)
                 })
             },
             async getFormValues () {
@@ -189,34 +188,47 @@
         position: absolute;
         background: #fff;
         width: 710px;
-        max-height: 80%;
         min-height: 200px;
-        top: 20px;
-        left: 25px;
+        top: 30px;
+        left: 50%;
+        transform: translateX(-50%);
         box-shadow: 0px 2px 9.6px 0.4px rgba(0, 0, 0, 0.4);
+        &.full-screen {
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
         .loading {
             min-height: 200px;
             height: 100%;
         }
         .attr-title {
-            font-size: 16px;
-            padding: 40px 32px 0;
-            color: #737987;
+            font-size: 14px;
+            padding-left: 16px;
+            height: 49px;
+            line-height: 48px;
+            border-bottom: 1px solid #e5e5e5;
+            background: #f7f7f7;
+            color: #333948;
         }
         .icon-close {
-            padding: 2px;
-            font-size: 16px;
+            padding: 6px;
+            font-size: 12px;
             position: absolute;
-            right: 10px;
-            top: 10px;
+            right: 6px;
+            top: 12px;
             cursor: pointer;
-            transition: all .2s linear;
+            color: #333948;
+            border-radius: 50%;
             &:hover {
-                transform: rotate(90deg);
+                background: #e5e5e5;
             }
         }
+        .attribute-padding {
+            height: 100%;
+            padding-right: 2px;
+        }
         .attribute-box {
-            height: calc(100% - 40px);
+            max-height: 300px;
             overflow: auto;
             @include scrollbar;
             padding-bottom: 40px;

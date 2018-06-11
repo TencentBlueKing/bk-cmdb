@@ -31,6 +31,12 @@ var modelMgr = &modelInputer{}
 type modelInputer struct {
 }
 
+// Init initialization method
+func (cli *modelInputer) Init(ctx input.InputerContext) error {
+
+	return nil
+}
+
 // Name the Inputer name.
 // This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 func (cli *modelInputer) Name() string {

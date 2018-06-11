@@ -39,6 +39,10 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 		return true, nil
 	}
 	searchCond := make(map[string]interface{})
+
+	// only search data not in diable status
+	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
+
 	for key, val := range valData {
 		if util.InArray(key, valid.IsOnlyArr) {
 			searchCond[key] = val
@@ -108,6 +112,9 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	}
 	objIDName := util.GetObjIDByType(objID)
 	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
+
+	// only search data not in diable status
+	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
 
 	if !isInner {
 		searchCond[common.BKObjIDField] = valid.objID

@@ -19,13 +19,19 @@
                     options: {
                         nodes: {
                             shape: 'image',
-                            widthConstraint: 55
+                            widthConstraint: 55,
+                            shadow: {
+                                enabled: true,
+                                color: 'rgba(0,0,0,0.1)',
+                                x: 0,
+                                y: 2,
+                                size: 4
+                            }
                         },
                         edges: {
                             color: {
-                                color: '#6b7baa',
-                                highlight: '#6b7baa',
-                                hover: '#6b7baa'
+                                color: '#c3cdd7',
+                                highlight: '#3c96ff'
                             },
                             smooth: {
                                 type: 'curvedCW',
@@ -78,7 +84,7 @@
                         this.$alertMsg(response['bk_error_msg'])
                     }
                 } catch (e) {
-                    this.$alertMsg(e)
+                    this.$alertMsg(e.message)
                 }
             },
             // 设置节点数据
@@ -88,8 +94,8 @@
                         id: nodeData['bk_obj_id'],
                         image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
                             name: nodeData['node_name'],
-                            backgroundColor: nodeData['ispre'] ? '#6b7baa' : '#fff',
-                            fontColor: nodeData['ispre'] ? '#fff' : '#6b7baa'
+                            backgroundColor: '#fff',
+                            fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
                         }))}`,
                         data: nodeData
                     }
@@ -129,11 +135,7 @@
             // 设置单节点位置并更新其节点位置信息
             setSingleNodePosition () {
                 const edges = this.network.edges
-                const noPositionSingleNode = this.network.nodes.filter(node => {
-                    const isSingle = !edges.some(edge => edge.from === node.id || edge.to === node.id)
-                    const hasPosition = node.hasOwnProperty('x') && node.hasOwnProperty('y')
-                    return isSingle && !hasPosition
-                })
+                const noPositionSingleNode = this.network.nodes.filter(node => !edges.some(edge => edge.from === node.id || edge.to === node.id))
                 const fixedNodeY = this.getSingleNodePositionY()
                 const fixedDistance = 70
                 const compensateDistance = noPositionSingleNode.length % 2 === 0 ? fixedDistance / 2 : 0
@@ -168,9 +170,9 @@
                             id: node.id,
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: node.data['node_name'],
-                                backgroundColor: node.data.ispre ? '#6b7baa' : '#fff',
-                                fontColor: node.data.ispre ? '#fff' : '#6b7baa',
-                                iconColor: node.data.ispre ? '#fff' : '#498fe0'
+                                fontColor: node.data.ispre ? '#6894c8' : '#868b97',
+                                iconColor: node.data.ispre ? '#6894c8' : '#868b97',
+                                backgroundColor: '#fff'
                             }))}`
                         })
                     }
@@ -218,8 +220,7 @@
                 })
                 this.setSingleNodePosition()
                 this.loadNodeImage()
-                this.updateNodePosition(this.noPositionNodes)
-                this.networkInstance.moveTo({scale: 0.8})
+                this.networkInstance.fit()
                 this.loading = false
             },
             addListener () {
