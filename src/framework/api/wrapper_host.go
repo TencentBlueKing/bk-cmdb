@@ -223,6 +223,11 @@ func (cli *HostWrapper) SetAssetID(assetID string) error {
 	return cli.host.SetValue(fieldAssetID, assetID)
 }
 
+// SetBusiness set the business id for the host
+func (cli *HostWrapper) SetBusiness(bizID int) error {
+	return cli.host.SetValue(fieldBusinessID, bizID)
+}
+
 // GetAssetID get the asset id for the host
 func (cli *HostWrapper) GetAssetID() (string, error) {
 	vals, err := cli.host.GetValues()
