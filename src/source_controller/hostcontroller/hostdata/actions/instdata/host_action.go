@@ -166,6 +166,7 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 		statuscode := 0
 		err := redisCli.Get(dcCommon.RedisSnapKeyChannelStatus).Scan(&statuscode)
 		if err != nil {
+			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
 		}
 
