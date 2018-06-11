@@ -185,7 +185,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 		}
 		//dat.ConvTime()
 		fields := dat.Fields
-		condition := util.SetQueryOwner(dat.Condition, ownerID)
+		condition := util.SetModOwner(dat.Condition, ownerID)
 
 		skip := dat.Start
 		limit := dat.Limit
