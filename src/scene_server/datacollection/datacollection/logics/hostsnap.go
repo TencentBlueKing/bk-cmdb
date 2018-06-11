@@ -48,12 +48,13 @@ var (
 
 // HostSnap define HostSnap
 type HostSnap struct {
-	id       string
-	chanName string
-	msgChan  chan string
-	maxSize  int
-	ts       time.Time // life cycle timestamp
-	isMaster bool
+	id         string
+	chanName   string
+	msgChan    chan string
+	maxSize    int
+	ts         time.Time // life cycle timestamp
+	lastMesgTs time.Time
+	isMaster   bool
 	sync.Mutex
 	interrupt     chan error
 	maxconcurrent int
@@ -436,9 +437,12 @@ func (h *HostSnap) subChan() {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
 	}
+	healcheckCh := make(chan struct{})
+	go h.healthCheck(healcheckCh)
 	defer func() {
 		subChan.Unsubscribe(h.chanName)
 		h.subscribing = false
+		close(healcheckCh)
 		blog.Infof("subChan Close")
 	}()
 
@@ -478,7 +482,7 @@ func (h *HostSnap) subChan() {
 		if chanlen != 0 && chanlen%10 == 0 {
 			blog.Infof("buff len %d", chanlen)
 		}
-
+		h.lastMesgTs = time.Now()
 		h.msgChan <- msg.Payload
 		cnt++
 		if cnt%10000 == 0 {
@@ -558,4 +562,25 @@ func fetch() map[string]map[string]interface{} {
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
 	return hostcache
+}
+
+func (h *HostSnap) healthCheck(closeChan chan struct{}) {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-closeChan:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			channelstatus := 0
+			if err := h.snapCli.Ping().Err(); err != nil {
+				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
+			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
+				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
+			} else {
+				channelstatus = bkcommon.CCSuccess
+			}
+			h.redisCli.Set(common.RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
+		}
+	}
 }
