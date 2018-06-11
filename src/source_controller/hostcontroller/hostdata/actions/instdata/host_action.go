@@ -73,7 +73,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}

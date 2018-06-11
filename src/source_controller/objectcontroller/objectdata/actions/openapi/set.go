@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
@@ -131,7 +131,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 	//发送删除主机关系事件
 	ec := eventdata.NewEventContextByReq(req)
 	for oldContent := range oldContents {
-		err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionDelete, oldContent, nil)
+		err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionDelete, oldContent, nil, ownerID)
 		if err != nil {
 			blog.Error("create event error:%v", err)
 		}
@@ -181,7 +181,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 		}
 		//推送新加到空闲机器的关系
 		for _, row := range addIdleModuleDatas {
-			err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionCreate, nil, row)
+			err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionCreate, nil, row, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}

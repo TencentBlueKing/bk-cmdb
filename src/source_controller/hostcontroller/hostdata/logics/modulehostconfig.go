@@ -93,7 +93,7 @@ func DelSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 
 	// send events
 	for _, origindata := range origindatas {
-		err := ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionDelete, nil, origindata)
+		err := ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionDelete, nil, origindata, ownerID)
 		if err != nil {
 			blog.Error("create event error:%v", err)
 		}
@@ -154,7 +154,7 @@ func AddSingleHostModuleRelation(ec *eventdata.EventContext, cc *api.APIResource
 		return false, err
 	}
 
-	err = ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionCreate, moduleHostConfig, nil)
+	err = ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionCreate, moduleHostConfig, nil, ownerID)
 	if err != nil {
 		blog.Error("create event error:%v", err)
 	}

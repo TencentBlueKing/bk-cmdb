@@ -43,7 +43,7 @@ func NewEventContextByReq(req *restful.Request) *EventContext {
 	}
 }
 
-func (c *EventContext) InsertEvent(eventType, objType, action string, curData interface{}, preData interface{}) (err error) {
+func (c *EventContext) InsertEvent(eventType, objType, action string, curData interface{}, preData interface{}, ownerID string) (err error) {
 	ar := api.GetAPIResource()
 	eventIDseletor := common.KvMap{
 		"key": types.EventCacheEventIDKey,
@@ -58,6 +58,7 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 		Action:     action,
 		ActionTime: commontypes.Now(),
 		ObjType:    objType,
+		OwnerID:    ownerID,
 		Data: []types.EventData{
 			{
 				CurData: curData,
