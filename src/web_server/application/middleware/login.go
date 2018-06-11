@@ -114,6 +114,15 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 			session.Set("language", cookieLanuage)
 		}
 
+		cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
+		if "" == cookieOwnerID || nil != err {
+			c.SetCookie(common.BKHTTPOwnerID, cookieOwnerID, 0, "/", "", false, false)
+			session.Set("owner_uin", cookieOwnerID)
+
+		} else if cookieOwnerID != session.Get("owner_uin") {
+			session.Set("owner_uin", cookieOwnerID)
+		}
+
 		session.Set("userName", "admin")
 		session.Set("role", "1")
 		session.Set("owner_uin", "0")
