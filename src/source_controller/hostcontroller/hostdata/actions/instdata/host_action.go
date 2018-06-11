@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	. "configcenter/src/common/metadata"
 
 	"configcenter/src/common/util"
 	dcCommon "configcenter/src/scene_server/datacollection/common"
@@ -31,6 +32,7 @@ import (
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
+
 	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -67,7 +69,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		blog.Info("create object type:%s,data:%v", objType, input)
 		input[common.CreateTimeField] = time.Now()
 		var idName string
-		ID, err := instdata.CreateObject(objType, input, &idName)
+		id, err := instdata.CreateObject(objType, input, &idName)
 		if err != nil {
 			blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostCreateInst)
@@ -75,7 +77,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 
 		// record event
 		originData := map[string]interface{}{}
-		if err := instdata.GetObjectByID(objType, nil, ID, originData, ""); err != nil {
+		if err := instdata.GetObjectByID(objType, nil, id, originData, ""); err != nil {
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
@@ -86,7 +88,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		}
 
 		info := make(map[string]int)
-		info[idName] = ID
+		info[idName] = id
 		return http.StatusOK, info, nil
 	}, resp)
 }

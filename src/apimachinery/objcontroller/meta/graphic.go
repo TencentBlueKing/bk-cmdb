@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
+	metatype "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/api/metadata"
 )
 
@@ -34,8 +35,8 @@ func (t *meta) SearchTopoGraphics(ctx context.Context, h util.Headers, dat *meta
 	return
 }
 
-func (t *meta) UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
 	subPath := "/topographics/update"
 
 	err = t.client.Post().
