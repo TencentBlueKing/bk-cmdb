@@ -26,6 +26,7 @@ import vClickOutside from 'v-click-outside'
 import Cookies from 'js-cookie'
 import moment from 'moment'
 import vDrag from './directive/drag'
+import axiosQueue from './mixins/axios-queue'
 import '@/api/axios'
 
 const languageTranslate = {
@@ -54,6 +55,8 @@ Vue.directive('focus', {
         }
     }
 })
+
+Vue.mixin(axiosQueue)
 
 Vue.config.productionTip = false
 
