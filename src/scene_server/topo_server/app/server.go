@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/topo_server/app/options"
-	"configcenter/src/scene_server/topo_server/topo_service"
 )
 
 //Run ccapi server
@@ -24,7 +23,7 @@ func Run(op *options.ServerOption) error {
 
 	setConfig(op)
 
-	serv, err := ccapi.NewCCAPIServer(op.ServConf)
+	serv, err := NewCCAPIServer(op.ServConf)
 	if err != nil {
 		blog.Error("fail to create ccapi server. err:%s", err.Error())
 		return err
