@@ -14,6 +14,7 @@ package inst
 
 import (
 	cccommon "configcenter/src/common"
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/errors"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
@@ -88,13 +89,55 @@ func (cli *host) search() ([]model.Attribute, []types.MapStr, error) {
 	return nil, nil, nil
 }
 func (cli *host) IsExists() (bool, error) {
-	return true, nil
+
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return false, err
+	}
+
+	cond := common.CreateCondition()
+
+	for _, attrItem := range attrs {
+
+		if !attrItem.GetKey() {
+			continue
+		}
+
+		if !cli.datas.Exists(attrItem.GetID()) {
+			continue
+		}
+
+		cond.Field(attrItem.GetID()).Eq(cli.datas[attrItem.GetID()])
+
+	}
+
+	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(items), nil
 }
 func (cli *host) Create() error {
-	return nil
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return nil
+	}
+
+	return cli.Save()
+
 }
 func (cli *host) Update() error {
-	return nil
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
+		return nil
+	}
+
+	return cli.Save()
 }
 func (cli *host) Save() error {
 
@@ -103,6 +146,17 @@ func (cli *host) Save() error {
 		return err
 	}
 
+	bizID := 0
+	if cli.datas.Exists(BusinessID) {
+		id, err := cli.datas.Int(BusinessID)
+		if nil != err {
+			return err
+		}
+		bizID = id
+	}
+
+	log.Errorf("set bizid:%d", bizID)
+
 	// clear the invalid data
 	for _, attrItem := range attrs {
 		if !cli.datas.Exists(attrItem.GetID()) {
@@ -110,8 +164,19 @@ func (cli *host) Save() error {
 		}
 	}
 
-	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.datas)
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+
+		cli.datas.Remove(key)
+	})
+
+	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(bizID, cli.datas)
 	if err != nil {
+		log.Errorf("failed to create host, error info is %s", err.Error())
 		return err
 	}
 	if len(hostID) != 1 {
