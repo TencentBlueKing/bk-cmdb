@@ -55,6 +55,9 @@ func SetModOwner(condition interface{}, ownerID string) map[string]interface{} {
 	case map[string]interface{}:
 		condition.(map[string]interface{})[common.BKOwnerIDField] = ownerID
 		return condition.(map[string]interface{})
+	case common.KvMap:
+		condition.(common.KvMap)[common.BKOwnerIDField] = ownerID
+		return condition.(map[string]interface{})
 	default:
 		out, err := bson.Marshal(condition)
 		if err != nil {
