@@ -17,7 +17,6 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/common/commondata"
 )
@@ -48,8 +47,7 @@ func (t *hostctrl) GetHosts(ctx context.Context, h util.Headers, opt *commondata
 	return
 }
 
-func (t *hostctrl) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *hostctrl) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *metadata.Response, err error) {
 	subPath := "/insts"
 
 	err = t.client.Post().
