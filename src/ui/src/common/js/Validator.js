@@ -69,7 +69,7 @@ const singlechar = {
         return '请输入' + field
     },
     validate: value => { // 验证规则
-        return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_，；;“”‘’。\."'\\\/])*$/.test(value)
+        return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；;“”‘’。\."'\\\/])*$/.test(value)
     }
 }
 Validator.extend('singlechar', singlechar)

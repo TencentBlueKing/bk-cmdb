@@ -19,7 +19,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/core/cc/api"
 	sencapi "configcenter/src/scene_server/api"
-	actobj "configcenter/src/scene_server/topo_server/topo_service/actions/object"
+	actobj "configcenter/src/scene_server/topo_server/actions/object"
 	obj "configcenter/src/source_controller/api/object"
 	"configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
 )

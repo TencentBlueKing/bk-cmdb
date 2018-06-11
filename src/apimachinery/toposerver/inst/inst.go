@@ -19,7 +19,7 @@ import (
 
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/topo_service/actions/inst"
+	"configcenter/src/scene_server/topo_server/actions/inst"
 )
 
 // TODO: config this body data struct.
