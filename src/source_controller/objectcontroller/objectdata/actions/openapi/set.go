@@ -48,6 +48,7 @@ func init() {
 func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -67,8 +68,9 @@ func (cli *setAction) DeleteSetHost(req *restful.Request, resp *restful.Response
 			blog.Error("unmarshal json error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+		input = util.SetModOwner(input, ownerID)
 
-		err = delModuleConfigSet(input, req)
+		err = delModuleConfigSet(input, ownerID, req)
 		if err != nil {
 			blog.Error("fail to delSetConfigHost: %v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommParamsInvalid)
@@ -89,7 +91,7 @@ func getModuleConfigCount(con map[string]interface{}) (int, error) {
 	return count, err
 }
 
-func delModuleConfigSet(input map[string]interface{}, req *restful.Request) error {
+func delModuleConfigSet(input map[string]interface{}, ownerID string, req *restful.Request) error {
 	tableName := "cc_ModuleHostConfig"
 
 	appID, ok := input[common.BKAppIDField]
@@ -104,7 +106,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 		return getErr
 	}
 
-	setID, moduleID, defErr := GetIdleModule(appID)
+	setID, moduleID, defErr := GetIdleModule(appID, ownerID)
 	if nil != defErr {
 		blog.Errorf("get idle module error:%v", defErr)
 		return defErr
@@ -115,19 +117,6 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 		blog.Error("fail to delSetConfigHost: %v", err)
 		return err
 	}
-	/*count, err := getModuleConfigCount(input)
-	if err != nil {
-		blog.Error("fail to delSetConfigHost: %v", err)
-		return err
-	}
-	blog.Debug("count:%v", count)
-	if count != 0 {
-		err = delModuleConfigSet(input, req)
-		if err != nil {
-			blog.Error("fail to delSetConfigHost: %v", err)
-			return err
-		}
-	}*/
 	//发送删除主机关系事件
 	ec := eventdata.NewEventContextByReq(req)
 	for oldContent := range oldContents {
@@ -147,6 +136,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 	}
 	//del host from set, get host module relation
 	params := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: common.KvMap{"$in": hostIDs}}
+	params = util.SetModOwner(params, ownerID)
 	var hostRelations []interface{}
 	getErr = set.CC.InstCli.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
 	if getErr != nil {
@@ -169,6 +159,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 		if !ok {
 			param := map[string]interface{}{common.BKAppIDField: appID, common.BKSetIDField: setID, common.BKModuleIDField: moduleID, common.BKHostIDField: rawHostID}
 			//set.CC.InstCli.InsertMuti
+			param = util.SetModOwner(param, ownerID)
 			addIdleModuleDatas = append(addIdleModuleDatas, param)
 		}
 
@@ -192,8 +183,9 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 	return nil
 }
 
-func GetIdleModule(appID interface{}) (interface{}, interface{}, error) {
+func GetIdleModule(appID interface{}, ownerID string) (interface{}, interface{}, error) {
 	params := common.KvMap{common.BKAppIDField: appID, common.BKDefaultField: common.DefaultResModuleFlag, common.BKModuleNameField: common.DefaultResModuleName}
+	params = util.SetModOwner(params, ownerID)
 	var result bson.M
 	err := set.CC.InstCli.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
 
