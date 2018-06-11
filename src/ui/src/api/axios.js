@@ -20,6 +20,16 @@ const alertMsg = (message, theme = 'error', delay = 3000) => {
     })
 }
 
+const catchErrorMsg = (response) => {
+    let msg = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+    if (response.data && response.data['bk_error_msg']) {
+        msg = response.data['bk_error_msg']
+    } else if (response.statusText) {
+        msg = response.statusText
+    }
+    alertMsg(msg)
+}
+
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
@@ -30,28 +40,31 @@ let axios = Axios.create({
     }
 })
 
-const catchErrorMsg = (response) => {
-    let msg = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
-    if (response.data && response.data['bk_error_msg']) {
-        msg = response.data['bk_error_msg']
-    } else if (response.statusText) {
-        msg = response.statusText
+let axiosQueue = []
+axios.interceptors.request.use(config => {
+    if (config.hasOwnProperty('id') && !axiosQueue.some(id => config.id === id)) {
+        axiosQueue.push(config.id)
     }
-    $alertMsg(msg)
-}
-
-Vue.prototype.$axiosResponseInterceptor = axios.interceptors.response.use(
+    return config
+})
+axios.interceptors.response.use(
     response => {
+        const config = response.config
+        if (config.hasOwnProperty('id')) {
+            axiosQueue.splice(axiosQueue.indexOf(config.id), 1)
+        }
         return response.data
     },
     error => {
-        if (error.response) {
+        const config = error.config
+        const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
+        if (globalError && error.response) {
             switch (error.response.status) {
                 case 401:
                     window.location.href = window.loginUrl
                     break
                 case 403:
-                    $alertMsg(error.response.statusText)
+                    alertMsg(error.response.statusText)
                     break
                 case 500:
                     // 异常
@@ -71,3 +84,4 @@ Vue.prototype.$Axios = Axios
 export const $axios = axios
 export const $Axios = Axios
 export const $alertMsg = alertMsg
+export const $AxiosQueue = axiosQueue
