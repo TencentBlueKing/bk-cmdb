@@ -86,7 +86,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 		if len(originDatas) > 0 {
 			ec := eventdata.NewEventContextByReq(req)
 			for _, originData := range originDatas {
-				err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionDelete, nil, originData)
+				err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionDelete, nil, originData, ownerID)
 				if err != nil {
 					blog.Error("create event error:%v", err)
 				}
@@ -150,7 +150,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 					if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil {
 						blog.Error("create event error:%v", err)
 					} else {
-						err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionUpdate, newData, originData)
+						err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionUpdate, newData, originData, ownerID)
 						if err != nil {
 							blog.Error("create event error:%v", err)
 						}
@@ -242,7 +242,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionCreate, origindata, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionCreate, origindata, nil, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}

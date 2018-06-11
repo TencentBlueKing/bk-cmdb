@@ -69,6 +69,7 @@ type EventInst struct {
 	ObjType     string      `json:"obj_type"`
 	Data        []EventData `json:"data"`
 	RequestID   string      `json:"request_id"`
+	OwnerID     string      `json:"supplier_account"`
 	RequestTime types.Time  `json:"request_time"`
 }
 
