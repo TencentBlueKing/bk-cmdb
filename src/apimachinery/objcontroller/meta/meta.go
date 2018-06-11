@@ -17,7 +17,6 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
 	metatype "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/api/metadata"
 )
@@ -36,9 +35,9 @@ func (t *meta) SelectObjects(ctx context.Context, h util.Headers, dat interface{
 	return
 }
 
-func (t *meta) DeleteObject(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+func (t *meta) DeleteObject(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
+	subPath := fmt.Sprintf("/meta/object/%d", id)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -50,7 +49,7 @@ func (t *meta) DeleteObject(ctx context.Context, objID string, h util.Headers, d
 	return
 }
 
-func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metadata.ObjectAttDes) (resp *metatype.CreateObjectResult, err error) {
+func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metatype.Object) (resp *metatype.CreateObjectResult, err error) {
 	resp = new(metatype.CreateObjectResult)
 	subPath := "/meta/object"
 
@@ -64,9 +63,9 @@ func (t *meta) CreateObject(ctx context.Context, h util.Headers, dat *metadata.O
 	return
 }
 
-func (t *meta) UpdateObject(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/%s", objID)
+func (t *meta) UpdateObject(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
+	subPath := fmt.Sprintf("/meta/object/%d", id)
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -78,8 +77,8 @@ func (t *meta) UpdateObject(ctx context.Context, objID string, h util.Headers, d
 	return
 }
 
-func (t *meta) SelectObjectAssociations(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectObjectAssociations(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAssociationResult, err error) {
+	resp = new(metatype.QueryObjectAssociationResult)
 	subPath := "/meta/objectassts"
 
 	err = t.client.Post().
@@ -92,8 +91,8 @@ func (t *meta) SelectObjectAssociations(ctx context.Context, h util.Headers, dat
 	return
 }
 
-func (t *meta) DeleteObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) DeleteObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
 
 	err = t.client.Delete().
@@ -106,8 +105,8 @@ func (t *meta) DeleteObjectAssociation(ctx context.Context, objID string, h util
 	return
 }
 
-func (t *meta) CreateObjectAssociation(ctx context.Context, h util.Headers, dat *metadata.ObjectAsst) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateObjectAssociation(ctx context.Context, h util.Headers, dat *metadata.ObjectAsst) (resp *metatype.CreateResult, err error) {
+	resp = new(metatype.CreateResult)
 	subPath := "/meta/objectasst"
 
 	err = t.client.Post().
@@ -120,8 +119,8 @@ func (t *meta) CreateObjectAssociation(ctx context.Context, h util.Headers, dat 
 	return
 }
 
-func (t *meta) UpdateObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) UpdateObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
 	subPath := fmt.Sprintf("/meta/objectasst/%s", objID)
 
 	err = t.client.Put().
@@ -134,8 +133,8 @@ func (t *meta) UpdateObjectAssociation(ctx context.Context, objID string, h util
 	return
 }
 
-func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h util.Headers) (resp *metatype.QueryObjectAttributeResult, err error) {
+	resp = new(metatype.QueryObjectAttributeResult)
 	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
 
 	err = t.client.Post().
@@ -148,8 +147,8 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID string, h util.Hea
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
+	resp = new(metatype.QueryObjectAttributeResult)
 	subPath := "/meta/objectatts"
 
 	err = t.client.Post().
@@ -162,9 +161,9 @@ func (t *meta) SelectObjectAttWithParams(ctx context.Context, h util.Headers, da
 	return
 }
 
-func (t *meta) DeleteObjectAttByID(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+func (t *meta) DeleteObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
+	subPath := fmt.Sprintf("/meta/objectatt/%d", id)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -176,8 +175,8 @@ func (t *meta) DeleteObjectAttByID(ctx context.Context, objID string, h util.Hea
 	return
 }
 
-func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metadata.ObjectAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metatype.Attribute) (resp *metatype.CreateObjectAttributeResult, err error) {
+	resp = new(metatype.CreateObjectAttributeResult)
 	subPath := "/meta/objectatt"
 
 	err = t.client.Post().
@@ -190,9 +189,9 @@ func (t *meta) CreateObjectAtt(ctx context.Context, h util.Headers, dat *metadat
 	return
 }
 
-func (t *meta) UpdateObjectAttByID(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/%s", objID)
+func (t *meta) UpdateObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
+	subPath := fmt.Sprintf("/meta/objectatt/%d", id)
 
 	err = t.client.Put().
 		WithContext(ctx).

@@ -1,24 +1,24 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package api
 
 import (
 	"net/http"
 
 	"configcenter/src/common"
-	frcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/types"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -39,7 +39,7 @@ func (cli *topoAPI) initBusiness() {
 // CreateBusiness create a new business
 func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
@@ -74,7 +74,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 // DeleteBusiness delete the business
 func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
@@ -87,7 +87,7 @@ func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryPa
 // UpdateBusiness update the business
 func (cli *topoAPI) UpdateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
@@ -103,7 +103,7 @@ func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, pathParams, q
 
 	// /app/status/{flag}/{owner_id}/{app_id}
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
@@ -119,7 +119,7 @@ func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryPa
 
 	// "/app/search/{owner_id}
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
@@ -147,7 +147,7 @@ func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryPa
 // SearchDefaultBusiness search the business by condition
 func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
@@ -175,7 +175,7 @@ func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, 
 // CreateDefaultBusiness create the default business
 func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	cond := frcommon.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 

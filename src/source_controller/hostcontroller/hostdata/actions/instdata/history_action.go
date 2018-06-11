@@ -23,8 +23,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/metadata"
+	. "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	restful "github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
