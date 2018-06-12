@@ -388,14 +388,6 @@ func (h *HostSnap) concede() {
 // saveRunning lock master process
 func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
-	setNXChan := make(chan struct{})
-	go func() {
-		select {
-		case <-time.After(masterProcLockLiveTime):
-			blog.Fatalf("saveRunning check: set nx time out!! the network may be broken, redis stats: %v ", h.redisCli.PoolStats())
-		case <-setNXChan:
-		}
-	}()
 	if h.isMaster {
 		var val string
 		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
@@ -422,7 +414,6 @@ func (h *HostSnap) saveRunning() (ok bool) {
 			blog.Infof("slave check: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 		}
 	}
-	close(setNXChan)
 	return ok
 }
 
