@@ -18,12 +18,11 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
-	metadata2 "configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
+	metatype "configcenter/src/common/metadata"
 )
 
-func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metadata.PropertyGroup) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error) {
+	resp = new(metatype.CreateObjectGroupResult)
 	subPath := "/meta/objectatt/group/new"
 
 	err = t.client.Post().
@@ -36,8 +35,8 @@ func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *met
 	return
 }
 
-func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metadata2.PropertyGroupCondition) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.UpdateGroupCondition) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
 	subPath := "/meta/objectatt/group/update"
 
 	err = t.client.Put().
@@ -50,8 +49,8 @@ func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *met
 	return
 }
 
-func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/meta/objectatt/group/groupid/%s", groupID)
 
 	err = t.client.Delete().
@@ -64,8 +63,8 @@ func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h util.H
 	return
 }
 
-func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, dat []metadata2.PropertyGroupObjectAtt) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, dat []metatype.PropertyGroupObjectAtt) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
 	subPath := "/meta/objectatt/group/property"
 
 	err = t.client.Put().
@@ -78,8 +77,8 @@ func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers,
 	return
 }
 
-func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/meta/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", h.OwnerID, objID, propertyID, groupID)
 
 	err = t.client.Put().
@@ -106,8 +105,8 @@ func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, objID string, 
 	return
 }
 
-func (t *meta) SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
+	resp = new(metatype.QueryObjectGroupResult)
 	subPath := "/meta/objectatt/group/search"
 
 	err = t.client.Post().

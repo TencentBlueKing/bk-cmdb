@@ -176,7 +176,3 @@ func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful
 		return http.StatusOK, result, nil
 	}, resp)
 }
-
-
-
-
