@@ -200,7 +200,7 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
             <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
         <div class="pop-master" v-show="isPopShow">
@@ -431,7 +431,8 @@
                         this.$axios({
                             url: url,
                             method: method,
-                            data: params
+                            data: params,
+                            id: 'savePush'
                         }).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')

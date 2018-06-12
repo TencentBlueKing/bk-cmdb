@@ -39,6 +39,15 @@ let axios = Axios.create({
         'bkcclanguage': 'cn'   // 取值 cn/en
     }
 })
+
+const updateLoadingStatus = (config) => {
+    if (config.hasOwnProperty('id')) {
+        let queue = [...window.CMDB_APP.$store.state.common.axiosQueue]
+        queue.splice(queue.indexOf(config.id), 1)
+        window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
+    }
+}
+
 axios.interceptors.request.use(config => {
     const axiosQueue = window.CMDB_APP.$store.state.common.axiosQueue
     if (config.hasOwnProperty('id') && !axiosQueue.some(id => config.id === id)) {
@@ -49,15 +58,12 @@ axios.interceptors.request.use(config => {
 axios.interceptors.response.use(
     response => {
         const config = response.config
-        if (config.hasOwnProperty('id')) {
-            let queue = [...window.CMDB_APP.$store.state.common.axiosQueue]
-            queue.splice(queue.indexOf(config.id), 1)
-            window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
-        }
+        updateLoadingStatus(config)
         return response.data
     },
     error => {
         const config = error.config
+        updateLoadingStatus(config)
         const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
         if (globalError && error.response) {
             switch (error.response.status) {
