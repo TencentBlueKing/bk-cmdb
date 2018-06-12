@@ -26,7 +26,8 @@ const state = {
     usercustom: {},          // 用户字段配置
     globalLoading: false,
     memberLoading: false,
-    language: Cookies.get('blueking_language') || 'zh_CN'
+    language: Cookies.get('blueking_language') || 'zh_CN',
+    axiosQueue: []
 }
 
 const getters = {
@@ -40,7 +41,8 @@ const getters = {
     usercustom: state => state.usercustom,
     globalLoading: state => state.globalLoading,
     memberLoading: state => state.memberLoading,
-    language: state => state.language
+    language: state => state.language,
+    axiosQueue: state => state.axiosQueue
 }
 
 const actions = {
@@ -130,6 +132,9 @@ const mutations = {
     },
     setGlobalLoading (state, isLoading) {
         state.globalLoading = isLoading
+    },
+    updateAxiosQueue (state, axiosQueue) {
+        state.axiosQueue = axiosQueue
     }
 }
 
