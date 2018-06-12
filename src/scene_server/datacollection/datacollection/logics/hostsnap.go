@@ -48,13 +48,12 @@ var (
 
 // HostSnap define HostSnap
 type HostSnap struct {
-	id         string
-	chanName   string
-	msgChan    chan string
-	maxSize    int
-	ts         time.Time // life cycle timestamp
-	lastMesgTs time.Time
-	isMaster   bool
+	id       string
+	chanName string
+	msgChan  chan string
+	maxSize  int
+	ts       time.Time // life cycle timestamp
+	isMaster bool
 	sync.Mutex
 	interrupt     chan error
 	maxconcurrent int
@@ -204,10 +203,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
 			return nil
 		default:
-			var data = msg
-			if gjson.Get(msg, "dataid").Exists() {
-				data = gjson.Get(msg, "data").String()
-			}
+			data := gjson.Get(msg, "data").String()
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
@@ -278,12 +274,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = bkcommon.HostOSTypeEnumLinux //"Linux"
+		ostype = "Linux"
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = bkcommon.HostOSTypeEnumWindows // "Windows"
+		ostype = "Windows"
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -299,21 +295,18 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		}
 	}
 
-	osbit := val.Get("data.system.info.systemtype").String()
-
 	setter := map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,                    //Mhz
-		"bk_disk":       disk / 1024 / 1024 / 1024, //GB
-		"bk_mem":        mem / 1024 / 1024,         //MB
+		"bk_cpu_mhz":    CPUMhz,             //Mhz
+		"bk_disk":       disk / 1024 / 1024, //MB
+		"bk_mem":        mem / 1024 / 1024,  //MB
 		"bk_os_type":    ostype,
 		"bk_os_name":    osname,
 		"bk_os_version": version,
 		"bk_host_name":  hostname,
 		"bk_outer_mac":  OuterMAC,
 		"bk_mac":        InnerMAC,
-		"bk_os_bit":     osbit,
 	}
 
 	if cupnum <= 0 {
@@ -338,8 +331,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		blog.Info("bk_outer_mac not found in message for ", innerIP)
 	} else if InnerMAC == "" {
 		blog.Info("bk_mac not found in message for ", innerIP)
-	} else if osbit == "" {
-		blog.Info("bk_os_bit not found in message for ", innerIP)
 	}
 
 	return setter
@@ -420,10 +411,12 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
+			h.isMaster = false
 		} else if val == h.id {
 			blog.Infof("master check : i am still master")
 			h.redisCli.Set(common.MasterProcLockKey, h.id, masterProcLockLiveTime)
 			ok = true
+			h.isMaster = true
 		} else {
 			blog.Infof("exit master,val = %v, id = %v", val, h.id)
 			h.isMaster = false
@@ -433,12 +426,14 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
+			h.isMaster = false
 		} else if ok {
 			blog.Infof("slave check: ok")
 			blog.Infof("i am master from now")
 			h.isMaster = true
 		} else {
 			blog.Infof("slave check: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
+			h.isMaster = false
 		}
 	}
 	return ok
@@ -455,12 +450,9 @@ func (h *HostSnap) subChan() {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
 	}
-	// healcheckCh := make(chan struct{})
-	// go h.healthCheck(healcheckCh)
 	defer func() {
 		subChan.Unsubscribe(h.chanName)
 		h.subscribing = false
-		// close(healcheckCh)
 		blog.Infof("subChan Close")
 	}()
 
@@ -500,7 +492,6 @@ func (h *HostSnap) subChan() {
 		if chanlen != 0 && chanlen%10 == 0 {
 			blog.Infof("buff len %d", chanlen)
 		}
-		h.lastMesgTs = time.Now()
 		h.msgChan <- msg.Payload
 		cnt++
 		if cnt%10000 == 0 {
@@ -580,25 +571,4 @@ func fetch() map[string]map[string]interface{} {
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
 	return hostcache
-}
-
-func (h *HostSnap) healthCheck(closeChan chan struct{}) {
-	ticker := time.NewTicker(time.Minute)
-	for {
-		select {
-		case <-closeChan:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			channelstatus := 0
-			if err := h.snapCli.Ping().Err(); err != nil {
-				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
-			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
-				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
-			} else {
-				channelstatus = bkcommon.CCSuccess
-			}
-			h.redisCli.Set(common.RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
-		}
-	}
 }
