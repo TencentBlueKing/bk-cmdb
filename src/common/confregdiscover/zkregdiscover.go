@@ -68,6 +68,10 @@ func (zkRD *ZkRegDiscover) Write(path string, data []byte) error {
 	return zkRD.zkcli.Update(path, string(data))
 }
 
+func (zkRD *ZkRegDiscover) Read(path string) (string, error) {
+    return zkRD.zkcli.Get(path)
+}
+
 func (zkRD *ZkRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
 
 	discvCtx, _ := context.WithCancel(zkRD.rootCtx)
