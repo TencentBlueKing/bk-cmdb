@@ -353,6 +353,8 @@ func getIPS(val *gjson.Result) (ips []string) {
 }
 
 func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
+	cachelock.Lock()
+	defer cachelock.Unlock()
 	cloudid := val.Get("cloudid").String()
 	/*if cloudid == "0" || cloudid == "" {
 		cloudid := common.BKCloudIDField
@@ -530,15 +532,11 @@ func (h *HostSnap) clearMsgChan() {
 var cachelock = sync.Mutex{}
 
 func (h *HostSnap) getCache() map[string]map[string]interface{} {
-	cachelock.Lock()
-	defer cachelock.Unlock()
 	return h.cache.cache[h.cache.flag]
 }
 
 func (h *HostSnap) setCache(key string, val map[string]interface{}) {
-	cachelock.Lock()
 	h.cache.cache[h.cache.flag][key] = val
-	cachelock.Unlock()
 }
 
 func (h *HostSnap) fetchDB() {
