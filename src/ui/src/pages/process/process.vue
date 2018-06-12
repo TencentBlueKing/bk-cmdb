@@ -167,9 +167,6 @@
                 let headerTail = []
                 attribute.map(property => {
                     let {
-                        isonly,
-                        isrequired,
-                        'bk_isapi': bkIsapi,
                         'bk_property_id': bkPropertyId,
                         'bk_property_name': bkPropertyName
                     } = property
@@ -178,15 +175,29 @@
                         name: bkPropertyName,
                         property: property
                     }
-                    if (!bkIsapi) {
-                        if (isonly && isrequired) {
-                            headerLead.push(headerItem)
-                        } else if (isonly || isonly) {
-                            headerMiddle.push(headerItem)
-                        } else {
-                            headerTail.push(headerItem)
-                        }
+                    switch (bkPropertyId) {
+                        case 'bk_process_name':
+                            headerMiddle[0] = headerItem
+                            break
+                        case 'bk_func_id':
+                            headerMiddle[1] = headerItem
+                            break
+                        case 'bind_ip':
+                            headerMiddle[2] = headerItem
+                            break
+                        case 'port':
+                            headerMiddle[3] = headerItem
+                            break
+                        case 'protocol':
+                            headerMiddle[4] = headerItem
+                            break
+                        case 'bk_func_name':
+                            headerMiddle[5] = headerItem
+                            break
                     }
+                })
+                headerMiddle = headerMiddle.filter(header => {
+                    return header !== undefined
                 })
                 headerLead.unshift({
                     id: 'bk_process_id',
@@ -195,7 +206,6 @@
                     width: 50
                 })
                 this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 7)
-                // this.table.header = headerLead.concat(headerMiddle, headerTail).slice(0, 6)
             },
             'filter.bkBizId' (bkBizId) {
                 this.$nextTick(() => {
@@ -205,6 +215,7 @@
         },
         methods: {
             multipleUpdate () {
+                this.slider.title.text = this.$t("ProcessManagement['批量编辑']")
                 this.slider.tab.attribute.isMultipleUpdate = true
                 this.slider.tab.attribute.type = 'create'
                 this.slider.tab.attribute.formValues = {bk_process_id: this.table.chooseId.join(',')}

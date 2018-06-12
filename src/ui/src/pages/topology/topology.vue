@@ -46,7 +46,7 @@
                         @delete="deleteNode"
                         @cancel="cancelCreate"></v-attribute>
                 </bk-tabpanel>
-                <bk-tabpanel name="process" :title="$t('Permission[\'进程管理\']')" :show="attributeBkObjId === 'module'">
+                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')" :show="attributeBkObjId === 'module'">
                     <v-process
                         :isShow="view.tab.active === 'process'"
                         :bizId="tree.bkBizId"
