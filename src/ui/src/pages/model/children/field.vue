@@ -485,12 +485,12 @@
                                         </div>
                                     </div>
                                     <div class="submit-btn" v-if="!isReadOnly">
-                                        <a class="save-btn main-btn mr10" @click="saveFieldChange(item, index)">
+                                        <bk-button type="primary" :loading="$loading('saveChange')" class="save-btn main-btn mr10" :class="{'loading': $loading('saveChange')}" @click="saveFieldChange(item, index)">
                                             {{$t('Common["保存"]')}}
-                                        </a>
-                                        <a class="cancel-btn vice-btn" @click="cancelFieldChange(item, index)">
+                                        </bk-button>
+                                        <bk-button type="default" class="cancel-btn vice-btn" @click="cancelFieldChange(item, index)">
                                             {{$t('Common["取消"]')}}
-                                        </a>
+                                        </bk-button>
                                     </div>
                                 </form>
                             </div>
@@ -1046,7 +1046,7 @@
                             </form>
                             <!-- 保存取消按钮 -->
                             <div class="button-wraper">
-                                <bk-button type="primary" class="save-btn main-btn mr10" @click="saveNewField">
+                                <bk-button type="primary" class="save-btn main-btn mr10" :loading="$loading('saveNew')" @click="saveNewField">
                                     {{$t('Common["保存"]')}}
                                 </bk-button>
                                 <bk-button type="default" class="cancel-btn vice-btn" @click="closeAddFieldBox">
@@ -1752,7 +1752,7 @@
                     unit: this.newFieldInfo.unit,
                     bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
-                this.$axios.post('object/attr', params).then(res => {
+                this.$axios.post('object/attr', params, {id: 'saveNew'}).then(res => {
                     if (res.result) {
                         this.getModelField()
                         this.closeAddFieldBox()
@@ -1835,7 +1835,7 @@
                     params['bk_obj_id'] = this.objId
                     params['bk_supplier_account'] = this.bkSupplierAccount
                 }
-                this.$axios.put(`object/attr/${item['id']}`, params).then(res => {
+                this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'}).then(res => {
                     if (res.result) {
                         this.getModelField()
                         this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
@@ -2492,7 +2492,7 @@
         }
         .submit-btn{
             margin-left: 70px;
-            a{
+            .bk-button{
                 height: 30px;
                 line-height: 28px;
                 border-radius: 2px;
