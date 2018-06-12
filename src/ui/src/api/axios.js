@@ -39,11 +39,10 @@ let axios = Axios.create({
         'bkcclanguage': 'cn'   // 取值 cn/en
     }
 })
-
-let axiosQueue = []
 axios.interceptors.request.use(config => {
+    const axiosQueue = window.CMDB_APP.$store.state.common.axiosQueue
     if (config.hasOwnProperty('id') && !axiosQueue.some(id => config.id === id)) {
-        axiosQueue.push(config.id)
+        window.CMDB_APP.$store.commit('updateAxiosQueue', [...axiosQueue, config.id])
     }
     return config
 })
@@ -51,7 +50,9 @@ axios.interceptors.response.use(
     response => {
         const config = response.config
         if (config.hasOwnProperty('id')) {
-            axiosQueue.splice(axiosQueue.indexOf(config.id), 1)
+            let queue = [...window.CMDB_APP.$store.state.common.axiosQueue]
+            queue.splice(queue.indexOf(config.id), 1)
+            window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
         }
         return response.data
     },
@@ -84,4 +85,3 @@ Vue.prototype.$Axios = Axios
 export const $axios = axios
 export const $Axios = Axios
 export const $alertMsg = alertMsg
-export const $AxiosQueue = axiosQueue
