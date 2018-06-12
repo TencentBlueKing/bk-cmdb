@@ -138,11 +138,11 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 			// if the import data from excel include instid, it will only use the inst id as the condition
 			if id, ok := targetInput[common.BKInstIDField]; ok {
 				condition[common.BKInstIDField] = id
+				delete(targetInput, common.BKInstIDField)
 			} else {
 				condition[common.BKOwnerIDField] = ownerID
 				condition[common.BKObjIDField] = objID
 				condition[InstName] = targetInput[InstName]
-
 			}
 
 			if _, ok := targetInput[InstName]; !ok {
