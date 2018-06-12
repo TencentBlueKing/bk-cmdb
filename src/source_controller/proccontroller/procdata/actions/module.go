@@ -40,13 +40,13 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/module", Params: nil, Handler: proc.DeleteProc2Module})
 	proc.CreateAction()
 }
-
+/*
 // DeleteProc2Module delete proc module config
 func (pm *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
     language := util.GetActionLanguage(req)
     defErr := pm.CC.Error.CreateDefaultCCErrorIf(language)
 }
-
+*/
 //DeleteProc2Module delete proc module config
 func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
