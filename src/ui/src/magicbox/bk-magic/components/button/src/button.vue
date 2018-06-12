@@ -1,6 +1,7 @@
 <template>
     <button
         class="bk-button"
+        type="button"
         :title="title"
         :disabled="disabled"
         :class="['bk-' + type, 'bk-button-' + size, {'is-disabled': disabled, 'is-loading': loading}]"
