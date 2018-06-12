@@ -22,7 +22,7 @@ import (
 
 func init() {
 
-	api.RegisterInputer(business)
+	//api.RegisterInputer(business)
 	//api.RegisterFrequencyInputer(business, time.Minute)
 }
 
