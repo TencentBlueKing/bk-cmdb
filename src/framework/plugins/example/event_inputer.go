@@ -23,7 +23,7 @@ import (
 
 func init() {
 
-	api.RegisterInputer(eve)
+	//api.RegisterInputer(eve)
 
 	api.RegisterEventHost(eve.eventCallback)
 	api.RegisterEventHostIdentifier(eve.eventCallback)
