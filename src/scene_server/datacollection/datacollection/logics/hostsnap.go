@@ -301,8 +301,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
-	// TODO add log when fields empty
-	return map[string]interface{}{
+	setter := map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
 		"bk_cpu_mhz":    CPUMhz,                    //Mhz
@@ -316,6 +315,34 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		"bk_mac":        InnerMAC,
 		"bk_os_bit":     osbit,
 	}
+
+	if cupnum <= 0 {
+		blog.Info("bk_cpu not found in message for ", innerIP)
+	} else if cpumodule == "" {
+		blog.Info("bk_cpu_module not found in message for ", innerIP)
+	} else if CPUMhz <= 0 {
+		blog.Info("bk_cpu_mhz not found in message for ", innerIP)
+	} else if disk <= 0 {
+		blog.Info("bk_disk not found in message for ", innerIP)
+	} else if mem <= 0 {
+		blog.Info("bk_mem not found in message for ", innerIP)
+	} else if ostype == "" {
+		blog.Info("bk_os_type not found in message for ", innerIP)
+	} else if osname == "" {
+		blog.Info("bk_os_name not found in message for ", innerIP)
+	} else if version == "" {
+		blog.Info("bk_os_version not found in message for ", innerIP)
+	} else if hostname == "" {
+		blog.Info("bk_host_name not found in message for ", innerIP)
+	} else if outerIP != "" && OuterMAC == "" {
+		blog.Info("bk_outer_mac not found in message for ", innerIP)
+	} else if InnerMAC == "" {
+		blog.Info("bk_mac not found in message for ", innerIP)
+	} else if osbit == "" {
+		blog.Info("bk_os_bit not found in message for ", innerIP)
+	}
+
+	return setter
 }
 func getIPS(val *gjson.Result) (ips []string) {
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
@@ -428,12 +455,12 @@ func (h *HostSnap) subChan() {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
 	}
-	healcheckCh := make(chan struct{})
-	go h.healthCheck(healcheckCh)
+	// healcheckCh := make(chan struct{})
+	// go h.healthCheck(healcheckCh)
 	defer func() {
 		subChan.Unsubscribe(h.chanName)
 		h.subscribing = false
-		close(healcheckCh)
+		// close(healcheckCh)
 		blog.Infof("subChan Close")
 	}()
 
