@@ -44,7 +44,7 @@
                 </div>
                 <div class="footer">
                     <div class="btn-group">
-                        <bk-button type="primary" class="confirm-btn" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('saveClassify')" class="confirm-btn" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
                         <bk-button type="default" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
                     </div>
                 </div>

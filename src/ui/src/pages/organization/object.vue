@@ -74,7 +74,7 @@
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
                 :wrapperMinusHeight="150"
-                :loading="table.loading"
+                :loading="$loading('instSearch')"
                 @handleRowClick="editObject"
                 @handleSortChange="setTableSort"
                 @handlePageChange="setTablePage"
@@ -507,7 +507,7 @@
             // 获取表格列表
             getTableList () {
                 this.table.loading = true
-                return this.$axios.post(this.axiosConfig.url, this.axiosConfig.params).then(res => {
+                return this.$axios.post(this.axiosConfig.url, this.axiosConfig.params, {id: 'instSearch'}).then(res => {
                     let data = {
                         count: 0,
                         info: []
@@ -578,7 +578,7 @@
                     let updateUrl = this.objId === 'biz'
                         ? `biz/${this.bkSupplierAccount}/${bizId}`
                         : `inst/${this.bkSupplierAccount}/${this.objId}/${instId}`
-                    this.$axios.put(updateUrl, formData).then(res => {
+                    this.$axios.put(updateUrl, formData, {id: 'instEdit'}).then(res => {
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
@@ -589,7 +589,7 @@
                     })
                 } else {
                     let createUrl = this.objId === 'biz' ? `biz/${this.bkSupplierAccount}` : `inst/${this.bkSupplierAccount}/${this.objId}`
-                    this.$axios.post(createUrl, formData).then(res => {
+                    this.$axios.post(createUrl, formData, {id: 'instEdit'}).then(res => {
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
@@ -627,7 +627,8 @@
                 try {
                     let res = await this.$axios({
                         method: method,
-                        url: url
+                        url: url,
+                        id: 'instDelete'
                     })
                     this.setTablePage(1)
                     this.closeObjectSlider()

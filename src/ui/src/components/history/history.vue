@@ -27,12 +27,12 @@
                 <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active" :multiple="false"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
-                <bk-button type="primary" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('auditHistory')" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
             </div>
         </div>
         <div class="history-table">
             <v-table
-                :loading="table.isLoading" 
+                :loading="$loading('auditHistory')" 
                 :header="table.header" 
                 :list="table.list" 
                 :pagination="table.pagination" 
@@ -100,8 +100,7 @@
                         size: 10
                     },
                     defaultSort: '-op_time',
-                    sort: '-op_time',
-                    isLoading: false
+                    sort: '-op_time'
                 }
             }
         },
@@ -168,8 +167,7 @@
                 }
             },
             getHistory () {
-                this.table.isLoading = true
-                this.$axios.post('audit/search', this.searchParams).then(res => {
+                this.$axios.post('audit/search', this.searchParams, {id: 'auditHistory'}).then(res => {
                     if (res.result) {
                         res.data.info.map(history => {
                             history['op_time'] = this.$formatTime(history['op_time'])
@@ -179,9 +177,6 @@
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
-                    this.table.isLoading = false
-                }).catch(() => {
-                    this.table.isLoading = false
                 })
             },
             setFilterDate (oldDate, newDate) {
