@@ -31,7 +31,9 @@ type factory struct {
 
 func (cli *factory) CreateInst(params types.LogicParams, obj model.Object) Inst {
 	return &inst{
+		
 		params:    params,
 		clientSet: cli.clientSet,
+		target:    obj,
 	}
 }

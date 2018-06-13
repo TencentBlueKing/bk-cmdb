@@ -12,6 +12,10 @@
 
 package metadata
 
+import (
+	types "configcenter/src/common/mapstr"
+)
+
 // RspID response id
 type RspID struct {
 	ID int `json:"id"`
@@ -123,4 +127,25 @@ type QueryObjectClassificationWithObjectsResult struct {
 type QueryObjectAssociationResult struct {
 	BaseResp `json:",inline"`
 	Data     []Association `json:"data"`
+}
+
+// QueryInstInput query common input params
+type QueryInstInput struct {
+	Condition interface{} `json:"condition"`
+	Fields    string      `json:"fields"`
+	Start     int         `json:"start"`
+	Limit     int         `json:"limit"`
+	Sort      string      `json:"sort"`
+}
+
+// QueryInstResult query inst result
+type QueryInstResult struct {
+	BaseResp `json:",inline"`
+	Data     types.MapStr `json:"data"`
+}
+
+// CreateInstResult create inst result
+type CreateInstResult struct {
+	BaseResp `json:",inline"`
+	Data     types.MapStr `json:"data"`
 }

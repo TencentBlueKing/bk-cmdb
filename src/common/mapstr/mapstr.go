@@ -42,6 +42,13 @@ func (cli MapStr) ToJSON() ([]byte, error) {
 	return js, nil
 }
 
+// Get return the origin value by the key
+func (cli MapStr) Get(key string) (val interface{}, exists bool) {
+
+	val, exists = cli[key]
+	return val, exists
+}
+
 // Set set a new value for the key, the old value will be replaced
 func (cli MapStr) Set(key string, value interface{}) {
 	cli[key] = value
