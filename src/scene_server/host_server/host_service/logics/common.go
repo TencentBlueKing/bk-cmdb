@@ -13,15 +13,16 @@
 package logics
 
 import (
+	"encoding/json"
+
+	simplejson "github.com/bitly/go-simplejson"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
-	"encoding/json"
-
-	simplejson "github.com/bitly/go-simplejson"
-	restful "github.com/emicklei/go-restful"
 )
 
 // GetHttpResult get http result
@@ -50,7 +51,7 @@ func GetHttpResult(req *restful.Request, url, method string, params interface{})
 	}
 	isSuccess, err := addReply.Get("result").Bool()
 	if nil != err || !isSuccess {
-		errMsg, _ := addReply.Get("message").String()
+		errMsg, _ := addReply.Get(common.HTTPBKAPIErrorMessage).String()
 		blog.Error("http do error, url:%s, params:%s, error:%s", url, strParams, errMsg)
 		return false, errMsg, addReply.Get("data").Interface()
 	}
