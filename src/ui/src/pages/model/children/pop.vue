@@ -198,7 +198,7 @@
         left: 0;
         right: 0;
         background: rgba(0, 0, 0, .6);
-        z-index: 9999;
+        z-index: 1299;
         .is-danger{
             color: #ff5656;
             font-size: 12px;

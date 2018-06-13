@@ -116,13 +116,13 @@
             <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                 {{$t("CustomQuery['预览']")}}
             </bk-button>
-            <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
+            <bk-button type="primary" :loading="$loading('saveUserAPI')" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
                 {{$t("Common['保存']")}}
             </bk-button>
             <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">
                 {{$t("Common['取消']")}}
             </bk-button>
-            <bk-button type="default" class="userapi-btn del-btn" @click="deleteUserAPIConfirm" v-if="type === 'update'">
+            <bk-button type="default" :loading="$loading('deleteUserAPI')" class="userapi-btn del-btn" @click="deleteUserAPIConfirm" v-if="type === 'update'">
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
@@ -375,7 +375,7 @@
             */
             async deleteUserAPI () {
                 try {
-                    await this.$axios.delete(`userapi/${this.bkBizId}/${this.id}`)
+                    await this.$axios.delete(`userapi/${this.bkBizId}/${this.id}`, {id: 'deleteUserAPI'})
                     this.$emit('delete')
                     this.$emit('cancel')
                     this.$alertMsg(this.$t("Common['删除成功']"), 'success')
@@ -546,7 +546,7 @@
                         // 将Info字段转为JSON字符串提交
                         let params = Object.assign({}, this.apiParams, {'info': JSON.stringify(this.apiParams['info'])})
                         if (this.type === 'create') {
-                            this.$axios.post('userapi', params).then(res => {
+                            this.$axios.post('userapi', params, {id: 'saveUserAPI'}).then(res => {
                                 if (res.result) {
                                     this.$alertMsg(this.$t("Common['保存成功']"), 'success')
                                     this.$emit('create', res.data)
@@ -555,7 +555,7 @@
                                 }
                             })
                         } else {
-                            this.$axios.put(`userapi/${this.bkBizId}/${this.id}`, params)
+                            this.$axios.put(`userapi/${this.bkBizId}/${this.id}`, params, {id: 'saveUserAPI'})
                             .then(res => {
                                 if (res.result) {
                                     this.$emit('update', res.data)
