@@ -73,3 +73,34 @@ type GetHostSnapResult struct {
 	BaseResp `json:",inline"`
 	Data     HostSnap `json:"data"`
 }
+
+type GetHostModuleIDsResult struct {
+	BaseResp `json:",inline"`
+	Data     []int `json:"data"`
+}
+
+type ParamData struct {
+	ApplicationID       int   `json:"bk_biz_id"`
+	HostID              []int `json:"bk_host_id"`
+	OwnerModuleID       int   `json:"bk_owner_module_id"`
+	OwnerAppplicationID int   `json:"bk_owner_biz_id"`
+}
+
+type AssignHostToAppParams struct {
+	ApplicationID      int   `json:"bk_biz_id"`
+	HostID             []int `json:"bk_host_id"`
+	ModuleID           int   `json:"bk_module_id"`
+	OwnerApplicationID int   `json:"bk_owner_biz_id"`
+	OwnerModuleID      int   `json:"bk_owner_module_id"`
+}
+
+type HostConfig struct {
+	BaseResp `json:",inline"`
+	Data     []interface{} `json:"data"`
+}
+
+type ModuleHostConfigParams struct {
+	ApplicationID int   `json:"bk_biz_id"`
+	HostID        int   `json:"bk_host_id"`
+	ModuleID      []int `json:"bk_module_id"`
+}
