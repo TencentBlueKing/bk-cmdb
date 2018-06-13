@@ -224,15 +224,8 @@
             async getAllProcessID (isChecked) {
                 if (isChecked) {
                     let allProcessId = []
-                    let params = {
-                        condition: {
-                            'bk_biz_id': this.filter.bkBizId
-                        },
-                        fields: [
-                            'bk_process_id'
-                        ],
-                        page: {}
-                    }
+                    let params = this.$deepClone(this.searchParams)
+                    params.page = {}
                     this.table.isLoading = true
                     try {
                         const res = await this.$axios.post(`proc/search/${this.bkSupplierAccount}/${this.filter.bkBizId}`, params)
