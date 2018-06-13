@@ -17,12 +17,11 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+	metatype "configcenter/src/common/metadata"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Headers, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Headers, dat *metatype.QueryInstInput) (resp *metatype.QueryInstResult, err error) {
+	resp = new(metatype.QueryInstResult)
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
 
 	err = t.client.Post().
@@ -35,8 +34,8 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Hea
 	return
 }
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instance) CreateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error) {
+	resp = new(metatype.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Post().
@@ -49,8 +48,8 @@ func (t *instance) CreateObject(ctx context.Context, objType string, h util.Head
 	return
 }
 
-func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Delete().
@@ -63,8 +62,8 @@ func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers
 	return
 }
 
-func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+	resp = new(metatype.UpdateResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Put().
