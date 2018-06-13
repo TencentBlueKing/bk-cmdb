@@ -204,7 +204,7 @@
             },
             saveProcess (formData, originalData) {
                 if (this.slider.tab.attribute.type === 'create') {
-                    this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData).then(res => {
+                    this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData, {id: 'editAttr'}).then(res => {
                         if (res.result) {
                             this.$alertMsg(this.$t("ProcessManagement['新增进程成功']"), 'success')
                             this.setCurrentPage(1)
@@ -214,7 +214,7 @@
                         }
                     })
                 } else {
-                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData).then(res => {
+                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData, {id: 'editAttr'}).then(res => {
                         if (res.result) {
                             this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
                             this.setCurrentPage(1)
@@ -229,7 +229,7 @@
                 this.$bkInfo({
                     title: this.$t("ProcessManagement['确认要删除进程']", {processName: data['bk_process_name']}),
                     confirmFn: () => {
-                        this.$axios.delete(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${data['bk_process_id']}`).then((res) => {
+                        this.$axios.delete(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${data['bk_process_id']}`, {id: 'instDelete'}).then((res) => {
                             if (res.result) {
                                 this.closeSlider()
                                 this.setCurrentPage(1)

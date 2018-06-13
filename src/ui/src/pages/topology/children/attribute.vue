@@ -85,7 +85,7 @@
             </template>
         </ul>
         <div class="attribute-btn">
-            <bk-button type="primary" class="bk-button main-btn" @click="doSubmit" :disabled="errors.any()" v-if="displayType === 'form'">{{$t('Common[\'保存\']')}}</bk-button>
+            <bk-button type="primary" class="bk-button main-btn" @click="doSubmit" :loading="$loading('editAttr')" :disabled="errors.any()" v-if="displayType === 'form'">{{$t('Common[\'保存\']')}}</bk-button>
             <template v-if="!editable">
                 <span class="tooltip-wrapper" v-tooltip="{content: $t('Common[\'关键业务不能够修改\']'), classes: 'topo-tip'}">
                     <bk-button type="primary" class="bk-button main-btn" disabled v-if="displayType === 'list'">{{$t('Common[\'编辑\']')}}</bk-button>
@@ -96,7 +96,7 @@
             </template>
             <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="toggleDisplayType('list')" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'取消\']')}}</bk-button>
             <bk-button type="default" class="bk-button vice-btn cancel-btn" @click="cancelCreate" v-if="type === 'create'">{{$t('Common[\'取消\']')}}</bk-button>
-            <button class="del-btn" @click="doDelete" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'删除\']')}}</button>
+            <bk-button class="del-btn" @click="doDelete" :loading="$loading('deleteAttr')" v-if="type === 'update' && displayType === 'form'">{{$t('Common[\'删除\']')}}</bk-button>
         </div>
     </div>
 </template>
@@ -295,7 +295,6 @@
                 }
                 if (property.hasOwnProperty('option')) {
                     if (bkPropertyType === 'int') {
-                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min')) {
                             rules['min_value'] = option.min
                         }

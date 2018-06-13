@@ -37,8 +37,8 @@
                 <div class="button-group fr">
                     <bk-button type="primary" v-if="isNotModule" v-show="selectedList.length" @click="doTransfer(false)">{{$t('Common[\'确认转移\']')}}</bk-button>
                     <template v-else v-show="selectedList.length">
-                        <bk-button type="primary" @click="doTransfer(false)">{{$t('Common[\'覆盖\']')}}</bk-button>
-                        <bk-button type="primary" @click="doTransfer(true)">{{$t('Common[\'更新\']')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('transfer')" @click="doTransfer(false)">{{$t('Common[\'覆盖\']')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('transfer')" @click="doTransfer(true)">{{$t('Common[\'更新\']')}}</bk-button>
                     </template>
                     <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
                 </div>
@@ -186,7 +186,7 @@
                     this.$axios.post('hosts/modules/resource', {
                         'bk_biz_id': this.bkBizId,
                         'bk_host_id': this.chooseId
-                    }).then(res => {
+                    }, {id: 'transfer'}).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
                             this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
@@ -210,7 +210,7 @@
                             return node['bk_inst_id']
                         }),
                         'is_increment': type
-                    }).then(res => {
+                    }, {id: 'transfer'}).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
                             this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
