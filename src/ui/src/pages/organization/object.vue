@@ -533,7 +533,8 @@
                 if (isAllCheck) {
                     this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
-                    const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
+                    let params = this.$deepClone(this.axiosConfig.params)
+                    params.page = {}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
                     this.$axios.post(this.axiosConfig.url, params).then(res => {
                         if (res.result) {
