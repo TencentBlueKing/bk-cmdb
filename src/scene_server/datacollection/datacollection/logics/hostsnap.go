@@ -59,6 +59,8 @@ type HostSnap struct {
 	interrupt     chan error
 	maxconcurrent int
 
+	doneCh chan struct{}
+
 	resetHandle chan struct{}
 
 	redisCli *redis.Client
@@ -95,6 +97,7 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
 		wg:            sync.WaitGroup{},
+		doneCh:        make(chan struct{}),
 		cache: &Cache{
 			cache: map[bool]*HostCache{},
 			flag:  false,
@@ -105,7 +108,6 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 
 // Start start main handle routines
 func (h *HostSnap) Start() {
-	go h.fetchDB()
 	go func() {
 		h.Run()
 		for {
@@ -122,6 +124,7 @@ func (h *HostSnap) Run() {
 		if syserr != nil {
 			blog.Errorf("emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
 		}
+		close(h.doneCh)
 		h.isMaster = false
 		return
 	}()
@@ -132,6 +135,8 @@ func (h *HostSnap) Run() {
 	var msgs []string
 	var addCount int
 	var waitCnt int
+
+	go h.fetchDB()
 
 	if h.saveRunning() {
 		go h.subChan()
@@ -217,6 +222,9 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		case <-resetHandle:
 			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
 			return nil
+		case <-h.doneCh:
+			blog.Warnf("close handler, handled %d")
+			return nil
 		default:
 			data := gjson.Get(msg, "data").String()
 			val := gjson.Parse(data)
@@ -243,7 +251,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			}
 			outip, ok := host.get(bkcommon.BKHostOuterIPField).(string)
 			if !ok {
-				blog.Warnf("outip is not string, &s", val.String())
+				blog.Warnf("outip is not string, %s", val.String())
 			}
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
@@ -332,27 +340,37 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	}
 
 	if cupnum <= 0 {
-		blog.Info("bk_cpu not found in message for ", innerIP)
-	} else if cpumodule == "" {
-		blog.Info("bk_cpu_module not found in message for ", innerIP)
-	} else if CPUMhz <= 0 {
-		blog.Info("bk_cpu_mhz not found in message for ", innerIP)
-	} else if disk <= 0 {
-		blog.Info("bk_disk not found in message for ", innerIP)
-	} else if mem <= 0 {
-		blog.Info("bk_mem not found in message for ", innerIP)
-	} else if ostype == "" {
-		blog.Info("bk_os_type not found in message for ", innerIP)
-	} else if osname == "" {
-		blog.Info("bk_os_name not found in message for ", innerIP)
-	} else if version == "" {
-		blog.Info("bk_os_version not found in message for ", innerIP)
-	} else if hostname == "" {
-		blog.Info("bk_host_name not found in message for ", innerIP)
-	} else if outerIP != "" && OuterMAC == "" {
-		blog.Info("bk_outer_mac not found in message for ", innerIP)
-	} else if InnerMAC == "" {
-		blog.Info("bk_mac not found in message for ", innerIP)
+		blog.Infof("bk_cpu not found in message for %s", innerIP)
+	}
+	if cpumodule == "" {
+		blog.Infof("bk_cpu_module not found in message for %s", innerIP)
+	}
+	if CPUMhz <= 0 {
+		blog.Infof("bk_cpu_mhz not found in message for %s", innerIP)
+	}
+	if disk <= 0 {
+		blog.Infof("bk_disk not found in message for %s", innerIP)
+	}
+	if mem <= 0 {
+		blog.Infof("bk_mem not found in message for %s", innerIP)
+	}
+	if ostype == "" {
+		blog.Infof("bk_os_type not found in message for %s", innerIP)
+	}
+	if osname == "" {
+		blog.Infof("bk_os_name not found in message for %s", innerIP)
+	}
+	if version == "" {
+		blog.Infof("bk_os_version not found in message for %s", innerIP)
+	}
+	if hostname == "" {
+		blog.Infof("bk_host_name not found in message for %s", innerIP)
+	}
+	if outerIP != "" && OuterMAC == "" {
+		blog.Infof("bk_outer_mac not found in message for %s", innerIP)
+	}
+	if InnerMAC == "" {
+		blog.Infof("bk_mac not found in message for %s", innerIP)
 	}
 
 	return setter
@@ -572,12 +590,18 @@ func (h *HostSnap) fetchDB() {
 	cachelock.Unlock()
 	go func() {
 		ticker := time.NewTicker(fetchDBInterval)
-		for range ticker.C {
-			cache := fetch()
-			cachelock.Lock()
-			h.cache.cache[!h.cache.flag] = cache
-			h.cache.flag = !h.cache.flag
-			cachelock.Unlock()
+		for {
+			select {
+			case <-ticker.C:
+				cache := fetch()
+				cachelock.Lock()
+				h.cache.cache[!h.cache.flag] = cache
+				h.cache.flag = !h.cache.flag
+				cachelock.Unlock()
+			case <-h.doneCh:
+				blog.Warnf("close fetchDB")
+				return
+			}
 		}
 	}()
 }
@@ -588,7 +612,7 @@ func fetch() *HostCache {
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
-	hostcache := &HostCache{}
+	hostcache := &HostCache{data: map[string]*HostInst{}}
 	for index := range result {
 		cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
 		innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
@@ -605,7 +629,7 @@ type HostInst struct {
 }
 
 func (h *HostInst) get(key string) interface{} {
-	h.RUnlock()
+	h.RLock()
 	value := h.data[key]
 	h.RUnlock()
 	return value
@@ -623,7 +647,7 @@ type HostCache struct {
 }
 
 func (h *HostCache) get(key string) *HostInst {
-	h.RUnlock()
+	h.RLock()
 	value := h.data[key]
 	h.RUnlock()
 	return value
