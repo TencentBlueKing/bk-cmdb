@@ -17,12 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
-	obj "configcenter/src/scene_server/topo_server/actions/object"
+    "configcenter/src/common/metadata"
 )
 
-func (t *object) CreateModel(ctx context.Context, h http.Header, model *obj.MainLineObject) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/model/mainline"
 
 	err = t.client.Post().
@@ -34,8 +33,9 @@ func (t *object) CreateModel(ctx context.Context, h http.Header, model *obj.Main
 		Into(resp)
 	return
 }
-func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+
+func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/model/mainline/owners/%s/objectids/%s", ownerID, objID)
 
 	err = t.client.Delete().
@@ -47,8 +47,9 @@ func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, 
 		Into(resp)
 	return
 }
-func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+
+func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/model/%s", ownerID)
 
 	err = t.client.Get().
@@ -60,8 +61,9 @@ func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header)
 		Into(resp)
 	return
 }
-func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+
+func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/model/%s/%s/%s", ownerID, clsID, objID)
 
 	err = t.client.Get().
@@ -73,8 +75,9 @@ func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID s
 		Into(resp)
 	return
 }
-func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+
+func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/inst/%s/%s", ownerID, appID)
 
 	err = t.client.Get().
@@ -86,8 +89,9 @@ func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h
 		Into(resp)
 	return
 }
-func (t *object) SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+
+func (t *object) SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/inst/child/%s/%s/%s/%s", ownerID, objID, appID, instID)
 
 	err = t.client.Get().

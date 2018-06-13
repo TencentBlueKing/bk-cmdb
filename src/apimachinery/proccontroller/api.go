@@ -16,11 +16,11 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/module"
 
 	err = p.client.Post().
@@ -33,8 +33,8 @@ func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/module/search"
 
 	err = p.client.Post().
@@ -47,8 +47,8 @@ func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interf
 	return
 }
 
-func (p *procctrl) DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *procctrl) DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/module"
 
 	err = p.client.Delete().

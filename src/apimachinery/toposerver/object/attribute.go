@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
 	obj "configcenter/src/source_controller/api/object"
+    "configcenter/src/common/metadata"
 )
 
-func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *obj.ObjAttDes) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *obj.ObjAttDes) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/objectattr"
 
 	err = t.client.Post().
@@ -35,8 +35,8 @@ func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *obj.Ob
 	return
 }
 
-func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/objectattr/search"
 
 	err = t.client.Post().
@@ -49,8 +49,8 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, d
 	return
 }
 
-func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
 	err = t.client.Put().
@@ -63,8 +63,8 @@ func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Heade
 	return
 }
 
-func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/objectattr/%s", objID)
 
 	err = t.client.Post().

@@ -15,3 +15,12 @@ package metadata
 type DeleteHostBatchOpt struct {
 	HostID string `json:"bk_host_id"`
 }
+
+type FavouriteParms struct {
+    ID          string `json:"id"`
+    Info        string `json:"info"`
+    QueryParams string `json:"query_params"`
+    Name        string `json:"name"`
+    IsDefault   int    `json:"is_default"`
+    Count       int    `json:"count"`
+}

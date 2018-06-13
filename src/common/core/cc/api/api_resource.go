@@ -30,7 +30,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 
-	"configcenter/src/apimachinery"
 	restful "github.com/emicklei/go-restful"
 )
 
@@ -57,7 +56,6 @@ type BKAPIRsp struct {
 }
 
 type APIResource struct {
-	APIMachinery apimachinery.ClientSetInterface
 	ConfigData   []byte
 	Config       string
 	URL          string

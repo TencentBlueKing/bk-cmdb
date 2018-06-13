@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/%s", supplierAcct)
 
 	err = t.client.Post().
@@ -34,8 +34,8 @@ func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h 
 	return
 }
 
-func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Delete().
@@ -48,8 +48,8 @@ func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, gr
 	return
 }
 
-func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Put().
@@ -62,8 +62,8 @@ func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, gr
 	return
 }
 
-func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/%s/search", supplierAcct)
 
 	err = t.client.Post().
@@ -77,8 +77,8 @@ func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h 
 }
 
 // TODO: confirm body
-func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Post().
@@ -91,8 +91,8 @@ func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct strin
 	return
 }
 
-func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Get().
@@ -105,8 +105,8 @@ func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, 
 	return
 }
 
-func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/user/detail/%s/%s", supplierAcct, userName)
 
 	err = t.client.Get().
@@ -119,8 +119,8 @@ func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userN
 	return
 }
 
-func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
 	err = t.client.Post().
@@ -133,8 +133,8 @@ func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, ob
 	return
 }
 
-func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
 	err = t.client.Get().

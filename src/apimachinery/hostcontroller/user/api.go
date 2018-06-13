@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 func (u *user) AddUserConfig(ctx context.Context, h http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
@@ -60,7 +59,7 @@ func (u *user) DeleteUserConfig(ctx context.Context, businessID string, id strin
 	return
 }
 
-func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *commondata.ObjQueryInput) (resp *metadata.GetUserConfigResult, err error) {
+func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.GetUserConfigResult, err error) {
 	subPath := "/userapi/search"
 
 	err = u.client.Post().

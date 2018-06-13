@@ -17,13 +17,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
 	paraparse "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/event_server/types"
+    "configcenter/src/common/metadata"
 )
 
-func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat paraparse.SubscribeCommonSearch) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat paraparse.SubscribeCommonSearch) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/search/%s/%s", ownerID, appID)
 
 	err = e.client.Post().
@@ -36,8 +36,8 @@ func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h
 	return
 }
 
-func (e *eventServer) Ping(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) Ping(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/subscribe/ping"
 
 	err = e.client.Post().
@@ -50,8 +50,8 @@ func (e *eventServer) Ping(ctx context.Context, h http.Header, dat interface{}) 
 	return
 }
 
-func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/subscribe/telnet"
 
 	err = e.client.Post().
@@ -64,8 +64,8 @@ func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}
 	return
 }
 
-func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *types.Subscription) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *types.Subscription) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/%s/%s", ownerID, appID)
 
 	err = e.client.Post().
@@ -78,8 +78,8 @@ func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID strin
 	return
 }
 
-func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/%s/%s/%s", ownerID, appID, subscribeID)
 
 	err = e.client.Delete().
@@ -92,8 +92,8 @@ func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID str
 	return
 }
 
-func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *types.Subscription) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *types.Subscription) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/%s/%s/%s", ownerID, appID, subscribeID)
 
 	err = e.client.Put().

@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
+    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s", appID, setID)
 
 	err = t.client.Post().
@@ -35,8 +35,8 @@ func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID s
 	return
 }
 
-func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
 
 	err = t.client.Delete().
@@ -49,8 +49,8 @@ func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID s
 	return
 }
 
-func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
 
 	err = t.client.Put().
@@ -63,8 +63,8 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID s
 	return
 }
 
-func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/search/%s/%s/%s", ownerID, appID, setID)
 
 	err = t.client.Put().

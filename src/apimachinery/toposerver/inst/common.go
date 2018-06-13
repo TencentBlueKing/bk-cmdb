@@ -17,12 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s", ownerID)
 
 	err = t.client.Post().
@@ -35,8 +34,8 @@ func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.
 	return
 }
 
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/topo/internal/%s/%s", ownerID, appID)
 
 	err = t.client.Get().

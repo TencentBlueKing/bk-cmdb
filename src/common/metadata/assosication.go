@@ -10,25 +10,18 @@
  * limitations under the License.
  */
 
-package openapi
+package metadata
 
-import (
-	"context"
-	"net/http"
-
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
-)
-
-type OpenAPIClientInterface interface {
-	GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+// ConditionItem subcondition
+type ConditionItem struct {
+    Field    string      `json:"field,omitempty"`
+    Operator string      `json:"operator,omitempty"`
+    Value    interface{} `json:"value,omitempty"`
 }
 
-func NewOpenApiClientInterface(client rest.ClientInterface) OpenAPIClientInterface {
-	return &openapi{client: client}
-}
-
-type openapi struct {
-	client rest.ClientInterface
+// AssociationParams  association params
+type AssociationParams struct {
+    Page      BasePage          `json:"page,omitempty"`
+    Fields    map[string][]string        `json:"fields,omitempty"`
+    Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }

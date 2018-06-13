@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (p *process) GetProcessDetailByID(ctx context.Context, ownerID string, appID string, procID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) GetProcessDetailByID(ctx context.Context, ownerID string, appID string, procID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/%s/%s/%s", ownerID, appID, procID)
 
 	err = p.client.Get().
@@ -34,8 +34,8 @@ func (p *process) GetProcessDetailByID(ctx context.Context, ownerID string, appI
 	return
 }
 
-func (p *process) GetProcessBindModule(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) GetProcessBindModule(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", ownerID, businessID, procID)
 
 	err = p.client.Get().
@@ -48,8 +48,8 @@ func (p *process) GetProcessBindModule(ctx context.Context, ownerID string, busi
 	return
 }
 
-func (p *process) BindModuleProcess(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) BindModuleProcess(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s/%s", ownerID, businessID, procID, moduleName)
 
 	err = p.client.Put().
@@ -62,8 +62,8 @@ func (p *process) BindModuleProcess(ctx context.Context, ownerID string, busines
 	return
 }
 
-func (p *process) DeleteModuleProcessBind(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) DeleteModuleProcessBind(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s/%s", ownerID, businessID, procID, moduleName)
 
 	err = p.client.Delete().
@@ -76,8 +76,8 @@ func (p *process) DeleteModuleProcessBind(ctx context.Context, ownerID string, b
 	return
 }
 
-func (p *process) CreateProcess(ctx context.Context, ownerID string, businessID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) CreateProcess(ctx context.Context, ownerID string, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/%s/%s", ownerID, businessID)
 
 	err = p.client.Post().
@@ -90,8 +90,8 @@ func (p *process) CreateProcess(ctx context.Context, ownerID string, businessID 
 	return
 }
 
-func (p *process) DeleteProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) DeleteProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/%s/%s/%s", ownerID, businessID, procID)
 
 	err = p.client.Delete().
@@ -104,8 +104,8 @@ func (p *process) DeleteProcess(ctx context.Context, ownerID string, businessID 
 	return
 }
 
-func (p *process) SearchProcess(ctx context.Context, ownerID string, businessID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) SearchProcess(ctx context.Context, ownerID string, businessID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/search/%s/%s", ownerID, businessID)
 
 	err = p.client.Post().
@@ -118,8 +118,8 @@ func (p *process) SearchProcess(ctx context.Context, ownerID string, businessID 
 	return
 }
 
-func (p *process) UpdateProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *process) UpdateProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/%s/%s/%s", ownerID, businessID, procID)
 
 	err = p.client.Put().

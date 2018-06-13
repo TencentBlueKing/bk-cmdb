@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
+    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/set/%s", appID)
 
 	err = t.client.Post().
@@ -35,8 +35,8 @@ func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Hea
 	return
 }
 
-func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/set/%s/%s", appID, setID)
 
 	err = t.client.Delete().
@@ -49,8 +49,8 @@ func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID stri
 	return
 }
 
-func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/set/%s/%s", appID, setID)
 
 	err = t.client.Put().
@@ -63,8 +63,8 @@ func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID stri
 	return
 }
 
-func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/set/search/%s/%s", ownerID, appID)
 
 	err = t.client.Post().

@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/clear"
 
 	err = a.client.Post().
@@ -34,8 +34,8 @@ func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *a
 	return
 }
 
-func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/migrate/system/hostcrossbiz/%s", ownerID)
 
 	err = a.client.Post().
@@ -48,8 +48,8 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 	return
 }
 
-func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/migrate/%s/%s", distribution, ownerID)
 
 	err = a.client.Post().

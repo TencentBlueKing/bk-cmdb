@@ -17,12 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+    "configcenter/src/common/metadata"
 )
 
-func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -35,8 +34,8 @@ func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessI
 	return
 }
 
-func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/search"
 
 	err = t.client.Post().
@@ -49,8 +48,8 @@ func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *commonda
 	return
 }
 
-func (t *auditctl) AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/host/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -63,8 +62,8 @@ func (t *auditctl) AddHostLog(ctx context.Context, ownerID string, businessID st
 	return
 }
 
-func (t *auditctl) AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -77,8 +76,8 @@ func (t *auditctl) AddHostLogs(ctx context.Context, ownerID string, businessID s
 	return
 }
 
-func (t *auditctl) AddModuleLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddModuleLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/module/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -91,8 +90,8 @@ func (t *auditctl) AddModuleLog(ctx context.Context, ownerID string, businessID 
 	return
 }
 
-func (t *auditctl) AddModuleLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddModuleLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/modules/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -105,8 +104,8 @@ func (t *auditctl) AddModuleLogs(ctx context.Context, ownerID string, businessID
 	return
 }
 
-func (t *auditctl) AddObjectLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddObjectLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/obj/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -119,8 +118,8 @@ func (t *auditctl) AddObjectLog(ctx context.Context, ownerID string, businessID 
 	return
 }
 
-func (t *auditctl) AddObjectLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddObjectLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/objs/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -133,8 +132,8 @@ func (t *auditctl) AddObjectLogs(ctx context.Context, ownerID string, businessID
 	return
 }
 
-func (t *auditctl) AddProcLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddProcLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/proc/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -147,8 +146,8 @@ func (t *auditctl) AddProcLog(ctx context.Context, ownerID string, businessID st
 	return
 }
 
-func (t *auditctl) AddProcLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddProcLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/procs/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -161,8 +160,8 @@ func (t *auditctl) AddProcLogs(ctx context.Context, ownerID string, businessID s
 	return
 }
 
-func (t *auditctl) AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/set/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().
@@ -175,8 +174,8 @@ func (t *auditctl) AddSetLog(ctx context.Context, ownerID string, businessID str
 	return
 }
 
-func (t *auditctl) AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *auditctl) AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/sets/%s/%s/%s", ownerID, businessID, user)
 
 	err = t.client.Post().

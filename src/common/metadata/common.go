@@ -78,3 +78,41 @@ type RecursiveMapResponse struct {
 	BaseResp `json:",inline"`
 	Data     map[string]map[string]*basetype.Type `json:"data"`
 }
+
+type ObjQueryInput struct {
+    Condition interface{} `json:"condition"`
+    Fields    string      `json:"fields"`
+    Start     int         `json:"start"`
+    Limit     int         `json:"limit"`
+    Sort      string      `json:"sort"`
+}
+
+type CloudHostModuleParams struct {
+    ApplicationID int          `json:"bk_biz_id"`
+    HostInfoArr   []BkHostInfo `json:"host_info"`
+    ModuleID      int          `json:"bk_module_id"`
+}
+
+type BkHostInfo struct {
+    IP      string `json:"bk_host_innerip"`
+    CloudID int    `json:"bk_cloud_id"`
+}
+
+type DefaultModuleHostConfigParams struct {
+    ApplicationID int   `json:"bk_biz_id"`
+    HostID        []int `json:"bk_host_id"`
+}
+
+//common search struct
+type SearchParams struct {
+    Condition map[string]interface{} `json:"condition"`
+    Page      map[string]interface{} `json:"page,omitempty"`
+    Fields    []string               `json:"fields,omitempty"`
+    Native    int                    `json:"native,omitempty"`
+}
+
+// PropertyGroupCondition used to reflect the property group json
+type PropertyGroupCondition struct {
+    Condition map[string]interface{} `json:"condition"`
+    Data      map[string]interface{} `json:"data"`
+}

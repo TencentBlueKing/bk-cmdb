@@ -17,14 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/host_server/host_service/actions/hosts"
-	"configcenter/src/source_controller/common/commondata"
+    "configcenter/src/common/metadata"
 )
 
-func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/host/batch"
 
 	err = hs.client.Delete().
@@ -37,8 +35,8 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat in
 	return
 }
 
-func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/%s/%s", ownerID, hostID)
 
 	err = hs.client.Get().
@@ -51,8 +49,8 @@ func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hos
 	return
 }
 
-func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
 
 	err = hs.client.Get().
@@ -65,8 +63,8 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 	return
 }
 
-func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/addhost"
 
 	err = hs.client.Post().
@@ -79,8 +77,8 @@ func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{
 	return
 }
 
-func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/host/add/agent"
 
 	err = hs.client.Post().
@@ -93,8 +91,8 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat i
 	return
 }
 
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "hosts/favorites/search"
 
 	err = hs.client.Post().
@@ -107,8 +105,8 @@ func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat 
 	return
 }
 
-func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *hosts.FavouriteParms) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "hosts/favorites"
 
 	err = hs.client.Post().
@@ -121,8 +119,8 @@ func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *
 	return
 }
 
-func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("hosts/favorites/%s", id)
 
 	err = hs.client.Put().
@@ -135,8 +133,8 @@ func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h 
 	return
 }
 
-func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("hosts/favorites/%s", id)
 
 	err = hs.client.Delete().
@@ -149,8 +147,8 @@ func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h 
 	return
 }
 
-func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/favorites/%s/incr", id)
 
 	err = hs.client.Put().
@@ -163,8 +161,8 @@ func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h 
 	return
 }
 
-func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/history"
 
 	err = hs.client.Post().
@@ -177,8 +175,8 @@ func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[str
 	return
 }
 
-func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/history/%s/%s", start, limit)
 
 	err = hs.client.Get().
@@ -191,8 +189,8 @@ func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit strin
 	return
 }
 
-func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *hosts.CloudHostModuleParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/modules/biz/mutiple"
 
 	err = hs.client.Post().
@@ -205,8 +203,8 @@ func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h http
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 
 	err = hs.client.Post().
@@ -219,8 +217,8 @@ func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header) (re
 	return
 }
 
-func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/emptymodule"
 
 	err = hs.client.Post().
@@ -233,8 +231,8 @@ func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/faultmodule"
 
 	err = hs.client.Post().
@@ -247,8 +245,8 @@ func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/resource"
 
 	err = hs.client.Post().
@@ -261,8 +259,8 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 	return
 }
 
-func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/assgin"
 
 	err = hs.client.Post().
@@ -275,8 +273,8 @@ func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *h
 	return
 }
 
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/host/add/module"
 
 	err = hs.client.Post().
@@ -289,8 +287,8 @@ func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, 
 	return
 }
 
-func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom"
 
 	err = hs.client.Post().
@@ -303,8 +301,8 @@ func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (hs *hostServer) GetUserCustom(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom/user/search"
 
 	err = hs.client.Post().
@@ -317,8 +315,8 @@ func (hs *hostServer) GetUserCustom(ctx context.Context, h http.Header) (resp *a
 	return
 }
 
-func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom/default/search"
 
 	err = hs.client.Post().
@@ -331,8 +329,8 @@ func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp
 	return
 }
 
-func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("getAgentStatus/%s", appID)
 
 	err = hs.client.Get().
@@ -345,8 +343,8 @@ func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h http.H
 	return
 }
 
-func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/openapi/host/%s", appID)
 
 	err = hs.client.Put().
@@ -359,8 +357,8 @@ func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h http.Heade
 	return
 }
 
-func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/host/updateHostByAppID/%s", appID)
 
 	err = hs.client.Put().
@@ -373,8 +371,8 @@ func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h htt
 	return
 }
 
-func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/host/getHostListByAppidAndField/%s/%s", appID, field)
 
 	err = hs.client.Get().
@@ -387,8 +385,8 @@ func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID stri
 	return
 }
 
-func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/gethostlistbyip"
 
 	err = hs.client.Post().
@@ -401,8 +399,8 @@ func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/getmodulehostlist"
 
 	err = hs.client.Post().
@@ -415,8 +413,8 @@ func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) HostSearchBySetID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchBySetID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/getsethostlist"
 
 	err = hs.client.Post().
@@ -429,8 +427,8 @@ func (hs *hostServer) HostSearchBySetID(ctx context.Context, h http.Header, dat 
 	return
 }
 
-func (hs *hostServer) HostSearchByAppID(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchByAppID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/getapphostlist"
 
 	err = hs.client.Post().
@@ -443,8 +441,8 @@ func (hs *hostServer) HostSearchByAppID(ctx context.Context, h http.Header, dat 
 	return
 }
 
-func (hs *hostServer) HostSearchByProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchByProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/gethostsbyproperty"
 
 	err = hs.client.Post().
@@ -457,8 +455,8 @@ func (hs *hostServer) HostSearchByProperty(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/getIPAndProxyByCompany"
 
 	err = hs.client.Post().
@@ -471,8 +469,8 @@ func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h http.Header,
 	return
 }
 
-func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/updatecustomproperty"
 
 	err = hs.client.Put().
@@ -485,8 +483,8 @@ func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "openapi/host/clonehostproperty"
 
 	err = hs.client.Put().
@@ -499,8 +497,8 @@ func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (res
 	return
 }
 
-func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/host/getHostAppByCompanyId"
 
 	err = hs.client.Post().
@@ -513,8 +511,8 @@ func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h http.Header, 
 	return
 }
 
-func (hs *hostServer) DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/host/delhostinapp"
 
 	err = hs.client.Delete().
@@ -527,8 +525,8 @@ func (hs *hostServer) DelHostInApp(ctx context.Context, h http.Header, dat inter
 	return
 }
 
-func (hs *hostServer) GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/host/getGitServerIp"
 
 	err = hs.client.Post().
@@ -541,8 +539,8 @@ func (hs *hostServer) GetGitServerIp(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/plat"
 
 	err = hs.client.Get().
@@ -555,8 +553,8 @@ func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *api.BKA
 	return
 }
 
-func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/plat"
 
 	err = hs.client.Post().
@@ -569,8 +567,8 @@ func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[str
 	return
 }
 
-func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/plat/%s", cloudID)
 
 	err = hs.client.Delete().
@@ -583,8 +581,8 @@ func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header
 	return
 }
 
-func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/search"
 
 	err = hs.client.Post().
@@ -597,8 +595,8 @@ func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params
 	return
 }
 
-func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/search/asstdetail"
 
 	err = hs.client.Post().
@@ -611,8 +609,8 @@ func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h http.Heade
 	return
 }
 
-func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/host/batch"
 
 	err = hs.client.Put().
@@ -625,8 +623,8 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat in
 	return
 }
 
-func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/userapi"
 
 	err = hs.client.Post().
@@ -639,8 +637,8 @@ func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h http.Header, dat
 	return
 }
 
-func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
 	err = hs.client.Put().
@@ -653,8 +651,8 @@ func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID stri
 	return
 }
 
-func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
 	err = hs.client.Delete().
@@ -667,8 +665,8 @@ func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID stri
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/search/%s", businessID)
 
 	err = hs.client.Post().
@@ -681,8 +679,8 @@ func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string,
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
 
 	err = hs.client.Get().
@@ -695,8 +693,8 @@ func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID s
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/data/%s/%s/%s/%s", businessID, id, start, limit)
 
 	err = hs.client.Get().
