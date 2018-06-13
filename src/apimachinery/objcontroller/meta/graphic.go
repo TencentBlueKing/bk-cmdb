@@ -16,12 +16,10 @@ import (
     "context"
     "net/http"
 
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/api/metadata"
+    "configcenter/src/common/metadata"
 )
 
-func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
+func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.Response, err error) {
     subPath := "/topographics/search"
 
     err = t.client.Post().
@@ -34,8 +32,7 @@ func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metad
     return
 }
 
-func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error){
     subPath := "/topographics/update"
 
     err = t.client.Post().

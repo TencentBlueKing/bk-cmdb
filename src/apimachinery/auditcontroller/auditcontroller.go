@@ -19,28 +19,27 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/common/metadata"
 )
 
 type AuditCtrlInterface interface {
-	AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *api.BKAPIRsp, err error)
-	GetAuditLog(ctx context.Context, h http.Header, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error)
+	AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	GetAuditLog(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.Response, err error)
 
-	AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error)
-	AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error)
+	AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 
-	AddModuleLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error)
-	AddModuleLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error)
+	AddModuleLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddModuleLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 
-	AddObjectLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error)
-	AddObjectLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error)
+	AddObjectLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddObjectLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 
-	AddProcLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error)
-	AddProcLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error)
+	AddProcLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddProcLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 
-	AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *api.BKAPIRsp, err error)
-	AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *api.BKAPIRsp, err error)
+	AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 }
 
 func NewAuditCtrlInterface(c *util.Capability, version string) AuditCtrlInterface {

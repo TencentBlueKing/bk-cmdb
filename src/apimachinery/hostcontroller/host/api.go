@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.Response, err error) {
@@ -34,7 +33,7 @@ func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header
 	return
 }
 
-func (t *hostctrl) GetHosts(ctx context.Context, h http.Header, opt *commondata.ObjQueryInput) (resp *metadata.GetHostsResult, err error) {
+func (t *hostctrl) GetHosts(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.GetHostsResult, err error) {
 	subPath := "/hosts/search"
 
 	err = t.client.Post().

@@ -16,11 +16,11 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/proc/getProcModule"
 
 	err = t.client.Post().
@@ -33,8 +33,8 @@ func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, d
 	return
 }
 
-func (t *openAPI) DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *openAPI) DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/set/delhost"
 
 	err = t.client.Delete().

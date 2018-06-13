@@ -18,12 +18,12 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/paraparse"
+    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s", ownerID)
 
 	err = t.client.Post().
@@ -36,8 +36,8 @@ func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.H
 	return
 }
 
-func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s/%s", ownerID, appID)
 
 	err = t.client.Delete().
@@ -50,8 +50,8 @@ func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID st
 	return
 }
 
-func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s/%s", ownerID, appID)
 	err = t.client.Put().
 		WithContext(ctx).
@@ -63,8 +63,8 @@ func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID st
 	return
 }
 
-func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string, h http.Header) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s/%s/%s", flag, ownerID, appID)
 	err = t.client.Put().
 		WithContext(ctx).
@@ -76,8 +76,8 @@ func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string
 	return
 }
 
-func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/search/%s", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).
@@ -89,8 +89,8 @@ func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.H
 	return
 }
 
-func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/default/%s/search", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).
@@ -102,8 +102,8 @@ func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h ht
 	return
 }
 
-func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/default/%s", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).

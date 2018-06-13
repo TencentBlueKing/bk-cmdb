@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/core/cc/api"
+    "configcenter/src/common/metadata"
 )
 
-func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/openapi/GetProcessPortByApplicationID/%s", appID)
 
 	err = p.client.Post().
@@ -34,8 +34,8 @@ func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID strin
 	return
 }
 
-func (p *openapi) GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (p *openapi) GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/openapi/GetProcessPortByIP"
 
 	err = p.client.Post().
