@@ -14,41 +14,85 @@ package backbone
 
 import (
 	"fmt"
+    "context"
+    "sync"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
+    "configcenter/src/apimachinery"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/language"
+    cc "configcenter/src/common/backbone/configcenter"
+    "configcenter/src/common/blog"
 )
 
-func NewBackbone(zkAddr string, c Config) (*Engine, error) {
+func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath string, procHandler cc.ProcHandlerFunc, c *Config) (*Engine, error) {
 	disc, err := NewServcieDiscovery(zkAddr)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
-	}
-
+	}   
+    
+    engine, err := New(c, disc)
+    if err != nil {
+        return nil, fmt.Errorf("new engine failed, err: %v", err)
+    }
+    
+    handler := &cc.CCHandler{
+        OnProcessUpdate: procHandler,
+        OnLanguageUpdate: engine.onLanguageUpdate,
+        OnErrorUpdate: engine.onErrorUpdate,
+    }
+    
+    err = cc.NewConfigCenter(ctx, zkAddr, procName, confPath, handler)
+    if err != nil {
+        return nil, fmt.Errorf("new config center failed, err: %v", err)
+    }
+    
 	if err := ListenServer(c.Server); err != nil {
 		return nil, err
-	}
+	}	
 
-	return New(c, disc)
+	return engine, nil
 }
 
-func New(c Config, disc ServiceDiscoverInterface) (*Engine, error) {
+func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
 		return nil, err
-	}
+	}	
 
 	return &Engine{
 		CoreAPI:  c.CoreAPI,
 		SvcDisc:  disc,
-		Language: c.Language,
-		CCErr:    c.CCErr,
 	}, nil
 }
 
 type Engine struct {
+    sync.Mutex
 	CoreAPI  apimachinery.ClientSetInterface
 	SvcDisc  ServiceDiscoverInterface
 	Language language.CCLanguageIf
 	CCErr    errors.CCErrorIf
 }
+
+func(e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap){
+    e.Lock()
+    defer e.Unlock()
+    if e.Language == nil {
+        e.Language = language.NewFromCtx(current)
+        blog.Infof("load language config success.")
+        return 
+    }
+    e.Language.Load(current)
+    blog.V(3).Infof("load new language config success.")
+}
+
+func(e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
+    e.Lock()
+    defer e.Unlock()
+    if e.CCErr == nil {
+        e.CCErr = errors.NewFromCtx(current)
+        blog.Infof("load error code config success.")
+        return 
+    }
+    e.CCErr.Load(current)
+    blog.V(3).Infof("load new error config success.")
+}
+
