@@ -41,6 +41,7 @@ type Core interface {
 	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error)
 	FindObjectGroup(params types.LogicParams, cond condition.Condition) ([]model.Group, error)
+	FindGroupByObject(params types.LogicParams, cond condition.Condition) ([]model.Group, error)
 	FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error)
 
 	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
