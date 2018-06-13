@@ -29,6 +29,10 @@ func InStrArr(arr []string, key string) bool {
 	return false
 }
 
+func GetLanguage(header http.Header) string {
+	return header.Get(common.BKHTTPLanguage)
+}
+
 // GetActionLanguage returns language form hender
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)

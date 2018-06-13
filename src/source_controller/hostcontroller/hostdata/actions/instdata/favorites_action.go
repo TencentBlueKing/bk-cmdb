@@ -90,7 +90,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 	}
 
 	resp.WriteAsJson(HostFavorite{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data:     ID{ID: xidDevice.String()},
 	})
 	return
@@ -254,7 +254,7 @@ func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.
 	info["count"] = count
 	info["info"] = result
 	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data:     info,
 	})
 }
@@ -284,7 +284,7 @@ func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restf
 		return
 	}
 	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, ""},
+		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
 		Data:     result,
 	})
 }
