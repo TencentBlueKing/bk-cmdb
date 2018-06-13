@@ -94,7 +94,7 @@ func getChanName(config map[string]string) (string, error) {
 	default:
 		return "", fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
-	return defaultAppID + "_snapshot", nil
+	return "snapshot" + defaultAppID, nil
 }
 
 func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
