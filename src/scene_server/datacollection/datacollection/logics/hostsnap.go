@@ -22,6 +22,7 @@ import (
 	"github.com/tidwall/gjson"
 	"io"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -65,13 +66,13 @@ type HostSnap struct {
 
 	subscribing bool
 
-	cache *hostcache
+	cache *Cache
 
 	wg sync.WaitGroup
 }
 
-type hostcache struct {
-	cache map[bool]map[string]map[string]interface{}
+type Cache struct {
+	cache map[bool]*HostCache
 	flag  bool
 }
 
@@ -94,8 +95,8 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
 		wg:            sync.WaitGroup{},
-		cache: &hostcache{
-			cache: map[bool]map[string]map[string]interface{}{},
+		cache: &Cache{
+			cache: map[bool]*HostCache{},
 			flag:  false,
 		},
 	}
@@ -105,11 +106,25 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 // Start start main handle routines
 func (h *HostSnap) Start() {
 	go h.fetchDB()
-	go h.Run()
+	go func() {
+		h.Run()
+		for {
+			time.Sleep(time.Second * 10)
+			NewHostSnap(h.chanName, h.maxSize, h.redisCli, h.snapCli).Run()
+		}
+	}()
 }
 
 // Run hostsnap main functionality
 func (h *HostSnap) Run() {
+	defer func() {
+		syserr := recover()
+		if syserr != nil {
+			blog.Errorf("emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
+		}
+		h.isMaster = false
+		return
+	}()
 	blog.Infof("datacollection start with maxconcurrent: %d", h.maxconcurrent)
 	ticker := time.NewTicker(getMasterProcIntervalTime)
 	var err error
@@ -210,7 +225,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				blog.Infof("host not found, continue, %s", val.String())
 				continue
 			}
-			hostid := fmt.Sprint(host[bkcommon.BKHostIDField])
+			hostid := fmt.Sprint(host.get(bkcommon.BKHostIDField))
 			if hostid == "" {
 				blog.Infof("host id not found, continue, %s", val.String())
 				continue
@@ -220,9 +235,16 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10)
 
 			// update host fields value
-			condition := map[string]interface{}{bkcommon.BKHostIDField: host[bkcommon.BKHostIDField]}
-			innerip, _ := host[bkcommon.BKHostInnerIPField].(string)
-			outip, _ := host[bkcommon.BKHostOuterIPField].(string)
+			condition := map[string]interface{}{bkcommon.BKHostIDField: host.get(bkcommon.BKHostIDField)}
+			innerip, ok := host.get(bkcommon.BKHostInnerIPField).(string)
+			if !ok {
+				blog.Infof("innerip is empty, continue, %s", val.String())
+				continue
+			}
+			outip, ok := host.get(bkcommon.BKHostOuterIPField).(string)
+			if !ok {
+				blog.Warnf("outip is not string, &s", val.String())
+			}
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
 				blog.Infof("update by %v, to %v", condition, setter)
@@ -238,14 +260,14 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	return nil
 }
 
-func copyVal(a, b map[string]interface{}) {
+func copyVal(a map[string]interface{}, b *HostInst) {
 	for k, v := range a {
-		b[k] = v
+		b.set(k, v)
 	}
 }
-func needToUpdate(a, b map[string]interface{}) bool {
+func needToUpdate(a map[string]interface{}, b *HostInst) bool {
 	for k, v := range a {
-		if b[k] != v {
+		if b.get(k) != v {
 			return true
 		}
 	}
@@ -352,9 +374,7 @@ func getIPS(val *gjson.Result) (ips []string) {
 	return ips
 }
 
-func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
-	cachelock.Lock()
-	defer cachelock.Unlock()
+func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 	cloudid := val.Get("cloudid").String()
 	/*if cloudid == "0" || cloudid == "" {
 		cloudid := common.BKCloudIDField
@@ -363,7 +383,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 	if len(ips) > 0 {
 		blog.Infof("handle clouid: %s ips: %v", cloudid, ips)
 		for _, ip := range ips {
-			if host := h.getCache()[cloudid+"::"+ip]; host != nil {
+			if host := h.getCache().get(cloudid + "::" + ip); host != nil {
 				return host
 			}
 		}
@@ -381,11 +401,12 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 		if err != nil {
 			blog.Errorf("fetch db error %v", err)
 		}
-		for _, host := range result {
-			cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
-			innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
-			h.setCache(cloudid+"::"+innerip, host)
-			return h.getCache()[cloudid+"::"+innerip]
+		for index := range result {
+			cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
+			innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+			inst := &HostInst{data: result[index]}
+			h.setCache(cloudid+"::"+innerip, inst)
+			return inst
 		}
 		blog.Infof("ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
 	} else {
@@ -529,14 +550,18 @@ func (h *HostSnap) clearMsgChan() {
 	blog.Warnf("cleared %d", cnt)
 }
 
-var cachelock = sync.Mutex{}
+var cachelock = sync.RWMutex{}
 
-func (h *HostSnap) getCache() map[string]map[string]interface{} {
+func (h *HostSnap) getCache() *HostCache {
+	cachelock.RLock()
+	defer cachelock.RUnlock()
 	return h.cache.cache[h.cache.flag]
 }
 
-func (h *HostSnap) setCache(key string, val map[string]interface{}) {
-	h.cache.cache[h.cache.flag][key] = val
+func (h *HostSnap) setCache(key string, val *HostInst) {
+	cachelock.Lock()
+	h.cache.cache[h.cache.flag].set(key, val)
+	cachelock.Unlock()
 }
 
 func (h *HostSnap) fetchDB() {
@@ -555,18 +580,55 @@ func (h *HostSnap) fetchDB() {
 	}()
 }
 
-func fetch() map[string]map[string]interface{} {
+func fetch() *HostCache {
 	result := []map[string]interface{}{}
 	err := instdata.GetHostByCondition(nil, nil, &result, "", 0, 0)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
-	hostcache := map[string]map[string]interface{}{}
-	for _, host := range result {
-		cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
-		innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
-		hostcache[cloudid+"::"+innerip] = host
+	hostcache := &HostCache{}
+	for index := range result {
+		cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
+		innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+		hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
 	return hostcache
+}
+
+// HostInst host inst cache
+type HostInst struct {
+	sync.RWMutex
+	data map[string]interface{}
+}
+
+func (h *HostInst) get(key string) interface{} {
+	h.RUnlock()
+	value := h.data[key]
+	h.RUnlock()
+	return value
+}
+
+func (h *HostInst) set(key string, value interface{}) {
+	h.Lock()
+	h.data[key] = value
+	h.Unlock()
+}
+
+type HostCache struct {
+	sync.RWMutex
+	data map[string]*HostInst
+}
+
+func (h *HostCache) get(key string) *HostInst {
+	h.RUnlock()
+	value := h.data[key]
+	h.RUnlock()
+	return value
+}
+
+func (h *HostCache) set(key string, value *HostInst) {
+	h.Lock()
+	h.data[key] = value
+	h.Unlock()
 }
