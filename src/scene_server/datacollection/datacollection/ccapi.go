@@ -106,7 +106,7 @@ func (ccAPI *CCAPIServer) Start() error {
 	err := a.GetDataCli(config, "mongodb")
 	if err != nil {
 		blog.Error("connect mongodb error exit! err:%s", err.Error())
-		chErr <- err
+		return err
 	}
 	instdata.DataH = a.InstCli
 
