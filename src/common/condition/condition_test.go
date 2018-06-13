@@ -10,33 +10,30 @@
  * limitations under the License.
  */
 
-package inst
+package condition_test
 
 import (
-	frtypes "configcenter/src/common/mapstr"
-
-	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common/condition"
+	"testing"
 )
 
-// Inst the inst interface
-type Inst interface {
-	model.Operation
-	GetObject() model.Object
+func TestCondition(t *testing.T) {
 
-	GetInstID() (int, error)
-	GetInstName() (string, error)
+	cond := condition.CreateCondition()
+	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
 
-	SetValue(key string, value interface{}) error
+	result := cond.ToMapStr()
+	rst, _ := result.ToJSON()
 
-	SetValues(values frtypes.MapStr) error
+	t.Logf("the result:%+v", string(rst))
 
-	GetValues() (frtypes.MapStr, error)
+	newCond := condition.CreateCondition()
+	err := newCond.Parse(result)
+	if nil != err {
+		t.Logf("failed to parse condition, error info is %s", err.Error())
+		return
+	}
 
-	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Factory used to all inst
-type Factory interface {
-	CreateInst(params types.LogicParams, obj model.Object) Inst
+	rstT, _ := newCond.ToMapStr().ToJSON()
+	t.Logf("the parse result:%+v", string(rstT))
 }

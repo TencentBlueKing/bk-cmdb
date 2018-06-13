@@ -13,6 +13,8 @@
 package condition
 
 import (
+	"reflect"
+
 	types "configcenter/src/common/mapstr"
 )
 
@@ -30,6 +32,7 @@ type Condition interface {
 	SetSort(sort string)
 	GetSort() string
 	Field(fieldName string) Field
+	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
 }
 
@@ -39,6 +42,54 @@ type condition struct {
 	limit  int
 	sort   string
 	fields []Field
+}
+
+// Parse load the data into condition object
+func (cli *condition) Parse(data types.MapStr) error {
+
+	var fieldFunc func(tmpField *field, val interface{})
+	fieldFunc = func(tmpField *field, val interface{}) {
+
+		valType := reflect.TypeOf(val)
+
+		switch valType.Kind() {
+		default:
+			tmpField.fieldValue = val
+
+		case reflect.Map:
+			tmpMap := val.(types.MapStr)
+			tmpMap.ForEach(func(key string, subVal interface{}) {
+				switch key {
+
+				default:
+					tmp := &field{}
+					tmp.fieldName = key
+					tmp.opeartor = BKDBEQ
+					tmp.condition = tmpField.condition
+					fieldFunc(tmp, subVal)
+					tmpField.fields = append(tmpField.fields, tmp)
+				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR:
+					tmpField.opeartor = key
+					fieldFunc(tmpField, subVal)
+				}
+
+			})
+		}
+
+	}
+
+	data.ForEach(func(key string, val interface{}) {
+
+		tmpField := &field{}
+		tmpField.condition = cli
+		tmpField.fieldName = key
+		tmpField.opeartor = BKDBEQ
+		fieldFunc(tmpField, val)
+		cli.fields = append(cli.fields, tmpField)
+
+	})
+
+	return nil
 }
 
 // SetStart set the start

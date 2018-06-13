@@ -36,6 +36,48 @@ type object struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (cli *object) GetInstIDFieldName() string {
+
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppIDField
+	case common.BKInnerObjIDSet:
+		return common.BKSetIDField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleIDField
+	case common.BKINnerObjIDObject:
+		return common.BKInstIDField
+	case common.BKInnerObjIDHost:
+		return common.BKHostIDField
+	case common.BKInnerObjIDProc:
+		return common.BKProcIDField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudIDField
+	default:
+		return common.BKInstIDField
+	}
+
+}
+
+func (cli *object) GetInstNameFieldName() string {
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppNameField
+	case common.BKInnerObjIDSet:
+		return common.BKSetNameField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleNameField
+	case common.BKInnerObjIDHost:
+		return common.BKHostInnerIPField
+	case common.BKInnerObjIDProc:
+		return common.BKProcNameField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudNameField
+	default:
+		return common.BKInstNameField
+	}
+}
+
 func (cli *object) IsExists() ([]meta.Object, bool, error) {
 
 	cond := condition.CreateCondition()

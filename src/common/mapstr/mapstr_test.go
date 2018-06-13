@@ -10,33 +10,4 @@
  * limitations under the License.
  */
 
-package inst
-
-import (
-	frtypes "configcenter/src/common/mapstr"
-
-	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
-)
-
-// Inst the inst interface
-type Inst interface {
-	model.Operation
-	GetObject() model.Object
-
-	GetInstID() (int, error)
-	GetInstName() (string, error)
-
-	SetValue(key string, value interface{}) error
-
-	SetValues(values frtypes.MapStr) error
-
-	GetValues() (frtypes.MapStr, error)
-
-	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Factory used to all inst
-type Factory interface {
-	CreateInst(params types.LogicParams, obj model.Object) Inst
-}
+package mapstr_test
