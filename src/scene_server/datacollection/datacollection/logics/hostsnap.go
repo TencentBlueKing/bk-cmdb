@@ -227,7 +227,10 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			blog.Warnf("close handler, handled %d")
 			return nil
 		default:
-			data := gjson.Get(msg, "data").String()
+			var data = msg
+			if gjson.Get(msg, "dataid").Exists() {
+				data = gjson.Get(msg, "data").String()
+			}
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
@@ -672,6 +675,9 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 	for {
 		select {
 		case <-h.doneCh:
+			ticker.Stop()
+			return
+		case <-closeChan:
 			ticker.Stop()
 			return
 		case <-ticker.C:
