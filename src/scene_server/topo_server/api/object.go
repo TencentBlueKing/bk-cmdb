@@ -15,6 +15,7 @@ package api
 import (
 	"net/http"
 
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -45,12 +46,33 @@ func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, quer
 
 // CreateObject create a new object
 func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	rsp, err := cli.core.CreateObject(params, data)
+
+	if nil != err {
+		return nil, err
+	}
+
+	return rsp.ToMapStr()
 }
 
 // SearchObject search some objects by condition
 func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+
+	if err := cond.Parse(data); nil != err {
+		return nil, err
+	}
+
+	rstItems, err := cli.core.FindObject(params, cond)
+	if nil != err {
+		return nil, err
+	}
+
+	results := frtypes.MapStr{}
+	results.Set("data", rstItems)
+	return results, err
 }
 
 // SearchObjectTopo search the object topo
@@ -60,10 +82,31 @@ func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, query
 
 // UpdateObject update the object
 func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(pathParams("id"))
+
+	err := cli.core.UpdateObject(params, data, cond)
+
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // DeleteObject delete the object
 func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+
+	cond.Field("id").Eq(pathParams("id"))
+
+	err := cli.core.DeleteObject(params, cond)
+
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }

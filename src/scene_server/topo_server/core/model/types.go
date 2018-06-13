@@ -218,6 +218,9 @@ type Object interface {
 	GetModifier() string
 
 	ToMapStr() (frtypes.MapStr, error)
+
+	GetInstIDFieldName() string
+	GetInstNameFieldName() string
 }
 
 // Factory used to create object  classification attribute etd.

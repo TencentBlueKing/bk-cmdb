@@ -123,7 +123,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 	appID, err := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
 
 	data := make(map[string]interface{})
@@ -136,7 +136,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	data[common.LastTimeField] = time.Now()
 
 	params := make(map[string]interface{})
-	params[common.BKFieldID] = ID
+	params[common.BKFieldID] = id
 	params[common.BKAppIDField] = appID
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
@@ -156,7 +156,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 		dupParams := make(map[string]interface{})
 		dupParams["name"] = newName
 		dupParams[common.BKAppIDField] = appID
-		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: id}
 
 		rowCount, getErr := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
 		if nil != getErr {
@@ -190,12 +190,12 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 	appID, _ := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
 
 	params := make(map[string]interface{})
 	params[common.BKAppIDField] = appID
-	params["id"] = ID
+	params["id"] = id
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
 	if nil != err {
@@ -297,17 +297,17 @@ func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	appID, _ := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
-	ID := req.PathParameter("id")
+	id := req.PathParameter("id")
 
 	params := make(map[string]interface{})
 	params[common.BKAppIDField] = appID
-	params["id"] = ID
+	params["id"] = id
 	var fieldArr []string
 
 	result := make(map[string]interface{})
 	err := u.CC.InstCli.GetOneByCondition(u.tableName, fieldArr, params, &result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
-		blog.Error("get user api infomation error,input:%v error:%v", ID, err)
+		blog.Error("get user api infomation error,input:%v error:%v", id, err)
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommDBSelectFailed, defErr.Error(common.CCErrCommDBSelectFailed).Error(), resp)
 		return
 	}

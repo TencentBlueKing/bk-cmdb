@@ -59,16 +59,7 @@ func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pa
 	}
 
 	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range clsItems {
-		obj, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		items = append(items, obj)
-	}
-
-	result.Set("data", items)
+	result.Set("data", clsItems)
 
 	return result, nil
 }
@@ -78,25 +69,22 @@ func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, q
 
 	cond := condition.CreateCondition()
 
+	if data.Exists("page") {
+		//page, err := data.MapStr("page")
+		//if nil != err {
+		//	return nil, err
+		//}
+	}
+
 	// TODO: data => cond
 
 	clsItems, err := cli.core.FindClassification(params, cond)
-
 	if nil != err {
 		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range clsItems {
-		obj, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		items = append(items, obj)
-	}
-
-	result.Set("data", items)
+	result.Set("data", clsItems)
 
 	return result, nil
 }

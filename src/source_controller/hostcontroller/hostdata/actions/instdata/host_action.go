@@ -67,7 +67,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 
 	input[common.CreateTimeField] = time.Now()
 	var idName string
-	ID, err := instdata.CreateObject(objType, input, &idName)
+	id, err := instdata.CreateObject(objType, input, &idName)
 	if err != nil {
 		blog.Errorf("create object type:%s ,data: %v error: %v", objType, input, err)
 		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrHostCreateInst).Error()})
@@ -76,7 +76,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 
 	// record event
 	originData := map[string]interface{}{}
-	if err := instdata.GetObjectByID(objType, nil, ID, originData, ""); err != nil {
+	if err := instdata.GetObjectByID(objType, nil, id, originData, ""); err != nil {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventdata.NewEventContextByReq(req)
@@ -88,7 +88,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 
 	resp.WriteAsJson(Response{
 		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data:     map[string]int{idName: ID},
+		Data:     map[string]int{idName: id},
 	})
 }
 
