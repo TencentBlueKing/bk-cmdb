@@ -13,6 +13,9 @@
 package api
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/metadata"
 	"net/http"
 
 	frtypes "configcenter/src/common/mapstr"
@@ -34,30 +37,126 @@ func (cli *topoAPI) initObjectGroup() {
 
 // CreateObjectGroup create a new object group
 func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	rsp, err := cli.core.CreateObjectGroup(params, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return rsp.ToMapStr()
 }
 
 // UpdateObjectGroup update the object group information
 func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+	val, exists := data.Get("id")
+
+	if exists {
+		cond.Field("id").Eq(val)
+	} else {
+		val, exists = data.Get(metadata.GroupFieldGroupID)
+		if !exists {
+			return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.GroupFieldGroupID)
+		}
+		cond.Field(metadata.GroupFieldGroupID).Eq(val)
+	}
+
+	err := cli.core.UpdateObjectGroup(params, data, cond)
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // DeleteObjectGroup delete the object group
 func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+	val, exists := data.Get("id")
+
+	if exists {
+		cond.Field("id").Eq(val)
+	} else {
+		val, exists = data.Get(metadata.GroupFieldGroupID)
+		if !exists {
+			return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.GroupFieldGroupID)
+		}
+		cond.Field(metadata.GroupFieldGroupID).Eq(val)
+	}
+
+	err := cli.core.DeleteObjectGroup(params, cond)
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
 func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	val, exists := data.Get(metadata.ModelFieldObjectID)
+	if !exists {
+		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.ModelFieldObjectID)
+	}
+	cond.Field(metadata.ModelFieldObjectID).Eq(val)
+	data.Remove(metadata.ModelFieldObjectID)
+
+	val, exists = data.Get(metadata.AttributeFieldPropertyID)
+	if !exists {
+		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.AttributeFieldPropertyID)
+	}
+	cond.Field(metadata.AttributeFieldPropertyID).Eq(val)
+	data.Remove(metadata.AttributeFieldPropertyID)
+
+	err := cli.core.UpdateObjectAttribute(params, data, cond)
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := condition.CreateCondition()
+
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
+	cond.Field(metadata.AttributeFieldPropertyID).Eq(pathParams("property_id"))
+	cond.Field(metadata.AttributeFieldPropertyGroup).Eq("group_id")
+
+	innerData := frtypes.MapStr{}
+	innerData.Set(metadata.AttributeFieldPropertyGroup, "none")
+	innerData.Set(metadata.AttributeFieldPropertyIndex, -1)
+
+	err := cli.core.UpdateObjectAttribute(params, innerData, cond)
+	if nil != err {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // SearchGroupByObject search the groups by the object
 func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
+
+	items, err := cli.core.FindGroupByObject(params, cond)
+	if nil != err {
+		return nil, err
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("data", items)
+
+	return result, nil
 }
