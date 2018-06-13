@@ -117,7 +117,7 @@
                 </div>
             </template>
             <div class="screening-btn" ref="screeningBtn">
-                <bk-button type="primary" @click.prevent="refresh">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
+                <bk-button type="primary" :loading="$loading('hostSearch')" @click.prevent="refresh">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
             </div>
         </form>
     </div>

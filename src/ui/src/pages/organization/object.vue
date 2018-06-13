@@ -578,7 +578,7 @@
                     let updateUrl = this.objId === 'biz'
                         ? `biz/${this.bkSupplierAccount}/${bizId}`
                         : `inst/${this.bkSupplierAccount}/${this.objId}/${instId}`
-                    this.$axios.put(updateUrl, formData, {id: 'instEdit'}).then(res => {
+                    this.$axios.put(updateUrl, formData, {id: 'editAttr'}).then(res => {
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
@@ -589,7 +589,7 @@
                     })
                 } else {
                     let createUrl = this.objId === 'biz' ? `biz/${this.bkSupplierAccount}` : `inst/${this.bkSupplierAccount}/${this.objId}`
-                    this.$axios.post(createUrl, formData, {id: 'instEdit'}).then(res => {
+                    this.$axios.post(createUrl, formData, {id: 'editAttr'}).then(res => {
                         if (res.result) {
                             this.setTablePage(1)
                             this.closeObjectSlider()
