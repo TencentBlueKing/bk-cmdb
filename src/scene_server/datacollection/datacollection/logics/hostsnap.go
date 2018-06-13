@@ -391,6 +391,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 		blog.Infof("ips not in cache clouid: %s,ip: %v", cloudid, ips)
 		clouidInt, err := strconv.Atoi(cloudid)
 		if nil != err {
+			blog.Infof("cloudid \"%s\" not integer", cloudid)
 			return nil
 		}
 		condition := map[string]interface{}{
