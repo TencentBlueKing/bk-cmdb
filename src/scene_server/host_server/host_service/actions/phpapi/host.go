@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
-	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
@@ -52,7 +51,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/gethostsbyproperty", Params: nil, Handler: host.HostSearchByProperty})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/getIPAndProxyByCompany", Params: nil, Handler: host.GetIPAndProxyByCompany})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/openapi/updatecustomproperty", Params: nil, Handler: host.UpdateCustomProperty})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "openapi/host/clonehostproperty", Params: nil, Handler: host.CloneHostProperty})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/openapi/host/getHostAppByCompanyId", Params: nil, Handler: host.GetHostAppByCompanyId})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/openapi/host/delhostinapp", Params: nil, Handler: host.DelHostInApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/openapi/host/getGitServerIp", Params: nil, Handler: host.GetGitServerIp})
@@ -276,8 +274,8 @@ func (cli *hostAction) UpdateHostByAppID(req *restful.Request, resp *restful.Res
 				common.BKHostIDField: hostID,
 			}
 			data := map[string]interface{}{
-				// TODO 没有gse_proxy字段，暂时不修改;2018/03/09
-				//common.BKGseProxyField: 1,
+			// TODO 没有gse_proxy字段，暂时不修改;2018/03/09
+			//common.BKGseProxyField: 1,
 			}
 
 			_, err := phpapilogic.UpdateHostMain(req, hostCondition, data, appID, cli.CC.HostCtrl(), cli.CC.ObjCtrl(), cli.CC.AuditCtrl(), cli.CC.Error)
@@ -366,166 +364,6 @@ func (cli *hostAction) UpdateCustomProperty(req *restful.Request, resp *restful.
 		return
 	}
 	cli.ResponseSuccess(res, resp)
-}
-
-// cloneHostProperty 克隆主机
-func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Response) {
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_ReadReqBody, common.CC_Err_Comm_http_DO_STR, resp)
-		return
-	}
-	input := make(map[string]interface{})
-	err = json.Unmarshal(value, &input)
-	if nil != err {
-		blog.Error("Unmarshal json failed, error:%v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_http_Input_Params, common.CC_Err_Comm_http_Input_Params_STR, resp)
-		return
-	}
-	blog.Debug("CloneHostProperty input:%v", input)
-	appId, _ := strconv.Atoi(input[common.BKAppIDField].(string))
-	orgIp := input[common.BKOrgIPField]
-	dstIp := input[common.BKDstIPField]
-
-	platId, hasPlatId := input[common.BKCloudIDField]
-	platIdInt, _ := strconv.Atoi(input[common.BKCloudIDField].(string))
-	condition := common.KvMap{
-		common.BKHostInnerIPField: orgIp,
-	}
-
-	if hasPlatId && platId != nil && platId != "" {
-		condition[common.BKCloudIDField] = platIdInt
-	}
-	// 处理源IP
-	hostMap, hostIdArr, err := phpapilogic.GetHostMapByCond(req, condition)
-
-	blog.Debug("hostMapData:%v", hostMap)
-	if err != nil {
-		blog.Error("getHostMapByCond error : %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
-
-	if len(hostIdArr) == 0 {
-		blog.Error("clone host getHostMapByCond error, ip:%s, platid:%s", orgIp, platId)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
-
-	hostMapData, ok := hostMap[hostIdArr[0]].(map[string]interface{})
-	if false == ok {
-		blog.Error("getHostMapByCond not source ip : %s", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
-
-	configCond := map[string]interface{}{
-		common.BKHostIDField: []interface{}{hostMapData[common.BKHostIDField]},
-		common.BKAppIDField:  []int{appId},
-	}
-	// 判断源IP是否存在
-	configData, err := logics.GetConfigByCond(req, host.CC.HostCtrl(), configCond)
-	blog.Debug("configData:%v", configData)
-	if nil != err {
-		blog.Error("clone host property error : %v", err)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return
-	}
-	if len(configData) == 0 {
-		msg := "no find host"
-		blog.Error("clone host property error : %v", msg)
-		cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, fmt.Sprintf("%s %s", common.CC_Err_Comm_Host_Get_FAIL_STR, msg), resp)
-		return
-	}
-	// 处理目标IP
-	dstIpArr := strings.Split(dstIp.(string), ",")
-	// 获得已存在的主机
-	dstCondition := map[string]interface{}{
-		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBIN: dstIpArr,
-		},
-		common.BKCloudIDField: platIdInt,
-	}
-	dstHostMap, dstHostIdArr, err := phpapilogic.GetHostMapByCond(req, dstCondition)
-	blog.Debug("dstHostMap:%v", dstHostMap)
-
-	dstConfigCond := map[string]interface{}{
-		common.BKAppIDField:  []int{appId},
-		common.BKHostIDField: dstHostIdArr,
-	}
-	dstHostIdArrV, err := logics.GetHostIDByCond(req, host.CC.HostCtrl(), dstConfigCond)
-	existIpArr := make([]string, 0)
-	for _, id := range dstHostIdArrV {
-		if dstHostMapData, ok := dstHostMap[id].(map[string]interface{}); ok {
-			existIpArr = append(existIpArr, dstHostMapData[common.BKHostInnerIPField].(string))
-		}
-	}
-
-	//更新的时候，不修改为nil的数据
-	updateHostData := make(map[string]interface{})
-	for key, val := range hostMapData {
-		if nil != val {
-			updateHostData[key] = val
-		}
-	}
-	// 克隆主机, 已存在的修改，不存在的新增；dstIpArr: 全部要克隆的主机，existIpArr：已存在的要克隆的主机
-	blog.Debug("existIpArr:%v", existIpArr)
-	for _, dstIpV := range dstIpArr {
-		if dstIpV == orgIp {
-			blog.Debug("clone host updateHostMain err:%v", err)
-			msg := "dstIp 和 orgIp不能相同"
-			cli.ResponseFailed(common.CC_Err_Comm_Host_Update_FAIL_ERR, fmt.Sprintf("%s%s", common.CC_Err_Comm_Host_Update_FAIL_ERR_STR, msg), resp)
-			return
-		}
-		blog.Debug("hostMapData:%v", hostMapData)
-		if phpapilogic.In_existIpArr(existIpArr, dstIpV) {
-			blog.Debug("clone update")
-			hostCondition := map[string]interface{}{
-				common.BKHostInnerIPField: dstIpV,
-			}
-
-			updateHostData[common.BKHostInnerIPField] = dstIpV
-			delete(updateHostData, common.BKHostIDField)
-			res, err := phpapilogic.UpdateHostMain(req, hostCondition, updateHostData, appId, host.CC.HostCtrl(), host.CC.ObjCtrl(), host.CC.AuditCtrl(), cli.CC.Error)
-			if nil != err {
-				blog.Debug("clone host updateHostMain err:%v", err)
-				msg := fmt.Sprintf("clone host error:%s", dstIpV)
-				cli.ResponseFailed(common.CC_Err_Comm_Host_Update_FAIL_ERR, fmt.Sprintf("%s%s", common.CC_Err_Comm_Host_Update_FAIL_ERR_STR, msg), resp)
-				return
-			}
-			blog.Debug("clone host updateHostMain res:%v", res)
-		} else {
-			hostMapData[common.BKHostInnerIPField] = dstIpV
-			blog.Debug("clone add")
-			addHostMapData := hostMapData
-			delete(addHostMapData, common.BKHostIDField)
-			cloneHostId, err := phpapilogic.AddHost(req, addHostMapData, host.CC.ObjCtrl())
-			if nil != err {
-				blog.Debug("clone host addHost err:%v", err)
-				msg := fmt.Sprintf("clone host error:%s", dstIpV)
-				cli.ResponseFailed(common.CC_Err_Comm_HOST_CREATE_FAIL, fmt.Sprintf("%s%s", common.CC_Err_Comm_HOST_CREATE_FAIL_STR, msg), resp)
-				return
-			}
-
-			blog.Debug("cloneHostId:%v", cloneHostId)
-			blog.Debug("configData[0]:%v", configData[0])
-			configDataMap := make(map[string]interface{}, 0)
-			configDataMap[common.BKHostIDField] = cloneHostId
-			configDataMap[common.BKModuleIDField] = []int{configData[0][common.BKModuleIDField]}
-			configDataMap[common.BKAppIDField] = configData[0][common.BKAppIDField]
-			configDataMap[common.BKSetIDField] = configData[0][common.BKSetIDField]
-			err = phpapilogic.AddModuleHostConfig(req, configDataMap, host.CC.HostCtrl())
-			if nil != err {
-				blog.Debug("clone host addModuleHostConfig err:%v", err)
-				msg := fmt.Sprintf("clone host error:%s", dstIpV)
-				cli.ResponseFailed(common.CC_Err_Comm_HOST_CREATE_FAIL, fmt.Sprintf("%s%s", common.CC_Err_Comm_HOST_CREATE_FAIL_STR, msg), resp)
-				return
-			}
-		}
-	}
-
-	cli.ResponseSuccess(nil, resp)
 }
 
 //DelHostInApp: 从业务空闲机集群中删除主机

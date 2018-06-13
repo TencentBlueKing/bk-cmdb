@@ -392,7 +392,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 		return
 	}
 	formData := req.Request.Form
-	blog.Error("formData:%v", formData)
+	blog.Debug("formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
 		"orgIp",
@@ -408,17 +408,29 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 	dstIp := formData.Get("dstIp")
 	platId := formData.Get("platId")
 
+	appIDI, err := strconv.Atoi(appId)
+	if nil != err {
+		blog.Error("CloneHostProperty ApplicationID params error")
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
+		return
+	}
+
+	platIDI, err := strconv.Atoi(platId)
+	if nil != err {
+		platIDI = 0
+	}
+
 	param := make(common.KvMap)
-	param[common.BKAppIDField] = appId
+
+	param[common.BKAppIDField] = appIDI
 	param[common.BKOrgIPField] = orgIp
 	param[common.BKDstIPField] = dstIp
-	param[common.BKCloudIDField] = platId
+	param[common.BKCloudIDField] = platIDI
 	paramJson, _ := json.Marshal(param)
 
-	url := fmt.Sprintf("%s/host/v1/openapi/host/clonehostproperty", cli.CC.HostAPI())
-	blog.Infof("http request for CloneHostProperty url:%s, params:%s", url, string(paramJson))
+	url := fmt.Sprintf("%s/host/v1/propery/clone", cli.CC.HostAPI())
 	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPUpdate, []byte(paramJson))
-	blog.Infof("http request for CloneHostProperty url:%s, reply:%s", url, rspV3)
+	blog.Infof("http request for CloneHostProperty url:%s, params:%s, reply:%s", url, string(paramJson), rspV3)
 	if err != nil {
 		blog.Error("CloneHostProperty url:%s, params:%s, error:%s", url, string(paramJson), err.Error())
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
