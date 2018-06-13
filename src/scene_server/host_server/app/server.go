@@ -13,31 +13,108 @@
 package app
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	"context"
+	"fmt"
+	"os"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/host_service"
+	myCommon "configcenter/src/scene_server/host_server/common"
+	hostsvc "configcenter/src/scene_server/host_server/service"
+	"github.com/emicklei/go-restful"
+    logics2 "configcenter/src/scene_server/host_server/logics"
 )
 
-func Run(op *options.ServerOption) error {
+func Run(ctx context.Context, op *options.ServerOption) error {
 
-	serv, err := ccapi.NewCCAPIServer(op.ServConf)
+	svrInfo, err := newServerInfo(op)
 	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
+		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
+	c := &util.APIMachineryConfig{
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
 	}
 
-	serv.Start()
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return fmt.Errorf("new api machinery failed, err: %v", err)
+	}
 
+	service := new(hostsvc.Service)
+	server := backbone.Server{
+		ListenAddr: svrInfo.IP,
+		ListenPort: svrInfo.Port,
+		Handler:    restful.NewContainer().Add(service.WebService(rdapi.AllGlobalFilter())),
+		TLS:        backbone.TLSConfig{},
+	}
+
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
+	bonC := &backbone.Config{
+		RegisterPath: regPath,
+		RegisterInfo: *svrInfo,
+		CoreAPI:      machinery,
+		Server:       server,
+	}
+
+	hostSvr := new(HostServer)
+	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+		types.CC_MODULE_HOST,
+		op.ServConf.ExConfig,
+		hostSvr.onHostConfigUpdate,
+		bonC)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+
+	service.Engine = engine
+	_ := logics2.Logics{Engine: engine}
+	hostSvr.Core = engine
+	select {}
 	return nil
 }
 
-func setConfig(op *options.ServerOption) {
-	//server cert directory
+type HostServer struct {
+	Core *backbone.Engine
+}
 
+func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	config := current.ConfigMap
+	myCommon.SetGseConfig(config["gse.addr"], config["gse.user"], config["gse.pwd"], config["gse.port"], config["gse.redis_pwd"])
+}
+
+func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
 }

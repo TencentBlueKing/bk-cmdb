@@ -102,9 +102,8 @@ type HostConfig struct {
 }
 
 type ModuleHostConfigParams struct {
-	ApplicationID int   `json:"bk_biz_id"`
-	HostID        int   `json:"bk_host_id"`
-	ModuleID      []int `json:"bk_module_id"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        int64   `json:"bk_host_id"`
 }
 
 type UserConfig struct {

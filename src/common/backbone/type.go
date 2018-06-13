@@ -16,8 +16,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 )
 
@@ -25,8 +23,6 @@ type Config struct {
 	RegisterPath string
 	RegisterInfo types.ServerInfo
 	CoreAPI      apimachinery.ClientSetInterface
-	Language     language.CCLanguageIf
-	CCErr        errors.CCErrorIf
 	Server       Server
 }
 
