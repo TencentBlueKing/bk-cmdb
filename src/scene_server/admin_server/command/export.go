@@ -2,27 +2,28 @@ package command
 
 import (
 	"configcenter/src/storage"
+	"encoding/json"
 	"fmt"
 	"os"
 )
 
-func export(position string, db storage.DI) error {
-	stat, err := os.Stat(position)
+func export(db storage.DI, opt *option) error {
+	file, err := os.Create(opt.position)
 	if nil != err {
 		return err
 	}
+	defer file.Close()
+	defer file.Sync()
 
-	if stat.IsDir() {
-		return fmt.Errorf("%s is not a file", position)
-	}
-
-	file, err := os.Create(position)
+	topo, err := getBKTopo(db, opt)
 	if nil != err {
 		return err
 	}
-
-	// db.GetMutilByCondition(cName, fields, condiction, result, sort, start, limit)
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(topo)
+	if nil != err {
+		return fmt.Errorf("encode topo error: %s", err.Error())
+	}
 
 	return nil
-
 }
