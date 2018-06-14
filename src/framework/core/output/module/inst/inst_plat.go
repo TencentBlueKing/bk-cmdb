@@ -79,7 +79,15 @@ func (cli *plat) SetValue(key string, value interface{}) error {
 
 	return nil
 }
-
+func (cli *plat) IsExists() (bool, error) {
+	return true, nil
+}
+func (cli *plat) Create() error {
+	return nil
+}
+func (cli *plat) Update() error {
+	return nil
+}
 func (cli *plat) Save() error {
 	return nil
 }

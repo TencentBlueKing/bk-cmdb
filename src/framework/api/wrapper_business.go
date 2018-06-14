@@ -48,6 +48,21 @@ func (cli *BusinessWrapper) SetValue(key string, val interface{}) error {
 	return cli.business.SetValue(key, val)
 }
 
+// IsExists check the set
+func (cli *BusinessWrapper) IsExists() (bool, error) {
+	return cli.business.IsExists()
+}
+
+// Create only to create
+func (cli *BusinessWrapper) Create() error {
+	return cli.business.Create()
+}
+
+// Update only to update
+func (cli *BusinessWrapper) Update() error {
+	return cli.business.Update()
+}
+
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
