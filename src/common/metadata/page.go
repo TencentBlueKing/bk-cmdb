@@ -12,6 +12,12 @@
 
 package metadata
 
+const (
+	PageName  = "page"
+	PageSort  = "sort"
+	PageStart = "start"
+)
+
 // BasePage for paging query
 type BasePage struct {
 	Sort  string `json:"sort,omitempty"`

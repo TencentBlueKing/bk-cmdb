@@ -15,11 +15,10 @@ package api
 import (
 	"net/http"
 
-	// "configcenter/src/common"
-	// "configcenter/src/common/blog"
-
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -68,15 +67,22 @@ func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pa
 func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := condition.CreateCondition()
+	if data.Exists(metadata.PageName) {
 
-	if data.Exists("page") {
-		//page, err := data.MapStr("page")
-		//if nil != err {
-		//	return nil, err
-		//}
+		page, err := data.MapStr(metadata.PageName)
+		if nil != err {
+			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			return nil, err
+		}
+
+		if err = cond.SetPage(page); nil != err {
+			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			return nil, err
+		}
+
+		data.Remove(metadata.PageName)
 	}
-
-	// TODO: data => cond
+	cond.Parse(data)
 
 	clsItems, err := cli.core.FindClassification(params, cond)
 	if nil != err {
@@ -92,21 +98,15 @@ func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, q
 // UpdateClassification update the object classification
 func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	cond := condition.CreateCondition()
-
-	cond.Field("id")
-
+	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.UpdateClassification(params, data, cond)
-
 	return nil, err
 }
 
 // DeleteClassification delete the object classification
 func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 	cond := condition.CreateCondition()
-
-	cond.Field("id")
-
+	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.DeleteClassification(params, cond)
-
 	return nil, err
 }

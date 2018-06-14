@@ -16,6 +16,7 @@ import (
 	"reflect"
 
 	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 // CreateCondition create a condition object
@@ -25,6 +26,7 @@ func CreateCondition() Condition {
 
 // Condition condition interface
 type Condition interface {
+	SetPage(page types.MapStr) error
 	SetStart(start int)
 	GetStart() int
 	SetLimit(limit int)
@@ -42,6 +44,25 @@ type condition struct {
 	limit  int
 	sort   string
 	fields []Field
+}
+
+// SetPage set the page
+func (cli *condition) SetPage(page types.MapStr) error {
+
+	start, err := page.Int(metadata.PageStart)
+	if nil != err {
+		return err
+	}
+
+	cli.start = start
+
+	sort, err := page.String(metadata.PageSort)
+	if nil != err {
+		return err
+	}
+	cli.sort = sort
+
+	return nil
 }
 
 // Parse load the data into condition object
