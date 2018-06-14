@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package metadata
 
 import (
@@ -79,40 +79,40 @@ type RecursiveMapResponse struct {
 	Data     map[string]map[string]*basetype.Type `json:"data"`
 }
 
-type ObjQueryInput struct {
-    Condition interface{} `json:"condition"`
-    Fields    string      `json:"fields"`
-    Start     int         `json:"start"`
-    Limit     int         `json:"limit"`
-    Sort      string      `json:"sort"`
+type QueryInput struct {
+	Condition interface{} `json:"condition"`
+	Fields    string      `json:"fields"`
+	Start     int         `json:"start"`
+	Limit     int         `json:"limit"`
+	Sort      string      `json:"sort"`
 }
 
 type CloudHostModuleParams struct {
-    ApplicationID int          `json:"bk_biz_id"`
-    HostInfoArr   []BkHostInfo `json:"host_info"`
-    ModuleID      int          `json:"bk_module_id"`
+	ApplicationID int          `json:"bk_biz_id"`
+	HostInfoArr   []BkHostInfo `json:"host_info"`
+	ModuleID      int          `json:"bk_module_id"`
 }
 
 type BkHostInfo struct {
-    IP      string `json:"bk_host_innerip"`
-    CloudID int    `json:"bk_cloud_id"`
+	IP      string `json:"bk_host_innerip"`
+	CloudID int    `json:"bk_cloud_id"`
 }
 
 type DefaultModuleHostConfigParams struct {
-    ApplicationID int   `json:"bk_biz_id"`
-    HostID        []int `json:"bk_host_id"`
+	ApplicationID int   `json:"bk_biz_id"`
+	HostID        []int `json:"bk_host_id"`
 }
 
 //common search struct
 type SearchParams struct {
-    Condition map[string]interface{} `json:"condition"`
-    Page      map[string]interface{} `json:"page,omitempty"`
-    Fields    []string               `json:"fields,omitempty"`
-    Native    int                    `json:"native,omitempty"`
+	Condition map[string]interface{} `json:"condition"`
+	Page      map[string]interface{} `json:"page,omitempty"`
+	Fields    []string               `json:"fields,omitempty"`
+	Native    int                    `json:"native,omitempty"`
 }
 
 // PropertyGroupCondition used to reflect the property group json
 type PropertyGroupCondition struct {
-    Condition map[string]interface{} `json:"condition"`
-    Data      map[string]interface{} `json:"data"`
+	Condition map[string]interface{} `json:"condition"`
+	Data      map[string]interface{} `json:"data"`
 }

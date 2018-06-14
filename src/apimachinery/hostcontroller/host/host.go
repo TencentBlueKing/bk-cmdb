@@ -22,7 +22,7 @@ import (
 
 type HostInterface interface {
 	GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.Response, err error)
-	GetHosts(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.GetHostsResult, err error)
+	GetHosts(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetHostSnap(ctx context.Context, hostID string, h http.Header) (resp *metadata.GetHostSnapResult, err error)
 }
