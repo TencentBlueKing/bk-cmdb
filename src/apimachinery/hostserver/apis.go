@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-    "configcenter/src/common/metadata"
 )
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -35,8 +35,7 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat in
 	return
 }
 
-func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
 	subPath := fmt.Sprintf("/hosts/%s/%s", ownerID, hostID)
 
 	err = hs.client.Get().
@@ -49,8 +48,7 @@ func (hs *hostServer) GetHostDetailByID(ctx context.Context, ownerID string, hos
 	return
 }
 
-func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error) {
 	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
 
 	err = hs.client.Get().
@@ -665,7 +663,7 @@ func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID stri
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/search/%s", businessID)
 

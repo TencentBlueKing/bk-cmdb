@@ -15,9 +15,9 @@ package inst
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	metatype "configcenter/src/common/metadata"
-	"net/http"
 )
 
 func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error) {
