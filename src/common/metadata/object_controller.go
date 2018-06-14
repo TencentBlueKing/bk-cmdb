@@ -18,7 +18,7 @@ import (
 
 // RspID response id
 type RspID struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }
 
 // CreateResult create result
@@ -71,7 +71,7 @@ type UpdateGroupCondition struct {
 
 	Data struct {
 		Name  string `json:"bk_group_name"`
-		Index int    `json:"bk_group_index"`
+		Index int64  `json:"bk_group_index"`
 	} `json:"data"`
 }
 
@@ -129,10 +129,16 @@ type QueryObjectAssociationResult struct {
 	Data     []Association `json:"data"`
 }
 
+// InstResult inst item result
+type InstResult struct {
+	Count int            `json:"count"`
+	Info  []types.MapStr `json:"info"`
+}
+
 // QueryInstResult query inst result
 type QueryInstResult struct {
 	BaseResp `json:",inline"`
-	Data     types.MapStr `json:"data"`
+	Data     InstResult `json:"data"`
 }
 
 // CreateInstResult create inst result

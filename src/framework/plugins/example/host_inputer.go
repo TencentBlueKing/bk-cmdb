@@ -18,15 +18,15 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 
 	"fmt"
-	"time"
+	//"time"
 
 	"io"
 )
 
 func init() {
 
-	// api.RegisterInputer(host)
-	api.RegisterFrequencyInputer(host, time.Minute*5)
+	api.RegisterInputer(host)
+	//api.RegisterFrequencyInputer(host, time.Minute*5)
 }
 
 var host = &hostInputer{}
@@ -56,7 +56,8 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	}
 
 	// set the inner field
-	host.SetInnerIP("192.168.1.1")
+	host.SetInnerIP("192.168.1.135")
+	host.SetBusiness(3)
 	host.SetOsBit("64")
 	host.SetOsName("os-test")
 	host.SetOsType(api.HostOSTypeLinux)
@@ -77,10 +78,7 @@ func (cli *hostInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	hostAttr.SetID("host_field_id")
 	hostAttr.SetName("host_field_id(test)")
 	hostAttr.SetType(model.FieldTypeLongChar)
-	hostAttr.SetOption(map[string]int{
-		"min": 0,
-		"max": 9999,
-	})
+
 	err = hostAttr.Save()
 	if nil != err {
 		fmt.Println("err attr:", err)
