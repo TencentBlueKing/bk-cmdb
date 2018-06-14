@@ -295,7 +295,6 @@
                 }
                 if (property.hasOwnProperty('option')) {
                     if (bkPropertyType === 'int') {
-                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min')) {
                             rules['min_value'] = option.min
                         }
