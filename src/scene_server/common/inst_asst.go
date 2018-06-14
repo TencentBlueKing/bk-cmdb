@@ -22,6 +22,7 @@ import (
 	objapi "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -54,7 +55,7 @@ func ExtractDataFromAssociationField(instID int64, input map[string]interface{},
 					asstFieldVal = append(asstFieldVal, asstInst)
 				}
 
-			case int64, int:
+			case int64, int, float32, float64:
 				asstInst := &metadata.InstAsst{}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)
@@ -70,7 +71,7 @@ func ExtractDataFromAssociationField(instID int64, input map[string]interface{},
 				asstFieldVal = append(asstFieldVal, asstInst)
 
 			default:
-				blog.Warnf("the target data (%v) type is not a string ", t)
+				blog.Warnf("the target data (%v) type : ($v) is not a string ", t, reflect.TypeOf(inputVal))
 			}
 		}
 	}
