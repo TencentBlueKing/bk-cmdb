@@ -626,13 +626,17 @@
                     method = 'delete'
                 }
                 try {
-                    let res = await this.$axios({
+                    const res = await this.$axios({
                         method: method,
                         url: url
                     })
-                    this.setTablePage(1)
-                    this.closeObjectSlider()
-                    this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    if (res.result) {
+                        this.setTablePage(1)
+                        this.closeObjectSlider()
+                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    } else {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
