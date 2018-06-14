@@ -14,20 +14,20 @@ package module
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
 )
 
 type ModuleInterface interface {
-	GetHostModulesIDs(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
-	AddModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
-	DelModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
-	DelDefaultModuleHostConfig(ctx context.Context, h util.Headers, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
-	MoveHost2ResourcePool(ctx context.Context, h util.Headers, dat *metadata.ParamData) (resp *metadata.BaseResp, err error)
-	AssignHostToApp(ctx context.Context, h util.Headers, dat interface{}) (resp *metadata.BaseResp, err error)
-	GetModulesHostConfig(ctx context.Context, h util.Headers, dat map[string][]int) (resp *metadata.HostConfig, err error)
+	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
+	AddModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	DelModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error)
+	AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error)
+	GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int) (resp *metadata.HostConfig, err error)
 }
 
 func NewModuleInterface(client rest.ClientInterface) ModuleInterface {

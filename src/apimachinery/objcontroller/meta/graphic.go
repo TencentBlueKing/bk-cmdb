@@ -13,38 +13,34 @@
 package meta
 
 import (
-	"context"
+    "context"
+    "net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	metatype "configcenter/src/common/metadata"
-	"configcenter/src/source_controller/api/metadata"
+    "configcenter/src/common/metadata"
 )
 
-func (t *meta) SearchTopoGraphics(ctx context.Context, h util.Headers, dat *metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/topographics/search"
+func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.Response, err error) {
+    subPath := "/topographics/search"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *metatype.UpdateResult, err error) {
-	resp = new(metatype.UpdateResult)
-	subPath := "/topographics/update"
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error){
+    subPath := "/topographics/update"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
