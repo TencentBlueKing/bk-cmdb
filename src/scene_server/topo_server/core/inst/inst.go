@@ -34,7 +34,7 @@ type inst struct {
 
 func (cli *inst) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetID(), cli.params.Header, cli.datas)
+	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), cli.datas)
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
 		return err
@@ -93,7 +93,7 @@ func (cli *inst) Update() error {
 	updateCond := frtypes.MapStr{}
 	updateCond.Set("data", cli.datas)
 	updateCond.Set("condition", cond.ToMapStr())
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetID(), cli.params.Header, updateCond)
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), updateCond)
 	if nil != err {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -140,7 +140,7 @@ func (cli *inst) Delete() error {
 	}
 
 	// execute delete action
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetID(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -179,7 +179,7 @@ func (cli *inst) IsExists() (bool, error) {
 	queryCond := metatype.QueryInstInput{}
 	queryCond.Condition = cond.ToMapStr()
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetID(), cli.params.Header, &queryCond)
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), &queryCond)
 
 	if nil != err {
 		blog.Errorf("failed to search object(%s) instances  , error info is %s", cli.target.GetID(), err.Error())
