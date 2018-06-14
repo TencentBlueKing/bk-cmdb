@@ -36,8 +36,8 @@
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="default" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
-                <bk-button type="primary" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
+                <bk-button type="default" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
+                <bk-button type="primary" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
             </template>
         </v-table>
     </div>
