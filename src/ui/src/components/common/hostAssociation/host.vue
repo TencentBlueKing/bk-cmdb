@@ -159,7 +159,7 @@
                     this.table.chooseId = []
                 }
             },
-            selected () {
+            selected (selected) {
                 this.initLocalSelected()
             }
         },
@@ -171,6 +171,8 @@
                 if (Array.isArray(this.selected)) {
                     let availableSelected = this.selected.filter(({id}) => id !== '')
                     this.localSelected = availableSelected.map(({bk_inst_name: bkInstName}) => bkInstName)
+                    let hostId = availableSelected.map(({id}) => id)
+                    this.$emit('update:selected', hostId.join(','))
                 }
             },
             initChoosed () {
