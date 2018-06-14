@@ -163,24 +163,24 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
 
-		statuscode := 0
-		err := redisCli.Get(dcCommon.RedisSnapKeyChannelStatus).Scan(&statuscode)
-		if err != nil {
-			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
-		}
-
-		if statuscode != common.CCSuccess {
-			return http.StatusInternalServerError, nil, defErr.Error(statuscode)
-		}
-
 		data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
 		var result interface{}
-		err = cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
+		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 		if err != nil {
+			statuscode := 0
+			err := redisCli.Get(dcCommon.RedisSnapKeyChannelStatus).Scan(&statuscode)
+			if err != nil {
+				blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
+			}
+
+			if statuscode != common.CCSuccess {
+				return http.StatusInternalServerError, nil, defErr.Error(statuscode)
+			}
 			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
 		}
+
 		return http.StatusOK, common.KvMap{"data": result}, nil
 	}, resp)
 }
