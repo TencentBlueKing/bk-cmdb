@@ -17,10 +17,10 @@ import (
 	"fmt"
 
 	metatype "configcenter/src/common/metadata"
-    "net/http"
+	"net/http"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInstInput) (resp *metatype.QueryInstResult, err error) {
+func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error) {
 	resp = new(metatype.QueryInstResult)
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
 

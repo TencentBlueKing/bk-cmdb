@@ -21,7 +21,7 @@ import (
 )
 
 type InstanceInterface interface {
-	SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInstInput) (resp *metatype.QueryInstResult, err error)
+	SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error)
 	CreateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error)
 	DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
 	UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)

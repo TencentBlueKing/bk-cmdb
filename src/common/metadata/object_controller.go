@@ -45,13 +45,13 @@ type QueryObjectResult struct {
 // CreateObjectResult create object result
 type CreateObjectResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // CreateObjectAttributeResult create object attribute result
 type CreateObjectAttributeResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // AttributeWrapper  wrapper, expansion field
@@ -90,7 +90,7 @@ type QueryObjectAttributeResult struct {
 // CreateObjectGroupResult create the object group result
 type CreateObjectGroupResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // QueryObjectGroupResult query the object group result
@@ -102,7 +102,7 @@ type QueryObjectGroupResult struct {
 // CreateObjectClassificationResult create the object classification result
 type CreateObjectClassificationResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // QueryObjectClassificationResult query the object classification result
@@ -127,15 +127,6 @@ type QueryObjectClassificationWithObjectsResult struct {
 type QueryObjectAssociationResult struct {
 	BaseResp `json:",inline"`
 	Data     []Association `json:"data"`
-}
-
-// QueryInstInput query common input params
-type QueryInstInput struct {
-	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields"`
-	Start     int         `json:"start"`
-	Limit     int         `json:"limit"`
-	Sort      string      `json:"sort"`
 }
 
 // QueryInstResult query inst result
