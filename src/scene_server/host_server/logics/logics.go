@@ -52,24 +52,18 @@ func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]meta
 	return headers, nil
 }
 
-func (lgc *Logics) GenerateHostLogs(ownerID string, hostID string, logHeaders []metadata.Header, pheader http.Header) (*metadata.Content, error) {
-	ctnt := new(metadata.Content)
-	ctnt.Headers = logHeaders
+func (lgc *Logics) GetHostInstanceDetails(ownerID string, hostID string, pheader http.Header) (map[string]interface{}, string, error) {
 
 	// get host details, pre data
 	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
+		return nil, "", fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
 	}
 
-	hostInfo, ok := result.Data.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("invalid host info data")
-	}
-
+	hostInfo := result.Data
 	attributes, err := lgc.GetObjectAsst(ownerID, pheader)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	for key, val := range attributes {
@@ -80,13 +74,13 @@ func (lgc *Logics) GenerateHostLogs(ownerID string, hostID string, logHeaders []
 
 			strItem, ok := item.(string)
 			if !ok {
-				return nil, errors.New("invalid parameter")
+				return nil, "", errors.New("invalid parameter")
 			}
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
 				id, err := strconv.ParseInt(strID, 10, 64)
 				if err != nil {
-					return nil, err
+					return nil, "", err
 				}
 				ids = append(ids, id)
 			}
@@ -100,7 +94,14 @@ func (lgc *Logics) GenerateHostLogs(ownerID string, hostID string, logHeaders []
 				Condition: cond,
 			}
 
+			asst, _, err := lgc.getInstAsst(ownerID, val, strings.Split(strItem, ","), pheader, q)
+			if err != nil {
+				return nil, "", fmt.Errorf("get instance asst failed, err: %v", err)
+			}
+			hostInfo[key] = asst
 		}
 	}
 
+	ip := hostInfo[common.BKHostInnerIPField].(string)
+	return hostInfo, ip, nil
 }

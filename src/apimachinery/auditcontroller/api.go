@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -34,7 +34,7 @@ func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessI
 	return
 }
 
-func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/search"
 
