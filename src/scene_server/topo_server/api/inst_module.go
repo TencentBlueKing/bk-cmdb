@@ -40,7 +40,7 @@ func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryPara
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 
-	objItems, err := cli.core.FindObject(params, cond)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
@@ -51,7 +51,7 @@ func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryPara
 	data.Set(common.BKSetIDField, pathParams("set_id"))
 
 	for _, item := range objItems {
-		setInst, err := cli.core.CreateInst(params, item, data)
+		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new set, %s", err.Error())
 			return nil, err
@@ -79,7 +79,7 @@ func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryPara
 		Field(common.BKSetIDField).Eq(pathParams("set_id")).
 		Field(common.BKModuleIDField).Eq(pathParams("module_id"))
 
-	err := cli.core.DeleteInst(params, cond)
+	err := cli.core.InstOperation().DeleteInst(params, cond)
 
 	return nil, err
 }
@@ -97,7 +97,7 @@ func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryPara
 	data.Set(common.BKSetIDField, pathParams("set_id"))
 	data.Set(common.BKModuleIDField, pathParams("module_id"))
 
-	err := cli.core.UpdateInst(params, data, cond)
+	err := cli.core.InstOperation().UpdateInst(params, data, cond)
 
 	return nil, err
 }
@@ -117,7 +117,7 @@ func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryPara
 	data.Set(common.BKInnerObjIDSet, pathParams("set_id"))
 	data.Set(common.BKOwnerIDField, pathParams("owner_id"))
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}

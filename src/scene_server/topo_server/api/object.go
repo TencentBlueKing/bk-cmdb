@@ -47,7 +47,7 @@ func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, quer
 // CreateObject create a new object
 func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	rsp, err := cli.core.CreateObject(params, data)
+	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 
 	if nil != err {
 		return nil, err
@@ -65,7 +65,7 @@ func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryPara
 		return nil, err
 	}
 
-	rstItems, err := cli.core.FindObject(params, cond)
+	rstItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryPara
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(pathParams("id"))
 
-	err := cli.core.UpdateObject(params, data, cond)
+	err := cli.core.ObjectOperation().UpdateObject(params, data, cond)
 
 	if nil != err {
 		return nil, err
@@ -102,7 +102,7 @@ func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryPara
 
 	cond.Field("id").Eq(pathParams("id"))
 
-	err := cli.core.DeleteObject(params, cond)
+	err := cli.core.ObjectOperation().DeleteObject(params, cond)
 
 	if nil != err {
 		return nil, err

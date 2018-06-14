@@ -38,7 +38,7 @@ func (cli *topoAPI) initObjectGroup() {
 // CreateObjectGroup create a new object group
 func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	rsp, err := cli.core.CreateObjectGroup(params, data)
+	rsp, err := cli.core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 		cond.Field(metadata.GroupFieldGroupID).Eq(val)
 	}
 
-	err := cli.core.UpdateObjectGroup(params, data, cond)
+	err := cli.core.GroupOperation().UpdateObjectGroup(params, data, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, quer
 		cond.Field(metadata.GroupFieldGroupID).Eq(val)
 	}
 
-	err := cli.core.DeleteObjectGroup(params, cond)
+	err := cli.core.GroupOperation().DeleteObjectGroup(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathPar
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(val)
 	data.Remove(metadata.AttributeFieldPropertyID)
 
-	err := cli.core.UpdateObjectAttribute(params, data, cond)
+	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathPar
 	innerData.Set(metadata.AttributeFieldPropertyGroup, "none")
 	innerData.Set(metadata.AttributeFieldPropertyIndex, -1)
 
-	err := cli.core.UpdateObjectAttribute(params, innerData, cond)
+	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, innerData, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, qu
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
 
-	items, err := cli.core.FindGroupByObject(params, cond)
+	items, err := cli.core.GroupOperation().FindGroupByObject(params, cond)
 	if nil != err {
 		return nil, err
 	}

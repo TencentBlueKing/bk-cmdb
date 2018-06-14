@@ -36,7 +36,7 @@ func (cli *topoAPI) initObjectAttribute() {
 // CreateObjectAttribute create a new object attribute
 func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
-	attr, err := cli.core.CreateObjectAttribute(params, data)
+	attr, err := cli.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, 
 		return nil, err
 	}
 
-	attrs, err := cli.core.FindObjectAttribute(params, cond)
+	attrs, err := cli.core.AttributeOperation().FindObjectAttribute(params, cond)
 	if nil != err {
 		blog.Errorf("failed to parse the data into condition, error info is %s", err.Error())
 		return nil, err
@@ -70,7 +70,7 @@ func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, 
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(queryParams("id"))
-	err := cli.core.UpdateObjectAttribute(params, data, cond)
+	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, cond)
 
 	return nil, err
 }
@@ -80,7 +80,7 @@ func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, 
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(queryParams("id"))
-	err := cli.core.DeleteObjectAttribute(params, cond)
+	err := cli.core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }
