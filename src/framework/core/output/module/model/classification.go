@@ -26,29 +26,45 @@ type classification struct {
 	ClassificationName string `field:"bk_classification_name"`
 	ClassificationType string `field:"bk_classification_type"`
 	ClassificationIcon string `field:"bk_classification_icon"`
+
+	id int
 }
 
 func (cli *classification) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
-
-func (cli *classification) Save() error {
+func (cli *classification) search() ([]types.MapStr, error) {
 
 	// construct the search condition
 	cond := common.CreateCondition().Field(ClassificationID).Eq(cli.ClassificationID)
 
 	// search all classifications by condition
-	dataItems, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
+	return client.GetClient().CCV3().Classification().SearchClassifications(cond)
+}
+func (cli *classification) IsExists() (bool, error) {
+	items, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(items), nil
+}
+
+func (cli *classification) Create() error {
+
+	id, err := client.GetClient().CCV3().Classification().CreateClassification(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
 
-	// create a new classification
-	if 0 == len(dataItems) {
-		if _, err = client.GetClient().CCV3().Classification().CreateClassification(cli.ToMapStr()); nil != err {
-			return err
-		}
-		return nil
+	cli.id = id
+	return nil
+}
+func (cli *classification) Update() error {
+
+	dataItems, err := cli.search()
+	if nil != err {
+		return err
 	}
 
 	// update the exists one
@@ -69,11 +85,22 @@ func (cli *classification) Save() error {
 			return err
 		}
 	}
-
-	// success
 	return nil
 }
+func (cli *classification) Save() error {
 
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
+}
+
+func (cli *classification) GetRecordID() int {
+	return cli.id
+}
 func (cli *classification) GetID() string {
 	return cli.ClassificationID
 }

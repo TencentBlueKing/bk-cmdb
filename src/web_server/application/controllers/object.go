@@ -41,6 +41,7 @@ var sortFields = []string{
 	"bk_property_id",
 	"bk_property_name",
 	"bk_property_type",
+	"bk_property_group_name",
 	"option",
 	"unit",
 	"description",
@@ -258,6 +259,13 @@ func ExportObject(c *gin.Context) {
 	setExcelTitle(sheet.AddRow(), defLang)
 	setExcelTitleType(sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
+
+	/*
+		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+		dd.SetDropList([]string{})
+		sheet.Col(2).SetDataValidationWithStart(dd, 3)
+		sheet.Cell(1,1).SetString()
+	*/
 
 	// add the value
 	for _, item := range arrItems {

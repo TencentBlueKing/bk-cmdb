@@ -15,11 +15,10 @@ package api
 import (
 	"net/http"
 
-	// "configcenter/src/common"
-	// "configcenter/src/common/blog"
-
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -49,28 +48,20 @@ func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, 
 func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := condition.CreateCondition()
-
-	// TODO: data => cond
+	data.Remove(metadata.PageName)
+	if err := cond.Parse(data); nil != err {
+		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
+		return nil, err
+	}
 
 	attrs, err := cli.core.FindObjectAttribute(params, cond)
-
 	if nil != err {
+		blog.Errorf("failed to parse the data into condition, error info is %s", err.Error())
 		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range attrs {
-
-		obj, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		items = append(items, obj)
-	}
-
-	result.Set("data", items)
-
+	result.Set("data", attrs)
 	return result, nil
 }
 
@@ -78,9 +69,7 @@ func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, 
 func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := condition.CreateCondition()
-
-	cond.Field("id")
-
+	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.UpdateObjectAttribute(params, data, cond)
 
 	return nil, err
@@ -90,9 +79,7 @@ func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, 
 func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
 	cond := condition.CreateCondition()
-
-	cond.Field("id")
-
+	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.DeleteObjectAttribute(params, cond)
 
 	return nil, err

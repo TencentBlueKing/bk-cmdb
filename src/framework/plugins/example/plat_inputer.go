@@ -20,7 +20,7 @@ import (
 
 func init() {
 
-	api.RegisterInputer(platMgr)
+	//api.RegisterInputer(platMgr)
 	//api.RegisterFrequencyInputer(platMgr, time.Minute*5)
 }
 

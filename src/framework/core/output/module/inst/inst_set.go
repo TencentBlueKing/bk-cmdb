@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -88,15 +88,13 @@ func (cli *set) SetValue(key string, value interface{}) error {
 
 	return nil
 }
-
-func (cli *set) Save() error {
-
+func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	businessID := cli.datas.String(BusinessID)
 
 	// get the attributes
 	attrs, err := cli.target.Attributes()
 	if nil != err {
-		return err
+		return nil, nil, err
 	}
 
 	// construct the condition which is used to check the if it is exists
@@ -106,7 +104,7 @@ func (cli *set) Save() error {
 	for _, attrItem := range attrs {
 		if attrItem.GetKey() {
 			if !cli.datas.Exists(attrItem.GetID()) {
-				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				return attrs, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
 			}
 			attrVal := cli.datas.String(attrItem.GetID())
 			cond.Field(attrItem.GetID()).Eq(attrVal)
@@ -117,19 +115,37 @@ func (cli *set) Save() error {
 
 	// search by condition
 	existItems, err := client.GetClient().CCV3().Set().SearchSets(cond)
+
+	return attrs, existItems, err
+}
+func (cli *set) IsExists() (bool, error) {
+
+	_, existItems, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(existItems), nil
+}
+
+func (cli *set) Create() error {
+
+	setID, err := client.GetClient().CCV3().Set().CreateSet(cli.datas)
+	if nil != err {
+		return err
+	}
+	cli.datas.Set(SetID, setID)
+	return nil
+}
+func (cli *set) Update() error {
+
+	businessID := cli.datas.String(BusinessID)
+
+	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
-	//fmt.Println("the exists:", existItems)
-
-	// create a new
-	if 0 == len(existItems) {
-		_, err = client.GetClient().CCV3().Set().CreateSet(cli.datas)
-		return err
-	}
-
-	// update the exists
 	for _, existItem := range existItems {
 
 		cli.datas.ForEach(func(key string, val interface{}) {
@@ -151,13 +167,23 @@ func (cli *set) Save() error {
 			}
 			existItem.Remove(key)
 		})
-		//fmt.Println("the new:", existItem)
+
 		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
 		if nil != err {
 			return err
 		}
 
 	}
-
 	return nil
+}
+func (cli *set) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
+
 }

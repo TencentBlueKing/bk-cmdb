@@ -48,6 +48,21 @@ func (cli *PlatWrapper) SetValue(key string, val interface{}) error {
 	return cli.plat.SetValue(key, val)
 }
 
+// IsExists check the set
+func (cli *PlatWrapper) IsExists() (bool, error) {
+	return cli.plat.IsExists()
+}
+
+// Create only to create
+func (cli *PlatWrapper) Create() error {
+	return cli.plat.Create()
+}
+
+// Update only to update
+func (cli *PlatWrapper) Update() error {
+	return cli.plat.Update()
+}
+
 // Save save the data
 func (cli *PlatWrapper) Save() error {
 	return cli.plat.Save()
