@@ -13,74 +13,94 @@
 package logics
 
 import (
-    "net/http"
-    "context"
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
 
-    "configcenter/src/common/backbone"
-    "configcenter/src/common"
-    "configcenter/src/source_controller/api/metadata"
-    "fmt"
-    "configcenter/src/framework/core/errors"
-    "configcenter/src/scene_server/host_server/service"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	meta "configcenter/src/common/metadata"
+	"configcenter/src/scene_server/host_server/service"
+	"configcenter/src/source_controller/api/metadata"
 )
 
 type Logics struct {
-    *backbone.Engine
+	*backbone.Engine
 }
 
-func(lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]metadata.Header, error){
-    searchOp := service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
-    result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, searchOp)
-    if err != nil || (err == nil && !result.Result){
-        return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.Message)
-    }
+func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]metadata.Header, error) {
+	searchOp := service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
+	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, searchOp)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
+	}
 
-    hostAttrArr, ok := result.Data.([]interface{})
-    if !ok {
-        return nil, errors.New("invalid response data")
-    }
-    
-    headers := make([]metadata.Header, 0)
-    for _, i := range hostAttrArr {
-        attr := i.(map[string]interface{})
-        data := metadata.Header{}
-        propertyID := attr[common.BKPropertyIDField].(string)
-        if propertyID == common.BKChildStr {
-            continue
-        }
-        data.PropertyID = propertyID
-        data.PropertyName = attr[common.BKPropertyNameField].(string)
+	headers := make([]metadata.Header, 0)
+	for _, p := range result.Data {
+		if p.PropertyID == common.BKChildStr {
+			continue
+		}
+		headers = append(headers, metadata.Header{
+			PropertyID:   p.PropertyID,
+			PropertyName: p.PropertyName,
+		})
+	}
 
-        headers = append(headers, data)
-    }
-    
-    return headers, nil
+	return headers, nil
 }
 
-func(lgc *Logics) GenerateHostLogs(ownerID string, hostID string, logHeaders []metadata.Header, pheader http.Header) (*metadata.Content, error) {
-    ctnt := new(metadata.Content)
-    ctnt.Headers = logHeaders
-    
-    // get host details
-    result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
-    if err != nil || (err == nil && !result.Result) {
-        return nil, fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
-    }
-    
-    hostInfo, ok := result.Data.(map[string]interface{})
-    if !ok {
-        return nil, errors.New("invalid host info data")
-    }
-    
-    // get host association
-    opt := service.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost)
-    assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, opt)
-    if err != nil || (err == nil && !assResult.Result) {
-        return nil, fmt.Errorf("get host association failed, err, %v, %v", err, result.ErrMsg)
-    }
-    
-    
-    
+func (lgc *Logics) GenerateHostLogs(ownerID string, hostID string, logHeaders []metadata.Header, pheader http.Header) (*metadata.Content, error) {
+	ctnt := new(metadata.Content)
+	ctnt.Headers = logHeaders
+
+	// get host details, pre data
+	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
+	}
+
+	hostInfo, ok := result.Data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("invalid host info data")
+	}
+
+	attributes, err := lgc.GetObjectAsst(ownerID, pheader)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range attributes {
+		if item, ok := hostInfo[key]; ok {
+			if item == nil {
+				continue
+			}
+
+			strItem, ok := item.(string)
+			if !ok {
+				return nil, errors.New("invalid parameter")
+			}
+			ids := make([]int64, 0)
+			for _, strID := range strings.Split(strItem, ",") {
+				id, err := strconv.ParseInt(strID, 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				ids = append(ids, id)
+			}
+
+			cond := make(map[string]interface{})
+			cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
+			q := meta.QueryInput{
+				Start:     0,
+				Limit:     common.BKNoLimit,
+				Sort:      "",
+				Condition: cond,
+			}
+
+		}
+	}
+
 }
-
-

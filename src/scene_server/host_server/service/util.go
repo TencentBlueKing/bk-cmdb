@@ -15,53 +15,50 @@ package service
 import "configcenter/src/common"
 
 func NewOperation() *operation {
-    return &operation{
-        op: make(map[string]interface{}),
-    }
+	return &operation{
+		op: make(map[string]interface{}),
+	}
 }
 
 type operation struct {
-    op map[string]interface{}
+	op map[string]interface{}
 }
 
 func (o *operation) Data() map[string]interface{} {
-    return o.op
+	return o.op
 }
 
 func (o *operation) WithHostID(hostID int64) *operation {
-    o.op[common.BKHostIDField] = hostID
-    return o
+	o.op[common.BKHostIDField] = hostID
+	return o
 }
 
 func (o *operation) WithAppID(appID int64) *operation {
-    o.op[common.BKAppIDField] = appID
-    return o
+	o.op[common.BKAppIDField] = appID
+	return o
 }
 
 func (o *operation) WithDefaultField(field int64) *operation {
-    o.op[common.BKDefaultField] = field
-    return o
+	o.op[common.BKDefaultField] = field
+	return o
 }
 
 func (o *operation) WithOwnerID(ownerID string) *operation {
-    o.op[common.BKDefaultField] = ownerID
-    return o
+	o.op[common.BKDefaultField] = ownerID
+	return o
 }
 
 func (o *operation) WithInstID(instID int64) *operation {
-    o.op[common.BKInstIDField] = instID
-    return o
+	o.op[common.BKInstIDField] = instID
+	return o
 }
 
 func (o *operation) WithObjID(objID string) *operation {
-    o.op[common.BKObjIDField] = objID
-    return o
+	o.op[common.BKObjIDField] = objID
+	return o
 }
 
-
-
-
-
-
-
-
+func (o *operation) WithPropertyID(id string) *operation {
+	o.op[common.BKObjAttIDField] = id
+	return o
+}
