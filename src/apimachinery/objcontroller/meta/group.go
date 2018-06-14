@@ -13,108 +13,100 @@
 package meta
 
 import (
-	"context"
-	"fmt"
+    "context"
+    "fmt"
+    "net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	metatype "configcenter/src/common/metadata"
+    metatype "configcenter/src/common/metadata"
 )
 
-func (t *meta) CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error) {
-	resp = new(metatype.CreateObjectGroupResult)
-	subPath := "/meta/objectatt/group/new"
+func (t *meta) CreatePropertyGroup(ctx context.Context, h http.Header, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error) {
+    subPath := "/meta/objectatt/group/new"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.UpdateGroupCondition) (resp *metatype.UpdateResult, err error) {
-	resp = new(metatype.UpdateResult)
-	subPath := "/meta/objectatt/group/update"
+func (t *meta) UpdatePropertyGroup(ctx context.Context, h http.Header, dat *metatype.UpdateGroupCondition) (resp *metatype.UpdateResult, err error) {
+    subPath := "/meta/objectatt/group/update"
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error) {
-	resp = new(metatype.DeleteResult)
-	subPath := fmt.Sprintf("/meta/objectatt/group/groupid/%s", groupID)
+func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metatype.DeleteResult, err error) {
+    subPath := fmt.Sprintf("/meta/objectatt/group/groupid/%s", groupID)
 
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Delete().
+        WithContext(ctx).
+        Body(nil).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, dat []metatype.PropertyGroupObjectAtt) (resp *metatype.UpdateResult, err error) {
-	resp = new(metatype.UpdateResult)
-	subPath := "/meta/objectatt/group/property"
+func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, dat []metatype.PropertyGroupObjectAtt) (resp *metatype.UpdateResult, err error) {
+    subPath := "/meta/objectatt/group/property"
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error) {
-	resp = new(metatype.DeleteResult)
-	subPath := fmt.Sprintf("/meta/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", h.OwnerID, objID, propertyID, groupID)
+func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID , propertyID, groupID string, h http.Header) (resp *metatype.DeleteResult, err error) {
+    subPath := fmt.Sprintf("/meta/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", ownerID, objID, propertyID, groupID)
 
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Put().
+        WithContext(ctx).
+        Body(nil).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/objectatt/group/property/owner/%s/object/%s", h.OwnerID, objID)
+func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metatype.Response, err error) {
+    subPath := fmt.Sprintf("/meta/objectatt/group/property/owner/%s/object/%s", ownerID, objID)
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }
 
-func (t *meta) SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
-	resp = new(metatype.QueryObjectGroupResult)
-	subPath := "/meta/objectatt/group/search"
+func (t *meta) SelectGroup(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
+    subPath := "/meta/objectatt/group/search"
 
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
+    err = t.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
 }

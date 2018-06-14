@@ -12,12 +12,56 @@
  
 package metadata
 
-import "configcenter/src/common/basetype"
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/basetype"
+	"configcenter/src/common/errors"
+	"fmt"
+	"github.com/gin-gonic/gin/json"
+)
 
 type BaseResp struct {
 	Result bool   `json:"result"`
 	Code   int    `json:"bk_error_code"`
 	ErrMsg string `json:"bk_error_msg"`
+}
+
+var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
+
+type RespError struct {
+	// error message
+	Msg error
+	// error code
+	ErrCode int
+}
+
+const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
+
+func (r *RespError) Error() string {
+	br := new(Response)
+	br.Code = r.ErrCode
+	br.ErrMsg = r.Msg.Error()
+	if nil != r.Msg {
+		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
+			br.Code = ccErr.GetCode()
+			br.ErrMsg = ccErr.Error()
+		}
+	}
+
+	js, err := json.Marshal(br)
+	if err != nil {
+		return fmt.Sprintf(defaultError, err.Error())
+	}
+
+	return string(js)
+}
+
+// data is the data you want to return to client.
+func NewSuccessResp(data interface{}) *Response {
+	return &Response{
+		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		Data:     data,
+	}
 }
 
 type Response struct {
@@ -33,4 +77,42 @@ type MapResponse struct {
 type RecursiveMapResponse struct {
 	BaseResp `json:",inline"`
 	Data     map[string]map[string]*basetype.Type `json:"data"`
+}
+
+type ObjQueryInput struct {
+    Condition interface{} `json:"condition"`
+    Fields    string      `json:"fields"`
+    Start     int         `json:"start"`
+    Limit     int         `json:"limit"`
+    Sort      string      `json:"sort"`
+}
+
+type CloudHostModuleParams struct {
+    ApplicationID int          `json:"bk_biz_id"`
+    HostInfoArr   []BkHostInfo `json:"host_info"`
+    ModuleID      int          `json:"bk_module_id"`
+}
+
+type BkHostInfo struct {
+    IP      string `json:"bk_host_innerip"`
+    CloudID int    `json:"bk_cloud_id"`
+}
+
+type DefaultModuleHostConfigParams struct {
+    ApplicationID int   `json:"bk_biz_id"`
+    HostID        []int `json:"bk_host_id"`
+}
+
+//common search struct
+type SearchParams struct {
+    Condition map[string]interface{} `json:"condition"`
+    Page      map[string]interface{} `json:"page,omitempty"`
+    Fields    []string               `json:"fields,omitempty"`
+    Native    int                    `json:"native,omitempty"`
+}
+
+// PropertyGroupCondition used to reflect the property group json
+type PropertyGroupCondition struct {
+    Condition map[string]interface{} `json:"condition"`
+    Data      map[string]interface{} `json:"data"`
 }

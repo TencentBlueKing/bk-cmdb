@@ -24,9 +24,9 @@ import (
 )
 
 type ObjControllerClientInterface interface {
-	Instance()  inst.InstanceInterface
-	Meta()      meta.MetaInterface
-	OpenAPI()   openapi.OpenApiInterface
+	Instance() inst.InstanceInterface
+	Meta() meta.MetaInterface
+	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
 }
 

@@ -16,11 +16,11 @@ import (
 	"context"
 	"fmt"
 
-	"configcenter/src/apimachinery/util"
 	metatype "configcenter/src/common/metadata"
+    "net/http"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Headers, dat *metatype.QueryInstInput) (resp *metatype.QueryInstResult, err error) {
+func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInstInput) (resp *metatype.QueryInstResult, err error) {
 	resp = new(metatype.QueryInstResult)
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
 
@@ -28,13 +28,13 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h util.Hea
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error) {
+func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error) {
 	resp = new(metatype.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -42,13 +42,13 @@ func (t *instance) CreateObject(ctx context.Context, objType string, h util.Head
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
 	resp = new(metatype.DeleteResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -56,13 +56,13 @@ func (t *instance) DelObject(ctx context.Context, objType string, h util.Headers
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+func (t *instance) UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
 	resp = new(metatype.UpdateResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
@@ -70,7 +70,7 @@ func (t *instance) UpdateObject(ctx context.Context, objType string, h util.Head
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
