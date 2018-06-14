@@ -30,7 +30,7 @@ type InstanceInterface interface {
     SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error)
     GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error)
     CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-    QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.ObjQueryInput) (resp *metadata.Response, err error)
+    QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.QueryInput) (resp *metadata.Response, err error)
     GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.Response, err error)
     CreateInst(ctx context.Context, ownerID string, objID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
     DeleteInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header) (resp *metadata.Response, err error)
