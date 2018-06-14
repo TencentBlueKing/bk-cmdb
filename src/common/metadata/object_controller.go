@@ -138,10 +138,16 @@ type QueryInstInput struct {
 	Sort      string      `json:"sort"`
 }
 
+// InstResult inst item result
+type InstResult struct {
+	Count int            `json:"count"`
+	Info  []types.MapStr `json:"info"`
+}
+
 // QueryInstResult query inst result
 type QueryInstResult struct {
 	BaseResp `json:",inline"`
-	Data     types.MapStr `json:"data"`
+	Data     InstResult `json:"data"`
 }
 
 // CreateInstResult create inst result
