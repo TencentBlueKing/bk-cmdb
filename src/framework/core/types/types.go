@@ -61,8 +61,3 @@ const (
 	// EventInstType the custom inst event
 	EventInstType EventType = "cmdb_v3_event_inst_type"
 )
-
-// Saver the save interface
-type Saver interface {
-	Save() error
-}

@@ -25,7 +25,7 @@ const (
 
 // Classification the classification metadata definition
 type Classification struct {
-	ID                 int    `json:"id"`
+	ID                 int64  `json:"id"`
 	ClassificationID   string `field:"bk_classification_id"`
 	ClassificationName string `field:"bk_classification_name"`
 	ClassificationType string `field:"bk_classification_type"`

@@ -37,7 +37,7 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int        `field:"id"`
+	ID          int64      `field:"id"`
 	ObjCls      string     `field:"bk_classification_id"`
 	ObjIcon     string     `field:"bk_obj_icon"`
 	ObjectID    string     `field:"bk_obj_id"`
@@ -93,10 +93,9 @@ type ObjDes struct {
 }
 
 type ObjectClsDes struct {
-    ID      int    `json:"id"`
-    ClsID   string `json:"bk_classification_id"`
-    ClsName string `json:"bk_classification_name"`
-    ClsType string `json:"bk_classification_type"`
-    ClsIcon string `json:"bk_classification_icon"`
+	ID      int    `json:"id"`
+	ClsID   string `json:"bk_classification_id"`
+	ClsName string `json:"bk_classification_name"`
+	ClsType string `json:"bk_classification_type"`
+	ClsIcon string `json:"bk_classification_icon"`
 }
-
