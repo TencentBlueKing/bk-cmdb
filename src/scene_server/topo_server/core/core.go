@@ -16,19 +16,56 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
-// New create a core manager
-func New(client apimachinery.ClientSetInterface) Core {
-	return &core{
-		clientSet:    client,
-		modelFactory: model.New(client),
-		instFactory:  inst.New(client),
-	}
+// Core Provides management interfaces for models and instances
+type Core interface {
+	AssociationOperation() operation.AssociationOperationInterface
+	AttributeOperation() operation.AttributeOperationInterface
+	ClassificationOperation() operation.ClassificationOperationInterface
+	GroupOperation() operation.GroupOperationInterface
+	InstOperation() operation.InstOperationInterface
+	ObjectOperation() operation.ObjectOperationInterface
 }
 
 type core struct {
-	clientSet    apimachinery.ClientSetInterface
-	modelFactory model.Factory
-	instFactory  inst.Factory
+	association    operation.AssociationOperationInterface
+	attribute      operation.AttributeOperationInterface
+	classification operation.ClassificationOperationInterface
+	group          operation.GroupOperationInterface
+	inst           operation.InstOperationInterface
+	object         operation.ObjectOperationInterface
+}
+
+// New create a core manager
+func New(client apimachinery.ClientSetInterface) Core {
+	targetModel := model.New(client)
+	targetInst := inst.New(client)
+	return &core{
+		association:    operation.NewAssociationOperation(client, targetModel, targetInst),
+		attribute:      operation.NewAttributeOperation(client, targetModel, targetInst),
+		classification: operation.NewClassificationOperation(client, targetModel, targetInst),
+		group:          operation.NewGroupOperation(client, targetModel, targetInst),
+		object:         operation.NewObjectOperation(client, targetModel, targetInst),
+	}
+}
+
+func (cli *core) AssociationOperation() operation.AssociationOperationInterface {
+	return cli.association
+}
+func (cli *core) AttributeOperation() operation.AttributeOperationInterface {
+	return cli.attribute
+}
+func (cli *core) ClassificationOperation() operation.ClassificationOperationInterface {
+	return cli.classification
+}
+func (cli *core) GroupOperation() operation.GroupOperationInterface {
+	return cli.group
+}
+func (cli *core) InstOperation() operation.InstOperationInterface {
+	return cli.inst
+}
+func (cli *core) ObjectOperation() operation.ObjectOperationInterface {
+	return cli.object
 }

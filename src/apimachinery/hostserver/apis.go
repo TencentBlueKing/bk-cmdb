@@ -665,7 +665,7 @@ func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID stri
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/userapi/search/%s", businessID)
 

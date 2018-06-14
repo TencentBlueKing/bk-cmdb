@@ -20,7 +20,7 @@ import (
     "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.ObjQueryInput) (resp *metadata.Response, err error) {
+func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.QueryInput) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s", ownerID)
 

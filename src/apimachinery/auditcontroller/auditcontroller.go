@@ -24,7 +24,7 @@ import (
 
 type AuditCtrlInterface interface {
 	AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetAuditLog(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.Response, err error)
+	GetAuditLog(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.Response, err error)
 
 	AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
 	AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
