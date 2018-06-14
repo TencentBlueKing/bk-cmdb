@@ -43,7 +43,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	objItems, err := cli.core.FindObject(params, cond)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -53,7 +53,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	for _, item := range objItems {
-		setInst, err := cli.core.CreateInst(params, item, data)
+		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new business, %s", err.Error())
 			return nil, err
@@ -79,7 +79,7 @@ func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryPa
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp).
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
-	err := cli.core.DeleteInst(params, cond)
+	err := cli.core.InstOperation().DeleteInst(params, cond)
 
 	return nil, err
 }
@@ -93,7 +93,7 @@ func (cli *topoAPI) UpdateBusiness(params types.LogicParams, pathParams, queryPa
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
 	data.Set(common.BKAppIDField, pathParams("app_id"))
-	err := cli.core.UpdateInst(params, data, cond)
+	err := cli.core.InstOperation().UpdateInst(params, data, cond)
 
 	return nil, err
 }
@@ -109,7 +109,7 @@ func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, pathParams, q
 		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
 	data.Set("flag", pathParams("flag"))
-	err := cli.core.UpdateInst(params, data, cond)
+	err := cli.core.InstOperation().UpdateInst(params, data, cond)
 
 	return nil, err
 }
@@ -125,7 +125,7 @@ func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryPa
 
 	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, 
 
 	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, 
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	objItems, err := cli.core.FindObject(params, cond)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -189,7 +189,7 @@ func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, 
 	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	for _, item := range objItems {
-		setInst, err := cli.core.CreateInst(params, item, data)
+		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new business, %s", err.Error())
 			return nil, err

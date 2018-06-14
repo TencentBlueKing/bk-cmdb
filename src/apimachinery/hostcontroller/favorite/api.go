@@ -24,7 +24,7 @@ type FavoriteInterface interface {
 	AddHostFavourite(ctx context.Context, user string, h http.Header, dat map[string]interface{}) (resp *metadata.IDResult, err error)
 	UpdateHostFavouriteByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
 	DeleteHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.BaseResp, err error)
-	GetHostFavourites(ctx context.Context, user string, h http.Header, dat metadata.ObjQueryInput) (resp *metadata.GetHostFavoriteResult, err error)
+	GetHostFavourites(ctx context.Context, user string, h http.Header, dat metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error)
 	GetHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error)
 }
 
