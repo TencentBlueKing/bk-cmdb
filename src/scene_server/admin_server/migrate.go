@@ -13,6 +13,7 @@
 package main
 
 import (
+	"configcenter/src/scene_server/admin_server/command"
 	"fmt"
 	"os"
 	"runtime"
@@ -38,6 +39,7 @@ func main() {
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
+	command.Parse(os.Args)
 	util.InitFlags()
 
 	if err := app.Run(op); err != nil {
