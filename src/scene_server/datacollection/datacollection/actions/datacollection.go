@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/gin-gonic/gin/json"
 )
 
 var dataCollection = &dataCollectionAction{}
@@ -43,16 +44,26 @@ func init() {
 
 func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error {
 	var err error
+
+	// todo hs
+	discli, err := getSnapClient(config, "discover-redis")
+	if nil != err {
+		return err
+	}
+	dccommon.Discli = discli
+
 	snapcli, err := getSnapClient(config, "snap-redis")
 	if nil != err {
 		return err
 	}
 	dccommon.Snapcli = snapcli
+
 	rediscli, err := getSnapClient(config, "redis")
 	if nil != err {
 		return err
 	}
 	dccommon.Rediscli = rediscli
+
 	chanName := ""
 	for {
 		chanName, err = getChanName()
@@ -63,7 +74,9 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli)
+	// todo hs init topicName to collection ApplicationBase
+	topicName := "hstest2"
+	hostSnap := logics.NewHostSnap(chanName,  topicName, 2000, rediscli, snapcli, discli)
 	hostSnap.Start()
 
 	// go mock(config, chanName)
@@ -87,12 +100,19 @@ func getChanName() (string, error) {
 }
 
 func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
+
+	// todo hs debug to console
+	jc, _ := json.Marshal(config)
+	fmt.Printf("config: %s\n", jc)
+
 	mastername := config[dType+".mastername"]
 	host := config[dType+".host"]
 	auth := config[dType+".pwd"]
 	db := config[dType+".database"]
 	dbNum, _ := strconv.Atoi(db)
+
 	var client *redis.Client
+
 	hosts := strings.Split(host, ",")
 	if mastername == "" {
 		option := &redis.Options{
