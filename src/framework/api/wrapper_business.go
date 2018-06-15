@@ -13,6 +13,8 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
 )
 
@@ -134,23 +136,17 @@ func (cli *BusinessWrapper) GetTester() (string, error) {
 	return vals.String(fieldBizTester), nil
 }
 
-/* TODO need to delete the follow code
-// SetSupplierAccount set the supplier account
-func (cli *BusinessWrapper) SetSupplierAccount(supplierAccount string) error {
-	id, _ := strconv.Atoi(supplierAccount)
-	cli.SetValue(fieldSupplierID, id)
-	return cli.business.SetValue(fieldSupplierAccount, supplierAccount)
-}
-
-// GetSupplierAccount get the supplier account
-func (cli *BusinessWrapper) GetSupplierAccount() (string, error) {
+// GetBusinessID get the id for the business
+func (cli *BusinessWrapper) GetBusinessID() (int, error) {
 	vals, err := cli.business.GetValues()
 	if nil != err {
-		return "", err
+		return 0, err
 	}
-	return vals.String(fieldSupplierAccount), nil
+	if !vals.Exists(fieldBusinessID) {
+		return 0, fmt.Errorf("the business id is not set")
+	}
+	return vals.Int(fieldBusinessID)
 }
-*/
 
 // SetLifeCycle set the life cycle
 func (cli *BusinessWrapper) SetLifeCycle(lifeCycle string) error {
