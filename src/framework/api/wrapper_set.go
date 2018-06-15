@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // SetIteratorWrapper the set iterator wrapper
@@ -193,4 +194,9 @@ func (cli *SetWrapper) Update() error {
 // Save save the data
 func (cli *SetWrapper) Save() error {
 	return cli.set.Save()
+}
+
+// GetModel get the model for the set
+func (cli *SetWrapper) GetModel() model.Model {
+	return cli.set.GetModel()
 }

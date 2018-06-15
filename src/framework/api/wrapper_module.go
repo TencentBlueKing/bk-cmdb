@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // ModuleIteratorWrapper the module iterator wrapper
@@ -63,6 +64,11 @@ func (cli *ModuleWrapper) Create() error {
 // Update only to update
 func (cli *ModuleWrapper) Update() error {
 	return cli.module.Update()
+}
+
+// GetModel get the model for the module
+func (cli *ModuleWrapper) GetModel() model.Model {
+	return cli.module.GetModel()
 }
 
 // Save save the data
