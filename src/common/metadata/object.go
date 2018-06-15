@@ -38,19 +38,19 @@ const (
 // Object object metadata definition
 type Object struct {
 	ID          int64      `field:"id"`
-	ObjCls      string     `field:"bk_classification_id"`
-	ObjIcon     string     `field:"bk_obj_icon"`
-	ObjectID    string     `field:"bk_obj_id"`
-	ObjectName  string     `field:"bk_obj_name"`
-	IsPre       bool       `field:"ispre"`
-	IsPaused    bool       `field:"bk_ispaused"`
-	Position    string     `field:"position"`
-	OwnerID     string     `field:"bk_supplier_account"`
-	Description string     `field:"description"`
-	Creator     string     `field:"creator"`
-	Modifier    string     `field:"modifier"`
-	CreateTime  *time.Time `field:"create_time"`
-	LastTime    *time.Time `field:"last_time"`
+	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id"`
+	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon"`
+	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id"`
+	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name"`
+	IsPre       bool       `field:"ispre" json:"ispre"`
+	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused"`
+	Position    string     `field:"position" json:"position"`
+	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account"`
+	Description string     `field:"description" json:"description"`
+	Creator     string     `field:"creator" json:"creator"`
+	Modifier    string     `field:"modifier" json:"modifier"`
+	CreateTime  *time.Time `field:"create_time" json:"create_time"`
+	LastTime    *time.Time `field:"last_time" json:"last_time"`
 }
 
 // Parse load the data from mapstr object into object instance

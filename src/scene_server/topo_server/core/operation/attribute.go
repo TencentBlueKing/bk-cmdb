@@ -14,19 +14,22 @@ package operation
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"context"
 )
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error)
-	DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error
+	DeleteObjectAttribute(params types.LogicParams, id int64, cond condition.Condition) error
 	FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error)
-	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 }
 
 type attribute struct {
@@ -49,25 +52,66 @@ func (cli *attribute) CreateObjectAttribute(params types.LogicParams, data frtyp
 
 	_, err := att.Parse(data)
 	if nil != err {
+		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
 	err = att.Save()
 	if nil != err {
+		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
 	return att, nil
 }
 
-func (cli *attribute) DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error {
+func (cli *attribute) DeleteObjectAttribute(params types.LogicParams, id int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-attr] failed to delete the attribute by the id(%d) or the condition(%#v), error info is %s", id, cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
 func (cli *attribute) FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error) {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.Error(rsp.Code)
+	}
+
 	return nil, nil
 }
 
-func (cli *attribute) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *attribute) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header.ToHeader(), data)
+
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-attr] failed to update the attribute by the condition(%#v) or the attr-id(%d), error info is %s", cond.ToMapStr(), attID, rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }

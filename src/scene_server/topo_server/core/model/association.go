@@ -13,9 +13,7 @@
 package model
 
 import (
-	//frcommon "configcenter/src/framework/common"
 	"configcenter/src/apimachinery"
-	//frcommon "configcenter/src/common"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -25,6 +23,10 @@ var _ Association = (*association)(nil)
 type association struct {
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *association) MarshalJSON() ([]byte, error) {
+	return nil, nil
 }
 
 func (cli *association) GetType() AssociationType {
