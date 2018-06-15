@@ -20,6 +20,7 @@ import (
 // cache key define
 const (
 	RedisSnapKeyPrefix = common.BKCacheKeyV3Prefix + "snapshot:"
+	RedisDisKeyPrefix = "hstest2"
 	MasterProcLockKey  = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
 )
 
@@ -27,4 +28,5 @@ const (
 var (
 	Snapcli  *redis.Client
 	Rediscli *redis.Client
+	Discli *redis.Client
 )
