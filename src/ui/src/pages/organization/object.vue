@@ -535,7 +535,8 @@
                 if (isAllCheck) {
                     this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
-                    const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
+                    let params = this.$deepClone(this.axiosConfig.params)
+                    params.page = {}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
                     this.$axios.post(this.axiosConfig.url, params).then(res => {
                         if (res.result) {
@@ -627,13 +628,17 @@
                     method = 'delete'
                 }
                 try {
-                    let res = await this.$axios({
+                    const res = await this.$axios({
                         method: method,
                         url: url
                     })
-                    this.setTablePage(1)
-                    this.closeObjectSlider()
-                    this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    if (res.result) {
+                        this.setTablePage(1)
+                        this.closeObjectSlider()
+                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    } else {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }

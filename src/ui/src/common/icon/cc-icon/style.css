@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?85q80o');
-  src:  url('fonts/icomoon.eot?85q80o#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?85q80o') format('truetype'),
-    url('fonts/icomoon.woff?85q80o') format('woff'),
-    url('fonts/icomoon.svg?85q80o#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?not2lk');
+  src:  url('fonts/icomoon.eot?not2lk#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?not2lk') format('truetype'),
+    url('fonts/icomoon.woff?not2lk') format('woff'),
+    url('fonts/icomoon.svg?not2lk#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -120,10 +120,10 @@
 .icon-cc-create-business:before {
   content: "\e91f";
 }
-.icon-cc-cube:before {
+.icon-cc-cube-entity:before {
   content: "\e920";
 }
-.icon-cc-cube-entity:before {
+.icon-cc-cube:before {
   content: "\e921";
 }
 .icon-cc-curve:before {
@@ -135,10 +135,10 @@
 .icon-cc-db2:before {
   content: "\e924";
 }
-.icon-cc-default:before {
+.icon-cc-default-class:before {
   content: "\e925";
 }
-.icon-cc-default-class:before {
+.icon-cc-default:before {
   content: "\e926";
 }
 .icon-cc-del:before {
@@ -213,13 +213,13 @@
 .icon-cc-home:before {
   content: "\e93e";
 }
-.icon-cc-host:before {
+.icon-cc-host-breakdown:before {
   content: "\e93f";
 }
-.icon-cc-host-breakdown:before {
+.icon-cc-host-free-pool:before {
   content: "\e940";
 }
-.icon-cc-host-free-pool:before {
+.icon-cc-host:before {
   content: "\e941";
 }
 .icon-cc-icon-city:before {
@@ -330,10 +330,10 @@
 .icon-cc-network-manage:before {
   content: "\e965";
 }
-.icon-cc-networks:before {
+.icon-cc-network-segment:before {
   content: "\e966";
 }
-.icon-cc-network-segment:before {
+.icon-cc-networks:before {
   content: "\e967";
 }
 .icon-cc-nginx:before {
@@ -363,10 +363,10 @@
 .icon-cc-pin:before {
   content: "\e970";
 }
-.icon-cc-plus:before {
+.icon-cc-plus-circle:before {
   content: "\e971";
 }
-.icon-cc-plus-circle:before {
+.icon-cc-plus:before {
   content: "\e972";
 }
 .icon-cc-port:before {
@@ -477,10 +477,10 @@
 .icon-cc-sort:before {
   content: "\e996";
 }
-.icon-cc-sqlite:before {
+.icon-cc-sql-server:before {
   content: "\e997";
 }
-.icon-cc-sql-server:before {
+.icon-cc-sqlite:before {
   content: "\e998";
 }
 .icon-cc-square:before {
@@ -519,10 +519,10 @@
 .icon-cc-tree:before {
   content: "\e9a4";
 }
-.icon-cc-triangle:before {
+.icon-cc-triangle-sider:before {
   content: "\e9a5";
 }
-.icon-cc-triangle-sider:before {
+.icon-cc-triangle:before {
   content: "\e9a6";
 }
 .icon-cc-unix:before {
