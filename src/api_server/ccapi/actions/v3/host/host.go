@@ -133,6 +133,12 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 	io.WriteString(resp, rsp)
 }
 
+func (cli *hostAction) cloneHostProperty(req *restful.Request, resp *restful.Response) {
+	url := cli.cc.HostAPI() + "/host/v1/propery/clone"
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
+	io.WriteString(resp, rsp)
+}
+
 func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search", Params: nil, Handler: host.GetHosts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/hosts/search/asstdetail", Params: nil, Handler: host.GetHostsAsstDetail, FilterHandler: nil, Version: v3.APIVersion})
@@ -148,5 +154,6 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/hosts/snapshot/{bk_host_id}", Params: nil, Handler: host.Snapshot, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: host.addHostFromAgent, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/biz/mutilple", Params: nil, Handler: host.addHostModuleMutiple, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/hosts/propery/clone", Params: nil, Handler: host.cloneHostProperty, FilterHandler: nil, Version: v3.APIVersion})
 	host.cc = api.NewAPIResource()
 }
