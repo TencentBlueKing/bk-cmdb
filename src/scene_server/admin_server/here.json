@@ -1,0 +1,1065 @@
+{
+    "mainline": [
+        "biz",
+        "yituo",
+        "set",
+        "module"
+    ],
+    "topo": {
+        "bk_obj_id": "biz",
+        "data": {
+            "bk_biz_developer": "",
+            "bk_biz_id": 2,
+            "bk_biz_maintainer": "admin",
+            "bk_biz_name": "蓝鲸",
+            "bk_biz_productor": "",
+            "bk_biz_tester": "",
+            "bk_supplier_account": "0",
+            "bk_supplier_id": 0,
+            "create_time": "2018-06-14T15:28:20.328+08:00",
+            "default": 0,
+            "language": "1",
+            "last_time": "2018-06-14T15:28:20.328+08:00",
+            "life_cycle": "2",
+            "operator": "",
+            "time_zone": "Asia/Shanghai"
+        },
+        "childs": [
+            {
+                "bk_obj_id": "yituo",
+                "data": {
+                    "bk_inst_id": 1,
+                    "bk_inst_name": "一坨",
+                    "bk_obj_id": "yituo",
+                    "bk_parent_id": 2,
+                    "bk_supplier_account": "0",
+                    "create_time": "2018-06-14T15:28:43.394+08:00",
+                    "default": 0,
+                    "last_time": "2018-06-14T15:28:43.394+08:00"
+                },
+                "childs": [
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 1,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_env": "3",
+                            "bk_set_id": 1,
+                            "bk_set_name": "空闲机池",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:20.241+08:00",
+                            "default": 1,
+                            "last_time": "2018-06-14T15:28:20.241+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_biz_id": 1,
+                                    "bk_module_id": 1,
+                                    "bk_module_name": "空闲机",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 1,
+                                    "bk_set_id": 1,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:20.245+08:00",
+                                    "default": 1,
+                                    "last_time": "2018-06-14T15:28:20.245+08:00"
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_biz_id": 1,
+                                    "bk_module_id": 2,
+                                    "bk_module_name": "故障机",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 1,
+                                    "bk_set_id": 1,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:20.247+08:00",
+                                    "default": 2,
+                                    "last_time": "2018-06-14T15:28:20.247+08:00"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 3,
+                            "bk_set_name": "数据服务模块",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.406+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 5,
+                                    "bk_module_name": "databus",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 3,
+                                    "bk_set_id": 3,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.014+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.014+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 6,
+                                    "bk_module_name": "monitor",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 3,
+                                    "bk_set_id": 3,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.046+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.046+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 7,
+                                    "bk_module_name": "dataapi",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 3,
+                                    "bk_set_id": 3,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.063+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.063+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 4,
+                            "bk_set_name": "公共组件",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.08+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.4+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 8,
+                                    "bk_module_name": "mysql",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.092+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.092+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 9,
+                                    "bk_module_name": "redis_cluster",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.107+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.107+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 10,
+                                    "bk_module_name": "zookeeper",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.121+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.121+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 11,
+                                    "bk_module_name": "consul",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.136+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.136+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 12,
+                                    "bk_module_name": "mongodb",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.152+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.152+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 13,
+                                    "bk_module_name": "redis",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.163+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.163+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 14,
+                                    "bk_module_name": "elasticsearch",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.18+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.18+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 15,
+                                    "bk_module_name": "beanstalk",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.195+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.195+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 16,
+                                    "bk_module_name": "influxdb",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.209+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.209+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 17,
+                                    "bk_module_name": "etcd",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.223+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.223+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 18,
+                                    "bk_module_name": "kafka",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.239+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.239+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 19,
+                                    "bk_module_name": "nginx",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.257+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.257+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 20,
+                                    "bk_module_name": "rabbitmq",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 4,
+                                    "bk_set_id": 4,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.274+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.274+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 5,
+                            "bk_set_name": "集成平台",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.29+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.414+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 21,
+                                    "bk_module_name": "appt",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.302+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.302+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 22,
+                                    "bk_module_name": "esb",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.317+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.317+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 23,
+                                    "bk_module_name": "login",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.331+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.331+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 24,
+                                    "bk_module_name": "paas",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.348+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.348+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 25,
+                                    "bk_module_name": "appengine",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.362+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.362+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 26,
+                                    "bk_module_name": "console",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.375+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.375+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 27,
+                                    "bk_module_name": "appo",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 5,
+                                    "bk_set_id": 5,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.39+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.39+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 6,
+                            "bk_set_name": "作业平台",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.404+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.396+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 28,
+                                    "bk_module_name": "job",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 6,
+                                    "bk_set_id": 6,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.413+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.413+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 7,
+                            "bk_set_name": "配置平台",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.428+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.411+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 29,
+                                    "bk_module_name": "auditcontroller",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.438+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.438+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 30,
+                                    "bk_module_name": "datacollection",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.456+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.456+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 31,
+                                    "bk_module_name": "hostserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.471+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.471+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 32,
+                                    "bk_module_name": "objectcontroller",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.487+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.487+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 33,
+                                    "bk_module_name": "procserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.499+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.499+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 34,
+                                    "bk_module_name": "toposerver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.515+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.515+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 35,
+                                    "bk_module_name": "webserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.529+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.529+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 36,
+                                    "bk_module_name": "adminserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.545+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.545+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 37,
+                                    "bk_module_name": "apiserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.558+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.558+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 38,
+                                    "bk_module_name": "eventserver",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.571+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.571+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 39,
+                                    "bk_module_name": "hostcontroller",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.592+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.592+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 40,
+                                    "bk_module_name": "proccontroller",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 7,
+                                    "bk_set_id": 7,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.608+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.608+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 8,
+                            "bk_set_name": "管控平台",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.624+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.409+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 41,
+                                    "bk_module_name": "gse_transit",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.636+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.636+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 42,
+                                    "bk_module_name": "gse_btsvr",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.651+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.651+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 43,
+                                    "bk_module_name": "gse_ops",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.668+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.668+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 44,
+                                    "bk_module_name": "license",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.686+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.686+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 45,
+                                    "bk_module_name": "gse_api",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.705+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.705+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 46,
+                                    "bk_module_name": "gse_data",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.719+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.719+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 47,
+                                    "bk_module_name": "gse_dba",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.736+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.736+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 48,
+                                    "bk_module_name": "gse_task",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.755+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.755+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 49,
+                                    "bk_module_name": "gse_proc",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.769+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.769+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 50,
+                                    "bk_module_name": "gse_opts",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.786+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.786+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 51,
+                                    "bk_module_name": "gse_alarm",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.805+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.805+08:00",
+                                    "operator": ""
+                                }
+                            },
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 52,
+                                    "bk_module_name": "gse_agent",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 8,
+                                    "bk_set_id": 8,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.83+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.83+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "bk_obj_id": "set",
+                        "data": {
+                            "bk_biz_id": 2,
+                            "bk_capacity": null,
+                            "bk_parent_id": 1,
+                            "bk_service_status": "1",
+                            "bk_set_desc": "",
+                            "bk_set_env": "3",
+                            "bk_set_id": 9,
+                            "bk_set_name": "故障自愈",
+                            "bk_supplier_account": "0",
+                            "create_time": "2018-06-14T15:28:21.855+08:00",
+                            "default": 0,
+                            "description": "",
+                            "last_time": "2018-06-14T15:28:43.403+08:00"
+                        },
+                        "childs": [
+                            {
+                                "bk_obj_id": "module",
+                                "data": {
+                                    "bk_bak_operator": "",
+                                    "bk_biz_id": 2,
+                                    "bk_module_id": 53,
+                                    "bk_module_name": "fta",
+                                    "bk_module_type": "1",
+                                    "bk_parent_id": 9,
+                                    "bk_set_id": 9,
+                                    "bk_supplier_account": "0",
+                                    "create_time": "2018-06-14T15:28:21.867+08:00",
+                                    "default": 0,
+                                    "last_time": "2018-06-14T15:28:21.867+08:00",
+                                    "operator": ""
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

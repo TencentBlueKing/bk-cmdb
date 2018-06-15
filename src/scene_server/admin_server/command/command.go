@@ -9,11 +9,9 @@ import (
 	"os"
 )
 
-type Command struct {
-}
-
 const bkbizCmdName = "bkbiz"
 
+// Parse run app command
 func Parse(args []string) error {
 	if len(args) < 4 || args[1] != bkbizCmdName {
 		blog.Error("args %d,arg = %s", len(args), args[1])
@@ -56,6 +54,15 @@ func Parse(args []string) error {
 			os.Exit(2)
 		}
 		blog.Infof("blueking business has been export to %s", filepath)
+	} else if importflag {
+		blog.Infof("importing blueking business from %s", filepath)
+		if err := importer(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID}); err != nil {
+			blog.Errorf("import error: %s", err.Error())
+			os.Exit(2)
+		}
+		blog.Infof("blueking business has been import to %s", filepath)
+	} else {
+		blog.Errorf("invalide argument")
 	}
 
 	os.Exit(0)
