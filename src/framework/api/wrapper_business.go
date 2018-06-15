@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
@@ -68,6 +69,11 @@ func (cli *BusinessWrapper) Update() error {
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
+}
+
+// GetModel get the model for the business
+func (cli *BusinessWrapper) GetModel() model.Model {
+	return cli.business.GetModel()
 }
 
 // SetDeveloper set the biz developer
