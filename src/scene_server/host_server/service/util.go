@@ -12,7 +12,10 @@
 
 package service
 
-import "configcenter/src/common"
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
+)
 
 func NewOperation() *operation {
 	return &operation{
@@ -39,7 +42,7 @@ func (o *operation) WithAppID(appID int64) *operation {
 }
 
 func (o *operation) WithDefaultField(field int64) *operation {
-	o.op[common.BKDefaultField] = field
+	o.op[common.BKSupplierIDField] = field
 	return o
 }
 
@@ -60,5 +63,15 @@ func (o *operation) WithObjID(objID string) *operation {
 
 func (o *operation) WithPropertyID(id string) *operation {
 	o.op[common.BKObjAttIDField] = id
+	return o
+}
+
+func (o *operation) WithModuleName(name string) *operation {
+	o.op[common.BKModuleNameField] = name
+	return o
+}
+
+func (o *operation) WithPage(p metadata.BasePage) *operation {
+	o.op[metadata.PageName] = p
 	return o
 }

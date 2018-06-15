@@ -41,7 +41,7 @@ type MetaInterface interface {
 	UpdateObject(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 	SelectObjectAssociations(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAssociationResult, err error)
 	DeleteObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
-	CreateObjectAssociation(ctx context.Context, h http.Header, dat *metadata.ObjectAsst) (resp *metadata.CreateResult, err error)
+	CreateObjectAssociation(ctx context.Context, h http.Header, dat *metadata.ObjectAssociations) (resp *metadata.CreateResult, err error)
 	UpdateObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 	SelectObjectAttByID(ctx context.Context, objID int64, h http.Header) (resp *metadata.QueryObjectAttributeResult, err error)
 	SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAttributeResult, err error)

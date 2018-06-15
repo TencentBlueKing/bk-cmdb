@@ -41,9 +41,15 @@ type HostSnapResult struct {
 	Data     map[string]interface{} `json:"data"`
 }
 
+type HostInputType string
+
+const (
+	ExecelType HostInputType = "excel"
+)
+
 type HostList struct {
-	ApplicationID int                            `json:"bk_biz_id"`
-	HostInfo      map[int]map[string]interface{} `json:"host_info"`
-	SupplierID    int                            `json:"bk_supplier_id"`
-	InputType     string                         `json:"input_type"`
+	ApplicationID int64                            `json:"bk_biz_id"`
+	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
+	SupplierID    int64                            `json:"bk_supplier_id"`
+	InputType     string                           `json:"input_type"`
 }

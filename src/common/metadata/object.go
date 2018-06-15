@@ -16,7 +16,6 @@ import (
 	"time"
 
 	types "configcenter/src/common/mapstr"
-	"configcenter/src/source_controller/api/metadata"
 )
 
 const (
@@ -69,8 +68,32 @@ func (cli *Object) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 
+// MainLineObject main line object definition
+type MainLineObject struct {
+	ObjectDes     `json:",inline"`
+	AssociationID string `json:"bk_asst_obj_id"`
+}
+
+type ObjectDes struct {
+	ID          int        `bson:"id"                json:"id"`
+	ObjCls      string     `bson:"bk_classification_id" json:"bk_classification_id"`
+	ObjIcon     string     `bson:"bk_obj_icon"          json:"bk_obj_icon"`
+	ObjectID    string     `bson:"bk_obj_id"            json:"bk_obj_id"`
+	ObjectName  string     `bson:"bk_obj_name"          json:"bk_obj_name"`
+	IsPre       bool       `bson:"ispre"             json:"ispre"`
+	IsPaused    bool       `bson:"bk_ispaused"          json:"bk_ispaused"`
+	Position    string     `bson:"position"          json:"position"`
+	OwnerID     string     `bson:"bk_supplier_account"  json:"bk_supplier_account"`
+	Description string     `bson:"description"       json:"description"`
+	Creator     string     `bson:"creator"           json:"creator"`
+	Modifier    string     `bson:"modifier"          json:"modifier"`
+	CreateTime  *time.Time `bson:"create_time"       json:"create_time"`
+	LastTime    *time.Time `bson:"last_time"         json:"last_time"`
+	Page        *BasePage  `bson:"-"                    json:"page,omitempty"`
+}
+
 // ObjectAsst define object association struct
-type ObjectAsst struct {
+type ObjectAssociations struct {
 	ID          int       `bson:"id"                    json:"id"`
 	ObjectID    string    `bson:"bk_obj_id"                json:"bk_obj_id"`
 	ObjectAttID string    `bson:"bk_object_att_id"         json:"bk_object_att_id"`
@@ -81,21 +104,18 @@ type ObjectAsst struct {
 	Page        *BasePage `bson:"-"                        json:"page,omitempty"`
 }
 
-// MainLineObject main line object definition
-type MainLineObject struct {
-	ObjDes        `json:",inline"`
-	AssociationID string `json:"bk_asst_obj_id"`
-}
-
-// ObjDes
-type ObjDes struct {
-	metadata.ObjectDes `json:",inline"`
-}
-
 type ObjectClsDes struct {
 	ID      int    `json:"id"`
 	ClsID   string `json:"bk_classification_id"`
 	ClsName string `json:"bk_classification_name"`
 	ClsType string `json:"bk_classification_type"`
 	ClsIcon string `json:"bk_classification_icon"`
+}
+
+type ObjAttDes struct {
+	Attribute         `json:",inline"`
+	AssoType          int    `json:"bk_asst_type"`
+	AsstForward       string `json:"bk_asst_forward"`
+	AssociationID     string `json:"bk_asst_obj_id"`
+	PropertyGroupName string `json:"bk_property_group_name"`
 }
