@@ -13,12 +13,13 @@
 package api
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/metadata"
+	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -49,6 +50,8 @@ func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, quer
 // UpdateObjectGroup update the object group information
 func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
 
+	fmt.Println("UpdateObjectGroup")
+
 	cond := condition.CreateCondition()
 	val, exists := data.Get("id")
 
@@ -72,7 +75,7 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 
 // DeleteObjectGroup delete the object group
 func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteObjectGroup")
 	cond := condition.CreateCondition()
 	val, exists := data.Get("id")
 
@@ -96,7 +99,7 @@ func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, quer
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
 func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -124,7 +127,7 @@ func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathPar
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -146,7 +149,7 @@ func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathPar
 
 // SearchGroupByObject search the groups by the object
 func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchGroupByObject")
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
 

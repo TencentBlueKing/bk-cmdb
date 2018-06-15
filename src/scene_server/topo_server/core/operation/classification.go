@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -68,13 +69,15 @@ func (cli *classification) DeleteClassification(params types.LogicParams, cond c
 }
 
 func (cli *classification) FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error) {
-
+	blog.Infof("find classification ")
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
+		blog.Infof("the data :%#v %#v %#v", rsp, err, cond.ToMapStr())
 		return nil, err
 	}
-	_ = rsp
-	return nil, nil
+
+	clsItems := model.CreateClassification(params, cli.clientSet, rsp.Data)
+	return clsItems, nil
 }
 
 func (cli *classification) UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {

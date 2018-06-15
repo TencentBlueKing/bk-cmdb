@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/blog"
@@ -35,7 +36,7 @@ func (cli *topoAPI) initObjectAttribute() {
 
 // CreateObjectAttribute create a new object attribute
 func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("CreateObjectAttribute")
 	attr, err := cli.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
 		return nil, err
@@ -46,7 +47,7 @@ func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, 
 
 // SearchObjectAttribute search the object attributes
 func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchObjectAttribute")
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {
@@ -67,7 +68,7 @@ func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, 
 
 // UpdateObjectAttribute update the object attribute
 func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateObjectAttribute")
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, cond)
@@ -77,7 +78,7 @@ func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, 
 
 // DeleteObjectAttribute delete the object attribute
 func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteObjectAttribute")
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(queryParams("id"))
 	err := cli.core.AttributeOperation().DeleteObjectAttribute(params, cond)
