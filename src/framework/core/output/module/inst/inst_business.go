@@ -164,6 +164,7 @@ func (cli *business) Update() error {
 		if nil != err {
 			return err
 		}
+		cli.datas.Set(BusinessID, instID)
 
 	}
 

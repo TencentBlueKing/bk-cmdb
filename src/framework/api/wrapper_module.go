@@ -13,6 +13,8 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
 )
 
@@ -66,6 +68,18 @@ func (cli *ModuleWrapper) Update() error {
 // Save save the data
 func (cli *ModuleWrapper) Save() error {
 	return cli.module.Save()
+}
+
+// GetModuleID get the id for the module
+func (cli *ModuleWrapper) GetModuleID() (int, error) {
+	vals, err := cli.module.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldModuleID) {
+		return 0, fmt.Errorf("the module id is not set")
+	}
+	return vals.Int(fieldModuleID)
 }
 
 // SetOperator set the operator

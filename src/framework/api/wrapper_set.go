@@ -13,6 +13,8 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
 )
 
@@ -148,6 +150,18 @@ func (cli *SetWrapper) SetParent(parentInstID int64) error {
 // SetName the name of the set
 func (cli *SetWrapper) SetName(name string) error {
 	return cli.set.SetValue(fieldSetName, name)
+}
+
+// GetSetID get the id for the set
+func (cli *SetWrapper) GetSetID() (int, error) {
+	vals, err := cli.set.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldSetID) {
+		return 0, fmt.Errorf("the set id is not set")
+	}
+	return vals.Int(fieldSetID)
 }
 
 // GetName get the set name
