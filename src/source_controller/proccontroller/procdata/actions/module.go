@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 	eventtypes "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/eventdata"
+    meta "configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
     "github.com/gin-gonic/gin/json"
     
@@ -49,7 +50,7 @@ func (pm *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restf
     input := make(map[string]interface{})
     if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
         blog.Errorf("delete process2module failed! decode request body err: %v", err)
-        resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
         return 
     }
     
@@ -63,7 +64,7 @@ func (pm *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restf
     blog.Infof("delete proc module config %v", input)
     if err := proc.CC.InstCli.DelByCondition(common.BKTableNameProcModule, input); err != nil {
         blog.Errorf("delete proc module config error: %v", err)
-        resp.WriteError(http.StatusInternalServerError, defErr.Error(common.CCErrProcDeleteProc2Module))
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
         return 
     }
     
@@ -77,7 +78,7 @@ func (pm *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restf
         }
     }
     
-    resp.WriteHeaderAndEntity(http.StatusOK, nil)
+    resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 // CreateProc2Module create proc module config
@@ -90,7 +91,7 @@ func (pm *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restf
     input := make([]interface{}, 0)
     if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
         blog.Errorf("create process2module failed! decode request body err: %v", err)
-        resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
         return
     }
 
@@ -99,7 +100,7 @@ func (pm *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restf
     for _, i := range input {
         if _, err := proc.CC.InstCli.Insert(common.BKTableNameProcModule, i); err != nil {
             blog.Errorf("create proc module config error:%v", err)
-            resp.WriteError(http.StatusInternalServerError, defErr.Error(common.CCErrProcCreateProc2Module))
+            resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
             return
         }
         //  record events
@@ -108,7 +109,7 @@ func (pm *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restf
         }
     }
 
-    resp.WriteHeaderAndEntity(http.StatusOK, nil)
+    resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 // GetProc2Module get process module config
@@ -121,7 +122,7 @@ func (pm *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful.
     input := make(map[string]interface{})
     if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
         blog.Errorf("get process2module failed! decode request body err: %v", err)
-        resp.WriteError(http.StatusBadRequest, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
         return
     }
 
@@ -129,9 +130,9 @@ func (pm *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful.
     var result []interface{}
     if err := proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &result, "", 0, 0); err != nil {
         blog.Errorf("get process2module config failed. err: %v", err)
-        resp.WriteError(http.StatusInternalServerError, defErr.Error(common.CCErrProcSelectProc2Module))
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
         return
     }
     
-    resp.WriteHeaderAndEntity(http.StatusOK, result)
+    resp.WriteEntity(meta.NewSuccessResp(result))
 }
