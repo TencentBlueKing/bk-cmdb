@@ -1,10 +1,9 @@
 package command
 
 import (
-	"bytes"
 	"configcenter/src/source_controller/common/instdata"
-	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type option struct {
@@ -14,30 +13,33 @@ type option struct {
 
 // Node topo node define
 type Node struct {
-	ObjID  string                 `json:"bk_obj_id,omitempty"`
-	InstID int                    `json:"bk_inst_id,omitempty"`
-	Data   map[string]interface{} `json:"data,omitempty"`
-	Childs []*Node                `json:"childs,omitempty"`
+	ObjID   string                 `json:"bk_obj_id,omitempty"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+	Childs  []*Node                `json:"childs,omitempty"`
+	instID  int
+	nodekey string
 }
 
-// type Data map[string]interface{}
-
-func (d Node) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	err := encoder.Encode(d)
-	fmt.Printf("%s\n")
-	return buf.Bytes(), err
-}
-
-func (n *Node) getInstID() (int, error) {
-	switch id := n.Data[instdata.GetIDNameByType(n.ObjID)].(type) {
-	case int:
-		return id, nil
-	case int64:
-		return int(id), nil
-	default:
+func (n *Node) getInstID() (int64, error) {
+	id, err := getInt64(n.Data[instdata.GetIDNameByType(n.ObjID)])
+	if nil != err {
 		return 0, fmt.Errorf("node has no instID: %+v", *n)
+	}
+	return id, nil
+}
+
+func getInt64(v interface{}) (int64, error) {
+	switch id := v.(type) {
+	case int:
+		return int64(id), nil
+	case int64:
+		return int64(id), nil
+	case float32:
+		return int64(id), nil
+	case float64:
+		return int64(id), nil
+	default:
+		return 0, fmt.Errorf("v is not number : %+v", v)
 	}
 }
 
@@ -49,4 +51,31 @@ func newNode(objID string) *Node {
 type Topo struct {
 	Mainline []string `json:"mainline"`
 	Topo     *Node    `json:"topo"`
+}
+
+// result: map[parentkey]map[childkey]node
+func (n *Node) expand(parent string, modelKeys map[string][]string, result map[string]map[string]*Node) {
+	if result[parent] == nil {
+		result[parent] = map[string]*Node{}
+	}
+	nodeKey := n.getNodekey(parent, modelKeys[n.ObjID])
+	n.nodekey = nodeKey
+	result[parent][nodeKey] = n
+	for _, child := range n.Childs {
+		child.expand(nodeKey, modelKeys, result)
+	}
+}
+
+// nodekey: model2[key1:value,key2:value]-model2[key1:value,key2:value]
+func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
+	nodekey = n.ObjID + "["
+	if "" != parentKey {
+		nodekey = parentKey + "-" + nodekey
+	}
+	kv := []string{}
+	for _, key := range keys {
+		kv = append(kv, key+":"+fmt.Sprint(n.Data[key]))
+	}
+	nodekey = strings.Join(kv, ",") + "]"
+	return nodekey
 }

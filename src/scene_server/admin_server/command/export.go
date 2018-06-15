@@ -20,6 +20,7 @@ func export(db storage.DI, opt *option) error {
 		return err
 	}
 	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "    ")
 	err = encoder.Encode(topo)
 	if nil != err {
 		return fmt.Errorf("encode topo error: %s", err.Error())

@@ -2,7 +2,6 @@ package command
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/storage"
@@ -14,7 +13,7 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 	if nil != err {
 		return nil, err
 	}
-	topo, err := getTopo(common.BKInnerObjIDApp, assts)
+	topo, err := getMainline(common.BKInnerObjIDApp, assts)
 	if nil != err {
 		return nil, err
 	}
@@ -23,7 +22,7 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 		return nil, err
 	}
 	pcmap := getPCmap(assts)
-	blog.InfoJSON("%s", pcmap)
+	// blog.InfoJSON("%s", pcmap)
 	err = getTree(db, root, pcmap)
 	if nil != err {
 		return nil, err
@@ -59,7 +58,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 		"bk_parent_id": instID,
 	}
 
-	blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
+	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
 	tablename := commondata.GetInstTableName(asst.ObjectID)
 	err = db.GetMutilByCondition(tablename, nil, condition, &childs, "", 0, 0)
@@ -107,13 +106,13 @@ func getChileAsst(objID string, assts []*metadata.ObjectAsst) *metadata.ObjectAs
 	return nil
 }
 
-func getTopo(root string, assts []*metadata.ObjectAsst) ([]string, error) {
+func getMainline(root string, assts []*metadata.ObjectAsst) ([]string, error) {
 	if root == common.BKInnerObjIDModule {
 		return []string{common.BKInnerObjIDModule}, nil
 	}
 	for _, asst := range assts {
 		if asst.AsstObjID == root {
-			topo, err := getTopo(asst.ObjectID, assts)
+			topo, err := getMainline(asst.ObjectID, assts)
 			if err != nil {
 				return nil, err
 			}
