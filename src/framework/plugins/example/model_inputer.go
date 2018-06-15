@@ -22,7 +22,7 @@ import (
 
 func init() {
 
-	// api.RegisterInputer(host)
+	api.RegisterInputer(host)
 	//api.RegisterFrequencyInputer(modelMgr, time.Minute*5)
 }
 
