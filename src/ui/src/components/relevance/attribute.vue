@@ -69,6 +69,7 @@
             formValuesConfig () {
                 let config = {
                     url: '',
+                    type: 'post',
                     params: {
                         page: {},
                         fields: {},
@@ -82,46 +83,8 @@
                         bk_biz_id: this.instId
                     }
                 } else if (this.objId === 'host') {
-                    config.url = 'hosts/search'
-                    config.params = {
-                        page: {
-                            start: 0,
-                            limit: 10,
-                            sort: 'bk_host_id'
-                        },
-                        pattern: '',
-                        bk_biz_id: -1,
-                        ip: {
-                            flag: 'bk_host_innerip|bk_host_outerip',
-                            exact: 1,
-                            data: []
-                        },
-                        condition: [{
-                            bk_obj_id: 'host',
-                            fields: [],
-                            condition: [{
-                                field: 'bk_host_id',
-                                operator: '$eq',
-                                value: this.instId
-                            }]
-                        }, {
-                            bk_obj_id: 'module',
-                            fields: [],
-                            condition: []
-                        }, {
-                            bk_obj_id: 'set',
-                            fields: [],
-                            condition: []
-                        }, {
-                            bk_obj_id: 'biz',
-                            fields: [],
-                            condition: [{
-                                field: 'default',
-                                operator: '$ne',
-                                value: 1
-                            }]
-                        }]
-                    }
+                    config.type = 'get'
+                    config.url = `/hosts/${this.bkSupplierAccount}/${this.instId}`
                 } else {
                     config.url = `inst/association/search/owner/${this.bkSupplierAccount}/object/${this.objId}`
                     config.params.condition[this.objId] = [{
@@ -165,8 +128,20 @@
             },
             async getFormValues () {
                 try {
-                    let res = await this.$axios.post(this.formValuesConfig.url, this.formValuesConfig.params)
-                    this.attr.formValues = this.objId === 'host' ? res.data.info[0].host : res.data.info[0]
+                    let res = await this.$axios({
+                        url: this.formValuesConfig.url,
+                        data: this.formValuesConfig.params,
+                        method: this.formValuesConfig.type
+                    })
+                    if (this.objId === 'host') {
+                        let values = {}
+                        res.data.map(({bk_property_id: bkPropertyId, bk_property_value: bkPropertyValue}) => {
+                            values[bkPropertyId] = bkPropertyValue !== null ? bkPropertyValue : ''
+                        })
+                        this.attr.formValues = values
+                    } else {
+                        this.attr.formValues = res.data.info[0]
+                    }
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
