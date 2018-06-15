@@ -36,19 +36,19 @@ func (cli *topoAPI) initObject() {
 }
 
 // CreateObjectBatch batch to create some objects
-func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObjectBatch")
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
-func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // CreateObject create a new object
-func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObject")
 	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 
@@ -60,7 +60,7 @@ func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryPara
 }
 
 // SearchObject search some objects by condition
-func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObject")
 	cond := condition.CreateCondition()
 
@@ -79,13 +79,13 @@ func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryPara
 }
 
 // SearchObjectTopo search the object topo
-func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectTopo")
 	return nil, nil
 }
 
 // UpdateObject update the object
-func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("UpdateObject")
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(pathParams("id"))
@@ -100,7 +100,7 @@ func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryPara
 }
 
 // DeleteObject delete the object
-func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 

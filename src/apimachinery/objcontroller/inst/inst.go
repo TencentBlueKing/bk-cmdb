@@ -21,9 +21,8 @@ import (
 )
 
 func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error) {
-	resp = new(metatype.QueryInstResult)
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
-
+	resp = new(metatype.QueryInstResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -35,9 +34,8 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Hea
 }
 
 func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error) {
-	resp = new(metatype.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
-
+	resp = new(metatype.CreateInstResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).

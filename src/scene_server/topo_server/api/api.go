@@ -148,7 +148,7 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 					return
 				}
 
-				cli.sendResponse(resp, data["data"])
+				cli.sendResponse(resp, data)
 
 			}})
 		}(a)

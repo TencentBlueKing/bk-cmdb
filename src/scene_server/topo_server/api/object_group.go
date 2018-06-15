@@ -36,8 +36,8 @@ func (cli *topoAPI) initObjectGroup() {
 	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{object_id}", HandlerFunc: cli.SearchGroupByObject})
 }
 
-// CreateObjectGroup create a new object group
-func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+// CreateObjectGroup create a new object grouphttps://github.com/Tencent/bk-cmdb/blob/apimachinery/src/common/metadata/object_controller.go
+func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	rsp, err := cli.core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
@@ -48,7 +48,7 @@ func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, quer
 }
 
 // UpdateObjectGroup update the object group information
-func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	fmt.Println("UpdateObjectGroup")
 
@@ -74,7 +74,7 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 }
 
 // DeleteObjectGroup delete the object group
-func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("DeleteObjectGroup")
 	cond := condition.CreateCondition()
 	val, exists := data.Get("id")
@@ -98,7 +98,7 @@ func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, quer
 }
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("UpdateObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
@@ -126,7 +126,7 @@ func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathPar
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
-func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("DeleteObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
@@ -148,7 +148,7 @@ func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathPar
 }
 
 // SearchGroupByObject search the groups by the object
-func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchGroupByObject")
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))

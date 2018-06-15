@@ -22,7 +22,7 @@ import (
 
 func (t *meta) SelectObjects(ctx context.Context, h http.Header, data interface{}) (resp *metatype.QueryObjectResult, err error) {
 	subPath := "/meta/objects"
-
+	resp = new(metatype.QueryObjectResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
@@ -35,7 +35,7 @@ func (t *meta) SelectObjects(ctx context.Context, h http.Header, data interface{
 
 func (t *meta) DeleteObject(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/object/%d", objID)
-
+	resp = new(metatype.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(dat).
@@ -48,7 +48,7 @@ func (t *meta) DeleteObject(ctx context.Context, objID int64, h http.Header, dat
 
 func (t *meta) CreateObject(ctx context.Context, h http.Header, dat *metatype.Object) (resp *metatype.CreateObjectResult, err error) {
 	subPath := "/meta/object"
-
+	resp = new(metatype.CreateObjectResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -61,7 +61,7 @@ func (t *meta) CreateObject(ctx context.Context, h http.Header, dat *metatype.Ob
 
 func (t *meta) UpdateObject(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
 	subPath := fmt.Sprintf("/meta/object/%d", objID)
-
+	resp = new(metatype.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
@@ -74,7 +74,7 @@ func (t *meta) UpdateObject(ctx context.Context, objID int64, h http.Header, dat
 
 func (t *meta) SelectObjectAssociations(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectAssociationResult, err error) {
 	subPath := "/meta/objectassts"
-
+	resp = new(metatype.QueryObjectAssociationResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -87,7 +87,7 @@ func (t *meta) SelectObjectAssociations(ctx context.Context, h http.Header, dat 
 
 func (t *meta) DeleteObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectasst/%d", objID)
-
+	resp = new(metatype.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(dat).
@@ -100,7 +100,7 @@ func (t *meta) DeleteObjectAssociation(ctx context.Context, objID int64, h http.
 
 func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.ObjectAsst) (resp *metatype.CreateResult, err error) {
 	subPath := "/meta/objectasst"
-
+	resp = new(metatype.CreateResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -113,7 +113,7 @@ func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *
 
 func (t *meta) UpdateObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectasst/%d", objID)
-
+	resp = new(metatype.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
@@ -126,7 +126,7 @@ func (t *meta) UpdateObjectAssociation(ctx context.Context, objID int64, h http.
 
 func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Header) (resp *metatype.QueryObjectAttributeResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/%d", objID)
-
+	resp = new(metatype.QueryObjectAttributeResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
@@ -139,7 +139,7 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Head
 
 func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
 	subPath := "/meta/objectatts"
-
+	resp = new(metatype.QueryObjectAttributeResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -152,7 +152,7 @@ func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat
 
 func (t *meta) DeleteObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/%d", objID)
-
+	resp = new(metatype.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(dat).
@@ -165,7 +165,7 @@ func (t *meta) DeleteObjectAttByID(ctx context.Context, objID int64, h http.Head
 
 func (t *meta) CreateObjectAtt(ctx context.Context, h http.Header, dat *metatype.Attribute) (resp *metatype.CreateObjectAttributeResult, err error) {
 	subPath := "/meta/objectatt"
-
+	resp = new(metatype.CreateObjectAttributeResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -178,7 +178,7 @@ func (t *meta) CreateObjectAtt(ctx context.Context, h http.Header, dat *metatype
 
 func (t *meta) UpdateObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/%d", objID)
-
+	resp = new(metatype.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
