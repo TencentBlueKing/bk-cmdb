@@ -275,18 +275,40 @@
                 this.slider.isShow = true
             },
             saveProcess (formData, originalData) {
-                let {
-                    bk_process_id: bkProcessId
-                } = originalData
-                this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, {...formData, ...{bk_process_id: bkProcessId.toString()}}).then(res => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
-                        this.setCurrentPage(1)
-                        this.closeSlider()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                if (this.slider.tab.attribute.type === 'create' && !this.slider.tab.attribute.isMultipleUpdate) {
+                    this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData).then(res => {
+                        if (res.result) {
+                            this.$alertMsg(this.$t("ProcessManagement['新增进程成功']"), 'success')
+                            this.setCurrentPage(1)
+                            this.closeSlider()
+                        } else {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
+                    })
+                } else if (!this.slider.tab.attribute.isMultipleUpdate) {
+                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData).then(res => {
+                        if (res.result) {
+                            this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
+                            this.setCurrentPage(1)
+                            this.closeSlider()
+                        } else {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
+                    })
+                } else {
+                    let {
+                        bk_process_id: bkProcessId
+                    } = originalData
+                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, {...formData, ...{bk_process_id: bkProcessId.toString()}}).then(res => {
+                        if (res.result) {
+                            this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
+                            this.setCurrentPage(1)
+                            this.closeSlider()
+                        } else {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
+                    })
+                }
             },
             deleteProcess (data) {
                 this.$bkInfo({
