@@ -71,7 +71,7 @@ func (cli *ModuleWrapper) Save() error {
 }
 
 // GetModuleID get the id for the module
-func (cli *ModuleWrapper) GetModuleID() (int, error) {
+func (cli *ModuleWrapper) GetModuleID() (int64, error) {
 	vals, err := cli.module.GetValues()
 	if nil != err {
 		return 0, err
@@ -79,7 +79,8 @@ func (cli *ModuleWrapper) GetModuleID() (int, error) {
 	if !vals.Exists(fieldModuleID) {
 		return 0, fmt.Errorf("the module id is not set")
 	}
-	return vals.Int(fieldModuleID)
+	val, err := vals.Int(fieldModuleID)
+	return int64(val), err
 }
 
 // SetOperator set the operator
