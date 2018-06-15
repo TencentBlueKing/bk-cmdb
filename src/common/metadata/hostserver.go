@@ -17,10 +17,33 @@ type DeleteHostBatchOpt struct {
 }
 
 type FavouriteParms struct {
-    ID          string `json:"id"`
-    Info        string `json:"info"`
-    QueryParams string `json:"query_params"`
-    Name        string `json:"name"`
-    IsDefault   int    `json:"is_default"`
-    Count       int    `json:"count"`
+	ID          string `json:"id"`
+	Info        string `json:"info"`
+	QueryParams string `json:"query_params"`
+	Name        string `json:"name"`
+	IsDefault   int    `json:"is_default"`
+	Count       int    `json:"count"`
+}
+
+type HostInstanceProperties struct {
+	PropertyID    string      `json:"bk_property_id"`
+	PropertyName  string      `json:"bk_property_name"`
+	PropertyValue interface{} `json:"bk_property_value"`
+}
+
+type HostInstancePropertiesResult struct {
+	BaseResp `json:",inline"`
+	Data     []HostInstanceProperties `json:"data"`
+}
+
+type HostSnapResult struct {
+	BaseResp `json:",inline"`
+	Data     map[string]interface{} `json:"data"`
+}
+
+type HostList struct {
+	ApplicationID int                            `json:"bk_biz_id"`
+	HostInfo      map[int]map[string]interface{} `json:"host_info"`
+	SupplierID    int                            `json:"bk_supplier_id"`
+	InputType     string                         `json:"input_type"`
 }

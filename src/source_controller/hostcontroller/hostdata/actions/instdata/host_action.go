@@ -104,7 +104,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	var result interface{}
+	var result map[string]interface{}
 	condition := make(map[string]interface{})
 	condition[common.BKHostIDField] = hostID
 	fields := make([]string, 0)
@@ -115,11 +115,10 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	resp.WriteAsJson(Response{
-		BaseResp: BaseResp{true, http.StatusOK, common.CCSuccessStr},
-		Data:     resp,
+	resp.WriteEntity(HostInstanceResult{
+		BaseResp: SuccessBaseResp,
+		Data:     result,
 	})
-
 }
 
 //GetHosts batch search host
