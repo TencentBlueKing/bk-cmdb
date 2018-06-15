@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -41,7 +42,7 @@ func (cli *topoAPI) initInst() {
 
 // CreateInst create a new inst
 func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("CreateInst")
 	// /inst/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -50,7 +51,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
-	objItems, err := cli.core.FindObject(params, cond)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
 	if nil != err {
 		blog.Errorf("failed to search the %s, %s", objID, err.Error())
@@ -61,7 +62,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 	data.Set(common.BKObjIDField, objID)
 
 	for _, item := range objItems {
-		setInst, err := cli.core.CreateInst(params, item, data)
+		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
 			return nil, err
@@ -81,19 +82,19 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 
 // DeleteInst delete the inst
 func (cli *topoAPI) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteInst")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(pathParams("obj_id")).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
-	err := cli.core.DeleteInst(params, cond)
+	err := cli.core.InstOperation().DeleteInst(params, cond)
 	return nil, err
 }
 
 // UpdateInst update the inst
 func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateInst")
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
@@ -103,13 +104,13 @@ func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
-	err := cli.core.UpdateInst(params, data, cond)
+	err := cli.core.InstOperation().UpdateInst(params, data, cond)
 	return nil, err
 }
 
 // SearchInst search the inst
 func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInst")
 	// /inst/search/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -118,7 +119,7 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -140,7 +141,7 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 
 // SearchInstAndAssociationDetail search the inst with association details
 func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstAndAssociationDetail")
 	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
 
 	objID := pathParams("obj_id")
@@ -149,7 +150,7 @@ func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pat
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -171,6 +172,7 @@ func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pat
 
 // SearchInstByObject search the inst of the object
 func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByObject")
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -179,7 +181,7 @@ func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, que
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -201,6 +203,7 @@ func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, que
 
 // SearchInstByAssociation search inst by the association inst
 func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByAssociation")
 	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -209,7 +212,7 @@ func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(objID)
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -230,6 +233,7 @@ func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams
 
 // SearchInstByInstID search the inst by inst ID
 func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByInstID")
 	// /inst/search/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
@@ -239,7 +243,7 @@ func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, que
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -260,7 +264,7 @@ func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, que
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstChildTopo")
 	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
@@ -270,7 +274,7 @@ func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, qu
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq("inst_id")
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -292,7 +296,7 @@ func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, qu
 
 // SearchInstTopo search the inst topo
 func (cli *topoAPI) SearchInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstTopo")
 	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
@@ -302,7 +306,7 @@ func (cli *topoAPI) SearchInstTopo(params types.LogicParams, pathParams, queryPa
 		Field(common.BKObjIDField).Eq(objID).
 		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
-	items, err := cli.core.FindInst(params, cond)
+	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
 		return nil, err
 	}
