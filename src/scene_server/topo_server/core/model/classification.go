@@ -14,6 +14,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -32,6 +33,10 @@ type classification struct {
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *classification) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.cls)
 }
 
 func (cli *classification) Parse(data frtypes.MapStr) (*metadata.Classification, error) {

@@ -176,7 +176,7 @@ func (cli *inst) IsExists() (bool, error) {
 
 	// check data duplication
 
-	queryCond := metatype.QueryInstInput{}
+	queryCond := metatype.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
 
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), &queryCond)
@@ -191,13 +191,7 @@ func (cli *inst) IsExists() (bool, error) {
 		return false, cli.params.Err.Error(common.CCErrTopoInstSelectFailed)
 	}
 
-	cnt, err := rsp.Data.Int("count")
-	if nil != err {
-		blog.Errorf("the object controller return the invalid data(%#v), error info is %s", rsp.Data, err.Error())
-		return false, cli.params.Err.Error(common.CCErrTopoInstSelectFailed)
-	}
-
-	return 0 != cnt, nil
+	return 0 != rsp.Data.Count, nil
 }
 func (cli *inst) Save() error {
 

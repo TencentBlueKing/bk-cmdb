@@ -10,27 +10,4 @@
  * limitations under the License.
  */
 
-package api
-
-import (
-	"fmt"
-	"net/http"
-
-	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/core/types"
-)
-
-func init() {
-	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initAuditLog)
-}
-
-func (cli *topoAPI) initAuditLog() {
-	fmt.Println("init audit log")
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.SearchAuditLog})
-}
-
-// SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	fmt.Println("SearchAuditLog")
-	return nil, nil
-}
+package operation
