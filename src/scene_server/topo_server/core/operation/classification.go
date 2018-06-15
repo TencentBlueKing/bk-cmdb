@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -27,9 +28,9 @@ import (
 // ClassificationOperationInterface classification opoeration methods
 type ClassificationOperationInterface interface {
 	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)
-	DeleteClassification(params types.LogicParams, cond condition.Condition) error
+	DeleteClassification(params types.LogicParams, id int64, cond condition.Condition) error
 	FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error)
-	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateClassification(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 }
 
 type classification struct {
@@ -64,22 +65,53 @@ func (cli *classification) CreateClassification(params types.LogicParams, data f
 	return cls, nil
 }
 
-func (cli *classification) DeleteClassification(params types.LogicParams, cond condition.Condition) error {
+func (cli *classification) DeleteClassification(params types.LogicParams, id int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-cls] failed to delete the classification by id (%d) or the condition (%#v), error info is %s ", id, cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
 func (cli *classification) FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error) {
-	blog.Infof("find classification ")
+
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
-		blog.Infof("the data :%#v %#v %#v", rsp, err, cond.ToMapStr())
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.Error(rsp.Code)
 	}
 
 	clsItems := model.CreateClassification(params, cli.clientSet, rsp.Data)
 	return clsItems, nil
 }
 
-func (cli *classification) UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *classification) UpdateClassification(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), id, params.Header.ToHeader(), data)
+
+	if nil != err {
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-cls] failed to update the classification by the id (%d) or the condtion (%#v), error info is %s", id, cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }

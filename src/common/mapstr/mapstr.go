@@ -33,6 +33,17 @@ func (cli MapStr) Merge(second MapStr) {
 	}
 }
 
+// MarshalJSONInto convert to the input value
+func (cli MapStr) MarshalJSONInto(target interface{}) error {
+
+	data, err := cli.ToJSON()
+	if nil != err {
+		return err
+	}
+
+	return json.Unmarshal(data, target)
+}
+
 // ToJSON convert to json string
 func (cli MapStr) ToJSON() ([]byte, error) {
 	js, err := json.Marshal(cli)

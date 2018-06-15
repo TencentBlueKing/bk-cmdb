@@ -118,21 +118,5 @@ func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryPara
 	data.Set(common.BKInnerObjIDSet, pathParams("set_id"))
 	data.Set(common.BKOwnerIDField, pathParams("owner_id"))
 
-	items, err := cli.core.InstOperation().FindInst(params, cond)
-	if nil != err {
-		return nil, err
-	}
-
-	results := make([]frtypes.MapStr, 0)
-	for _, item := range items {
-		toMapStr, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		results = append(results, toMapStr)
-	}
-
-	resultData := frtypes.MapStr{}
-	resultData.Set("data", results)
-	return resultData, nil
+	return cli.core.InstOperation().FindInst(params, cond)
 }
