@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -36,7 +37,7 @@ func (cli *topoAPI) initObjectGroup() {
 	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{object_id}", HandlerFunc: cli.SearchGroupByObject})
 }
 
-// CreateObjectGroup create a new object grouphttps://github.com/Tencent/bk-cmdb/blob/apimachinery/src/common/metadata/object_controller.go
+// CreateObjectGroup create a new object group
 func (cli *topoAPI) CreateObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	rsp, err := cli.core.GroupOperation().CreateObjectGroup(params, data)
@@ -52,20 +53,31 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 
 	fmt.Println("UpdateObjectGroup")
 
-	cond := condition.CreateCondition()
-	val, exists := data.Get("id")
+	cond := metadata.UpdateGroupCondition{}
 
-	if exists {
-		cond.Field("id").Eq(val)
-	} else {
-		val, exists = data.Get(metadata.GroupFieldGroupID)
-		if !exists {
-			return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.GroupFieldGroupID)
-		}
-		cond.Field(metadata.GroupFieldGroupID).Eq(val)
+	grpID, err := data.String(metadata.GroupFieldGroupID)
+	if nil != err {
+		blog.Errorf("[api-grp] failed to get group-id params from the path params, error info is  %s", err.Error())
+		return nil, err
 	}
 
-	err := cli.core.GroupOperation().UpdateObjectGroup(params, data, cond)
+	grpIndex, err := data.Int(metadata.GroupFieldGroupIndex)
+	if nil != err {
+		blog.Errorf("[api-grp] failed to get group-index params from the path params, error info is  %s", err.Error())
+		return nil, err
+	}
+
+	grpName, err := data.String(metadata.GroupFieldGroupName)
+	if nil != err {
+		blog.Errorf("[api-grp] failed to get group-name params from the path params, error info is  %s", err.Error())
+		return nil, err
+	}
+
+	cond.Condition.ID = grpID
+	cond.Data.Index = int64(grpIndex)
+	cond.Data.Name = grpName
+
+	err = cli.core.GroupOperation().UpdateObjectGroup(params, &cond)
 	if nil != err {
 		return nil, err
 	}
@@ -75,21 +87,8 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 
 // DeleteObjectGroup delete the object group
 func (cli *topoAPI) DeleteObjectGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("DeleteObjectGroup")
-	cond := condition.CreateCondition()
-	val, exists := data.Get("id")
 
-	if exists {
-		cond.Field("id").Eq(val)
-	} else {
-		val, exists = data.Get(metadata.GroupFieldGroupID)
-		if !exists {
-			return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.GroupFieldGroupID)
-		}
-		cond.Field(metadata.GroupFieldGroupID).Eq(val)
-	}
-
-	err := cli.core.GroupOperation().DeleteObjectGroup(params, cond)
+	err := cli.core.GroupOperation().DeleteObjectGroup(params, pathParams("id"))
 	if nil != err {
 		return nil, err
 	}
@@ -117,7 +116,7 @@ func (cli *topoAPI) UpdateObjectAttributeGroup(params types.LogicParams, pathPar
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(val)
 	data.Remove(metadata.AttributeFieldPropertyID)
 
-	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, cond)
+	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, -1, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -139,7 +138,7 @@ func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathPar
 	innerData.Set(metadata.AttributeFieldPropertyGroup, "none")
 	innerData.Set(metadata.AttributeFieldPropertyIndex, -1)
 
-	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, innerData, cond)
+	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, innerData, -1, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -149,17 +148,7 @@ func (cli *topoAPI) DeleteObjectAttributeGroup(params types.LogicParams, pathPar
 
 // SearchGroupByObject search the groups by the object
 func (cli *topoAPI) SearchGroupByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchGroupByObject")
+
 	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
-
-	items, err := cli.core.GroupOperation().FindGroupByObject(params, cond)
-	if nil != err {
-		return nil, err
-	}
-
-	result := frtypes.MapStr{}
-	result.Set("data", items)
-
-	return result, nil
+	return cli.core.GroupOperation().FindGroupByObject(params, pathParams("object_id"), cond)
 }

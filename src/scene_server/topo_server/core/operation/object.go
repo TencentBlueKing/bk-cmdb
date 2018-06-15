@@ -13,7 +13,11 @@
 package operation
 
 import (
+	"configcenter/src/common"
+	"context"
+
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -24,9 +28,9 @@ import (
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
 	CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error)
-	DeleteObject(params types.LogicParams, cond condition.Condition) error
+	DeleteObject(params types.LogicParams, id int64, cond condition.Condition) error
 	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
-	UpdateObject(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 }
 
 type object struct {
@@ -49,25 +53,65 @@ func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (
 
 	_, err := obj.Parse(data)
 	if nil != err {
+		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
 	err = obj.Save()
 	if nil != err {
+		blog.Errorf("[operation-obj] failed to save the data(%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
 	return obj, nil
 }
 
-func (cli *object) DeleteObject(params types.LogicParams, cond condition.Condition) error {
+func (cli *object) DeleteObject(params types.LogicParams, id int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
 func (cli *object) FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error) {
-	return nil, nil
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.Error(rsp.Code)
+	}
+
+	return model.CreateObject(params, cli.clientSet, rsp.Data), nil
 }
 
-func (cli *object) UpdateObject(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *object) UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-obj] failed to set the object to the new data(%#v) by the condition(%#v) or the  id (%d)", data, cond.ToMapStr(), id)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }

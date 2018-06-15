@@ -20,6 +20,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -43,8 +45,8 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 	fmt.Println("CreateBusiness")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
@@ -78,109 +80,154 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 func (cli *topoAPI) DeleteBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp).
-		Field(common.BKAppIDField).Eq(pathParams("app_id"))
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
+	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
-	err := cli.core.InstOperation().DeleteInst(params, cond)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
+
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
+
+	for _, item := range objItems {
+		if err = cli.core.InstOperation().DeleteInst(params, item, cond); nil != err {
+			return nil, err
+		}
+	}
 
 	return nil, err
 }
 
 // UpdateBusiness update the business
 func (cli *topoAPI) UpdateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("UpdateBusiness")
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
-		Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
-	data.Set(common.BKAppIDField, pathParams("app_id"))
-	err := cli.core.InstOperation().UpdateInst(params, data, cond)
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
+
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
+
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
+
+	for _, item := range objItems {
+		if err = cli.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
+			return nil, err
+		}
+	}
 
 	return nil, err
 }
 
 // UpdateBusinessStatus update the business status
 func (cli *topoAPI) UpdateBusinessStatus(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("UpdateBusinessStatus")
+
 	// /app/status/{flag}/{owner_id}/{app_id}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
-		Field(common.BKAppIDField).Eq(pathParams("app_id"))
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
+
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
+
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
 
 	data.Set("flag", pathParams("flag"))
-	err := cli.core.InstOperation().UpdateInst(params, data, cond)
+	for _, item := range objItems {
+		if err = cli.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
+			return nil, err
+		}
+	}
 
 	return nil, err
 }
 
 // SearchBusiness search the business by condition
 func (cli *topoAPI) SearchBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchBusiness")
+
 	// "/app/search/{owner_id}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
-	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
 	}
 
-	results := make([]frtypes.MapStr, 0)
-	for _, item := range items {
-		toMapStr, err := item.ToMapStr()
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	for _, objItem := range objItems {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
 		if nil != err {
+			blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
 		}
-		results = append(results, toMapStr)
+		count = count + cnt
+		instRst = append(instRst, instItems...)
 	}
 
-	resultData := frtypes.MapStr{}
-	resultData.Set("data", results)
-	return resultData, nil
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 }
 
 // SearchDefaultBusiness search the business by condition
 func (cli *topoAPI) SearchDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchDefaultBusiness")
+
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
-	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
+	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
-	items, err := cli.core.InstOperation().FindInst(params, cond)
 	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
 	}
 
-	results := make([]frtypes.MapStr, 0)
-	for _, item := range items {
-		toMapStr, err := item.ToMapStr()
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	for _, objItem := range objItems {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
 		if nil != err {
+			blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
 		}
-		results = append(results, toMapStr)
+		count = count + cnt
+		instRst = append(instRst, instItems...)
 	}
 
-	resultData := frtypes.MapStr{}
-	resultData.Set("data", results)
-	return resultData, nil
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+	return result, nil
 }
 
 // CreateDefaultBusiness create the default business
 func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateDefaultBusiness")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 

@@ -226,9 +226,8 @@ func (cli *inst) SetValue(key string, value interface{}) error {
 	return nil
 }
 
-func (cli *inst) SetValues(values frtypes.MapStr) error {
+func (cli *inst) SetValues(values frtypes.MapStr) {
 	cli.datas.Merge(values)
-	return nil
 }
 
 func (cli *inst) GetValues() (frtypes.MapStr, error) {

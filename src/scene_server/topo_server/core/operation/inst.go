@@ -14,19 +14,23 @@ package operation
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	metatype "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"context"
 )
 
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
 	CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
-	DeleteInst(params types.LogicParams, cond condition.Condition) error
-	FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error)
-	UpdateInst(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	DeleteInst(params types.LogicParams, obj model.Object, cond condition.Condition) error
+	FindInst(params types.LogicParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error)
+	UpdateInst(params types.LogicParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
 }
 
 type commonInst struct {
@@ -47,27 +51,63 @@ func NewInstOperation(client apimachinery.ClientSetInterface, modelFactory model
 func (cli *commonInst) CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 	item := cli.instFactory.CreateInst(params, obj)
 
-	err := item.SetValues(data)
-	if nil != err {
-		return nil, err
-	}
+	item.SetValues(data)
 
-	err = item.Save()
+	err := item.Save()
 	if nil != err {
+		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 		return nil, err
 	}
 
 	return item, nil
 }
 
-func (cli *commonInst) DeleteInst(params types.LogicParams, cond condition.Condition) error {
+func (cli *commonInst) DeleteInst(params types.LogicParams, obj model.Object, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetID(), params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
 	return nil
 }
 
-func (cli *commonInst) FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error) {
-	return nil, nil
+func (cli *commonInst) FindInst(params types.LogicParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
+
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetID(), params.Header.ToHeader(), cond)
+
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
+		return 0, nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond, rsp.ErrMsg)
+		return 0, nil, params.Err.Error(rsp.Code)
+	}
+
+	return rsp.Data.Count, inst.CreateInst(params, cli.clientSet, obj, rsp.Data.Info), nil
 }
 
-func (cli *commonInst) UpdateInst(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *commonInst) UpdateInst(params types.LogicParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
+
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetID(), params.Header.ToHeader(), cond.ToMapStr())
+
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
 	return nil
 }
