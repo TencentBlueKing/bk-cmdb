@@ -16,6 +16,7 @@ import (
 	"time"
 
 	types "configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/api/metadata"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int        `field:"id"`
+	ID          int64      `field:"id"`
 	ObjCls      string     `field:"bk_classification_id"`
 	ObjIcon     string     `field:"bk_obj_icon"`
 	ObjectID    string     `field:"bk_obj_id"`
@@ -66,4 +67,35 @@ func (cli *Object) Parse(data types.MapStr) (*Object, error) {
 // ToMapStr to mapstr
 func (cli *Object) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
+}
+
+// ObjectAsst define object association struct
+type ObjectAsst struct {
+	ID          int       `bson:"id"                    json:"id"`
+	ObjectID    string    `bson:"bk_obj_id"                json:"bk_obj_id"`
+	ObjectAttID string    `bson:"bk_object_att_id"         json:"bk_object_att_id"`
+	OwnerID     string    `bson:"bk_supplier_account"      json:"bk_supplier_account"`
+	AsstForward string    `bson:"bk_asst_forward"          json:"bk_asst_forward"`
+	AsstObjID   string    `bson:"bk_asst_obj_id"           json:"bk_asst_obj_id"`
+	AsstName    string    `bson:"bk_asst_name"             json:"bk_asst_name"`
+	Page        *BasePage `bson:"-"                        json:"page,omitempty"`
+}
+
+// MainLineObject main line object definition
+type MainLineObject struct {
+	ObjDes        `json:",inline"`
+	AssociationID string `json:"bk_asst_obj_id"`
+}
+
+// ObjDes
+type ObjDes struct {
+	metadata.ObjectDes `json:",inline"`
+}
+
+type ObjectClsDes struct {
+	ID      int    `json:"id"`
+	ClsID   string `json:"bk_classification_id"`
+	ClsName string `json:"bk_classification_name"`
+	ClsType string `json:"bk_classification_type"`
+	ClsIcon string `json:"bk_classification_icon"`
 }

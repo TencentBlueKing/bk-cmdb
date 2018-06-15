@@ -34,6 +34,7 @@ type model struct {
 	Description string `field:"description"`
 	Creator     string `field:"creator"`
 	Modifier    string `field:"modifier"`
+	id          int
 }
 
 func (cli *model) ToMapStr() types.MapStr {
@@ -65,24 +66,36 @@ func (cli *model) Attributes() ([]Attribute, error) {
 	return attrs, nil
 
 }
+func (cli *model) search() ([]types.MapStr, error) {
 
-func (cli *model) Save() error {
-
-	// construct the search condition
 	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
-	dataItems, err := client.GetClient().CCV3().Model().SearchObjects(cond)
+	return client.GetClient().CCV3().Model().SearchObjects(cond)
+}
+func (cli *model) IsExists() (bool, error) {
+
+	items, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+	return 0 != len(items), nil
+}
+func (cli *model) Create() error {
+
+	id, err := client.GetClient().CCV3().Model().CreateObject(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
-	//fmt.Println("dataitems:", dataItems)
-	// create a new object
-	if 0 == len(dataItems) {
-		if _, err = client.GetClient().CCV3().Model().CreateObject(cli.ToMapStr()); nil != err {
-			return err
-		}
-		return nil
+
+	cli.id = id
+	return nil
+}
+func (cli *model) Update() error {
+
+	dataItems, err := cli.search()
+	if nil != err {
+		return err
 	}
 
 	// update the exists one
@@ -110,8 +123,16 @@ func (cli *model) Save() error {
 			return err
 		}
 	}
+	return nil
+}
+func (cli *model) Save() error {
 
-	// success
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
 	return nil
 }
 

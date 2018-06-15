@@ -72,7 +72,10 @@ type Iterator interface {
 
 // Inst the inst interface
 type Inst interface {
-	types.Saver
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
 
 	GetModel() model.Model
 

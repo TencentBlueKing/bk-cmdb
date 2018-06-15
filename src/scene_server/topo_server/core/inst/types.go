@@ -24,8 +24,8 @@ type Inst interface {
 	model.Operation
 	GetObject() model.Object
 
-	GetInstID() int
-	GetInstName() string
+	GetInstID() (int, error)
+	GetInstName() (string, error)
 
 	SetValue(key string, value interface{}) error
 
