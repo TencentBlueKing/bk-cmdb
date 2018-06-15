@@ -13,6 +13,9 @@
 package model
 
 import (
+	"context"
+	"encoding/json"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -20,7 +23,6 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"context"
 )
 
 var _ Group = (*group)(nil)
@@ -32,17 +34,21 @@ type group struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (cli *group) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.grp)
+}
+
 func (cli *group) Create() error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), &cli.grp)
 
 	if nil != err {
-		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-grp] failed to request object controller, error info is %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to create the group(%s), error info is is %s", cli.grp.GroupID, rsp.ErrMsg)
+		blog.Errorf("[model-grp] failed to create the group(%s), error info is is %s", cli.grp.GroupID, rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
@@ -60,12 +66,12 @@ func (cli *group) Update() error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), cond)
 	if nil != err {
-		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to update the group(%s), error info is %s", cli.grp.GroupID, err.Error())
+		blog.Errorf("[model-grp]failed to update the group(%s), error info is %s", cli.grp.GroupID, err.Error())
 		return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
 	return nil
@@ -75,12 +81,12 @@ func (cli *group) Delete() error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header.ToHeader())
 	if nil != err {
-		blog.Error("failed to request object controller, error info is %s", err.Error())
+		blog.Error("[model-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.ErrMsg)
+		blog.Errorf("[model-grp]failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
