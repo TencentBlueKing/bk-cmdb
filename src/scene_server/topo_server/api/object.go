@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/condition"
@@ -36,17 +37,19 @@ func (cli *topoAPI) initObject() {
 
 // CreateObjectBatch batch to create some objects
 func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("CreateObjectBatch")
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
 func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // CreateObject create a new object
 func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("CreateObject")
 	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 
 	if nil != err {
@@ -58,7 +61,7 @@ func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryPara
 
 // SearchObject search some objects by condition
 func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchObject")
 	cond := condition.CreateCondition()
 
 	if err := cond.Parse(data); nil != err {
@@ -77,12 +80,13 @@ func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryPara
 
 // SearchObjectTopo search the object topo
 func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchObjectTopo")
 	return nil, nil
 }
 
 // UpdateObject update the object
 func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateObject")
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(pathParams("id"))
 

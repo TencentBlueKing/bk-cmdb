@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -36,7 +37,7 @@ func (cli *topoAPI) initModule() {
 
 // CreateModule create a new module
 func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("CreateModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 
@@ -71,7 +72,7 @@ func (cli *topoAPI) CreateModule(params types.LogicParams, pathParams, queryPara
 
 // DeleteModule delete the module
 func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
@@ -86,7 +87,7 @@ func (cli *topoAPI) DeleteModule(params types.LogicParams, pathParams, queryPara
 
 // UpdateModule update the module
 func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule).
@@ -104,7 +105,7 @@ func (cli *topoAPI) UpdateModule(params types.LogicParams, pathParams, queryPara
 
 // SearchModule search the modules
 func (cli *topoAPI) SearchModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchModule")
 	// {owner_id}/{app_id}/{set_id}
 
 	cond := condition.CreateCondition()

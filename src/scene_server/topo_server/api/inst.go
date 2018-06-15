@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -41,7 +42,7 @@ func (cli *topoAPI) initInst() {
 
 // CreateInst create a new inst
 func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("CreateInst")
 	// /inst/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -81,7 +82,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 
 // DeleteInst delete the inst
 func (cli *topoAPI) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("DeleteInst")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
 		Field(common.BKObjIDField).Eq(pathParams("obj_id")).
@@ -93,7 +94,7 @@ func (cli *topoAPI) DeleteInst(params types.LogicParams, pathParams, queryParams
 
 // UpdateInst update the inst
 func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("UpdateInst")
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
@@ -109,7 +110,7 @@ func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams
 
 // SearchInst search the inst
 func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInst")
 	// /inst/search/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -140,7 +141,7 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 
 // SearchInstAndAssociationDetail search the inst with association details
 func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstAndAssociationDetail")
 	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
 
 	objID := pathParams("obj_id")
@@ -171,6 +172,7 @@ func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pat
 
 // SearchInstByObject search the inst of the object
 func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByObject")
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -201,6 +203,7 @@ func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, que
 
 // SearchInstByAssociation search inst by the association inst
 func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByAssociation")
 	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
@@ -230,6 +233,7 @@ func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams
 
 // SearchInstByInstID search the inst by inst ID
 func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+	fmt.Println("SearchInstByInstID")
 	// /inst/search/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
@@ -260,7 +264,7 @@ func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, que
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstChildTopo")
 	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
@@ -292,7 +296,7 @@ func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, qu
 
 // SearchInstTopo search the inst topo
 func (cli *topoAPI) SearchInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+	fmt.Println("SearchInstTopo")
 	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
