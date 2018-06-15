@@ -14,7 +14,7 @@ package model
 
 import (
 	"configcenter/src/apimachinery"
-	//frcommon "configcenter/src/framework/common"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -23,6 +23,66 @@ func New(clientSet apimachinery.ClientSetInterface) Factory {
 	return &factory{
 		clientSet: clientSet,
 	}
+}
+
+// CreateClassification create classification objects
+func CreateClassification(params types.LogicParams, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
+	results := make([]Classification, 0)
+	for _, cls := range clsItems {
+
+		results = append(results, &classification{
+			cls:       cls,
+			params:    params,
+			clientSet: clientSet,
+		})
+	}
+
+	return results
+}
+
+// CreateObject create  objects
+func CreateObject(params types.LogicParams, clientSet apimachinery.ClientSetInterface, objItems []metadata.Object) []Object {
+	results := make([]Object, 0)
+	for _, obj := range objItems {
+
+		results = append(results, &object{
+			obj:       obj,
+			params:    params,
+			clientSet: clientSet,
+		})
+	}
+
+	return results
+}
+
+// CreateGroup create group  objects
+func CreateGroup(params types.LogicParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
+	results := make([]Group, 0)
+	for _, grp := range groupItems {
+
+		results = append(results, &group{
+			grp:       grp,
+			params:    params,
+			clientSet: clientSet,
+		})
+	}
+
+	return results
+}
+
+// CreateAttribute create attribute  objects
+func CreateAttribute(params types.LogicParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
+	results := make([]Attribute, 0)
+	for _, attr := range attrItems {
+
+		results = append(results, &attribute{
+			attr:      attr,
+			params:    params,
+			clientSet: clientSet,
+		})
+	}
+
+	return results
 }
 
 type factory struct {
