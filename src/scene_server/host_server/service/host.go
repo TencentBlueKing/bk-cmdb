@@ -234,6 +234,31 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if hostList.HostInfo == nil {
+		blog.Errorf("add host, but host info is nil.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
+	appID := hostList.ApplicationID
+	if appID == 0 {
+		// get default app id
+		appID, err := s.GetDefaultAppIDWithSupplier(strconv.FormatInt(hostList.SupplierID, 10), pheader)
+		if err != nil {
+			blog.Errorf("add host, but get default appid failed, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_QUERY_FAIL)})
+			return
+		}
+	}
+
+	cond := NewOperation().WithDefaultField(int64(common.DefaultResSetFlag)).WithModuleName(common.DefaultResSetName).WithAppID(appID).Data()
+	moduleID, err := s.GetResoulePoolModuleID(pheader, cond)
+	if err != nil {
+		blog.Errorf("add host, but get module id failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
+		return
+	}
+
 }
 
 func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response) {

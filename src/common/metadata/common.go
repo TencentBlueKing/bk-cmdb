@@ -81,10 +81,10 @@ type RecursiveMapResponse struct {
 
 type QueryInput struct {
 	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields"`
-	Start     int         `json:"start"`
-	Limit     int         `json:"limit"`
-	Sort      string      `json:"sort"`
+	Fields    string      `json:"fields,omitempty"`
+	Start     int         `json:"start,omitempty"`
+	Limit     int         `json:"limit,omitempty"`
+	Sort      string      `json:"sort",omitempty`
 }
 
 type CloudHostModuleParams struct {

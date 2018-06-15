@@ -98,7 +98,7 @@ func (t *meta) DeleteObjectAssociation(ctx context.Context, objID int64, h http.
 	return
 }
 
-func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.ObjectAsst) (resp *metatype.CreateResult, err error) {
+func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.ObjectAssociations) (resp *metatype.CreateResult, err error) {
 	subPath := "/meta/objectasst"
 
 	err = t.client.Post().

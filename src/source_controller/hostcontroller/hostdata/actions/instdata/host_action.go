@@ -59,7 +59,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	instdata.DataH = cli.CC.InstCli
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("add host failed with decode body err: %v", err)
 		resp.WriteAsJson(BaseResp{Code: http.StatusBadRequest, ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()})
 		return
