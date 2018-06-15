@@ -17,7 +17,6 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -36,6 +35,48 @@ type object struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (cli *object) GetInstIDFieldName() string {
+
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppIDField
+	case common.BKInnerObjIDSet:
+		return common.BKSetIDField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleIDField
+	case common.BKINnerObjIDObject:
+		return common.BKInstIDField
+	case common.BKInnerObjIDHost:
+		return common.BKHostIDField
+	case common.BKInnerObjIDProc:
+		return common.BKProcIDField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudIDField
+	default:
+		return common.BKInstIDField
+	}
+
+}
+
+func (cli *object) GetInstNameFieldName() string {
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppNameField
+	case common.BKInnerObjIDSet:
+		return common.BKSetNameField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleNameField
+	case common.BKInnerObjIDHost:
+		return common.BKHostInnerIPField
+	case common.BKInnerObjIDProc:
+		return common.BKProcNameField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudNameField
+	default:
+		return common.BKInstNameField
+	}
+}
+
 func (cli *object) IsExists() ([]meta.Object, bool, error) {
 
 	cond := condition.CreateCondition()
@@ -45,10 +86,7 @@ func (cli *object) IsExists() ([]meta.Object, bool, error) {
 	if nil != err {
 		return nil, false, err
 	}
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), util.Headers{
-		Language: cli.params.Header.Language,
-		OwnerID:  cli.params.Header.OwnerID,
-	}, condStr)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), condStr)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -65,7 +103,7 @@ func (cli *object) IsExists() ([]meta.Object, bool, error) {
 
 func (cli *object) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header, &cli.obj)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header.ToHeader(), &cli.obj)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -86,7 +124,7 @@ func (cli *object) Update() error {
 
 	data := meta.SetValueToMapStrByTags(cli)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ID, cli.params.Header, data)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), data)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -105,7 +143,7 @@ func (cli *object) Delete() error {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.ModelFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.ModelFieldObjCls).Eq(cli.obj.ObjCls)
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -175,7 +213,7 @@ func (cli *object) GetAttributes() ([]Attribute, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -206,7 +244,7 @@ func (cli *object) GetGroups() ([]Group, error) {
 	cond := condition.CreateCondition()
 
 	cond.Field(meta.GroupFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -240,7 +278,7 @@ func (cli *object) GetClassification() (Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(cli.obj.ObjCls)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

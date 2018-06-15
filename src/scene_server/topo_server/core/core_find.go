@@ -32,6 +32,10 @@ func (cli *core) FindObjectGroup(params types.LogicParams, cond condition.Condit
 	return nil, nil
 }
 
+func (cli *core) FindGroupByObject(params types.LogicParams, cond condition.Condition) ([]model.Group, error) {
+	return nil, nil
+}
+
 func (cli *core) FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error) {
 	return nil, nil
 }

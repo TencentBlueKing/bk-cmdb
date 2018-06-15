@@ -17,13 +17,13 @@ import (
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/output/module/model"
 	"fmt"
-	"time"
+	//"time"
 )
 
 func init() {
 
 	// api.RegisterInputer(host)
-	api.RegisterFrequencyInputer(modelMgr, time.Minute*5)
+	//api.RegisterFrequencyInputer(modelMgr, time.Minute*5)
 }
 
 var modelMgr = &modelInputer{}

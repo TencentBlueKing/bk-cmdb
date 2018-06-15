@@ -34,7 +34,7 @@ type group struct {
 
 func (cli *group) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header, &cli.grp)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), &cli.grp)
 
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
@@ -58,7 +58,7 @@ func (cli *group) Update() error {
 	cond.Data.Index = cli.grp.GroupIndex
 	cond.Data.Name = cli.grp.GroupName
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header, cond)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), cond)
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
 		return err
@@ -73,7 +73,7 @@ func (cli *group) Update() error {
 
 func (cli *group) Delete() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header)
+	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header.ToHeader())
 	if nil != err {
 		blog.Error("failed to request object controller, error info is %s", err.Error())
 		return err
@@ -92,7 +92,7 @@ func (cli *group) IsExists() (bool, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request object controller ,error info is %s", err.Error())
 		return false, err
@@ -123,7 +123,7 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 		Field(metadata.AttributeFieldPropertyGroup).Eq(cli.grp.GroupID).
 		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -182,7 +182,7 @@ func (cli *group) GetName() string {
 }
 
 func (cli *group) SetIndex(groupIndex int64) {
-	cli.grp.GroupIndex = int(groupIndex)
+	cli.grp.GroupIndex = groupIndex
 }
 
 func (cli *group) GetIndex() int64 {

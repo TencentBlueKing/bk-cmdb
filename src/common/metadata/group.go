@@ -41,10 +41,10 @@ type PropertyGroupObjectAtt struct {
 
 // Group group metadata definition
 type Group struct {
-	ID         int    `field:"id"`
+	ID         int64  `field:"id"`
 	GroupID    string `field:"bk_group_id"`
 	GroupName  string `field:"bk_group_name"`
-	GroupIndex int    `field:"bk_group_index"`
+	GroupIndex int64  `field:"bk_group_index"`
 	ObjectID   string `field:"bk_obj_id"`
 	OwnerID    string `field:"bk_supplier_account"`
 	IsDefault  bool   `field:"bk_isdefault"`
