@@ -90,6 +90,8 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	}
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
+	ignorItems = append(ignorItems, common.BKInstIDField)
+
 	blog.Debug("the ignore items:%+v", ignorItems)
 
 	valid := validator.NewValidMapWithKeyFields(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
