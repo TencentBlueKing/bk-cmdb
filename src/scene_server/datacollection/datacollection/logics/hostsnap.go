@@ -49,13 +49,13 @@ var (
 
 // HostSnap define HostSnap
 type HostSnap struct {
-	id         string
-	chanName   string
-	msgChan    chan string
-	maxSize    int
-	ts         time.Time // life cycle timestamp
-	lastMesgTs time.Time
-	isMaster   bool
+	id           string
+	hostChanName []string
+	msgChan      chan string
+	maxSize      int
+	ts           time.Time // life cycle timestamp
+	lastMesgTs   time.Time
+	isMaster     bool
 	sync.Mutex
 	interrupt     chan error
 	maxconcurrent int
@@ -82,12 +82,12 @@ type Cache struct {
 // NewHostSnap  returns new hostsnap object
 //
 // chanName: redis channel name，maxSize: max buffer cache, redisCli: CC redis cli, snapCli: snap redis cli
-func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
+func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
 	}
 	hostSnapInstance := &HostSnap{
-		chanName:      chanName,
+		hostChanName:  chanName,
 		msgChan:       make(chan string, maxSize*4),
 		interrupt:     make(chan error),
 		resetHandle:   make(chan struct{}),
@@ -113,7 +113,7 @@ func (h *HostSnap) Start() {
 		h.Run()
 		for {
 			time.Sleep(time.Second * 10)
-			NewHostSnap(h.chanName, h.maxSize, h.redisCli, h.snapCli).Run()
+			NewHostSnap(h.hostChanName, h.maxSize, h.redisCli, h.snapCli).Run()
 		}
 	}()
 }
@@ -140,7 +140,7 @@ func (h *HostSnap) Run() {
 	go h.fetchDB()
 
 	if h.saveRunning() {
-		go h.subChan()
+		go h.subChan(h.snapCli, h.hostChanName)
 	} else {
 		blog.Infof("run: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 	}
@@ -149,7 +149,7 @@ func (h *HostSnap) Run() {
 		case <-ticker.C:
 			if h.saveRunning() {
 				if !h.subscribing {
-					go h.subChan()
+					go h.subChan(h.snapCli, h.hostChanName)
 				}
 			}
 		case msg = <-h.msgChan:
@@ -228,7 +228,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			return nil
 		default:
 			var data = msg
-			if gjson.Get(msg, "dataid").Exists() {
+			if !gjson.Get(msg, "cloudid").Exists() {
 				data = gjson.Get(msg, "data").String()
 			}
 			val := gjson.Parse(data)
@@ -492,10 +492,10 @@ func (h *HostSnap) saveRunning() (ok bool) {
 }
 
 // subChan subscribe message from redis channel
-func (h *HostSnap) subChan() {
+func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	h.subscribing = true
 	var chanlen int
-	subChan, err := h.snapCli.Subscribe(h.chanName)
+	subChan, err := snapcli.Subscribe(chanName...)
 	if nil != err {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
@@ -505,13 +505,13 @@ func (h *HostSnap) subChan() {
 	defer func() {
 		h.subscribing = false
 		close(closeChan)
-		subChan.Unsubscribe(h.chanName)
+		subChan.Unsubscribe(chanName...)
 		blog.Infof("subChan Close")
 	}()
 
 	var ts = time.Now()
 	var cnt int64
-	blog.Infof("subcribing channel %s", h.chanName)
+	blog.Infof("subcribing channel %v", chanName)
 	for {
 		if false == h.isMaster {
 			// not master again, close subscribe to prevent unnecessary subscript
