@@ -26,6 +26,7 @@ import (
 	"configcenter/src/source_controller/common/instdata"
 	"github.com/emicklei/go-restful"
 	"time"
+	"configcenter/src/common/rdapi"
 )
 
 // CCAPIServer define data struct of bcs ccapi server
@@ -123,6 +124,10 @@ func (ccAPI *CCAPIServer) Start() error {
 			chErr <- err
 		}
 	}()
+
+	// extra discover
+	a.AddrSrv = ccAPI.rd
+	a.ObjCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_OBJECTCONTROLLER, a.AddrSrv)
 
 	go func() {
 		err := ccAPI.rd.Start()

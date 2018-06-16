@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"fmt"
 )
 
 var objaction = &objectAction{}
@@ -65,6 +66,8 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 			blog.Error("read http request body failed, error:%s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
+
+		fmt.Printf("CreateObjectDes: url=%s,body=%s\n", req.Request.URL, value)
 
 		obj := &metadata.ObjectDes{}
 		if jsErr := json.Unmarshal([]byte(value), obj); nil != jsErr {
