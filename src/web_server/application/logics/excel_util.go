@@ -173,8 +173,8 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
-
 			host[fieldName] = cellValue
+
 		case xlsx.CellTypeBool:
 			cellValue := cell.Bool()
 			host[fieldName] = cellValue
@@ -209,6 +209,14 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 
 				if optionOk {
 					host[fieldName] = getEnumIDByName(cell.Value, option)
+				}
+			case common.FieldTypeInt:
+				intVal, err := util.GetInt64ByInterface(host[fieldName])
+				//convertor int not err , set field value to correct type
+				if nil == err {
+					host[fieldName] = intVal
+				} else {
+					blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
 				}
 
 			}
