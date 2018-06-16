@@ -29,7 +29,7 @@ type Inst interface {
 
 	SetValue(key string, value interface{}) error
 
-	SetValues(values frtypes.MapStr) error
+	SetValues(values frtypes.MapStr)
 
 	GetValues() (frtypes.MapStr, error)
 

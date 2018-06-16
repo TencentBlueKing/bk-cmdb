@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/basetype"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -35,7 +37,7 @@ func (cli *topoAPI) initObjectAttribute() {
 }
 
 // CreateObjectAttribute create a new object attribute
-func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObjectAttribute")
 	attr, err := cli.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
@@ -46,7 +48,7 @@ func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, 
 }
 
 // SearchObjectAttribute search the object attributes
-func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectAttribute")
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
@@ -67,21 +69,44 @@ func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, 
 }
 
 // UpdateObjectAttribute update the object attribute
-func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	fmt.Println("UpdateObjectAttribute")
+func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
-	cond.Field("id").Eq(queryParams("id"))
-	err := cli.core.AttributeOperation().UpdateObjectAttribute(params, data, cond)
+	attID, err := basetype.NewType(pathParams("id"))
+
+	if nil != err {
+		blog.Errorf("[api-attr] failed to parse the path params id, error info is %s ", err.Error())
+		return nil, err
+	}
+
+	if !attID.IsNumeric() {
+		blog.Errorf("[api-attr] the path params id(%s) is not int", pathParams("id"))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+
+	err = cli.core.AttributeOperation().UpdateObjectAttribute(params, data, attID.Int64(), cond)
 
 	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	fmt.Println("DeleteObjectAttribute")
+func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
-	cond.Field("id").Eq(queryParams("id"))
-	err := cli.core.AttributeOperation().DeleteObjectAttribute(params, cond)
+
+	id, err := basetype.NewType(pathParams("id"))
+
+	if nil != err {
+		blog.Errorf("[api-attr] failed to parse the path params id, error info is %s ", err.Error())
+		return nil, err
+	}
+
+	if !id.IsNumeric() {
+		blog.Errorf("[api-attr] the path params id(%s) is not int", pathParams("id"))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+
+	err = cli.core.AttributeOperation().DeleteObjectAttribute(params, id.Int64(), cond)
 
 	return nil, err
 }

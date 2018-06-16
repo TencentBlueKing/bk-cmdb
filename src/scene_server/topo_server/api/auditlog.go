@@ -30,7 +30,7 @@ func (cli *topoAPI) initAuditLog() {
 }
 
 // SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchAuditLog")
 	return nil, nil
 }

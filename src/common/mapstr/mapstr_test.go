@@ -11,3 +11,24 @@
  */
 
 package mapstr_test
+
+import (
+	. "configcenter/src/common/mapstr"
+	"testing"
+)
+
+func TestMapStrInto(t *testing.T) {
+	type testData struct {
+		Ignor int
+		Data  string `field:"data"`
+		Test  int    `field:"test"`
+	}
+	target := MapStr{}
+	target.Set("test", 245)
+	target.Set("data", "test_data")
+
+	tmp := &testData{}
+	target.MarshalJSONInto(tmp)
+	t.Logf("the test tmp %#v", tmp)
+
+}

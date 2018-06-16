@@ -13,12 +13,13 @@
 package model
 
 import (
-	"configcenter/src/common/condition"
 	"context"
+	"encoding/json"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -32,6 +33,10 @@ type attribute struct {
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *attribute) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.attr)
 }
 
 func (cli *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
