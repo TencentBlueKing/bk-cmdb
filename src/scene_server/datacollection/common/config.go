@@ -20,8 +20,9 @@ import (
 // cache key define
 const (
 	RedisSnapKeyPrefix = common.BKCacheKeyV3Prefix + "snapshot:"
-	RedisDisKeyPrefix = "hstest2"
+	RedisDisKeyPrefix = common.BKCacheKeyV3Prefix + "discover:"
 	MasterProcLockKey  = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
+	MasterDisLockKey  = common.BKCacheKeyV3Prefix + "discover:masterlock"
 )
 
 // redis clients

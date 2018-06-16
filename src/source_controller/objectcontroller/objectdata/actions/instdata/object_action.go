@@ -207,6 +207,8 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 
 //create object
 func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Response) {
+
+
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -217,6 +219,9 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 		objType := pathParams["obj_type"]
 		instdata.DataH = cli.CC.InstCli
 		value, _ := ioutil.ReadAll(req.Request.Body)
+
+		fmt.Printf("CreateObject: url=%s,body=%s\n", req.Request.URL, value)
+
 		js, _ := simplejson.NewJson([]byte(value))
 		input, _ := js.Map()
 		input[common.CreateTimeField] = time.Now()
