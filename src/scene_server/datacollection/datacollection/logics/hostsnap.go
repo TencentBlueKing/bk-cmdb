@@ -67,7 +67,7 @@ type HostSnap struct {
 
 	cache *hostcache
 
-	wg sync.WaitGroup
+	wg *sync.WaitGroup
 }
 
 type hostcache struct {
@@ -78,7 +78,7 @@ type hostcache struct {
 // NewHostSnap  returns new hostsnap object
 //
 // chanName: redis channel name，maxSize: max buffer cache, redisCli: CC redis cli, snapCli: snap redis cli
-func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
+func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client, wg *sync.WaitGroup) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
 	}
@@ -93,7 +93,7 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 		ts:            time.Now(),
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
-		wg:            sync.WaitGroup{},
+		wg:            wg,
 		cache: &hostcache{
 			cache: map[bool]map[string]map[string]interface{}{},
 			flag:  false,
@@ -104,6 +104,9 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 
 // Start start main handle routines
 func (h *HostSnap) Start() {
+
+	defer h.wg.Done()
+
 	go h.fetchDB()
 	go h.Run()
 }
