@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 var dataCollection = &dataCollectionAction{}
@@ -42,7 +43,16 @@ func init() {
 }
 
 func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error {
+
+	blog.Infof("AutoExectueAction start...\n")
+
 	var err error
+
+	discli, err := getSnapClient(config, "discover-redis")
+	if nil != err {
+		return err
+	}
+
 	snapcli, err := getSnapClient(config, "snap-redis")
 	if nil != err {
 		return err
@@ -63,10 +73,18 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli, wg)
+	discover := logics.NewDiscover("hstest2", 2000, rediscli, discli, wg)
+
 	hostSnap.Start()
+	discover.Start()
+
 
 	// go mock(config, chanName)
+	blog.Infof("AutoExectueAction finished\n")
 	return nil
 }
 
