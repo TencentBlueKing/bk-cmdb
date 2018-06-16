@@ -16,6 +16,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/basetype"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -36,19 +39,19 @@ func (cli *topoAPI) initObject() {
 }
 
 // CreateObjectBatch batch to create some objects
-func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObjectBatch")
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
-func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // CreateObject create a new object
-func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObject")
 	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 
@@ -60,7 +63,7 @@ func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryPara
 }
 
 // SearchObject search some objects by condition
-func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObject")
 	cond := condition.CreateCondition()
 
@@ -68,49 +71,54 @@ func (cli *topoAPI) SearchObject(params types.LogicParams, pathParams, queryPara
 		return nil, err
 	}
 
-	rstItems, err := cli.core.ObjectOperation().FindObject(params, cond)
-	if nil != err {
-		return nil, err
-	}
-
-	results := frtypes.MapStr{}
-	results.Set("data", rstItems)
-	return results, err
+	return cli.core.ObjectOperation().FindObject(params, cond)
 }
 
 // SearchObjectTopo search the object topo
-func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectTopo")
 	return nil, nil
 }
 
 // UpdateObject update the object
-func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-	fmt.Println("UpdateObject")
-	cond := condition.CreateCondition()
-	cond.Field("id").Eq(pathParams("id"))
+func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	err := cli.core.ObjectOperation().UpdateObject(params, data, cond)
+	cond := condition.CreateCondition()
+
+	id, err := basetype.NewType(pathParams("id"))
 
 	if nil != err {
+		blog.Errorf("[api-obj] failed to parse the path params id, error info is %s ", err.Error())
 		return nil, err
 	}
 
-	return nil, nil
+	if !id.IsNumeric() {
+		blog.Errorf("[api-obj] the path params id(%s) is not int", pathParams("id"))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+
+	err = cli.core.ObjectOperation().UpdateObject(params, data, id.Int64(), cond)
+
+	return nil, err
 }
 
 // DeleteObject delete the object
-func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	cond.Field("id").Eq(pathParams("id"))
-
-	err := cli.core.ObjectOperation().DeleteObject(params, cond)
+	id, err := basetype.NewType(pathParams("id"))
 
 	if nil != err {
+		blog.Errorf("[api-obj] failed to parse the path params id, error info is %s ", err.Error())
 		return nil, err
 	}
 
-	return nil, nil
+	if !id.IsNumeric() {
+		blog.Errorf("[api-obj] the path params id(%s) is not int", pathParams("id"))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+
+	err = cli.core.ObjectOperation().DeleteObject(params, id.Int64(), cond)
+	return nil, err
 }

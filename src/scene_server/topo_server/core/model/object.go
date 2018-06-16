@@ -14,6 +14,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"configcenter/src/apimachinery"
@@ -33,6 +34,10 @@ type object struct {
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *object) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.obj)
 }
 
 func (cli *object) GetInstIDFieldName() string {
