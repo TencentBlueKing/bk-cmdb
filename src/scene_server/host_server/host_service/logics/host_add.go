@@ -34,7 +34,7 @@ import (
 )
 
 //AddHost, return error info
-func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
+func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID []int, cc *api.APIResource) (error, []string, []string, []string) {
 
 	hostsInst, err := NewHostsInstance(req, ownerID, inputType, common.BKDefaultDirSubArea, cc)
 	if nil != err {
@@ -363,6 +363,10 @@ func (h *hostsInstance) ParseHostInstanceAssocate(index int, host map[string]int
 }
 
 func (h *hostsInstance) UpdateHostInstance(index int, host map[string]interface{}, hostID int64) error {
+	// InputTypeApiNewHostSync method used only for synchronizing new hosts, not allowed to update
+	if common.InputTypeApiNewHostSync == h.inputType {
+		return h.errHandle.Error(common.CCErrCommDuplicateItem)
+	}
 
 	//delete(host, common.BKCloudIDField)
 	delete(host, "import_from")
@@ -401,8 +405,14 @@ func (h *hostsInstance) UpdateHostInstance(index int, host map[string]interface{
 	return nil
 }
 
-func (h *hostsInstance) AddHostInstance(index, appID, moduleID int, host map[string]interface{}, ts time.Time) (int, error) {
+func (h *hostsInstance) AddHostInstance(index, appID int, moduleID []int, host map[string]interface{}, ts time.Time) (int, error) {
 
+	switch h.inputType {
+	case common.InputTypeExcel:
+		host["import_from"] = common.HostAddMethodExcel
+	case common.InputTypeApiNewHostSync:
+		host["import_from"] = common.HostAddMethodAPI
+	}
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
 		host[common.BKCloudIDField] = h.cloudID
@@ -436,7 +446,7 @@ func (h *hostsInstance) AddHostInstance(index, appID, moduleID int, host map[str
 
 	addParams := make(map[string]interface{})
 	addParams[common.BKAppIDField] = appID
-	addParams[common.BKModuleIDField] = []int{moduleID}
+	addParams[common.BKModuleIDField] = moduleID
 	addModulesURL := h.hostAddr + "/host/v1/meta/hosts/modules/"
 	addParams[common.BKHostIDField] = hostID
 	innerIP := host[common.BKHostInnerIPField].(string)
