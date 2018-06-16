@@ -52,17 +52,20 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	if nil != err {
 		return err
 	}
+	dccommon.Discli = discli
 
 	snapcli, err := getSnapClient(config, "snap-redis")
 	if nil != err {
 		return err
 	}
 	dccommon.Snapcli = snapcli
+
 	rediscli, err := getSnapClient(config, "redis")
 	if nil != err {
 		return err
 	}
 	dccommon.Rediscli = rediscli
+
 	chanName := ""
 	for {
 		chanName, err = getChanName()

@@ -313,8 +313,11 @@ func (d *Discover) saveRunning() (ok bool) {
 }
 
 func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
+
 	defer atomic.AddInt64(&routeCnt, -1)
-	blog.Infof("handle %d num mesg, routines %d", len(msgs), atomic.LoadInt64(&routeCnt))
+
+	blog.Infof("handle %d num message, routines %d", len(msgs), atomic.LoadInt64(&routeCnt))
+
 	for index, msg := range msgs {
 		if msg == "" {
 			continue
