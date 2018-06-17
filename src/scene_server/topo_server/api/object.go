@@ -16,8 +16,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common"
-	"configcenter/src/common/basetype"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -52,9 +50,8 @@ func (cli *topoAPI) SearchObjectBatch(params types.LogicParams, pathParams, quer
 
 // CreateObject create a new object
 func (cli *topoAPI) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("CreateObject")
-	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 
+	rsp, err := cli.core.ObjectOperation().CreateObject(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -85,20 +82,15 @@ func (cli *topoAPI) UpdateObject(params types.LogicParams, pathParams, queryPara
 
 	cond := condition.CreateCondition()
 
-	id, err := basetype.NewType(pathParams("id"))
-
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id, error info is %s ", err.Error())
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
 
-	if !id.IsNumeric() {
-		blog.Errorf("[api-obj] the path params id(%s) is not int", pathParams("id"))
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
-	}
-
-	err = cli.core.ObjectOperation().UpdateObject(params, data, id.Int64(), cond)
-
+	err = cli.core.ObjectOperation().UpdateObject(params, data, id, cond)
 	return nil, err
 }
 
@@ -107,18 +99,14 @@ func (cli *topoAPI) DeleteObject(params types.LogicParams, pathParams, queryPara
 
 	cond := condition.CreateCondition()
 
-	id, err := basetype.NewType(pathParams("id"))
-
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id, error info is %s ", err.Error())
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
 
-	if !id.IsNumeric() {
-		blog.Errorf("[api-obj] the path params id(%s) is not int", pathParams("id"))
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
-	}
-
-	err = cli.core.ObjectOperation().DeleteObject(params, id.Int64(), cond)
+	err = cli.core.ObjectOperation().DeleteObject(params, id, cond)
 	return nil, err
 }

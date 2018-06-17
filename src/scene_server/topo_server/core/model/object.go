@@ -82,28 +82,38 @@ func (cli *object) GetInstNameFieldName() string {
 	}
 }
 
-func (cli *object) IsExists() ([]meta.Object, bool, error) {
-
+func (cli *object) search() ([]meta.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.obj.ObjectID)
 
 	condStr, err := cond.ToMapStr().ToJSON()
 	if nil != err {
-		return nil, false, err
+		return nil, err
 	}
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), condStr)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return nil, false, cli.params.Err.Error(rsp.Code)
+		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	return rsp.Data, 0 != len(rsp.Data), nil
+	return rsp.Data, nil
+
+}
+
+func (cli *object) IsExists() ([]meta.Object, bool, error) {
+
+	items, err := cli.search()
+	if nil != err {
+		return nil, false, err
+	}
+
+	return items, 0 != len(items), nil
 }
 
 func (cli *object) Create() error {
@@ -125,41 +135,33 @@ func (cli *object) Create() error {
 	return nil
 }
 
+func (cli *object) Delete() error {
+	return nil
+}
+
 func (cli *object) Update() error {
 
 	data := meta.SetValueToMapStrByTags(cli)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), data)
-
+	items, err := cli.search()
 	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+	for _, item := range items {
+
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, cli.params.Header.ToHeader(), data)
+
+		if nil != err {
+			blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
 	}
-
-	return nil
-}
-
-func (cli *object) Delete() error {
-
-	cond := condition.CreateCondition()
-	cond.Field(meta.ModelFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.ModelFieldObjCls).Eq(cli.obj.ObjCls)
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), cond.ToMapStr())
-
-	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
-	}
-
 	return nil
 }
 
@@ -188,7 +190,9 @@ func (cli *object) ToMapStr() (frtypes.MapStr, error) {
 
 func (cli *object) Save() error {
 
-	if cli.isNew {
+	if _, exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
 		return cli.Create()
 	}
 

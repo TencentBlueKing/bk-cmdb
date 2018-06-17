@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -53,31 +52,14 @@ func (cli *topoAPI) UpdateObjectGroup(params types.LogicParams, pathParams, quer
 
 	fmt.Println("UpdateObjectGroup")
 
-	cond := metadata.UpdateGroupCondition{}
+	cond := &metadata.UpdateGroupCondition{}
 
-	grpID, err := data.String(metadata.GroupFieldGroupID)
+	err := data.MarshalJSONInto(cond)
 	if nil != err {
-		blog.Errorf("[api-grp] failed to get group-id params from the path params, error info is  %s", err.Error())
 		return nil, err
 	}
 
-	grpIndex, err := data.Int(metadata.GroupFieldGroupIndex)
-	if nil != err {
-		blog.Errorf("[api-grp] failed to get group-index params from the path params, error info is  %s", err.Error())
-		return nil, err
-	}
-
-	grpName, err := data.String(metadata.GroupFieldGroupName)
-	if nil != err {
-		blog.Errorf("[api-grp] failed to get group-name params from the path params, error info is  %s", err.Error())
-		return nil, err
-	}
-
-	cond.Condition.ID = grpID
-	cond.Data.Index = int64(grpIndex)
-	cond.Data.Name = grpName
-
-	err = cli.core.GroupOperation().UpdateObjectGroup(params, &cond)
+	err = cli.core.GroupOperation().UpdateObjectGroup(params, cond)
 	if nil != err {
 		return nil, err
 	}

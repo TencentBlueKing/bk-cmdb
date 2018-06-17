@@ -30,7 +30,6 @@ var _ Classification = (*classification)(nil)
 // classification the model classification definition
 type classification struct {
 	cls       metadata.Classification
-	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
@@ -102,15 +101,25 @@ func (cli *classification) Create() error {
 
 func (cli *classification) Update() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), cli.cls.ID, cli.params.Header.ToHeader(), cli.cls.ToMapStr())
+	updateItems, err := cli.search()
 	if nil != err {
-		blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+	for _, item := range updateItems { // only one item
+
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header.ToHeader(), cli.cls.ToMapStr())
+		if nil != err {
+			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
+			return err
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
+
+		cli.cls = item
 	}
 
 	return nil
@@ -132,6 +141,7 @@ func (cli *classification) Delete() error {
 }
 
 func (cli *classification) search() ([]metadata.Classification, error) {
+
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
 
@@ -161,7 +171,9 @@ func (cli *classification) IsExists() (bool, error) {
 
 func (cli *classification) Save() error {
 
-	if cli.isNew {
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
 		return cli.Create()
 	}
 
