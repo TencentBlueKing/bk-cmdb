@@ -44,14 +44,14 @@ func (cli *topoAPI) initInst() {
 
 // CreateInst create a new inst
 func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("CreateInst")
+
 	// /inst/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objItems, err := cli.core.ObjectOperation().FindObject(params, cond)
 
@@ -64,13 +64,8 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 	data.Set(common.BKObjIDField, objID)
 
 	for _, item := range objItems {
-		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
-		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
-			return nil, err
-		}
 
-		err = setInst.Save()
+		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
 			return nil, err
@@ -95,9 +90,17 @@ func (cli *topoAPI) DeleteInst(params types.LogicParams, pathParams, queryParams
 		return nil, err
 	}
 
-	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
+	innerCond := condition.CreateCondition()
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("inst_id", pathParams("inst_id"))
+	id, err := paramPath.Int64("inst_id")
+	if nil != err {
+		blog.Errorf("[api-inst] failed to parse the path params id(%s), error info is %s ", pathParams("inst_id"), err.Error())
+		return nil, err
+	}
+	innerCond.Field(common.BKInstIDField).Eq(id)
 	for _, objItem := range objs {
-		err = cli.core.InstOperation().DeleteInst(params, objItem, cond)
+		err = cli.core.InstOperation().DeleteInst(params, objItem, innerCond)
 		if nil != err {
 			blog.Errorf("[api-inst] failed to delete the object(%s) inst (%s), error info is %s", objItem.GetID(), pathParams("inst_id"), err.Error())
 			return nil, err
@@ -124,9 +127,17 @@ func (cli *topoAPI) UpdateInst(params types.LogicParams, pathParams, queryParams
 		return nil, err
 	}
 
-	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
+	innerCond := condition.CreateCondition()
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("inst_id", pathParams("inst_id"))
+	id, err := paramPath.Int64("inst_id")
+	if nil != err {
+		blog.Errorf("[api-inst] failed to parse the path params id(%s), error info is %s ", pathParams("inst_id"), err.Error())
+		return nil, err
+	}
+	innerCond.Field(common.BKInstIDField).Eq(id)
 	for _, objItem := range objs {
-		err = cli.core.InstOperation().UpdateInst(params, data, objItem, cond)
+		err = cli.core.InstOperation().UpdateInst(params, data, objItem, innerCond)
 		if nil != err {
 			blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", objItem.GetID(), pathParams("inst_id"), data, err.Error())
 			return nil, err
@@ -143,6 +154,7 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 
 	objID := pathParams("obj_id")
 
+	// query the objects
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
 	cond.Field(common.BKObjIDField).Eq(objID)
@@ -153,14 +165,31 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 		return nil, err
 	}
 
+	// construct the query inst condition
 	count := 0
 	instRst := make([]inst.Inst, 0)
 	queryCond := &metadata.QueryInput{}
+
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
+	innerQueryCond, err := frtypes.NewFromInterface(queryCond.Condition)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to parse the condition, %s", err.Error())
+		return nil, err
+	}
+
+	if err := cond.Parse(innerQueryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the condition(%#v)", innerQueryCond)
+		return nil, err
+	}
+	queryCond.Condition = cond.ToMapStr()
+
+	fmt.Println("the query condition:", queryCond)
+
+	// query insts
 	for _, objItem := range objs {
 
 		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)

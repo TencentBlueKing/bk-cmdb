@@ -54,19 +54,7 @@ func (cli *topoAPI) CreateSet(params types.LogicParams, pathParams, queryParams 
 	data.Set(common.BKAppIDField, pathParams("app_id"))
 
 	for _, item := range objItems {
-		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
-		if nil != err {
-			blog.Errorf("failed to create a new set, %s", err.Error())
-			return nil, err
-		}
-
-		err = setInst.Save()
-		if nil != err {
-			blog.Errorf("failed to create a new set, %s", err.Error())
-			return nil, err
-		}
-
-		return setInst.ToMapStr() // only one item
+		return cli.core.InstOperation().CreateInst(params, item, data) // should only item
 	}
 
 	return nil, nil

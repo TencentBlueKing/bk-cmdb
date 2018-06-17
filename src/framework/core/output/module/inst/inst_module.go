@@ -173,6 +173,7 @@ func (cli *module) Update() error {
 		if nil != err {
 			return err
 		}
+		cli.datas.Set(ModuleID, instID)
 
 	}
 	return nil

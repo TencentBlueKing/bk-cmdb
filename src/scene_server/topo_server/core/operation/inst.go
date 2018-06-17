@@ -49,11 +49,13 @@ func NewInstOperation(client apimachinery.ClientSetInterface, modelFactory model
 }
 
 func (cli *commonInst) CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
+
+	blog.Infof("the data inst:%#v", data)
 	item := cli.instFactory.CreateInst(params, obj)
 
 	item.SetValues(data)
 
-	err := item.Save()
+	err := item.Create()
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 		return nil, err
@@ -64,7 +66,7 @@ func (cli *commonInst) CreateInst(params types.LogicParams, obj model.Object, da
 
 func (cli *commonInst) DeleteInst(params types.LogicParams, obj model.Object, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetID(), params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -81,7 +83,7 @@ func (cli *commonInst) DeleteInst(params types.LogicParams, obj model.Object, co
 
 func (cli *commonInst) FindInst(params types.LogicParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetID(), params.Header.ToHeader(), cond)
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -98,7 +100,11 @@ func (cli *commonInst) FindInst(params types.LogicParams, obj model.Object, cond
 
 func (cli *commonInst) UpdateInst(params types.LogicParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetID(), params.Header.ToHeader(), cond.ToMapStr())
+	inputParams := frtypes.New()
+	inputParams.Set("data", data)
+	inputParams.Set("condition", cond.ToMapStr())
+	blog.Infof("data condition:%#v", inputParams)
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), inputParams)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
