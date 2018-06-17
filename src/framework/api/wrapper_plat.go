@@ -14,6 +14,7 @@ package api
 
 import (
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // PlatIteratorWrapper the plat iterator wrapper
@@ -66,6 +67,11 @@ func (cli *PlatWrapper) Update() error {
 // Save save the data
 func (cli *PlatWrapper) Save() error {
 	return cli.plat.Save()
+}
+
+// GetModel get the model for the plat
+func (cli *PlatWrapper) GetModel() model.Model {
+	return cli.plat.GetModel()
 }
 
 // SetSupplierAccount set the supplier account code of the set

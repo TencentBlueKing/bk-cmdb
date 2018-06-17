@@ -172,6 +172,7 @@ func (cli *set) Update() error {
 		if nil != err {
 			return err
 		}
+		cli.datas.Set(SetID, instID)
 
 	}
 	return nil

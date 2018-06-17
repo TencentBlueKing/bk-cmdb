@@ -26,6 +26,27 @@ import (
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
+// New create a new MapStr instance
+func New() MapStr {
+	return MapStr{}
+}
+
+// NewFromInterface create a mapstr instance from the interface
+func NewFromInterface(data interface{}) (MapStr, error) {
+
+	switch tmp := data.(type) {
+	default:
+		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
+	case nil:
+		return MapStr{}, nil
+	case *map[string]interface{}:
+		return MapStr(*tmp), nil
+
+	case map[string]interface{}:
+		return MapStr(tmp), nil
+	}
+}
+
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
