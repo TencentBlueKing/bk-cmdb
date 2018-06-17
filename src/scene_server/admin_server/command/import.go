@@ -2,39 +2,32 @@ package command
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/mgo.v2"
 	"os"
 	"sort"
 	"strings"
 )
 
-func importer(db storage.DI, opt *option) error {
+func importBKBiz(db storage.DI, opt *option) error {
+
 	file, err := os.OpenFile(opt.position, os.O_RDONLY, os.ModePerm)
 	if nil != err {
 		return err
 	}
 	defer file.Close()
 
-	topo := new(Topo)
-	json.NewDecoder(file).Decode(topo)
+	tar := new(Topo)
+	json.NewDecoder(file).Decode(tar)
 	if nil != err {
 		return err
 	}
-	err = importBKBiz(db, opt, topo)
-	if nil != err {
-		return fmt.Errorf("import topo error: %s", err.Error())
-	}
 
-	return nil
-}
-
-func importBKBiz(db storage.DI, opt *option, tar *Topo) error {
 	cur, err := getBKTopo(db, opt)
 	if err != nil {
 		return fmt.Errorf("get src topo faile %s", err.Error())
@@ -46,65 +39,65 @@ func importBKBiz(db storage.DI, opt *option, tar *Topo) error {
 			strings.Join(tar.Mainline, "->"), strings.Join(cur.Mainline, "->"))
 	}
 
-	modelAttributes, modelKeys, err := getModelAttributes(db, opt, cur)
-	if err != nil {
-		return err
-	}
+	// walk blueking biz and get difference
+	ipt := newImporter(db, opt)
+	ipt.walk(true, tar.Topo)
 
-	screate, supdate, sdelete := compareTopo(cur, tar, modelAttributes, modelKeys)
-	sort.SliceStable(screate, func(i, j int) bool {
-		return screate[i].nodekey < screate[j].nodekey
+	// walk to create new node
+	tar.Topo.walk(func(node *Node) error {
+		if node.mark == "create" {
+			fmt.Printf("\033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+		}
+		return nil
 	})
-	sort.SliceStable(supdate, func(i, j int) bool {
-		return supdate[i].nodekey < supdate[j].nodekey
-	})
-	sort.SliceStable(sdelete, func(i, j int) bool {
-		return sdelete[i].nodekey > sdelete[j].nodekey
-	})
-	for _, node := range screate {
-		tablename := commondata.GetInstTableName(node.ObjID)
-		id, err := db.GetIncID(tablename)
-		if nil != err {
-			return fmt.Errorf("get increase id for  %s error: %s", tablename, err.Error())
+
+	// walk to delete unuse node
+	for objID, sdeletes := range ipt.sdelete {
+		for _, sdelete := range sdeletes {
+
+			instID, err := getInt64(sdelete[instdata.GetIDNameByType(objID)])
+			if nil != err {
+				return err
+			}
+
+			cur.Topo.walk(func(node *Node) error {
+				nodeID, err := node.getInstID()
+				if nil != err {
+					return err
+				}
+				if node.ObjID == objID && nodeID == instID {
+					// fmt.Printf("delete %s %+v\n", node.ObjID, node.Data)
+					node.walk(func(node *Node) error {
+						fmt.Printf("\033[31mdelete %s parent %s:%d,  %+v\033[0m\n", node.ObjID, objID, instID, node.Data)
+						// nodeID, err := node.getInstID()
+						// if nil != err {
+						// 	return err
+						// }
+						// deleteconition := map[string]interface{}{
+						// 	instdata.GetIDNameByType(node.ObjID): nodeID,
+						// }
+						// db.DelByCondition(commondata.GetInstTableName(objID), deleteconition)
+						return nil
+					})
+					// deleteconition := map[string]interface{}{
+					// 	instdata.GetIDNameByType(objID): nodeID,
+					// }
+					// db.DelByCondition(commondata.GetInstTableName(objID), deleteconition)
+					return fmt.Errorf("break")
+				}
+				return nil
+			})
+
 		}
-		idfield := instdata.GetIDNameByType(node.ObjID)
-		node.Data[idfield] = id
-		for _, child := range node.Childs {
-			child.Data["bk_parent_id"] = id
-		}
-		_, err = db.Insert(tablename, node.Data)
-		if nil != err {
-			return fmt.Errorf("insert date to %s error: %s", tablename, err.Error())
-		}
-		blog.Infof("inserted %s to data: %+v", node.ObjID, node.Data)
-	}
-	for _, node := range supdate {
-		tablename := commondata.GetInstTableName(node.ObjID)
-		condition := getModifyCondition(node.Data, modelKeys[node.ObjID])
-		updatedate := getUpdateData(node)
-		err = db.UpdateByCondition(tablename, updatedate, condition)
-		if nil != err {
-			return fmt.Errorf("insert date to %s error: %s", tablename, err.Error())
-		}
-		blog.Infof("updated %s by %+v to data: %+v", node.ObjID, condition, updatedate)
-	}
-	for _, node := range sdelete {
-		tablename := commondata.GetInstTableName(node.ObjID)
-		condition := getModifyCondition(node.Data, modelKeys[node.ObjID])
-		err = db.DelByCondition(tablename, condition)
-		if nil != err {
-			return fmt.Errorf("insert date to %s error: %s", tablename, err.Error())
-		}
-		blog.Infof("deleted %s to data: %+v", node.ObjID, condition)
 	}
 
 	return nil
 }
 
-func getModifyCondition(n map[string]interface{}, keys []string) map[string]interface{} {
+func getModifyCondition(data map[string]interface{}, keys []string) map[string]interface{} {
 	condition := map[string]interface{}{}
 	for _, key := range keys {
-		condition[key] = n[key]
+		condition[key] = data[key]
 	}
 	return condition
 }
@@ -144,89 +137,190 @@ func compareSlice(a, b []string) bool {
 	return true
 }
 
-// compareTopo compare a & b topo and returns there difference
-func compareTopo(cur, tar *Topo, modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string) (screate, supdate, sdelete []*Node) {
-	tarExp := map[string]map[string]*Node{}
-	curExp := map[string]map[string]*Node{}
-	tar.Topo.expand("", modelKeys, tarExp)
-	cur.Topo.expand("", modelKeys, curExp)
-
-	for tarparent, tarchilds := range tarExp {
-		curchilds := curExp[tarparent]
-		for tarchildKey, tarchildNode := range tarchilds {
-			if curchilds == nil {
-				screate = append(screate, tarchildNode)
-				continue
-			}
-			curchildNode := curchilds[tarchildKey]
-			if curchildNode == nil {
-				screate = append(screate, tarchildNode)
-			} else {
-				supdate = append(supdate, tarchildNode)
-			}
-		}
-	}
-
-	for curparent, curchilds := range curExp {
-		tarchilds := tarExp[curparent]
-		for curchildKey, curchildNode := range curchilds {
-			if tarchilds == nil {
-				sdelete = append(sdelete, curchildNode)
-				continue
-			}
-			tarchildNode := tarchilds[curchildKey]
-			if tarchildNode == nil {
-				sdelete = append(sdelete, curchildNode)
-			}
-
-		}
-	}
-
-	return
-}
-
-func restoreIDs(tar *Node, modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string) {
-
-}
-
-func restoreID(db storage.DI, opt *option, node *Node, help *idhelper) error {
-	switch node.ObjID {
-	case "biz":
-		condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
-		app := map[string]interface{}{}
-		err := db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &app)
-		if nil != err {
-			return fmt.Errorf("get biz of %+v error: %s", condition, err.Error())
-		}
-		bizID, err := getInt64(app[common.BKAppIDField])
-		if nil != err {
-			return fmt.Errorf("get bizID faile, data: %+v, error: %s", app, err.Error())
-		}
-		help.bizID = bizID
-		node.Data[common.BKAppIDField] = bizID
-	case "set":
-		condition := getModifyCondition(node.Data, []string{common.BKSetNameField})
-		set := map[string]interface{}{}
-		err := db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &set)
-		if nil != err {
-			return fmt.Errorf("get biz of %+v error: %s", condition, err.Error())
-		}
-		setID, err := getInt64(set[common.BKSetIDField])
-		if nil != err {
-			return fmt.Errorf("get setID faile, data: %+v, error: %s", set, err.Error())
-		}
-		node.Data[common.BKAppIDField] = setID
-
-	case "module":
-
-	}
-}
-
-type idhelper struct {
+type importer struct {
+	screate  map[string][]*Node
+	supdate  map[string][]*Node
+	sdelete  map[string][]map[string]interface{}
 	bizID    int64
 	setID    int64
-	module   int64
 	parentID int64
+
+	db  storage.DI
+	opt *option
+}
+
+func newImporter(db storage.DI, opt *option) *importer {
+	return &importer{
+		screate:  map[string][]*Node{},
+		supdate:  map[string][]*Node{},
+		sdelete:  map[string][]map[string]interface{}{},
+		bizID:    0,
+		setID:    0,
+		parentID: 0,
+
+		db:  db,
+		opt: opt,
+	}
+}
+
+func (ipt *importer) walk(includeRoot bool, node *Node) error {
+	if node.mark != "" {
+		return nil
+	}
+	if includeRoot {
+		switch node.ObjID {
+		case "biz":
+			condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
+			app := map[string]interface{}{}
+			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &app)
+			if nil != err {
+				return fmt.Errorf("get blueking business by %+v error: %s", condition, err.Error())
+			}
+			bizID, err := getInt64(app[common.BKAppIDField])
+			if nil != err {
+				return fmt.Errorf("get blueking bizID faile, data: %+v, error: %s", app, err.Error())
+			}
+			node.Data[common.BKAppIDField] = bizID
+			ipt.bizID = bizID
+			ipt.parentID = bizID
+			node.mark = "update"
+		case "set":
+			node.Data[common.BKAppIDField] = ipt.bizID
+			node.Data["bk_parent_id"] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, "bk_parent_id"})
+			set := map[string]interface{}{}
+			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &set)
+			if nil != err && mgo.ErrNotFound != err {
+				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
+			}
+			if mgo.ErrNotFound == err {
+				node.mark = "create"
+				nid, err := ipt.db.GetIncID(node.ObjID)
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[common.BKSetIDField] = nid
+				ipt.parentID = nid
+				ipt.setID = nid
+			} else {
+				node.mark = "update"
+				setID, err := getInt64(set[common.BKSetIDField])
+				if nil != err {
+					return fmt.Errorf("get setID faile, data: %+v, error: %s", set, err.Error())
+				}
+				node.Data[common.BKSetIDField] = setID
+				ipt.parentID = setID
+				ipt.setID = setID
+			}
+		case "module":
+			node.Data[common.BKAppIDField] = ipt.bizID
+			node.Data[common.BKSetIDField] = ipt.setID
+			node.Data["bk_parent_id"] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, "bk_parent_id"})
+			module := map[string]interface{}{}
+			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &module)
+			if nil != err && mgo.ErrNotFound != err {
+				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
+			}
+			if mgo.ErrNotFound == err {
+				node.mark = "create"
+				nid, err := ipt.db.GetIncID(node.ObjID)
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[common.BKModuleIDField] = nid
+			} else {
+				node.mark = "update"
+				moduleID, err := getInt64(module[common.BKModuleIDField])
+				if nil != err {
+					return fmt.Errorf("get moduleID faile, data: %+v, error: %s", module, err.Error())
+				}
+				node.Data[common.BKModuleIDField] = moduleID
+			}
+		default:
+			node.Data["bk_parent_id"] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), "bk_parent_id"})
+			condition[common.BKObjIDField] = node.ObjID
+			inst := map[string]interface{}{}
+			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &inst)
+			if nil != err && mgo.ErrNotFound != err {
+				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
+			}
+			if mgo.ErrNotFound == err {
+				node.mark = "create"
+				nid, err := ipt.db.GetIncID(node.ObjID)
+				if nil != err {
+					return fmt.Errorf("GetIncID error: %s", err.Error())
+				}
+				node.Data[instdata.GetIDNameByType(node.ObjID)] = nid
+				ipt.parentID = nid
+			} else {
+				node.mark = "update"
+				instID, err := getInt64(inst[instdata.GetIDNameByType(node.ObjID)])
+				if nil != err {
+					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
+				}
+				node.Data[instdata.GetIDNameByType(node.ObjID)] = instID
+				ipt.parentID = instID
+			}
+		}
+
+		// fetch datas that should delete
+		if node.ObjID != "module" {
+			childtablename := commondata.GetInstTableName(node.getChildObjID())
+			instID, _ := node.getInstID()
+			childCondition := map[string]interface{}{
+				"bk_parent_id": instID,
+				node.getChilDInstNameField(): map[string]interface{}{
+					"$nin": node.getChilDInstNames(),
+				},
+			}
+			switch node.getChildObjID() {
+			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+			default:
+				childCondition[common.BKObjIDField] = node.getChildObjID()
+			}
+			shouldDelete := []map[string]interface{}{}
+			err := ipt.db.GetMutilByCondition(childtablename, nil, childCondition, &shouldDelete, "", 0, 0)
+			if nil != err {
+				return fmt.Errorf("get child of %+v error: %s", childCondition, err.Error())
+			}
+			if len(shouldDelete) > 0 {
+				ipt.sdelete[node.getChildObjID()] = append(ipt.sdelete[node.getChildObjID()], shouldDelete...)
+			}
+		}
+
+		if node.mark == "create" {
+			ipt.screate[node.getChildObjID()] = append(ipt.screate[node.getChildObjID()], node)
+			parentID := ipt.parentID
+			bizID := ipt.bizID
+			setID := ipt.setID
+			err := ipt.walk(false, node)
+			if nil != err {
+				return nil
+			}
+			ipt.parentID = parentID
+			ipt.bizID = bizID
+			ipt.setID = setID
+		}
+		if node.mark == "update" {
+			ipt.supdate[node.getChildObjID()] = append(ipt.supdate[node.getChildObjID()], node)
+		}
+	}
+
+	parentID := ipt.parentID
+	bizID := ipt.bizID
+	setID := ipt.setID
+	for _, child := range node.Childs {
+		if err := ipt.walk(true, child); nil != err {
+			return err
+		}
+		ipt.parentID = parentID
+		ipt.bizID = bizID
+		ipt.setID = setID
+	}
+
+	return nil
 }
 
 // getModelAttributes returns the model attributes

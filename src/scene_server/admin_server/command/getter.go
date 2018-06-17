@@ -58,6 +58,12 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 		"bk_parent_id": instID,
 	}
 
+	switch asst.ObjectID {
+	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+	default:
+		condition[common.BKObjIDField] = asst.ObjectID
+	}
+
 	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
 	tablename := commondata.GetInstTableName(asst.ObjectID)
