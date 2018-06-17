@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -35,8 +37,18 @@ func (cli *topoAPI) initAssociation() {
 
 // CreateMainLineObject create a new object in the main line topo
 func (cli *topoAPI) CreateMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	fmt.Println("serch main line object ")
-	return nil, nil
+
+	asstData := &metadata.Association{}
+	_, err := asstData.Parse(data)
+	if nil != err {
+		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	_, err = cli.core.AssociationOperation().CreateAssociation(params, asstData)
+	return nil, err
 }
 
 // DeleteMainLineObject delete a object int the main line topo

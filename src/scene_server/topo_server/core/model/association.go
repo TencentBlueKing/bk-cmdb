@@ -13,20 +13,24 @@
 package model
 
 import (
+	"encoding/json"
+
 	"configcenter/src/apimachinery"
 	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Association = (*association)(nil)
 
 type association struct {
+	asst      metadata.Association
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
 }
 
 func (cli *association) MarshalJSON() ([]byte, error) {
-	return nil, nil
+	return json.Marshal(cli.asst)
 }
 
 func (cli *association) GetType() AssociationType {
@@ -42,11 +46,12 @@ func (cli *association) GetTopo(obj Object) (Topo, error) {
 }
 
 func (cli *association) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+	rst := metadata.SetValueToMapStrByTags(&cli.asst)
+	return rst, nil
 }
 
-func (cli *association) Parse(data frtypes.MapStr) error {
-	return nil
+func (cli *association) Parse(data frtypes.MapStr) (*metadata.Association, error) {
+	return cli.asst.Parse(data)
 }
 
 func (cli *association) Save() error {
