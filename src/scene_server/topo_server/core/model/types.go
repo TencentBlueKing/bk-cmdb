@@ -221,6 +221,7 @@ type Object interface {
 
 	GetInstIDFieldName() string
 	GetInstNameFieldName() string
+	GetObjectType() string
 }
 
 // Factory used to create object  classification attribute etd.

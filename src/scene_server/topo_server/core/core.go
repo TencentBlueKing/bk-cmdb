@@ -43,6 +43,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 	return &core{
+		inst:           operation.NewInstOperation(client, targetModel, targetInst),
 		association:    operation.NewAssociationOperation(client, targetModel, targetInst),
 		attribute:      operation.NewAttributeOperation(client, targetModel, targetInst),
 		classification: operation.NewClassificationOperation(client, targetModel, targetInst),

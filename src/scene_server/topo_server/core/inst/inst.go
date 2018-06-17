@@ -14,6 +14,7 @@ package inst
 
 import (
 	"context"
+	"encoding/json"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -32,9 +33,15 @@ type inst struct {
 	target    model.Object
 }
 
+func (cli *inst) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.datas)
+}
+
 func (cli *inst) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), cli.datas)
+	blog.Infof("the data:%#v", cli.datas)
+
+	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header.ToHeader(), cli.datas)
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
 		return err
