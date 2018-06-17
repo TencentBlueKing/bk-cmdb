@@ -57,7 +57,7 @@ func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (
 		return nil, err
 	}
 
-	err = obj.Save()
+	err = obj.Create()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to save the data(%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -101,7 +101,7 @@ func (cli *object) FindObject(params types.LogicParams, cond condition.Condition
 
 func (cli *object) UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), id, params.Header.ToHeader(), data)
 
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())

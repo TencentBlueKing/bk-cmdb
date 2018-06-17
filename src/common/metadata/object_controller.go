@@ -66,7 +66,9 @@ type AttributeWrapper struct {
 // UpdateGroupCondition update group condition struct
 type UpdateGroupCondition struct {
 	Condition struct {
-		ID string `json:"bk_group_id"`
+		ID      int64  `json:"id,omitempty"`
+		GroupID string `json:"bk_group_id"`
+		ObjID   string `json:"bk_obj_id"`
 	} `json:"condition"`
 
 	Data struct {

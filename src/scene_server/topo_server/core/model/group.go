@@ -59,20 +59,31 @@ func (cli *group) Create() error {
 
 func (cli *group) Update() error {
 
-	cond := &metadata.UpdateGroupCondition{}
-	cond.Condition.ID = cli.grp.GroupID
-	cond.Data.Index = cli.grp.GroupIndex
-	cond.Data.Name = cli.grp.GroupName
-
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), cond)
+	grps, err := cli.search()
 	if nil != err {
-		blog.Errorf("[model-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp]failed to update the group(%s), error info is %s", cli.grp.GroupID, err.Error())
-		return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+	for _, grpItem := range grps { // only one item
+
+		cond := &metadata.UpdateGroupCondition{}
+		cond.Condition.GroupID = grpItem.GroupID
+		cond.Data.Index = cli.grp.GroupIndex
+		cond.Data.Name = cli.grp.GroupName
+
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), cond)
+		if nil != err {
+			blog.Errorf("[model-grp]failed to request object controller, error info is %s", err.Error())
+			return err
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-grp]failed to update the group(%s), error info is %s", grpItem.GroupID, err.Error())
+			return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+		}
+
+		cli.grp.ID = grpItem.ID
+
 	}
 	return nil
 }
@@ -155,11 +166,33 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 	return rstItems, nil
 }
 
-func (cli *group) Save() error {
-	dataMapStr := metadata.SetValueToMapStrByTags(&cli.grp)
+func (cli *group) search() ([]metadata.Group, error) {
 
-	_ = dataMapStr
-	return nil
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, err
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	return rsp.Data, nil
+}
+func (cli *group) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
+		return cli.Create()
+	}
+
+	return cli.Update()
 }
 
 func (cli *group) CreateAttribute() Attribute {

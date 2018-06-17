@@ -60,7 +60,7 @@ func (cli *group) CreateObjectGroup(params types.LogicParams, data frtypes.MapSt
 		return nil, err
 	}
 
-	err = grp.Save()
+	err = grp.Create()
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to save the group data (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -73,13 +73,13 @@ func (cli *group) DeleteObjectGroup(params types.LogicParams, groupID string) er
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header.ToHeader())
 	if nil != err {
-		blog.Errorf("[operation-grp] failed to request the object conroller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
+		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-grp] failed to delete the group by the groupid (%s), error info is %s", groupID, err.Error())
-		return params.Err.Error(rsp.Code)
+		blog.Errorf("[operation-grp]failed to delte the group(%s), error info is %s", groupID, rsp.ErrMsg)
+		return params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (cli *group) FindObjectGroup(params types.LogicParams, cond condition.Condi
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return nil, nil
+	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
 }
 
 func (cli *group) FindGroupByObject(params types.LogicParams, objID string, cond condition.Condition) ([]model.Group, error) {
@@ -114,7 +114,8 @@ func (cli *group) FindGroupByObject(params types.LogicParams, objID string, cond
 		blog.Errorf("[operation-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", objID, cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
-	return nil, nil
+
+	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
 }
 func (cli *group) UpdateObjectGroup(params types.LogicParams, cond *metadata.UpdateGroupCondition) error {
 
