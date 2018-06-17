@@ -10,6 +10,7 @@
 
 <template lang="html">
    <div class="host-resource-wrapper clearfix">
+        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -167,6 +168,7 @@
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
     import vDeleteHistory from '@/components/history/delete'
+    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     export default {
         mixins: [Authority],
         data () {
@@ -533,7 +535,8 @@
                 if (isAllCheck) {
                     this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
-                    const params = this.objId === 'biz' ? {fields: [idKey]} : {fields: {}}
+                    let params = this.$deepClone(this.axiosConfig.params)
+                    params.page = {}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
                     this.$axios.post(this.axiosConfig.url, params).then(res => {
                         if (res.result) {
@@ -625,13 +628,17 @@
                     method = 'delete'
                 }
                 try {
-                    let res = await this.$axios({
+                    const res = await this.$axios({
                         method: method,
                         url: url
                     })
-                    this.setTablePage(1)
-                    this.closeObjectSlider()
-                    this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    if (res.result) {
+                        this.setTablePage(1)
+                        this.closeObjectSlider()
+                        this.table.chooseId = this.table.chooseId.filter(id => id !== (this.objId === 'biz' ? bizId : instId))
+                    } else {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
@@ -713,7 +720,8 @@
             vConfigField,
             vDeleteHistory,
             vAssociationList,
-            vNewAssociation
+            vNewAssociation,
+            vBreadcrumb
         }
     }
 </script>
@@ -724,6 +732,9 @@
     $primaryColor: #f9f9f9; //主要
     $fnMainColor: #bec6de; //文案主要颜色
     $primaryHoverColor: #6b7baa; //鼠标移上 主要颜色
+    .breadcrumbs{
+        padding: 8px 20px;
+    }
     .main-btn{  //主要按钮
         background: $primaryHoverColor;
         &:hover{
@@ -807,7 +818,7 @@
             margin: 0;
         }
         .bottom-contain{
-            padding:20px 20px 0 20px;
+            padding:0 20px;
         }
     }
     .bk-button-componey{
