@@ -126,7 +126,7 @@ func (cli *object) search(objID string) ([]meta.Object, error) {
 
 }
 
-func (cli *object) GetMainLineParentObject() (Object, error) {
+func (cli *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
 	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
@@ -156,7 +156,7 @@ func (cli *object) GetMainLineParentObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (cli *object) GetMainLineChildObject() (Object, error) {
+func (cli *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
@@ -240,7 +240,7 @@ func (cli *object) GetChildObject() ([]Object, error) {
 	return objItems, nil
 }
 
-func (cli *object) SetMainLineParentObject(objID string) error {
+func (cli *object) SetMainlineParentObject(objID string) error {
 
 	cond := condition.CreateCondition()
 
@@ -302,7 +302,7 @@ func (cli *object) SetMainLineParentObject(objID string) error {
 
 	return nil
 }
-func (cli *object) SetMainLineChildObject(objID string) error {
+func (cli *object) SetMainlineChildObject(objID string) error {
 
 	cond := condition.CreateCondition()
 

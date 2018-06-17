@@ -185,14 +185,14 @@ type Object interface {
 
 	Parse(data frtypes.MapStr) (*metadata.Object, error)
 
-	GetMainLineParentObject() (Object, error)
-	GetMainLineChildObject() (Object, error)
+	GetMainlineParentObject() (Object, error)
+	GetMainlineChildObject() (Object, error)
 
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
-	SetMainLineParentObject(objID string) error
-	SetMainLineChildObject(objID string) error
+	SetMainlineParentObject(objID string) error
+	SetMainlineChildObject(objID string) error
 
 	CreateGroup() Group
 	CreateAttribute() Attribute
