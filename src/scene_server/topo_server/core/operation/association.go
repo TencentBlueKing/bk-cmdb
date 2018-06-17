@@ -16,6 +16,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -23,7 +24,7 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error)
+	CreateAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
 	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
 	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
 }
@@ -43,7 +44,15 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface, modelFactor
 	}
 }
 
-func (cli *association) CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error) {
+func (cli *association) CreateAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error) {
+
+	// check the association
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
+	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(data.ObjectAttID)
+
+	//cli.clientSet.ObjectController().Meta().SelectObjectAssociations()
+
 	return nil, nil
 }
 func (cli *association) DeleteAssociation(params types.LogicParams, cond condition.Condition) error {

@@ -47,11 +47,10 @@ type Topo interface {
 
 // Association association operation interface declaration
 type Association interface {
-	Parse(data frtypes.MapStr) error
+	Parse(data frtypes.MapStr) (*metadata.Association, error)
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
 	GetTopo(obj Object) (Topo, error)
-
 	ToMapStr() (frtypes.MapStr, error)
 }
 
