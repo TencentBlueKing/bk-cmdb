@@ -58,19 +58,7 @@ func (cli *topoAPI) CreateBusiness(params types.LogicParams, pathParams, queryPa
 	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
 
 	for _, item := range objItems {
-		setInst, err := cli.core.InstOperation().CreateInst(params, item, data)
-		if nil != err {
-			blog.Errorf("failed to create a new business, %s", err.Error())
-			return nil, err
-		}
-
-		err = setInst.Save()
-		if nil != err {
-			blog.Errorf("failed to create a new business, %s", err.Error())
-			return nil, err
-		}
-
-		return setInst.ToMapStr() // only one item
+		return cli.core.InstOperation().CreateInst(params, item, data) // should only one item
 	}
 
 	return nil, nil

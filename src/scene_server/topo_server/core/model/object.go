@@ -82,6 +82,25 @@ func (cli *object) GetInstNameFieldName() string {
 	}
 }
 
+func (cli *object) GetObjectType() string {
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return cli.obj.ObjectID
+	case common.BKInnerObjIDSet:
+		return cli.obj.ObjectID
+	case common.BKInnerObjIDModule:
+		return cli.obj.ObjectID
+	case common.BKInnerObjIDHost:
+		return cli.obj.ObjectID
+	case common.BKInnerObjIDProc:
+		return cli.obj.ObjectID
+	case common.BKInnerObjIDPlat:
+		return cli.obj.ObjectID
+	default:
+		return common.BKINnerObjIDObject
+	}
+}
+
 func (cli *object) search() ([]meta.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(cli.obj.ObjectID)
@@ -136,6 +155,17 @@ func (cli *object) Create() error {
 }
 
 func (cli *object) Delete() error {
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), nil)
+
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[opration-obj] failed to delete the object by the id(%d)", cli.obj.ID)
+		return cli.params.Err.Error(rsp.Code)
+	}
 	return nil
 }
 

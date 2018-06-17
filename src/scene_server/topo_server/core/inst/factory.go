@@ -34,6 +34,7 @@ func CreateInst(params types.LogicParams, clientSet apimachinery.ClientSetInterf
 			clientSet: clientSet,
 			params:    params,
 			target:    obj,
+			datas:     mapstr.New(),
 		}
 		tmpInst.SetValues(item)
 		results = append(results, tmpInst)
@@ -47,7 +48,7 @@ type factory struct {
 
 func (cli *factory) CreateInst(params types.LogicParams, obj model.Object) Inst {
 	return &inst{
-
+		datas:     mapstr.New(),
 		params:    params,
 		clientSet: cli.clientSet,
 		target:    obj,
