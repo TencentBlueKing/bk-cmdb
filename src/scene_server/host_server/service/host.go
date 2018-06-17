@@ -24,7 +24,8 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/scene_server/host_server/logics"
+	"configcenter/src/source_controller/api/metadata"
 	"github.com/emicklei/go-restful"
 )
 
@@ -65,10 +66,10 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 
 	condition := make(map[string]interface{})
 	condition["condition"] = NewOperation().WithDefaultField(1).WithOwnerID(ownerID).Data()
-	query := commondata.ObjQueryInput{Condition: condition}
+	query := meta.QueryInput{Condition: condition}
 	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("delete host in batch, but search instance failed, err: %v, result err: %v", err, result.Message)
+		blog.Errorf("delete host in batch, but search instance failed, err: %v, result err: %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPReadBodyFailed)})
 	}
 
@@ -108,6 +109,13 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 
 	var logConents []auditoplog.AuditLogExt
 	for _, hostID := range iHostIDArr {
+		preHostLog, ip, err := s.GetHostInstanceDetails(ownerID, strconv.FormatInt(hostID, 10), req.Request.Header)
+		if err != nil {
+			blog.Errorf("get pre host snap failed, err: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+
 		opt := meta.ModuleHostConfigParams{
 			HostID:        hostID,
 			ApplicationID: appID,
@@ -118,34 +126,113 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		
-        delOp := NewOperation().WithInstID(hostID).WithObjID(common.BKInnerObjIDHost).Data()      
-        delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, req.Request.Header, delOp)
-        if err != nil || (err == nil && !delResult.Result) {
-            blog.Errorf("delete host in batch, but delete object failed, err: %v, result err: %v", err, result.ErrMsg)
-            resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
-            resp.WriteHeaderAndJson()
-            return
-        }
-		
-		// logObj := logics.NewHostLog(req, ownerID, strHostID, hostCtrl, objCtrl, hostFields)
-		// strHostID := fmt.Sprintf("%d", hostID)
-		// logContent, _ := logObj.GetHostLog(strHostID, true)
-        // 
-		// logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: logObj.GetInnerIP()})
+
+		delOp := NewOperation().WithInstID(hostID).WithObjID(common.BKInnerObjIDHost).Data()
+		delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, req.Request.Header, delOp)
+		if err != nil || (err == nil && !delResult.Result) {
+			blog.Errorf("delete host in batch, but delete object failed, err: %v, result err: %v", err, delResult.ErrMsg)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+		ctnt := metadata.Content{
+			PreData: preHostLog,
+			CurData: nil,
+			Headers: hostFields,
+		}
+		logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: ctnt, ExtKey: ip})
 	}
 
+	hostCond := make(map[string]interface{})
+	condInput := make(map[string]interface{})
+	hostCond[common.BKDBIN] = iHostIDArr
+	condInput[common.BKHostIDField] = hostCond
+	delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDHost, req.Request.Header, condInput)
+	if err != nil || (err == nil && !delResult.Result) {
+		blog.Errorf("delete host in batch, but delete host failed, err: %v, result err: %v", err, delResult.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+		return
+	}
+
+	auditResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, req.Request.Header, logConents)
+	if err != nil || (err == nil && !auditResult.Result) {
+		blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v", err, auditResult.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrAuditSaveLogFaile)})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func (s *Service) GetHostDetailByID(req *restful.Request, resp *restful.Response) {
+func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	hostID := req.PathParameter("bk_host_id")
+	ownerID := util.GetOwnerID(pheader)
 
+	details, _, err := s.GetHostInstanceDetails(ownerID, hostID, pheader)
+	if err != nil {
+		blog.Errorf("get host defails failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+	}
+
+	attribute, err := s.GetHostAttributes(ownerID, pheader)
+	if err != nil {
+		blog.Errorf("get host attribute fields failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+	}
+
+	result := make([]meta.HostInstanceProperties, 0)
+	for _, attr := range attribute {
+		if attr.PropertyID == common.BKChildStr {
+			continue
+		}
+		result = append(result, meta.HostInstanceProperties{
+			PropertyID:    attr.PropertyID,
+			PropertyName:  attr.PropertyName,
+			PropertyValue: details[attr.PropertyID],
+		})
+	}
+
+	resp.WriteEntity(meta.HostInstancePropertiesResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
 }
 
 func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	hostID := req.PathParameter(common.BKHostIDField)
+	result, err := s.CoreAPI.HostController().Host().GetHostSnap(context.Background(), hostID, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("get host snap info failed, err: %v, result err: %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
+		return
+	}
 
+	snap, err := logics.ParseHostSnap(result.Data.Data)
+	if err != nil {
+		blog.Errorf("get host snap info, but parse snap info failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
+		return
+	}
+
+	resp.WriteEntity(meta.HostSnapResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     snap,
+	})
 }
 
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	hostList := new(meta.HostList)
+	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
+		blog.Errorf("add host failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 
 }
 

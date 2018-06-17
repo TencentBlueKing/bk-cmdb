@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.HostInstanceResult, err error) {
 	subPath := fmt.Sprintf("/host/%s", hostID)
 
 	err = t.client.Get().

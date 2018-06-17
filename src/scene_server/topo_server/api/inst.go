@@ -155,13 +155,15 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 
 	count := 0
 	instRst := make([]inst.Inst, 0)
-	queryCond := metadata.QueryInput{}
-	queryCond.Condition = data
-	//queryCond.
+	queryCond := &metadata.QueryInput{}
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
 
 	for _, objItem := range objs {
 
-		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, cond)
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
 		if nil != err {
 			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
@@ -170,7 +172,10 @@ func (cli *topoAPI) SearchInst(params types.LogicParams, pathParams, queryParams
 		instRst = append(instRst, instItems...)
 	}
 
-	return instRst, nil
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+	return result, nil
 }
 
 // SearchInstAndAssociationDetail search the inst with association details
@@ -181,24 +186,82 @@ func (cli *topoAPI) SearchInstAndAssociationDetail(params types.LogicParams, pat
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	objs, err := cli.core.ObjectOperation().FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	for _, objItem := range objs {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+			return nil, err
+		}
+		count = count + cnt
+		instRst = append(instRst, instItems...)
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 }
 
 // SearchInstByObject search the inst of the object
 func (cli *topoAPI) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstByObject")
+
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	objs, err := cli.core.ObjectOperation().FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	for _, objItem := range objs {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+			return nil, err
+		}
+		count = count + cnt
+		instRst = append(instRst, instItems...)
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 
 }
 
@@ -210,10 +273,39 @@ func (cli *topoAPI) SearchInstByAssociation(params types.LogicParams, pathParams
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	objs, err := cli.core.ObjectOperation().FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	for _, objItem := range objs {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+			return nil, err
+		}
+		count = count + cnt
+		instRst = append(instRst, instItems...)
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 }
 
 // SearchInstByInstID search the inst by inst ID
@@ -224,11 +316,40 @@ func (cli *topoAPI) SearchInstByInstID(params types.LogicParams, pathParams, que
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID).
-		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	objs, err := cli.core.ObjectOperation().FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	for _, objItem := range objs {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+			return nil, err
+		}
+		count = count + cnt
+		instRst = append(instRst, instItems...)
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 }
 
 // SearchInstChildTopo search the child inst topo for a inst
@@ -239,11 +360,42 @@ func (cli *topoAPI) SearchInstChildTopo(params types.LogicParams, pathParams, qu
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID).
-		Field(common.BKInstIDField).Eq("inst_id")
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	objs, err := cli.core.ObjectOperation().FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	data.Set(common.BKInstIDField, pathParams("inst_id"))
+
+	count := 0
+	instRst := make([]inst.Inst, 0)
+	queryCond := &metadata.QueryInput{}
+
+	if err := data.MarshalJSONInto(queryCond); nil != err {
+		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	for _, objItem := range objs {
+
+		cnt, instItems, err := cli.core.InstOperation().FindInst(params, objItem, queryCond)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+			return nil, err
+		}
+		count = count + cnt
+		instRst = append(instRst, instItems...)
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", count)
+	result.Set("info", instRst)
+
+	return result, nil
 
 }
 
@@ -255,9 +407,8 @@ func (cli *topoAPI) SearchInstTopo(params types.LogicParams, pathParams, queryPa
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).
-		Field(common.BKObjIDField).Eq(objID).
-		Field(common.BKInstIDField).Eq(pathParams("inst_id"))
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	return cli.core.InstOperation().FindInst(params, cond)
+	return nil, nil
 }

@@ -25,8 +25,7 @@ import (
 	"strconv"
 )
 
-// instNameAsst  association inst name
-type instNameAsst struct {
+type InstNameAsst struct {
 	ID         string                 `json:"id"`
 	ObjID      string                 `json:"bk_obj_id"`
 	ObjIcon    string                 `json:"bk_obj_icon"`
@@ -62,16 +61,16 @@ func (lgc *Logics) GetObjectAsst(ownerID string, pheader http.Header) (map[strin
 	return attributes, nil
 }
 
-func (lgc *Logics) getInstAsst(owerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput) ([]instNameAsst, int, error) {
+func (lgc *Logics) getInstAsst(owerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput) ([]InstNameAsst, int, error) {
 	return lgc.getRawInstAsst(owerID, objID, IDs, pheader, query, false)
 
 }
 
-func (lgc *Logics) getInstAsstDetail(owerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput) ([]instNameAsst, int, error) {
+func (lgc *Logics) getInstAsstDetail(owerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput) ([]InstNameAsst, int, error) {
 	return lgc.getRawInstAsst(owerID, objID, IDs, pheader, query, true)
 }
 
-func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput, isDetail bool) ([]instNameAsst, int, error) {
+func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput, isDetail bool) ([]InstNameAsst, int, error) {
 	var infos []map[string]interface{}
 	var count int
 	var instName, instID string
@@ -93,20 +92,63 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
 		}
-		infos = rtn.Data
+		for _, tmp := range rtn.Data.Info {
+			infos = append(infos, map[string]interface{}(tmp))
+		}
+		count = rtn.Data.Count
 
 	case common.BKInnerObjIDSet:
 		instID = common.BKSetIDField
 		instName = common.BKSetNameField
+		query.Sort = common.BKSetIDField
+		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, pheader, query)
+		if err != nil || (err == nil && !rtn.Result) {
+			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
+		}
+		for _, tmp := range rtn.Data.Info {
+			infos = append(infos, map[string]interface{}(tmp))
+		}
+		count = rtn.Data.Count
 
 	case common.BKInnerObjIDModule:
 		instID = common.BKModuleIDField
 		instName = common.BKModuleNameField
+		query.Sort = common.BKModuleIDField
+		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKObjIDField, pheader, query)
+		if err != nil || (err == nil && !rtn.Result) {
+			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
+		}
+		for _, tmp := range rtn.Data.Info {
+			infos = append(infos, map[string]interface{}(tmp))
+		}
+		count = rtn.Data.Count
 
 	case common.BKInnerObjIDPlat:
 		instID = common.BKCloudIDField
 		instName = common.BKCloudNameField
+		query.Sort = common.BKCloudIDField
+		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, pheader, query)
+		if err != nil || (err == nil && !rtn.Result) {
+			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
+		}
+		for _, tmp := range rtn.Data.Info {
+			infos = append(infos, map[string]interface{}(tmp))
+		}
+		count = rtn.Data.Count
+
 	case common.BKINnerObjIDObject:
+		instName = common.BKInstNameField
+		instID = common.BKInstIDField
+		query.Sort = common.BKInstIDField
+		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKINnerObjIDObject, pheader, query)
+		if err != nil || (err == nil && !rtn.Result) {
+			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
+		}
+		for _, tmp := range rtn.Data.Info {
+			infos = append(infos, map[string]interface{}(tmp))
+		}
+		count = rtn.Data.Count
+
 	default:
 		return nil, 0, fmt.Errorf("unsupport obje type: %v", objID)
 	}
@@ -116,10 +158,10 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 		return s[:len(s)-1]
 	}
 
-	allInst := make([]instNameAsst, 0)
+	allInst := make([]InstNameAsst, 0)
 	for _, info := range infos {
 		if val, exist := info[instName]; exist {
-			inst := instNameAsst{}
+			inst := InstNameAsst{}
 			if name, can := val.(string); can {
 				inst.Name = name
 				inst.ObjID = objID
@@ -155,7 +197,7 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 
 	// get the InstName name
 	for _, ID := range IDs {
-		allInst = append(allInst, instNameAsst{ID: ID})
+		allInst = append(allInst, InstNameAsst{ID: ID})
 	}
 
 	return allInst, count, nil
