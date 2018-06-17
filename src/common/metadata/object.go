@@ -93,7 +93,7 @@ type ObjectDes struct {
 }
 
 // ObjectAsst define object association struct
-type ObjectAssociations struct {
+type Association struct {
 	ID          int       `bson:"id"                    json:"id"`
 	ObjectID    string    `bson:"bk_obj_id"                json:"bk_obj_id"`
 	ObjectAttID string    `bson:"bk_object_att_id"         json:"bk_object_att_id"`
@@ -102,6 +102,16 @@ type ObjectAssociations struct {
 	AsstObjID   string    `bson:"bk_asst_obj_id"           json:"bk_asst_obj_id"`
 	AsstName    string    `bson:"bk_asst_name"             json:"bk_asst_name"`
 	Page        *BasePage `bson:"-"                        json:"page,omitempty"`
+}
+
+func (cli *Association) Parse(data types.MapStr) (*Association, error) {
+
+	err := SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
 }
 
 type ObjectClsDes struct {
@@ -118,4 +128,12 @@ type ObjAttDes struct {
 	AsstForward       string `json:"bk_asst_forward"`
 	AssociationID     string `json:"bk_asst_obj_id"`
 	PropertyGroupName string `json:"bk_property_group_name"`
+}
+
+type InstAsst struct {
+	ID           int64  `bson:"id" json:"-"`
+	InstID       int64  `bson:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID     string `bson:"bk_obj_id" json:"bk_obj_id"`
+	AsstInstID   int64  `bson:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	AsstObjectID string `bson:"bk_asst_obj_id" json:"bk_asst_obj_id"`
 }

@@ -89,8 +89,8 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat i
 	return
 }
 
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "hosts/favorites/search"
 
 	err = hs.client.Post().

@@ -19,7 +19,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/host_server/service"
 )
 
 func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interface{}) (int64, error) {
@@ -41,4 +43,21 @@ func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interfa
 	}
 
 	return result.Data.Info[0].Int64(common.BKModuleIDField)
+}
+
+func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int64) ([]mapstr.MapStr, error) {
+	query := &metadata.QueryInput{
+		Start:     0,
+		Limit:     1,
+		Sort:      common.BKModuleIDField,
+		Fields:    common.BKModuleIDField,
+		Condition: service.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("get modules with id failed, err: %v, result err: %s", err, result.ErrMsg)
+	}
+
+	return result.Data.Info, nil
 }

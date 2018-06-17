@@ -29,18 +29,23 @@ type HostServerClientInterface interface {
 	HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+
+	GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error)
 	AddHostFavourite(ctx context.Context, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.Response, err error)
 	UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 	DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 	IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
+
 	AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error)
+
 	AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error)
 	HostModuleRelation(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+
 	MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 	MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 	MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
+
 	AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 	AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)

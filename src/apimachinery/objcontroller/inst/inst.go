@@ -34,7 +34,7 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Hea
 	return
 }
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.CreateInstResult, err error) {
+func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metatype.CreateInstResult, err error) {
 	resp = new(metatype.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
