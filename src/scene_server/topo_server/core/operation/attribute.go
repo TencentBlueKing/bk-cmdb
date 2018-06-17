@@ -56,7 +56,7 @@ func (cli *attribute) CreateObjectAttribute(params types.LogicParams, data frtyp
 		return nil, err
 	}
 
-	err = att.Save()
+	err = att.Create()
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -96,7 +96,7 @@ func (cli *attribute) FindObjectAttribute(params types.LogicParams, cond conditi
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return nil, nil
+	return model.CreateAttribute(params, cli.clientSet, rsp.Data), nil
 }
 
 func (cli *attribute) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {

@@ -44,7 +44,7 @@ const (
 
 // Attribute attribute metadata definition
 type Attribute struct {
-	ID            int64       `field:"id"`
+	ID            int64       `field:"id" json:"id"`
 	OwnerID       string      `field:"bk_supplier_account" json:"bk_supplier_account"`
 	ObjectID      string      `field:"bk_obj_id" json:"bk_obj_id"`
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id"`

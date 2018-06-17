@@ -41,7 +41,7 @@ type PropertyGroupObjectAtt struct {
 
 // Group group metadata definition
 type Group struct {
-	ID         int64  `field:"id"`
+	ID         int64  `field:"id" json:"id"`
 	GroupID    string `field:"bk_group_id" json:"bk_group_id"`
 	GroupName  string `field:"bk_group_name" json:"bk_group_name"`
 	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index"`

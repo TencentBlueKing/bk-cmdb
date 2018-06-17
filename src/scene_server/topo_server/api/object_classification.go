@@ -16,8 +16,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common"
-	"configcenter/src/common/basetype"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -104,19 +102,15 @@ func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, q
 func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	id, err := basetype.NewType(pathParams("id"))
-
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id, error info is %s ", err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
 
-	if !id.IsNumeric() {
-		blog.Errorf("[api-cls] the path params id(%s) is not int", pathParams("id"))
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
-	}
-
-	err = cli.core.ClassificationOperation().UpdateClassification(params, data, id.Int64(), cond)
+	err = cli.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
 	return nil, err
 }
 
@@ -124,18 +118,14 @@ func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, q
 func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	id, err := basetype.NewType(pathParams("id"))
-
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id, error info is %s ", err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
 
-	if !id.IsNumeric() {
-		blog.Errorf("[api-cls] the path params id(%s) is not int", pathParams("id"))
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "id")
-	}
-
-	err = cli.core.ClassificationOperation().DeleteClassification(params, id.Int64(), cond)
+	err = cli.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err
 }

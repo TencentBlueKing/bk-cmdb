@@ -85,9 +85,9 @@ func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID,
 	return
 }
 
-func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metatype.Response, err error) {
+func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/group/property/owner/%s/object/%s", ownerID, objID)
-	resp = new(metatype.Response)
+	resp = new(metatype.QueryObjectGroupResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).

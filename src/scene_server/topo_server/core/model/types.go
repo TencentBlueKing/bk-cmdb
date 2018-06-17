@@ -32,8 +32,8 @@ const (
 // Operation the saver interface method
 type Operation interface {
 	Create() error
-	Update() error
 	Delete() error
+	Update() error
 	Save() error
 }
 
