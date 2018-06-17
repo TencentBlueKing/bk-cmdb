@@ -55,3 +55,17 @@ func (cli *Association) Parse(data types.MapStr) (*Association, error) {
 func (cli *Association) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
+}
+
+// AssociationParams  association params
+type AssociationParams struct {
+	Page      BasePage                   `json:"page,omitempty"`
+	Fields    map[string][]string        `json:"fields,omitempty"`
+	Condition map[string][]ConditionItem `json:"condition,omitempty"`
+}
