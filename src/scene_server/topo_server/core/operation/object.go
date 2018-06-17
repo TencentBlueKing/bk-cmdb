@@ -15,6 +15,7 @@ package operation
 import (
 	"configcenter/src/common"
 	"context"
+	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
@@ -30,6 +31,7 @@ type ObjectOperationInterface interface {
 	CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error)
 	DeleteObject(params types.LogicParams, id int64, cond condition.Condition) error
 	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
+	FindSingleObject(params types.LogicParams, objectID string) (model.Object, error)
 	UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 }
 
@@ -48,6 +50,22 @@ func NewObjectOperation(client apimachinery.ClientSetInterface, modelFactory mod
 	}
 }
 
+func (cli *object) FindSingleObject(params types.LogicParams, objectID string) (model.Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objectID)
+
+	objs, err := cli.FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), error info is %s", params.Header.OwnerID, objectID, err.Error())
+		return nil, err
+	}
+	for _, item := range objs {
+		return item, nil
+	}
+	return nil, fmt.Errorf("not found the object(%s)", objectID)
+}
 func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error) {
 	obj := cli.modelFactory.CreaetObject(params)
 
