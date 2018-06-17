@@ -13,7 +13,10 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // ModuleIteratorWrapper the module iterator wrapper
@@ -63,9 +66,27 @@ func (cli *ModuleWrapper) Update() error {
 	return cli.module.Update()
 }
 
+// GetModel get the model for the module
+func (cli *ModuleWrapper) GetModel() model.Model {
+	return cli.module.GetModel()
+}
+
 // Save save the data
 func (cli *ModuleWrapper) Save() error {
 	return cli.module.Save()
+}
+
+// GetModuleID get the id for the module
+func (cli *ModuleWrapper) GetModuleID() (int64, error) {
+	vals, err := cli.module.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldModuleID) {
+		return 0, fmt.Errorf("the module id is not set")
+	}
+	val, err := vals.Int(fieldModuleID)
+	return int64(val), err
 }
 
 // SetOperator set the operator

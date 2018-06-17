@@ -182,7 +182,7 @@ func (cli *inst) Update() error {
 		if nil != err {
 			return err
 		}
-
+		cli.datas.Set(InstID, instID)
 	}
 
 	return nil
