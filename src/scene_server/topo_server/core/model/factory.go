@@ -117,10 +117,18 @@ func (cli *factory) CreateGroup(params types.LogicParams) Group {
 	}
 }
 
-func (cli *factory) CreateAssociation(params types.LogicParams) Association {
+func (cli *factory) CreateMainLineAssociatin(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
+	return &association{
+		isMainLine: true,
+		params:     params,
+		clientSet:  cli.clientSet,
+	}
+}
+func (cli *factory) CreateCommonAssociation(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
 
 	return &association{
-		params:    params,
-		clientSet: cli.clientSet,
+		isMainLine: false,
+		params:     params,
+		clientSet:  cli.clientSet,
 	}
 }
