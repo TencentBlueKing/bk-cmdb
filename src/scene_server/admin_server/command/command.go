@@ -5,6 +5,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
 	"configcenter/src/common/core/cc/api"
+	"fmt"
 	"github.com/spf13/pflag"
 	"os"
 )
@@ -53,14 +54,14 @@ func Parse(args []string) error {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
 		}
-		blog.Infof("blueking business has been export to %s", filepath)
+		fmt.Printf("blueking business has been export to %s\n", filepath)
 	} else if importflag {
-		blog.Infof("importing blueking business from %s", filepath)
-		if err := importer(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID}); err != nil {
+		fmt.Printf("importing blueking business from %s\n", filepath)
+		if err := importBKBiz(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID}); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}
-		blog.Infof("blueking business has been import to %s", filepath)
+		fmt.Printf("blueking business has been import from %s\n", filepath)
 	} else {
 		blog.Errorf("invalide argument")
 	}
