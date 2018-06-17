@@ -139,7 +139,9 @@ func (cli *attribute) Delete() error {
 
 func (cli *attribute) Save() error {
 
-	if cli.isNew {
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
 		return cli.Create()
 	}
 
