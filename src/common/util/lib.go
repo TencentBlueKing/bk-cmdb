@@ -55,6 +55,14 @@ func GetActionOnwerID(req *restful.Request) string {
 	return ownerID
 }
 
+func GetUser(header http.Header) string {
+	return header.Get(common.BKHTTPHeaderUser)
+}
+
+func GetOwnerID(header http.Header) string {
+	return header.Get(common.BKHTTPOwnerID)
+}
+
 func GetOwnerIDAndUser(header http.Header) (string, string) {
 	return header.Get(common.BKHTTPOwnerID), header.Get(common.BKHTTPHeaderUser)
 }

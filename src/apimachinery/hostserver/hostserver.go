@@ -19,14 +19,14 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-    "configcenter/src/common/metadata"
 )
 
 type HostServerClientInterface interface {
 	DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetHostDetailByID(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.Response, err error)
-	HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.HostInstancePropertiesResult, err error)
+	HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
