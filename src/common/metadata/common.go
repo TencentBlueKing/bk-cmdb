@@ -88,9 +88,9 @@ type QueryInput struct {
 }
 
 type CloudHostModuleParams struct {
-	ApplicationID int          `json:"bk_biz_id"`
+	ApplicationID int64        `json:"bk_biz_id"`
 	HostInfoArr   []BkHostInfo `json:"host_info"`
-	ModuleID      int          `json:"bk_module_id"`
+	ModuleID      int64        `json:"bk_module_id"`
 }
 
 type BkHostInfo struct {

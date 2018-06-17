@@ -14,8 +14,8 @@ package validator
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/errors"
-	api "configcenter/src/source_controller/api/object"
+	"configcenter/src/common/backbone"
+	"net/http"
 )
 
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
@@ -33,15 +33,14 @@ type EnumVal struct {
 }
 
 type ValidMap struct {
+	*backbone.Engine
+	pheader      http.Header
 	ownerID      string
 	objID        string
-	objCtrl      string
 	IsRequireArr []string
 	IsOnlyArr    []string
 	KeyFileds    map[string]interface{}
 	PropertyKv   map[string]string
-	ccError      errors.DefaultCCErrorIf
-	forward      *api.ForwardParam
 }
 
 // InstRst define

@@ -23,7 +23,21 @@ import (
 	"configcenter/src/scene_server/host_server/service"
 )
 
-func (lgc *Logics) GetDefaultAppIDWithSupplier(ownerID string, pheader http.Header) (int64, error) {
+func (lgc *Logics) GetDefaultAppIDWithSupplier(supplierID int64, pheader http.Header) (int64, error) {
+	cond := service.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithSupplierID(supplierID).Data()
+	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
+	if err != nil {
+		return -1, err
+	}
+
+	id, exist := appDetails[common.BKAppIDField].(int64)
+	if !exist {
+		return -1, errors.New("can not find bk biz field")
+	}
+	return id, nil
+}
+
+func (lgc *Logics) GetDefaultAppID(ownerID string, pheader http.Header) (int64, error) {
 	cond := service.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {

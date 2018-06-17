@@ -41,13 +41,18 @@ func (o *operation) WithAppID(appID int64) *operation {
 	return o
 }
 
-func (o *operation) WithDefaultField(field int64) *operation {
+func (o *operation) WithSupplierID(field int64) *operation {
 	o.op[common.BKSupplierIDField] = field
 	return o
 }
 
 func (o *operation) WithOwnerID(ownerID string) *operation {
-	o.op[common.BKDefaultField] = ownerID
+	o.op[common.BKOwnerIDField] = ownerID
+	return o
+}
+
+func (o *operation) WithDefaultField(d int64) *operation {
+	o.op[common.BKDefaultField] = d
 	return o
 }
 
@@ -71,7 +76,31 @@ func (o *operation) WithModuleName(name string) *operation {
 	return o
 }
 
+func (o *operation) WithModuleIDs(id []int64) *operation {
+	o.op[common.BKModuleIDField] = id
+	return o
+}
+
+func (o *operation) WithModuleID(id int64) *operation {
+	o.op[common.BKModuleIDField] = id
+	return o
+}
 func (o *operation) WithPage(p metadata.BasePage) *operation {
 	o.op[metadata.PageName] = p
+	return o
+}
+
+func (o *operation) WithAssoObjID(id string) *operation {
+	o.op[common.BKAsstObjIDField] = id
+	return o
+}
+
+func (o *operation) WithHostInnerIP(ip string) *operation {
+	o.op[common.BKHostInnerIPField] = ip
+	return o
+}
+
+func (o *operation) WithCloudID(id string) *operation {
+	o.op[common.BKCloudIDField] = id
 	return o
 }

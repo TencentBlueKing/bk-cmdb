@@ -98,7 +98,7 @@ func (t *meta) DeleteObjectAssociation(ctx context.Context, objID int64, h http.
 	return
 }
 
-func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.ObjectAssociations) (resp *metatype.CreateResult, err error) {
+func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.Association) (resp *metatype.CreateResult, err error) {
 	subPath := "/meta/objectasst"
 
 	err = t.client.Post().
@@ -137,7 +137,7 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Head
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryObjectAttributeResult, err error) {
 	subPath := "/meta/objectatts"
 
 	err = t.client.Post().

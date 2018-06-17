@@ -51,5 +51,14 @@ type HostList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
 	SupplierID    int64                            `json:"bk_supplier_id"`
-	InputType     string                           `json:"input_type"`
+	InputType     HostInputType                    `json:"input_type"`
+}
+
+type FavouriteParms struct {
+	ID          string `json:"id"`
+	Info        string `json:"info"`
+	QueryParams string `json:"query_params"`
+	Name        string `json:"name"`
+	IsDefault   int    `json:"is_default"`
+	Count       int    `json:"count"`
 }
