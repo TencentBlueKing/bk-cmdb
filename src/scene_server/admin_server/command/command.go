@@ -63,7 +63,9 @@ func Parse(args []string) error {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}
-		fmt.Printf("blueking business has been import from %s\n", filepath)
+		if !dryrun {
+			fmt.Printf("blueking business has been import from %s\n", filepath)
+		}
 	} else {
 		blog.Errorf("invalide argument")
 	}
