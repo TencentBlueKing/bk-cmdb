@@ -197,6 +197,8 @@ func (cli *group) Save() error {
 
 func (cli *group) CreateAttribute() Attribute {
 	return &attribute{
+		params:    cli.params,
+		clientSet: cli.clientSet,
 		attr: metadata.Attribute{
 			OwnerID:  cli.grp.OwnerID,
 			ObjectID: cli.grp.ObjectID,

@@ -15,7 +15,6 @@ package operation
 import (
 	"configcenter/src/common"
 	"context"
-	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
@@ -64,7 +63,7 @@ func (cli *object) FindSingleObject(params types.LogicParams, objectID string) (
 	for _, item := range objs {
 		return item, nil
 	}
-	return nil, fmt.Errorf("not found the object(%s)", objectID)
+	return nil, params.Err.Error(common.CCErrTopoObjectSelectFailed)
 }
 func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error) {
 	obj := cli.modelFactory.CreaetObject(params)

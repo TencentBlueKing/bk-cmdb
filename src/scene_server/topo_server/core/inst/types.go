@@ -44,7 +44,7 @@ type Inst interface {
 
 	SetValues(values frtypes.MapStr)
 
-	GetValues() (frtypes.MapStr, error)
+	GetValues() frtypes.MapStr
 
 	ToMapStr() (frtypes.MapStr, error)
 }

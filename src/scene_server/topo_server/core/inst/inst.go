@@ -53,13 +53,17 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
+	blog.Infof("debug inst:%#v", rsp.Data.Info)
+
 	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
 
 }
 
 func (cli *inst) Create() error {
 
-	blog.Infof("the data:%#v", cli.datas)
+	if cli.target.IsCommon() {
+		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
+	}
 
 	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header.ToHeader(), cli.datas)
 	if nil != err {
@@ -89,6 +93,10 @@ func (cli *inst) Update() error {
 
 	cond := condition.CreateCondition()
 
+	if cli.target.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
+	}
+
 	if exists {
 		// construct the update condition by the instid
 		cond.Field(instIDName).Eq(instID)
@@ -116,11 +124,10 @@ func (cli *inst) Update() error {
 	}
 
 	// execute update action
-
 	updateCond := frtypes.MapStr{}
 	updateCond.Set("data", cli.datas)
 	updateCond.Set("condition", cond.ToMapStr())
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), updateCond)
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header.ToHeader(), updateCond)
 	if nil != err {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -129,6 +136,17 @@ func (cli *inst) Update() error {
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", cli.target.GetID(), rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoInstUpdateFailed)
+	}
+
+	// read the new data
+	instItems, err := cli.searchInsts(cli.target, cond)
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to search the new insts data, error info is %s", err.Error())
+		return err
+	}
+
+	for _, item := range instItems { // should be only one item
+		cli.datas = item.GetValues()
 	}
 
 	return nil
@@ -167,7 +185,7 @@ func (cli *inst) Delete() error {
 	}
 
 	// execute delete action
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetObjectType(), cli.params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -189,6 +207,10 @@ func (cli *inst) IsExists() (bool, error) {
 	}
 
 	cond := condition.CreateCondition()
+	if cli.target.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
+	}
+
 	for _, attrItem := range attrs {
 		// check the inst
 		if attrItem.GetIsOnly() {
@@ -201,12 +223,10 @@ func (cli *inst) IsExists() (bool, error) {
 		}
 	}
 
-	// check data duplication
-
 	queryCond := metatype.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetID(), cli.params.Header.ToHeader(), &queryCond)
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetObjectType(), cli.params.Header.ToHeader(), &queryCond)
 
 	if nil != err {
 		blog.Errorf("failed to search object(%s) instances  , error info is %s", cli.target.GetID(), err.Error())
@@ -259,6 +279,6 @@ func (cli *inst) SetValues(values frtypes.MapStr) {
 	cli.datas.Merge(values)
 }
 
-func (cli *inst) GetValues() (frtypes.MapStr, error) {
-	return cli.datas, nil
+func (cli *inst) GetValues() frtypes.MapStr {
+	return cli.datas
 }

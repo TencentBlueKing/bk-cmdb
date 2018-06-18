@@ -36,11 +36,15 @@ func (cli *inst) updateMainlineAssociation(child Inst, parent Inst) error {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(child.GetObject().GetInstIDFieldName()).Eq(childID)
-	cond.Field(metatype.ModelFieldObjectID).Eq(child.GetObject().GetID())
+	cond.Field(child.GetObject().GetInstIDFieldName()).Eq(int(childID))
+	if child.GetObject().IsCommon() {
+		cond.Field(metatype.ModelFieldObjectID).Eq(child.GetObject().GetID())
+	}
 
 	data := frtypes.MapStr{}
-	data.Set("data", parentID)
+	data.Set("data", frtypes.MapStr{
+		common.BKInstParentStr: parentID,
+	})
 	data.Set("condition", cond.ToMapStr())
 
 	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), child.GetObject().GetObjectType(), cli.params.Header.ToHeader(), data)
@@ -203,7 +207,9 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
-	cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+	if parentObj.IsCommon() {
+		cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+	}
 	cond.Field(common.BKInstParentStr).Eq(parentID)
 
 	rspItems, err := cli.searchInsts(parentObj, cond)
@@ -221,6 +227,7 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 func (cli *inst) GetMainlineChildInst() (Inst, error) {
 	childObj, err := cli.target.GetMainlineChildObject()
 	if nil != err {
+		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, error info is %s", cli.target.GetID(), err.Error())
 		return nil, err
 	}
 
@@ -232,7 +239,9 @@ func (cli *inst) GetMainlineChildInst() (Inst, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
-	cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+	if childObj.IsCommon() {
+		cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
 
 	rspItems, err := cli.searchInsts(childObj, cond)
@@ -244,7 +253,7 @@ func (cli *inst) GetMainlineChildInst() (Inst, error) {
 	for _, item := range rspItems {
 		return item, nil // only one mainline child
 	}
-
+	blog.Warnf("[inst-asst] found nothing, the condition(%#v) the object(%s)", cond.ToMapStr(), childObj.GetID())
 	return nil, io.EOF
 }
 
@@ -353,12 +362,13 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 
 func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
 	parentInst, err := cli.GetMainlineParentInst()
-	if nil != err && io.EOF != err {
+	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the parent inst, error info is  %s", err.Error())
 		return err
 	}
 
-	if err = parentInst.SetMainlineChildInst(targetInst); nil != err {
+	if err = cli.updateMainlineAssociation(targetInst, parentInst); nil != err {
+
 		blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
 		return err
 	}
@@ -373,12 +383,12 @@ func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
 func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 
 	childInst, err := cli.GetMainlineChildInst()
-	if nil != err && io.EOF != err {
+	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the child inst, error info is  %s", err.Error())
 		return err
 	}
 
-	if err = childInst.SetMainlineParentInst(targetInst); nil != err {
+	if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
 		blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
 		return err
 	}

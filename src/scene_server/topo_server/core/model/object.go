@@ -101,16 +101,30 @@ func (cli *object) GetObjectType() string {
 		return common.BKINnerObjIDObject
 	}
 }
-
+func (cli *object) IsCommon() bool {
+	switch cli.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return false
+	case common.BKInnerObjIDSet:
+		return false
+	case common.BKInnerObjIDModule:
+		return false
+	case common.BKInnerObjIDHost:
+		return false
+	case common.BKInnerObjIDProc:
+		return false
+	case common.BKInnerObjIDPlat:
+		return false
+	default:
+		return true
+	}
+}
 func (cli *object) search(objID string) ([]meta.Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID)
+	cond.Field(common.BKObjIDField).Eq(objID)
 
-	condStr, err := cond.ToMapStr().ToJSON()
-	if nil != err {
-		return nil, err
-	}
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), condStr)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -287,6 +301,7 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 	for _, asst := range rsp.Data {
 
 		asst.AsstObjID = objID
+		asst.ObjectAttID = common.BKChildStr
 
 		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), asst.ToMapStr())
 		if nil != err {
@@ -346,11 +361,12 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 	}
 
 	// update
-	for _, asst := range rsp.Data { // only one item
+	for _, asst := range rsp.Data { // should be only one item
 
 		asst.ObjectID = objID
+		asst.ObjectAttID = common.BKChildStr
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), nil)
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -411,7 +427,7 @@ func (cli *object) Delete() error {
 
 func (cli *object) Update() error {
 
-	data := meta.SetValueToMapStrByTags(cli)
+	data := meta.SetValueToMapStrByTags(cli.obj)
 
 	items, err := cli.search(cli.obj.ObjectID)
 	if nil != err {
@@ -462,11 +478,11 @@ func (cli *object) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {
 		return err
-	} else if !exists {
-		return cli.Create()
+	} else if exists {
+		return cli.Update()
 	}
 
-	return cli.Update()
+	return cli.Create()
 
 }
 
@@ -481,6 +497,8 @@ func (cli *object) CreateGroup() Group {
 
 func (cli *object) CreateAttribute() Attribute {
 	return &attribute{
+		params:    cli.params,
+		clientSet: cli.clientSet,
 		attr: meta.Attribute{
 			OwnerID:  cli.obj.OwnerID,
 			ObjectID: cli.obj.ObjectID,
