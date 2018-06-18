@@ -56,7 +56,7 @@
                                 <li><i class=" fb bk-icon icon-check-1" v-show="item['isonly']"></i></li>
                                 <li><i class=" fb bk-icon icon-check-1" v-show="item['isrequired']"></i></li>
                                 <li>{{formatFieldType(item['bk_property_type'])}}</li>
-                                <li>{{item['bk_property_name']}}({{item['bk_property_id']}})</li>
+                                <li :title="`${item['bk_property_name']}(${item['bk_property_id']})`">{{item['bk_property_name']}}({{item['bk_property_id']}})</li>
                                 <li>
                                     <div class="btn-contain" v-if="item['bk_property_id']==='InstName'" v-bktooltips="{
                                             isShow: tips.innerField.isShow,
@@ -2223,29 +2223,31 @@
                     padding:0;
                     margin:0;
                     >li{
-                      float:left;
-                      height:40px;
-                      line-height:40px;
-                      background:#ffffff;
-                      text-align:center;
-                      border-bottom:1px solid $borderColor;
-                      &:nth-child(1){
-                        width:80px;
-                        border-left:1px solid $borderColor;
-                    }
-                    &:nth-child(2){
-                        width:80px;
-                    }
-                    &:nth-child(3){
-                        width:148px;
-                    }
-                    &:nth-child(4){
-                        width:287px;
-                    }
-                    &:nth-child(5){
-                        width:105px;
-                        border-right:1px solid $borderColor;
-                    }
+                        float:left;
+                        height:40px;
+                        line-height:40px;
+                        background:#ffffff;
+                        text-align:center;
+                        border-bottom:1px solid $borderColor;
+                        text-overflow: ellipsis;
+                        overflow: hidden;
+                        &:nth-child(1){
+                            width:80px;
+                            border-left:1px solid $borderColor;
+                        }
+                        &:nth-child(2){
+                            width:80px;
+                        }
+                        &:nth-child(3){
+                            width:148px;
+                        }
+                        &:nth-child(4){
+                            width:287px;
+                        }
+                        &:nth-child(5){
+                            width:105px;
+                            border-right:1px solid $borderColor;
+                        }
                     }
                 }
                 .list-content-hidden{

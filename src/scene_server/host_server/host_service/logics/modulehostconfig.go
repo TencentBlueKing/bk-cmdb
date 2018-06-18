@@ -98,7 +98,7 @@ func MoveHost2ResourcePool(CC *api.APIResource, req *restful.Request, appID int,
 	url := CC.HostCtrl() + "/host/v1/meta/hosts/resource"
 	isSucess, errmsg, data := GetHttpResult(req, url, common.HTTPUpdate, conds)
 	if !isSucess {
-		return data, errors.New(langHandle.Languagef("host_move_to_resource", errmsg)) //"更新主机关系失败;" + errmsg)
+		return data, errors.New(errmsg) //"更新主机关系失败;" + errmsg)
 	}
 	logClient.SetDesc("move host to resource pool")
 	logErr := logClient.SaveLog(fmt.Sprintf("%d", appID), user)
