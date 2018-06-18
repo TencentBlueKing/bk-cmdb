@@ -185,6 +185,8 @@ type Object interface {
 
 	Parse(data frtypes.MapStr) (*metadata.Object, error)
 
+	IsCommon() bool
+
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 

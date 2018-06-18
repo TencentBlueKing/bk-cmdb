@@ -49,7 +49,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	group := operation.NewGroupOperation(client, targetModel, targetInst)
 	object := operation.NewObjectOperation(client, targetModel, targetInst)
 
-	association := operation.NewAssociationOperation(client, object, attribute, inst, targetModel)
+	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
 
 	return &core{
 		inst:           inst,

@@ -11,3 +11,62 @@
  */
 
 package operation
+
+import (
+	"io"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	//"configcenter/src/common/condition"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
+
+func (cli *association) SetMainlineInstAssociation(params types.LogicParams, parent, current, child model.Object) error {
+
+	defaultCond := &metadata.QueryInput{}
+
+	// fetch all parent inst
+	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, error info is %s", parent.GetID(), err.Error())
+		return err
+	}
+
+	// reset the parent's inst
+	for _, parent := range parentInsts {
+
+		// create the default inst
+		defaultInst := cli.instFactory.CreateInst(params, current)
+		defaultInst.SetValue(common.BKOwnerIDField, params.Header.OwnerID)
+		defaultInst.SetValue(current.GetInstNameFieldName(), current.GetName())
+		defaultInst.SetValue(common.BKDefaultField, 0)
+
+		// create the inst
+		if err = defaultInst.Create(); nil != err {
+			blog.Errorf("[operation-asst] failed to create object(%s) default inst, error info is %s", current.GetID(), err.Error())
+			return err
+		}
+
+		// reset the child's parent
+		child, err := parent.GetMainlineChildInst()
+		if nil != err {
+			if io.EOF == err {
+				continue
+			}
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", parent.GetObject().GetID(), err.Error())
+			return err
+		}
+		blog.Infof("the child: %s", child.GetObject().GetID())
+
+		// set the child's parent
+		if err = child.SetMainlineParentInst(defaultInst); nil != err {
+			blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
+			return err
+		}
+
+	}
+
+	return nil
+}

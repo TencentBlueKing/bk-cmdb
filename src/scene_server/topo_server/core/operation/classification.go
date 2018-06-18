@@ -14,6 +14,7 @@ package operation
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -27,6 +28,7 @@ import (
 
 // ClassificationOperationInterface classification opoeration methods
 type ClassificationOperationInterface interface {
+	FindSingleClassification(params types.LogicParams, classificationID string) (model.Classification, error)
 	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)
 	DeleteClassification(params types.LogicParams, id int64, data frtypes.MapStr, cond condition.Condition) error
 	FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error)
@@ -46,6 +48,22 @@ func NewClassificationOperation(client apimachinery.ClientSetInterface, modelFac
 		modelFactory: modelFactory,
 		instFactory:  instFactory,
 	}
+}
+
+func (cli *classification) FindSingleClassification(params types.LogicParams, classificationID string) (model.Classification, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(classificationID)
+
+	objs, err := cli.FindClassification(params, cond)
+	if nil != err {
+		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), error info is %s", params.Header.OwnerID, classificationID, err.Error())
+		return nil, err
+	}
+	for _, item := range objs {
+		return item, nil
+	}
+	return nil, params.Err.Error(common.CCErrTopoObjectClassificationSelectFailed)
 }
 
 func (cli *classification) CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error) {

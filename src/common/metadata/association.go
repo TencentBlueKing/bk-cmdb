@@ -29,36 +29,18 @@ const (
 	AssociationFieldAssociationName = "bk_asst_name"
 )
 
-// MainLineAssociation the mainline association
-type MainLineAssociation struct {
-	ID          int64  `field:"id" json:"id"`
-	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id"`
-	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account"`
-	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward"`
-	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	AsstName    string `field:"bk_asst_name" json:"bk_asst_name"`
-}
-
-// Parse load the data from mapstr attribute into attribute instance
-func (cli *MainLineAssociation) Parse(data types.MapStr) (*MainLineAssociation, error) {
-
-	err := SetValueToStructByTags(cli, data)
-	if nil != err {
-		return nil, err
-	}
-
-	return cli, err
-}
-
-// ToMapStr to mapstr
-func (cli *MainLineAssociation) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
-}
-
 // Association define object association struct
 type Association struct {
-	MainLineAssociation `json:",inline"`
-	ObjectAttID         string `field:"bk_object_att_id"`
+	ID               int64  `field:"id" json:"id"`
+	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id"`
+	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account"`
+	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward"`
+	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	AsstName         string `field:"bk_asst_name" json:"bk_asst_name"`
+	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id"`
+	ClassificationID string `field:"bk_classification_id"`
+	ObjectIcon       string `field:"bk_obj_icon"`
+	ObjectName       string `field:"bk_obj_name"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance
