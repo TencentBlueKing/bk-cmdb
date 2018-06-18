@@ -16,9 +16,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/blog"
+	//"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	//"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 

@@ -30,8 +30,11 @@ type Inst interface {
 	GetParentInst() ([]Inst, error)
 	GetChildInst() ([]Inst, error)
 
-	SetMainlineParentInst(instID int64) error
-	SetMainlineChildInst(instID int64) error
+	SetParentInst(targetInst Inst) error
+	SetChildInst(targetInst Inst) error
+
+	SetMainlineParentInst(targetInst Inst) error
+	SetMainlineChildInst(targetInst Inst) error
 
 	GetInstID() (int64, error)
 	GetParentID() (int64, error)
