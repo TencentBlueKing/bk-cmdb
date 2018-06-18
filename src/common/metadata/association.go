@@ -84,6 +84,48 @@ func (cli *InstAsst) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 
+// MainlineObjectTopo the mainline object topo
+type MainlineObjectTopo struct {
+	ObjID      string `field:"bk_obj_id"`
+	ObjName    string `field:"bk_obj_name"`
+	OwnerID    string `field:"bk_supplier_account"`
+	NextObj    string `field:"bk_next_obj"`
+	NextName   string `field:"bk_next_name"`
+	PreObjID   string `field:"bk_pre_obj_id"`
+	PreObjName string `field:"bk_pre_obj_name"`
+}
+
+// Parse load the data from mapstr attribute into attribute instance
+func (cli *MainlineObjectTopo) Parse(data types.MapStr) (*MainlineObjectTopo, error) {
+
+	err := SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
+}
+
+// ToMapStr to mapstr
+func (cli *MainlineObjectTopo) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(cli)
+}
+
+// TopoInst 实例拓扑结构
+type TopoInst struct {
+	InstID   int64  `json:"bk_inst_id"`
+	InstName string `json:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id"`
+	ObjName  string `json:"bk_obj_name"`
+	Default  int    `json:"default"`
+}
+
+// TopoInstRst 拓扑实例
+type TopoInstRst struct {
+	TopoInst `json:",inline"`
+	Child    []TopoInstRst `json:"child"`
+}
+
 // ConditionItem subcondition
 type ConditionItem struct {
 	Field    string      `json:"field,omitempty"`

@@ -239,7 +239,7 @@ func (cli *topoAPI) CreateDefaultBusiness(params types.LogicParams, pathParams, 
 			return nil, err
 		}
 
-		return setInst.ToMapStr() // only one item
+		return setInst.ToMapStr(), nil // only one item
 	}
 
 	return nil, nil

@@ -26,6 +26,9 @@ import (
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
 	CreateMainlineAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
+	DeleteMainlineAssociaton(params types.LogicParams, objID string) error
+	SearchMainlineAssociationTopo(params types.LogicParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
+	SearchMainlineAssociationInstTopo(params types.LogicParams, bizID int64) ([]*metadata.TopoInstRst, error)
 	CreateCommonAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
 	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
 	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
