@@ -188,6 +188,19 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 			blog.Error("input params error:")
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
+
+		// check wether it can be delete
+		rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKAppIDField: []int{appID}})
+		if nil != rstErr {
+			blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+		}
+
+		if !rstOk {
+			blog.Error("failed to delete app, because of it has some hosts")
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+		}
+
 		if common.DataStatusFlag(flag) == common.DataStatusEnable {
 			condition := make(map[string]interface{})
 			searchParams := make(map[string]interface{})

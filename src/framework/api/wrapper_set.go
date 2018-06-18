@@ -13,7 +13,10 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // SetIteratorWrapper the set iterator wrapper
@@ -109,12 +112,13 @@ func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 }
 
 // GetBusinessID get the business id
-func (cli *SetWrapper) GetBusinessID() (int, error) {
+func (cli *SetWrapper) GetBusinessID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldBusinessID)
+	val, err := vals.Int(fieldBusinessID)
+	return int64(val), err
 }
 
 // SetSupplierAccount set the supplier account code of the set
@@ -150,6 +154,19 @@ func (cli *SetWrapper) SetName(name string) error {
 	return cli.set.SetValue(fieldSetName, name)
 }
 
+// GetSetID get the id for the set
+func (cli *SetWrapper) GetSetID() (int64, error) {
+	vals, err := cli.set.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldSetID) {
+		return 0, fmt.Errorf("the set id is not set")
+	}
+	val, err := vals.Int(fieldSetID)
+	return int64(val), err
+}
+
 // GetName get the set name
 func (cli *SetWrapper) GetName() (string, error) {
 	vals, err := cli.set.GetValues()
@@ -177,4 +194,9 @@ func (cli *SetWrapper) Update() error {
 // Save save the data
 func (cli *SetWrapper) Save() error {
 	return cli.set.Save()
+}
+
+// GetModel get the model for the set
+func (cli *SetWrapper) GetModel() model.Model {
+	return cli.set.GetModel()
 }
