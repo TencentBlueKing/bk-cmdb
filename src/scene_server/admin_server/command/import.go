@@ -10,12 +10,25 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
-func importBKBiz(db storage.DI, opt *option) error {
+func backup(db storage.DI, opt *option) error {
+	dir := filepath.Dir(opt.position)
+	now := time.Now().Format("2006_01_02_15_04_05")
+	file := filepath.Join(dir, "backup_bk_biz_"+now+".json")
+	err := export(db, &option{position: file, OwnerID: opt.OwnerID})
+	if nil != err {
+		return err
+	}
+	fmt.Println("blueking business has been backup to \033[35m" + file + "\033[0m")
+	return nil
+}
 
+func importBKBiz(db storage.DI, opt *option) error {
 	file, err := os.OpenFile(opt.position, os.O_RDONLY, os.ModePerm)
 	if nil != err {
 		return err
@@ -33,6 +46,11 @@ func importBKBiz(db storage.DI, opt *option) error {
 		return fmt.Errorf("get src topo faile %s", err.Error())
 	}
 
+	// err = backup(db, opt)
+	// if err != nil {
+	// 	return fmt.Errorf("backup faile %s", err)
+	// }
+
 	//topo check
 	if !compareSlice(tar.Mainline, cur.Mainline) {
 		return fmt.Errorf("different topo mainline found, your expecting import topo is [%s], but the existing topo is [%s]",
@@ -46,7 +64,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 	// walk to create new node
 	tar.BizTopo.walk(func(node *Node) error {
 		if node.mark == "create" {
-			fmt.Printf("\033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+			fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 			if !opt.dryrun {
 				_, err := db.Insert(commondata.GetInstTableName(node.ObjID), node.Data)
 				if nil != err {
@@ -55,7 +73,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 			}
 		}
 		if node.mark == "update" {
-			// fmt.Printf("\033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+			// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 			if !opt.dryrun {
 				instID, err := node.getInstID()
 				if nil != err {
@@ -101,7 +119,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 						default:
 							deleteconition[common.BKObjIDField] = child.ObjID
 						}
-						fmt.Printf("\033[31mdelete %s parent %s, by %+v\033[0m\n", child.ObjID, objID, deleteconition)
+						fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, node.Data, deleteconition)
 						if !opt.dryrun {
 							err = db.DelByCondition(commondata.GetInstTableName(objID), deleteconition)
 							if nil != err {
@@ -145,7 +163,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 
 			topo.Data[common.BKProcessIDField] = procID
 			condition := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
-			// fmt.Printf("\033[36mupdate process by %+v, data: %+v\033[0m\n", condition, topo.Data)
+			// fmt.Printf("--- \033[36mupdate process by %+v, data: %+v\033[0m\n", condition, topo.Data)
 			if !opt.dryrun {
 				err = db.UpdateByCondition(common.BKTableNameBaseProcess, topo.Data, condition)
 				if nil != err {
@@ -162,7 +180,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = procID
-				fmt.Printf("\033[34minsert process module data: %+v\033[0m\n", procmod)
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
 				if !opt.dryrun {
 					_, err = db.Insert(common.BKTableNameProcModule, &procmod)
 					if nil != err {
@@ -179,7 +197,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 					common.BKModuleNameField: curmodule,
 					common.BKProcessIDField:  procID,
 				}
-				fmt.Printf("\033[31mdelete process module by %+v\033[0m\n", delcondition)
+				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
 				if !opt.dryrun {
 					err = db.DelByCondition(common.BKTableNameProcModule, delcondition)
 					if nil != err {
@@ -194,7 +212,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 				return fmt.Errorf("GetIncID for prcess faile, error: %s ", err.Error())
 			}
 			topo.Data[common.BKProcessIDField] = nid
-			fmt.Printf("\033[34minsert process data: %+v\033[0m\n", topo.Data)
+			fmt.Printf("--- \033[34minsert process data: %+v\033[0m\n", topo.Data)
 			if !opt.dryrun {
 				_, err = db.Insert(common.BKTableNameBaseProcess, topo.Data)
 				if nil != err {
@@ -206,7 +224,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = nid
-				fmt.Printf("\033[34minsert process module data: %+v\033[0m\n", topo.Data)
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
 				if !opt.dryrun {
 					_, err = db.Insert(common.BKTableNameProcModule, &procmod)
 					if nil != err {
@@ -223,14 +241,14 @@ func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 			delcondition := map[string]interface{}{
 				common.BKProcessIDField: proc.Data[common.BKProcessIDField],
 			}
-			fmt.Printf("\033[31mdelete process by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delcondition)
 			if !opt.dryrun {
 				err = db.DelByCondition(common.BKTableNameBaseProcess, delcondition)
 				if nil != err {
 					return fmt.Errorf("delete process by %+v, error: %s", delcondition, err.Error())
 				}
 			}
-			fmt.Printf("\033[31mdelete process module by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
 			if !opt.dryrun {
 				err = db.DelByCondition(common.BKTableNameProcModule, delcondition)
 				if nil != err {
