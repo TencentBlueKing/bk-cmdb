@@ -15,6 +15,7 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"io"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -33,6 +34,214 @@ type attribute struct {
 	isNew     bool
 	params    types.LogicParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *attribute) searchObjects(objID string) ([]metadata.Object, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID).Field(common.BKObjIDField).Eq(objID)
+
+	condStr, err := cond.ToMapStr().ToJSON()
+	if nil != err {
+		return nil, err
+	}
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), condStr)
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", objID, rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	return rsp.Data, nil
+
+}
+
+func (cli *attribute) GetParentObject() (Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(metadata.AssociationFieldObjectID).Eq(cli.attr.ObjectID)
+	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(cli.attr.PropertyID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
+		return nil, err
+	}
+
+	for _, asst := range rsp.Data {
+
+		rspRst, err := cli.searchObjects(asst.ObjectID)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
+			return nil, err
+		}
+
+		objItems := CreateObject(cli.params, cli.clientSet, rspRst)
+		for _, item := range objItems { // only one object
+			return item, nil
+		}
+
+	}
+
+	return nil, io.EOF
+}
+func (cli *attribute) GetChildObject() (Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(cli.attr.ObjectID)
+	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(cli.attr.PropertyID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
+		return nil, err
+	}
+
+	for _, asst := range rsp.Data {
+
+		rspRst, err := cli.searchObjects(asst.ObjectID)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s", asst.ObjectID, err.Error())
+			return nil, err
+		}
+
+		objItems := CreateObject(cli.params, cli.clientSet, rspRst)
+		for _, item := range objItems { // only one object
+			return item, nil
+		}
+
+	}
+
+	return nil, io.EOF
+}
+
+func (cli *attribute) SetParentObject(objID string) error {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(cli.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldObjectID).Eq(cli.attr.ObjectID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-attr] failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-attr] failed to search the parent association, error info is %s", rsp.ErrMsg)
+		return cli.params.Err.Error(rsp.Code)
+	}
+
+	// create
+	if 0 == len(rsp.Data) {
+
+		asst := &metadata.Association{}
+		asst.OwnerID = cli.params.Header.OwnerID
+		asst.ObjectAttID = cli.attr.PropertyID
+		asst.AsstObjID = objID
+		asst.ObjectID = cli.attr.ObjectID
+
+		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header.ToHeader(), asst)
+
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
+			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
+
+		return nil
+	}
+
+	// update
+	for _, asst := range rsp.Data {
+
+		asst.AsstObjID = objID
+
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), nil)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
+			return err
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to update the child association, error info is %s", rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
+	}
+
+	return nil
+}
+func (cli *attribute) SetChildObject(objID string) error {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(cli.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(cli.attr.ObjectID)
+
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-attr] failed to request the object controller, error info is %s", err.Error())
+		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-attr] failed to search the child association, error info is %s", rsp.ErrMsg)
+		return cli.params.Err.Error(rsp.Code)
+	}
+
+	// create
+	if 0 == len(rsp.Data) {
+
+		asst := &metadata.Association{}
+		asst.OwnerID = cli.params.Header.OwnerID
+		asst.ObjectAttID = cli.attr.PropertyID
+		asst.AsstObjID = cli.attr.ObjectID
+		asst.ObjectID = objID
+
+		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header.ToHeader(), asst)
+
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
+			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
+
+		return nil
+	}
+
+	// update
+	for _, asst := range rsp.Data {
+
+		asst.ObjectID = objID
+
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), nil)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
+			return err
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to update the child association, error info is %s", rsp.ErrMsg)
+			return cli.params.Err.Error(rsp.Code)
+		}
+	}
+
+	return nil
 }
 
 func (cli *attribute) MarshalJSON() ([]byte, error) {

@@ -14,8 +14,10 @@ package operation
 
 import (
 	"configcenter/src/apimachinery"
+
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -23,27 +25,50 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error)
+	CreateMainlineAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
+	DeleteMainlineAssociaton(params types.LogicParams, objID string) error
+	SearchMainlineAssociationTopo(params types.LogicParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
+	SearchMainlineAssociationInstTopo(params types.LogicParams, bizID int64) ([]*metadata.TopoInstRst, error)
+	CreateCommonAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
 	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
 	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
 }
 
 type association struct {
 	clientSet    apimachinery.ClientSetInterface
+	cls          ClassificationOperationInterface
+	obj          ObjectOperationInterface
+	attr         AttributeOperationInterface
+	inst         InstOperationInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
 }
 
 // NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface, modelFactory model.Factory, instFactory inst.Factory) AssociationOperationInterface {
+func NewAssociationOperation(client apimachinery.ClientSetInterface, cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory) AssociationOperationInterface {
 	return &association{
 		clientSet:    client,
-		modelFactory: modelFactory,
-		instFactory:  instFactory,
+		cls:          cls,
+		obj:          obj,
+		attr:         attr,
+		inst:         inst,
+		modelFactory: targetModel,
+		instFactory:  targetInst,
 	}
 }
 
-func (cli *association) CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error) {
+func (cli *association) CreateCommonAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error) {
+
+	//  check the association
+	//	cond := condition.CreateCondition()
+	//	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
+	//	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(data.ObjectAttID)
+
+	//asst := cli.modelFactory.(params)
+	//asst.Parse(data)
+
+	//cli.clientSet.ObjectController().Meta().SelectObjectAssociations()
+
 	return nil, nil
 }
 func (cli *association) DeleteAssociation(params types.LogicParams, cond condition.Condition) error {

@@ -71,7 +71,7 @@ func (cli *topoAPI) CreateInst(params types.LogicParams, pathParams, queryParams
 			return nil, err
 		}
 
-		return setInst.ToMapStr() // only one item
+		return setInst.ToMapStr(), nil // only one item
 	}
 
 	return nil, nil

@@ -16,7 +16,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -35,20 +38,36 @@ func (cli *topoAPI) initAssociation() {
 
 // CreateMainLineObject create a new object in the main line topo
 func (cli *topoAPI) CreateMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("serch main line object ")
-	return nil, nil
+
+	mainLineAssociation := &metadata.Association{}
+
+	_, err := mainLineAssociation.Parse(data)
+	if nil != err {
+		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+	}
+
+	return cli.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 }
 
 // DeleteMainLineObject delete a object int the main line topo
 func (cli *topoAPI) DeleteMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("delete mainl line object ")
-	return nil, nil
+
+	objID := pathParams("obj_id")
+	err := cli.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+	return nil, err
 }
 
 // SearchMainLineOBjectTopo search the main line topo
 func (cli *topoAPI) SearchMainLineOBjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("search mainl line object topo")
-	return nil, nil
+
+	bizObj, err := cli.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
+		return nil, err
+	}
+
+	return cli.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
 // SearchObjectByClassificationID search the object by classification ID
@@ -60,8 +79,15 @@ func (cli *topoAPI) SearchObjectByClassificationID(params types.LogicParams, pat
 // SearchBusinessTopo search the business topo
 func (cli *topoAPI) SearchBusinessTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	fmt.Println("search business topo")
-	return nil, nil
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("app_id"))
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s ", pathParams("app_id"), err.Error())
+		return nil, err
+	}
+
+	return cli.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, id)
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
