@@ -12,6 +12,14 @@
 
 package inst
 
+type deleteCondition struct {
+	InstID []int `json:"inst_ids"`
+}
+
+type operation struct {
+	Delete deleteCondition `json:"delete"`
+}
+
 // instNameAsst  association inst name
 type instNameAsst struct {
 	ID         string                 `json:"id"`

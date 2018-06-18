@@ -233,6 +233,8 @@ const (
 	CCErrTopoGetCloudErrStrFaild = 1101031
 	//CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
+	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
+	CCErrTopoBizTopoLevelOverLimit = 1101033
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032

@@ -327,6 +327,30 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
+		// check the object level limit
+		level := common.BKNoLimit
+		if config, err := cli.CC.ParseConfig(); nil != err {
+			blog.Errorf("failed to get the parse the conigure, error info is %s", err.Error())
+		} else if cfg, ok := config[common.BKTopoBusinessLevelLimit]; ok {
+			level, _ = strconv.Atoi(cfg)
+			if level < 3 { // the min level limit is 3
+				level = common.BKNoLimit
+			}
+		}
+
+		rstItems, ctrErr := cli.mgr.SelectTopoModel(forward, nil, obj.OwnerID, common.BKInnerObjIDApp, "", "", "", defErr)
+		if nil != ctrErr {
+			blog.Error("select topo model failed, error information is %v, res:%v", ctrErr, rstItems)
+			return http.StatusBadRequest, nil, ctrErr
+		}
+
+		blog.Debug("select module for insts:%v", rstItems)
+
+		if level >= len(rstItems) {
+			blog.Errorf("business topology level exceeds the limit, %d", level)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrTopoBizTopoLevelOverLimit)
+		}
+
 		// to cache the old main association by the parent
 		asstSearch := map[string]interface{}{}
 		asstSearch[common.BKOwnerIDField] = obj.OwnerID
