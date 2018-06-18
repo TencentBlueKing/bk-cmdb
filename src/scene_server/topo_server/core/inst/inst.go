@@ -15,7 +15,6 @@ package inst
 import (
 	"context"
 	"encoding/json"
-	"io"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -56,80 +55,6 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
 
-}
-
-func (cli *inst) GetMainlineParentInst() (Inst, error) {
-
-	parentObj, err := cli.target.GetMainlineParentObject()
-	if nil != err {
-		return nil, err
-	}
-
-	parentID, err := cli.GetParentID()
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
-		return nil, err
-	}
-
-	cond := condition.CreateCondition()
-	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
-	cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
-	cond.Field(common.BKInstParentStr).Eq(parentID)
-
-	rspItems, err := cli.searchInsts(parentObj, cond)
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	for _, item := range rspItems {
-		return item, nil // only one mainline parent
-	}
-
-	return nil, io.EOF
-}
-func (cli *inst) GetMainlineChildInst() (Inst, error) {
-	childObj, err := cli.target.GetMainlineChildObject()
-	if nil != err {
-		return nil, err
-	}
-
-	currInstID, err := cli.GetInstID()
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
-		return nil, err
-	}
-
-	cond := condition.CreateCondition()
-	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
-	cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
-	cond.Field(common.BKInstParentStr).Eq(currInstID)
-
-	rspItems, err := cli.searchInsts(childObj, cond)
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	for _, item := range rspItems {
-		return item, nil // only one mainline child
-	}
-
-	return nil, io.EOF
-}
-
-func (cli *inst) GetParentInst() ([]Inst, error) {
-	return nil, nil
-}
-func (cli *inst) GetChildInst() ([]Inst, error) {
-	return nil, nil
-}
-
-func (cli *inst) SetMainlineParentInst(instID int64) error {
-	return nil
-}
-func (cli *inst) SetMainlineChildInst(instID int64) error {
-	return nil
 }
 
 func (cli *inst) Create() error {

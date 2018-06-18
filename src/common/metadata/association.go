@@ -77,6 +77,31 @@ func (cli *Association) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 
+// InstAsst an association definition between instances.
+type InstAsst struct {
+	ID           int64  `field:"id" json:"-"`
+	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
+	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+}
+
+// Parse load the data from mapstr attribute into attribute instance
+func (cli *InstAsst) Parse(data types.MapStr) (*InstAsst, error) {
+
+	err := SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
+}
+
+// ToMapStr to mapstr
+func (cli *InstAsst) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(cli)
+}
+
 // ConditionItem subcondition
 type ConditionItem struct {
 	Field    string      `json:"field,omitempty"`
