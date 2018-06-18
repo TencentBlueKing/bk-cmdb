@@ -90,24 +90,30 @@ type factory struct {
 }
 
 func (cli *factory) CreaetObject(params types.LogicParams) Object {
-	return &object{
+	obj := &object{
 		params:    params,
 		clientSet: cli.clientSet,
 	}
+	obj.SetSupplierAccount(params.Header.OwnerID)
+	return obj
 }
 
 func (cli *factory) CreaetClassification(params types.LogicParams) Classification {
-	return &classification{
+	cls := &classification{
 		params:    params,
 		clientSet: cli.clientSet,
 	}
+	cls.SetSupplierAccount(params.Header.OwnerID)
+	return cls
 }
 
 func (cli *factory) CreateAttribute(params types.LogicParams) Attribute {
-	return &attribute{
+	attr := &attribute{
 		params:    params,
 		clientSet: cli.clientSet,
 	}
+	attr.SetSupplierAccount(params.Header.OwnerID)
+	return attr
 }
 
 func (cli *factory) CreateGroup(params types.LogicParams) Group {
@@ -117,10 +123,18 @@ func (cli *factory) CreateGroup(params types.LogicParams) Group {
 	}
 }
 
-func (cli *factory) CreateAssociation(params types.LogicParams) Association {
+func (cli *factory) CreateMainLineAssociatin(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
+	return &association{
+		isMainLine: true,
+		params:     params,
+		clientSet:  cli.clientSet,
+	}
+}
+func (cli *factory) CreateCommonAssociation(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
 
 	return &association{
-		params:    params,
-		clientSet: cli.clientSet,
+		isMainLine: false,
+		params:     params,
+		clientSet:  cli.clientSet,
 	}
 }

@@ -24,16 +24,29 @@ type Inst interface {
 	model.Operation
 	GetObject() model.Object
 
-	GetInstID() (int, error)
+	GetMainlineParentInst() (Inst, error)
+	GetMainlineChildInst() (Inst, error)
+
+	GetParentInst() ([]Inst, error)
+	GetChildInst() ([]Inst, error)
+
+	SetParentInst(targetInst Inst) error
+	SetChildInst(targetInst Inst) error
+
+	SetMainlineParentInst(targetInst Inst) error
+	SetMainlineChildInst(targetInst Inst) error
+
+	GetInstID() (int64, error)
+	GetParentID() (int64, error)
 	GetInstName() (string, error)
 
 	SetValue(key string, value interface{}) error
 
 	SetValues(values frtypes.MapStr)
 
-	GetValues() (frtypes.MapStr, error)
+	GetValues() frtypes.MapStr
 
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() frtypes.MapStr
 }
 
 // Factory used to all inst

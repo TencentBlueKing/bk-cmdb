@@ -42,13 +42,22 @@ type core struct {
 func New(client apimachinery.ClientSetInterface) Core {
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
+
+	inst := operation.NewInstOperation(client, targetModel, targetInst)
+	attribute := operation.NewAttributeOperation(client, targetModel, targetInst)
+	classification := operation.NewClassificationOperation(client, targetModel, targetInst)
+	group := operation.NewGroupOperation(client, targetModel, targetInst)
+	object := operation.NewObjectOperation(client, targetModel, targetInst)
+
+	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
+
 	return &core{
-		inst:           operation.NewInstOperation(client, targetModel, targetInst),
-		association:    operation.NewAssociationOperation(client, targetModel, targetInst),
-		attribute:      operation.NewAttributeOperation(client, targetModel, targetInst),
-		classification: operation.NewClassificationOperation(client, targetModel, targetInst),
-		group:          operation.NewGroupOperation(client, targetModel, targetInst),
-		object:         operation.NewObjectOperation(client, targetModel, targetInst),
+		inst:           inst,
+		association:    association,
+		attribute:      attribute,
+		classification: classification,
+		group:          group,
+		object:         object,
 	}
 }
 
