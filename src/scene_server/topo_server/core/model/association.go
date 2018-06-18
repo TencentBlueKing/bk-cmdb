@@ -24,9 +24,10 @@ import (
 var _ Association = (*association)(nil)
 
 type association struct {
-	asst      metadata.Association
-	params    types.LogicParams
-	clientSet apimachinery.ClientSetInterface
+	asst       metadata.Association
+	isMainLine bool
+	params     types.LogicParams
+	clientSet  apimachinery.ClientSetInterface
 }
 
 func (cli *association) MarshalJSON() ([]byte, error) {
@@ -35,6 +36,22 @@ func (cli *association) MarshalJSON() ([]byte, error) {
 
 func (cli *association) GetType() AssociationType {
 	return CommonAssociation
+}
+
+func (cli *association) IsExists() (bool, error) {
+	return false, nil
+}
+func (cli *association) Create() error {
+	return nil
+}
+func (cli *association) Delete() error {
+	return nil
+}
+func (cli *association) Update() error {
+	return nil
+}
+func (cli *association) Save() error {
+	return nil
 }
 
 func (cli *association) SetTopo(parent, child Object) error {
@@ -52,8 +69,4 @@ func (cli *association) ToMapStr() (frtypes.MapStr, error) {
 
 func (cli *association) Parse(data frtypes.MapStr) (*metadata.Association, error) {
 	return cli.asst.Parse(data)
-}
-
-func (cli *association) Save() error {
-	return nil
 }
