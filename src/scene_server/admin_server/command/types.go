@@ -10,6 +10,7 @@ import (
 type option struct {
 	OwnerID  string
 	position string
+	dryrun   bool
 }
 
 // Node topo node define
@@ -119,6 +120,7 @@ func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
 
 // Topo define
 type Topo struct {
-	Mainline []string `json:"mainline"`
-	Topo     *Node    `json:"topo"`
+	Mainline  []string       `json:"mainline"`
+	BizTopo   *Node          `json:"biz_topo"`
+	ProcTopos []*ProcessTopo `json:"proc_topo"`
 }

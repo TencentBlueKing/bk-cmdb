@@ -22,12 +22,14 @@ func Parse(args []string) error {
 	var (
 		exportflag     bool
 		importflag     bool
+		dryrun         bool
 		filepath       string
 		configposition string
 	)
 
 	// set flags
 	bkbizfs := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
+	bkbizfs.BoolVar(&dryrun, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
 	bkbizfs.StringVar(&filepath, "file", "", "export or import filepath")
@@ -57,7 +59,7 @@ func Parse(args []string) error {
 		fmt.Printf("blueking business has been export to %s\n", filepath)
 	} else if importflag {
 		fmt.Printf("importing blueking business from %s\n", filepath)
-		if err := importBKBiz(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID}); err != nil {
+		if err := importBKBiz(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID, dryrun: dryrun}); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}

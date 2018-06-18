@@ -28,7 +28,12 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 		return nil, err
 	}
 
-	return &Topo{Mainline: topo, Topo: root}, nil
+	proctopo, err := getProcessTopo(db, opt)
+	if nil != err {
+		return nil, err
+	}
+
+	return &Topo{Mainline: topo, BizTopo: root, ProcTopos: proctopo}, nil
 }
 
 func getBKAppNode(db storage.DI, opt *option) (*Node, error) {
@@ -139,4 +144,51 @@ func getAsst(db storage.DI, opt *option) ([]*metadata.ObjectAsst, error) {
 		return nil, fmt.Errorf("query cc_ObjAsst error: %s", err.Error())
 	}
 	return assts, nil
+}
+
+func getProcessTopo(db storage.DI, opt *option) ([]*ProcessTopo, error) {
+	// fetch all process
+	procs := []map[string]interface{}{}
+	err := db.GetMutilByCondition(common.BKTableNameBaseProcess, nil, map[string]interface{}{}, &procs, "", 0, 0)
+	if nil != err {
+		return nil, fmt.Errorf("get process faile %s", err.Error())
+	}
+
+	// fetch all process module
+	procmodules := []ProModule{}
+	err = db.GetMutilByCondition(common.BKTableNameProcModule, nil, map[string]interface{}{}, &procmodules, "", 0, 0)
+	if nil != err {
+		return nil, fmt.Errorf("get process faile %s", err.Error())
+	}
+
+	procmodMap := map[int64][]string{}
+	for _, pm := range procmodules {
+		procmodMap[pm.ProcessID] = append(procmodMap[pm.ProcessID], pm.ModuleName)
+	}
+
+	topos := []*ProcessTopo{}
+	for _, proc := range procs {
+		topo := ProcessTopo{
+			Data: proc,
+		}
+		procID, err := getInt64(proc["bk_process_id"])
+		if nil != err {
+			return nil, err
+		}
+		topo.Modules = procmodMap[procID]
+		topos = append(topos, &topo)
+	}
+
+	return topos, nil
+}
+
+type ProModule struct {
+	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id,omitempty"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name,omitempty"`
+	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
+}
+
+type ProcessTopo struct {
+	Data    map[string]interface{} `json:"data"`
+	Modules []string               `json:"modules"`
 }
