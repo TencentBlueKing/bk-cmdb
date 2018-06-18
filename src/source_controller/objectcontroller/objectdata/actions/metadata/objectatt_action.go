@@ -297,7 +297,7 @@ func (cli *objectAttAction) SelectObjectAttWithParams(req *restful.Request, resp
 			blog.Error("find object by selector failed, error information is %s", selErr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
-		blog.Debug("the result:%+v", results)
+		// blog.Debug("the result:%+v", results)
 		// translate language
 		for index := range results {
 			results[index].PropertyName = commondata.TranslatePropertyName(defLang, &results[index])

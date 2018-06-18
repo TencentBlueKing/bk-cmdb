@@ -58,7 +58,7 @@ const (
 	BKDefaultOwnerID = "0"
 
 	// BKSupereOwnerID the super owner value
-	BKSupereOwnerID = "supperowner"
+	BKSuperOwnerID = "supperowner"
 
 	// BKDefaultSupplierID the default owner id
 	BKDefaultSupplierID = 0

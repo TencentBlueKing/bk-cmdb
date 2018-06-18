@@ -93,8 +93,34 @@ func (cli *appAction) GetInternalTopo(req *restful.Request, resp *restful.Respon
 	io.WriteString(resp, rsp)
 }
 
+// CreateDefaultApp create default application
+func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams["owner_id"]
+	url := cli.CC.TopoAPI() + "/topo/v1/app/default/" + ownerID
+	//	req.Request.URL.Path = "/topo/v1/app/" + ownerID
+	blog.Info("Create default App url:%s", req.Request.URL.Path)
+	//	httpcli.ProxyRestHttp(req, resp, url)
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
+	io.WriteString(resp, rsp)
+}
+
+// SearchDefaultApp search default application
+func (cli *appAction) SearchDefaultApp(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams["owner_id"]
+	url := cli.CC.TopoAPI() + "/topo/v1/app/default/" + ownerID + "/search"
+	//	req.Request.URL.Path = "/topo/v1/app/" + ownerID
+	blog.Info("search default App url:%s", req.Request.URL.Path)
+	//	httpcli.ProxyRestHttp(req, resp, url)
+	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
+	io.WriteString(resp, rsp)
+}
+
 func init() {
 
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/default/{owner_id}", Params: nil, Handler: app.CreateDefaultApp, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/default/{owner_id}/search", Params: nil, Handler: app.SearchDefaultApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/{owner_id}", Params: nil, Handler: app.CreateApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.DeleteApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateApp, Version: v3.APIVersion})
