@@ -703,6 +703,8 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 		}
 
 		if ownerID != common.BKDefaultOwnerID {
+			headerOwner := util.GetActionOnwerID(req)
+			blog.Infof("copy asst for %s, header owner: %s", ownerID, headerOwner)
 			searchAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectassts"
 			searchAsstCondition := map[string]interface{}{
 				common.BKOwnerIDField:  common.BKDefaultOwnerID,
@@ -722,6 +724,9 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 
 			assts := []map[string]interface{}{}
 			json.Unmarshal([]byte(searchAsstJSON.Get("data").String()), &assts)
+
+			blog.Infof("copy asst for %s, %+v", ownerID, assts)
+
 			for index := range assts {
 				assts[index][common.BKOwnerIDField] = ownerID
 

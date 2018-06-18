@@ -23,7 +23,7 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager.httpCli = httpclient.NewHttpClient()
 	ownerManager.httpCli.SetHeader(common.BKHTTPHeaderUser, userName)
 	ownerManager.httpCli.SetHeader(common.BKHTTPLanguage, language)
-	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, ownerID)
+	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 	return ownerManager
 }
 
@@ -52,7 +52,7 @@ func (m *OwnerManager) addDefaultApp() error {
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(params)
-	url := fmt.Sprintf("%s/api/%s/topo/biz/default/%s", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
+	url := fmt.Sprintf("%s/api/%s/biz/default/%s", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
 	blog.Info("migrate add default app url :%s", url)
 	blog.Info("migrate add default app content :%s", string(byteParams))
 	m.httpCli.POST(url, nil, byteParams)
@@ -82,7 +82,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 	params["limit"] = 20
 
 	byteParams, _ := json.Marshal(params)
-	url := fmt.Sprintf("%s/api/%s/topo/biz/default/%s/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
+	url := fmt.Sprintf("%s/api/%s/biz/default/%s/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
 
 	blog.Info("migrate get default app url :%s", url)
 	blog.Info("migrate get default app content :%s", string(byteParams))

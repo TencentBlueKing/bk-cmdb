@@ -14,7 +14,6 @@ package util
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"net/http"
 
 	restful "github.com/emicklei/go-restful"
@@ -35,11 +34,11 @@ func GetActionLanguage(req *restful.Request) string {
 	if "" == language {
 		language = "zh-cn"
 	}
-	blog.Infof("request language: %s, header: %v", language, req.Request.Header)
+	// blog.Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 
-// GetActionLanguage returns user form hender
+// GetActionUser returns user form hender
 func GetActionUser(req *restful.Request) string {
 	user := req.HeaderParameter(common.BKHTTPHeaderUser)
 	return user
