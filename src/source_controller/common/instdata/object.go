@@ -70,6 +70,7 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := commondata.ObjTableMap[objType]
 	if err := DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
 

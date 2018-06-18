@@ -44,28 +44,28 @@ const (
 
 // Attribute attribute metadata definition
 type Attribute struct {
-	ID            int         `field:"id"`
-	OwnerID       string      `field:"bk_supplier_account"`
-	ObjectID      string      `field:"bk_obj_id"`
-	PropertyID    string      `field:"bk_property_id"`
-	PropertyName  string      `field:"bk_property_name"`
-	PropertyGroup string      `field:"bk_property_group"`
-	PropertyIndex int         `field:"bk_property_index"`
-	Unit          string      `field:"unit"`
-	Placeholder   string      `field:"placeholder"`
-	IsEditable    bool        `field:"editable"`
-	IsPre         bool        `field:"ispre"`
-	IsRequired    bool        `field:"isrequired"`
-	IsReadOnly    bool        `field:"isreadonly"`
-	IsOnly        bool        `field:"isonly"`
-	IsSystem      bool        `field:"bk_issystem"`
-	IsAPI         bool        `field:"bk_isapi"`
-	PropertyType  string      `field:"bk_property_type"`
-	Option        interface{} `field:"option"`
-	Description   string      `field:"description"`
-	Creator       string      `field:"creator"`
-	CreateTime    *time.Time  `field:"create_time"`
-	LastTime      *time.Time  `field:"last_time"`
+	ID            int64       `field:"id" json:"id"`
+	OwnerID       string      `field:"bk_supplier_account" json:"bk_supplier_account"`
+	ObjectID      string      `field:"bk_obj_id" json:"bk_obj_id"`
+	PropertyID    string      `field:"bk_property_id" json:"bk_property_id"`
+	PropertyName  string      `field:"bk_property_name" json:"bk_property_name"`
+	PropertyGroup string      `field:"bk_property_group" json:"bk_property_group"`
+	PropertyIndex int64       `field:"bk_property_index" json:"bk_property_index"`
+	Unit          string      `field:"unit" json:"unit"`
+	Placeholder   string      `field:"placeholder" json:"placeholder"`
+	IsEditable    bool        `field:"editable" json:"editable"`
+	IsPre         bool        `field:"ispre" json:"ispre"`
+	IsRequired    bool        `field:"isrequired" json:"isrequired"`
+	IsReadOnly    bool        `field:"isreadonly" json:"isreadonly"`
+	IsOnly        bool        `field:"isonly" json:"isonly"`
+	IsSystem      bool        `field:"bk_issystem" json:"bk_issystem"`
+	IsAPI         bool        `field:"bk_isapi" json:"bk_isapi"`
+	PropertyType  string      `field:"bk_property_type" json:"bk_property_type"`
+	Option        interface{} `field:"option" json:"option"`
+	Description   string      `field:"description" json:"description"`
+	Creator       string      `field:"creator" json:"creator"`
+	CreateTime    *time.Time  `field:"create_time" json:"create_time"`
+	LastTime      *time.Time  `field:"last_time" json:"last_time"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance

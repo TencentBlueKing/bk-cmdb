@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	frtypes "configcenter/src/common/mapstr"
@@ -24,11 +25,12 @@ func init() {
 }
 
 func (cli *topoAPI) initAuditLog() {
+	fmt.Println("init audit log")
 	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: cli.SearchAuditLog})
 }
 
 // SearchAuditLog search audit logs
-func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+func (cli *topoAPI) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchAuditLog")
 	return nil, nil
 }

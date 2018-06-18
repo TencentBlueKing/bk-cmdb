@@ -13,13 +13,13 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
-	// "configcenter/src/common"
-	// "configcenter/src/common/blog"
-
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -36,9 +36,9 @@ func (cli *topoAPI) initObjectClassification() {
 }
 
 // CreateClassification create a new object classification
-func (cli *topoAPI) CreateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
-	cls, err := cli.core.CreateClassification(params, data)
+func (cli *topoAPI) CreateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("create classifications ")
+	cls, err := cli.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -46,79 +46,86 @@ func (cli *topoAPI) CreateClassification(params types.LogicParams, pathParams, q
 }
 
 // SearchClassificationWithObjects search the classification with objects
-func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
-
+func (cli *topoAPI) SearchClassificationWithObjects(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("serch classifications with objects ")
 	cond := condition.CreateCondition()
+	if data.Exists(metadata.PageName) {
 
-	// TODO: data => cond
+		page, err := data.MapStr(metadata.PageName)
+		if nil != err {
+			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			return nil, err
+		}
 
-	clsItems, err := cli.core.FindClassification(params, cond)
+		if err = cond.SetPage(page); nil != err {
+			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			return nil, err
+		}
 
-	if nil != err {
+		data.Remove(metadata.PageName)
+	}
+
+	if err := cond.Parse(data); nil != err {
+		blog.Errorf("failed to parse the condition, error info is %s", err.Error())
 		return nil, err
 	}
 
-	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range clsItems {
-		obj, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		items = append(items, obj)
-	}
-
-	result.Set("data", items)
-
-	return result, nil
+	return cli.core.ClassificationOperation().FindClassification(params, cond)
 }
 
 // SearchClassification search the classifications
-func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
+	fmt.Println("serch classifications ")
 	cond := condition.CreateCondition()
+	if data.Exists(metadata.PageName) {
 
-	// TODO: data => cond
-
-	clsItems, err := cli.core.FindClassification(params, cond)
-
-	if nil != err {
-		return nil, err
-	}
-
-	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range clsItems {
-		obj, err := item.ToMapStr()
+		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
+			blog.Errorf("failed to get the page , error info is %s", err.Error())
 			return nil, err
 		}
-		items = append(items, obj)
+
+		if err = cond.SetPage(page); nil != err {
+			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			return nil, err
+		}
+
+		data.Remove(metadata.PageName)
 	}
+	cond.Parse(data)
 
-	result.Set("data", items)
-
-	return result, nil
+	return cli.core.ClassificationOperation().FindClassification(params, cond)
 }
 
 // UpdateClassification update the object classification
-func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		return nil, err
+	}
 
-	cond.Field("id")
-
-	err := cli.core.UpdateClassification(params, data, cond)
-
+	err = cli.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
 	return nil, err
 }
 
 // DeleteClassification delete the object classification
-func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		return nil, err
+	}
 
-	cond.Field("id")
-
-	err := cli.core.DeleteClassification(params, cond)
-
+	err = cli.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err
 }

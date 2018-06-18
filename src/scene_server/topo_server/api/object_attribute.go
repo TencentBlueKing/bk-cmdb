@@ -15,11 +15,10 @@ package api
 import (
 	"net/http"
 
-	// "configcenter/src/common"
-	// "configcenter/src/common/blog"
-
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -28,16 +27,16 @@ func init() {
 }
 
 func (cli *topoAPI) initObjectAttribute() {
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectatt", HandlerFunc: cli.CreateObjectAttribute})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectatt/search", HandlerFunc: cli.SearchObjectAttribute})
-	cli.actions = append(cli.actions, action{Method: http.MethodPut, Path: "/objectatt/{id}", HandlerFunc: cli.UpdateObjectAttribute})
-	cli.actions = append(cli.actions, action{Method: http.MethodDelete, Path: "/objectatt/{id}", HandlerFunc: cli.DeleteObjectAttribute})
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectattr", HandlerFunc: cli.CreateObjectAttribute})
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objectattr/search", HandlerFunc: cli.SearchObjectAttribute})
+	cli.actions = append(cli.actions, action{Method: http.MethodPut, Path: "/objectattr/{id}", HandlerFunc: cli.UpdateObjectAttribute})
+	cli.actions = append(cli.actions, action{Method: http.MethodDelete, Path: "/objectattr/{id}", HandlerFunc: cli.DeleteObjectAttribute})
 }
 
 // CreateObjectAttribute create a new object attribute
-func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	attr, err := cli.core.CreateObjectAttribute(params, data)
+	attr, err := cli.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -46,54 +45,49 @@ func (cli *topoAPI) CreateObjectAttribute(params types.LogicParams, pathParams, 
 }
 
 // SearchObjectAttribute search the object attributes
-func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-
-	// TODO: data => cond
-
-	attrs, err := cli.core.FindObjectAttribute(params, cond)
-
-	if nil != err {
+	data.Remove(metadata.PageName)
+	if err := cond.Parse(data); nil != err {
+		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
 		return nil, err
 	}
 
-	result := frtypes.MapStr{}
-	items := make([]frtypes.MapStr, 0)
-	for _, item := range attrs {
-
-		obj, err := item.ToMapStr()
-		if nil != err {
-			return nil, err
-		}
-		items = append(items, obj)
-	}
-
-	result.Set("data", items)
-
-	return result, nil
+	return cli.core.AttributeOperation().FindObjectAttribute(params, cond)
 }
 
 // UpdateObjectAttribute update the object attribute
-func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		return nil, err
+	}
 
-	cond.Field("id")
-
-	err := cli.core.UpdateObjectAttribute(params, data, cond)
+	err = cli.core.AttributeOperation().UpdateObjectAttribute(params, data, id, cond)
 
 	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (cli *topoAPI) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	cond.Field("id")
+	paramPath := frtypes.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		return nil, err
+	}
 
-	err := cli.core.DeleteObjectAttribute(params, cond)
+	err = cli.core.AttributeOperation().DeleteObjectAttribute(params, id, cond)
 
 	return nil, err
 }

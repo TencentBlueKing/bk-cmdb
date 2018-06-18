@@ -13,31 +13,30 @@
 package user
 
 import (
-    "context"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
 type UserInterface interface {
-    AddUserConfig(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    UpdateUserConfig(ctx context.Context, businessID string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    DeleteUserConfig(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    GetUserConfig(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error)
-    GetUserConfigDetail(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    
-    AddUserCustom(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    UpdateUserCustomByID(ctx context.Context, user string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    GetUserCustomByUser(ctx context.Context, user string,  h util.Headers) (resp *api.BKAPIRsp, err error)
-    GetDefaultUserCustom(ctx context.Context, user string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	AddUserConfig(ctx context.Context, h http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error)
+	UpdateUserConfig(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
+	DeleteUserConfig(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.BaseResp, err error)
+	GetUserConfig(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error)
+	GetUserConfigDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.GetUserConfigDetailResult, err error)
+
+	AddUserCustom(ctx context.Context, user string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
+	UpdateUserCustomByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error)
+	GetUserCustomByUser(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error)
+	GetDefaultUserCustom(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error)
 }
 
 func NewUserInterface(client rest.ClientInterface) UserInterface {
-    return &user{client:client}
+	return &user{client: client}
 }
 
 type user struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }
