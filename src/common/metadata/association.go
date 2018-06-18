@@ -15,12 +15,18 @@ package metadata
 import types "configcenter/src/common/mapstr"
 
 const (
-	AssociationFieldObjectID            = "bk_obj_id"
-	AssociationFieldObjectAttributeID   = "bk_object_att_id"
-	AssociationFieldSupplierAccount     = "bk_supplier_account"
-	AssociationFieldAssociationForward  = "bk_asst_forward"
+	// AssociationFieldObjectID the association data field definition
+	AssociationFieldObjectID = "bk_obj_id"
+	// AssociationFieldObjectAttributeID the association data field definition
+	AssociationFieldObjectAttributeID = "bk_object_att_id"
+	// AssociationFieldSupplierAccount the association data field definition
+	AssociationFieldSupplierAccount = "bk_supplier_account"
+	// AssociationFieldAssociationForward the association data field definition
+	AssociationFieldAssociationForward = "bk_asst_forward"
+	// AssociationFieldAssociationObjectID the association data field definition
 	AssociationFieldAssociationObjectID = "bk_asst_obj_id"
-	AssociationFieldAssociationName     = "bk_asst_name"
+	// AssociationFieldAssociationName the association data field definition
+	AssociationFieldAssociationName = "bk_asst_name"
 )
 
 // Association define object association struct
@@ -48,4 +54,18 @@ func (cli *Association) Parse(data types.MapStr) (*Association, error) {
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
+}
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
+}
+
+// AssociationParams  association params
+type AssociationParams struct {
+	Page      BasePage                   `json:"page,omitempty"`
+	Fields    map[string][]string        `json:"fields,omitempty"`
+	Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }

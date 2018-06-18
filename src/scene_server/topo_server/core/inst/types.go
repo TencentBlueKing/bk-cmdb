@@ -24,12 +24,12 @@ type Inst interface {
 	model.Operation
 	GetObject() model.Object
 
-	GetInstID() int
-	GetInstName() string
+	GetInstID() (int, error)
+	GetInstName() (string, error)
 
 	SetValue(key string, value interface{}) error
 
-	SetValues(values frtypes.MapStr) error
+	SetValues(values frtypes.MapStr)
 
 	GetValues() (frtypes.MapStr, error)
 

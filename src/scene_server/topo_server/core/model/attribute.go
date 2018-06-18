@@ -13,12 +13,13 @@
 package model
 
 import (
-	"configcenter/src/common/condition"
 	"context"
+	"encoding/json"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -34,6 +35,10 @@ type attribute struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (cli *attribute) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.attr)
+}
+
 func (cli *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
 	return cli.attr.Parse(data)
 }
@@ -47,7 +52,7 @@ func (cli *attribute) ToMapStr() (frtypes.MapStr, error) {
 
 func (cli *attribute) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), cli.params.Header, &cli.attr)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), cli.params.Header.ToHeader(), &cli.attr)
 
 	if nil != err {
 		blog.Errorf("faield to request the object controller, the error info is %s", err.Error())
@@ -65,7 +70,7 @@ func (cli *attribute) Create() error {
 
 func (cli *attribute) Update() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header, cli.attr.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header.ToHeader(), cli.attr.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
@@ -86,7 +91,7 @@ func (cli *attribute) search() ([]metadata.Attribute, error) {
 		Field(metadata.AttributeFieldObjectID).Eq(cli.attr.ObjectID).
 		Field(metadata.AttributeFieldPropertyID).Eq(cli.attr.PropertyName)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request to object controller, error info is %s", err.Error())
@@ -117,7 +122,7 @@ func (cli *attribute) Delete() error {
 		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID).
 		Field(metadata.AttributeFieldPropertyID).Eq(cli.attr.PropertyID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header, cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), cli.attr.ID, cli.params.Header.ToHeader(), cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request object, error info is %s", err.Error())
@@ -134,7 +139,9 @@ func (cli *attribute) Delete() error {
 
 func (cli *attribute) Save() error {
 
-	if cli.isNew {
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if !exists {
 		return cli.Create()
 	}
 
@@ -183,11 +190,11 @@ func (cli *attribute) GetGroup() (Group, error) {
 }
 
 func (cli *attribute) SetGroupIndex(attGroupIndex int64) {
-	cli.attr.PropertyIndex = int(attGroupIndex)
+	cli.attr.PropertyIndex = attGroupIndex
 }
 
 func (cli *attribute) GetGroupIndex() int64 {
-	return int64(cli.attr.PropertyIndex)
+	return cli.attr.PropertyIndex
 }
 
 func (cli *attribute) SetUnint(unit string) {

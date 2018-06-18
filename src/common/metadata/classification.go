@@ -25,11 +25,11 @@ const (
 
 // Classification the classification metadata definition
 type Classification struct {
-	ID                 int    `json:"id"`
-	ClassificationID   string `field:"bk_classification_id"`
-	ClassificationName string `field:"bk_classification_name"`
-	ClassificationType string `field:"bk_classification_type"`
-	ClassificationIcon string `field:"bk_classification_icon"`
+	ID                 int64  `field:"id" json:"id"`
+	ClassificationID   string `field:"bk_classification_id"  json:"bk_classification_id"`
+	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name"`
+	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type"`
+	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon"`
 }
 
 // Parse load the data from mapstr classification into classification instance

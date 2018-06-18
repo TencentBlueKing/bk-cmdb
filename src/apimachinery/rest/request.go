@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -36,11 +37,11 @@ import (
 type VerbType string
 
 const (
-	PUT    VerbType = "put"
-	POST   VerbType = "post"
-	GET    VerbType = "get"
-	DELETE VerbType = "delete"
-	PATCH  VerbType = "patch"
+	PUT    VerbType = http.MethodPut
+	POST   VerbType = http.MethodPost
+	GET    VerbType = http.MethodGet
+	DELETE VerbType = http.MethodDelete
+	PATCH  VerbType = http.MethodPatch
 )
 
 type Request struct {
@@ -97,7 +98,6 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 
 func (r *Request) SubResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
-	subPath = "/" + subPath
 	r.subPath = subPath
 	return r
 }
@@ -260,6 +260,10 @@ func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
 	}
+	if http.StatusOK != r.StatusCode {
+		return fmt.Errorf("error info %s", string(r.Body))
+	}
+
 	err := json.Unmarshal(r.Body, obj)
 	if nil != err {
 		return err

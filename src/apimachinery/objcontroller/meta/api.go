@@ -14,46 +14,40 @@ package meta
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	metatype "configcenter/src/common/metadata"
-	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/common/metadata"
 )
 
 type MetaInterface interface {
-	SelectClassificationWithObject(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationWithObjectsResult, err error)
-	SelectClassifications(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationResult, err error)
-	DeleteClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
-	CreateClassification(ctx context.Context, h util.Headers, dat *metatype.Classification) (resp *metatype.CreateObjectClassificationResult, err error)
-	UpdateClassification(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)
-
-	SearchTopoGraphics(ctx context.Context, h util.Headers, dat *metadata.TopoGraphics) (resp *api.BKAPIRsp, err error)
-	UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *metatype.UpdateResult, err error)
-
-	CreatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error)
-	UpdatePropertyGroup(ctx context.Context, h util.Headers, dat *metatype.UpdateGroupCondition) (resp *metatype.UpdateResult, err error)
-	DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error)
-	UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, dat []metatype.PropertyGroupObjectAtt) (resp *metatype.UpdateResult, err error)
-	DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *metatype.DeleteResult, err error)
-	SelectPropertyGroupByObjectID(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SelectGroup(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error)
-
-	SelectObjects(ctx context.Context, h util.Headers, data interface{}) (resp *metatype.QueryObjectResult, err error)
-	DeleteObject(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
-	CreateObject(ctx context.Context, h util.Headers, dat *metatype.Object) (resp *metatype.CreateObjectResult, err error)
-	UpdateObject(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)
-
-	SelectObjectAssociations(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAssociationResult, err error)
-	DeleteObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
-	CreateObjectAssociation(ctx context.Context, h util.Headers, dat *metadata.ObjectAsst) (resp *metatype.CreateResult, err error)
-	UpdateObjectAssociation(ctx context.Context, objID string, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)
-	SelectObjectAttByID(ctx context.Context, objID string, h util.Headers) (resp *metatype.QueryObjectAttributeResult, err error)
-	SelectObjectAttWithParams(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error)
-	DeleteObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
-	CreateObjectAtt(ctx context.Context, h util.Headers, dat *metatype.Attribute) (resp *metatype.CreateObjectAttributeResult, err error)
-	UpdateObjectAttByID(ctx context.Context, id int, h util.Headers, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)
+	SelectClassificationWithObject(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationWithObjectsResult, err error)
+	SelectClassifications(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationResult, err error)
+	DeleteClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	CreateClassification(ctx context.Context, h http.Header, dat *metadata.Classification) (resp *metadata.CreateObjectClassificationResult, err error)
+	UpdateClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
+	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.Response, err error)
+	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error)
+	CreatePropertyGroup(ctx context.Context, h http.Header, dat *metadata.Group) (resp *metadata.CreateObjectGroupResult, err error)
+	UpdatePropertyGroup(ctx context.Context, h http.Header, dat *metadata.UpdateGroupCondition) (resp *metadata.UpdateResult, err error)
+	DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.DeleteResult, err error)
+	UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, dat []metadata.PropertyGroupObjectAtt) (resp *metadata.UpdateResult, err error)
+	DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID, propertyID, groupID string, h http.Header) (resp *metadata.DeleteResult, err error)
+	SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectGroupResult, err error)
+	SelectGroup(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectGroupResult, err error)
+	SelectObjects(ctx context.Context, h http.Header, data interface{}) (resp *metadata.QueryObjectResult, err error)
+	DeleteObject(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	CreateObject(ctx context.Context, h http.Header, dat *metadata.Object) (resp *metadata.CreateObjectResult, err error)
+	UpdateObject(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
+	SelectObjectAssociations(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAssociationResult, err error)
+	DeleteObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	CreateObjectAssociation(ctx context.Context, h http.Header, dat *metadata.ObjectAsst) (resp *metadata.CreateResult, err error)
+	UpdateObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
+	SelectObjectAttByID(ctx context.Context, objID int64, h http.Header) (resp *metadata.QueryObjectAttributeResult, err error)
+	SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAttributeResult, err error)
+	DeleteObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	CreateObjectAtt(ctx context.Context, h http.Header, dat *metadata.Attribute) (resp *metadata.CreateObjectAttributeResult, err error)
+	UpdateObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 }
 
 func NewmetaInterface(client rest.ClientInterface) MetaInterface {

@@ -10,34 +10,30 @@
  * limitations under the License.
  */
 
-package core
+package condition_test
 
 import (
 	"configcenter/src/common/condition"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"testing"
 )
 
-func (cli *core) DeleteClassification(params types.LogicParams, cond condition.Condition) error {
-	return nil
-}
-func (cli *core) DeleteObject(params types.LogicParams, cond condition.Condition) error {
-	return nil
-}
+func TestCondition(t *testing.T) {
 
-func (cli *core) DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error {
-	return nil
-}
+	cond := condition.CreateCondition()
+	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
 
-func (cli *core) DeleteObjectGroup(params types.LogicParams, cond condition.Condition) error {
+	result := cond.ToMapStr()
+	rst, _ := result.ToJSON()
 
-	return nil
-}
+	t.Logf("the result:%+v", string(rst))
 
-func (cli *core) DeleteInst(params types.LogicParams, cond condition.Condition) error {
-	return nil
-}
+	newCond := condition.CreateCondition()
+	err := newCond.Parse(result)
+	if nil != err {
+		t.Logf("failed to parse condition, error info is %s", err.Error())
+		return
+	}
 
-func (cli *core) DeleteAssociation(params types.LogicParams, cond condition.Condition) error {
-
-	return nil
+	rstT, _ := newCond.ToMapStr().ToJSON()
+	t.Logf("the parse result:%+v", string(rstT))
 }

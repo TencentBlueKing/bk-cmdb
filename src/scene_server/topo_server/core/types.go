@@ -12,41 +12,4 @@
 
 package core
 
-import (
-	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
 
-	"configcenter/src/scene_server/topo_server/core/inst"
-	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
-)
-
-// Core Provides management interfaces for models and instances
-type Core interface {
-	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)
-	CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error)
-	CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error)
-	CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error)
-	CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
-	CreateAssociation(params types.LogicParams, data frtypes.MapStr) (model.Association, error)
-
-	DeleteClassification(params types.LogicParams, cond condition.Condition) error
-	DeleteObject(params types.LogicParams, cond condition.Condition) error
-	DeleteObjectAttribute(params types.LogicParams, cond condition.Condition) error
-	DeleteObjectGroup(params types.LogicParams, cond condition.Condition) error
-	DeleteInst(params types.LogicParams, cond condition.Condition) error
-	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
-
-	FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error)
-	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
-	FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error)
-	FindObjectGroup(params types.LogicParams, cond condition.Condition) ([]model.Group, error)
-	FindInst(params types.LogicParams, cond condition.Condition) ([]inst.Inst, error)
-
-	UpdateClassification(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-	UpdateObject(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-	UpdateObjectGroup(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-	UpdateInst(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
-}

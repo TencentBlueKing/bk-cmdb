@@ -88,66 +88,71 @@ func (cli *topoAPI) Actions() []*httpserver.Action {
 
 	var httpactions []*httpserver.Action
 	for _, a := range cli.actions {
-		httpactions = append(httpactions, &httpserver.Action{Verb: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
-			ownerID := util.GetActionOnwerID(req)
-			user := util.GetActionUser(req)
+		func(act action) {
 
-			// get the language
-			language := util.GetActionLanguage(req)
+			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
-			defLang := cli.lang.CreateDefaultCCLanguageIf(language)
+				ownerID := util.GetActionOnwerID(req)
+				user := util.GetActionUser(req)
 
-			// get the error info by the language
-			defErr := cli.err.CreateDefaultCCErrorIf(language)
+				// get the language
+				language := util.GetActionLanguage(req)
 
-			value, err := ioutil.ReadAll(req.Request.Body)
-			if err != nil {
-				blog.Errorf("read http request body failed, error:%s", err.Error())
-				errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-				respData, _ := cli.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
-				cli.sendResponse(resp, respData)
-				return
-			}
+				defLang := cli.lang.CreateDefaultCCLanguageIf(language)
 
-			mData := frtypes.MapStr{}
-			if err := json.Unmarshal(value, &mData); nil != err {
-				blog.Errorf("failed to unmarshal the data, error %s", err.Error())
-				errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-				respData, _ := cli.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
-				cli.sendResponse(resp, respData)
-				return
-			}
+				// get the error info by the language
+				defErr := cli.err.CreateDefaultCCErrorIf(language)
 
-			data, dataErr := a.HandlerFunc(types.LogicParams{
-				Err:  defErr,
-				Lang: defLang,
-				Header: apiutil.Headers{
-					Language: language,
-					User:     user,
-					OwnerID:  ownerID,
-				},
-			},
-				req.PathParameter,
-				req.QueryParameter,
-				mData)
-
-			if nil != dataErr {
-				blog.Errorf("%s", dataErr.Error())
-				switch e := dataErr.(type) {
-				default:
-					respData, _ := cli.createAPIRspStr(common.CCSystemBusy, dataErr.Error())
+				value, err := ioutil.ReadAll(req.Request.Body)
+				if err != nil {
+					blog.Errorf("read http request body failed, error:%s", err.Error())
+					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+					respData, _ := cli.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
 					cli.sendResponse(resp, respData)
-				case errors.CCErrorCoder:
-					respData, _ := cli.createAPIRspStr(e.GetCode(), dataErr.Error())
-					cli.sendResponse(resp, respData)
+					return
 				}
-				return
-			}
 
-			cli.sendResponse(resp, data)
+				mData := frtypes.MapStr{}
+				if err := json.Unmarshal(value, &mData); nil != err {
+					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+					respData, _ := cli.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
+					cli.sendResponse(resp, respData)
+					return
+				}
 
-		}})
+				data, dataErr := act.HandlerFunc(types.LogicParams{
+					Err:  defErr,
+					Lang: defLang,
+					Header: apiutil.Headers{
+						Language: language,
+						User:     user,
+						OwnerID:  ownerID,
+					},
+				},
+					req.PathParameter,
+					req.QueryParameter,
+					mData)
+
+				if nil != dataErr {
+					blog.Errorf("%s", dataErr.Error())
+					switch e := dataErr.(type) {
+					default:
+						respData, _ := cli.createAPIRspStr(common.CCSystemBusy, dataErr.Error())
+						cli.sendResponse(resp, respData)
+					case errors.CCErrorCoder:
+						respData, _ := cli.createAPIRspStr(e.GetCode(), dataErr.Error())
+						cli.sendResponse(resp, respData)
+					}
+					return
+				}
+
+				cli.sendResponse(resp, data)
+
+			}})
+		}(a)
+
 	}
 	return httpactions
 }

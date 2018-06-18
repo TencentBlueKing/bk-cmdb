@@ -12,9 +12,13 @@
 
 package metadata
 
+import (
+	types "configcenter/src/common/mapstr"
+)
+
 // RspID response id
 type RspID struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }
 
 // CreateResult create result
@@ -41,13 +45,13 @@ type QueryObjectResult struct {
 // CreateObjectResult create object result
 type CreateObjectResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // CreateObjectAttributeResult create object attribute result
 type CreateObjectAttributeResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // AttributeWrapper  wrapper, expansion field
@@ -62,12 +66,14 @@ type AttributeWrapper struct {
 // UpdateGroupCondition update group condition struct
 type UpdateGroupCondition struct {
 	Condition struct {
-		ID string `json:"bk_group_id"`
+		ID      int64  `json:"id,omitempty"`
+		GroupID string `json:"bk_group_id"`
+		ObjID   string `json:"bk_obj_id"`
 	} `json:"condition"`
 
 	Data struct {
 		Name  string `json:"bk_group_name"`
-		Index int    `json:"bk_group_index"`
+		Index int64  `json:"bk_group_index"`
 	} `json:"data"`
 }
 
@@ -86,7 +92,7 @@ type QueryObjectAttributeResult struct {
 // CreateObjectGroupResult create the object group result
 type CreateObjectGroupResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // QueryObjectGroupResult query the object group result
@@ -98,7 +104,7 @@ type QueryObjectGroupResult struct {
 // CreateObjectClassificationResult create the object classification result
 type CreateObjectClassificationResult struct {
 	BaseResp `json:",inline"`
-	Data     RspID
+	Data     RspID `json:"data"`
 }
 
 // QueryObjectClassificationResult query the object classification result
@@ -123,4 +129,22 @@ type QueryObjectClassificationWithObjectsResult struct {
 type QueryObjectAssociationResult struct {
 	BaseResp `json:",inline"`
 	Data     []Association `json:"data"`
+}
+
+// InstResult inst item result
+type InstResult struct {
+	Count int            `json:"count"`
+	Info  []types.MapStr `json:"info"`
+}
+
+// QueryInstResult query inst result
+type QueryInstResult struct {
+	BaseResp `json:",inline"`
+	Data     InstResult `json:"data"`
+}
+
+// CreateInstResult create inst result
+type CreateInstResult struct {
+	BaseResp `json:",inline"`
+	Data     types.MapStr `json:"data"`
 }

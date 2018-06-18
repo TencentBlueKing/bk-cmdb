@@ -20,7 +20,7 @@ import (
 )
 
 // LogicFunc the core logic function definition
-type LogicFunc func(params types.LogicParams, parthParams, queryParams ParamsGetter, data frtypes.MapStr) (frtypes.MapStr, error)
+type LogicFunc func(params types.LogicParams, parthParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string

@@ -32,8 +32,8 @@ const (
 // Operation the saver interface method
 type Operation interface {
 	Create() error
-	Update() error
 	Delete() error
+	Update() error
 	Save() error
 }
 
@@ -218,6 +218,10 @@ type Object interface {
 	GetModifier() string
 
 	ToMapStr() (frtypes.MapStr, error)
+
+	GetInstIDFieldName() string
+	GetInstNameFieldName() string
+	GetObjectType() string
 }
 
 // Factory used to create object  classification attribute etd.
