@@ -17,11 +17,64 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	//"configcenter/src/common/condition"
+	"configcenter/src/common/condition"
+	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+func (cli *association) ResetMainlineInstAssociatoin(params types.LogicParams, current model.Object) error {
+
+	defaultCond := &metadata.QueryInput{}
+
+	// fetch all parent inst
+	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to find current object(%s) inst, error info is %s", current.GetID(), err.Error())
+		return err
+	}
+
+	// reset the parent's inst
+	for _, currentInst := range currentInsts {
+		// delete the current inst
+		instID, err := currentInst.GetInstID()
+		if nil != err {
+			blog.Errorf("[operation-asst] failed to get the inst id from the inst(%#v)", currentInst.ToMapStr())
+			return err
+		}
+
+		parent, err := currentInst.GetMainlineParentInst()
+		if nil != err {
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, error info is %s", current.GetID(), err.Error())
+			return err
+		}
+
+		// reset the child's parent
+		child, err := currentInst.GetMainlineChildInst()
+		if nil != err {
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", current.GetID(), err.Error())
+			return err
+		}
+		blog.Infof("the child: %s", child.GetObject().GetID())
+
+		// set the child's parent
+		if err = child.SetMainlineParentInst(parent); nil != err {
+			blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
+			return err
+		}
+
+		// delete the current inst
+		cond := condition.CreateCondition()
+		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
+		if err = cli.inst.DeleteInst(params, current, cond); nil != err {
+			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), error info is %s", currentInst.ToMapStr(), err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (cli *association) SetMainlineInstAssociation(params types.LogicParams, parent, current, child model.Object) error {
 
@@ -69,4 +122,65 @@ func (cli *association) SetMainlineInstAssociation(params types.LogicParams, par
 	}
 
 	return nil
+}
+
+func (cli *association) SearchMainlineAssociationInstTopo(params types.LogicParams, bizID int64) ([]*metadata.TopoInstRst, error) {
+
+	bizObj, err := cli.obj.FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		return nil, err
+	}
+
+	cond := &metadata.QueryInput{}
+	cond.Condition = frtypes.MapStr{
+		bizObj.GetInstIDFieldName(): bizID,
+	}
+	_, bizInsts, err := cli.inst.FindInst(params, bizObj, cond)
+
+	if nil != err {
+		return nil, err
+	}
+
+	results := make([]*metadata.TopoInstRst, 0)
+
+	for _, biz := range bizInsts {
+
+		var lastRst *metadata.TopoInstRst
+	exist_for:
+		for {
+			tmp := metadata.TopoInstRst{}
+			instID, err := biz.GetInstID()
+			if nil != err {
+				return nil, err
+			}
+			instName, err := biz.GetInstName()
+			if nil != err {
+				return nil, err
+			}
+
+			tmp.InstID = instID
+			tmp.InstName = instName
+			tmp.ObjID = biz.GetObject().GetID()
+			tmp.ObjName = biz.GetObject().GetName()
+
+			tmpChild, err := biz.GetMainlineChildInst()
+			if nil != err {
+				if io.EOF == err {
+					break exist_for
+				}
+				return nil, err
+			}
+			biz = tmpChild
+			if nil != lastRst {
+				lastRst.Child = append(lastRst.Child, tmp)
+			} else {
+				lastRst = &tmp
+			}
+
+		}
+
+		results = append(results, lastRst)
+
+	}
+	return results, nil
 }

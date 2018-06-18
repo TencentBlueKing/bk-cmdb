@@ -19,7 +19,73 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"io"
 )
+
+func (cli *association) DeleteMainlineAssociaton(params types.LogicParams, objID string) error {
+
+	targetObj, err := cli.obj.FindSingleObject(params, objID)
+	if nil != err {
+		blog.Errorf("[opeartion-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
+		return err
+	}
+
+	parentObj, err := targetObj.GetMainlineParentObject()
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to find the object(%s)'s parent, error info is %s", objID, err.Error())
+		return err
+	}
+
+	childObj, err := targetObj.GetMainlineChildObject()
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to find the object(%s)'s child, error info is %s", objID, err.Error())
+		return err
+	}
+
+	if err = cli.ResetMainlineInstAssociatoin(params, targetObj); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s", objID, err.Error())
+		return nil
+	}
+
+	return childObj.SetMainlineParentObject(parentObj.GetID())
+}
+
+func (cli *association) SearchMainlineAssociationTopo(params types.LogicParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
+
+	results := make([]*metadata.MainlineObjectTopo, 0)
+
+	for {
+
+		tmpRst := &metadata.MainlineObjectTopo{}
+		tmpRst.ObjID = targetObj.GetID()
+		tmpRst.ObjName = targetObj.GetName()
+		tmpRst.OwnerID = params.Header.OwnerID
+
+		parentObj, err := targetObj.GetMainlineParentObject()
+		if nil == err {
+			tmpRst.PreObjID = parentObj.GetID()
+			tmpRst.PreObjName = parentObj.GetName()
+		} else if nil != err && io.EOF != err {
+			return nil, err
+		}
+
+		childObj, err := targetObj.GetMainlineChildObject()
+		if nil == err {
+			tmpRst.NextObj = childObj.GetID()
+			tmpRst.NextName = childObj.GetName()
+		} else if nil != err {
+			if io.EOF == err {
+				results = append(results, tmpRst)
+				return results, nil
+			}
+			return nil, err
+		}
+
+		results = append(results, tmpRst)
+		targetObj = childObj
+	}
+
+}
 
 func (cli *association) CreateMainlineAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error) {
 

@@ -46,7 +46,7 @@ type Inst interface {
 
 	GetValues() frtypes.MapStr
 
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() frtypes.MapStr
 }
 
 // Factory used to all inst

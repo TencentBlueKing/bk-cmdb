@@ -267,8 +267,8 @@ func (cli *inst) GetInstName() (string, error) {
 	return cli.datas.String(cli.target.GetInstNameFieldName())
 }
 
-func (cli *inst) ToMapStr() (frtypes.MapStr, error) {
-	return cli.datas, nil
+func (cli *inst) ToMapStr() frtypes.MapStr {
+	return cli.datas
 }
 func (cli *inst) SetValue(key string, value interface{}) error {
 	cli.datas.Set(key, value)
