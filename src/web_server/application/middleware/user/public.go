@@ -124,6 +124,7 @@ func (m *publicUser) LoginUser(c *gin.Context, checkUrl string, isMultiOwner boo
 			blog.Error("get owner_uin info role error: %v", err)
 			return false
 		}
+		InitOwner(ownerID)
 	}
 
 	cookielanguage, _ := c.Cookie("blueking_language")
