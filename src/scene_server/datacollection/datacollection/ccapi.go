@@ -125,9 +125,13 @@ func (ccAPI *CCAPIServer) Start() error {
 		}
 	}()
 
-	// extra discover
 	a.AddrSrv = ccAPI.rd
+	//check object controller server
 	a.ObjCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_OBJECTCONTROLLER, a.AddrSrv)
+	//check object topo server
+	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
+
+	blog.Infof("discover topo api url: %s\n", a.TopoAPI())
 
 	go func() {
 		err := ccAPI.rd.Start()

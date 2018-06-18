@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 	"sync"
+	"configcenter/src/framework/core/errors"
 )
 
 var dataCollection = &dataCollectionAction{}
@@ -66,45 +67,62 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	}
 	dccommon.Rediscli = rediscli
 
-	chanName := ""
+	snapChan, discoverChan := "", ""
+	var err1, err2 error
 	for {
-		chanName, err = getChanName()
-		if nil == err {
+		snapChan, err1 = getChanName("snapshot")
+		discoverChan, err2 = getChanName("discover")
+		if err1 == nil && err2 == nil{
 			break
 		}
-		blog.Errorf("get channame faile: %v, please init databae firs, we will try 10 second later", err)
+
+		blog.Errorf("get channel name failed: %v, please init database first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	hostSnap := logics.NewHostSnap(chanName, 2000, rediscli, snapcli, wg)
-	discover := logics.NewDiscover("hstest2", 2000, rediscli, discli, wg)
+	blog.Infof("get channel name: snap=%s, discover=%s\n", snapChan, discoverChan)
+	hostSnap := logics.NewHostSnap(snapChan, 2000, rediscli, snapcli, wg)
+	discover := logics.NewDiscover(discoverChan, 2000, rediscli, discli, wg, d.CC)
 
 	hostSnap.Start()
 	discover.Start()
-
 
 	// go mock(config, chanName)
 	blog.Infof("AutoExectueAction finished\n")
 	return nil
 }
 
-func getChanName() (string, error) {
+func getChanName(funcType string) (string, error) {
+
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
+
 	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
 		return "", err
 	}
+
 	if len(results) <= 0 {
 		return "", fmt.Errorf("default app not found")
 	}
+
 	defaultAppID := fmt.Sprint(results[0][common.BKAppIDField])
 	if len(defaultAppID) == 0 {
 		return "", fmt.Errorf("default app not found")
 	}
-	return defaultAppID + "_snapshot", nil
+
+	// 通道类型映射
+	switch funcType {
+	case "discover":
+		return "hstest2", nil
+		//return defaultAppID + "_discover", nil
+	case "snapshot":
+		return defaultAppID + "_snapshot", nil
+	default:
+		return "", errors.New("unknown func type: " + funcType)
+	}
 }
 
 func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
