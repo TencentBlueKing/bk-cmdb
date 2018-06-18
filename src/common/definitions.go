@@ -65,6 +65,8 @@ const (
 
 	// BKTimeTypeParseFlag the time flag
 	BKTimeTypeParseFlag = "cc_time_type"
+
+	BKTopoBusinessLevelLimit = "business_topo_level_max"
 )
 
 const (
