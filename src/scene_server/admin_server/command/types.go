@@ -124,3 +124,14 @@ type Topo struct {
 	BizTopo   *Node          `json:"biz_topo"`
 	ProcTopos []*ProcessTopo `json:"proc_topo"`
 }
+
+type ProModule struct {
+	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id,omitempty"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name,omitempty"`
+	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
+}
+
+type ProcessTopo struct {
+	Data    map[string]interface{} `json:"data"`
+	Modules []string               `json:"modules"`
+}
