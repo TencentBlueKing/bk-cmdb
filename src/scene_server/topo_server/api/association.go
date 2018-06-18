@@ -39,16 +39,17 @@ func (cli *topoAPI) initAssociation() {
 func (cli *topoAPI) CreateMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	fmt.Println("serch main line object ")
+	/*
+		mainLineAssociation := &metadata.Association{}
 
-	asstData := &metadata.Association{}
-	_, err := asstData.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
-		return nil, err
-	}
+		err := mainLineAssociation.Parse(data)
+		if nil != err {
+			blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+		}
 
-	_, err = cli.core.AssociationOperation().CreateAssociation(params, asstData)
-	return nil, err
+		_, err = cli.core.AssociationOperation().CreateMainLineAssociation(params, mainLineAssociation)
+	*/
+	return nil, nil
 }
 
 // DeleteMainLineObject delete a object int the main line topo

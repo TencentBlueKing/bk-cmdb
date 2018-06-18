@@ -15,6 +15,7 @@ package inst
 import (
 	"context"
 	"encoding/json"
+	"io"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -35,6 +36,100 @@ type inst struct {
 
 func (cli *inst) MarshalJSON() ([]byte, error) {
 	return json.Marshal(cli.datas)
+}
+
+func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition) ([]Inst, error) {
+
+	queryInput := &metatype.QueryInput{}
+	queryInput.Condition = cond.ToMapStr()
+
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), targetModel.GetObjectType(), cli.params.Header.ToHeader(), queryInput)
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
+		return nil, cli.params.Err.Error(rsp.Code)
+	}
+
+	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
+
+}
+
+func (cli *inst) GetMainlineParentInst() (Inst, error) {
+
+	parentObj, err := cli.target.GetMainlineParentObject()
+	if nil != err {
+		return nil, err
+	}
+
+	parentID, err := cli.GetParentID()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
+		return nil, err
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+	cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+	cond.Field(common.BKInstParentStr).Eq(parentID)
+
+	rspItems, err := cli.searchInsts(parentObj, cond)
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	for _, item := range rspItems {
+		return item, nil // only one mainline parent
+	}
+
+	return nil, io.EOF
+}
+func (cli *inst) GetMainlineChildInst() (Inst, error) {
+	childObj, err := cli.target.GetMainlineChildObject()
+	if nil != err {
+		return nil, err
+	}
+
+	currInstID, err := cli.GetInstID()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
+		return nil, err
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+	cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+	cond.Field(common.BKInstParentStr).Eq(currInstID)
+
+	rspItems, err := cli.searchInsts(childObj, cond)
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	for _, item := range rspItems {
+		return item, nil // only one mainline child
+	}
+
+	return nil, io.EOF
+}
+
+func (cli *inst) GetParentInst() ([]Inst, error) {
+	return nil, nil
+}
+func (cli *inst) GetChildInst() ([]Inst, error) {
+	return nil, nil
+}
+
+func (cli *inst) SetMainlineParentInst(instID int64) error {
+	return nil
+}
+func (cli *inst) SetMainlineChildInst(instID int64) error {
+	return nil
 }
 
 func (cli *inst) Create() error {
@@ -215,9 +310,11 @@ func (cli *inst) GetObject() model.Object {
 	return cli.target
 }
 
-func (cli *inst) GetInstID() (int, error) {
-
-	return cli.datas.Int(cli.target.GetInstIDFieldName())
+func (cli *inst) GetInstID() (int64, error) {
+	return cli.datas.Int64(cli.target.GetInstIDFieldName())
+}
+func (cli *inst) GetParentID() (int64, error) {
+	return cli.datas.Int64(common.BKInstParentStr)
 }
 
 func (cli *inst) GetInstName() (string, error) {

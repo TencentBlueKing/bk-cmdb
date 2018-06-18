@@ -24,7 +24,17 @@ type Inst interface {
 	model.Operation
 	GetObject() model.Object
 
-	GetInstID() (int, error)
+	GetMainlineParentInst() (Inst, error)
+	GetMainlineChildInst() (Inst, error)
+
+	GetParentInst() ([]Inst, error)
+	GetChildInst() ([]Inst, error)
+
+	SetMainlineParentInst(instID int64) error
+	SetMainlineChildInst(instID int64) error
+
+	GetInstID() (int64, error)
+	GetParentID() (int64, error)
 	GetInstName() (string, error)
 
 	SetValue(key string, value interface{}) error

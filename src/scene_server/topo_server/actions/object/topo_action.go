@@ -24,11 +24,12 @@ import (
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 	"fmt"
-	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
+
+	"github.com/bitly/go-simplejson"
 
 	restful "github.com/emicklei/go-restful"
 )
