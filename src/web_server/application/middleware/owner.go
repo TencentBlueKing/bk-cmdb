@@ -3,6 +3,7 @@ package middleware
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/http/httpclient"
 	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
@@ -13,26 +14,35 @@ type OwnerManager struct {
 	httpCli  *httpclient.HttpClient
 	OwnerID  string
 	UserName string
-	APIAddr  string
 }
 
-func NewOwnerManager(userName, APIAddr, ownerID, language string) (*OwnerManager, error) {
+func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager := new(OwnerManager)
 	ownerManager.UserName = userName
-	ownerManager.APIAddr = APIAddr
 	ownerManager.OwnerID = ownerID
 	ownerManager.httpCli = httpclient.NewHttpClient()
 	ownerManager.httpCli.SetHeader(common.BKHTTPHeaderUser, userName)
 	ownerManager.httpCli.SetHeader(common.BKHTTPLanguage, language)
 	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, ownerID)
-	return ownerManager, nil
+	return ownerManager
 }
 
-func (m OwnerManager) InitOwner(ownerID string) {
-
+func (m *OwnerManager) InitOwner() error {
+	blog.Infof("init owner %s", m.OwnerID)
+	exist, err := m.defaultAppIsExist()
+	if err != nil {
+		return err
+	}
+	if !exist {
+		err = m.addDefaultApp()
+		if nil != err {
+			return err
+		}
+	}
+	return nil
 }
 
-func (m OwnerManager) addDefaultApp(ownerID string) error {
+func (m *OwnerManager) addDefaultApp() error {
 	params := map[string]interface{}{}
 	params[common.BKAppNameField] = common.DefaultAppName
 	params[common.BKMaintainersField] = "admin"
@@ -42,7 +52,7 @@ func (m OwnerManager) addDefaultApp(ownerID string) error {
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
 	byteParams, _ := json.Marshal(params)
-	url := fmt.Sprintf("%s/api/%s/topo/app/default/%s", m.APIAddr, webCommon.API_VERSION, m.OwnerID)
+	url := fmt.Sprintf("%s/api/%s/topo/biz/default/%s", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
 	blog.Info("migrate add default app url :%s", url)
 	blog.Info("migrate add default app content :%s", string(byteParams))
 	m.httpCli.POST(url, nil, byteParams)
@@ -51,54 +61,55 @@ func (m OwnerManager) addDefaultApp(ownerID string) error {
 	if err != nil {
 		return err
 	}
-	js, _ := simplejson.NewJson([]byte(reply))
-	output, _ := js.Map()
 
-	code, err := util.GetIntByInterface(output[common.HTTPBKAPIErrorCode])
-	if err != nil {
-		return errors.New(reply)
-	}
-	if 0 != code {
-		return errors.New(fmt.Sprint(output[common.HTTPBKAPIErrorMessage]))
+	result := CreateAppResult{}
+	err = json.Unmarshal(reply, &result)
+	if nil != err {
+		return err
 	}
 
+	if result.Code != common.CCSuccess {
+		return fmt.Errorf("create app faild %s", result.Message)
+	}
 	return nil
 }
 
-func defaultAppIsExist(req *restful.Request, cc *api.APIResource, ownerID string) (bool, error) {
-
+func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 	params := make(map[string]interface{})
-
 	params["condition"] = make(map[string]interface{})
 	params["fields"] = []string{common.BKAppIDField}
 	params["start"] = 0
 	params["limit"] = 20
 
 	byteParams, _ := json.Marshal(params)
-	url := cc.TopoAPI() + "/topo/v1/app/default/" + ownerID + "/search"
+	url := fmt.Sprintf("%s/api/%s/topo/biz/default/%s/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
+
 	blog.Info("migrate get default app url :%s", url)
 	blog.Info("migrate get default app content :%s", string(byteParams))
-	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, byteParams)
+	reply, err := m.httpCli.POST(url, nil, byteParams)
 	blog.Info("migrate get default app return :%s", string(reply))
 	if err != nil {
 		return false, err
 	}
-	js, _ := simplejson.NewJson([]byte(reply))
-	output, _ := js.Map()
 
-	code, err := util.GetIntByInterface(output["bk_error_code"])
-	if err != nil {
-		return false, errors.New(reply)
+	result := SearchAppResult{}
+	err = json.Unmarshal(reply, &result)
+	if nil != err {
+		return false, err
 	}
-	if 0 != code {
-		return false, errors.New(output["message"].(string))
+
+	if result.Code != common.CCSuccess {
+		return false, fmt.Errorf("search default app err: %s", result.Message)
 	}
-	cnt, err := js.Get("data").Get("count").Int()
-	if err != nil {
-		return false, errors.New(reply)
-	}
-	if 0 == cnt {
+
+	if 0 >= result.Data.Count {
 		return false, nil
 	}
 	return true, nil
+}
+
+type CreateAppResult struct {
+	Result  bool        `json:"result"`
+	Code    int         `json:"bk_error_code"`
+	Message interface{} `json:"bk_error_msg"`
 }

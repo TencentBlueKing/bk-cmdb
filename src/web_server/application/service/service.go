@@ -62,6 +62,7 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	a.AddrSrv = s.rd
+	a.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
 
 	//	a.Lang = language.New()
 

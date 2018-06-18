@@ -701,9 +701,47 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 			blog.Errorf("add default application module error, ownerID:%s, error info is %v ", ownerID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
 		}
+
+		if ownerID != common.BKDefaultOwnerID {
+			searchAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectassts"
+			searchAsstCondition := map[string]interface{}{
+				common.BKOwnerIDField:  common.BKDefaultOwnerID,
+				common.BKObjAttIDField: common.BKChildStr,
+			}
+			searchAsstData, _ := json.Marshal(searchAsstCondition)
+			searchAsstReply, err := httpcli.ReqHttp(req, searchAsstURL, common.HTTPSelectPost, []byte(searchAsstData))
+			if nil != err {
+				blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+			}
+
+			searchAsstJSON := gjson.Parse(searchAsstReply)
+			if !searchAsstJSON.Get("result").Bool() {
+				return http.StatusInternalServerError, nil, defErr.Error(int(searchAsstJSON.Get(common.HTTPBKAPIErrorCode).Int()))
+			}
+
+			assts := []map[string]interface{}{}
+			json.Unmarshal([]byte(searchAsstJSON.Get("data").String()), &assts)
+			for index := range assts {
+				assts[index][common.BKOwnerIDField] = ownerID
+
+				createAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectasst"
+				createAsstData, _ := json.Marshal(assts[index])
+				createAsstReply, err := httpcli.ReqHttp(req, createAsstURL, common.HTTPSelectPost, []byte(createAsstData))
+				if nil != err {
+					blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+				}
+				createAsstJSON := gjson.Parse(createAsstReply)
+				if !createAsstJSON.Get("result").Bool() {
+					return http.StatusInternalServerError, nil, defErr.Error(int(createAsstJSON.Get(common.HTTPBKAPIErrorCode).Int()))
+				}
+			}
+
+		}
+
 		result := make(map[string]interface{})
 		result[common.BKAppIDField] = appID
-
 		return http.StatusOK, result, nil
 	}, resp)
 }
