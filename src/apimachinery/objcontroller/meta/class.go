@@ -13,74 +13,74 @@
 package meta
 
 import (
-    "context"
-    "fmt"
-    "net/http"
+	"context"
+	"fmt"
+	"net/http"
 
-    metatype "configcenter/src/common/metadata"
+	metatype "configcenter/src/common/metadata"
 )
 
 func (t *meta) SelectClassificationWithObject(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationWithObjectsResult, err error) {
-    subPath := fmt.Sprintf("/meta/object/classification/%s/objects", ownerID)
-
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	subPath := fmt.Sprintf("/meta/object/classification/%s/objects", ownerID)
+	resp = new(metatype.QueryObjectClassificationWithObjectsResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
 func (t *meta) SelectClassifications(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationResult, err error) {
-    subPath := "/meta/object/classification/search"
-
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	subPath := "/meta/object/classification/search"
+	resp = new(metatype.QueryObjectClassificationResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
 func (t *meta) DeleteClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
-    subPath := fmt.Sprintf("/meta/object/classification/%d", id)
-
-    err = t.client.Delete().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
+	resp = new(metatype.DeleteResult)
+	err = t.client.Delete().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
 func (t *meta) CreateClassification(ctx context.Context, h http.Header, dat *metatype.Classification) (resp *metatype.CreateObjectClassificationResult, err error) {
-    subPath := "/meta/object/classification"
-
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	subPath := "/meta/object/classification"
+	resp = new(metatype.CreateObjectClassificationResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
 func (t *meta) UpdateClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
-    subPath := fmt.Sprintf("/meta/object/classification/%d", id)
-
-    err = t.client.Put().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
+	resp = new(metatype.UpdateResult)
+	err = t.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

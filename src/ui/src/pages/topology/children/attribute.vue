@@ -7,7 +7,7 @@
                         <label class="attribute-item-label fl" :class="{'required': property['isrequired']}">
                             {{property['bk_property_name']}}
                         </label>
-                        <div class="attribute-item-field fl" :style="{zIndex: property['bk_asst_obj_id'] === 'host' ? 998 : attribute[bkObjId].length - index}">
+                        <div class="attribute-item-field fl" :style="{zIndex: property['bk_asst_obj_id'] === 'host' && isHostShow ? 998 : attribute[bkObjId].length - index}">
                             <input v-if="property['bk_property_type'] === 'int'" 
                                 type="text" maxlength="11" class="bk-form-input"
                                 :disabled="!property['editable']"
@@ -30,7 +30,7 @@
                                 @date-selected="setDate(...arguments, property['bk_property_id'])">
                             </bk-datepicker>
                             <template v-else-if="property['bk_property_type'] === 'singleasst' || property['bk_property_type'] === 'multiasst'">
-                                <v-host v-if="property['bk_asst_obj_id'] === 'host'"
+                                <v-host :isSelectBoxShow.sync="isHostShow" v-if="property['bk_asst_obj_id'] === 'host'"
                                     :multiple="property['bk_property_type'] === 'multiasst'"
                                     :selected.sync="localValues[property['bk_property_id']]">
                                 </v-host>
@@ -142,7 +142,8 @@
                 attribute: {},
                 localValues: {},
                 displayType: 'list',
-                attributeLoading: false
+                attributeLoading: false,
+                isHostShow: false
             }
         },
         computed: {
@@ -295,7 +296,6 @@
                 }
                 if (property.hasOwnProperty('option')) {
                     if (bkPropertyType === 'int') {
-                        // option = JSON.parse(option)
                         if (option.hasOwnProperty('min')) {
                             rules['min_value'] = option.min
                         }

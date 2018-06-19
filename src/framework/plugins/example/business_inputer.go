@@ -22,7 +22,7 @@ import (
 
 func init() {
 
-	//api.RegisterInputer(business)
+	api.RegisterInputer(business)
 	//api.RegisterFrequencyInputer(business, time.Minute)
 }
 
@@ -59,7 +59,8 @@ func (cli *businessInputer) Run(ctx input.InputerContext) *input.InputerResult {
 	if nil != err {
 		fmt.Println("failed to save the business:", err)
 	}
-
+	bizID, _ := business.GetBusinessID()
+	fmt.Println("the business id:", bizID)
 	return nil
 
 }

@@ -89,7 +89,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 		// save
 		_, err = cli.CC.InstCli.Insert(obj.TableName(), obj)
 		if nil == err {
-			return http.StatusOK, []*metadata.ObjectDes{obj}, nil
+			return http.StatusOK, obj, nil
 		}
 		blog.Error("failed to insert the object, error info is %s", err.Error())
 		return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)

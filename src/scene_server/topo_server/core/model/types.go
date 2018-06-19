@@ -31,9 +31,10 @@ const (
 
 // Operation the saver interface method
 type Operation interface {
+	IsExists() (bool, error)
 	Create() error
-	Update() error
 	Delete() error
+	Update() error
 	Save() error
 }
 
@@ -42,16 +43,16 @@ type Topo interface {
 	Current() Object
 	Prev() Object
 	Next() Object
-	ToMapStr() frtypes.MapStr
 }
 
 // Association association operation interface declaration
 type Association interface {
-	Parse(data frtypes.MapStr) error
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Association, error)
+
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
 	GetTopo(obj Object) (Topo, error)
-
 	ToMapStr() (frtypes.MapStr, error)
 }
 
@@ -92,6 +93,12 @@ type Attribute interface {
 
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
+
+	GetParentObject() (Object, error)
+	GetChildObject() (Object, error)
+
+	SetParentObject(objID string) error
+	SetChildObject(objID string) error
 
 	SetObjectID(objectID string)
 	GetObjectID() string
@@ -178,6 +185,17 @@ type Object interface {
 
 	Parse(data frtypes.MapStr) (*metadata.Object, error)
 
+	IsCommon() bool
+
+	GetMainlineParentObject() (Object, error)
+	GetMainlineChildObject() (Object, error)
+
+	GetParentObject() ([]Object, error)
+	GetChildObject() ([]Object, error)
+
+	SetMainlineParentObject(objID string) error
+	SetMainlineChildObject(objID string) error
+
 	CreateGroup() Group
 	CreateAttribute() Attribute
 
@@ -221,6 +239,7 @@ type Object interface {
 
 	GetInstIDFieldName() string
 	GetInstNameFieldName() string
+	GetObjectType() string
 }
 
 // Factory used to create object  classification attribute etd.
@@ -229,5 +248,6 @@ type Factory interface {
 	CreaetClassification(params types.LogicParams) Classification
 	CreateAttribute(params types.LogicParams) Attribute
 	CreateGroup(params types.LogicParams) Group
-	CreateAssociation(params types.LogicParams) Association
+	CreateCommonAssociation(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association
+	CreateMainLineAssociatin(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association
 }

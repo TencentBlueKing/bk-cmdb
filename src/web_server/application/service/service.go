@@ -195,8 +195,9 @@ func (ccWeb *CCWebServer) Start() error {
 		}
 		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
 		for _, metricAction := range metricActions {
-			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
-				metricAction.HandlerFunc(c.Writer, c.Request)
+			newmetricAction := metricAction
+			ccWeb.httpServ.GET(newmetricAction.Path, func(c *gin.Context) {
+				newmetricAction.HandlerFunc(c.Writer, c.Request)
 			})
 		}
 		ccWeb.httpServ.GET("/", func(c *gin.Context) {

@@ -13,34 +13,34 @@
 package meta
 
 import (
-    "context"
-    "net/http"
+	"context"
+	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.Response, err error) {
-    subPath := "/topographics/search"
+	subPath := "/topographics/search"
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error){
-    subPath := "/topographics/update"
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error) {
+	subPath := "/topographics/update"
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
