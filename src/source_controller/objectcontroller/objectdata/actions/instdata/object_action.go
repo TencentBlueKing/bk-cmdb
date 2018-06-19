@@ -52,6 +52,7 @@ func init() {
 
 //delete object
 func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("delete insts")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetActionOnwerID(req)
@@ -99,6 +100,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 
 //update object
 func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("update insts")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetActionOnwerID(req)
@@ -116,7 +118,8 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 		data := input["data"].(map[string]interface{})
 		data[common.LastTimeField] = time.Now()
 		condition := input["condition"]
-		util.SetModOwner(condition, ownerID)
+		condition = util.SetModOwner(condition, ownerID)
+		data = util.SetModOwner(data, ownerID)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
@@ -164,6 +167,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 //search object
 func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Response) {
+	blog.Info("select insts")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetActionOnwerID(req)
@@ -212,6 +216,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 
 //create object
 func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("create insts")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetActionOnwerID(req)

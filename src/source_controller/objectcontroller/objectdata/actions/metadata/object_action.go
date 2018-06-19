@@ -190,6 +190,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		condition := util.SetModOwner(map[string]interface{}{"id": appID}, ownerID)
+		data = util.SetModOwner(data, ownerID)
 		err = cli.CC.InstCli.UpdateByCondition(metadata.ObjectDes{}.TableName(), data, condition)
 		if nil != err {
 			blog.Error("fail update object by condition, error information is %s", err.Error())

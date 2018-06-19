@@ -69,7 +69,9 @@ func (cli *objectAssociationAction) CreateObjectAssociation(req *restful.Request
 			blog.Error("fail to unmarshal json, error information is %s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
-		obj.OwnerID = ownerID
+		if ownerID != common.BKSuperOwnerID {
+			obj.OwnerID = ownerID
+		}
 
 		// save to the storage
 		id, err := cli.CC.InstCli.GetIncID(obj.TableName())
