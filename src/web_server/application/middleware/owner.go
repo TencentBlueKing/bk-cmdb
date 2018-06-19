@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
+	"time"
 )
 
 type OwnerManager struct {
@@ -31,14 +33,34 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 
 func (m *OwnerManager) InitOwner() error {
 	blog.Infof("init owner %s", m.OwnerID)
+
 	exist, err := m.defaultAppIsExist()
 	if err != nil {
 		return err
 	}
 	if !exist {
-		err = m.addDefaultApp()
-		if nil != err {
+		rediscli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+		for {
+			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
+			if nil != err {
+				blog.Errorf("owner_init_lock error %s", err.Error())
+				return err
+			}
+			if ok {
+				defer rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock" + m.OwnerID)
+				break
+			}
+			time.Sleep(time.Second)
+		}
+		exist, err = m.defaultAppIsExist()
+		if err != nil {
 			return err
+		}
+		if !exist {
+			err = m.addDefaultApp()
+			if nil != err {
+				return err
+			}
 		}
 	}
 	return nil
