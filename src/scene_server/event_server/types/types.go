@@ -29,7 +29,7 @@ type Subscription struct {
 	TimeOut          int64       `bson:"time_out" json:"time_out"`                   // second
 	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
-	OwnerID          string      `bson:"supplier_account" json:"supplier_account"`
+	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
 	LastTime         *types.Time `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
