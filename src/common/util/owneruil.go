@@ -23,9 +23,6 @@ func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{}
 
 	switch cond := condition.(type) {
 	case map[string]interface{}:
-		if ownerID == common.BKSuperOwnerID {
-			return cond
-		}
 		if val, ok := cond[common.BKOwnerIDField]; ok {
 			switch val.(type) {
 			case string:
@@ -43,16 +40,10 @@ func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{}
 		}
 		return cond
 	case nil:
-		if ownerID == common.BKSuperOwnerID {
-			return nil
-		}
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
 	default:
-		if ownerID == common.BKSuperOwnerID {
-			return map[string]interface{}{}
-		}
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
