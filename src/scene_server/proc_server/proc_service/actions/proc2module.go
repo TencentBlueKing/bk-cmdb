@@ -76,7 +76,7 @@ func (cli *procAction) BindModuleProcess(req *restful.Request, resp *restful.Res
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcBindToMoudleFaile)
 		}
 
-		auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, "", fmt.Sprintf("bind module [%s]", moduleName), ownerID, appIDStr, user, auditoplog.AuditOpTypeModify)
+		auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(procID, "", fmt.Sprintf("bind module [%s]", moduleName), ownerID, appIDStr, user, auditoplog.AuditOpTypeModify)
 
 		return http.StatusOK, nil, nil
 	}, resp)
@@ -119,7 +119,7 @@ func (cli *procAction) DeleteModuleProcessBind(req *restful.Request, resp *restf
 			blog.Error("delete module process bind  error :%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcUnBindToMoudleFaile)
 		}
-		auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, "", fmt.Sprintf("unbind module [%s]", moduleName), ownerID, appIDStr, user, auditoplog.AuditOpTypeModify)
+		auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(procID, "", fmt.Sprintf("unbind module [%s]", moduleName), ownerID, appIDStr, user, auditoplog.AuditOpTypeModify)
 		return http.StatusOK, nil, nil
 	}, resp)
 }
