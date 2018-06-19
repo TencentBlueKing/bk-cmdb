@@ -20,7 +20,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (f *favorites) AddHostFavourite(ctx context.Context, user string, h http.Header, dat map[string]interface{}) (resp *metadata.IDResult, err error) {
+func (f *favorites) AddHostFavourite(ctx context.Context, user string, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
 	subPath := fmt.Sprintf("/hosts/favorites/%s", user)
 
 	err = f.client.Post().
@@ -59,7 +60,8 @@ func (f *favorites) DeleteHostFavouriteByID(ctx context.Context, user string, id
 	return
 }
 
-func (f *favorites) GetHostFavourites(ctx context.Context, user string, h http.Header, dat metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+
+func (f *favorites) GetHostFavourites(ctx context.Context, user string, h http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
 	subPath := fmt.Sprintf("/hosts/favorites/search/%s", user)
 
 	err = f.client.Post().

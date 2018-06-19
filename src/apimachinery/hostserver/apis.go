@@ -89,8 +89,8 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat i
 	return
 }
 
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "hosts/favorites/search"
 
 	err = hs.client.Post().
@@ -187,7 +187,7 @@ func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit strin
 	return
 }
 
-func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/biz/mutiple"
 
@@ -271,7 +271,7 @@ func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *m
 	return
 }
 
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/host/add/module"
 
@@ -579,7 +579,7 @@ func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header
 	return
 }
 
-func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/search"
 
@@ -593,7 +593,7 @@ func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, dat *params
 	return
 }
 
-func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/search/asstdetail"
 

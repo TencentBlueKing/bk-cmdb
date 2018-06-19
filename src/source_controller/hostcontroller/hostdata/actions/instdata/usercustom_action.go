@@ -55,7 +55,7 @@ func (cli *userCustomAction) AddUserCustom(req *restful.Request, resp *restful.R
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	data := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("add user custom, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -85,7 +85,7 @@ func (cli *userCustomAction) UpdateUserCustomByID(req *restful.Request, resp *re
 	conditons["bk_user"] = req.PathParameter("bk_user")
 	data := make(map[string]interface{})
 
-	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("update user custom by id, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return

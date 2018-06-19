@@ -33,6 +33,7 @@ type RespError struct {
 	Msg error
 	// error code
 	ErrCode int
+	Data    interface{}
 }
 
 const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
@@ -47,6 +48,7 @@ func (r *RespError) Error() string {
 			br.ErrMsg = ccErr.Error()
 		}
 	}
+	br.Data = r.Data
 
 	js, err := json.Marshal(br)
 	if err != nil {
@@ -81,16 +83,16 @@ type RecursiveMapResponse struct {
 
 type QueryInput struct {
 	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields"`
-	Start     int         `json:"start"`
-	Limit     int         `json:"limit"`
-	Sort      string      `json:"sort"`
+	Fields    string      `json:"fields,omitempty"`
+	Start     int         `json:"start,omitempty"`
+	Limit     int         `json:"limit,omitempty"`
+	Sort      string      `json:"sort",omitempty`
 }
 
 type CloudHostModuleParams struct {
-	ApplicationID int          `json:"bk_biz_id"`
+	ApplicationID int64        `json:"bk_biz_id"`
 	HostInfoArr   []BkHostInfo `json:"host_info"`
-	ModuleID      int          `json:"bk_module_id"`
+	ModuleID      int64        `json:"bk_module_id"`
 }
 
 type BkHostInfo struct {
@@ -99,8 +101,8 @@ type BkHostInfo struct {
 }
 
 type DefaultModuleHostConfigParams struct {
-	ApplicationID int   `json:"bk_biz_id"`
-	HostID        []int `json:"bk_host_id"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        []int64 `json:"bk_host_id"`
 }
 
 //common search struct

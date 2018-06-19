@@ -137,7 +137,7 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Head
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryObjectAttributeResult, err error) {
 	subPath := "/meta/objectatts"
 	resp = new(metatype.QueryObjectAttributeResult)
 	err = t.client.Post().
