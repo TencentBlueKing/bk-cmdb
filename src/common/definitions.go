@@ -624,6 +624,7 @@ const (
 
 	// CCSystemOperatorUserName the system user
 	CCSystemOperatorUserName = "cc_system"
+	CCSystemCollectorUserName = "collector"
 )
 
 // APIRsp the result the http requst
