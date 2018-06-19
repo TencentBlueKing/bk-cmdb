@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -88,11 +88,12 @@ func (cli *inst) SetValue(key string, value interface{}) error {
 	return nil
 }
 
-func (cli *inst) Save() error {
+func (cli *inst) search() ([]model.Attribute, []types.MapStr, error) {
+
 	// get the attributes
 	attrs, err := cli.target.Attributes()
 	if nil != err {
-		return err
+		return nil, nil, err
 	}
 
 	// construct the condition which is used to check the if it is exists
@@ -109,31 +110,46 @@ func (cli *inst) Save() error {
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
-				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				return attrs, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
 			}
 
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
 
-	log.Infof("cond:%#v", cond.ToMapStr())
-
 	// search by condition
 	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	return attrs, existItems, err
+}
+
+func (cli *inst) IsExists() (bool, error) {
+
+	_, existItems, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(existItems), nil
+}
+func (cli *inst) Create() error {
+
+	instID, err := client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
+	if nil != err {
+		return err
+	}
+	cli.datas.Set(InstID, instID)
+	return nil
+}
+func (cli *inst) Update() error {
+
+	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
-	log.Infof("the exists:%#v", cli.target.GetID())
-
-	// create a new
-	if 0 == len(existItems) {
-		_, err = client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
-		return err
-	}
-
 	targetInstID := InstID
-	switch cli.target.GetID() {
+	objID := cli.target.GetID()
+	switch objID {
 	case Plat:
 		targetInstID = PlatID
 	}
@@ -166,8 +182,18 @@ func (cli *inst) Save() error {
 		if nil != err {
 			return err
 		}
-
+		cli.datas.Set(InstID, instID)
 	}
 
 	return nil
+}
+func (cli *inst) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
 }

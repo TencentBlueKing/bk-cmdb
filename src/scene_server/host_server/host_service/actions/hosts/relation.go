@@ -168,7 +168,7 @@ func (m *hostModuleConfigAction) MoveHostToResourcePool(req *restful.Request, re
 		reply, err := logics.MoveHost2ResourcePool(m.CC, req, data.ApplicationID, data.HostID)
 
 		if err != nil {
-			return http.StatusInternalServerError, reply, defErr.Errorf(common.CCErrHostMoveResourcePoolFail, err.Error())
+			return http.StatusInternalServerError, reply, defErr.Errorf(common.CCErrHostMoveResourcePoolFail, fmt.Sprintf("%d", data.HostID), err.Error())
 
 		} else {
 			return http.StatusOK, nil, nil
