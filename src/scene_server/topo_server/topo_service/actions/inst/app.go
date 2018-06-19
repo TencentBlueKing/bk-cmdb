@@ -143,7 +143,7 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeDel)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 		}
 		//delete set in app
 		setInput := make(map[string]interface{})
@@ -273,7 +273,7 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
 		return http.StatusOK, nil, nil
@@ -371,7 +371,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
 		return http.StatusOK, nil, nil
@@ -515,7 +515,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "create app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "create app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
 		}
 		//create default set
 		inputSetInfo := make(map[string]interface{})
