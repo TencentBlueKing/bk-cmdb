@@ -123,7 +123,7 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 			ownerMan := NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
 			if err := ownerMan.InitOwner(); nil != err {
 				blog.Errorf("init owner fail %s", err.Error())
-				return false
+				return true
 			}
 		}
 

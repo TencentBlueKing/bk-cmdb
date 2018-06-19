@@ -5,9 +5,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/scene_server/validator"
 	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/gjson"
 )
 
 type OwnerManager struct {
@@ -43,7 +45,11 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
-	params := map[string]interface{}{}
+	blog.Info("addDefaultApp")
+	params, err := m.getObjectFields(common.BKInnerObjIDApp)
+	if err != nil {
+		return err
+	}
 	params[common.BKAppNameField] = common.DefaultAppName
 	params[common.BKMaintainersField] = "admin"
 	params[common.BKProductPMField] = "admin"
@@ -106,6 +112,84 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("%s/api/%s/object/attr/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION)
+	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
+	byteParams, _ := json.Marshal(conds)
+	blog.Info("migrate get object fields url :%s", url)
+	blog.Info("migrate get object fields content :%s", string(byteParams))
+	reply, err := m.httpCli.POST(url, nil, byteParams)
+	blog.Info("migrate get object fileds return :%s", string(reply))
+	if err != nil {
+		return nil, err
+	}
+
+	replyVal := gjson.ParseBytes(reply)
+	if !replyVal.Get("result").Bool() {
+		return nil, fmt.Errorf("get object fields faile: %s", replyVal.Get(common.HTTPBKAPIErrorMessage))
+	}
+
+	fields := []map[string]interface{}{}
+	json.Unmarshal([]byte(replyVal.Get("data").String()), &fields)
+
+	ret := map[string]interface{}{}
+	type intOptionType struct {
+		Min int
+		Max int
+	}
+	type EnumOptionType struct {
+		Name string
+		Type string
+	}
+
+	for _, mapField := range fields {
+		fieldName, _ := mapField["bk_property_id"].(string)
+		fieldType, _ := mapField["bk_property_type"].(string)
+		option, _ := mapField["option"]
+		switch fieldType {
+		case common.FieldTypeSingleChar:
+			ret[fieldName] = ""
+		case common.FieldTypeLongChar:
+			ret[fieldName] = ""
+		case common.FieldTypeInt:
+			ret[fieldName] = nil
+		case common.FieldTypeEnum:
+			enumOptions := validator.ParseEnumOption(option)
+			v := ""
+			if len(enumOptions) > 0 {
+				var defaultOption *validator.EnumVal
+				for _, k := range enumOptions {
+					if k.IsDefault {
+						defaultOption = &k
+						break
+					}
+				}
+				if nil != defaultOption {
+					v = defaultOption.ID
+				}
+			}
+			ret[fieldName] = v
+		case common.FieldTypeDate:
+			ret[fieldName] = ""
+		case common.FieldTypeTime:
+			ret[fieldName] = ""
+		case common.FieldTypeUser:
+			ret[fieldName] = ""
+		case common.FieldTypeMultiAsst:
+			ret[fieldName] = nil
+		case common.FieldTypeTimeZone:
+			ret[fieldName] = nil
+		case common.FieldTypeBool:
+			ret[fieldName] = false
+		default:
+			ret[fieldName] = nil
+		}
+		blog.Infof("set field %s to %+v", fieldName, ret[fieldName])
+
+	}
+	return ret, nil
 }
 
 type CreateAppResult struct {
