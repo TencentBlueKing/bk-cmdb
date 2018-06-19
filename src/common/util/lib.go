@@ -14,6 +14,7 @@ package util
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"net/http"
 
 	restful "github.com/emicklei/go-restful"
@@ -47,6 +48,7 @@ func GetActionUser(req *restful.Request) string {
 // GetActionOnwerID returns owner_uin form hender
 func GetActionOnwerID(req *restful.Request) string {
 	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
+	blog.Infof("request ownerID : %s", ownerID)
 	return ownerID
 }
 

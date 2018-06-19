@@ -172,6 +172,7 @@ func (cli *objectClassificationAction) UpdateClassification(req *restful.Request
 		}
 
 		selector = util.SetModOwner(selector, ownerID)
+		data = util.SetModOwner(data, ownerID)
 		// update object into storage
 		if updateErr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjClassifiction, &data, selector); nil != updateErr {
 			blog.Error("fail update object by condition, error:%v", updateErr.Error())

@@ -67,7 +67,7 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
-	blog.Info("addDefaultApp")
+	blog.Info("addDefaultApp %s", m.OwnerID)
 	params, err := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {
 		return err
@@ -81,11 +81,7 @@ func (m *OwnerManager) addDefaultApp() error {
 
 	byteParams, _ := json.Marshal(params)
 	url := fmt.Sprintf("%s/api/%s/biz/default/%s", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
-	blog.Info("migrate add default app url :%s", url)
-	blog.Info("migrate add default app content :%s", string(byteParams))
-	m.httpCli.POST(url, nil, byteParams)
 	reply, err := m.httpCli.POST(url, nil, byteParams)
-	blog.Info("migrate add default app return :%s", string(reply))
 	if err != nil {
 		return err
 	}
@@ -112,10 +108,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 	byteParams, _ := json.Marshal(params)
 	url := fmt.Sprintf("%s/api/%s/biz/default/%s/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION, m.OwnerID)
 
-	blog.Info("migrate get default app url :%s", url)
-	blog.Info("migrate get default app content :%s", string(byteParams))
 	reply, err := m.httpCli.POST(url, nil, byteParams)
-	blog.Info("migrate get default app return :%s", string(reply))
 	if err != nil {
 		return false, err
 	}
@@ -140,10 +133,7 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 	url := fmt.Sprintf("%s/api/%s/object/attr/search", api.GetAPIResource().APIAddr(), webCommon.API_VERSION)
 	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
 	byteParams, _ := json.Marshal(conds)
-	blog.Info("migrate get object fields url :%s", url)
-	blog.Info("migrate get object fields content :%s", string(byteParams))
 	reply, err := m.httpCli.POST(url, nil, byteParams)
-	blog.Info("migrate get object fileds return :%s", string(reply))
 	if err != nil {
 		return nil, err
 	}

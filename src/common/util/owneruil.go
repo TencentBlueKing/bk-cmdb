@@ -23,21 +23,23 @@ func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{}
 
 	switch cond := condition.(type) {
 	case map[string]interface{}:
-		if val, ok := cond[common.BKOwnerIDField]; ok {
-			switch val.(type) {
-			case string:
-				cond[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID, val.(string)}}
-			case map[string]interface{}:
-				for op, v := range val.(map[string]interface{}) {
-					if op == common.BKDBIN {
-						switch owners := v.(type) {
-						case []string:
-							val.(map[string]interface{})[op] = append(owners, common.BKDefaultOwnerID)
-						}
-					}
-				}
-			}
-		}
+		// if val, ok := cond[common.BKOwnerIDField]; ok {
+		// 	switch val.(type) {
+		// 	case string:
+		// 		cond[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}}
+		// 	case map[string]interface{}:
+		// 		for op, v := range val.(map[string]interface{}) {
+		// 			if op == common.BKDBIN {
+		// 				switch owners := v.(type) {
+		// 				case []string:
+		// 					val.(map[string]interface{})[op] = append(owners, common.BKDefaultOwnerID)
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// } else {
+		cond[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}}
+		// }
 		return cond
 	case nil:
 		return map[string]interface{}{

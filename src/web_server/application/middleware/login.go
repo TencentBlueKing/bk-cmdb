@@ -129,7 +129,6 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 
 		session.Set("userName", "admin")
 		session.Set("role", "1")
-		session.Set("owner_uin", "0")
 		session.Set(webCommon.IsSkipLogin, "1")
 		session.Save()
 		return true

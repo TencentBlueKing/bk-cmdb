@@ -707,8 +707,7 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 			blog.Infof("copy asst for %s, header owner: %s", ownerID, headerOwner)
 			searchAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectassts"
 			searchAsstCondition := map[string]interface{}{
-				common.BKOwnerIDField:  common.BKDefaultOwnerID,
-				common.BKObjAttIDField: common.BKChildStr,
+				common.BKOwnerIDField: common.BKDefaultOwnerID,
 			}
 			searchAsstData, _ := json.Marshal(searchAsstCondition)
 			searchAsstReply, err := httpcli.ReqHttp(req, searchAsstURL, common.HTTPSelectPost, []byte(searchAsstData))

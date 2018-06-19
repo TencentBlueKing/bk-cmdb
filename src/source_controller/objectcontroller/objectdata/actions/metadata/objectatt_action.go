@@ -205,6 +205,7 @@ func (cli *objectAttAction) UpdateObjectAttByID(req *restful.Request, resp *rest
 		}
 
 		condition := util.SetModOwner(map[string]interface{}{"id": appID}, ownerID)
+		data = util.SetModOwner(data, ownerID)
 		// update object into storage
 		updateErr := cli.CC.InstCli.UpdateByCondition(metadata.ObjectAttDes{}.TableName(), data, condition)
 		if nil != updateErr {

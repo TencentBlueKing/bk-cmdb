@@ -132,6 +132,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 		}
 
 		propertyGroup.Condition = util.SetModOwner(propertyGroup.Condition, ownerID)
+		propertyGroup.Data = util.SetModOwner(propertyGroup.Data, ownerID)
 		blog.Debug("property group:%+v", propertyGroup)
 		if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNamePropertyGroup, propertyGroup.Data, propertyGroup.Condition); nil != updateerr {
 			blog.Error("fail update object by condition, error:%v", updateerr.Error())
@@ -273,6 +274,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 			}
 
 			objectAttSelector = util.SetModOwner(objectAttSelector, ownerID)
+			objectAttValue = util.SetModOwner(objectAttValue, ownerID)
 			// update the object attribute
 			if updateerr := cli.CC.InstCli.UpdateByCondition(common.BKTableNameObjAttDes, objectAttValue, objectAttSelector); nil != updateerr {
 				blog.Error("fail update object by condition, error:%v", updateerr.Error())
