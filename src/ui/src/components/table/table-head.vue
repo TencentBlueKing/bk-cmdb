@@ -28,10 +28,10 @@
                     @click="handleSort(column)">
                     <div :class="['head-label', 'fl', {'has-sort': column.sortable}]" :title="column.name">{{column.name}}</div>
                     <div class="head-sort fl" v-if="column.sortable">
-                        <i :class="['head-sort-angle', 'ascing', {'active': column.id === sortStore.sort && sortStore.order === 'asc'}]"
+                        <i :class="['head-sort-angle', 'ascing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'asc'}]"
                             @click.stop="handleSort(column, 'asc')">
                         </i>
-                        <i :class="['head-sort-angle', 'descing', {'active': column.id === sortStore.sort && sortStore.order === 'desc'}]"
+                        <i :class="['head-sort-angle', 'descing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'desc'}]"
                             @click.stop="handleSort(column, 'desc')">
                         </i>
                     </div>

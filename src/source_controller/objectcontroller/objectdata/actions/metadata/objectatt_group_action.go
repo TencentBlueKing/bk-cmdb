@@ -91,7 +91,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 
 		_, err = cli.CC.InstCli.Insert(propertyGroup.TableName(), propertyGroup)
 		if nil == err {
-			return http.StatusOK, []*metadata.PropertyGroup{propertyGroup}, nil
+			return http.StatusOK, propertyGroup, nil
 		}
 
 		blog.Error("failed to insert the property group , error info is %s", err.Error())

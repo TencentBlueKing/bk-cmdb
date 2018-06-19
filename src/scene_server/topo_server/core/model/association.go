@@ -13,22 +13,45 @@
 package model
 
 import (
-	//frcommon "configcenter/src/framework/common"
+	"encoding/json"
+
 	"configcenter/src/apimachinery"
-	//frcommon "configcenter/src/common"
 	frtypes "configcenter/src/common/mapstr"
+	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Association = (*association)(nil)
 
 type association struct {
-	params    types.LogicParams
-	clientSet apimachinery.ClientSetInterface
+	asst       metadata.Association
+	isMainLine bool
+	params     types.LogicParams
+	clientSet  apimachinery.ClientSetInterface
+}
+
+func (cli *association) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cli.asst)
 }
 
 func (cli *association) GetType() AssociationType {
 	return CommonAssociation
+}
+
+func (cli *association) IsExists() (bool, error) {
+	return false, nil
+}
+func (cli *association) Create() error {
+	return nil
+}
+func (cli *association) Delete() error {
+	return nil
+}
+func (cli *association) Update() error {
+	return nil
+}
+func (cli *association) Save() error {
+	return nil
 }
 
 func (cli *association) SetTopo(parent, child Object) error {
@@ -40,13 +63,10 @@ func (cli *association) GetTopo(obj Object) (Topo, error) {
 }
 
 func (cli *association) ToMapStr() (frtypes.MapStr, error) {
-	return nil, nil
+	rst := metadata.SetValueToMapStrByTags(&cli.asst)
+	return rst, nil
 }
 
-func (cli *association) Parse(data frtypes.MapStr) error {
-	return nil
-}
-
-func (cli *association) Save() error {
-	return nil
+func (cli *association) Parse(data frtypes.MapStr) (*metadata.Association, error) {
+	return cli.asst.Parse(data)
 }
