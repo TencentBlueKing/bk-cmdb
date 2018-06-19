@@ -1,7 +1,6 @@
 package logics
 
 import (
-	"fmt"
 	"time"
 	"sync"
 	"sync/atomic"
@@ -10,13 +9,14 @@ import (
 	"io"
 	"runtime"
 	"encoding/json"
-	"github.com/tidwall/gjson"
-
 	"configcenter/src/scene_server/datacollection/common"
 	"configcenter/src/common/blog"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"fmt"
+	"github.com/tidwall/gjson"
+	"strings"
 	"configcenter/src/framework/core/log"
 )
 
@@ -63,7 +63,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 	httpClient.SetHeader("Content-Type", "application/json")
 	httpClient.SetHeader("Accept", "application/json")
 	httpClient.SetHeader(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
-	httpClient.SetHeader(bkc.BKHTTPHeaderUser, "collector")
+	httpClient.SetHeader(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
 
 	return &Discover{
 		chanName:               chanName,
@@ -368,15 +368,23 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			return nil
 		default:
 
-			// todo 1- create model and attr
-			err := d.CreateModel(msg)
+			// todo 1- try create model
+			err := d.TryCreateModel(msg)
 			if err != nil {
 				blog.Errorf("create model err: %s\n"+
 					"##msg[%s]msg##\n", err, msg)
 				continue
 			}
 
-			// todo 2- create inst
+			// todo 2- try create model attr
+			err = d.TryCreateAttrs(msg)
+			if err != nil {
+				blog.Errorf("create attr err: %s\n"+
+					"##msg[%s]msg##\n", err, msg)
+				continue
+			}
+
+			// todo 3- create inst
 			err = d.UpdateOrCreateInst(msg)
 			if err != nil {
 				blog.Errorf("create inst err: %s\n"+
@@ -391,6 +399,7 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	return nil
 }
 
+// ====================================================================================================================
 type Model struct {
 	BkClassificationID string `json:"bk_classification_id"`
 	BkObjID            string `json:"bk_obj_id"`
@@ -403,9 +412,91 @@ type Field struct {
 	BkPropertyType string `json:"bk_property_type"`
 }
 
+type M map[string]interface{}
+
+type MapData M
+
+type ResultBase struct {
+	Result  bool   `json:"result"`
+	Code    int    `json:"bk_error_code"`
+	Message string `json:"bk_err_message"`
+}
+
+type Result struct {
+	ResultBase
+	Data interface{} `json:"data"`
+}
+
+type DetailResult struct {
+	ResultBase
+	Data struct {
+		Count int       `json:"count"`
+		Info  []MapData `json:"info"`
+	} `json:"data"`
+}
+
+type ListResult struct {
+	ResultBase
+	Data []MapData `json:"data"`
+}
+
+func (m *M) toJson() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+func (m M) Keys() (keys []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	return
+}
+
+func (r *Result) mapData() (MapData, error) {
+	if m, ok := r.Data.(MapData); ok {
+		return m, nil
+	}
+	return nil, fmt.Errorf("parse map data error: %v", r)
+}
+
+func (d *Discover) parseListResult(res []byte) (ListResult, error) {
+
+	var lR ListResult
+
+	if err := json.Unmarshal(res, &lR); nil != err {
+		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		return lR, err
+	}
+
+	return lR, nil
+}
+
+func (d *Discover) parseDetailResult(res []byte) (DetailResult, error) {
+
+	var dR DetailResult
+
+	if err := json.Unmarshal(res, &dR); nil != err {
+		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		return dR, err
+	}
+
+	return dR, nil
+}
+
+func (d *Discover) parseResult(res []byte) (Result, error) {
+
+	var r Result
+
+	if err := json.Unmarshal(res, &r); nil != err {
+		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		return r, err
+	}
+
+	return r, nil
+}
+
 func (d *Discover) parseModel(msg string) (model *Model, err error) {
 
-	//create model
 	model = &Model{}
 	modelStr := gjson.Get(msg, "data.meta.model").String()
 
@@ -417,7 +508,230 @@ func (d *Discover) parseModel(msg string) (model *Model, err error) {
 	return
 }
 
-func (d *Discover) CreateModel(msg string) error {
+func (d *Discover) parseData(msg string) (data M, err error) {
+
+	dataStr := gjson.Get(msg, "data.data").String()
+	if err = json.Unmarshal([]byte(dataStr), &data); err != nil {
+		blog.Errorf("parse data error: %s", err)
+		return
+	}
+	return
+}
+
+func (d *Discover) parseFields(msg string) (fields map[string]Field, err error) {
+
+	fieldsStr := gjson.Get(msg, "data.meta.fields").String()
+	blog.Infof("create model attr fieldsStr: %s\n", fieldsStr)
+	if err = json.Unmarshal([]byte(fieldsStr), &fields); err != nil {
+		blog.Errorf("create model attr unmarshal error: %s", err)
+		return
+	}
+	return
+}
+
+func (d *Discover) parseObjID(msg string) string {
+	return gjson.Get(msg, "data.meta.model.bk_obj_id").String()
+}
+
+func (d *Discover) GetAttrs(msg string) (ListResult, error) {
+
+	var nilR = ListResult{}
+
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return nilR, fmt.Errorf("parse model error: %s", err)
+	}
+
+	//create model attr
+	fields, err := d.parseFields(msg)
+	if err != nil {
+		blog.Errorf("create model attr unmarshal error: %s", err)
+		return nilR, err
+	}
+
+	filterFields := make([]string, 0, len(fields))
+	for k := range fields {
+		filterFields = append(filterFields, k)
+	}
+	// construct the condition
+	cond := M{
+		bkc.BKPropertyIDField: M{
+			bkc.BKDBIN: filterFields,
+		},
+		bkc.BKObjIDField:   model.BkObjID,
+		bkc.BKOwnerIDField: bkc.BKDefaultOwnerID,
+		//bkc.CreatorField:   bkc.CCSystemCollectorUserName,
+	}
+
+	// marshal the condition
+	condJs, err := cond.toJson()
+	if err != nil {
+		return nilR, fmt.Errorf("marshal condition error: %s", err)
+	}
+
+	// search attr by condition
+	url := fmt.Sprintf("%s/topo/v1/objectattr/search", d.cc.TopoAPI())
+	blog.Infof("get model attr url=%s, body=%s\n", url, condJs)
+
+	res, err := d.requests.POST(url, nil, condJs)
+	if nil != err {
+		blog.Errorf("search model err: %s\n", err)
+		return nilR, err
+	}
+
+	//blog.Infof("search attr result: %s\n", res)
+
+	// parse inst data
+	dR, err := d.parseListResult(res)
+	if err != nil {
+		blog.Errorf("parse result error: %s\n", err)
+		return nilR, err
+	}
+
+	return dR, nil
+
+}
+
+func (d *Discover) TryCreateAttrs(msg string) error {
+
+	// get exist attr
+	dR, err := d.GetAttrs(msg)
+	if nil != err {
+		return fmt.Errorf("get attr error: %s", err)
+	}
+
+	existAttrHash := make(map[string]int, len(dR.Data))
+	//existAttrs := make([]string, len(dR.Data))
+	if dR.Result && len(dR.Data) > 0 {
+		for i, v := range dR.Data {
+			if idStr, ok := v[bkc.BKPropertyIDField].(string); ok {
+				existAttrHash[idStr] = i
+				//existAttrs = append(existAttrs, idStr)
+			}
+		}
+		//blog.Infof("attr exist: %v\n", existAttrs)
+	}
+
+	// debug only
+	existAttrHashJs, _ := json.Marshal(existAttrHash)
+	blog.Infof("attr hash: %s", existAttrHashJs)
+
+	// parse object_id
+	objID := d.parseObjID(msg)
+
+	//create model attr
+	fields, err := d.parseFields(msg)
+	if err != nil {
+		blog.Errorf("create model attr unmarshal error: %s", err)
+		return err
+	}
+
+	// batch create model attrs
+	for instId, v := range fields {
+
+		// skip exist attr
+		if _, ok := existAttrHash[instId]; ok {
+			//log.Infof("skip exist field: %s", instId)
+			continue
+		}
+
+		blog.Infof("attr: %s -> %v\n", instId, v)
+
+		// skip default field
+		if instId == bkc.BKInstNameField {
+			log.Infof("skip default field: %s", instId)
+			continue
+		}
+
+		attrBody := M{
+			bkc.BKObjIDField:         objID,
+			bkc.BKPropertyGroupField: bkc.BKDefaultField,
+			bkc.BKPropertyIDField:    instId,
+			bkc.BKPropertyNameField:  v.BkPropertyName,
+			bkc.BKPropertyTypeField:  v.BkPropertyType,
+			bkc.BKOwnerIDField:       bkc.BKDefaultOwnerID,
+			bkc.CreatorField:         bkc.CCSystemCollectorUserName,
+		}
+
+		attrBodyJs, _ := attrBody.toJson()
+		url := fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI())
+
+		blog.Infof("create model attr url=%s, body=%s\n", url, attrBody)
+		res, err := d.requests.POST(url, nil, []byte(attrBodyJs))
+		if nil != err {
+			return fmt.Errorf("create model attr error: %s", err.Error())
+		}
+
+		blog.Infof("create model attr result: %s\n", res)
+
+		resMap, err := d.parseResult(res)
+		if !resMap.Result {
+			return fmt.Errorf("create model attr failed: %s\n", resMap.Message)
+		}
+
+	}
+
+	return nil
+}
+
+func (d *Discover) GetModel(msg string) (ListResult, error) {
+
+	var nilR = ListResult{}
+
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return nilR, fmt.Errorf("parse model error: %s", err)
+	}
+
+	// construct the condition
+	cond := M{
+		bkc.BKObjIDField:            model.BkObjID,
+		bkc.BKClassificationIDField: model.BkClassificationID,
+		bkc.BKOwnerIDField:          bkc.BKDefaultOwnerID,
+		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
+	}
+
+	// marshal the condition
+	condJs, err := cond.toJson()
+	if err != nil {
+		return nilR, fmt.Errorf("marshal condition error: %s", err)
+	}
+
+	// search object by condition
+	url := fmt.Sprintf("%s/topo/v1/objects", d.cc.TopoAPI())
+	blog.Infof("get model url=%s, condition=%s\n", url, condJs)
+
+	res, err := d.requests.POST(url, nil, condJs)
+	if nil != err {
+		blog.Errorf("search model err: %s\n", err)
+		return nilR, err
+	}
+
+	blog.Infof("search model result: %s\n", res)
+
+	// parse inst data
+	dR, err := d.parseListResult(res)
+	if err != nil {
+		blog.Errorf("parse result error: %s\n", err)
+		return nilR, err
+	}
+
+	return dR, nil
+
+}
+
+func (d *Discover) TryCreateModel(msg string) error {
+
+	dR, err := d.GetModel(msg)
+	if nil != err {
+		return fmt.Errorf("get inst error: %s", err)
+	}
+
+	// model exist
+	if dR.Result && len(dR.Data) > 0 {
+		blog.Infof("model exist: %v\n", dR.Data)
+		return nil
+	}
 
 	//create model
 	model, err := d.parseModel(msg)
@@ -425,81 +739,189 @@ func (d *Discover) CreateModel(msg string) error {
 		return fmt.Errorf("parse model error: %s", err.Error())
 	}
 
-	body := map[string]interface{}{
+	body := M{
 		bkc.BKClassificationIDField: model.BkClassificationID,
 		bkc.BKObjIDField:            model.BkObjID,
 		bkc.BKObjNameField:          model.BkObjName,
 		bkc.BKOwnerIDField:          bkc.BKDefaultOwnerID,
 		bkc.BKObjIconField:          "icon-cc-middleware",
-		bkc.CreatorField:            bkc.CCSystemOperatorUserName,
+		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
-	bodyJs, _ := json.Marshal(body)
-	blog.Infof("create model body: %s", bodyJs)
-	res, err := d.requests.POST(fmt.Sprintf("%s/topo/v1/object", d.cc.TopoAPI()), nil, []byte(bodyJs))
+	bodyJs, _ := body.toJson()
+	url := fmt.Sprintf("%s/topo/v1/object", d.cc.TopoAPI())
+	blog.Infof("create model url=%s, body=%s\n", bodyJs)
+
+	res, err := d.requests.POST(url, nil, bodyJs)
 	if nil != err {
 		return fmt.Errorf("create model error: %s", err.Error())
 	}
 	blog.Infof("create model result: %s\n", res)
 
-	// TODO verify res
-	//js, err := simplejson.NewJson([]byte(res))
-	//jsMap, _ := js.Map()
-
-	//create model attr
-	fields := make(map[string]Field, 0)
-	fieldsStr := gjson.Get(msg, "data.meta.fields").String()
-	blog.Infof("create model attr fieldsStr: %s\n", fieldsStr)
-	if err := json.Unmarshal([]byte(fieldsStr), &fields); err != nil {
-		blog.Errorf("create model attr unmarshal error: %s", err)
-		return err
-	}
-
-	// batch create model attrs
-	for k, v := range fields {
-		blog.Infof("attr: %s -> %v\n", k, v)
-
-		// skip default field
-		if model.BkObjID == bkc.BKInstNameField {
-			log.Infof("skip default field: %s", model.BkObjID)
-			continue
-		}
-
-		attrBody := map[string]interface{}{
-			bkc.BKObjIDField:         model.BkObjID,
-			bkc.BKPropertyGroupField: bkc.BKDefaultField,
-			bkc.BKPropertyIDField:    k,
-			bkc.BKPropertyNameField:  v.BkPropertyName,
-			bkc.BKPropertyTypeField:  v.BkPropertyType,
-			bkc.BKOwnerIDField:       bkc.BKDefaultOwnerID,
-		}
-
-		attrBodyJs, _ := json.Marshal(attrBody)
-		blog.Infof("create model attr body: %s", attrBody)
-
-		res, err = d.requests.POST(fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI()), nil, []byte(attrBodyJs))
-		if nil != err {
-			return fmt.Errorf("create model attr error: %s", err.Error())
-		}
-
-		blog.Infof("create model attr result: %s\n", res)
+	resMap, err := d.parseResult(res)
+	if !resMap.Result {
+		return fmt.Errorf("create model failed: %s\n", resMap.Message)
 	}
 
 	return nil
 }
 
+func (d *Discover) GetInst(msg string) (DetailResult, error) {
+
+	var nilR = DetailResult{}
+
+	// parse object_id
+	objID := d.parseObjID(msg)
+
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return nilR, fmt.Errorf("parse model error: %s", err)
+	}
+
+	// build condition
+	condition := M{
+		//bkc.CreatorField: bkc.CCSystemCollectorUserName,
+		bkc.BKObjIDField: objID,
+	}
+
+	bodyMap, err := d.parseData(msg)
+	if err != nil {
+		return nilR, fmt.Errorf("parse data error: %s", err)
+	}
+
+	keys := strings.Split(model.Keys, ",")
+	for _, key := range keys {
+		keyStr := string(key)
+		condition[keyStr] = bodyMap[keyStr]
+	}
+
+	// construct the condition
+	cond := M{
+		"fields": []string{},
+		"page": M{
+			"start": 0,
+			"limit": 1,
+			"sort":  bkc.BKInstNameField,
+		},
+		"condition": condition,
+	}
+
+	// marshal the condition
+	condJs, err := cond.toJson()
+	if err != nil {
+		return nilR, fmt.Errorf("marshal condition error: %s", err)
+	}
+
+	// search inst by condition
+	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, model.BkObjID)
+	blog.Infof("get inst url=%s, condition=%s\n", url, condJs)
+
+	res, err := d.requests.POST(url, nil, condJs)
+	if nil != err {
+		blog.Errorf("search inst err: %s\n", err)
+		return nilR, err
+	}
+
+	blog.Infof("search inst result: %s\n", res)
+
+	// parse inst data
+	dR, err := d.parseDetailResult(res)
+	if err != nil {
+		blog.Errorf("parse result error: %s\n", err)
+		return nilR, err
+	}
+
+	return dR, nil
+
+}
+
 func (d *Discover) UpdateOrCreateInst(msg string) error {
 
-	//create inst
-	bodyJs := gjson.Get(msg, "data.data").String()
-	objID := gjson.Get(msg, "data.meta.model.bk_obj_id").String()
-	blog.Infof("create model body: %s", bodyJs)
+	// parse object_id
+	objID := d.parseObjID(msg)
 
-	res, err := d.requests.POST(fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID), nil, []byte(bodyJs))
+	dR, err := d.GetInst(msg)
 	if nil != err {
-		return fmt.Errorf("create inst error: %s", err.Error())
+		return fmt.Errorf("get inst error: %s", err)
 	}
-	blog.Infof("create inst result: %s\n", res)
+
+	blog.Infof("get inst result: count=%d, info=%v\n", dR.Data.Count, dR.Data.Info)
+
+	// create inst
+	if dR.Data.Count == 0 {
+
+		createJs := gjson.Get(msg, "data.data").String()
+
+		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
+		blog.Infof("create inst url=%s, body=%s\n", url, createJs)
+
+		res, err := d.requests.POST(url, nil, []byte(createJs))
+		if nil != err {
+			return fmt.Errorf("create inst error: %s", err)
+		}
+
+		blog.Infof("create inst result: %s\n", res)
+
+		resMap, err := d.parseResult(res)
+		if !resMap.Result {
+			return fmt.Errorf("create inst failed: %s\n", resMap.Message)
+		}
+
+		return nil
+	}
+
+	// update exist inst
+	info := dR.Data.Info[0]
+	instID, ok := info[bkc.BKInstIDField].(float64)
+	if !ok {
+		return fmt.Errorf("get bk_inst_id failed: %s", info[bkc.BKInstIDField])
+	}
+
+	bodyData, err := d.parseData(msg)
+	if nil != err {
+		return fmt.Errorf("parse inst data error: %s", err)
+	}
+
+	// update info by sample data
+	hasDiff := false
+	for k, v := range bodyData {
+		if info[k] != v {
+			hasDiff = true
+		}
+		info[k] = v
+
+		blog.Debug("%s: %v ---> %v", k, v, info[k])
+	}
+
+	if !hasDiff {
+		blog.Infof("no need to update inst")
+		return nil
+	}
+
+	// remove some keys
+	delete(info, bkc.BKObjIDField)
+	delete(info, bkc.BKOwnerIDField)
+	delete(info, bkc.BKDefaultField)
+	delete(info, bkc.BKInstIDField)
+	delete(info, bkc.LastTimeField)
+	delete(info, bkc.CreateTimeField)
+
+	//info[bkc.CreatorField] = bkc.CCSystemCollectorUserName
+
+	updateJs, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Errorf("marshal inst data error: %s", err)
+	}
+
+	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s/%d", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID, int(instID))
+	blog.Infof("update inst url=%s, body=%s\n", url, updateJs)
+
+	res, err := d.requests.PUT(url, nil, updateJs)
+	if nil != err {
+		return fmt.Errorf("update inst error: %s", err)
+	}
+
+	blog.Infof("update inst result: %s\n", res)
 
 	return nil
 }
