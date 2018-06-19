@@ -19,7 +19,11 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/service"
 )
 
@@ -70,4 +74,74 @@ func (lgc *Logics) GetAppDetails(fields string, condition map[string]interface{}
 	}
 
 	return result.Data.Info[0], nil
+}
+
+func (lgc *Logics) IsHostExistInApp(appID, hostID int64, pheader http.Header) (bool, error) {
+	conf := metadata.ModuleHostConfigParams{
+		ApplicationID: appID,
+		HostID:        hostID,
+	}
+
+	result, err := lgc.CoreAPI.HostController().Module().GetHostModulesIDs(context.Background(), pheader, &conf)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("get host module ids failed, err: %v, %v", err, result.ErrMsg)
+		return false, errors.New(lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader)).Languagef("host_search_module_fail_with_errmsg", err.Error()))
+	}
+
+	if result.Data == nil {
+		return false, nil
+	}
+
+	if len(result.Data) == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (lgc *Logics) GetSingleApp(pheader http.Header, cond interface{}) (mapstr.MapStr, error) {
+	query := &metadata.QueryInput{
+		Condition: cond,
+		Start:     0,
+		Limit:     1,
+		Sort:      common.BKAppIDField,
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("get app failed, err: %v, %v", err, result.ErrMsg)
+	}
+
+	if len(result.Data.Info) == 0 {
+		return nil, nil
+	}
+	return result.Data.Info[0], nil
+}
+
+func (lgc *Logics) GetAppIDByCond(pheader http.Header, cond []interface{}) ([]int64, error) {
+	condc := make(map[string]interface{})
+	params.ParseCommonParams(cond, condc)
+	query := &metadata.QueryInput{
+		Condition: condc,
+		Start:     0,
+		Limit:     common.BKNoLimit,
+		Sort:      common.BKHostIDField,
+		Fields:    common.BKAppIDField,
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+
+	appIDs := make([]int64, 0)
+	for _, info := range result.Data.Info {
+		id, err := info.Int64(common.BKAppIDField)
+		if err != nil {
+			return nil, err
+		}
+		appIDs = append(appIDs, id)
+	}
+
+	return appIDs, nil
 }

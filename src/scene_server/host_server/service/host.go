@@ -173,12 +173,14 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	if err != nil {
 		blog.Errorf("get host defails failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		return
 	}
 
 	attribute, err := s.GetHostAttributes(ownerID, pheader)
 	if err != nil {
 		blog.Errorf("get host attribute fields failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		return
 	}
 
 	result := make([]meta.HostInstanceProperties, 0)
@@ -384,18 +386,6 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetDefaultCustom(req *restful.Request, resp *restful.Response) {
-
-}
-
 func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 
 }
@@ -468,11 +458,20 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) HostSearch(req *restful.Request, resp *restful.Response) {
+func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	body := new(meta.HostCommonSearch)
+	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
+		blog.Errorf("search host failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 
 }
 
-func (s *Service) HostSearchWithAsstDetail(req *restful.Request, resp *restful.Response) {
+func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.Response) {
 
 }
 

@@ -39,7 +39,7 @@ type HostServerClientInterface interface {
 	AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error)
 
-	AddHostMutiltAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error)
+	AddHostMultiAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error)
 	HostModuleRelation(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 
 	MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
@@ -47,7 +47,7 @@ type HostServerClientInterface interface {
 	MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 
 	AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
-	AssignHostToAppModule(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	AssignHostToAppModule(ctx context.Context, h http.Header, dat *metadata.HostToAppModule) (resp *metadata.Response, err error)
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
@@ -69,8 +69,8 @@ type HostServerClientInterface interface {
 	GetPlat(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error)
-	HostSearch(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error)
-	HostSearchWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error)
+	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error)
+	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
