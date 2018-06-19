@@ -13,12 +13,13 @@
 package params
 
 import (
-	"configcenter/src/common"
 	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"configcenter/src/common"
 )
 
 //common search struct

@@ -33,7 +33,7 @@ func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interfa
 		Condition: condition,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKModuleIDField, pheader, &query)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, &query)
 	if err != nil || (err == nil && !result.Result) {
 		return -1, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
@@ -60,4 +60,29 @@ func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int6
 	}
 
 	return result.Data.Info, nil
+}
+
+func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []interface{}) ([]int64, error) {
+	query := &metadata.QueryInput{
+		Start:     0,
+		Limit:     common.BKNoLimit,
+		Sort:      common.BKModuleIDField,
+		Fields:    common.BKModuleIDField,
+		Condition: cond,
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, phader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("get module id failed, err: %v, %v", err, result.ErrMsg)
+	}
+
+	moduleIDArr := make([]int64, 0)
+	for _, i := range result.Data.Info {
+		moduleID, err := i.Int64(common.BKModuleIDField)
+		if err != nil {
+			return nil, fmt.Errorf("invalid module id: %v", err)
+		}
+		moduleIDArr = append(moduleIDArr, moduleID)
+	}
+	return moduleIDArr, nil
 }
