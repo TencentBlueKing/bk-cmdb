@@ -24,26 +24,25 @@ import (
 	"configcenter/src/common/backbone"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/host_server/service"
-	"configcenter/src/source_controller/api/metadata"
 )
 
 type Logics struct {
 	*backbone.Engine
 }
 
-func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]metadata.Header, error) {
+func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]meta.Header, error) {
 	searchOp := service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
 	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, searchOp)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
 
-	headers := make([]metadata.Header, 0)
+	headers := make([]meta.Header, 0)
 	for _, p := range result.Data {
 		if p.PropertyID == common.BKChildStr {
 			continue
 		}
-		headers = append(headers, metadata.Header{
+		headers = append(headers, meta.Header{
 			PropertyID:   p.PropertyID,
 			PropertyName: p.PropertyName,
 		})

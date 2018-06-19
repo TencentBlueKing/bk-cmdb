@@ -22,10 +22,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
-	"configcenter/src/source_controller/api/metadata"
 	"github.com/emicklei/go-restful"
 )
 
@@ -65,7 +65,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	condition := make(map[string]interface{})
-	condition["condition"] = NewOperation().WithDefaultField(1).WithOwnerID(ownerID).Data()
+	condition["condition"] = NewOperation().WithSupplierID(1).WithOwnerID(ownerID).Data()
 	query := meta.QueryInput{Condition: condition}
 	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
 	if err != nil || (err == nil && !result.Result) {
@@ -134,7 +134,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		ctnt := metadata.Content{
+		ctnt := meta.Content{
 			PreData: preHostLog,
 			CurData: nil,
 			Headers: hostFields,
@@ -173,12 +173,14 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	if err != nil {
 		blog.Errorf("get host defails failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		return
 	}
 
 	attribute, err := s.GetHostAttributes(ownerID, pheader)
 	if err != nil {
 		blog.Errorf("get host attribute fields failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		return
 	}
 
 	result := make([]meta.HostInstanceProperties, 0)
@@ -234,77 +236,153 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if hostList.HostInfo == nil {
+		blog.Errorf("add host, but host info is nil.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
+	appID := hostList.ApplicationID
+	if appID == 0 {
+		// get default app id
+		var err error
+		appID, err = s.GetDefaultAppIDWithSupplier(hostList.SupplierID, pheader)
+		if err != nil {
+			blog.Errorf("add host, but get default appid failed, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_QUERY_FAIL)})
+			return
+		}
+	}
+
+	cond := NewOperation().WithSupplierID(int64(common.DefaultResSetFlag)).WithModuleName(common.DefaultResSetName).WithAppID(appID).Data()
+	moduleID, err := s.GetResoulePoolModuleID(pheader, cond)
+	if err != nil {
+		blog.Errorf("add host, but get module id failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
+		return
+	}
+
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, moduleID, common.BKDefaultOwnerID, pheader, hostList.HostInfo, hostList.InputType)
+	if err != nil {
+		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
+
+		retData := make(map[string]interface{})
+		retData["success"] = succ
+		retData["error"] = errRow
+		retData["update_error"] = updateErrRow
+		resp.WriteEntity(meta.Response{
+			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			Data:     retData,
+		})
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
 
 func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := common.BKDefaultOwnerID
 
-}
+	agents := make(mapstr.MapStr)
+	if err := json.NewDecoder(req.Request.Body).Decode(&agents); err != nil {
+		blog.Errorf("add host from agent failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 
-func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response) {
+	if len(agents) == 0 {
+		blog.Errorf("add host from agent, but got 0 agents from body.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")})
+		return
+	}
 
-}
+	appID, err := s.GetDefaultAppID(ownerID, pheader)
+	if 0 == appID || nil != err {
+		blog.Errorf("add host from agent, but got invalid appid, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, err.Error())})
+		return
+	}
 
-func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response) {
+	opt := NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
+	moduleID, err := s.GetResoulePoolModuleID(pheader, opt.Data())
+	if err != nil {
+		blog.Errorf("add host from agent , but get module id failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
+		return
+	}
 
-}
+	agents["import_from"] = common.HostAddMethodAgent
+	addHost := make(map[int64]map[string]interface{})
+	addHost[1] = agents
 
-func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Response) {
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, moduleID, common.BKDefaultOwnerID, pheader, addHost, "")
+	if err != nil {
+		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
-}
+		retData := make(map[string]interface{})
+		retData["success"] = succ
+		retData["error"] = errRow
+		retData["update_error"] = updateErrRow
+		resp.WriteEntity(meta.Response{
+			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			Data:     retData,
+		})
+	}
 
-func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Response) {
+	resp.WriteEntity(meta.NewSuccessResp(succ))
 
 }
 
 func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	user := util.GetUser(pheader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	data := make(mapstr.MapStr)
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("add host from agent failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	content, ok := data["content"].(string)
+	if !ok || "" == content {
+		blog.Error("add history, but content is empty. data: %v", data)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+
+	}
+	params := make(map[string]interface{}, 1)
+	params["content"] = content
+
+	result, err := s.CoreAPI.HostController().History().AddHistory(context.Background(), user, pheader, &meta.HistoryContent{Content: content})
+	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("add history failed, err: %v, result err: %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostHisCreateFail)})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(result.Data))
 }
 
 func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	user := util.GetUser(pheader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	start := req.PathParameter("start")
+	limit := req.PathParameter("limit")
 
-}
+	result, err := s.CoreAPI.HostController().History().GetHistorys(context.Background(), user, start, limit, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("get history failed, err: %v, result err: %v", err, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostHisGetFail)})
+		return
+	}
 
-func (s *Service) AddHostMutiltAppModuleRelation(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) MoveHost2EmptyModule(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) MoveHost2FaultModule(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetDefaultCustom(req *restful.Request, resp *restful.Response) {
+	resp.WriteEntity(meta.GetHistoryResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result.Data,
+	})
 
 }
 
@@ -380,11 +458,20 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) HostSearch(req *restful.Request, resp *restful.Response) {
+func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	body := new(meta.HostCommonSearch)
+	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
+		blog.Errorf("search host failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 
 }
 
-func (s *Service) HostSearchWithAsstDetail(req *restful.Request, resp *restful.Response) {
+func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.Response) {
 
 }
 

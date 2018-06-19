@@ -14,11 +14,13 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
 	"fmt"
+	"net/http"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -30,8 +32,14 @@ func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err 
 }
 
 // NewValidMapWithKeyFields returns new NewValidMap
-func NewValidMapWithKeyFields(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
-	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
+func NewValidMapWithKeyFields(ownerID, objID string, keyFileds []string, pheader http.Header, engine *backbone.Engine) *ValidMap {
+	tmp := &ValidMap{
+		Engine:    engine,
+		pheader:   pheader,
+		ownerID:   ownerID,
+		objID:     objID,
+		KeyFileds: make(map[string]interface{}, 0),
+	}
 
 	for _, item := range keyFileds {
 		tmp.KeyFileds[item] = item
@@ -40,7 +48,7 @@ func NewValidMapWithKeyFields(ownerID, objID, objCtrl string, keyFileds []string
 }
 
 // ValidMap basic valid
-func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int) (bool, error) {
+func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int64) (bool, error) {
 	valRule := NewValRule(valid.ownerID, valid.objCtrl)
 
 	valRule.GetObjAttrByID(valid.forward, valid.objID)
