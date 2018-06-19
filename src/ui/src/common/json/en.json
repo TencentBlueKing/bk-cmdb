@@ -314,7 +314,8 @@
         "单击选择对应图标": "Click to select the corresponding icon",
         "设置为默认值": "Set as default",
         "请输入ID": "Enter ID",
-        "全局视图": "Global View"
+        "全局视图": "Global View",
+        "请输入关键词": "Enter key word"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
