@@ -30,9 +30,9 @@ type HostIdentifier struct {
 	OuterIP   string             `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
 	OSType    string             `json:"bk_os_type" bson:"bk_os_type"`           // 操作系统类型
 	OSName    string             `json:"bk_os_name" bson:"bk_os_name"`           // 操作系统名称
-	Memory    string             `json:"bk_mem" bson:"bk_mem"`                   // 内存容量
-	CPU       string             `json:"bk_cpu" bson:"bk_cpu"`                   // CPU逻辑核心数
-	Disk      string             `json:"bk_disk" bson:"bk_disk"`                 // 磁盘容量
+	Memory    int64              `json:"bk_mem" bson:"bk_mem"`                   // 内存容量
+	CPU       int64              `json:"bk_cpu" bson:"bk_cpu"`                   // CPU逻辑核心数
+	Disk      int64              `json:"bk_disk" bson:"bk_disk"`                 // 磁盘容量
 	Module    map[string]*Module `json:"associations" bson:"associations"`
 }
 

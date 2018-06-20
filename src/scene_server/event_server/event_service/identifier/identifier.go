@@ -243,11 +243,11 @@ func (i *Inst) set(key string, value interface{}) {
 		case "bk_os_name":
 			i.ident.OSName = fmt.Sprint(value)
 		case "bk_mem":
-			i.ident.Memory = fmt.Sprint(value)
+			i.ident.Memory, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_cpu":
-			i.ident.CPU = fmt.Sprint(value)
+			i.ident.CPU, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_disk":
-			i.ident.Disk = fmt.Sprint(value)
+			i.ident.Disk, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		}
 	}
 }
@@ -273,9 +273,9 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
-	ident.Memory = fmt.Sprint(m["bk_mem"])
-	ident.CPU = fmt.Sprint(m["bk_cpu"])
-	ident.Disk = fmt.Sprint(m["bk_disk"])
+	ident.Memory, _ = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
+	ident.CPU, _ = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
+	ident.Disk, _ = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
 	ident.Module = map[string]*Module{}
 	return &ident
 }
