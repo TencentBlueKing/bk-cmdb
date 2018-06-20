@@ -125,8 +125,9 @@ func (t *meta) UpdateObjectAssociation(ctx context.Context, objID int64, h http.
 }
 
 func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Header) (resp *metatype.QueryObjectAttributeResult, err error) {
-	subPath := fmt.Sprintf("/meta/objectatt/%d", objID)
 	resp = new(metatype.QueryObjectAttributeResult)
+
+	subPath := fmt.Sprintf("/meta/objectatt/%d", objID)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
@@ -137,9 +138,10 @@ func (t *meta) SelectObjectAttByID(ctx context.Context, objID int64, h http.Head
 	return
 }
 
-func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryObjectAttributeResult, err error) {
-	subPath := "/meta/objectatts"
+func (t *meta) SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectAttributeResult, err error) {
 	resp = new(metatype.QueryObjectAttributeResult)
+	subPath := "/meta/objectatts"
+
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).

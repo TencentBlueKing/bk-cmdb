@@ -23,7 +23,7 @@ import (
 	parse "configcenter/src/common/paraparse"
 )
 
-func (lgc *Logics) GetSetIDByCond(pheader http.Header, cond []interface{}) ([]int64, error) {
+func (lgc *Logics) GetSetIDByCond(pheader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
 	condc := make(map[string]interface{})
 	parse.ParseCommonParams(cond, condc)
 

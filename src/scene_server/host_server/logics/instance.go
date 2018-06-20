@@ -14,15 +14,16 @@ package logics
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/service"
-
-	"encoding/json"
-	"strconv"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 type InstNameAsst struct {
@@ -37,7 +38,7 @@ type InstNameAsst struct {
 
 func (lgc *Logics) GetObjectAsst(ownerID string, pheader http.Header) (map[string]string, error) {
 	// get host attribute info
-	opt := service.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
+	opt := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
 	attResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, opt)
 	if err != nil || (err == nil && !attResult.Result) {
 		return nil, fmt.Errorf("get host association failed, err, %v, %v", err, attResult.ErrMsg)
@@ -47,7 +48,7 @@ func (lgc *Logics) GetObjectAsst(ownerID string, pheader http.Header) (map[strin
 	attributes := make(map[string]string)
 	for _, item := range attResult.Data {
 		if item.PropertyType == common.FieldTypeSingleAsst || item.PropertyType == common.FieldTypeMultiAsst {
-			opt := service.NewOperation().WithObjID(item.ObjectID).WithOwnerID(item.OwnerID).WithPropertyID(item.PropertyID).Data()
+			opt := hutil.NewOperation().WithObjID(item.ObjectID).WithOwnerID(item.OwnerID).WithPropertyID(item.PropertyID).Data()
 			res, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, opt)
 			if err != nil || (err == nil && !res.Result) {
 				return nil, fmt.Errorf("get host pre data failed, err, %v, %v", err, res.ErrMsg)
@@ -201,4 +202,56 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 	}
 
 	return allInst, count, nil
+}
+
+// get inst detail sub without association object detail
+func (lgc *Logics) GetInstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage) ([]map[string]interface{}, error) {
+	return lgc.getInstDetailsSub(pheader, objID, ownerID, input, page, false)
+}
+
+// get inst detail sub with association object detail
+func (lgc *Logics) GetInstAsstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage) ([]map[string]interface{}, error) {
+	return lgc.getInstDetailsSub(pheader, objID, ownerID, input, page, true)
+}
+
+func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage, isDetail bool) ([]map[string]interface{}, error) {
+	asso, err := lgc.GetObjectAsst(ownerID, pheader)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dataItem := range input {
+		// key 是关联字段，val 是字段关联的模型ID
+		for key, objID := range asso {
+			if keyItem, exist := dataItem[key]; exist {
+				if nil == keyItem {
+					continue
+				}
+				keyItemStr, ok := keyItem.(string)
+				if !ok {
+					return nil, errors.New("invalid parameter")
+				}
+				var retData []InstNameAsst
+				var err error
+				query := &meta.QueryInput{
+					Start: page.Start,
+					Limit: page.Limit,
+					Sort:  page.Sort,
+				}
+				if true == isDetail {
+
+					retData, _, err = lgc.getInstAsstDetail(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)
+				} else {
+					retData, _, err = lgc.getInstAsst(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)
+				}
+				if err != nil {
+					return nil, err
+				}
+				dataItem[key] = retData
+
+			}
+		}
+	}
+
+	return input, nil
 }

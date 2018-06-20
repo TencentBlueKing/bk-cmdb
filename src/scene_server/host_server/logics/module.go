@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/service"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interface{}) (int64, error) {
@@ -51,7 +51,7 @@ func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int6
 		Limit:     1,
 		Sort:      common.BKModuleIDField,
 		Fields:    common.BKModuleIDField,
-		Condition: service.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
+		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
 	}
 
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)
@@ -62,7 +62,7 @@ func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int6
 	return result.Data.Info, nil
 }
 
-func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []interface{}) ([]int64, error) {
+func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     common.BKNoLimit,
@@ -85,4 +85,30 @@ func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []interface{}) ([]
 		moduleIDArr = append(moduleIDArr, moduleID)
 	}
 	return moduleIDArr, nil
+}
+
+func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]interface{}, error) {
+
+	query := &metadata.QueryInput{
+		Condition: cond,
+		Start:     0,
+		Limit:     common.BKNoLimit,
+		Sort:      common.BKModuleIDField,
+		Fields:    fields,
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+	moduleMap := make(map[int64]interface{})
+	for _, info := range result.Data.Info {
+		id, err := info.Int64(common.BKModuleIDField)
+		if err != nil {
+			return nil, err
+		}
+		moduleMap[id] = info
+	}
+
+	return moduleMap, nil
 }

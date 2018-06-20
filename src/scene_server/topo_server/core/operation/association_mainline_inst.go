@@ -148,7 +148,6 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.LogicPara
 		var lastRst *metadata.TopoInstRst
 	exist_for:
 		for {
-			tmp := metadata.TopoInstRst{}
 			instID, err := biz.GetInstID()
 			if nil != err {
 				return nil, err
@@ -158,6 +157,7 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.LogicPara
 				return nil, err
 			}
 
+			tmp := metadata.TopoInstRst{}
 			tmp.InstID = instID
 			tmp.InstName = instName
 			tmp.ObjID = biz.GetObject().GetID()

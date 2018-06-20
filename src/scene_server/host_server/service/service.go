@@ -77,4 +77,6 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.Get))
 	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.Detail))
 	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserAPIData))
+
+	return ws
 }

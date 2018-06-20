@@ -47,6 +47,6 @@ type Header struct {
 }
 
 type Ref struct {
-	RefID   int    `json:"ref_id"`
+	RefID   int64  `json:"ref_id"`
 	RefName string `json:"ref_name"`
 }
