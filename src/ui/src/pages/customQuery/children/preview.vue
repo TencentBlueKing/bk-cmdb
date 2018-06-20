@@ -231,7 +231,7 @@
         top: 150px;
         left: 0;
         width: 100%;
-        z-index: 3;
+        z-index: 99;
     }
     .userapi-preview{
         width: 595px;

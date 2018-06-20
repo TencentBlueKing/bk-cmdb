@@ -21,6 +21,10 @@
         <div class="userapi-group">
             <div class="userapi-input clearfix">
                 <label class="userapi-input-name fl">{{$t("CustomQuery['查询内容']")}}</label>
+                <div class="userapi-content-display">
+                    <textarea class="" name="" id="" cols="30" rows="10"></textarea>
+                    <bk-button v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus"></bk-button>
+                </div>
                 <bk-select class="fl userapi-content-selector"
                     :selected.sync="attribute.selected"
                     :filterable="true"
@@ -34,7 +38,7 @@
                 </bk-select>
             </div>
         </div>
-        <div class="userapi-group">
+        <div class="userapi-group list">
             <ul class="userapi-list">
                 <li class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
                     <label class="userapi-name fl">{{property.bkPropertyName}}</label>
@@ -88,27 +92,38 @@
                 </li>
             </ul>
             <div class="userapi-new" v-click-outside="clickOutside">
-                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增条件']")}}</button>
-                <div class="userapi-new-selector-wrapper" v-show="isPropertiesShow">
-                    <bk-select class="userapi-new-selector" 
-                        :selected.sync="selectedObjId">
-                        <bk-select-option v-for="(obj, index) in object"
-                            :key="index"
-                            :value="obj.id"
-                            :label="obj.name">
-                        </bk-select-option>
-                    </bk-select>   
-                    <bk-select class="userapi-new-select"
-                        ref="propertySelector"
-                        @on-selected="addUserProperties">
-                            <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
-                                :disabled="property.disabled"
-                                :key="property['bk_property_id']"
-                                :value="property['bk_property_id']"
-                                :label="property['bk_property_name']">
+                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
+                <div class="userapi-pop-wrapper">
+                    <div class="userapi-new-selector-pop" v-show="isPropertiesShow">
+                        <p class="pop-title">{{$t("CustomQuery['新增查询条件']")}}</p>
+                        <bk-select class="userapi-new-selector" 
+                            :selected.sync="selectedObjId">
+                            <bk-select-option v-for="(obj, index) in object"
+                                :key="index"
+                                :value="obj.id"
+                                :label="obj.name">
                             </bk-select-option>
-                    </bk-select>
+                        </bk-select>
+                        <div class="userapi-new-selector-wrapper">
+                            <bk-select class="userapi-new-select"
+                                ref="propertySelector"
+                                :multiple="true"
+                                :selected.sync="propertySelected[selectedObjId]"
+                                @on-selected="">
+                                    <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
+                                    <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                                        :disabled="property.disabled"
+                                        :key="property['bk_property_id']"
+                                        :value="property['bk_property_id']"
+                                        :label="property['bk_property_name']">
+                                    </bk-select-option>
+                            </bk-select>
+                        </div>
+                        <div class="btn-wrapper">
+                            <bk-button type="primary" class="btn confirm" @click="addUserProperties">{{$t("Common['确定']")}}</bk-button>
+                            <bk-button type="default" class="btn vice-btn" @click="toggleUserAPISelector(false)">{{$t("Common['取消']")}}</bk-button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -206,6 +221,11 @@
                     }
                 },
                 selectedObjId: 'host',
+                propertySelected: {
+                    host: '',
+                    set: '',
+                    module: ''
+                },
                 operatorMap: {
                     'time': '$in',
                     'enum': '$eq'
@@ -464,28 +484,59 @@
                     attributeSelected: this.attribute.selected
                 }
             },
-            addUserProperties ({value: bkPropertyId}, index) {
-                let property = this.getOriginalProperty(bkPropertyId, this.selectedObjId)
-                let {
-                    'bk_property_name': bkPropertyName,
-                    'bk_property_type': bkPropertyType,
-                    'bk_asst_obj_id': bkAsstObjId,
-                    'bk_obj_id': bkObjId
-                } = property
-                property.disabled = true
-                this.userProperties.push({
-                    bkObjId,
-                    bkPropertyId,
-                    bkPropertyType,
-                    bkPropertyName,
-                    bkAsstObjId,
-                    operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
-                    value: ''
-                })
-                this.$refs.propertySelector.curLabel = ''
-                this.$refs.propertySelector.curValue = ''
+            addUserProperties () {
+                for (let key in this.propertySelected) {
+                    if (this.propertySelected[key].length) {
+                        this.propertySelected[key].split(',').map(bkPropertyId => {
+                            let property = this.getOriginalProperty(bkPropertyId, key)
+                            let {
+                                'bk_property_name': bkPropertyName,
+                                'bk_property_type': bkPropertyType,
+                                'bk_asst_obj_id': bkAsstObjId,
+                                'bk_obj_id': bkObjId
+                            } = property
+                            property.disabled = true
+                            let isExist = this.userProperties.findIndex(property => {
+                                return bkPropertyId === property.bkPropertyId
+                            }) > -1
+                            if (!isExist) {
+                                this.userProperties.push({
+                                    bkObjId,
+                                    bkPropertyId,
+                                    bkPropertyType,
+                                    bkPropertyName,
+                                    bkAsstObjId,
+                                    operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
+                                    value: ''
+                                })
+                            }
+                        })
+                    }
+                }
                 this.toggleUserAPISelector(false)
             },
+            // addUserProperties ({value: bkPropertyId}, index) {
+                // let property = this.getOriginalProperty(bkPropertyId, this.selectedObjId)
+                // let {
+                //     'bk_property_name': bkPropertyName,
+                //     'bk_property_type': bkPropertyType,
+                //     'bk_asst_obj_id': bkAsstObjId,
+                //     'bk_obj_id': bkObjId
+                // } = property
+                // property.disabled = true
+                // this.userProperties.push({
+                //     bkObjId,
+                //     bkPropertyId,
+                //     bkPropertyType,
+                //     bkPropertyName,
+                //     bkAsstObjId,
+                //     operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
+                //     value: ''
+                // })
+                // this.$refs.propertySelector.curLabel = ''
+                // this.$refs.propertySelector.curValue = ''
+                // this.toggleUserAPISelector(false)
+            // },
             setUserPropertyTime (oldTime, newTime, index) {
                 this.userProperties[index]['value'] = newTime
             },
@@ -521,6 +572,19 @@
             },
             /* 切换新增条件的显示 */
             toggleUserAPISelector (isPropertiesShow) {
+                if (!isPropertiesShow) {
+                    let properties = {
+                        host: [],
+                        set: [],
+                        module: []
+                    }
+                    this.userProperties.map(property => {
+                        properties[property.bkObjId].push(property.bkPropertyId)
+                    })
+                    this.propertySelected.host = properties.host.join(',')
+                    this.propertySelected.set = properties.set.join(',')
+                    this.propertySelected.module = properties.module.join(',')
+                }
                 this.isPropertiesShow = isPropertiesShow
             },
             clickOutside () {
@@ -598,7 +662,13 @@
         overflow-y: auto;
     }
     .userapi-group{
-        margin-top: 20px;
+        margin: 20px -40px 0;
+        padding: 0 40px 20px;
+        border-bottom: 1px solid #e3ebf3;
+        &.list {
+            padding-top: 1px;
+            border: none;
+        }
     }
     .userapi-list{
         line-height: 30px;
@@ -645,26 +715,55 @@
         width: 470px;
         margin: 20px 0 0 120px;
         font-size: 14px;
-        // color: #6b7baa;
-        position: relative;
         .userapi-new-btn{
             width: 470px;
-            height: 42px;
+            height: 32px;
             background-color: #ffffff;
             border-radius: 2px;
-            border: solid 1px #c3cdd7;
+            border: 1px dashed #c3cdd7;
             outline: 0;
+            color: #c7ced6;
             &:hover{
                 box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
             }
         }
     }
-    .userapi-new-selector-wrapper{
+    .userapi-pop-wrapper {
         position: absolute;
-        top: 100%;
+        top: 150px;
         left: 0;
+        width: 100%;
+        z-index: 99;
+    }
+    .userapi-new-selector-pop {
+        margin: 0 auto;
+        padding: 30px;
+        background: #fff;
+        box-shadow: 0px 3px 6px 0.12px rgba(175, 177, 180, 0.61);
+        width: 530px;
+        border: 1px solid #fff;
+        border-image: linear-gradient(#f5f5f5, #d2d4d9) 30 30;
+        .pop-title {
+            font-size: 13px;
+            margin: 0;
+            color: #737987;
+        }
+        .btn-wrapper {
+            margin-top: 20px;
+            text-align: right;
+            .bk-button {
+                min-width: 110px;
+                height: 34px;
+                line-height: 32px;
+                &:first-child {
+                    margin-right: 10px;
+                }
+            }
+        }
+    }
+    .userapi-new-selector-wrapper{
         width: 470px;
-        margin-top: 3px;
+        margin-top: 5px;
         background-color: #ffffff;
         box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
         border-radius: 2px;
@@ -672,7 +771,7 @@
         z-index: 10;
     }
     .userapi-input{
-        margin-top: 26px;
+        margin-top: 20px;
         position: relative;
         .userapi-input-name{
             width: 115px;
@@ -683,21 +782,39 @@
         .userapi-input-text{
             width: 470px;
             height: 32px;
-            // border-radius: 2px;
-            // // border: solid 1px #bec6de;
             margin: 0 5px;
-            // padding: 0 8px;
+        }
+        .userapi-content-display {
+            textarea {
+                width: 470px;
+                height: 64px;
+                margin: 0 5px 10px;
+                resize: none;
+                outline: none;
+                vertical-align: bottom;
+            }
+            .btn-icon {
+                vertical-align: top;
+                width: 25px;
+                height: 25px;
+                padding: 0;
+                margin-top: 4px;
+                font-size: 20px;
+                line-height: 25px;
+            }
+        }
+        .userapi-content-selector {
+            margin-left: 120px;
         }
     }
     .userapi-btn-group{
-        margin: 40px 0 0 120px;
+        margin: 30px 0 0 120px;
         font-size: 0;
         .userapi-btn{
             width: 110px;
             height: 34px;
             margin: 0 10px 0 0;
             font-size: 14px;
-            // letter-spacing: 4px;
         }
     }
     .validate-message{
@@ -740,8 +857,8 @@
             }
         }
         &.userapi-new-selector{
-            width: 445px;
-            margin: 6px auto 0;
+            width: 470px;
+            margin-top: 20px;
         }
         &.userapi-content-selector{
             width: 470px;
