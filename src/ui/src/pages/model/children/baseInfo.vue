@@ -145,7 +145,7 @@
                     bk_obj_id: '',                // API标识
                     bk_classification_id: '',
                     bk_supplier_account: 0,
-                    bk_obj_icon: 'icon-cc-business'
+                    bk_obj_icon: 'icon-cc-default'
                 },
                 baseInfoCopy: {},
                 baseInfoVerify: {
@@ -155,7 +155,7 @@
                 nowIndex: 0,                   // 选择图标下拉框当前index
                 isIconDrop: false,             // 选择图标下拉框
                 isChoose: true,                // 判断编辑分类的时候是否选择了icon
-                iconValue: 'icon-cc-business', // 选择icon的值
+                iconValue: 'icon-cc-default', // 选择icon的值
                 icon: {
                     searchText: '',
                     list: [],
@@ -202,7 +202,7 @@
         methods: {
             isCloseConfirmShow () {
                 if (this.type === 'new') {
-                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-business') {
+                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-default') {
                         return true
                     }
                 } else {
@@ -244,9 +244,9 @@
                     bk_obj_id: '',
                     bk_classification_id: '',
                     bk_supplier_account: this.bkSupplierAccount,
-                    bk_obj_icon: 'icon-cc-business'
+                    bk_obj_icon: 'icon-cc-default'
                 }
-                this.iconValue = 'icon-cc-business'
+                this.iconValue = 'icon-cc-default'
                 this.baseInfoVerify = {
                     bk_obj_name: true,          // true: 成功 false 失败
                     bk_obj_id: true
