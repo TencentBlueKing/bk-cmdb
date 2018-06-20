@@ -57,7 +57,7 @@ func (iden *HostIdentifier) fillIden() *HostIdentifier {
 
 	for moduleID := range iden.Module {
 
-		biz, err := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID)
+		biz, err := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -66,7 +66,7 @@ func (iden *HostIdentifier) fillIden() *HostIdentifier {
 		iden.Module[moduleID].SupplierAccount = fmt.Sprint(biz.data[common.BKOwnerIDField])
 		iden.Module[moduleID].SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
-		set, err := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID)
+		set, err := getCache(common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -75,7 +75,7 @@ func (iden *HostIdentifier) fillIden() *HostIdentifier {
 		iden.Module[moduleID].SetEnv = fmt.Sprint(set.data[common.BKSetEnvField])
 		iden.Module[moduleID].SetStatus = fmt.Sprint(set.data[common.BKSetStatusField])
 
-		module, err := getCache(common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID)
+		module, err := getCache(common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -83,7 +83,7 @@ func (iden *HostIdentifier) fillIden() *HostIdentifier {
 		iden.Module[moduleID].ModuleName = fmt.Sprint(module.data[common.BKModuleNameField])
 
 	}
-	cloud, err := getCache(common.BKInnerObjIDPlat, iden.CloudID)
+	cloud, err := getCache(common.BKInnerObjIDPlat, iden.CloudID, false)
 	if err != nil {
 		blog.Errorf("identifier: getCache error %s", err.Error())
 		return iden
