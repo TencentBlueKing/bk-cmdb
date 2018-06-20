@@ -275,7 +275,7 @@
                 let agentAppUrl = window.agentAppUrl
                 if (agentAppUrl) {
                     if (window.agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_agent_setup'}), '*')
+                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
                     } else {
                         window.open(agentAppUrl)
                     }
