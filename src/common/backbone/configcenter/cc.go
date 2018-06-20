@@ -15,48 +15,48 @@ package configcenter
 import (
 	"context"
 	"encoding/json"
-    "sync"
-    "time"
-    "fmt"
+	"fmt"
+	"sync"
+	"time"
 
-    "configcenter/src/common/blog"
-    crd "configcenter/src/common/confregdiscover"
-    "configcenter/src/common/errors"
-    "configcenter/src/common/language"
-    "configcenter/src/common/types"
+	"configcenter/src/common/blog"
+	crd "configcenter/src/common/confregdiscover"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/common/types"
 )
 
 var confC *CC
 
 func NewConfigCenter(ctx context.Context, zkAddr string, procName string, confPath string, handler *CCHandler) error {
-    disc := crd.NewZkRegDiscover(zkAddr, 10 * time.Second)
-    return New(ctx, procName, confPath, disc, handler)
+	disc := crd.NewZkRegDiscover(zkAddr, 10*time.Second)
+	return New(ctx, procName, confPath, disc, handler)
 }
 
-func New(ctx context.Context, procName string, confPath string, disc crd.ConfRegDiscvServer, handler *CCHandler) error {
-    confC = &CC{
-        ctx: ctx,
-        disc: disc,
-        handler: handler,
-        procName: procName,
-        previousProc: new(ProcessConfig),
-        previousLang: make(map[string]language.LanguageMap),
-        previousError: make(map[string]errors.ErrorCode),
-    }
-    
-    // parse config only from file
-    if len(confPath) != 0 {
-        return LoadConfigFromLocalFile(confPath, handler)
-    }
-    
-    if err := confC.run(); err != nil {
-        return err
-    }
-    
-    // TODO: start this sync later.
-    // go confC.sync()
-    
-    return nil
+func New(ctx context.Context, procName string, confPath string, disc crd.ConfRegDiscvIf, handler *CCHandler) error {
+	confC = &CC{
+		ctx:           ctx,
+		disc:          disc,
+		handler:       handler,
+		procName:      procName,
+		previousProc:  new(ProcessConfig),
+		previousLang:  make(map[string]language.LanguageMap),
+		previousError: make(map[string]errors.ErrorCode),
+	}
+
+	// parse config only from file
+	if len(confPath) != 0 {
+		return LoadConfigFromLocalFile(confPath, handler)
+	}
+
+	if err := confC.run(); err != nil {
+		return err
+	}
+
+	// TODO: start this sync later.
+	// go confC.sync()
+
+	return nil
 }
 
 type ProcHandlerFunc func(previous, current ProcessConfig)
@@ -68,10 +68,10 @@ type CCHandler struct {
 }
 
 type CC struct {
-    sync.Mutex
-    // used to stop the config center gracefully.
-    ctx           context.Context
-	disc          crd.ConfRegDiscvServer
+	sync.Mutex
+	// used to stop the config center gracefully.
+	ctx           context.Context
+	disc          crd.ConfRegDiscvIf
 	handler       *CCHandler
 	procName      string
 	previousProc  *ProcessConfig
@@ -108,7 +108,7 @@ func (c *CC) run() error {
 			c.onErrorChange(eEvent)
 		case langEvent := <-langEvent:
 			c.onLanguageChange(langEvent)
-		case c.ctx.Done():
+		case <-c.ctx.Done():
 			blog.Warnf("config center event watch stopped because of context done.")
 			return
 		}
@@ -126,17 +126,17 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 
 	now, err := ParseConfigWithData(cur.Data)
 	if err != nil {
-        blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", c.procName, err)
-        return
-    }
+		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", c.procName, err)
+		return
+	}
 
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousProc
 	c.previousProc = now
 	if c.handler != nil {
-        go c.handler.OnProcessUpdate(*prev, *now)
-    }
+		go c.handler.OnProcessUpdate(*prev, *now)
+	}
 	blog.Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
 }
 
@@ -158,10 +158,10 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 	defer c.Unlock()
 	prev := c.previousError
 	c.previousError = now
-	
+
 	if c.handler != nil {
-        go c.handler.OnErrorUpdate(prev, deepCopyError(now))
-    }
+		go c.handler.OnErrorUpdate(prev, deepCopyError(now))
+	}
 	blog.V(3).Infof("config center received event that *ERROR CODE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
@@ -183,26 +183,26 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 	defer c.Unlock()
 	prev := c.previousLang
 	c.previousLang = now
-	
+
 	if c.handler != nil {
-        go c.handler.OnLanguageUpdate(prev, deepCopyLanguage(now))
-    }
+		go c.handler.OnLanguageUpdate(prev, deepCopyLanguage(now))
+	}
 	blog.V(3).Infof("config center received event that *LANGUAGE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
 func (c *CC) sync() {
-    ticker := time.NewTicker(15 * time.Second)
-    for {
-        select {
-        case <- c.ctx.Done():
-            return 
-        case <- ticker.C:            
-        }
-        
-        // sync the data from zk, and compare if it has been changed.
-        // then call their handler.
-        
-    }
+	ticker := time.NewTicker(15 * time.Second)
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-ticker.C:
+		}
+
+		// sync the data from zk, and compare if it has been changed.
+		// then call their handler.
+
+	}
 }
 
 func deepCopyError(source map[string]errors.ErrorCode) map[string]errors.ErrorCode {

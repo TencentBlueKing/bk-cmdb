@@ -25,10 +25,10 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	myCommon "configcenter/src/scene_server/host_server/common"
+	logics2 "configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
+	hutil "configcenter/src/scene_server/host_server/util"
 	"github.com/emicklei/go-restful"
-    logics2 "configcenter/src/scene_server/host_server/logics"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -89,7 +89,7 @@ type HostServer struct {
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	config := current.ConfigMap
-	myCommon.SetGseConfig(config["gse.addr"], config["gse.user"], config["gse.pwd"], config["gse.port"], config["gse.redis_pwd"])
+	hutil.SetGseConfig(config["gse.addr"], config["gse.user"], config["gse.pwd"], config["gse.port"], config["gse.redis_pwd"])
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

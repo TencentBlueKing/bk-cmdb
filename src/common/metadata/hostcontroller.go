@@ -12,7 +12,9 @@
 
 package metadata
 
-import "time"
+import (
+	"time"
+)
 
 type ID struct {
 	ID string `json:"id"`
@@ -101,9 +103,16 @@ type AssignHostToAppParams struct {
 	OwnerModuleID      int   `json:"bk_owner_module_id"`
 }
 
+type ModuleHost struct {
+	AppID    int64 `json:"bk_biz_id"`
+	HostID   int64 `json:"bk_host_id"`
+	ModuleID int64 `json:"bk_module_id"`
+	SetID    int64 `json:"bk_set_id"`
+}
+
 type HostConfig struct {
 	BaseResp `json:",inline"`
-	Data     []interface{} `json:"data"`
+	Data     []ModuleHost `json:"data"`
 }
 
 type ModuleHostConfigParams struct {

@@ -97,7 +97,7 @@ func (m *mod) AssignHostToApp(ctx context.Context, h http.Header, dat interface{
 	return
 }
 
-func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int) (resp *metadata.HostConfig, err error) {
+func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
 	subPath := "/meta/hosts/module/config/search"
 
 	err = m.client.Post().

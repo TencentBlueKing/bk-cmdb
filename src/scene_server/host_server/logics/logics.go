@@ -13,94 +13,9 @@
 package logics
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"net/http"
-	"strconv"
-	"strings"
-
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	meta "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/service"
 )
 
 type Logics struct {
 	*backbone.Engine
-}
-
-func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]meta.Header, error) {
-	searchOp := service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, searchOp)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
-	}
-
-	headers := make([]meta.Header, 0)
-	for _, p := range result.Data {
-		if p.PropertyID == common.BKChildStr {
-			continue
-		}
-		headers = append(headers, meta.Header{
-			PropertyID:   p.PropertyID,
-			PropertyName: p.PropertyName,
-		})
-	}
-
-	return headers, nil
-}
-
-func (lgc *Logics) GetHostInstanceDetails(ownerID string, hostID string, pheader http.Header) (map[string]interface{}, string, error) {
-
-	// get host details, pre data
-	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, "", fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
-	}
-
-	hostInfo := result.Data
-	attributes, err := lgc.GetObjectAsst(ownerID, pheader)
-	if err != nil {
-		return nil, "", err
-	}
-
-	for key, val := range attributes {
-		if item, ok := hostInfo[key]; ok {
-			if item == nil {
-				continue
-			}
-
-			strItem, ok := item.(string)
-			if !ok {
-				return nil, "", errors.New("invalid parameter")
-			}
-			ids := make([]int64, 0)
-			for _, strID := range strings.Split(strItem, ",") {
-				id, err := strconv.ParseInt(strID, 10, 64)
-				if err != nil {
-					return nil, "", err
-				}
-				ids = append(ids, id)
-			}
-
-			cond := make(map[string]interface{})
-			cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
-			q := meta.QueryInput{
-				Start:     0,
-				Limit:     common.BKNoLimit,
-				Sort:      "",
-				Condition: cond,
-			}
-
-			asst, _, err := lgc.getInstAsst(ownerID, val, strings.Split(strItem, ","), pheader, q)
-			if err != nil {
-				return nil, "", fmt.Errorf("get instance asst failed, err: %v", err)
-			}
-			hostInfo[key] = asst
-		}
-	}
-
-	ip := hostInfo[common.BKHostInnerIPField].(string)
-	return hostInfo, ip, nil
 }
