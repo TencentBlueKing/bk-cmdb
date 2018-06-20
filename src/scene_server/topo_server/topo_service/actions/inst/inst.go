@@ -91,101 +91,134 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
+
 	valid := validator.NewValidMapWithKeyFields(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
 	user := util.GetActionUser(req)
-	isUpdate := false
+
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
 	// extract the data for the associated field
 	asstFieldVal := cli.extractDataFromAssociationField(0, targetInput, asstDes)
 
-	// check
-	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
+	isUpdate := false
 	targetMethod := common.HTTPSelectPost
 	input := make(map[string]interface{})
-	switch e := err.(type) {
-	case nil:
-		// clear the association field
-		if isBatch {
-			for _, item := range asstDes {
-				if _, ok := targetInput[item.ObjectAttID]; ok {
-					delete(targetInput, item.ObjectAttID)
-				}
-			}
 
-			// set the nonexist
-			for _, j := range nonExistsFiled {
-				propertyID := j.PropertyID
-				fieldType := j.PropertyType
-				switch fieldType {
-				case common.FieldTypeSingleChar:
-					targetInput[propertyID] = ""
-				case common.FieldTypeLongChar:
-					targetInput[propertyID] = ""
-				default:
-					targetInput[propertyID] = nil
+	// if include inst id, it will only update the data by id
+	if id, ok := targetInput[common.BKInstIDField]; ok {
+		targetMethod = common.HTTPUpdate
+		isUpdate = true
+		condition := make(map[string]interface{})
+		condition[common.BKInstIDField] = id
+
+		tmpID, err := util.GetInt64ByInterface(id)
+		if nil != err {
+			blog.Errorf("the instid (%v) is invalid, error info is %s", id, err.Error())
+			return http.StatusBadRequest, nil, isUpdate, err
+		}
+		delete(targetInput, common.BKInstIDField)
+		if _, err := valid.ValidMap(targetInput, common.ValidUpdate, int(tmpID)); nil != err {
+			switch e := err.(type) {
+			case nil:
+				break
+			case errors.CCErrorCoder:
+				if e.GetCode() == common.CCErrCommDuplicateItem {
+					break
 				}
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
+			default:
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
 			}
 		}
 
-		input = targetInput
+		input["data"] = targetInput
+		input["condition"] = condition
 
-	case errors.CCErrorCoder:
-		if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
+	} else {
 
-			isUpdate = true
-			condition := make(map[string]interface{})
+		// check
+		_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
 
-			// if the import data from excel include instid, it will only use the inst id as the condition
-			if id, ok := targetInput[common.BKInstIDField]; ok {
-				condition[common.BKInstIDField] = id
-				delete(targetInput, common.BKInstIDField)
-			} else {
-				condition[common.BKOwnerIDField] = ownerID
-				condition[common.BKObjIDField] = objID
-				condition[InstName] = targetInput[InstName]
-			}
-
-			if _, ok := targetInput[InstName]; !ok {
-				blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
-				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
-			}
-
-			if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
-				switch e := err.(type) {
-				case nil:
-					break
-				case errors.CCErrorCoder:
-					if e.GetCode() == common.CCErrCommDuplicateItem {
-						break
-					}
-					blog.Error("failed valid the input data, error info is %s", err.Error())
-					return http.StatusBadRequest, nil, isUpdate, err
-				default:
-					blog.Error("failed valid the input data, error info is %s", err.Error())
-					return http.StatusBadRequest, nil, isUpdate, err
-				}
-			}
-
-			targetMethod = common.HTTPUpdate
+		switch e := err.(type) {
+		case nil:
 			// clear the association field
-			/*if isBatch {
+			if isBatch {
 				for _, item := range asstDes {
 					if _, ok := targetInput[item.ObjectAttID]; ok {
 						delete(targetInput, item.ObjectAttID)
 					}
 				}
-			}*/
 
-			input["data"] = targetInput
-			input["condition"] = condition
+				// set the nonexist
+				for _, j := range nonExistsFiled {
+					propertyID := j.PropertyID
+					fieldType := j.PropertyType
+					switch fieldType {
+					case common.FieldTypeSingleChar:
+						targetInput[propertyID] = ""
+					case common.FieldTypeLongChar:
+						targetInput[propertyID] = ""
+					default:
+						targetInput[propertyID] = nil
+					}
+				}
+			}
 
-		} else {
+			input = targetInput
+
+		case errors.CCErrorCoder:
+			if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
+
+				isUpdate = true
+				condition := make(map[string]interface{})
+
+				condition[common.BKOwnerIDField] = ownerID
+				condition[common.BKObjIDField] = objID
+				condition[InstName] = targetInput[InstName]
+
+				if _, ok := targetInput[InstName]; !ok {
+					blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
+					return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
+				}
+
+				if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
+					switch e := err.(type) {
+					case nil:
+						break
+					case errors.CCErrorCoder:
+						if e.GetCode() == common.CCErrCommDuplicateItem {
+							break
+						}
+						blog.Error("failed valid the input data, error info is %s", err.Error())
+						return http.StatusBadRequest, nil, isUpdate, err
+					default:
+						blog.Error("failed valid the input data, error info is %s", err.Error())
+						return http.StatusBadRequest, nil, isUpdate, err
+					}
+				}
+
+				targetMethod = common.HTTPUpdate
+				// clear the association field
+				/*if isBatch {
+					for _, item := range asstDes {
+						if _, ok := targetInput[item.ObjectAttID]; ok {
+							delete(targetInput, item.ObjectAttID)
+						}
+					}
+				}*/
+
+				input["data"] = targetInput
+				input["condition"] = condition
+
+			} else {
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
+			}
+		default:
 			blog.Error("failed valid the input data, error info is %s", err.Error())
 			return http.StatusBadRequest, nil, isUpdate, err
 		}
-	default:
-		blog.Error("failed valid the input data, error info is %s", err.Error())
-		return http.StatusBadRequest, nil, isUpdate, err
 	}
 
 	// take snapshot before operation if is update
