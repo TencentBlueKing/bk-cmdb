@@ -64,7 +64,7 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				inst, err := getCache(e.ObjType, instID)
+				inst, err := getCache(e.ObjType, instID, false)
 				if err != nil {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
@@ -126,7 +126,7 @@ func handleInst(e *types.EventInst) {
 	} else if types.EventTypeRelation == e.EventType && "moduletransfer" == e.ObjType {
 		blog.Infof("identifier: handle inst %+v", e)
 		go func() {
-			time.Sleep(time.Second * 3) // delay to ensure moduletransfer ended
+			time.Sleep(time.Second * 60) // delay to ensure moduletransfer ended
 			for index := range e.Data {
 				var curdata map[string]interface{}
 
@@ -146,7 +146,7 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				inst, err := getCache(common.BKInnerObjIDHost, instID)
+				inst, err := getCache(common.BKInnerObjIDHost, instID, true)
 				if err != nil {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
@@ -156,22 +156,22 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				belong, ok := inst.data["associations"].(map[string]interface{})
+				// belong, ok := inst.data["associations"].(map[string]interface{})
 
-				// TODO 处理数据类型
-				moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
-				switch e.Action {
-				case types.EventActionCreate:
-					if ok {
-						belong[moduleID] = curdata
-					}
-					inst.ident.Module[moduleID] = NewModule(curdata)
-				case types.EventActionDelete:
-					if ok {
-						delete(belong, moduleID)
-					}
-					delete(inst.ident.Module, moduleID)
-				}
+				// // TODO 处理数据类型
+				// moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
+				// switch e.Action {
+				// case types.EventActionCreate:
+				// 	if ok {
+				// 		belong[moduleID] = curdata
+				// 	}
+				// 	inst.ident.Module[moduleID] = NewModule(curdata)
+				// case types.EventActionDelete:
+				// 	if ok {
+				// 		delete(belong, moduleID)
+				// 	}
+				// 	delete(inst.ident.Module, moduleID)
+				// }
 				inst.saveCache()
 				d := types.EventData{CurData: inst.ident.fillIden()}
 				hostIdentify.Data = append(hostIdentify.Data, d)
@@ -279,11 +279,11 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.Module = map[string]*Module{}
 	return &ident
 }
-func getCache(objType string, instID int) (*Inst, error) {
+func getCache(objType string, instID int, fromdb bool) (*Inst, error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
-	if "" == ret || "nil" == ret {
+	if "" == ret || "nil" == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		err := instdata.GetObjectByID(objType, nil, instID, &inst.data, "")
 		if err != nil {
