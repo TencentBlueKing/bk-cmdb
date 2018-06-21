@@ -14,8 +14,7 @@ const bkbizCmdName = "bkbiz"
 
 // Parse run app command
 func Parse(args []string) error {
-	if len(args) < 4 || args[1] != bkbizCmdName {
-		blog.Error("args %d,arg = %s", len(args), args[1])
+	if len(args) <= 1 || args[1] != bkbizCmdName {
 		return nil
 	}
 
