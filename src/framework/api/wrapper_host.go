@@ -19,7 +19,7 @@ import (
 
 // HostIteratorWrapper the host iterator wrapper
 type HostIteratorWrapper struct {
-	host inst.Iterator
+	host inst.HostIterator
 }
 
 // Next next the business
@@ -34,14 +34,14 @@ func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 // ForEach the foreach function
 func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) error {
 
-	return cli.host.ForEach(func(item inst.Inst) error {
+	return cli.host.ForEach(func(item inst.HostInterface) error {
 		return callback(&HostWrapper{host: item})
 	})
 }
 
 // HostWrapper the host wrapper
 type HostWrapper struct {
-	host inst.Inst
+	host inst.HostInterface
 }
 
 // GetModel get the model for the host

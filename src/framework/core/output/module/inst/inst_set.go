@@ -22,7 +22,23 @@ import (
 	//"fmt"
 )
 
-var _ Inst = (*set)(nil)
+var _ SetInterface = (*set)(nil)
+
+// SetInterface the set interface
+type SetInterface interface {
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type set struct {
 	target model.Model
@@ -56,28 +72,6 @@ func (cli *set) GetInstName() string {
 
 func (cli *set) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *set) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *set) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *set) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *set) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *set) GetChildren() ([]Topo, error) {
-	return nil, nil
 }
 
 func (cli *set) SetValue(key string, value interface{}) error {

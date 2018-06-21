@@ -21,7 +21,23 @@ import (
 	"errors"
 )
 
-var _ Inst = (*module)(nil)
+var _ ModuleInterface = (*module)(nil)
+
+// ModuleInterface the module interface
+type ModuleInterface interface {
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type module struct {
 	target model.Model
@@ -55,28 +71,6 @@ func (cli *module) GetInstName() string {
 
 func (cli *module) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *module) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *module) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *module) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *module) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *module) GetChildren() ([]Topo, error) {
-	return nil, nil
 }
 
 func (cli *module) SetValue(key string, value interface{}) error {

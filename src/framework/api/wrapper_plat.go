@@ -34,14 +34,14 @@ func (cli *PlatIteratorWrapper) Next() (*PlatWrapper, error) {
 // ForEach the foreach function
 func (cli *PlatIteratorWrapper) ForEach(callback func(plat *PlatWrapper) error) error {
 
-	return cli.plat.ForEach(func(item inst.Inst) error {
+	return cli.plat.ForEach(func(item inst.CommonInstInterface) error {
 		return callback(&PlatWrapper{plat: item})
 	})
 }
 
 // PlatWrapper the plat wrapper
 type PlatWrapper struct {
-	plat inst.Inst
+	plat inst.CommonInstInterface
 }
 
 // SetValue set the key value
