@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// 缓存时间30min
+const cacheTime = time.Minute*30
+
 // 模型元数据结构
 type Model struct {
 	BkClassificationID string `json:"bk_classification_id"`
@@ -257,7 +260,7 @@ func (d *Discover) GetAttrs(msg string) (ListResult, error) {
 			return dR, nil
 		}
 
-		ok, err := d.redisCli.SetNX(modelAttrKey, filterJs, time.Minute*30).Result()
+		ok, err := d.redisCli.SetNX(modelAttrKey, filterJs, cacheTime).Result()
 		if !ok {
 			blog.Infof("%s: flush to redis failed: %s\n", modelAttrKey, err)
 			return dR, nil
@@ -478,7 +481,7 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 			return dR, nil
 		}
 
-		ok, err := d.redisCli.SetNX(modelKey, val, time.Minute*30).Result()
+		ok, err := d.redisCli.SetNX(modelKey, val, cacheTime).Result()
 		if !ok {
 			blog.Infof("%s: flush to redis failed: %s\n", modelKey, err)
 			return dR, nil
