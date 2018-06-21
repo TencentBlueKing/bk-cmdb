@@ -71,7 +71,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 		ts:                     time.Now(),
 		id:                     xid.New().String()[5:],
 		maxConcurrent:          runtime.NumCPU(),
-		getMasterInterval:      time.Second * 63,
+		getMasterInterval:      time.Second * 33,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
 		wg:                     wg,
 		cc:                     cc,
