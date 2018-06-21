@@ -5,7 +5,7 @@
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
             </div>
-            <div class="content-section clearfix">
+            <div class="content-section clearfix" v-bkloading="{isLoading: $loading('transfer')}">
                 <div class="section-left fl">
                     <div class="section-biz">
                         <label class="biz-label">{{$t('Common[\'业务\']')}}</label>
