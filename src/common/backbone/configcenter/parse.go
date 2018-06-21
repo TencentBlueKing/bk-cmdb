@@ -15,12 +15,13 @@ package configcenter
 import (
 	"bufio"
 	"bytes"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 )
 
 const middle = "."

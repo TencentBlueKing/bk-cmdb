@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"runtime"
 
 	"configcenter/src/common"
@@ -21,7 +22,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app"
 	"configcenter/src/scene_server/host_server/app/options"
-	"context"
 	"github.com/spf13/pflag"
 )
 
@@ -36,6 +36,10 @@ func main() {
 	op.AddFlags(pflag.CommandLine)
 
 	util.InitFlags()
+
+	if err := common.SavePid(); err != nil {
+		blog.Error("fail to save pid: err:%s", err.Error())
+	}
 
 	if err := app.Run(context.Background(), op); err != nil {
 		blog.Fatal(err)
