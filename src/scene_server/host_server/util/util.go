@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package service
+package util
 
 import (
 	"configcenter/src/common"
@@ -93,6 +93,11 @@ func (o *operation) WithPage(p metadata.BasePage) *operation {
 func (o *operation) WithAssoObjID(id string) *operation {
 	o.op[common.BKAsstObjIDField] = id
 	return o
+}
+
+func (o *operation) WithAssoInstID(id map[string]interface{}) *operation {
+    o.op[common.BKAsstInstIDField] = id
+    return o
 }
 
 func (o *operation) WithHostInnerIP(ip string) *operation {
