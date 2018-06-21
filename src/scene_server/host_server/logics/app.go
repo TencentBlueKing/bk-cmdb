@@ -24,11 +24,11 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/service"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(supplierID int64, pheader http.Header) (int64, error) {
-	cond := service.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithSupplierID(supplierID).Data()
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithSupplierID(supplierID).Data()
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {
 		return -1, err
@@ -42,7 +42,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(supplierID int64, pheader http.He
 }
 
 func (lgc *Logics) GetDefaultAppID(ownerID string, pheader http.Header) (int64, error) {
-	cond := service.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	cond := hutil.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {
 		return -1, err
@@ -118,7 +118,7 @@ func (lgc *Logics) GetSingleApp(pheader http.Header, cond interface{}) (mapstr.M
 	return result.Data.Info[0], nil
 }
 
-func (lgc *Logics) GetAppIDByCond(pheader http.Header, cond []interface{}) ([]int64, error) {
+func (lgc *Logics) GetAppIDByCond(pheader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
 	condc := make(map[string]interface{})
 	params.ParseCommonParams(cond, condc)
 	query := &metadata.QueryInput{
@@ -144,4 +144,30 @@ func (lgc *Logics) GetAppIDByCond(pheader http.Header, cond []interface{}) ([]in
 	}
 
 	return appIDs, nil
+}
+
+func (lgc *Logics) GetAppMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]interface{}, error) {
+
+	query := &metadata.QueryInput{
+		Condition: cond,
+		Start:     0,
+		Limit:     common.BKNoLimit,
+		Sort:      common.BKAppIDField,
+		Fields:    fields,
+	}
+
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+	appMap := make(map[int64]interface{})
+	for _, info := range result.Data.Info {
+		id, err := info.Int64(common.BKAppIDField)
+		if err != nil {
+			return nil, err
+		}
+		appMap[id] = info
+	}
+
+	return appMap, nil
 }

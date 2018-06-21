@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/eventdata"
@@ -239,7 +240,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 
 	fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
 	cc := api.NewAPIResource()
-	var result []interface{}
+	var result []mapstr.MapStr
 	err := cc.InstCli.GetMutilByCondition("cc_ModuleHostConfig", fields, query, &result, common.BKHostIDField, 0, 100000)
 	if err != nil {
 		blog.Error("get module host config failed, err: %v", err)

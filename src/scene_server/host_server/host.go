@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app"
 	"configcenter/src/scene_server/host_server/app/options"
+	"context"
 	"github.com/spf13/pflag"
 )
 
@@ -36,7 +37,7 @@ func main() {
 
 	util.InitFlags()
 
-	if err := app.Run(op); err != nil {
+	if err := app.Run(context.Background(), op); err != nil {
 		blog.Fatal(err)
 	}
 }
