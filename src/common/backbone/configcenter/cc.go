@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -53,8 +54,7 @@ func New(ctx context.Context, procName string, confPath string, disc crd.ConfReg
 		return err
 	}
 
-	// TODO: start this sync later.
-	// go confC.sync()
+	confC.sync()
 
 	return nil
 }
@@ -191,18 +191,116 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 }
 
 func (c *CC) sync() {
+	blog.Infof("start sync config from config center.")
+	c.syncProc()
+	c.syncLang()
+	c.syncErr()
 	ticker := time.NewTicker(15 * time.Second)
-	for {
-		select {
-		case <-c.ctx.Done():
-			return
-		case <-ticker.C:
+	go func() {
+		for {
+			select {
+			case <-c.ctx.Done():
+				return
+			case <-ticker.C:
+			}
+
+			// sync the data from zk, and compare if it has been changed.
+			// then call their handler.
+			c.syncProc()
+			c.syncLang()
+			c.syncErr()
 		}
+	}()
+}
 
-		// sync the data from zk, and compare if it has been changed.
-		// then call their handler.
-
+func (c *CC) syncProc() {
+	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
+	data, err := c.disc.Read(procPath)
+	if err != nil {
+		blog.Errorf("sync process config failed, err: %v", err)
+		return
 	}
+
+	conf, err := ParseConfigWithData([]byte(data))
+	if err != nil {
+		blog.Errorf("config center sync process[%s] config, but parse failed, err: %v", c.procName, err)
+		return
+	}
+
+	c.Lock()
+	defer c.Unlock()
+	if reflect.DeepEqual(conf, c.previousProc) {
+		blog.V(4).Infof("sync process config, but nothing is changed.")
+		return
+	}
+	blog.V(4).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
+	blog.V(4).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
+
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+	c.onProcChange(event)
+}
+
+func (c *CC) syncLang() {
+	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
+	if err != nil {
+		blog.Errorf("sync process config failed, err: %v", err)
+		return
+	}
+
+	lang := make(map[string]language.LanguageMap)
+	if err := json.Unmarshal([]byte(data), &lang); err != nil {
+		blog.Errorf("sync *LANGUAGE* config, but unmarshal failed, err: %v", c.procName, err)
+		return
+	}
+
+	c.Lock()
+	defer c.Unlock()
+	if reflect.DeepEqual(lang, c.previousLang) {
+		blog.V(4).Infof("sync language config, but nothing is changed.")
+		return
+	}
+
+	blog.V(4).Infof("sync language config, before change is: %v", c.previousLang)
+	blog.V(4).Infof("sync language config, after change is: %v", lang)
+
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+	c.onLanguageChange(event)
+}
+
+func (c *CC) syncErr() {
+	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
+	if err != nil {
+		blog.Errorf("sync process config failed, err: %v", err)
+		return
+	}
+
+	errCode := make(map[string]errors.ErrorCode)
+	if err := json.Unmarshal([]byte(data), &errCode); err != nil {
+		blog.Errorf("sync error code config, but unmarshal failed, err: %v", c.procName, err)
+		return
+	}
+
+	c.Lock()
+	defer c.Unlock()
+	if reflect.DeepEqual(errCode, c.previousError) {
+		blog.V(4).Infof("sync error code config, but nothing is changed.")
+		return
+	}
+
+	blog.V(4).Infof("sync language config, before change is: %v", c.previousError)
+	blog.V(4).Infof("sync language config, after change is: %v", errCode)
+
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+	c.onErrorChange(event)
 }
 
 func deepCopyError(source map[string]errors.ErrorCode) map[string]errors.ErrorCode {
