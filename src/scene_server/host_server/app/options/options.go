@@ -37,3 +37,15 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 }
+
+type Gse struct {
+	ZkAddress     string
+	ZkUser        string
+	ZkPassword    string
+	RedisPort     string
+	RedisPassword string
+}
+
+type Config struct {
+	Gse Gse
+}
