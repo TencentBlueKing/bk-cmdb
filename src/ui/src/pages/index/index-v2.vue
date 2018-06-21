@@ -224,7 +224,7 @@
  </script>
 
  <style lang="scss" scoped>
-    $itemBorder: #dfecfc;
+    $itemBorder: #cbdef6;
     $modelColor: #3c96ff;
     .index-wrapper{
         height: 100%;
@@ -271,7 +271,7 @@
             }
         }
         &:hover{
-            box-shadow: 0 3px 8px 0px rgba(37, 81, 140, .1);
+            box-shadow: 0 3px 8px 0px rgba(37, 81, 140, .15);
         }
         .classify-pin{
             position: absolute;

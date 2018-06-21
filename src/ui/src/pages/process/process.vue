@@ -1,5 +1,6 @@
 <template>
     <div class="process-wrapper">
+        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="process-filter clearfix">
             <v-application-selector class="filter-selector fl"
                 :filterable="true" 
@@ -67,6 +68,7 @@
     import vSideSlider from '@/components/slider/sideslider'
     import vAttribute from '@/components/object/attribute'
     import vHistory from '@/components/history/history'
+    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     import vModule from './children/module'
     import { mapGetters } from 'vuex'
     export default {
@@ -326,13 +328,17 @@
             vSideSlider,
             vAttribute,
             vModule,
-            vHistory
+            vHistory,
+            vBreadcrumb
         }
     }
 </script>
 <style lang="scss" scoped>
     .process-wrapper{
-        padding: 20px;
+        padding: 0 20px;
+        .breadcrumbs{
+            padding: 8px 0;
+        }
     }
     .process-filter{
         .filter-selector{

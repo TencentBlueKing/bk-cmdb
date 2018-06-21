@@ -220,3 +220,31 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	}
 	return name, skip
 }
+
+// addSystemField add system field, get property not return property fields
+func addSystemField(fields map[string]Property, objID string, defLang lang.DefaultCCLanguageIf) {
+	for key, field := range fields {
+		field.ExcelColIndex = field.ExcelColIndex + 1
+		fields[key] = field
+	}
+
+	idProperty := Property{
+		ID:            "",
+		Name:          "",
+		PropertyType:  common.FieldTypeInt,
+		Group:         "基础信息",
+		ExcelColIndex: 0,
+	}
+
+	switch objID {
+	case common.BKInnerObjIDHost:
+		idProperty.ID = common.BKHostIDField
+		idProperty.Name = defLang.Languagef("host_property_bk_host_id")
+		fields[idProperty.ID] = idProperty
+	case common.BKINnerObjIDObject:
+		idProperty.ID = common.BKInstIDField
+		idProperty.Name = defLang.Languagef("common_property_bk_inst_id")
+		fields[idProperty.ID] = idProperty
+	}
+
+}

@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -87,11 +87,10 @@ func (cli *business) SetValue(key string, value interface{}) error {
 
 	return nil
 }
-
-func (cli *business) Save() error {
+func (cli *business) search() ([]model.Attribute, []types.MapStr, error) {
 	attrs, err := cli.target.Attributes()
 	if nil != err {
-		return err
+		return nil, nil, err
 	}
 
 	cond := common.CreateCondition()
@@ -100,7 +99,7 @@ func (cli *business) Save() error {
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
-				return errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
 			}
 
 			cond.Field(attrItem.GetID()).Eq(attrVal)
@@ -108,18 +107,35 @@ func (cli *business) Save() error {
 	}
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	items, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	return attrs, items, err
+}
+func (cli *business) IsExists() (bool, error) {
+
+	// search by condition
+	_, existItems, err := cli.search()
 	if nil != err {
-		return err
+		return false, err
 	}
 
-	// create a new
-	if 0 == len(existItems) {
-		bizID, err := client.GetClient().CCV3().Business().CreateBusiness(cli.datas)
-		if err == nil {
-			cli.datas.Set(BusinessID, bizID)
-			return nil
-		}
+	return 0 != len(existItems), nil
+}
+
+func (cli *business) Create() error {
+
+	bizID, err := client.GetClient().CCV3().Business().CreateBusiness(cli.datas)
+	if err == nil {
+		cli.datas.Set(BusinessID, bizID)
+		return nil
+	}
+	cli.datas.Set(BusinessID, bizID)
+	return err
+
+}
+func (cli *business) Update() error {
+
+	attrs, existItems, err := cli.search()
+	if nil != err {
 		return err
 	}
 
@@ -148,8 +164,20 @@ func (cli *business) Save() error {
 		if nil != err {
 			return err
 		}
+		cli.datas.Set(BusinessID, instID)
 
 	}
 
 	return nil
+}
+func (cli *business) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
+
 }
