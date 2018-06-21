@@ -906,6 +906,14 @@
                 padding: 8px 20px;
             }
         }
+        &.userapi-content-selector{
+            .bk-select-wrapper{
+                display: none;
+            }
+            .bk-select-list{
+                top: 0;
+            }
+        }
     }
     .bk-date.userapi-date{
         width: 470px !important;
