@@ -52,6 +52,11 @@
 	"1001052": "update topo graphics failed",
 	"1101080": "The module does not exist, please refresh the page",
 	"1101081": "blueking business does not allow deletion",
-	"1101033": "Business topology level exceeds the limit",
+	"1101031": "query cloud area failed, %s",
+	"1101032": "cloud area does not exist",
+	"1101033": "query business failed,%s",
+	"1101034": "query module failed,%s",
+	"1101035": "Business topology level exceeds the limit",
+
 	"": "" 
 }
