@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -233,7 +234,7 @@ func NewHostSyncValidModule(req *restful.Request, appID int, moduleID []int, obj
 		if exist {
 			dbModuleID = append(dbModuleID, int(id))
 		} else {
-			notExistModuleId = append(notExistModuleId, fmt.Sprintf("%d", id))
+			notExistModuleId = append(notExistModuleId, strconv.FormatInt(id, 10))
 		}
 	}
 	if 0 < len(notExistModuleId) {
