@@ -10,42 +10,28 @@
  * limitations under the License.
  */
 
-package instdata
+package service
 
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
-	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
+	"strconv"
+	"time"
 )
 
-func init() {
-	history.CC = api.NewAPIResource()
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/history/{user}", Params: nil, Handler: history.AddHistory})
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/history/{user}/{start}/{limit}", Params: nil, Handler: history.GetHistorys})
-}
+const HistoryCollection = "cc_History"
 
-var history *historyAction = &historyAction{}
-
-// ObjectAction
-type historyAction struct {
-	base.BaseAction
-}
-
-//AddHistory add history
-func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := req.PathParameter("user")
 
 	bodyData := new(meta.HistoryContent)
 	if err := json.NewDecoder(req.Request.Body).Decode(bodyData); err != nil {
@@ -60,30 +46,32 @@ func (cli *historyAction) AddHistory(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	data := make(map[string]interface{}, 4)
-	data["content"] = bodyData.Content
-	data["user"] = req.PathParameter("user")
-	data[common.CreateTimeField] = time.Now()
-	id := xid.New()
-	data["id"] = id.String()
+	id := xid.New().String()
+	history := meta.HistoryMeta{
+		ID:         id,
+		User:       user,
+		Content:    bodyData.Content,
+		CreateTime: time.Now().UTC(),
+	}
 
-	_, err := cli.CC.InstCli.Insert("cc_History", data)
+	_, err := s.Instance.Insert("cc_History", history)
 	if nil != err {
-		blog.Error("add history failed, err: %v, params:%v", err, data)
+		blog.Error("add history failed, err: %v, params: %+v", err, history)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 
 	resp.WriteEntity(meta.IDResult{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     meta.ID{ID: id.String()},
+		Data:     meta.ID{ID: id},
 	})
 
 }
 
-func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := req.PathParameter("user")
 
 	start, err := strconv.Atoi(req.PathParameter("start"))
 	if err != nil {
@@ -96,19 +84,18 @@ func (cli *historyAction) GetHistorys(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	conds := make(map[string]interface{}, 1)
-	conds["user"] = req.PathParameter("user")
+	conds := common.KvMap{"user": user}
 	fields := []string{"id", "content", common.CreateTimeField, "user"}
-	var result []interface{}
+	var result []meta.HistoryMeta
 	sort := "-" + common.LastTimeField
-	err = history.CC.InstCli.GetMutilByCondition("cc_History", fields, conds, &result, sort, start, limit)
+	err = s.Instance.GetMutilByCondition(HistoryCollection, fields, conds, &result, sort, start, limit)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params: %v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	nums, err := history.CC.InstCli.GetCntByCondition("cc_History", conds)
+	nums, err := s.Instance.GetCntByCondition(HistoryCollection, conds)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
