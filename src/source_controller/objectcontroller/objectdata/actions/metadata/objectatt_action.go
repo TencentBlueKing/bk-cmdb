@@ -29,7 +29,6 @@ import (
 	"github.com/bitly/go-simplejson"
 
 	"github.com/emicklei/go-restful"
-	"fmt"
 )
 
 var metaObjectAtt = &objectAttAction{}
@@ -70,8 +69,6 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 			blog.Error("read http request failed, error:%s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
-
-		fmt.Printf("CreateObjectAtt: url=%s,body=%s\n", req.Request.URL, value)
 
 		obj := &metadata.ObjectAttDes{}
 
