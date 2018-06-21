@@ -65,6 +65,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+		condition["default"] = map[string]interface{}{common.BKDBEQ: 0}
 	default:
 		condition[common.BKObjIDField] = asst.ObjectID
 	}
