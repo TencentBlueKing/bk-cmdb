@@ -21,23 +21,31 @@
         <div class="userapi-group">
             <div class="userapi-input clearfix">
                 <label class="userapi-input-name fl">{{$t("CustomQuery['查询内容']")}}</label>
-                <bk-select class="fl userapi-content-selector"
-                    :selected.sync="attribute.selected"
-                    :filterable="true"
-                    :multiple="true">
-                    <bk-select-option v-for="(property, index) in attribute.list"
-                        :key="index"
-                        :disabled="property.disabled"
-                        :value="property['bk_property_id']"
-                        :label="property['bk_property_name']">
-                    </bk-select-option>
-                </bk-select>
+                <div class="userapi-content-display">
+                    <textarea v-model="selectedName" disabled name="" id="" cols="30" rows="10"></textarea>
+                    <bk-button :disabled="attribute.isShow" v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus" @click="toggleContentSelector(true)"></bk-button>
+                </div>
+                <div v-show="attribute.isShow">
+                    <bk-select class="fl userapi-content-selector"
+                        ref="content"
+                        @on-toggle="toggleContentSelector"
+                        :selected.sync="attribute.selected"
+                        :filterable="true"
+                        :multiple="true">
+                        <bk-select-option v-for="(property, index) in attribute.list"
+                            :key="index"
+                            :disabled="property.contentDisabled"
+                            :value="property['bk_property_id']"
+                            :label="property['bk_property_name']">
+                        </bk-select-option>
+                    </bk-select>
+                </div>
             </div>
         </div>
-        <div class="userapi-group">
+        <div class="userapi-group list">
             <ul class="userapi-list">
                 <li class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
-                    <label class="userapi-name fl">{{property.bkPropertyName}}</label>
+                    <label class="userapi-name fl" :title="`${property.bkObjName} - ${property.bkPropertyName}`">{{property.bkObjName}} - {{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
                             :range-separator="'-'"
@@ -80,7 +88,7 @@
                         <input v-else type="text" class="userapi-text fl"
                             v-model.trim="property.value">
                     </span>
-                    <i class="icon icon-cc-del userapi-delete fl" @click="deleteUserProperty(property, index)"></i>
+                    <i class="userapi-delete fl bk-icon icon-close" @click="deleteUserProperty(property, index)"></i>
                     <v-validate class="validate-message" v-validate="'required'"
                         :name="property.bkPropertyName" 
                         :value="property.value">
@@ -88,27 +96,36 @@
                 </li>
             </ul>
             <div class="userapi-new" v-click-outside="clickOutside">
-                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增条件']")}}</button>
-                <div class="userapi-new-selector-wrapper" v-show="isPropertiesShow">
-                    <bk-select class="userapi-new-selector" 
-                        :selected.sync="selectedObjId">
-                        <bk-select-option v-for="(obj, index) in object"
-                            :key="index"
-                            :value="obj.id"
-                            :label="obj.name">
-                        </bk-select-option>
-                    </bk-select>   
-                    <bk-select class="userapi-new-select"
-                        ref="propertySelector"
-                        @on-selected="addUserProperties">
-                            <!-- <bk-select-option v-for="(property, index) in filterProperty(object[selectedObjId]['properties'])" -->
-                            <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
-                                :disabled="property.disabled"
-                                :key="property['bk_property_id']"
-                                :value="property['bk_property_id']"
-                                :label="property['bk_property_name']">
+                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
+                <div class="userapi-pop-wrapper">
+                    <div class="userapi-new-selector-pop" v-show="isPropertiesShow">
+                        <p class="pop-title">{{$t("CustomQuery['新增查询条件']")}}</p>
+                        <bk-select class="userapi-new-selector" 
+                            :selected.sync="selectedObjId">
+                            <bk-select-option v-for="(obj, index) in object"
+                                :key="index"
+                                :value="obj.id"
+                                :label="obj.name">
                             </bk-select-option>
-                    </bk-select>
+                        </bk-select>
+                        <div class="userapi-new-selector-wrapper">
+                            <bk-select class="userapi-new-select"
+                                ref="propertySelector"
+                                :multiple="true"
+                                :selected.sync="propertySelected[selectedObjId]">
+                                    <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
+                                        :disabled="property.disabled"
+                                        :key="property['bk_property_id']"
+                                        :value="property['bk_property_id']"
+                                        :label="property['bk_property_name']">
+                                    </bk-select-option>
+                            </bk-select>
+                        </div>
+                        <div class="btn-wrapper">
+                            <bk-button type="primary" class="btn confirm" @click="addUserProperties">{{$t("Common['确定']")}}</bk-button>
+                            <bk-button type="default" class="btn vice-btn" @click="toggleUserAPISelector(false)">{{$t("Common['取消']")}}</bk-button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -158,26 +175,27 @@
                 attribute: {
                     list: [],
                     selected: '',
+                    isShow: false,
                     default: [{
                         'bk_property_id': 'bk_host_innerip',
                         'bk_property_name': this.$t("Common['内网IP']"),
-                        'disabled': true
+                        'contentDisabled': true
                     }, {
                         'bk_property_id': 'bk_biz_name',
                         'bk_property_name': this.$t("Common['业务']"),
-                        'disabled': true
+                        'contentDisabled': true
                     }, {
                         'bk_property_id': 'bk_set_name',
                         'bk_property_name': this.$t("Hosts['集群']"),
-                        'disabled': true
+                        'contentDisabled': true
                     }, {
                         'bk_property_id': 'bk_module_name',
                         'bk_property_name': this.$t("Hosts['模块']"),
-                        'disabled': true
+                        'contentDisabled': true
                     }, {
                         'bk_property_id': 'bk_cloud_id',
                         'bk_property_name': this.$t("Hosts['云区域']"),
-                        'disabled': true
+                        'contentDisabled': true
                     }]
                 },
                 userProperties: [], // 自定义查询条件
@@ -206,6 +224,11 @@
                     }
                 },
                 selectedObjId: 'host',
+                propertySelected: {
+                    host: '',
+                    set: '',
+                    module: ''
+                },
                 operatorMap: {
                     'time': '$in',
                     'enum': '$eq'
@@ -214,6 +237,19 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            selectedName () {
+                let selected = this.attribute.selected.split(',')
+                let nameList = []
+                selected.map(propertyId => {
+                    let attr = this.attribute.list.find(({bk_property_id: bkPropertyId}) => {
+                        return bkPropertyId === propertyId
+                    })
+                    if (attr) {
+                        nameList.push(attr['bk_property_name'])
+                    }
+                })
+                return nameList.join(',')
+            },
             /* 生成保存自定义API的参数 */
             apiParams () {
                 let paramsMap = [
@@ -308,7 +344,7 @@
         },
         watch: {
             /* 监听侧滑栏的显示状态，显示则初始化相关下拉列表，不显示则清空内容 */
-            isShow (isShow) {
+            async isShow (isShow) {
                 if (!isShow) {
                     setTimeout(() => {
                         this.resetDefine()
@@ -317,7 +353,8 @@
                         })
                     })
                 } else if (this.id) {
-                    this.getUserAPIDetail()
+                    await this.getUserAPIDetail()
+                    this.toggleUserAPISelector(false)
                 }
             },
             'object.host.properties' (properties) {
@@ -347,6 +384,10 @@
             this.initObjectProperties()
         },
         methods: {
+            toggleContentSelector (isShow) {
+                this.$refs.content.open = isShow
+                this.attribute.isShow = isShow
+            },
             isCloseConfirmShow () {
                 if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
                     return true
@@ -403,14 +444,17 @@
                     return res
                 })
             },
-            getUserAPIDetail () {
-                this.$axios.get(`userapi/detail/${this.bkBizId}/${this.id}`).then(res => {
+            async getUserAPIDetail () {
+                try {
+                    const res = await this.$axios.get(`userapi/detail/${this.bkBizId}/${this.id}`)
                     if (res.result) {
                         this.setUserProperties(res.data)
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        this.$alertMsg(res.data['bk_error_msg'])
                     }
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             addDisabled () {
                 for (let objId in this.object) {
@@ -441,6 +485,7 @@
                             } else {
                                 properties.push({
                                     'bkObjId': originalProperty['bk_obj_id'],
+                                    'bkObjName': this.object[originalProperty['bk_obj_id']].name,
                                     'bkPropertyType': originalProperty['bk_property_type'],
                                     'bkPropertyName': originalProperty['bk_property_name'],
                                     'bkPropertyId': originalProperty['bk_property_id'],
@@ -457,6 +502,7 @@
                     }
                 })
                 this.userProperties = properties
+                this.toggleUserAPISelector(false)
                 this.name = detail['name']
                 this.dataCopy = {
                     name: detail['name'],
@@ -464,26 +510,36 @@
                     attributeSelected: this.attribute.selected
                 }
             },
-            addUserProperties ({value: bkPropertyId}, index) {
-                let property = this.getOriginalProperty(bkPropertyId, this.selectedObjId)
-                let {
-                    'bk_property_name': bkPropertyName,
-                    'bk_property_type': bkPropertyType,
-                    'bk_asst_obj_id': bkAsstObjId,
-                    'bk_obj_id': bkObjId
-                } = property
-                property.disabled = true
-                this.userProperties.push({
-                    bkObjId,
-                    bkPropertyId,
-                    bkPropertyType,
-                    bkPropertyName,
-                    bkAsstObjId,
-                    operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
-                    value: ''
-                })
-                this.$refs.propertySelector.curLabel = ''
-                this.$refs.propertySelector.curValue = ''
+            addUserProperties () {
+                for (let key in this.propertySelected) {
+                    if (this.propertySelected[key].length) {
+                        this.propertySelected[key].split(',').map(bkPropertyId => {
+                            let property = this.getOriginalProperty(bkPropertyId, key)
+                            let {
+                                'bk_property_name': bkPropertyName,
+                                'bk_property_type': bkPropertyType,
+                                'bk_asst_obj_id': bkAsstObjId,
+                                'bk_obj_id': bkObjId
+                            } = property
+                            property.disabled = true
+                            let isExist = this.userProperties.findIndex(property => {
+                                return bkPropertyId === property.bkPropertyId
+                            }) > -1
+                            if (!isExist) {
+                                this.userProperties.push({
+                                    bkObjId,
+                                    bkPropertyId,
+                                    bkPropertyType,
+                                    bkPropertyName,
+                                    bkObjName: this.object[bkObjId].name,
+                                    bkAsstObjId,
+                                    operator: this.operatorMap.hasOwnProperty(bkPropertyType) ? this.operatorMap[bkPropertyType] : '',
+                                    value: ''
+                                })
+                            }
+                        })
+                    }
+                }
                 this.toggleUserAPISelector(false)
             },
             setUserPropertyTime (oldTime, newTime, index) {
@@ -521,6 +577,19 @@
             },
             /* 切换新增条件的显示 */
             toggleUserAPISelector (isPropertiesShow) {
+                if (!isPropertiesShow) {
+                    let properties = {
+                        host: [],
+                        set: [],
+                        module: []
+                    }
+                    this.userProperties.map(property => {
+                        properties[property.bkObjId].push(property.bkPropertyId)
+                    })
+                    this.propertySelected.host = properties.host.join(',')
+                    this.propertySelected.set = properties.set.join(',')
+                    this.propertySelected.module = properties.module.join(',')
+                }
                 this.isPropertiesShow = isPropertiesShow
             },
             clickOutside () {
@@ -549,6 +618,11 @@
                             this.$axios.post('userapi', params, {id: 'saveUserAPI'}).then(res => {
                                 if (res.result) {
                                     this.$alertMsg(this.$t("Common['保存成功']"), 'success')
+                                    this.dataCopy = {
+                                        name: this.name,
+                                        userProperties: this.$deepClone(this.userProperties),
+                                        attributeSelected: this.attribute.selected
+                                    }
                                     this.$emit('create', res.data)
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
@@ -559,6 +633,11 @@
                             .then(res => {
                                 if (res.result) {
                                     this.$emit('update', res.data)
+                                    this.dataCopy = {
+                                        name: this.name,
+                                        userProperties: this.$deepClone(this.userProperties),
+                                        attributeSelected: this.attribute.selected
+                                    }
                                     this.$alertMsg(this.$t("Common['修改成功']"), 'success')
                                 } else {
                                     this.$alertMsg(res['bk_error_msg'])
@@ -598,7 +677,13 @@
         overflow-y: auto;
     }
     .userapi-group{
-        margin-top: 20px;
+        margin: 20px -40px 0px;
+        padding: 0 40px 20px 20px;
+        border-bottom: 1px solid #e3ebf3;
+        &.list {
+            padding-top: 1px;
+            border: none;
+        }
     }
     .userapi-list{
         line-height: 30px;
@@ -607,10 +692,11 @@
             margin-top: 20px;
             position: relative;
             .userapi-name{
-                width: 115px;
+                width: 135px;
                 line-height: 32px;
                 padding-right: 15px;
                 text-align: right;
+                @include ellipsis;
             }
             .userapi-text{
                 position: relative;
@@ -627,44 +713,71 @@
             }
             .userapi-delete{
                 display: block;
-                width: 30px;
-                height: 32px;
-                margin: 0 5px;
-                line-height: 30px;
+                margin: 2px 5px 2px 0;
+                padding: 6px;
                 text-align: center;
-                border: 1px solid #bec6de;
-                border-radius: 2px;
+                color: #737987;
                 cursor: pointer;
+                border-radius: 50%;
                 &:hover{
-                    border-color: #ef4c4c;
+                    background: #e5e5e5;
                 }
             }
         }
     }
     .userapi-new{
         width: 470px;
-        margin: 20px 0 0 120px;
+        margin: 20px 0 0 140px;
         font-size: 14px;
-        // color: #6b7baa;
-        position: relative;
         .userapi-new-btn{
             width: 470px;
-            height: 42px;
+            height: 32px;
             background-color: #ffffff;
             border-radius: 2px;
-            border: solid 1px #c3cdd7;
+            border: 1px dashed #c3cdd7;
             outline: 0;
+            color: #c7ced6;
             &:hover{
                 box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
             }
         }
     }
-    .userapi-new-selector-wrapper{
+    .userapi-pop-wrapper {
         position: absolute;
-        top: 100%;
+        top: 150px;
         left: 0;
+        width: 100%;
+        z-index: 99;
+    }
+    .userapi-new-selector-pop {
+        margin: 0 auto;
+        padding: 30px;
+        background: #fff;
+        box-shadow: 0px 3px 6px 0.12px rgba(175, 177, 180, 0.61);
+        width: 530px;
+        border: 1px solid #fff;
+        border-image: linear-gradient(#f5f5f5, #d2d4d9) 30 30;
+        .pop-title {
+            font-size: 13px;
+            margin: 0;
+            color: #737987;
+        }
+        .btn-wrapper {
+            margin-top: 20px;
+            text-align: right;
+            .bk-button {
+                min-width: 110px;
+                height: 34px;
+                line-height: 32px;
+                &:first-child {
+                    margin-right: 10px;
+                }
+            }
+        }
+    }
+    .userapi-new-selector-wrapper{
         width: 470px;
-        margin-top: 3px;
+        margin-top: 5px;
         background-color: #ffffff;
         box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
         border-radius: 2px;
@@ -672,10 +785,10 @@
         z-index: 10;
     }
     .userapi-input{
-        margin-top: 26px;
+        margin-top: 20px;
         position: relative;
         .userapi-input-name{
-            width: 115px;
+            width: 135px;
             line-height: 32px;
             text-align: right;
             padding-right: 15px;
@@ -683,21 +796,42 @@
         .userapi-input-text{
             width: 470px;
             height: 32px;
-            // border-radius: 2px;
-            // // border: solid 1px #bec6de;
             margin: 0 5px;
-            // padding: 0 8px;
+        }
+        .userapi-content-display {
+            textarea {
+                width: 470px;
+                height: 64px;
+                margin: 0 5px 10px;
+                padding: 5px 16px;
+                font-size: 14px;
+                resize: none;
+                outline: none;
+                vertical-align: bottom;
+                color: #666;
+            }
+            .btn-icon {
+                vertical-align: top;
+                width: 25px;
+                height: 25px;
+                padding: 0;
+                margin-top: 4px;
+                font-size: 20px;
+                line-height: 25px;
+            }
+        }
+        .userapi-content-selector {
+            margin-left: 140px;
         }
     }
     .userapi-btn-group{
-        margin: 40px 0 0 120px;
+        margin: 30px 0 0 120px;
         font-size: 0;
         .userapi-btn{
             width: 110px;
             height: 34px;
             margin: 0 10px 0 0;
             font-size: 14px;
-            // letter-spacing: 4px;
         }
     }
     .validate-message{
@@ -740,8 +874,8 @@
             }
         }
         &.userapi-new-selector{
-            width: 445px;
-            margin: 6px auto 0;
+            width: 470px;
+            margin-top: 20px;
         }
         &.userapi-content-selector{
             width: 470px;

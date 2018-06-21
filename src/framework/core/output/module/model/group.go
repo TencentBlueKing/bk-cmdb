@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
@@ -29,25 +29,41 @@ type group struct {
 	OwnerID    string `field:"bk_supplier_account"`
 	IsDefault  bool   `field:"bk_isdefault"`
 	IsPre      bool   `field:"ispre"`
+	id         int
 }
 
 func (cli *group) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
 
-func (cli *group) Save() error {
+func (cli *group) search() ([]types.MapStr, error) {
 
 	// construct the search condition
 	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID)
-	// .Field(GroupID).Eq(cli.GroupID).
 
 	// search all group by condition
-	dataItems, err := client.GetClient().CCV3().Group().SearchGroups(cond)
+	return client.GetClient().CCV3().Group().SearchGroups(cond)
+
+}
+
+func (cli *group) IsExists() (bool, error) {
+
+	items, err := cli.search()
+	return 0 != len(items), err
+}
+
+func (cli *group) Create() error {
+
+	id, err := client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr())
+	cli.id = id
+	return err
+}
+func (cli *group) Update() error {
+
+	dataItems, err := cli.search()
 	if nil != err {
 		return err
 	}
-
-	log.Infof("search group return %v", dataItems)
 
 	var updateitem types.MapStr
 	lastIndex := 1
@@ -90,12 +106,21 @@ func (cli *group) Save() error {
 		}
 		return client.GetClient().CCV3().Group().UpdateGroup(updateitem, cond)
 	}
-
-	// create a new obj ect
-	if _, err := client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr()); nil != err {
-		return err
-	}
 	return nil
+}
+func (cli *group) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
+}
+
+func (cli *group) GetRecordID() int {
+	return cli.id
 }
 
 func (cli *group) SetID(id string) {

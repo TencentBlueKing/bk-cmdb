@@ -437,7 +437,9 @@
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
-                    this.$emit('handleAssociationLoaded', res.data[0])
+                    if (isRoot) {
+                        this.$emit('handleAssociationLoaded', res.data[0])
+                    }
                     await this.setTopoStruct(res.data[0], isRoot)
                 } catch (e) {
                     this.isLoading = false
@@ -546,7 +548,7 @@
                     params: {}
                 }
                 if (toNode['bk_obj_id'] === 'host') {
-                    params.params['bk_host_id'] = toNode['bk_inst_id']
+                    params.params['bk_host_id'] = toNode['bk_inst_id'].toString()
                 } else {
                     params[this.getInstanceIdKey(toNode['bk_obj_id'])] = toNode['bk_inst_id']
                 }
@@ -640,8 +642,8 @@
         mounted () {
             this.container = this.$refs.topo
         },
-        created () {
-            this.getRelationInfo(this.objId, this.instId, true)
+        async created () {
+            await this.getRelationInfo(this.objId, this.instId, true)
         },
         components: {
             vAttribute
