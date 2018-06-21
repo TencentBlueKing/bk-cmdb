@@ -13,21 +13,24 @@
 package host
 
 import (
+	"io"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/ccapi/actions/v3"
 	"configcenter/src/common"
+	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
-	"io"
-
-	"github.com/emicklei/go-restful"
 )
 
 var host = &hostAction{}
 
 type hostAction struct {
 	cc *api.APIResource
+	base.BaseAction
 }
 
 // GetHosts get hosts by id without assocate object detaill
@@ -135,8 +138,14 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 
 func (cli *hostAction) newHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/hosts/sync/new/host"
-	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
-	io.WriteString(resp, rsp)
+
+	cli.CallResponse(func() (string, error) {
+		rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+		if nil != err {
+			blog.Errorf("newHostSyncAppTopo  http do err, url:%s, err:%s", url, err.Error())
+		}
+		return rsp, err
+	}, resp)
 }
 
 func init() {
