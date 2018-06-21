@@ -22,6 +22,13 @@ import (
 	"time"
 )
 
+// Get return the origin value by the key
+func (cli MapStr) Get(key string) (val interface{}, exists bool) {
+
+	val, exists = cli[key]
+	return val, exists
+}
+
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
@@ -59,6 +66,38 @@ func (cli MapStr) Bool(key string) bool {
 		return false
 	case bool:
 		return t
+	}
+}
+
+// Int64 return the value by the key
+func (cli MapStr) Int64(key string) (int64, error) {
+
+	switch t := cli[key].(type) {
+	default:
+		return 0, errors.New("invalid num")
+	case nil:
+		return 0, errors.New("invalid key(" + key + "), not found value")
+	case int:
+		return int64(t), nil
+	case int16:
+		return int64(t), nil
+	case int32:
+		return int64(t), nil
+	case int64:
+		return t, nil
+	case float32:
+		return int64(t), nil
+	case float64:
+		return int64(t), nil
+	case json.Number:
+		num, err := t.Int64()
+		return int64(num), err
+	case string:
+		tv, err := strconv.Atoi(t)
+		if nil != err {
+			return 0, err
+		}
+		return int64(tv), nil
 	}
 }
 

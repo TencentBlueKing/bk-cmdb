@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
@@ -69,6 +70,11 @@ func (cli *BusinessWrapper) Update() error {
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
+}
+
+// GetValues return the values
+func (cli *BusinessWrapper) GetValues() (types.MapStr, error) {
+	return cli.business.GetValues()
 }
 
 // GetModel get the model for the business

@@ -133,40 +133,35 @@ func (cli *set) Create() error {
 }
 func (cli *set) Update() error {
 
-	businessID := cli.datas.String(BusinessID)
-
 	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
+	// clear the invalid field
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+		cli.datas.Remove(key)
+	})
+
 	for _, existItem := range existItems {
 
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
-
-		instID, err := existItem.Int(SetID)
+		instID, err := existItem.Int64(SetID)
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(SetID).Eq(instID).Field(BusinessID).Eq(businessID)
 
-		// clear the invalid field
-		existItem.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
-			}
-			existItem.Remove(key)
-		})
+		updateCond := common.CreateCondition()
+		updateCond.Field(SetID).Eq(instID)
 
-		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
+		err = client.GetClient().CCV3().Set().UpdateSet(cli.datas, updateCond)
 		if nil != err {
 			return err
 		}
-		cli.datas.Set(SetID, instID)
 
 	}
 	return nil

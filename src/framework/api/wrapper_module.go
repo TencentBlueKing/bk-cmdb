@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // ModuleIteratorWrapper the module iterator wrapper
@@ -74,6 +75,11 @@ func (cli *ModuleWrapper) GetModel() model.Model {
 // Save save the data
 func (cli *ModuleWrapper) Save() error {
 	return cli.module.Save()
+}
+
+// GetValues return the values
+func (cli *ModuleWrapper) GetValues() (types.MapStr, error) {
+	return cli.module.GetValues()
 }
 
 // GetModuleID get the id for the module

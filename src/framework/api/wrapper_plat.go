@@ -15,6 +15,7 @@ package api
 import (
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // PlatIteratorWrapper the plat iterator wrapper
@@ -67,6 +68,11 @@ func (cli *PlatWrapper) Update() error {
 // Save save the data
 func (cli *PlatWrapper) Save() error {
 	return cli.plat.Save()
+}
+
+// GetValues return the values
+func (cli *PlatWrapper) GetValues() (types.MapStr, error) {
+	return cli.plat.GetValues()
 }
 
 // GetModel get the model for the plat

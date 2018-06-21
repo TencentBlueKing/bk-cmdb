@@ -15,13 +15,12 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/errors"
-	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 )
 
-var _ HostInterface = (*business)(nil)
+var _ BusinessInterface = (*business)(nil)
 
 // BusinessInterface the business interface
 type BusinessInterface interface {
@@ -32,7 +31,7 @@ type BusinessInterface interface {
 
 	GetModel() model.Model
 
-	GetInstID() int
+	GetInstID() (int, error)
 	GetInstName() string
 
 	SetValue(key string, value interface{}) error
@@ -48,21 +47,8 @@ func (cli *business) GetModel() model.Model {
 	return cli.target
 }
 
-func (cli *business) IsMainLine() bool {
-	return false
-}
-
-func (cli *business) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
-}
-
-func (cli *business) GetInstID() int {
-	instID, err := cli.datas.Int(BusinessID)
-	if err != nil {
-		log.Errorf("get bk_biz_id faile %v", err)
-	}
-	return instID
+func (cli *business) GetInstID() (int, error) {
+	return cli.datas.Int(BusinessID)
 }
 func (cli *business) GetInstName() string {
 
@@ -140,32 +126,33 @@ func (cli *business) Update() error {
 			existItem.Set(key, val)
 		})
 
-		instID, err := existItem.Int(BusinessID)
+		bizID, err := existItem.Int(BusinessID)
 		if nil != err {
 			return err
 		}
+
 		// clear the invalid field
-		existItem.ForEach(func(key string, val interface{}) {
+		cli.datas.ForEach(func(key string, val interface{}) {
 			for _, attrItem := range attrs {
 				if attrItem.GetID() == key {
 					return
 				}
 			}
-			existItem.Remove(key)
+			cli.datas.Remove(key)
 		})
+
 		//fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3().Business().UpdateBusiness(existItem, instID)
+		err = client.GetClient().CCV3().Business().UpdateBusiness(cli.datas, bizID)
 		if nil != err {
 			return err
 		}
-		cli.datas.Set(BusinessID, instID)
 
 	}
 
 	return nil
 }
-func (cli *business) Save() error {
 
+func (cli *business) Save() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
@@ -173,5 +160,4 @@ func (cli *business) Save() error {
 	}
 
 	return cli.Create()
-
 }

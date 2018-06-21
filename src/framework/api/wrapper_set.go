@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // SetIteratorWrapper the set iterator wrapper
@@ -44,6 +45,11 @@ func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) err
 // SetWrapper the set wrapper
 type SetWrapper struct {
 	set inst.SetInterface
+}
+
+// GetValues return the values
+func (cli *SetWrapper) GetValues() (types.MapStr, error) {
+	return cli.set.GetValues()
 }
 
 // SetValue set the key value
