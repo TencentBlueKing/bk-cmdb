@@ -13,6 +13,9 @@
 package inst
 
 import (
+	"strconv"
+	"strings"
+
 	cccommon "configcenter/src/common"
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/errors"
@@ -31,9 +34,12 @@ type HostInterface interface {
 	Update() error
 	Save() error
 
+	SetBusinessID(bizID int64)
+	SetModuleIDS(moduleIDS []int64)
+
 	GetModel() model.Model
 
-	GetInstID() int
+	GetInstID() (int, error)
 	GetInstName() string
 
 	SetValue(key string, value interface{}) error
@@ -47,16 +53,20 @@ type host struct {
 	datas     types.MapStr
 }
 
+func (cli *host) SetBusinessID(bizID int64) {
+	cli.bizID = bizID
+}
+
+func (cli *host) SetModuleIDS(moduleIDS []int64) {
+	cli.moduleIDS = moduleIDS
+}
+
 func (cli *host) GetModel() model.Model {
 	return cli.target
 }
 
-func (cli *host) GetInstID() int {
-	instID, err := cli.datas.Int(cccommon.BKHostIDField)
-	if err != nil {
-		log.Errorf("get bk_host_id faile %v", err)
-	}
-	return instID
+func (cli *host) GetInstID() (int, error) {
+	return cli.datas.Int(cccommon.BKHostIDField)
 }
 
 func (cli *host) GetInstName() string {
@@ -71,9 +81,83 @@ func (cli *host) SetValue(key string, value interface{}) error {
 	cli.datas.Set(key, value)
 	return nil
 }
+
+func (cli *host) ResetAssociationValue() error {
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return err
+	}
+
+	for _, attrItem := range attrs {
+		if attrItem.GetKey() {
+
+			if model.FieldTypeSingleAsst == attrItem.GetType() {
+				asstVals, err := cli.datas.MapStrArray(attrItem.GetID())
+				if nil != err {
+					return err
+				}
+
+				for _, val := range asstVals {
+
+					valID, err := val.Int64(InstID)
+					if nil != err {
+						return err
+					}
+					cli.datas.Set(attrItem.GetID(), valID)
+				}
+
+				continue
+			}
+
+			if model.FieldTypeMultiAsst == attrItem.GetType() {
+				asstVals, err := cli.datas.MapStrArray(attrItem.GetID())
+				if nil != err {
+					return err
+				}
+
+				condVals := make([]string, 0)
+				for _, val := range asstVals {
+
+					valID := val.String(InstID)
+					if 0 != len(valID) {
+						condVals = append(condVals, valID)
+					}
+				}
+
+				cli.datas.Set(attrItem.GetID(), strings.Join(condVals, ","))
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cli *host) search() ([]model.Attribute, []types.MapStr, error) {
 
-	return nil, nil, nil
+	if err := cli.ResetAssociationValue(); nil != err {
+		return nil, nil, err
+	}
+
+	attrs, err := cli.target.Attributes()
+	if nil != err {
+		return nil, nil, err
+	}
+
+	cond := common.CreateCondition()
+	for _, attrItem := range attrs {
+		if attrItem.GetKey() {
+
+			attrVal, exists := cli.datas.Get(attrItem.GetID())
+			if !exists {
+				return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			}
+			cond.Field(attrItem.GetID()).Eq(attrVal)
+		}
+	}
+	//log.Infof("the condition:%#v", cond.ToMapStr())
+	// search by condition
+	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
+	return attrs, items, err
 }
 func (cli *host) IsExists() (bool, error) {
 
@@ -118,40 +202,12 @@ func (cli *host) Create() error {
 }
 func (cli *host) Update() error {
 
-	if exists, err := cli.IsExists(); nil != err {
-		return err
-	} else if !exists {
-		return nil
-	}
-
-	return cli.Save()
-}
-func (cli *host) Save() error {
-
-	attrs, err := cli.target.Attributes()
+	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
-	bizID := 0
-	if cli.datas.Exists(BusinessID) {
-		id, err := cli.datas.Int(BusinessID)
-		if nil != err {
-			return err
-		}
-		bizID = id
-	}
-
-	log.Errorf("set bizid:%d", bizID)
-
 	// clear the invalid data
-	for _, attrItem := range attrs {
-		if !cli.datas.Exists(attrItem.GetID()) {
-			cli.datas.Remove(attrItem.GetID())
-		}
-	}
-
-	// clear the undefined data
 	cli.datas.ForEach(func(key string, val interface{}) {
 		for _, attrItem := range attrs {
 			if attrItem.GetID() == key {
@@ -162,14 +218,33 @@ func (cli *host) Save() error {
 		cli.datas.Remove(key)
 	})
 
-	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
-	if err != nil {
-		log.Errorf("failed to create host, error info is %s", err.Error())
-		return err
+	for _, existItem := range existItems {
+
+		hostID, err := existItem.Int64(HostID)
+		if nil != err {
+			return err
+		}
+
+		updateCond := common.CreateCondition()
+		updateCond.Field(ModuleID).Eq(hostID)
+		log.Infof("the exists:%s %d", string(cli.datas.ToJSON()), hostID)
+		err = client.GetClient().CCV3().Host().UpdateHostBatch(cli.datas, strconv.Itoa(int(hostID)))
+		if err != nil {
+			log.Errorf("failed to update host, error info is %s", err.Error())
+			return err
+		}
+
 	}
-	if len(hostID) != 1 {
-		return errors.New("incorrect id number received")
-	}
-	cli.datas.Set(cccommon.BKHostIDField, hostID[0])
+
 	return nil
+}
+func (cli *host) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
 }

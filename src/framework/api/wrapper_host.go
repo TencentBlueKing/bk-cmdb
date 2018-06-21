@@ -15,6 +15,7 @@ package api
 import (
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // HostIteratorWrapper the host iterator wrapper
@@ -26,9 +27,7 @@ type HostIteratorWrapper struct {
 func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 
 	host, err := cli.host.Next()
-
 	return &HostWrapper{host: host}, err
-
 }
 
 // ForEach the foreach function
@@ -42,6 +41,22 @@ func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) 
 // HostWrapper the host wrapper
 type HostWrapper struct {
 	host inst.HostInterface
+}
+
+// SetTopo set the host topo
+func (cli *HostWrapper) SetTopo(bizID int64, moduleIDS []int64) {
+	cli.host.SetBusinessID(bizID)
+	cli.host.SetModuleIDS(moduleIDS)
+}
+
+// SetBusiness set the business id for the host
+func (cli *HostWrapper) SetBusiness(bizID int64) {
+	cli.host.SetBusinessID(bizID)
+}
+
+// SetModuleIDS set the modules
+func (cli *HostWrapper) SetModuleIDS(moduleIDS []int64) {
+	cli.host.SetModuleIDS(moduleIDS)
 }
 
 // GetModel get the model for the host
@@ -76,6 +91,11 @@ func (cli *HostWrapper) Save() error {
 		return err
 	}
 	return cli.host.Save()
+}
+
+// GetValues return the values
+func (cli *HostWrapper) GetValues() (types.MapStr, error) {
+	return cli.host.GetValues()
 }
 
 // SetBakOperator set the bak operator
@@ -221,11 +241,6 @@ func (cli *HostWrapper) GetOuterIP() (string, error) {
 // SetAssetID set the assetid for the host
 func (cli *HostWrapper) SetAssetID(assetID string) error {
 	return cli.host.SetValue(fieldAssetID, assetID)
-}
-
-// SetBusiness set the business id for the host
-func (cli *HostWrapper) SetBusiness(bizID int) error {
-	return cli.host.SetValue(fieldBusinessID, bizID)
 }
 
 // GetAssetID get the asset id for the host

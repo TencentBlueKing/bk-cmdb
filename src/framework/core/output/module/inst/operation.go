@@ -13,7 +13,11 @@
 package inst
 
 import (
+	"strconv"
+	"strings"
+
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 )
@@ -26,6 +30,9 @@ type OperationInterface interface {
 	CreateBusinessInst(target model.Model) BusinessInterface
 	CreatePlatInst(target model.Model) CommonInstInterface
 	CreateHostInst(target model.Model) HostInterface
+
+	DeleteHosts(supplierAccount string, hostIDS []int64) error
+
 	FindCommonInstLikeName(target model.Model, instName string) (Iterator, error)
 	FindCommonInstByCondition(target model.Model, cond common.Condition) (Iterator, error)
 	FindBusinessLikeName(target model.Model, businessName string) (BusinessIterator, error)
@@ -69,6 +76,16 @@ func (o *operation) CreatePlatInst(target model.Model) CommonInstInterface {
 }
 func (o *operation) CreateHostInst(target model.Model) HostInterface {
 	return &host{target: target, datas: types.MapStr{}}
+}
+
+func (o *operation) DeleteHosts(supplierAccount string, hostIDS []int64) error {
+
+	hostIDArr := make([]string, 0)
+	for hostID := range hostIDS {
+		hostIDArr = append(hostIDArr, strconv.Itoa(hostID))
+	}
+
+	return client.GetClient().CCV3().Host().DeleteHostBatch(strings.Join(hostIDArr, ","))
 }
 
 func (o *operation) FindCommonInstLikeName(target model.Model, instName string) (Iterator, error) {

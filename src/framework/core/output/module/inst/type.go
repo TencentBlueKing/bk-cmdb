@@ -16,6 +16,10 @@ package inst
 type FieldName string
 
 const (
+
+	// HostID host id
+	HostID = "bk_host_id"
+
 	// PlatID the plat id
 	PlatID = "bk_cloud_id"
 	// Plat the object id
