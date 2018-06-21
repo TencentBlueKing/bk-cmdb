@@ -21,7 +21,7 @@ import (
 
 // ModuleIteratorWrapper the module iterator wrapper
 type ModuleIteratorWrapper struct {
-	module inst.Iterator
+	module inst.ModuleIterator
 }
 
 // Next next the module
@@ -36,14 +36,14 @@ func (cli *ModuleIteratorWrapper) Next() (*ModuleWrapper, error) {
 // ForEach the foreach function
 func (cli *ModuleIteratorWrapper) ForEach(callback func(module *ModuleWrapper) error) error {
 
-	return cli.module.ForEach(func(item inst.Inst) error {
+	return cli.module.ForEach(func(item inst.ModuleInterface) error {
 		return callback(&ModuleWrapper{module: item})
 	})
 }
 
 // ModuleWrapper the module wrapper
 type ModuleWrapper struct {
-	module inst.Inst
+	module inst.ModuleInterface
 }
 
 // SetValue set the key value

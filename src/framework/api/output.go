@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package api
 
 import (
@@ -47,7 +47,7 @@ func CreateBusiness(supplierAccount string) (*BusinessWrapper, error) {
 	if nil != err {
 		return nil, err
 	}
-	businessInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	businessInst := mgr.OutputerMgr.InstOperation().CreateBusinessInst(targetModel)
 	wrapper := &BusinessWrapper{business: businessInst}
 	//wrapper.SetSupplierAccount(supplierAccount)
 	return wrapper, err
@@ -60,7 +60,7 @@ func FindBusinessLikeName(supplierAccount, businessName string) (*BusinessIterat
 		return nil, err
 	}
 
-	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, businessName)
+	iter, err := mgr.OutputerMgr.InstOperation().FindBusinessLikeName(targetModel, businessName)
 	return &BusinessIteratorWrapper{business: iter}, err
 }
 
@@ -70,7 +70,7 @@ func FindBusinessByCondition(supplierAccount string, cond common.Condition) (*Bu
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.InstOperation().FindBusinessByCondition(targetModel, cond)
 	return &BusinessIteratorWrapper{business: iter}, err
 }
 
@@ -82,8 +82,7 @@ func CreateSet(supplierAccount string) (*SetWrapper, error) {
 		return nil, err
 	}
 
-	setInst, err := mgr.OutputerMgr.CreateInst(targetModel)
-
+	setInst := mgr.OutputerMgr.InstOperation().CreateSetInst(targetModel)
 	return &SetWrapper{set: setInst}, err
 }
 
@@ -94,7 +93,7 @@ func FindSetLikeName(supplierAccount, setName string) (*SetIteratorWrapper, erro
 		return nil, err
 	}
 
-	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, setName)
+	iter, err := mgr.OutputerMgr.InstOperation().FindSetsLikeName(targetModel, setName)
 	return &SetIteratorWrapper{set: iter}, err
 }
 
@@ -104,7 +103,7 @@ func FindSetByCondition(supplierAccount string, cond common.Condition) (*SetIter
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.InstOperation().FindSetsByCondition(targetModel, cond)
 	return &SetIteratorWrapper{set: iter}, err
 }
 
@@ -116,7 +115,7 @@ func CreateModule(supplierAccount string) (*ModuleWrapper, error) {
 		return nil, err
 	}
 
-	moduleInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	moduleInst := mgr.OutputerMgr.InstOperation().CreateModuleInst(targetModel)
 	return &ModuleWrapper{module: moduleInst}, err
 }
 
@@ -127,7 +126,7 @@ func FindModuleLikeName(supplierAccount, moduleName string) (*ModuleIteratorWrap
 		return nil, err
 	}
 
-	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, moduleName)
+	iter, err := mgr.OutputerMgr.InstOperation().FindModulesLikeName(targetModel, moduleName)
 	return &ModuleIteratorWrapper{module: iter}, err
 }
 
@@ -137,7 +136,7 @@ func FindModuleByCondition(supplierAccount string, cond common.Condition) (*Modu
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.InstOperation().FindModulesByCondition(targetModel, cond)
 	return &ModuleIteratorWrapper{module: iter}, err
 }
 
@@ -148,7 +147,7 @@ func CreateHost(supplierAccount string) (*HostWrapper, error) {
 		return nil, err
 	}
 
-	hostInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	hostInst := mgr.OutputerMgr.InstOperation().CreateHostInst(targetModel)
 	return &HostWrapper{host: hostInst}, err
 }
 
@@ -158,7 +157,7 @@ func FindHostLikeName(supplierAccount, hostName string) (*HostIteratorWrapper, e
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, hostName)
+	iter, err := mgr.OutputerMgr.InstOperation().FindHostsLikeName(targetModel, hostName)
 	return &HostIteratorWrapper{host: iter}, err
 }
 
@@ -168,7 +167,7 @@ func FindHostByCondition(supplierAccount string, cond common.Condition) (*HostIt
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.InstOperation().FindHostsByCondition(targetModel, cond)
 	return &HostIteratorWrapper{host: iter}, err
 }
 
@@ -179,7 +178,7 @@ func CreatePlat(supplierAccount string) (*PlatWrapper, error) {
 		return nil, err
 	}
 
-	platInst, err := mgr.OutputerMgr.CreateInst(targetModel)
+	platInst := mgr.OutputerMgr.InstOperation().CreatePlatInst(targetModel)
 	platInst.SetValue(fieldSupplierAccount, supplierAccount)
 	platInst.SetValue(fieldObjectID, plat)
 	return &PlatWrapper{plat: platInst}, err
@@ -223,7 +222,7 @@ func FindPlatLikeName(supplierAccount, platName string) (*PlatIteratorWrapper, e
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsLikeName(targetModel, platName)
+	iter, err := mgr.OutputerMgr.InstOperation().FindPlatsLikeName(targetModel, platName)
 	return &PlatIteratorWrapper{plat: iter}, err
 }
 
@@ -233,21 +232,21 @@ func FindPlatByCondition(supplierAccount string, cond common.Condition) (*PlatIt
 	if nil != err {
 		return nil, err
 	}
-	iter, err := mgr.OutputerMgr.FindInstsByCondition(targetModel, cond)
+	iter, err := mgr.OutputerMgr.InstOperation().FindPlatsByCondition(targetModel, cond)
 	return &PlatIteratorWrapper{plat: iter}, err
 }
 
 // CreateCommonInst create a common inst object
-func CreateCommonInst(target model.Model) (inst.Inst, error) {
-	return mgr.OutputerMgr.CreateInst(target)
+func CreateCommonInst(target model.Model) (inst.CommonInstInterface, error) {
+	return mgr.OutputerMgr.InstOperation().CreateCommonInst(target), nil
 }
 
 // FindInstsLikeName find all insts by the name
 func FindInstsLikeName(target model.Model, instName string) (inst.Iterator, error) {
-	return mgr.OutputerMgr.FindInstsLikeName(target, instName)
+	return mgr.OutputerMgr.InstOperation().FindCommonInstLikeName(target, instName)
 }
 
 // FindInstsByCondition find all insts by the condition
 func FindInstsByCondition(target model.Model, cond common.Condition) (inst.Iterator, error) {
-	return mgr.OutputerMgr.FindInstsByCondition(target, cond)
+	return mgr.OutputerMgr.InstOperation().FindCommonInstByCondition(target, cond)
 }

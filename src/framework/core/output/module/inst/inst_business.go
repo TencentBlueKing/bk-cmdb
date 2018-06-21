@@ -21,7 +21,23 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
-var _ Inst = (*business)(nil)
+var _ HostInterface = (*business)(nil)
+
+// BusinessInterface the business interface
+type BusinessInterface interface {
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type business struct {
 	target model.Model
@@ -55,28 +71,6 @@ func (cli *business) GetInstName() string {
 
 func (cli *business) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *business) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *business) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *business) SetParent(parentInstID int) error {
-	return errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *business) GetParent() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *business) GetChildren() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
 }
 
 func (cli *business) SetValue(key string, value interface{}) error {

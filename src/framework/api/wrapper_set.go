@@ -21,7 +21,7 @@ import (
 
 // SetIteratorWrapper the set iterator wrapper
 type SetIteratorWrapper struct {
-	set inst.Iterator
+	set inst.SetIterator
 }
 
 // Next next the set
@@ -36,14 +36,14 @@ func (cli *SetIteratorWrapper) Next() (*SetWrapper, error) {
 // ForEach the foreach function
 func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) error {
 
-	return cli.set.ForEach(func(item inst.Inst) error {
+	return cli.set.ForEach(func(item inst.SetInterface) error {
 		return callback(&SetWrapper{set: item})
 	})
 }
 
 // SetWrapper the set wrapper
 type SetWrapper struct {
-	set inst.Inst
+	set inst.SetInterface
 }
 
 // SetValue set the key value

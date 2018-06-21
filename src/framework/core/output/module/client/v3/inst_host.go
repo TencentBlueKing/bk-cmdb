@@ -24,15 +24,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// HostGetter host getter
 type HostGetter interface {
 	Host() HostInterface
 }
 
+// HostInterface host operation
 type HostInterface interface {
 	// SearchHost search host by condition,
 	SearchHost(cond common.Condition) ([]types.MapStr, error)
 	// CreateHostBatch create host
-	CreateHostBatch(bizID int, data ...types.MapStr) ([]int, error)
+	CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.MapStr) ([]int, error)
 	// update update host by hostID, hostID could be separated by a comma
 	UpdateHostBatch(data types.MapStr, hostID string) error
 	// DeleteHost delete host by hostID, hostID could be separated by a comma
@@ -49,18 +51,21 @@ func newHost(cli *Client) *Host {
 		cli: cli,
 	}
 }
-func (h *Host) CreateHostBatch(bizID int, data ...types.MapStr) ([]int, error) {
+
+// CreateHostBatch batch to create hosts
+func (h *Host) CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.MapStr) ([]int, error) {
 	infos := map[int]map[string]interface{}{}
 	for index := range data {
-		data[index].Set("import_from", "3")
+		data[index].Set("import_from", "3") // 3 means api import hosts
 		infos[index] = data[index]
 	}
 	param := types.MapStr{
 		"bk_biz_id":      bizID,
+		"bk_module_id":   moduleIDS,
 		"bk_supplier_id": cccommon.BKDefaultSupplierID,
 		"host_info":      infos,
 	}
-	targetURL := fmt.Sprintf("%s/api/v3/hosts/add", h.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/sync/new/host", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, param.ToJSON())
 	if nil != err {
 		return nil, err
@@ -84,6 +89,7 @@ func (h *Host) CreateHostBatch(bizID int, data ...types.MapStr) ([]int, error) {
 	return ids, nil
 }
 
+// UpdateHostBatch batch to update the hosts
 func (h *Host) UpdateHostBatch(data types.MapStr, hostID string) error {
 
 	data.Set("bk_host_id", hostID)
@@ -103,6 +109,7 @@ func (h *Host) UpdateHostBatch(data types.MapStr, hostID string) error {
 	return nil
 }
 
+// DeleteHostBatch batch to delete the host
 func (h *Host) DeleteHostBatch(hostID string) error {
 	data := common.CreateCondition().Field("bk_host_id").Eq(hostID)
 
@@ -122,6 +129,7 @@ func (h *Host) DeleteHostBatch(hostID string) error {
 	return nil
 }
 
+// SearchHost search the host
 func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 
 	data := cond.ToMapStr()

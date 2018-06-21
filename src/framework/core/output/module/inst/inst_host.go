@@ -22,24 +22,33 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
-var _ Inst = (*host)(nil)
+var _ HostInterface = (*host)(nil)
+
+// HostInterface the host interface
+type HostInterface interface {
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type host struct {
-	target model.Model
-	datas  types.MapStr
+	bizID     int64
+	moduleIDS []int64
+	target    model.Model
+	datas     types.MapStr
 }
 
 func (cli *host) GetModel() model.Model {
 	return cli.target
-}
-
-func (cli *host) IsMainLine() bool {
-	return false
-}
-
-func (cli *host) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
 }
 
 func (cli *host) GetInstID() int {
@@ -56,28 +65,6 @@ func (cli *host) GetInstName() string {
 
 func (cli *host) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *host) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *host) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *host) SetParent(parentInstID int) error {
-	return errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *host) GetParent() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *host) GetChildren() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
 }
 
 func (cli *host) SetValue(key string, value interface{}) error {
@@ -164,6 +151,7 @@ func (cli *host) Save() error {
 		}
 	}
 
+	// clear the undefined data
 	cli.datas.ForEach(func(key string, val interface{}) {
 		for _, attrItem := range attrs {
 			if attrItem.GetID() == key {
@@ -174,7 +162,7 @@ func (cli *host) Save() error {
 		cli.datas.Remove(key)
 	})
 
-	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(bizID, cli.datas)
+	hostID, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
 	if err != nil {
 		log.Errorf("failed to create host, error info is %s", err.Error())
 		return err

@@ -21,7 +21,7 @@ import (
 
 // BusinessIteratorWrapper the business iterator wrapper
 type BusinessIteratorWrapper struct {
-	business inst.Iterator
+	business inst.BusinessIterator
 }
 
 // Next next the business
@@ -36,14 +36,14 @@ func (cli *BusinessIteratorWrapper) Next() (*BusinessWrapper, error) {
 // ForEach the foreach function
 func (cli *BusinessIteratorWrapper) ForEach(callback func(business *BusinessWrapper) error) error {
 
-	return cli.business.ForEach(func(item inst.Inst) error {
+	return cli.business.ForEach(func(item inst.BusinessInterface) error {
 		return callback(&BusinessWrapper{business: item})
 	})
 }
 
 // BusinessWrapper the business wrapper
 type BusinessWrapper struct {
-	business inst.Inst
+	business inst.BusinessInterface
 }
 
 // SetValue set the key value
