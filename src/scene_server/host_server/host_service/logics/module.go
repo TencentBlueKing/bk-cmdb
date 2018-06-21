@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/source_controller/common/commondata"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -165,16 +166,21 @@ func NewHostSyncValidModule(req *restful.Request, appID int, moduleID []int, obj
 	if 0 == len(moduleID) {
 		return nil, fmt.Errorf("module id number must be > 1")
 	}
+
 	conds := common.KvMap{
 		common.BKAppIDField:    appID,
 		common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleID},
 	}
-	condition := make(map[string]interface{})
-	condition["sort"] = common.BKModuleIDField
-	condition["start"] = 0
-	condition["limit"] = 0
-	condition["condition"] = conds
-	bodyContent, _ := json.Marshal(condition)
+
+	condition := new(commondata.ObjQueryInput)
+	condition.Sort = common.BKModuleIDField
+	condition.Start = 0
+	condition.Limit = 0
+	condition.Condition = conds
+	bodyContent, err := json.Marshal(condition)
+	if nil != err {
+		return nil, fmt.Errorf("query module parameters not json")
+	}
 	url := objAddr + "/object/v1/insts/module/search"
 	blog.Info("NewHostSyncValidModule url :%s", url)
 	blog.Info("NewHostSyncValidModule content :%s", string(bodyContent))
