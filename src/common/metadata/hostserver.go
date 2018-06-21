@@ -12,6 +12,10 @@
 
 package metadata
 
+import (
+	"configcenter/src/common/mapstr"
+)
+
 type DeleteHostBatchOpt struct {
 	HostID string `json:"bk_host_id"`
 }
@@ -90,7 +94,17 @@ type IPInfo struct {
 
 //search condition
 type SearchCondition struct {
-	Fields    []string      `json:"fields"`
-	Condition []interface{} `json:"condition"`
-	ObjectID  string        `json:"bk_obj_id"`
+	Fields    []string        `json:"fields"`
+	Condition []ConditionItem `json:"condition"`
+	ObjectID  string          `json:"bk_obj_id"`
+}
+
+type SearchHost struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
+}
+
+type SearchHostResult struct {
+	BaseResp `json:",inline"`
+	Data     SearchHost `json:"data"`
 }

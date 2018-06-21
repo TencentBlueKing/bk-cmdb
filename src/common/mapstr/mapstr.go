@@ -128,7 +128,7 @@ func (cli MapStr) Int64(key string) (int64, error) {
 	case nil:
 		return 0, errors.New("invalid key(" + key + "), not found value")
 	case int:
-		return t, nil
+		return int64(t), nil
 	case int16:
 		return int64(t), nil
 	case int32:
@@ -143,39 +143,7 @@ func (cli MapStr) Int64(key string) (int64, error) {
 		num, err := t.Int64()
 		return int64(num), err
 	case string:
-		return strconv.Atoi(t)
-	}
-}
-
-// Int64 return the value by the key
-func (cli MapStr) Int64(key string) (int64, error) {
-
-	switch t := cli[key].(type) {
-	default:
-		return 0, errors.New("invalid num")
-	case nil:
-		return 0, errors.New("invalid key(" + key + "), not found value")
-	case int:
-		return int64(t), nil
-	case int16:
-		return int64(t), nil
-	case int32:
-		return int64(t), nil
-	case int64:
-		return t, nil
-	case float32:
-		return int64(t), nil
-	case float64:
-		return int64(t), nil
-	case json.Number:
-		num, err := t.Int64()
-		return num, err
-	case string:
-		tv, err := strconv.Atoi(t)
-		if nil != err {
-			return 0, err
-		}
-		return int64(tv), nil
+		return strconv.ParseInt(t, 10, 64)
 	}
 }
 

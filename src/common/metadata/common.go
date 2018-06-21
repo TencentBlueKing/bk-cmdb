@@ -86,7 +86,7 @@ type QueryInput struct {
 	Fields    string      `json:"fields,omitempty"`
 	Start     int         `json:"start,omitempty"`
 	Limit     int         `json:"limit,omitempty"`
-	Sort      string      `json:"sort",omitempty`
+	Sort      string      `json:"sort,omitempty"`
 }
 
 type CloudHostModuleParams struct {

@@ -164,6 +164,8 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	// TODO: check the return result, may be wrong
-
+	info := make(map[string]interface{})
+	info["id"] = ID
+	info["count"] = result.Data.Count + 1
+	resp.WriteEntity(metadata.NewSuccessResp(info))
 }

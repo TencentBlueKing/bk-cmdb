@@ -18,17 +18,94 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	hostParse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/host_service/instapi"
+	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
-	"github.com/bitly/go-simplejson"
 )
+
+func (lgc *Logics) GetHostAttributes(ownerID string, header http.Header) ([]metadata.Header, error) {
+	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
+	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, searchOp)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
+	}
+
+	headers := make([]metadata.Header, 0)
+	for _, p := range result.Data {
+		if p.PropertyID == common.BKChildStr {
+			continue
+		}
+		headers = append(headers, metadata.Header{
+			PropertyID:   p.PropertyID,
+			PropertyName: p.PropertyName,
+		})
+	}
+
+	return headers, nil
+}
+
+func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID string) (map[string]interface{}, string, error) {
+	// get host details, pre data
+	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, "", fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
+	}
+
+	hostInfo := result.Data
+	attributes, err := lgc.GetObjectAsst(ownerID, pheader)
+	if err != nil {
+		return nil, "", err
+	}
+
+	for key, val := range attributes {
+		if item, ok := hostInfo[key]; ok {
+			if item == nil {
+				continue
+			}
+
+			strItem, ok := item.(string)
+			if !ok {
+				return nil, "", errors.New("invalid parameter")
+			}
+			ids := make([]int64, 0)
+			for _, strID := range strings.Split(strItem, ",") {
+				id, err := strconv.ParseInt(strID, 10, 64)
+				if err != nil {
+					return nil, "", err
+				}
+				ids = append(ids, id)
+			}
+
+			cond := make(map[string]interface{})
+			cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
+			q := &metadata.QueryInput{
+				Condition: cond,
+				Fields:    "",
+				Start:     0,
+				Limit:     common.BKNoLimit,
+				Sort:      "",
+			}
+
+			asst, _, err := lgc.getInstAsst(ownerID, val, strings.Split(strItem, ","), pheader, q)
+			if err != nil {
+				return nil, "", fmt.Errorf("get instance asst failed, err: %v", err)
+			}
+			hostInfo[key] = asst
+		}
+	}
+
+	ip := hostInfo[common.BKHostInnerIPField].(string)
+	return hostInfo, ip, nil
+}
 
 func (lgc *Logics) GetConfigByCond(pheader http.Header, cond map[string][]int64) ([]map[string]int64, error) {
 	configArr := make([]map[string]int64, 0)
@@ -42,33 +119,12 @@ func (lgc *Logics) GetConfigByCond(pheader http.Header, cond map[string][]int64)
 		return nil, fmt.Errorf("get module host config failed, err: %v, %v", err, result.ErrMsg)
 	}
 
-	for _, infos := range result.Data {
-		info := infos.(map[string]interface{})
-		hostID, err := info[common.BKHostIDField].(json.Number).Int64()
-		if err != nil {
-			return nil, err
-		}
-
-		setID, err := info[common.BKSetIDField].(json.Number).Int64()
-		if err != nil {
-			return nil, err
-		}
-
-		moduleID, err := info[common.BKModuleIDField].(json.Number).Int64()
-		if err != nil {
-			return nil, err
-		}
-
-		appID, err := info[common.BKAppIDField].(json.Number).Int64()
-		if err != nil {
-			return nil, err
-		}
-
+	for _, info := range result.Data {
 		data := make(map[string]int64)
-		data[common.BKAppIDField] = appID
-		data[common.BKSetIDField] = setID
-		data[common.BKModuleIDField] = moduleID
-		data[common.BKHostIDField] = hostID
+		data[common.BKAppIDField] = info.AppID
+		data[common.BKSetIDField] = info.SetID
+		data[common.BKModuleIDField] = info.ModuleID
+		data[common.BKHostIDField] = info.HostID
 		configArr = append(configArr, data)
 	}
 	return configArr, nil
@@ -182,18 +238,25 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		return errors.New(lang.Languagef("host_agent_add_host_module_fail", err.Error()))
 	}
 
-	//prepare the log
-	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
-	logObj := NewHostLog(req, common.BKDefaultOwnerID, "", hostAddr, ObjAddr, hostLogFields)
-	content, _ := logObj.GetHostLog(fmt.Sprintf("%d", hostID), false)
-	logAPIClient := sourceAuditAPI.NewClient(auditAddr)
-	logAPIClient.AuditHostLog(hostID, content, "enter IP HOST", ip, ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
-	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
-	logClient.SetHostID([]int{hostID})
-	logClient.SetDesc("host module change")
-	logClient.SaveLog(fmt.Sprintf("%d", appID), user)
-	return nil
+	audit := lgc.NewHostLog(pheader, ownerID)
+	if err := audit.WithPrevious(strconv.FormatInt(hostID, 10), nil); err != nil {
+		return fmt.Errorf("audit host log, but get pre data failed, err: %v", err)
+	}
+	content := audit.GetContent(hostID)
+	log := common.KvMap{common.BKContentField: content, common.BKOpDescField: "enter ip host", common.BKHostInnerIPField: audit.ip, common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": hostID}
+	aResult, err := lgc.CoreAPI.AuditController().AddHostLog(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, pheader, log)
+	if err != nil || (err == nil && !aResult.Result) {
+		return fmt.Errorf("audit host module log failed, err: %v, %v", err, aResult.ErrMsg)
+	}
 
+	hmAudit := lgc.NewHostModuleLog(pheader, []int64{hostID})
+	if err := hmAudit.WithPrevious(); err != nil {
+		return fmt.Errorf("audit host module log, but get pre data failed, err: %v", err)
+	}
+	if err := hmAudit.SaveAudit(strconv.FormatInt(appID, 10), user, "host module change"); err != nil {
+		return fmt.Errorf("audit host module log, but get pre data failed, err: %v", err)
+	}
+	return nil
 }
 
 func (lgc *Logics) GetHostInfoByConds(pheader http.Header, cond map[string]interface{}) ([]map[string]interface{}, error) {
@@ -213,9 +276,15 @@ func (lgc *Logics) GetHostInfoByConds(pheader http.Header, cond map[string]inter
 }
 
 // HostSearch search host by mutiple condition
-func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSearch, isDetail bool) (interface{}, error) {
+const (
+	SplitFlag      = "##"
+	TopoSetName    = "TopSetName"
+	TopoModuleName = "TopModuleName"
+)
+
+func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSearch, isDetail bool) (*metadata.SearchHost, error) {
 	var hostCond, appCond, setCond, moduleCond, mainlineCond metadata.SearchCondition
-	objectCondMap := make(map[string][]interface{}, 0)
+	objectCondMap := make(map[string][]metadata.ConditionItem, 0)
 	appIDArr := make([]int64, 0)
 	setIDArr := make([]int64, 0)
 	moduleIDArr := make([]int64, 0)
@@ -233,12 +302,11 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	setIDNameMap := make(map[int64]string)
 
 	hostModuleMap := make(map[int64]interface{})
-	hostSetMap := make(map[int64]interface{})
+	hostSetMap := make(map[int64]mapstr.MapStr)
 	hostAppMap := make(map[int64]interface{})
 
-	result := make(map[string]interface{})
-	totalInfo := make([]interface{}, 0)
-	moduleHostConfig := make(map[string][]int, 0)
+	totalInfo := make([]mapstr.MapStr, 0)
+	moduleHostConfig := make(map[string][]int64)
 
 	for _, object := range data.Condition {
 		if object.ObjectID == common.BKInnerObjIDHost {
@@ -258,14 +326,15 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 	//search appID by cond
 	if -1 != data.AppID && 0 != data.AppID {
-		cond := make(map[string]interface{})
-		cond["field"] = common.BKAppIDField
-		cond["operator"] = common.BKDBEQ
-		cond["value"] = data.AppID
-		appCond.Condition = append(appCond.Condition, cond)
+		appCond.Condition = append(appCond.Condition, metadata.ConditionItem{
+			Field:    common.BKAppIDField,
+			Operator: common.BKDBEQ,
+			Value:    data.AppID,
+		})
 	}
+
+	var err error
 	if len(appCond.Condition) > 0 {
-		var err error
 		appIDArr, err = lgc.GetAppIDByCond(pheader, appCond.Condition)
 		if err != nil {
 			return nil, err
@@ -273,33 +342,45 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	}
 	//search mainline object by cond
 	if len(mainlineCond.Condition) > 0 {
-		objSetIDArr = GetSetIDByObjectCond(req, objCtrl, data.AppID, mainlineCond.Condition)
+		objSetIDArr, err = lgc.GetSetIDByObjectCond(pheader, data.AppID, mainlineCond.Condition)
+		if err != nil {
+			return nil, err
+		}
 	}
 	//search set by appcond
 	if len(setCond.Condition) > 0 || len(mainlineCond.Condition) > 0 {
 		if len(appCond.Condition) > 0 {
-			cond := make(map[string]interface{})
-			cond["field"] = common.BKAppIDField
-			cond["operator"] = common.BKDBIN
-			cond["value"] = appIDArr
-			setCond.Condition = append(setCond.Condition, cond)
+			setCond.Condition = append(setCond.Condition, metadata.ConditionItem{
+				Field:    common.BKAppIDField,
+				Operator: common.BKDBIN,
+				Value:    appIDArr,
+			})
 		}
 		if len(mainlineCond.Condition) > 0 {
-			cond := make(map[string]interface{})
-			cond["field"] = common.BKSetIDField
-			cond["operator"] = common.BKDBIN
-			cond["value"] = objSetIDArr
-			setCond.Condition = append(setCond.Condition, cond)
+			setCond.Condition = append(setCond.Condition, metadata.ConditionItem{
+				Field:    common.BKSetIDField,
+				Operator: common.BKDBIN,
+				Value:    objSetIDArr,
+			})
 		}
-		setIDArr, _ = GetSetIDByCond(req, objCtrl, setCond.Condition)
+		setIDArr, err = lgc.GetSetIDByCond(pheader, setCond.Condition)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//search host id by object
 	firstCond := true
 	if len(objectCondMap) > 0 {
 		for objID, objCond := range objectCondMap {
-			instIDArr := GetObjectInstByCond(req, objID, objCtrl, objCond)
-			instHostIDArr := GetHostIDByInstID(req, objID, objCtrl, instIDArr)
+			instIDArr, err := lgc.GetObjectInstByCond(pheader, objID, objCond)
+			if err != nil {
+				return nil, err
+			}
+			instHostIDArr, err := lgc.GetHostIDByInstID(pheader, objID, instIDArr)
+			if err != nil {
+				return nil, err
+			}
 			if firstCond {
 				instAsstHostIDArr = instHostIDArr
 			} else {
@@ -312,21 +393,24 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	instAsstHostIDArr = util.IntArrayUnique(instAsstHostIDArr)
 	if len(moduleCond.Condition) > 0 {
 		if len(setCond.Condition) > 0 {
-			cond := make(map[string]interface{})
-			cond["field"] = common.BKSetIDField
-			cond["operator"] = common.BKDBIN
-			cond["value"] = setIDArr
-			moduleCond.Condition = append(moduleCond.Condition, cond)
+			moduleCond.Condition = append(moduleCond.Condition, metadata.ConditionItem{
+				Field:    common.BKSetIDField,
+				Operator: common.BKDBIN,
+				Value:    setIDArr,
+			})
 		}
 		if len(appCond.Condition) > 0 {
-			cond := make(map[string]interface{})
-			cond["field"] = common.BKAppIDField
-			cond["operator"] = common.BKDBIN
-			cond["value"] = appIDArr
-			moduleCond.Condition = append(moduleCond.Condition, cond)
+			moduleCond.Condition = append(moduleCond.Condition, metadata.ConditionItem{
+				Field:    common.BKSetIDField,
+				Operator: common.BKDBIN,
+				Value:    appIDArr,
+			})
 		}
 		//search module by cond
-		moduleIDArr, _ = GetModuleIDByCond(req, objCtrl, moduleCond.Condition)
+		moduleIDArr, err = lgc.GetModuleIDByCond(pheader, moduleCond.Condition)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if len(appCond.Condition) > 0 {
@@ -341,42 +425,26 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	if len(objectCondMap) > 0 {
 		moduleHostConfig[common.BKHostIDField] = instAsstHostIDArr
 	}
-	hostIDArr, _ = GetHostIDByCond(req, hostCtrl, moduleHostConfig)
+	hostIDArr, err = lgc.GetHostIDByCond(pheader, moduleHostConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || -1 != data.AppID {
-		cond := make(map[string]interface{})
-		cond["field"] = common.BKHostIDField
-		cond["operator"] = common.BKDBIN
-		cond["value"] = hostIDArr
-		hostCond.Condition = append(hostCond.Condition, cond)
+		hostCond.Condition = append(hostCond.Condition, metadata.ConditionItem{
+			Field:    common.BKHostIDField,
+			Operator: common.BKDBIN,
+			Value:    hostIDArr,
+		})
 	}
 	if 0 != len(hostCond.Fields) {
 		hostCond.Fields = append(hostCond.Fields, common.BKHostIDField)
 	}
 
-	url := hostCtrl + "/host/v1/hosts/search"
-	start := data.Page.Start
-	limit := data.Page.Limit
-	sort := data.Page.Sort
-	body := make(map[string]interface{})
-	body["start"] = start
-	body["limit"] = limit
-	body["sort"] = sort
-	body["fields"] = strings.Join(hostCond.Fields, ",")
-
-	bodyContent, _ := json.Marshal(body)
-	blog.Info("Get Host By Cond url :%s", url)
-	blog.Info("Get Host By Cond content :%s", string(bodyContent))
-	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("Get Host By Cond return :%s", string(reply))
-	if err != nil {
-		//cli.ResponseFailed(common.CC_Err_Comm_Host_Get_FAIL, common.CC_Err_Comm_Host_Get_FAIL_STR, resp)
-		return nil, errors.New(common.CC_Err_Comm_Host_Get_FAIL_STR)
-	}
 	condition := make(map[string]interface{})
 	hostParse.ParseHostParams(hostCond.Condition, condition)
 	hostParse.ParseHostIPParams(data.Ip, condition)
-	body["condition"] = condition
+
 	query := &metadata.QueryInput{
 		Condition: condition,
 		Start:     data.Page.Start,
@@ -392,40 +460,34 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	hostResult := gResult.Data.Info
 
 	// deal the host
-	instapi.Inst.InitInstHelper(hostCtrl, objCtrl)
-	var retStrErr int
+	var retStrErr error
+	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit}
 	if true == isDetail {
-		hostResult, retStrErr = instapi.Inst.GetInstAsstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
-			"start": 0,
-			"limit": common.BKNoLimit,
-			"sort":  "",
-		})
+		hostResult, retStrErr = lgc.GetInstAsstDetailsSub(pheader, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, page)
 	} else {
-		hostResult, retStrErr = instapi.Inst.GetInstDetailsSub(req, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, map[string]interface{}{
-			"start": 0,
-			"limit": common.BKNoLimit,
-			"sort":  "",
-		})
+		hostResult, retStrErr = lgc.GetInstDetailsSub(pheader, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, page)
 	}
-
-	if common.CCSuccess != retStrErr {
+	if err != nil {
 		blog.Error("failed to replace association object, error code is %d", retStrErr)
+		return nil, err
 	}
 
-	cnt := hostResult["count"]
-	hostInfo := hostResult["info"].([]interface{})
-	result["count"] = cnt
-	resHostIDArr := make([]int, 0)
-	queryCond := make(map[string]interface{})
-	for _, j := range hostInfo {
-		host := j.(map[string]interface{})
-		hostID, _ := host[common.BKHostIDField].(json.Number).Int64()
-		resHostIDArr = append(resHostIDArr, int(hostID))
-
-		queryCond[common.BKHostIDField] = resHostIDArr
+	resHostIDArr := make([]int64, 0)
+	queryCond := make(map[string][]int64)
+	for _, j := range hostResult {
+		hostID, err := j[common.BKHostIDField].(json.Number).Int64()
+		if err != nil {
+			return nil, err
+		}
+		resHostIDArr = append(resHostIDArr, hostID)
 	}
-	mhconfig, _ := GetConfigByCond(req, hostCtrl, queryCond)
-	blog.Info("get modulehostconfig map:%v", mhconfig)
+	queryCond[common.BKHostIDField] = resHostIDArr
+
+	mhconfig, err := lgc.GetConfigByCond(pheader, queryCond)
+	if err != nil {
+		return nil, err
+	}
+	blog.V(3).Infof("get modulehostconfig map:%v", mhconfig)
 	for _, mh := range mhconfig {
 		hostID := mh[common.BKHostIDField]
 		hostAppConfig[hostID] = append(hostAppConfig[hostID], mh[common.BKAppIDField])
@@ -440,8 +502,6 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		disModuleIDArr = append(disModuleIDArr, mh[common.BKModuleIDField])
 	}
 	if nil != appCond.Fields {
-		//get app fields
-
 		exist := util.InArray(common.BKAppIDField, appCond.Fields)
 		if 0 != len(appCond.Fields) && !exist {
 			appCond.Fields = append(appCond.Fields, common.BKAppIDField)
@@ -451,11 +511,12 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		celld[common.BKDBIN] = disAppIDArr
 		cond[common.BKAppIDField] = celld
 		fields := strings.Join(appCond.Fields, ",")
-		hostAppMap, _ = GetAppMapByCond(req, fields, objCtrl, cond)
+		hostAppMap, err = lgc.GetAppMapByCond(pheader, fields, cond)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if nil != setCond.Fields {
-		//get set fields
-
 		exist := util.InArray(common.BKSetIDField, setCond.Fields)
 		if !exist && 0 != len(setCond.Fields) {
 			setCond.Fields = append(setCond.Fields, common.BKSetIDField)
@@ -465,11 +526,12 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		celld[common.BKDBIN] = disSetIDArr
 		cond[common.BKSetIDField] = celld
 		fields := strings.Join(setCond.Fields, ",")
-		hostSetMap, _ = GetSetMapByCond(req, fields, objCtrl, cond)
+		hostSetMap, err = lgc.GetSetMapByCond(pheader, fields, cond)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if nil != moduleCond.Fields {
-		//get module fields
-
 		exist := util.InArray(common.BKModuleIDField, moduleCond.Fields)
 		if !exist && 0 != len(moduleCond.Fields) {
 			moduleCond.Fields = append(moduleCond.Fields, common.BKModuleIDField)
@@ -479,18 +541,18 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		celld[common.BKDBIN] = disModuleIDArr
 		cond[common.BKModuleIDField] = celld
 		fields := strings.Join(moduleCond.Fields, ",")
-		hostModuleMap, _ = GetModuleMapByCond(req, fields, objCtrl, cond)
+		hostModuleMap, _ = lgc.GetModuleMapByCond(pheader, fields, cond)
 	}
 
 	//com host info
-	for _, j := range hostInfo {
-		host := j.(map[string]interface{})
-		hostID, _ := host[common.BKHostIDField].(json.Number).Int64()
-		hostID32 := int(hostID)
-		hostData := make(map[string]interface{})
+	for _, host := range hostResult {
+		hostID, err := host[common.BKHostIDField].(json.Number).Int64()
+		if err != nil {
+			return nil, fmt.Errorf("invalid hostid: %v", err)
+		}
 
 		//appdata
-		hostAppIDArr, ok := hostAppConfig[hostID32]
+		hostAppIDArr, ok := hostAppConfig[hostID]
 		if false == ok {
 			continue
 		}
@@ -501,10 +563,11 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 				hostAppData = append(hostAppData, appInfo)
 			}
 		}
+		hostData := make(map[string]interface{})
 		hostData[common.BKInnerObjIDApp] = hostAppData
 
 		//setdata
-		hostSetIDArr, ok := hostSetConfig[hostID32]
+		hostSetIDArr, ok := hostSetConfig[hostID]
 		hostSetData := make([]interface{}, 0)
 		for _, setID := range hostSetIDArr {
 			setInfo, isOk := hostSetMap[setID]
@@ -527,17 +590,13 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 			if false == isOk {
 				continue
 			}
-			data, isOk := setInfo.(map[string]interface{})
-			if false == isOk {
-				continue
-			}
 
-			setName, isOk := data[common.BKSetNameField].(string)
+			setName, isOk := setInfo[common.BKSetNameField].(string)
 			if false == isOk {
 				continue
 			}
 			datacp := make(map[string]interface{})
-			for key, val := range data {
+			for key, val := range setInfo {
 				datacp[key] = val
 			}
 			datacp[TopoSetName] = appName + SplitFlag + setName
@@ -547,7 +606,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		hostData[common.BKInnerObjIDSet] = hostSetData
 
 		//moduledata
-		hostModuleIDArr, ok := hostModuleConfig[hostID32]
+		hostModuleIDArr, ok := hostModuleConfig[hostID]
 		hostModuleData := make([]interface{}, 0)
 		for _, ModuleID := range hostModuleIDArr {
 			moduleInfo, ok := hostModuleMap[ModuleID]
@@ -593,12 +652,30 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		}
 		hostData[common.BKInnerObjIDModule] = hostModuleData
 
-		hostData[common.BKInnerObjIDHost] = j
+		hostData[common.BKInnerObjIDHost] = host
 		totalInfo = append(totalInfo, hostData)
 	}
 
-	result["info"] = totalInfo
-	result["count"] = cnt
+	return &metadata.SearchHost{
+		Info:  totalInfo,
+		Count: gResult.Data.Count,
+	}, nil
+}
 
-	return result, err
+func (lgc *Logics) GetHostIDByCond(pheader http.Header, cond map[string][]int64) ([]int64, error) {
+	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), pheader, cond)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, val := range result.Data {
+		id, err := val.Int64(common.BKInstIDField)
+		if err != nil {
+			return nil, err
+		}
+		hostIDs = append(hostIDs, id)
+	}
+
+	return hostIDs, nil
 }

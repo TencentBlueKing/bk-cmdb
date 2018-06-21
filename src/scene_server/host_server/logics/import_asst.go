@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sceneUtil "configcenter/src/scene_server/common/util"
-	"configcenter/src/scene_server/host_server/service"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 type asstObjectInst struct {
@@ -309,13 +309,8 @@ func (a *asstObjectInst) getAsstObjectConds(infos map[int64]map[string]interface
 
 //GetObjectFields get object fields
 func (a *asstObjectInst) getObjectFields(objID, sort string) ([]metadata.ObjAttDes, error) {
-	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit}
-	query := &metadata.QueryInput{
-		Condition: service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(a.ownerID).WithPage(page).Data(),
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKPropertyIDField,
-	}
+	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKPropertyIDField}
+	query := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(a.ownerID).WithPage(page).Data()
 	result, err := a.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), a.pheader, query)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("search host attributes failed, err: %v, result err: %s", err, result.ErrMsg)
@@ -329,7 +324,7 @@ func (a *asstObjectInst) getObjectFields(objID, sort string) ([]metadata.ObjAttD
 			continue
 		}
 
-		cond := service.NewOperation().WithPropertyID(attr.PropertyID).WithOwnerID(a.ownerID).WithObjID(attr.ObjectID).Data()
+		cond := hutil.NewOperation().WithPropertyID(attr.PropertyID).WithOwnerID(a.ownerID).WithObjID(attr.ObjectID).Data()
 		assResult, err := a.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.pheader, cond)
 		if err != nil || (err == nil && !result.Result) {
 			return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)

@@ -579,8 +579,8 @@ func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header
 	return
 }
 
-func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+	resp = new(metadata.SearchHostResult)
 	subPath := "/search"
 
 	err = hs.client.Post().
@@ -593,8 +593,8 @@ func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params
 	return
 }
 
-func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+	resp = new(metadata.SearchHostResult)
 	subPath := "/search/asstdetail"
 
 	err = hs.client.Post().
