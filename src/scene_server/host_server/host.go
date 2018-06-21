@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"runtime"
 
 	"configcenter/src/common"
@@ -21,7 +22,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app"
 	"configcenter/src/scene_server/host_server/app/options"
-	"context"
 	"github.com/spf13/pflag"
 )
 
