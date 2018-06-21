@@ -14,6 +14,7 @@ package host
 
 import (
 	"io"
+	"net/http"
 
 	"github.com/emicklei/go-restful"
 
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/util"
 )
 
 var host = &hostAction{}
@@ -138,14 +140,16 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 
 func (cli *hostAction) newHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/hosts/sync/new/host"
+	defErr := cli.cc.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
-	cli.CallResponse(func() (string, error) {
-		rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
-		if nil != err {
-			blog.Errorf("newHostSyncAppTopo  http do err, url:%s, err:%s", url, err.Error())
-		}
-		return rsp, err
-	}, resp)
+	rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+	if nil != err {
+		blog.Errorf("newHostSyncAppTopo  http do err, url:%s, err:%s", url, err.Error())
+		cli.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	io.WriteString(resp, rsp)
+
 }
 
 func init() {
