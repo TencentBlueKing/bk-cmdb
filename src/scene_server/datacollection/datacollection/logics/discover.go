@@ -71,7 +71,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 		ts:                     time.Now(),
 		id:                     xid.New().String()[5:],
 		maxConcurrent:          runtime.NumCPU(),
-		getMasterInterval:      time.Second * 10,
+		getMasterInterval:      time.Second * 63,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
 		wg:                     wg,
 		cc:                     cc,
@@ -87,7 +87,6 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 func (d *Discover) Start() {
 	defer d.wg.Done()
 
-	//go d.fetchDB()
 	go d.Run()
 }
 
@@ -130,8 +129,6 @@ func (d *Discover) Run() {
 			addCount = 0
 			d.ts = time.Now()
 
-			blog.Infof("[%v]: read messages before: %d", d.ts, len(msgs))
-
 		f:
 		// 持续读取1s通道内的消息，最多读取d.maxSize个
 			for {
@@ -153,22 +150,23 @@ func (d *Discover) Run() {
 			delayHandleCnt = 0
 			for {
 
-				blog.Infof("read messages after: %d", len(msgs))
-
 				// 延迟处理的次数超过一定程度？
 				if delayHandleCnt > d.maxConcurrent*2 {
 					blog.Warnf("msg process delay %d times, reset handlers", delayHandleCnt)
 					close(d.resetHandle)
 					d.resetHandle = make(chan struct{})
 
-					// todo 延迟处理计数清零？
+					// 延迟处理计数清零
 					//delayHandleCnt = 0
 				}
 
 				if atomic.LoadInt64(&msgHandlerCnt) < int64(d.maxConcurrent) {
+
 					atomic.AddInt64(&msgHandlerCnt, 1)
 					blog.Infof("start message handler: %d", msgHandlerCnt)
+
 					go d.handleMsg(msgs, d.resetHandle)
+
 					break
 				}
 
@@ -216,7 +214,7 @@ func (d *Discover) subChan() {
 		}
 
 		received, err := subChan.Receive()
-		blog.Infof("start receive message: %v\n", received)
+		//blog.Debug("start receive message: %v\n", received)
 		if nil != err {
 
 			if err == redis.Nil || err == io.EOF {
@@ -234,7 +232,7 @@ func (d *Discover) subChan() {
 			continue
 		}
 
-		// todo 生产者生产消息速度大于消费者，自动清理超出的历史消息？？
+		// 生产者生产消息速度大于消费者，自动清理超出的历史消息
 		chanLen := len(d.msgChan)
 		if d.maxSize*2 <= chanLen {
 			//  if msgChan fulled, clear old msgs
@@ -244,7 +242,8 @@ func (d *Discover) subChan() {
 
 		d.msgChan <- msg.Payload
 		cnt++
-		blog.Infof("send %dth message to msgChan", cnt)
+
+		blog.Infof("send %d message to discover channel", cnt)
 
 		if cnt%10000 == 0 {
 			blog.Infof("receive rate: %d/sec", int(float64(cnt)/time.Now().Sub(ts).Seconds()))
@@ -268,7 +267,7 @@ func (d *Discover) clearOldMsg() {
 		d.Lock()
 		cnt++
 
-		// todo 清理时，若发生新的消息写入，则重新获取消息数量？
+		// 清理时，若发生新的消息写入，则重新获取消息数量？
 		if ts != d.ts {
 			blog.Infof("clearOldMsg")
 			msgCnt = len(d.msgChan) - d.maxSize
@@ -282,7 +281,7 @@ func (d *Discover) clearOldMsg() {
 		d.Unlock()
 	}
 
-	// todo 确认最终清理完毕（清理时间等于最后一次的消息写入时间）
+	// 确认最终清理完毕（清理时间等于最后一次的消息写入时间）
 	if ts == d.ts {
 		close(d.resetHandle)
 	}
@@ -349,7 +348,7 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 
 	defer atomic.AddInt64(&msgHandlerCnt, -1)
 
-	blog.Infof("handle %d num message, routines %d", len(msgs), atomic.LoadInt64(&msgHandlerCnt))
+	blog.Infof("discover-master: handle %d num message, routines %d", len(msgs), atomic.LoadInt64(&msgHandlerCnt))
 
 	for index, msg := range msgs {
 
