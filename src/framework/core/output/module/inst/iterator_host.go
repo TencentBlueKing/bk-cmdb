@@ -13,13 +13,12 @@
 package inst
 
 import (
+	"io"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
-
-	"fmt"
 )
 
 var _ HostIterator = (*hostIterator)(nil)
@@ -92,7 +91,7 @@ func (cli *hostIterator) Next() (HostInterface, error) {
 		if nil != err {
 			return nil, err
 		}
-		fmt.Println("the err:", err)
+		//fmt.Println("the err:", err)
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
 			return nil, io.EOF
@@ -108,5 +107,10 @@ func (cli *hostIterator) Next() (HostInterface, error) {
 		target: cli.targetModel,
 		datas:  tmpItem,
 	}
+
+	if err := returnItem.reset(); nil != err {
+		return nil, err
+	}
+
 	return returnItem, nil
 }

@@ -76,6 +76,7 @@ func (cli MapStr) Int64(key string) (int64, error) {
 	default:
 		return 0, errors.New("invalid num")
 	case nil:
+
 		return 0, errors.New("invalid key(" + key + "), not found value")
 	case int:
 		return int64(t), nil
@@ -108,6 +109,7 @@ func (cli MapStr) Int(key string) (int, error) {
 	default:
 		return 0, errors.New("invalid num")
 	case nil:
+
 		return 0, errors.New("invalid key(" + key + "), not found value")
 	case int:
 		return t, nil
@@ -239,7 +241,13 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		val := reflect.ValueOf(cli[key])
 		switch val.Kind() {
 		default:
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+
+			return []MapStr{
+				MapStr{
+					key: val.Interface(),
+				},
+			}, nil
+
 		case reflect.Slice:
 			tmpval, ok := val.Interface().([]MapStr)
 			if ok {
@@ -250,6 +258,7 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		}
 
 	case nil:
+
 		return nil, fmt.Errorf("the key(%s) is invalid", key)
 	case []map[string]interface{}:
 		items := make([]MapStr, 0)
