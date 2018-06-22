@@ -26,10 +26,7 @@ var _ SetInterface = (*set)(nil)
 
 // SetInterface the set interface
 type SetInterface interface {
-	IsExists() (bool, error)
-	Create() error
-	Update() error
-	Save() error
+	Maintaince
 
 	GetModel() model.Model
 

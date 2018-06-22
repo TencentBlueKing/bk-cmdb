@@ -43,6 +43,73 @@ type HostWrapper struct {
 	host inst.HostInterface
 }
 
+// GetBizs return all business for the host
+func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
+
+	bizWraps := make([]*BusinessWrapper, 0)
+	bizs := cli.host.GetBizs()
+	for _, biz := range bizs {
+
+		supplier := biz.String(fieldSupplierAccount)
+		bizWrap, err := CreateBusiness(supplier)
+		if nil != err {
+			return nil, err
+		}
+		biz.ForEach(func(key string, val interface{}) {
+			bizWrap.SetValue(key, val)
+		})
+
+		bizWraps = append(bizWraps, bizWrap)
+	}
+
+	return bizWraps, nil
+}
+
+// GetSets return all sets for the host
+func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
+
+	setWraps := make([]*SetWrapper, 0)
+	sets := cli.host.GetSets()
+	for _, set := range sets {
+
+		supplier := set.String(fieldSupplierAccount)
+		setWrap, err := CreateSet(supplier)
+		if nil != err {
+			return nil, err
+		}
+		set.ForEach(func(key string, val interface{}) {
+			setWrap.SetValue(key, val)
+		})
+
+		setWraps = append(setWraps, setWrap)
+	}
+
+	return setWraps, nil
+}
+
+// GetModules return all modules for the module
+func (cli *HostWrapper) GetModules() ([]*ModuleWrapper, error) {
+
+	moduleWraps := make([]*ModuleWrapper, 0)
+	modules := cli.host.GetModules()
+	for _, module := range modules {
+
+		supplier := module.String(fieldSupplierAccount)
+		moduleWrap, err := CreateModule(supplier)
+		if nil != err {
+			return nil, err
+		}
+
+		module.ForEach(func(key string, val interface{}) {
+			moduleWrap.SetValue(key, val)
+		})
+
+		moduleWraps = append(moduleWraps, moduleWrap)
+	}
+
+	return moduleWraps, nil
+}
+
 // Transfer transfer operation
 func (cli *HostWrapper) Transfer() inst.TransferInterface {
 	return cli.host.Transfer()

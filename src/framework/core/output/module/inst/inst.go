@@ -25,10 +25,7 @@ var _ CommonInstInterface = (*inst)(nil)
 
 // CommonInstInterface the inst interface
 type CommonInstInterface interface {
-	IsExists() (bool, error)
-	Create() error
-	Update() error
-	Save() error
+	Maintaince
 
 	GetModel() model.Model
 
