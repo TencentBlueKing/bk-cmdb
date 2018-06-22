@@ -130,6 +130,9 @@ const (
 	// CCErrCommParamsShouldBeEnum set enum
 	CCErrCommParamsShouldBeEnum = 1199034
 
+	// CCErrCommXXExceedLimit  xx exceed limit number
+	CCErrCommXXExceedLimit = 1199035
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -231,8 +234,12 @@ const (
 
 	// CCErrTopoGetCloudErrStrFaild get cloud error
 	CCErrTopoGetCloudErrStrFaild = 1101031
-	//CCErrTopoCloudNotFound   cloud area not found
+	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
+	// CCErrTopoGetAppFaild search app err %s
+	CCErrTopoGetAppFaild = 1101033
+	// CCErrTopoGetModuleFailed search  module err %s
+	CCErrTopoGetModuleFailed = 1101034
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
