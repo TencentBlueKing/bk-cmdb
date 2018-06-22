@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -408,25 +409,25 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 	dstIp := formData.Get("dstIp")
 	platId := formData.Get("platId")
 
-	appIdI, err := strconv.Atoi(appId)
+	appIdI, err := strconv.ParseInt(appId, 10, 64)
 	if nil != err {
 		blog.Error("CloneHostProperty error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
-	platIdI, err := strconv.Atoi(platId)
+	platIdI, err := strconv.ParseInt(platId, 10, 64)
 
 	if nil != err {
 		blog.Error("CloneHostProperty error: %s", msg)
 		platIdI = 0
 	}
 
-	param := make(common.KvMap)
-	param[common.BKAppIDField] = appIdI
-	param[common.BKOrgIPField] = orgIp
-	param[common.BKDstIPField] = dstIp
-	param[common.BKCloudIDField] = platIdI
+	var param metadata.HostCloneInputParams
+	param.AppID = appIdI
+	param.DstIP = dstIp
+	param.OrgIP = orgIp
+	param.PlatID = platIdI
 	paramJson, _ := json.Marshal(param)
 
 	url := fmt.Sprintf("%s/host/v1/propery/clone", cli.CC.HostAPI())

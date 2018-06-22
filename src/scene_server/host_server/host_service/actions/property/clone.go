@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/host_service/logics"
 	apilogic "configcenter/src/scene_server/host_server/host_service/logics/phpapi"
@@ -42,13 +43,6 @@ func init() {
 	host.CreateAction()
 }
 
-type InputParams struct {
-	OrgIP  string `json:"bk_org_ip"`
-	DstIP  string `json:"bk_dst_ip"`
-	AppID  int64  `json:"bk_biz_id"`
-	PlatID int64  `json:"bk_cloud_id"`
-}
-
 // cloneHostProperty  clone host property
 func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Response) {
 	defError := cli.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
@@ -59,7 +53,8 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 		cli.ResponseFailed(common.CCErrCommHTTPReadBodyFailed, defError.Error(common.CCErrCommHTTPReadBodyFailed).Error(), resp)
 		return
 	}
-	var input InputParams
+
+	var input metadata.HostCloneInputParams
 	err = json.Unmarshal(value, &input)
 	if nil != err {
 		blog.Error("Unmarshal json failed, error:%v", err)
@@ -68,14 +63,10 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 	}
 
 	blog.Debug("CloneHostProperty input:%v", input)
-	appId := input.AppID
-	orgIp := input.OrgIP
-	dstIp := input.DstIP
-	platId := input.PlatID
 
 	condition := common.KvMap{
-		common.BKHostInnerIPField: orgIp,
-		common.BKCloudIDField:     platId,
+		common.BKHostInnerIPField: input.OrgIP,
+		common.BKCloudIDField:     input.PlatID,
 	}
 
 	// deal with origin IP
@@ -89,7 +80,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 	}
 
 	if len(hostIdArr) == 0 {
-		blog.Error("clone host getHostMapByCond error, ip:%s, platid:%s", orgIp, platId)
+		blog.Error("clone host getHostMapByCond error, ip:%s, platid:%s", input.OrgIP, input.PlatID)
 		cli.ResponseFailed(common.CCErrHostDetailFail, "not found host ", resp)
 		return
 	}
@@ -101,9 +92,16 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 		return
 	}
 
+	hostIDI, ok := hostMapData[common.BKHostIDField].(int64)
+	if false == ok {
+		blog.Error("host id not int : %v", hostMapData[common.BKHostIDField])
+		cli.ResponseFailed(common.CCErrHostDetailFail, "source ip not found", resp)
+		return
+	}
+
 	configCond := map[string]interface{}{
-		common.BKHostIDField: []interface{}{hostMapData[common.BKHostIDField]},
-		common.BKAppIDField:  []int64{appId},
+		common.BKHostIDField: []int64{hostIDI},
+		common.BKAppIDField:  []int64{input.AppID},
 	}
 	// check is ip exist
 	configData, err := logics.GetConfigByCond(req, host.CC.HostCtrl(), configCond)
@@ -120,20 +118,20 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 		return
 	}
 	// deal with destination IP
-	dstIpArr := strings.Split(dstIp, ",")
+	dstIpArr := strings.Split(input.DstIP, ",")
 
 	// get exist ip
 	dstCondition := map[string]interface{}{
 		common.BKHostInnerIPField: map[string]interface{}{
 			common.BKDBIN: dstIpArr,
 		},
-		common.BKCloudIDField: platId,
+		common.BKCloudIDField: input.PlatID,
 	}
 	dstHostMap, dstHostIdArr, err := apilogic.GetHostMapByCond(req, dstCondition)
 	blog.Debug("dstHostMap:%v", dstHostMap)
 
 	dstConfigCond := map[string]interface{}{
-		common.BKAppIDField:  []int64{appId},
+		common.BKAppIDField:  []int64{input.AppID},
 		common.BKHostIDField: dstHostIdArr,
 	}
 	dstHostIdArrV, err := logics.GetHostIDByCond(req, host.CC.HostCtrl(), dstConfigCond)
@@ -187,7 +185,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 	// dstIpArr: all hosts to be cloned, existIpArr: existing host to be cloned
 	blog.Debug("existIpArr:%v", existIPMap)
 	for dstIpV, _ := range dstIPMap {
-		if dstIpV == orgIp {
+		if dstIpV == input.OrgIP {
 			blog.Debug("clone host updateHostMain err:dstIp and orgIp cannot be the same")
 			msg := "dstIp and orgIp cannot be the same"
 			cli.ResponseFailed(common.CCErrHostCreateFail, msg, resp)
@@ -203,7 +201,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 
 			updateHostData[common.BKHostInnerIPField] = dstIpV
 			delete(updateHostData, common.BKHostIDField)
-			res, err := apilogic.UpdateHostMain(req, hostCondition, updateHostData, int(appId), host.CC.HostCtrl(), host.CC.ObjCtrl(), host.CC.AuditCtrl(), cli.CC.Error)
+			res, err := apilogic.UpdateHostMain(req, hostCondition, updateHostData, int(input.AppID), host.CC.HostCtrl(), host.CC.ObjCtrl(), host.CC.AuditCtrl(), cli.CC.Error)
 			if nil != err {
 				blog.Debug("clone host updateHostMain err: %v", err)
 				msg := fmt.Sprintf("clone host error:%s", dstIpV)
@@ -212,7 +210,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 			}
 			blog.Debug("clone host updateHostMain res:%v", res)
 			params := make(map[string]interface{})
-			params[common.BKAppIDField] = appId
+			params[common.BKAppIDField] = input.AppID
 			params[common.BKHostIDField] = hostID
 
 			delModulesURL := cli.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
@@ -239,7 +237,7 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 			hostID = cloneHostId
 
 		}
-		err = apilogic.AddModuleHostConfig(req, hostID, appId, moduleIDs, host.CC.HostCtrl())
+		err = apilogic.AddModuleHostConfig(req, hostID, input.AppID, moduleIDs, host.CC.HostCtrl())
 		if nil != err {
 			blog.Debug("clone host addModuleHostConfig err:%v", err)
 			msg := fmt.Sprintf("clone host get source ip host module relation failure, error:%s", err.Error())
