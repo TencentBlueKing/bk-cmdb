@@ -16,8 +16,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -26,10 +24,27 @@ func init() {
 	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initObject)
 }
 
-func (cli *topoAPI) initObject() {
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}", HandlerFunc: cli.CreateUserGroup})
-	cli.actions = append(cli.actions, action{Method: http.MethodDelete, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: cli.DeleteUserGroup})
-	cli.actions = append(cli.actions, action{Method: http.MethodPut, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: cli.UpdateUserGroup})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}/search", HandlerFunc: cli.SearchUserGroup})
+func (cli *topoAPI) initPrivilege() {
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: cli.UpdateUserGroupPrivi})
+	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: cli.GetUserGroupPrivi})
+	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/privilege/user/detail/{bk_supplier_account}/{user_name}", HandlerFunc: cli.GetUserPrivi})
 
+}
+
+// UpdateUserGroupPrivi search user goup
+func (cli *topoAPI) UpdateUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// GetUserGroupPrivi search user goup
+func (cli *topoAPI) GetUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// GetUserPrivi search user goup
+func (cli *topoAPI) GetUserPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
 }
