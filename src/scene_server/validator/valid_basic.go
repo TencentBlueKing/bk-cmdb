@@ -131,11 +131,9 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	//fmt.Printf("valdata:%+v\n", valData)
 	//valid unique
 	if validType == common.ValidCreate {
-		err = valid.validCreateUnique(valData)
-		return err
+		return valid.validCreateUnique(valData)
 	} else {
-		err = valid.validUpdateUnique(valData, instID)
-		return err
+		return valid.validUpdateUnique(valData, instID)
 	}
 
 }
