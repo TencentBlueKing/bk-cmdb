@@ -140,7 +140,14 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 
 func (cli *hostAction) setHostMoveToIdleModules(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/hosts/faultmodule/set"
-	rsp, _ := httpcli.ReqForward(req, url, common.HTTPCreate)
+	defErr := cli.cc.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+
+	rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+	if nil != err {
+		blog.Errorf("newHostSyncAppTopo  http do err, url:%s, err:%s", url, err.Error())
+		cli.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
 	io.WriteString(resp, rsp)
 }
 
