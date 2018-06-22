@@ -68,3 +68,11 @@ const (
 	// HostInnerIP the host innerip
 	HostInnerIP = "bk_host_innerip"
 )
+
+// Maintaince the operation method
+type Maintaince interface {
+	IsExists() (bool, error)
+	Create() error
+	Update() error
+	Save() error
+}

@@ -30,15 +30,16 @@ var _ HostInterface = (*host)(nil)
 
 // HostInterface the host interface
 type HostInterface interface {
-	IsExists() (bool, error)
-	Create() error
-	Update() error
-	Save() error
+	Maintaince
 
 	Transfer() TransferInterface
 
 	SetBusinessID(bizID int64)
 	SetModuleIDS(moduleIDS []int64)
+
+	GetBizs() []types.MapStr
+	GetSets() []types.MapStr
+	GetModules() []types.MapStr
 
 	GetModel() model.Model
 
@@ -50,10 +51,25 @@ type HostInterface interface {
 }
 
 type host struct {
+	bizs      []types.MapStr
+	sets      []types.MapStr
+	modules   []types.MapStr
 	bizID     int64
 	moduleIDS []int64
 	target    model.Model
 	datas     types.MapStr
+}
+
+func (cli *host) GetBizs() []types.MapStr {
+	return cli.bizs
+}
+
+func (cli *host) GetSets() []types.MapStr {
+	return cli.sets
+}
+
+func (cli *host) GetModules() []types.MapStr {
+	return cli.modules
 }
 
 func (cli *host) reset() error {
@@ -63,6 +79,7 @@ func (cli *host) reset() error {
 	if nil != err {
 		return fmt.Errorf("failed to get biz data , error info is %s", err.Error())
 	}
+	cli.bizs = datas
 
 	for _, dataVal := range datas {
 		id, err := dataVal.Int64(BusinessID)
@@ -78,6 +95,7 @@ func (cli *host) reset() error {
 	if nil != err {
 		return fmt.Errorf("failed to get module data , error info is %s", err.Error())
 	}
+	cli.modules = datas
 
 	for _, dataVal := range datas {
 		id, err := dataVal.Int64(ModuleID)
@@ -93,6 +111,7 @@ func (cli *host) reset() error {
 	if nil != err {
 		return fmt.Errorf("failed to get module data , error info is %s", err.Error())
 	}
+	cli.sets = datas
 
 	for _, dataVal := range datas {
 		id, err := dataVal.Int64(SetID)

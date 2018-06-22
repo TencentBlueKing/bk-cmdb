@@ -24,10 +24,7 @@ var _ ModuleInterface = (*module)(nil)
 
 // ModuleInterface the module interface
 type ModuleInterface interface {
-	IsExists() (bool, error)
-	Create() error
-	Update() error
-	Save() error
+	Maintaince
 
 	GetModel() model.Model
 

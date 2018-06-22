@@ -24,10 +24,7 @@ var _ BusinessInterface = (*business)(nil)
 
 // BusinessInterface the business interface
 type BusinessInterface interface {
-	IsExists() (bool, error)
-	Create() error
-	Update() error
-	Save() error
+	Maintaince
 
 	GetModel() model.Model
 
