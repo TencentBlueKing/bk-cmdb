@@ -44,7 +44,7 @@
         </div>
         <div class="userapi-group list">
             <ul class="userapi-list">
-                <li class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
+                <li :key="`${property.bkPropertyId}-${property.bkObjId}`" class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
                     <label class="userapi-name fl" :title="`${property.bkObjName} - ${property.bkPropertyName}`">{{property.bkObjName}} - {{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
@@ -114,7 +114,6 @@
                                 :multiple="true"
                                 :selected.sync="propertySelected[selectedObjId]">
                                     <bk-select-option v-for="(property, index) in object[selectedObjId]['properties']"
-                                        :disabled="property.disabled"
                                         :key="property['bk_property_id']"
                                         :value="property['bk_property_id']"
                                         :label="property['bk_property_name']">
@@ -511,6 +510,7 @@
                 }
             },
             addUserProperties () {
+                let selectedList = []
                 for (let key in this.propertySelected) {
                     if (this.propertySelected[key].length) {
                         this.propertySelected[key].split(',').map(bkPropertyId => {
@@ -521,6 +521,10 @@
                                 'bk_asst_obj_id': bkAsstObjId,
                                 'bk_obj_id': bkObjId
                             } = property
+                            selectedList.push({
+                                bkPropertyId,
+                                bkObjId
+                            })
                             property.disabled = true
                             let isExist = this.userProperties.findIndex(property => {
                                 return bkPropertyId === property.bkPropertyId
@@ -540,6 +544,11 @@
                         })
                     }
                 }
+                this.userProperties = this.userProperties.filter(property => {
+                    return selectedList.findIndex(({bkPropertyId, bkObjId}) => {
+                        return bkPropertyId === property.bkPropertyId && bkObjId === property.bkObjId
+                    }) > -1
+                })
                 this.toggleUserAPISelector(false)
             },
             setUserPropertyTime (oldTime, newTime, index) {
@@ -607,6 +616,11 @@
                         property.disabled = false
                     })
                 })
+                this.dataCopy = {
+                    name: '',
+                    userProperties: [],
+                    attributeSelected: this.attribute.selected
+                }
             },
             /* 保存自定义条件 */
             saveUserAPI () {
@@ -678,7 +692,7 @@
     }
     .userapi-group{
         margin: 20px -40px 0px;
-        padding: 0 40px 20px 20px;
+        padding: 0 40px 20px 15px;
         border-bottom: 1px solid #e3ebf3;
         &.list {
             padding-top: 1px;
@@ -692,7 +706,7 @@
             margin-top: 20px;
             position: relative;
             .userapi-name{
-                width: 135px;
+                width: 160px;
                 line-height: 32px;
                 padding-right: 15px;
                 text-align: right;
@@ -727,7 +741,7 @@
     }
     .userapi-new{
         width: 470px;
-        margin: 20px 0 0 140px;
+        margin: 20px 0 0 165px;
         font-size: 14px;
         .userapi-new-btn{
             width: 470px;
@@ -779,7 +793,6 @@
         width: 470px;
         margin-top: 5px;
         background-color: #ffffff;
-        box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
         border-radius: 2px;
         border: solid 1px #bec6de;
         z-index: 10;
@@ -788,7 +801,7 @@
         margin-top: 20px;
         position: relative;
         .userapi-input-name{
-            width: 135px;
+            width: 160px;
             line-height: 32px;
             text-align: right;
             padding-right: 15px;
@@ -809,6 +822,7 @@
                 outline: none;
                 vertical-align: bottom;
                 color: #666;
+                background: #fff;
             }
             .btn-icon {
                 vertical-align: top;
@@ -821,11 +835,11 @@
             }
         }
         .userapi-content-selector {
-            margin-left: 140px;
+            margin-left: 165px;
         }
     }
     .userapi-btn-group{
-        margin: 30px 0 0 120px;
+        margin: 30px 0 0 140px;
         font-size: 0;
         .userapi-btn{
             width: 110px;
@@ -837,7 +851,7 @@
     .validate-message{
         position: absolute;
         top: 100%;
-        left: 120px;
+        left: 165px;
         height: 16px;
         line-height: 16px;
     }
