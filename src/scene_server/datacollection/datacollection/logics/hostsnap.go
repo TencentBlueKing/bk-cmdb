@@ -234,17 +234,19 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
-				blog.Infof("host not found, continue, %s", val.String())
+				blog.Warnf("host not found, continue, %s", val.String())
 				continue
 			}
 			hostid := fmt.Sprint(host.get(bkcommon.BKHostIDField))
 			if hostid == "" {
-				blog.Infof("host id not found, continue, %s", val.String())
+				blog.Warnf("host id not found, continue, %s", val.String())
 				continue
 			}
 
 			// set snap cache
-			h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10)
+			if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
+				blog.Errorf("save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+			}
 
 			// update host fields value
 			condition := map[string]interface{}{bkcommon.BKHostIDField: host.get(bkcommon.BKHostIDField)}
