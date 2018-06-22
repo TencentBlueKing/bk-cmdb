@@ -29,16 +29,44 @@ type HostGetter interface {
 	Host() HostInterface
 }
 
+// HostInfo the host infos
+type HostInfo struct {
+	HostInnerIP string `json:"bk_host_innerip"`
+	CloudID     int64  `json:"bk_cloud_id"`
+}
+
 // HostInterface host operation
 type HostInterface interface {
 	// SearchHost search host by condition,
 	SearchHost(cond common.Condition) ([]types.MapStr, error)
 	// CreateHostBatch create host
 	CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.MapStr) ([]int, error)
+
 	// update update host by hostID, hostID could be separated by a comma
 	UpdateHostBatch(data types.MapStr, hostID string) error
+
 	// DeleteHost delete host by hostID, hostID could be separated by a comma
 	DeleteHostBatch(hostID string) error
+
+	// TransferHostToBusinessModule transfer host to business module
+	TransferHostToBusinessModule(bizID int64, hostIDS []int64, newModuleIDS []int64, isIncrement bool) error
+
+	// TransferHostFromResourcePoolsToBusinessIdleModule transfer host to business module
+	TransferHostFromResourcePoolsToBusinessIdleModule(bizID int64, hostIDS []int64) error
+
+	// TransferHostToBusinessFaultModule transfer host module to fault module
+	TransferHostToBusinessFaultModule(bizID int64, hostIDS []int64) error
+
+	// TransferHostToBusinessIdleModule transfer host module to idle module
+	TransferHostToBusinessIdleModule(bizID int64, hostIDS []int64) error
+
+	// TransferHostToResourcePools transfer host module to resource pools
+	TransferHostToResourcePools(bizID int64, hostIDS []int64) error
+
+	// TransferHostToAnotherBusinessModules transfer host to another modules
+	TransferHostToAnotherBusinessModules(bizID int64, moduleID int64, hostInfo []*HostInfo) error
+	// ResetBusinessHosts transfer the hosts in set or module to the idle module
+	ResetBusinessHosts(bizID int64, moduleID int64, setID int64) error
 }
 
 // Host define
@@ -50,6 +78,170 @@ func newHost(cli *Client) *Host {
 	return &Host{
 		cli: cli,
 	}
+}
+
+// TransferHostModule transfer hosts to another modules in the same business
+func (h *Host) TransferHostToBusinessModule(bizID int64, hostIDS []int64, newModuleIDS []int64, isIncrement bool) error {
+
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(ModuleID, newModuleIDS)
+	params.Set(HostID, hostIDS)
+	params.Set(IsIncrement, isIncrement)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+
+}
+
+// TransferHostFromResourcePoolsToBusinessIdleModule transfer the hosts from resource pools to another business
+func (h *Host) TransferHostFromResourcePoolsToBusinessIdleModule(bizID int64, hostIDS []int64) error {
+
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(HostID, hostIDS)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/resource/idle", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+// TransferHostToBusinessFaultModule transfer host module to fault module
+func (h *Host) TransferHostToBusinessFaultModule(bizID int64, hostIDS []int64) error {
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(HostID, hostIDS)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/fault", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+// TransferHostToBusinessIdleModule transfer host module to idle module
+func (h *Host) TransferHostToBusinessIdleModule(bizID int64, hostIDS []int64) error {
+
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(HostID, hostIDS)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/idle", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+// TransferHostToResourcePools transfer host module to resource pools
+func (h *Host) TransferHostToResourcePools(bizID int64, hostIDS []int64) error {
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(HostID, hostIDS)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/resource", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+// TransferHostToAnotherBusinessModules transfer host to another business modules
+func (h *Host) TransferHostToAnotherBusinessModules(bizID int64, moduleID int64, hostInfo []*HostInfo) error {
+
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(ModuleID, moduleID)
+	params.Set(HostInfoField, hostInfo)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/biz/mutilple", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
+}
+
+// ResetBusinessHosts transfer the hosts in set or module to the idle module
+func (h *Host) ResetBusinessHosts(bizID int64, moduleID int64, setID int64) error {
+
+	params := types.MapStr{}
+	params.Set(BusinessID, bizID)
+	params.Set(ModuleID, moduleID)
+	params.Set(SetID, setID)
+
+	targetURL := fmt.Sprintf("%s/api/v3/hosts/modules/idle/set", h.cli.GetAddress())
+	rst, err := h.cli.httpCli.POST(targetURL, nil, params.ToJSON())
+	if nil != err {
+		return err
+	}
+
+	gs := gjson.ParseBytes(rst)
+
+	// check result
+	if !gs.Get("result").Bool() {
+		return errors.New(gs.Get("bk_error_msg").String())
+	}
+
+	return nil
 }
 
 // CreateHostBatch batch to create hosts
@@ -75,8 +267,6 @@ func (h *Host) CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.Map
 
 	// check result
 	if !gs.Get("result").Bool() {
-		fmt.Println("host info:", string(param.ToJSON()))
-		fmt.Println("rst:", string(rst))
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 
@@ -213,6 +403,8 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
+
+	//log.Infof("the host result:%s", dataStr)
 
 	hostMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &hostMap)

@@ -43,6 +43,11 @@ type HostWrapper struct {
 	host inst.HostInterface
 }
 
+// Transfer transfer operation
+func (cli *HostWrapper) Transfer() inst.TransferInterface {
+	return cli.host.Transfer()
+}
+
 // SetTopo set the host topo
 func (cli *HostWrapper) SetTopo(bizID int64, moduleIDS []int64) {
 	cli.host.SetBusinessID(bizID)

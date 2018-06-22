@@ -24,6 +24,15 @@ const (
 	PlatID = "bk_cloud_id"
 	// Plat the object id
 	Plat = "plat"
+	// Business the business object
+	Business = "biz"
+
+	// Module the module object
+	Module = "module"
+
+	// Set the set object
+	Set = "set"
+
 	// BusinessID the business id
 	BusinessID = "bk_biz_id"
 	// BusinessNameField the business name
@@ -55,4 +64,7 @@ const (
 	HostIDField = "bk_host_id"
 	// HostNameField the host name field
 	HostNameField = "bk_host_name"
+
+	// HostInnerIP the host innerip
+	HostInnerIP = "bk_host_innerip"
 )

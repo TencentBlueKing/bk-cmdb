@@ -13,6 +13,7 @@
 package inst
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -34,12 +35,14 @@ type HostInterface interface {
 	Update() error
 	Save() error
 
+	Transfer() TransferInterface
+
 	SetBusinessID(bizID int64)
 	SetModuleIDS(moduleIDS []int64)
 
 	GetModel() model.Model
 
-	GetInstID() (int, error)
+	GetInstID() (int64, error)
 	GetInstName() string
 
 	SetValue(key string, value interface{}) error
@@ -51,6 +54,56 @@ type host struct {
 	moduleIDS []int64
 	target    model.Model
 	datas     types.MapStr
+}
+
+func (cli *host) reset() error {
+
+	// parse business
+	datas, err := cli.datas.MapStrArray(Business)
+	if nil != err {
+		return fmt.Errorf("failed to get biz data , error info is %s", err.Error())
+	}
+
+	for _, dataVal := range datas {
+		id, err := dataVal.Int64(BusinessID)
+		if nil != err {
+			return fmt.Errorf("failed to get biz id, error info is %s", err.Error())
+		}
+
+		cli.bizID = id
+	}
+
+	// parse module
+	datas, err = cli.datas.MapStrArray(Module)
+	if nil != err {
+		return fmt.Errorf("failed to get module data , error info is %s", err.Error())
+	}
+
+	for _, dataVal := range datas {
+		id, err := dataVal.Int64(ModuleID)
+		if nil != err {
+			return fmt.Errorf("failed to get module id, error info is %s", err.Error())
+		}
+
+		cli.moduleIDS = append(cli.moduleIDS, id)
+	}
+
+	// parse set
+	datas, err = cli.datas.MapStrArray(Set)
+	if nil != err {
+		return fmt.Errorf("failed to get module data , error info is %s", err.Error())
+	}
+
+	for _, dataVal := range datas {
+		id, err := dataVal.Int64(SetID)
+		if nil != err {
+			return fmt.Errorf("failed to get set id, error info is %s", err.Error())
+		}
+
+		cli.moduleIDS = append(cli.moduleIDS, id)
+	}
+
+	return nil
 }
 
 func (cli *host) SetBusinessID(bizID int64) {
@@ -65,8 +118,8 @@ func (cli *host) GetModel() model.Model {
 	return cli.target
 }
 
-func (cli *host) GetInstID() (int, error) {
-	return cli.datas.Int(cccommon.BKHostIDField)
+func (cli *host) GetInstID() (int64, error) {
+	return cli.datas.Int64(cccommon.BKHostIDField)
 }
 
 func (cli *host) GetInstName() string {
@@ -80,6 +133,12 @@ func (cli *host) GetValues() (types.MapStr, error) {
 func (cli *host) SetValue(key string, value interface{}) error {
 	cli.datas.Set(key, value)
 	return nil
+}
+
+func (cli *host) Transfer() TransferInterface {
+	return &transfer{
+		targetHost: cli,
+	}
 }
 
 func (cli *host) ResetAssociationValue() error {
@@ -99,11 +158,18 @@ func (cli *host) ResetAssociationValue() error {
 
 				for _, val := range asstVals {
 
-					valID, err := val.Int64(InstID)
-					if nil != err {
-						return err
+					// the datas is created by find
+					valID, exists := val.Get(InstID)
+					if exists {
+						cli.datas.Set(attrItem.GetID(), valID)
+						continue
 					}
-					cli.datas.Set(attrItem.GetID(), valID)
+
+					// default the datas is new one
+					valID, exists = val.Get(attrItem.GetID())
+					if exists {
+						cli.datas.Set(attrItem.GetID(), valID)
+					}
 				}
 
 				continue
@@ -190,22 +256,36 @@ func (cli *host) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 func (cli *host) Create() error {
-
+	log.Infof("the create host:%#v", cli.datas)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
 		return nil
 	}
+	log.Infof("the create host:%#v", cli.datas)
+	ids, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
+	if nil != err {
+		return err
+	}
 
-	return cli.Save()
+	if 0 == len(ids) {
+		return fmt.Errorf("the host ids is empty")
+	}
+
+	cli.datas.Set(HostID, ids[0])
+
+	return nil
 
 }
+
 func (cli *host) Update() error {
 
 	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
+
+	//log.Infof("the exists:%s %d", string(cli.datas.ToJSON()), 0)
 
 	// clear the invalid data
 	cli.datas.ForEach(func(key string, val interface{}) {
@@ -214,9 +294,11 @@ func (cli *host) Update() error {
 				return
 			}
 		}
-
+		log.Infof("remove the invalid field:%s", key)
 		cli.datas.Remove(key)
 	})
+
+	cli.datas.Remove("create_time") //invalid check , need to delete
 
 	for _, existItem := range existItems {
 
@@ -227,7 +309,8 @@ func (cli *host) Update() error {
 
 		updateCond := common.CreateCondition()
 		updateCond.Field(ModuleID).Eq(hostID)
-		log.Infof("the exists:%s %d", string(cli.datas.ToJSON()), hostID)
+
+		//log.Infof("the exists:%s %d", string(existItem.ToJSON()), hostID)
 		err = client.GetClient().CCV3().Host().UpdateHostBatch(cli.datas, strconv.Itoa(int(hostID)))
 		if err != nil {
 			log.Errorf("failed to update host, error info is %s", err.Error())
