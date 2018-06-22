@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
 	"fmt"
@@ -24,34 +25,63 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"sync"
 )
 
 // NewValidMap returns new NewValidMap
-func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
-	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
+func NewValidMap(ownerID, objID string, pheader http.Header, engine *backbone.Engine) *ValidMap {
+	return &ValidMap{
+		Engine:  engine,
+		pheader: pheader,
+		ownerID: ownerID,
+		objID:   objID,
+
+		propertys:    map[string]metadata.Attribute{},
+		require:      map[string]bool{},
+		isOnly:       map[string]bool{},
+		shouldIgnore: map[string]bool{},
+	}
 }
 
 // NewValidMapWithKeyFields returns new NewValidMap
-func NewValidMapWithKeyFields(ownerID, objID string, keyFileds []string, pheader http.Header, engine *backbone.Engine) *ValidMap {
-	tmp := &ValidMap{
-		Engine:    engine,
-		pheader:   pheader,
-		ownerID:   ownerID,
-		objID:     objID,
-		KeyFileds: make(map[string]interface{}, 0),
-	}
+func NewValidMapWithKeyFields(ownerID, objID string, ignoreFields []string, pheader http.Header, engine *backbone.Engine) *ValidMap {
+	tmp := NewValidMap(ownerID, objID, pheader, engine)
 
-	for _, item := range keyFileds {
-		tmp.KeyFileds[item] = item
+	for _, item := range ignoreFields {
+		tmp.shouldIgnore[item] = true
 	}
 	return tmp
 }
 
+// Init init
+func (valid *ValidMap) Init() error {
+	lang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	m := map[string]interface{}{
+		common.BKObjIDField:   valid.objID,
+		common.BKOwnerIDField: valid.ownerID,
+	}
+	result, err := valid.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(valid.ctx, valid.pheader, m)
+	if nil != err {
+		return err
+	}
+	if !result.Result {
+		return valid.CCErr.Error(util.GetLanguage(valid.pheader), result.Code)
+	}
+	for _, attr := range result.Data {
+		valid.propertys[attr.PropertyID] = attr
+		if attr.IsRequired{
+			valid.require[attr.PropertyID]=true
+		}
+		if attr.IsOnly
+	}
+	return nil
+}
+
 // ValidMap basic valid
 func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int64) (bool, error) {
-	valRule := NewValRule(valid.ownerID, valid.objCtrl)
+	valid.Init()
 
-	valRule.GetObjAttrByID(valid.forward, valid.objID)
+	valRule.GetObjAttrByID(valid.pheader, valid.objID)
 	valid.IsRequireArr = valRule.IsRequireArr
 	valid.IsOnlyArr = valRule.IsOnlyArr
 	valid.PropertyKv = valRule.PropertyKv
