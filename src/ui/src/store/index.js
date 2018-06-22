@@ -15,6 +15,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import common from './modules/common'
+import main from './modules/main'
 import process from './modules/process'
 import index from './modules/index'
 import hostTransferPop from './modules/hostTransferPop'
@@ -28,6 +29,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     modules: {
         common,
+        main,
         process,
         index,
         hostTransferPop,
