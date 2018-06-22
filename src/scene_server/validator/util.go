@@ -14,7 +14,7 @@ package validator
 
 import (
 	"configcenter/src/common"
-	api "configcenter/src/source_controller/api/object"
+	"configcenter/src/common/metadata"
 	"encoding/json"
 
 	"gopkg.in/mgo.v2/bson"
@@ -40,8 +40,8 @@ func getBool(val interface{}) bool {
 }
 
 // fillLostedFieldValue fill the value in inst map data
-func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes) {
-	for _, field := range fields {
+func fillLostedFieldValue(valData map[string]interface{}, propertys map[string]metadata.Attribute) {
+	for _, field := range propertys {
 		_, ok := valData[field.PropertyID]
 		if !ok {
 			switch field.PropertyType {
@@ -63,16 +63,19 @@ func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes
 						}
 					}
 					if nil != defaultOption {
-						v = defaultOption.ID
+						valData[field.PropertyID] = defaultOption.ID
+					} else {
+						valData[field.PropertyID] = nil
 					}
+				} else {
+					valData[field.PropertyID] = nil
 				}
-				valData[field.PropertyID] = v
 			case common.FieldTypeDate:
-				valData[field.PropertyID] = ""
+				valData[field.PropertyID] = nil
 			case common.FieldTypeTime:
-				valData[field.PropertyID] = ""
+				valData[field.PropertyID] = nil
 			case common.FieldTypeUser:
-				valData[field.PropertyID] = ""
+				valData[field.PropertyID] = nil
 			case common.FieldTypeMultiAsst:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeTimeZone:
@@ -87,7 +90,7 @@ func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes
 }
 
 // ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) []EnumVal {
+func ParseEnumOption(val interface{}) EnumOption {
 	enumOptions := []EnumVal{}
 	if nil == val || "" == val {
 		return enumOptions
@@ -134,16 +137,14 @@ func parseIntOption(val interface{}) IntOption {
 }
 
 //setEnumDefault
-func setEnumDefault(valData map[string]interface{}, valRule *ValRule) {
+func setEnumDefault(valData map[string]interface{}, propertys map[string]metadata.Attribute) {
 
 	for key, val := range valData {
-		rule, ok := valRule.FieldRule[key]
+		property, ok := propertys[key]
 		if !ok {
 			continue
 		}
-		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField]
-		switch fieldType {
+		switch property.PropertyType {
 		case common.FieldTypeEnum:
 			if nil != val {
 				valStr, ok := val.(string)
@@ -155,19 +156,13 @@ func setEnumDefault(valData map[string]interface{}, valRule *ValRule) {
 				}
 			}
 
-			enumOption := ParseEnumOption(option)
-			var defaultOption *EnumVal
-
+			enumOption := ParseEnumOption(property.Option)
 			for _, k := range enumOption {
 				if k.IsDefault {
-					defaultOption = &k
+					valData[key] = k.ID
 					break
 				}
 			}
-			if nil != defaultOption {
-				valData[key] = defaultOption.ID
-			}
-
 		}
 
 	}

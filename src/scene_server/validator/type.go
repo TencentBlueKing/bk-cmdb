@@ -15,10 +15,10 @@ package validator
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"context"
 	"net/http"
-	"sync"
 )
 
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
@@ -29,7 +29,20 @@ type IntOption struct {
 	Max string `bson:"max" json:"max"`
 }
 
-// EnumVal enum option
+// EnumOption enum option
+type EnumOption []EnumVal
+
+// GetDefault returns EnumOption's default value
+func (opt EnumOption) GetDefault() *EnumVal {
+	for index := range opt {
+		if opt[index].IsDefault {
+			return &opt[index]
+		}
+	}
+	return nil
+}
+
+// EnumVal enum option val
 type EnumVal struct {
 	ID        string `bson:"id"           json:"id"`
 	Name      string `bson:"name"         json:"name"`
@@ -44,6 +57,7 @@ type ValidMap struct {
 	pheader http.Header
 	ownerID string
 	objID   string
+	errif   errors.DefaultCCErrorIf
 
 	propertys    map[string]metadata.Attribute
 	require      map[string]bool
