@@ -13,17 +13,19 @@
 package controllers
 
 import (
+	"fmt"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/web_server/application/middleware/user"
-	"fmt"
-
-	"github.com/gin-gonic/contrib/sessions"
-
-	"github.com/gin-gonic/gin"
 )
+
+const BkAccountUrl = "site.bk_account_url"
 
 func init() {
 	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/user/list", nil, GetUserList})
@@ -49,7 +51,7 @@ var getUserFailData = map[string]interface{}{
 func GetUserList(c *gin.Context) {
 	a := api.NewAPIResource()
 	config, _ := a.ParseConfig()
-	accountURL := config["site.bk_account_url"]
+	accountURL := config[BkAccountUrl]
 	user := user.NewUser()
 	code, data := user.GetUserList(c, accountURL)
 	c.JSON(code, data)

@@ -39,10 +39,22 @@ var getUserFailData = map[string]interface{}{
 }
 
 type userResult struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-	Code    string      `json:"code"`
-	Result  bool        `json:"result"`
+	Message string     `json:"message"`
+	Data    []userInfo `json:"data"`
+	Code    string     `json:"code"`
+	Result  bool       `json:"result"`
+}
+
+type userInfo struct {
+	UserName string `json:"username"`
+	QQ       string `json:"qq"`
+	Role     string `json:"role"`
+	Language string `json:"language"`
+	Phone    string `json:"phone"`
+	WxUserid string `json:"wx_userid"`
+	Email    string `json:"email"`
+	Chname   string `json:"chname"`
+	TimeZone string `json:"time_zone"`
 }
 
 // LoginUser  user login
@@ -167,32 +179,15 @@ func (m *publicUser) GetUserList(c *gin.Context, accountURL string) (int, interf
 	}
 	blog.Info("get user list urlL: %s, return：%s", getURL, reply)
 	var result userResult
+	info := make([]map[string]interface{}, 0)
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
 		return 200, getUserFailData
 	}
-	data, ok := result.Data.([]interface{})
-	if false == ok {
-		return 200, getUserFailData
-
-	}
-	info := make([]interface{}, 0)
-	for _, i := range data {
-		j, ok := i.(map[string]interface{})
-		if false == ok {
-			continue
-		}
-		name, ok := j["username"]
-		if false == ok {
-			continue
-		}
-		chname, ok := j["chname"]
-		if false == ok {
-			continue
-		}
+	for _, user := range result.Data {
 		cellData := make(map[string]interface{})
-		cellData["chinese_name"] = chname
-		cellData["english_name"] = name
+		cellData["chinese_name"] = user.Chname
+		cellData["english_name"] = user.UserName
 		info = append(info, cellData)
 	}
 	return 200, map[string]interface{}{
