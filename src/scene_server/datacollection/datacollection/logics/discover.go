@@ -269,7 +269,6 @@ func (d *Discover) clearOldMsg() {
 
 		// 清理时，若发生新的消息写入，则重新获取消息数量？
 		if ts != d.ts {
-			blog.Infof("clearOldMsg")
 			msgCnt = len(d.msgChan) - d.maxSize
 		} else {
 			select {
@@ -281,7 +280,7 @@ func (d *Discover) clearOldMsg() {
 		d.Unlock()
 	}
 
-	// 确认最终清理完毕（清理时间等于最后一次的消息写入时间）
+	// 确认最终清理完毕？（清理时间等于最后一次的消息写入时间）
 	if ts == d.ts {
 		close(d.resetHandle)
 	}

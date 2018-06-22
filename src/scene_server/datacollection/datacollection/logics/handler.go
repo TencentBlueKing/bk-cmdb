@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// 缓存时间30min
-const cacheTime = time.Minute*30
+// 缓存时间5min
+const cacheTime = time.Minute*5
 
 // 模型元数据结构
 type Model struct {
@@ -260,8 +260,8 @@ func (d *Discover) GetAttrs(msg string) (ListResult, error) {
 			return dR, nil
 		}
 
-		ok, err := d.redisCli.SetNX(modelAttrKey, filterJs, cacheTime).Result()
-		if !ok {
+		_, err = d.redisCli.Set(modelAttrKey, filterJs, cacheTime).Result()
+		if err != nil {
 			blog.Infof("%s: flush to redis failed: %s\n", modelAttrKey, err)
 			return dR, nil
 		}
@@ -481,8 +481,8 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 			return dR, nil
 		}
 
-		ok, err := d.redisCli.SetNX(modelKey, val, cacheTime).Result()
-		if !ok {
+		_, err = d.redisCli.Set(modelKey, val, cacheTime).Result()
+		if err != nil {
 			blog.Infof("%s: flush to redis failed: %s\n", modelKey, err)
 			return dR, nil
 		}
