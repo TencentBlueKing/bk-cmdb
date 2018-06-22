@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // NewValidMap returns new NewValidMap
