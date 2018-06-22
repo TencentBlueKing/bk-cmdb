@@ -18,11 +18,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/option"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strconv"
 )
@@ -89,23 +85,6 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		return err
 	}
 
-	// valRule.GetObjAttrByID(valid.pheader, valid.objID)
-	// valid.IsRequireArr = valRule.IsRequireArr
-	// valid.IsOnlyArr = valRule.IsOnlyArr
-	// valid.PropertyKv = valRule.PropertyKv
-	// keyDataArr := make([]string, 0)
-	// var result bool
-	// var err error
-	// blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
-
-	// for key := range valid.KeyFileds {
-	// 	// set the key field
-	// 	keyDataArr = append(keyDataArr, key)
-	// }
-
-	//set default value
-	setEnumDefault(valData, valid.propertys)
-
 	//valid create request
 	if validType == common.ValidCreate {
 		fillLostedFieldValue(valData, valid.propertys)
@@ -124,16 +103,15 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
-		option := property.Option
 		switch fieldType {
 		case common.FieldTypeSingleChar:
 			err = valid.validChar(val, key)
 		case common.FieldTypeLongChar:
 			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
-			err = valid.validInt(val, key, option)
+			err = valid.validInt(val, key)
 		case common.FieldTypeEnum:
-			err = valid.validEnum(val, key, option)
+			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:
 			err = valid.validDate(val, key)
 		case common.FieldTypeTime:
@@ -156,7 +134,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		err = valid.validCreateUnique(valData)
 		return err
 	} else {
-		err = valid.validUpdateUnique(valData, valid.objID, instID)
+		err = valid.validUpdateUnique(valData, instID)
 		return err
 	}
 
@@ -188,6 +166,10 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 				break
 			}
 			strReg, err := regexp.Compile(option)
+			if nil != err {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
 				return valid.errif.Error(common.CCErrFieldRegValidFailed)
@@ -227,6 +209,10 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 				break
 			}
 			strReg, err := regexp.Compile(option)
+			if nil != err {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
 				return valid.errif.Error(common.CCErrFieldRegValidFailed)
@@ -242,8 +228,7 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 
 // validInt valid int
 func (valid *ValidMap) validInt(val interface{}, key string) error {
-	var value int64
-	if nil == val || "" == val {
+	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -252,18 +237,18 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 		return nil
 	}
 
-	var id int
-	switch value := val.(type) {
+	var value int64
+	switch tmp := val.(type) {
 	case int:
-		id = value
+		value = int64(tmp)
 	case int32:
-		id = int(value)
+		value = int64(tmp)
 	case int64:
-		id = int(value)
+		value = int64(tmp)
 	case float64:
-		id = int(value)
+		value = int64(tmp)
 	case float32:
-		id = int(value)
+		value = int64(tmp)
 	default:
 		blog.Errorf("params %s:%#v not int", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
@@ -339,9 +324,9 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 }
 
 // validEnum valid enum
-func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}) error {
+func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	// validate require
-	if nil == val || "" == val {
+	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -356,6 +341,10 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 
+	option, ok := valid.propertys[key]
+	if !ok {
+		return nil
+	}
 	// validate within enum
 	enumOption := ParseEnumOption(option)
 	match := false
@@ -398,36 +387,25 @@ func (valid *ValidMap) validDate(val interface{}, key string) error {
 
 //valid time
 func (valid *ValidMap) validTime(val interface{}, key string) error {
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if !isIn && nil == val {
-		return true, nil
-	}
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
-	if isIn && nil == val {
-		blog.Error("params in need")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
 	}
 
 	valStr, ok := val.(string)
 	if false == ok {
 		blog.Error("date can shoule be string")
 		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
+	}
 
-	}
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
 	result := util.IsTime(valStr)
 	if !result {
 		blog.Error("params   not valid")
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	isIn = util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
-	return true, nil
-
+	return nil
 }

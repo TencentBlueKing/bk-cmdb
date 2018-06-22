@@ -46,14 +46,13 @@ func fillLostedFieldValue(valData map[string]interface{}, propertys map[string]m
 		if !ok {
 			switch field.PropertyType {
 			case common.FieldTypeSingleChar:
-				valData[field.PropertyID] = ""
+				valData[field.PropertyID] = nil
 			case common.FieldTypeLongChar:
-				valData[field.PropertyID] = ""
+				valData[field.PropertyID] = nil
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
 				enumOptions := ParseEnumOption(field.Option)
-				v := ""
 				if len(enumOptions) > 0 {
 					var defaultOption *EnumVal
 					for _, k := range enumOptions {
@@ -134,38 +133,4 @@ func parseIntOption(val interface{}) IntOption {
 		intOption.Max = getString(option["max"])
 	}
 	return intOption
-}
-
-//setEnumDefault
-func setEnumDefault(valData map[string]interface{}, propertys map[string]metadata.Attribute) {
-
-	for key, val := range valData {
-		property, ok := propertys[key]
-		if !ok {
-			continue
-		}
-		switch property.PropertyType {
-		case common.FieldTypeEnum:
-			if nil != val {
-				valStr, ok := val.(string)
-				if false == ok {
-					return
-				}
-				if "" != valStr {
-					continue
-				}
-			}
-
-			enumOption := ParseEnumOption(property.Option)
-			for _, k := range enumOption {
-				if k.IsDefault {
-					valData[key] = k.ID
-					break
-				}
-			}
-		}
-
-	}
-
-	return
 }
