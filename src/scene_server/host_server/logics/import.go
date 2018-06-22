@@ -28,13 +28,13 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	sceneUtil "configcenter/src/scene_server/common/util"
-	"configcenter/src/scene_server/host_server/service"
+	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
 )
 
 func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.Header, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
 
-	instance := NewImportInstance(ownerID, importType, common.BKDefaultDirSubArea, pheader, lgc.Engine, hostInfos)
+	instance := NewImportInstance(ownerID, pheader, lgc.Engine)
 
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ownerID, pheader)
@@ -42,7 +42,7 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 		return nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
 	}
 
-	cond := service.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
+	cond := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
 	assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
 	if err != nil || (err == nil && !assResult.Result) {
 		return nil, nil, nil, fmt.Errorf("search host assosications failed, err: %v, result err: %s", err, assResult.ErrMsg)
@@ -54,14 +54,14 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 		return nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
 	}
 
-	_, _, err = instance.getHostAsstHande()
+	_, _, err = instance.getHostAsstHande(importType, hostInfos)
 	if nil != err {
 		blog.Errorf("get host assocate info  error, errror:%s", err.Error())
 		return nil, nil, nil, err
 	}
 
 	for index, host := range hostInfos {
-		instance.parseHostInstanceAssocate(index, host)
+		instance.parseHostInstanceAssocate(importType, index, host)
 	}
 
 	var errMsg, updateErrMsg, succMsg []string
@@ -122,7 +122,7 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 			return nil, nil, nil, fmt.Errorf("invalid host id: %v", hostID)
 		}
 
-		preData, _, err := lgc.GetHostInstanceDetails(ownerID, hostID, pheader)
+		preData, _, err := lgc.GetHostInstanceDetails(pheader, hostID, ownerID)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
@@ -134,9 +134,8 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 				continue
 			}
 		} else {
-			// TODO:
 			var err error
-			intHostID, err = instance.addHostInstance(index, appID, moduleID, host)
+			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
 			if err != nil {
 				errMsg = append(errMsg, err.Error())
 				continue
@@ -146,7 +145,7 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 
 		succMsg = append(succMsg, strconv.FormatInt(index, 10))
 
-		curData, _, err := lgc.GetHostInstanceDetails(ownerID, hostID, pheader)
+		curData, _, err := lgc.GetHostInstanceDetails(pheader, hostID, ownerID)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
@@ -184,13 +183,8 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 
 func (lgc *Logics) getHostFields(ownerID string, pheader http.Header) (map[string]*metadata.ObjAttDes, error) {
 	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit}
-	query := &metadata.QueryInput{
-		Condition: service.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).WithPage(page).Data(),
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKPropertyIDField,
-	}
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, query)
+	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).WithPage(page).Data()
+	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, opt)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("search host attributes failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
@@ -204,7 +198,7 @@ func (lgc *Logics) getHostFields(ownerID string, pheader http.Header) (map[strin
 			continue
 		}
 
-		cond := service.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
+		cond := hutil.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
 		assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
 		if err != nil || (err == nil && !result.Result) {
 			return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)
@@ -262,13 +256,8 @@ func (lgc *Logics) getObjAsstObjectPrimaryKey(ownerID string, defaultFields map[
 	asstPrimaryKey := make(map[string][]metadata.ObjAttDes)
 	for _, f := range defaultFields {
 		if util.IsAssocateProperty(f.PropertyType) {
-			query := &metadata.QueryInput{
-				Condition: service.NewOperation().WithOwnerID(ownerID).WithObjID(f.AssociationID).Data(),
-				Start:     0,
-				Limit:     common.BKNoLimit,
-				Sort:      common.BKPropertyIDField,
-			}
-
+			page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKPropertyIDField}
+			query := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(f.AssociationID).WithPage(page).Data()
 			result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, query)
 			if err != nil || (err == nil && !result.Result) {
 				return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
@@ -283,7 +272,7 @@ func (lgc *Logics) getObjAsstObjectPrimaryKey(ownerID string, defaultFields map[
 					continue
 				}
 
-				cond := service.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
+				cond := hutil.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
 				assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
 				if err != nil || (err == nil && !result.Result) {
 					return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)
@@ -449,36 +438,33 @@ func (lgc *Logics) getAsstInstByAsstObjectConds(pheader http.Header, asstInstCon
 
 type importInstance struct {
 	*backbone.Engine
-	pheader       http.Header
-	inputType     metadata.HostInputType
-	ownerID       string
-	cloudID       int64
-	hostInfos     map[int64]map[string]interface{}
+	pheader   http.Header
+	inputType metadata.HostInputType
+	ownerID   string
+	// cloudID       int64
+	// hostInfos     map[int64]map[string]interface{}
 	assObjectInt  *asstObjectInst
 	defaultFields map[string]*metadata.ObjAttDes
 	asstDes       []metadata.Association
 	rowErr        map[int64]error
 }
 
-func NewImportInstance(ownerID string, importType metadata.HostInputType, cloudID int64, pheader http.Header, engine *backbone.Engine, hostInfos map[int64]map[string]interface{}) *importInstance {
+func NewImportInstance(ownerID string, pheader http.Header, engine *backbone.Engine) *importInstance {
 	return &importInstance{
-		pheader:   pheader,
-		Engine:    engine,
-		ownerID:   ownerID,
-		inputType: importType,
-		cloudID:   cloudID,
-		hostInfos: hostInfos,
+		pheader: pheader,
+		Engine:  engine,
+		ownerID: ownerID,
 	}
 }
 
-func (h *importInstance) getHostAsstHande() (*asstObjectInst, map[int64]error, error) {
-	if common.InputTypeExcel == h.inputType {
+func (h *importInstance) getHostAsstHande(inputType metadata.HostInputType, hostInfos map[int64]map[string]interface{}) (*asstObjectInst, map[int64]error, error) {
+	if common.InputTypeExcel == inputType {
 		h.assObjectInt = NewAsstObjectInst(h.pheader, h.Engine, h.ownerID, h.defaultFields)
 		err := h.assObjectInt.GetObjAsstObjectPrimaryKey()
 		if nil != err {
 			return nil, nil, fmt.Errorf("get host assocate object  property failure, error:%s", err.Error())
 		}
-		h.rowErr, err = h.assObjectInt.InitInstFromData(h.hostInfos)
+		h.rowErr, err = h.assObjectInt.InitInstFromData(hostInfos)
 		if nil != err {
 			return nil, nil, fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error())
 		}
@@ -487,8 +473,8 @@ func (h *importInstance) getHostAsstHande() (*asstObjectInst, map[int64]error, e
 	return h.assObjectInt, h.rowErr, nil
 }
 
-func (h *importInstance) parseHostInstanceAssocate(index int64, host map[string]interface{}) {
-	if common.InputTypeExcel == h.inputType {
+func (h *importInstance) parseHostInstanceAssocate(inputType metadata.HostInputType, index int64, host map[string]interface{}) {
+	if common.InputTypeExcel == inputType {
 		if _, ok := h.rowErr[index]; true == ok {
 			return
 		}
@@ -515,7 +501,7 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 
 	}
 
-	err = h.updateInstAssociation(h.pheader, hostID, h.ownerID, common.BKInnerObjIDHost, host)
+	err = h.UpdateInstAssociation(h.pheader, hostID, h.ownerID, common.BKInnerObjIDHost, host)
 	if err != nil {
 		blog.Error("update host asst attr error : %v", err)
 		return fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
@@ -533,8 +519,8 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	return nil
 }
 
-func (h *importInstance) updateInstAssociation(pheader http.Header, instID int64, ownerID, objID string, input map[string]interface{}) error {
-	opt := service.NewOperation().WithOwnerID(h.ownerID).WithObjID(objID).Data()
+func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64, ownerID, objID string, input map[string]interface{}) error {
+	opt := hutil.NewOperation().WithOwnerID(h.ownerID).WithObjID(objID).Data()
 	result, err := h.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), h.pheader, opt)
 	if err != nil || (err == nil && !result.Result) {
 		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
@@ -561,7 +547,7 @@ func (h *importInstance) updateInstAssociation(pheader http.Header, instID int64
 }
 
 func (h *importInstance) deleteInstAssociation(instID int64, objID, asstObjID string) error {
-	opt := service.NewOperation().WithInstID(instID).WithObjID(objID)
+	opt := hutil.NewOperation().WithInstID(instID).WithObjID(objID)
 	if "" != asstObjID {
 		opt.WithAssoObjID(asstObjID)
 	}
@@ -574,10 +560,10 @@ func (h *importInstance) deleteInstAssociation(instID int64, objID, asstObjID st
 	return nil
 }
 
-func (h *importInstance) addHostInstance(index, appID, moduleID int64, host map[string]interface{}) (int64, error) {
+func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, host map[string]interface{}) (int64, error) {
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
-		host[common.BKCloudIDField] = h.cloudID
+		host[common.BKCloudIDField] = cloudID
 	}
 	filterFields := []string{common.CreateTimeField}
 	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
@@ -611,7 +597,7 @@ func (h *importInstance) addHostInstance(index, appID, moduleID int64, host map[
 		}
 	}
 
-	opt := service.NewOperation().WithAppID(appID).WithModuleIDs([]int64{moduleID}).WithHostID(hostID).Data()
+	opt := hutil.NewOperation().WithAppID(appID).WithModuleIDs([]int64{moduleID}).WithHostID(hostID).Data()
 	hResult, err := h.CoreAPI.HostController().Host().AddHost(context.Background(), h.pheader, opt)
 	if err != nil || (err == nil && hResult.Result) {
 		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error(), hResult.ErrMsg))

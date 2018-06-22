@@ -17,18 +17,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/host_server/service"
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/util"
-    "encoding/json"
-    "github.com/emicklei/go-restful"
+	parse "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // get the object attributes
 func (lgc *Logics) GetObjectAttributes(ownerID, objID string, pheader http.Header, page meta.BasePage) ([]meta.Attribute, error) {
-	opt := service.NewOperation().WithOwnerID(ownerID).WithPage(page).WithObjID(objID).Data()
+	opt := hutil.NewOperation().WithOwnerID(ownerID).WithPage(page).WithObjID(objID).Data()
 	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, opt)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("get object attribute failed, err: %v, %v", err, result.ErrMsg)
@@ -38,157 +37,222 @@ func (lgc *Logics) GetObjectAttributes(ownerID, objID string, pheader http.Heade
 }
 
 func (lgc *Logics) GetTopoIDByName(pheader http.Header, c *meta.HostToAppModule) (int64, int64, int64, error) {
-    if "" == c.AppName || "" == c.SetName || "" == c.ModuleName {
-        return 0, 0, 0, nil
-    }
-    
-    appInfo, appErr := lgc.GetSingleApp(pheader, common.KvMap{common.BKAppNameField: c.AppName, common.BKOwnerIDField: c.OwnerID})
-    if nil != appErr {
-        blog.Errorf("getTopoIDByName get app info error; %s", appErr.Error())
-        return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
-    }
-    
-    appID, err := appInfo.Int64(common.BKAppIDField)
-    if err != nil {
-        return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommParamsInvalid)
-    }
+	if "" == c.AppName || "" == c.SetName || "" == c.ModuleName {
+		return 0, 0, 0, nil
+	}
 
-    appIDConf := map[string]interface{}{
-        "field":    common.BKAppIDField,
-        "operator": common.BKDBEQ,
-        "value":    appID,
-    }
-    setNameCond := map[string]interface{}{
-        "field":    common.BKSetNameField,
-        "operator": common.BKDBEQ,
-        "value":    c.SetName,
-    }
-    var setCond []interface{}
-    setCond = append(setCond, appIDConf, setNameCond)
+	appInfo, appErr := lgc.GetSingleApp(pheader, common.KvMap{common.BKAppNameField: c.AppName, common.BKOwnerIDField: c.OwnerID})
+	if nil != appErr {
+		blog.Errorf("getTopoIDByName get app info error; %s", appErr.Error())
+		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
 
-    setIDs, setErr := lgc.GetSetIDByCond(pheader, setCond)
-    if nil != setErr {
-        blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
-        return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
-    }
-    if 0 == len(setIDs) || 0 >= setIDs[0] {
-        blog.Info("getTopoIDByName get set info not found; applicationName: %s, setName: %s", c.AppName, c.SetName)
-        return 0, 0, 0, nil
-    }
-    setID := setIDs[0]
-    setIDConds := map[string]interface{}{
-        "field":    common.BKSetIDField,
-        "operator": common.BKDBEQ,
-        "value":    setID,
-    }
-    moduleNameCond := map[string]interface{}{
-        "field":    common.BKModuleNameField,
-        "operator": common.BKDBEQ,
-        "value":    c.ModuleName,
-    }
-    var moduleCond []interface{}
-    moduleCond = append(moduleCond, appIDConf, setIDConds, moduleNameCond)
-    moduleIDs, moduleErr := lgc.GetModuleIDByCond(pheader, moduleCond)
-    if nil != moduleErr {
-        blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
-        return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
-    }
-    if 0 == len(moduleIDs) || 0 >= moduleIDs[0] {
-        blog.Info("getTopoIDByName get module info not found; applicationName: %s, setName: %s, moduleName: %s", c.AppName, c.SetName, c.ModuleName)
-        return 0, 0, 0, nil
-    }
-    moduleID := moduleIDs[0]
+	appID, err := appInfo.Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommParamsInvalid)
+	}
 
-    return appID, setID, moduleID, nil
+	appIdItem := meta.ConditionItem{
+		Field:    common.BKAppIDField,
+		Operator: common.BKDBEQ,
+		Value:    appID,
+	}
+	setNameItem := meta.ConditionItem{
+		Field:    common.BKSetNameField,
+		Operator: common.BKDBEQ,
+		Value:    c.SetName,
+	}
+
+	setCond := []meta.ConditionItem{appIdItem, setNameItem}
+	setIDs, setErr := lgc.GetSetIDByCond(pheader, setCond)
+	if nil != setErr {
+		blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
+		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if 0 == len(setIDs) || 0 >= setIDs[0] {
+		blog.Info("getTopoIDByName get set info not found; applicationName: %s, setName: %s", c.AppName, c.SetName)
+		return 0, 0, 0, nil
+	}
+	setID := setIDs[0]
+
+	setIDConds := meta.ConditionItem{
+		Field:    common.BKSetIDField,
+		Operator: common.BKDBEQ,
+		Value:    setID,
+	}
+
+	moduleNameCond := meta.ConditionItem{
+		Field:    common.BKModuleNameField,
+		Operator: common.BKDBEQ,
+		Value:    c.ModuleName,
+	}
+
+	moduleCond := []meta.ConditionItem{appIdItem, setIDConds, moduleNameCond}
+	moduleIDs, moduleErr := lgc.GetModuleIDByCond(pheader, moduleCond)
+	if nil != moduleErr {
+		blog.Errorf("getTopoIDByName get app info error; %s", setErr.Error())
+		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if 0 == len(moduleIDs) || 0 >= moduleIDs[0] {
+		blog.Info("getTopoIDByName get module info not found; applicationName: %s, setName: %s, moduleName: %s", c.AppName, c.SetName, c.ModuleName)
+		return 0, 0, 0, nil
+	}
+	moduleID := moduleIDs[0]
+
+	return appID, setID, moduleID, nil
 }
 
-func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, objectCond []interface{}) ([]int64, error) {
-    objectIDArr := make([]int, 0)
-    conc := make(map[string]interface{})
-    appIDCond := make(map[string]interface{})
-    condition := make([]interface{}, 0)
+func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, objectCond []meta.ConditionItem) ([]int64, error) {
+	objectIDArr := make([]int64, 0)
+	condition := make([]meta.ConditionItem, 0)
 
-    appIDCond["field"] = common.BKAppIDField
-    appIDCond["operator"] = common.BKDBEQ
-    appIDCond["value"] = appID
+	instItem := meta.ConditionItem{}
+	for _, i := range objectCond {
+		if i.Field != common.BKInstIDField {
+			continue
+		}
+		value, err := util.GetInt64ByInterface(i.Value)
+		if nil != err {
+			return nil, err
+		}
+		instItem.Field = common.BKInstParentStr
+		instItem.Operator = i.Operator
+		instItem.Value = i.Value
+		objectIDArr = append(objectIDArr, value)
+	}
+	condition = append(condition, instItem)
 
-    for _, i := range objectCond {
-        condi := i.(map[string]interface{})
-        field, ok := condi["field"].(string)
-        if false == ok || field != common.BKInstIDField {
-            continue
-        }
-        value, err := util.GetIntByInterface(condi["value"])
-        if nil != err {
-            continue
-        }
-        conc["field"] = common.BKInstParentStr
-        conc["operator"] = condi["operator"]
-        conc["value"] = condi["value"]
-        objectIDArr = append(objectIDArr, value)
-    }
-    condition = append(condition, conc)
-    condition = append(condition, appIDCond)
+	appIDItem := meta.ConditionItem{
+		Field:    common.BKAppIDField,
+		Operator: common.BKDBEQ,
+		Value:    appID,
+	}
+	condition = append(condition, appIDItem)
 
-    for {
-        sSetIDArr, err := lgc.GetSetIDByCond(pheader, condition)
-        if err != nil {
-            return nil, err
-        }
+	for {
+		sSetIDArr, err := lgc.GetSetIDByCond(pheader, condition)
+		if err != nil {
+			return nil, err
+		}
 
-        if 0 != len(sSetIDArr) {
-            return sSetIDArr, nil
-        }
+		if 0 != len(sSetIDArr) {
+			return sSetIDArr, nil
+		}
 
-        sObjectIDArr := getObjectByParentID(req, objectIDArr, objURL)
-        objectIDArr = sObjectIDArr
-        if 0 == len(sObjectIDArr) {
-            return []int{}
-        }
-        conc = make(map[string]interface{})
-        condition = make([]interface{}, 0)
-        conc["field"] = common.BKInstParentStr
-        conc["operator"] = common.BKDBIN
-        conc["value"] = sObjectIDArr
-        condition = append(condition, conc)
-        condition = append(condition, appIDCond)
-    }
-    
+		sObjectIDArr, err := lgc.getObjectByParentID(pheader, objectIDArr)
+		if err != nil {
+			return nil, err
+		}
+		objectIDArr = sObjectIDArr
+		if 0 == len(sObjectIDArr) {
+			return []int64{}, nil
+		}
+
+		conc := meta.ConditionItem{
+			Field:    common.BKInstParentStr,
+			Operator: common.BKDBIN,
+			Value:    sObjectIDArr,
+		}
+		condition = make([]meta.ConditionItem, 0)
+		condition = append(condition, conc)
+		condition = append(condition, appIDItem)
+	}
+
 }
 
-func (lgc *Logics) func getObjectByParentID(pheader http.Header, valArr []int64) []int {
-    instIDArr := make([]int, 0)
-    condCell := make(map[string]interface{})
-    condition := make(map[string]interface{})
-    sCond := make(map[string]interface{})
-    condCell[common.BKDBIN] = valArr
-    sCond[common.BKInstParentStr] = condCell
-    condition["condition"] = sCond
-    bodyContent, _ := json.Marshal(condition)
-    url := objURL + "/object/v1/insts/object/search"
-    blog.Info("GetObjectIDByCond url :%s", url)
-    blog.Info("GetObjectIDByCond content :%s", string(bodyContent))
-    reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-    blog.Info("GetObjectIDByCond return :%s", string(reply))
-    if err != nil {
-        blog.Error("GetsetIDByCond err :%v", err)
-        return instIDArr
-    }
-    var sResult ObjectSResult
-    err = json.Unmarshal([]byte(reply), &sResult)
-    if err != nil {
-        blog.Error("GetObjectIDByCond err :%v", err)
-        return instIDArr
-    }
-    if 0 == sResult.Data.Count {
-        return instIDArr
-    }
-    for _, j := range sResult.Data.Info {
-        cell, err := util.GetIntByInterface(j[common.BKInstIDField])
-        if nil != err {
-            continue
-        }
-        instIDArr = append(instIDArr, cell)
-    }
-    return instIDArr
+func (lgc *Logics) getObjectByParentID(pheader http.Header, valArr []int64) ([]int64, error) {
+	instIDArr := make([]int64, 0)
+	condCell, sCond := make(map[string]interface{}), make(map[string]interface{})
+	condCell[common.BKDBIN] = valArr
+	sCond[common.BKInstParentStr] = condCell
+
+	query := &meta.QueryInput{
+		Condition: sCond,
+		Start:     0,
+		Limit:     common.BKNoLimit,
+	}
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKINnerObjIDObject, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("get object failed, err: %v, %v", err, result.ErrMsg)
+	}
+
+	if result.Data.Count == 0 {
+		return instIDArr, nil
+	}
+
+	for _, info := range result.Data.Info {
+		id, err := info.Int64(common.BKInstIDField)
+		if err != nil {
+			return nil, fmt.Errorf("invalid obj id: %v", err)
+		}
+		instIDArr = append(instIDArr, id)
+	}
+
+	return instIDArr, nil
+}
+
+func (lgc *Logics) GetObjectInstByCond(pheader http.Header, objID string, cond []meta.ConditionItem) ([]int64, error) {
+	instIDArr := make([]int64, 0)
+	condc := make(map[string]interface{})
+	parse.ParseCommonParams(cond, condc)
+
+	var outField, objType string
+	if objID == common.BKInnerObjIDPlat {
+		outField = common.BKCloudIDField
+		objType = common.BKInnerObjIDPlat
+	} else {
+		condc[common.BKObjIDField] = objID
+		outField = common.BKInstIDField
+		objType = common.BKINnerObjIDObject
+	}
+
+	query := &meta.QueryInput{
+		Condition: condc,
+		Start:     0,
+		Limit:     1,
+		Sort:      common.BKAppIDField,
+	}
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), objType, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+
+	if result.Data.Count == 0 {
+		return instIDArr, nil
+	}
+
+	for _, info := range result.Data.Info {
+		id, err := info.Int64(outField)
+		if err != nil {
+			return nil, err
+		}
+		instIDArr = append(instIDArr, id)
+	}
+
+	return instIDArr, nil
+}
+func (lgc *Logics) GetHostIDByInstID(pheader http.Header, asstObjId string, instIDArr []int64) ([]int64, error) {
+	cond := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).
+		WithAssoObjID(asstObjId).WithAssoInstID(map[string]interface{}{common.BKDBIN: instIDArr}).Data()
+
+	query := &meta.QueryInput{
+		Condition: cond,
+		Start:     0,
+		Limit:     common.BKNoLimit,
+	}
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, pheader, query)
+	if err != nil || (err == nil && !result.Result) {
+		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, val := range result.Data.Info {
+		id, err := val.Int64(common.BKInstIDField)
+		if err != nil {
+			return nil, err
+		}
+		hostIDs = append(hostIDs, id)
+	}
+
+	return hostIDs, nil
 }

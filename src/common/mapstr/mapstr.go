@@ -141,13 +141,9 @@ func (cli MapStr) Int64(key string) (int64, error) {
 		return int64(t), nil
 	case json.Number:
 		num, err := t.Int64()
-		return num, err
+		return int64(num), err
 	case string:
-		tv, err := strconv.Atoi(t)
-		if nil != err {
-			return 0, err
-		}
-		return int64(tv), nil
+		return strconv.ParseInt(t, 10, 64)
 	}
 }
 

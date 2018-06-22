@@ -27,7 +27,7 @@ type ModuleInterface interface {
 	DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
 	MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error)
 	AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error)
-	GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int) (resp *metadata.HostConfig, err error)
+	GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error)
 }
 
 func NewModuleInterface(client rest.ClientInterface) ModuleInterface {

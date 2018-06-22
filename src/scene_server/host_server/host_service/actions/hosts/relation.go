@@ -415,6 +415,10 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
 			}
 		}
+		user := util.GetActionUser(req)
+		logClient.SetDesc("host to " + moduleNameLogKey + " module")
+		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
 
+		return http.StatusOK, nil, nil
 	}, resp)
 }
