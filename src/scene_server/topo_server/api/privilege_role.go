@@ -10,4 +10,29 @@
  * limitations under the License.
  */
 
- package api
+package api
+
+import (
+	"fmt"
+	"net/http"
+
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
+
+func (cli *topoAPI) initPrivigeRole() {
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: cli.CreatePrivilege})
+	cli.actions = append(cli.actions, action{Method: http.MethodGet, Path: "/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: cli.GetPrivilege})
+}
+
+// CreatePrivilege search user goup
+func (cli *topoAPI) CreatePrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// GetPrivilege search user goup
+func (cli *topoAPI) GetPrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}

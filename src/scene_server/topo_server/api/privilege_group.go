@@ -16,8 +16,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -26,12 +24,33 @@ func init() {
 	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initObject)
 }
 
-func (cli *topoAPI) initObject() {
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/object/batch", HandlerFunc: cli.CreateObjectBatch})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/object/search/batch", HandlerFunc: cli.SearchObjectBatch})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/object", HandlerFunc: cli.CreateObject})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objects", HandlerFunc: cli.SearchObject})
-	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/objects/topo", HandlerFunc: cli.SearchObjectTopo})
-	cli.actions = append(cli.actions, action{Method: http.MethodPut, Path: "/object/{id}", HandlerFunc: cli.UpdateObject})
-	cli.actions = append(cli.actions, action{Method: http.MethodDelete, Path: "/object/{id}", HandlerFunc: cli.DeleteObject})
+func (cli *topoAPI) initPrivilegeGroup() {
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}", HandlerFunc: cli.CreateUserGroup})
+	cli.actions = append(cli.actions, action{Method: http.MethodDelete, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: cli.DeleteUserGroup})
+	cli.actions = append(cli.actions, action{Method: http.MethodPut, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: cli.UpdateUserGroup})
+	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}/search", HandlerFunc: cli.SearchUserGroup})
+}
+
+// CreateUserGroup create user goup
+func (cli *topoAPI) CreateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// DeleteUserGroup delete user goup
+func (cli *topoAPI) DeleteUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// UpdateUserGroup update user goup
+func (cli *topoAPI) UpdateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
+}
+
+// SearchUserGroup search user goup
+func (cli *topoAPI) SearchUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchObjectBatch")
+	return nil, nil
 }
