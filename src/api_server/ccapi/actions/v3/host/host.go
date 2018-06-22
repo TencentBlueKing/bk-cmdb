@@ -140,6 +140,8 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 
 func (cli *hostAction) cloneHostProperty(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/propery/clone"
+	defErr := cli.cc.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+
 	rsp, err := httpcli.ReqForward(req, url, common.HTTPUpdate)
 	if nil != err {
 		blog.Errorf("cloneHostProperty  http do err, url:%s, err:%s", url, err.Error())
