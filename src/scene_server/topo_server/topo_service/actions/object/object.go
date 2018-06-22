@@ -22,6 +22,8 @@ import (
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	"strings"
 
+	"github.com/rs/xid"
+
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 
@@ -196,6 +198,19 @@ func (cli *objectAction) updateObjectAttribute(tmpItem *api.ObjAttDes, jsObjAttr
 		}
 	}
 
+	if jsTmp, ok := jsObjAttr.CheckGet("bk_property_group"); ok {
+		if tmp, tmpErr := jsTmp.String(); nil == tmpErr {
+			if "" == tmp {
+				blog.Error("bk_property_group_name could not be empty")
+				return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedSet, "bk_property_group_name")
+			}
+			tmpItem.PropertyGroup = tmp
+		} else {
+			blog.Error("can not parse the bk_property_group_name, error info is %s", tmpErr.Error())
+			return tmpItem, errProxy.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name")
+		}
+	}
+
 	if jsTmp, ok := jsObjAttr.CheckGet("option"); ok {
 		switch tmpItem.PropertyType {
 		case common.FieldTypeEnum:
@@ -333,10 +348,102 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 				colIdx, _ := strconv.Atoi(keyIdx)
 
+				// check group name
+				propertyGroupName, err := jsObjAttr.Get(keyIdx).Get("bk_property_group_name").String()
+				jsObjAttr.Get(keyIdx).Del("bk_property_group_name")
+				if nil != err {
+					blog.Error("failed to parse the bk_property_group_name, error info is %s", err.Error())
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name"))
+					if failed, ok := subResult["insert_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["insert_failed"] = failedArr
+					} else {
+						subResult["insert_failed"] = []string{
+							errStr,
+						}
+					}
+					result[objID] = subResult
+					continue
+				}
+
+				// check group name
+				if 0 == len(propertyGroupName) {
+					jsObjAttr.Get(keyIdx).Set("bk_property_group", "default") // set default, if set nothing
+				} else {
+					data := map[string]interface{}{
+						common.BKOwnerIDField: ownerID,
+						common.BKObjIDField:   objID,
+						"bk_group_name":       propertyGroupName,
+					}
+					dataStr, _ := json.Marshal(data)
+					grps, err := cli.mgr.SelectPropertyGroupByObjectID(forward, ownerID, objID, dataStr, defErr)
+					if nil != err {
+						blog.Error("failed to search the group, error info is %s", err.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name"))
+						if failed, ok := subResult["insert_failed"]; ok {
+							failedArr := failed.([]string)
+							failedArr = append(failedArr, errStr)
+							subResult["insert_failed"] = failedArr
+						} else {
+							subResult["insert_failed"] = []string{
+								errStr,
+							}
+						}
+						result[objID] = subResult
+						continue
+					}
+
+					if 0 != len(grps) {
+						jsObjAttr.Get(keyIdx).Set("bk_property_group", grps[0].GroupID) // only one group, not any more
+					} else {
+						grp := api.ObjAttGroupDes{}
+						grp.ObjectID = objID
+						grp.OwnerID = ownerID
+						grp.GroupID = xid.New().String()
+						grp.GroupName = propertyGroupName
+						grpStr, _ := json.Marshal(grp)
+						if _, err := cli.mgr.CreateObjectGroup(forward, grpStr, defErr); nil != err {
+							blog.Error("failed to create the group, error info is %s", err.Error())
+							errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Error(common.CCErrTopoObjectGroupCreateFailed))
+							if failed, ok := subResult["insert_failed"]; ok {
+								failedArr := failed.([]string)
+								failedArr = append(failedArr, errStr)
+								subResult["insert_failed"] = failedArr
+							} else {
+								subResult["insert_failed"] = []string{
+									errStr,
+								}
+							}
+							result[objID] = subResult
+							continue
+						}
+
+						jsObjAttr.Get(keyIdx).Set("bk_property_group", grp.GroupID) // only one group, not any more
+					}
+
+				}
+
+				// check base attribute
 				propertyID, err := jsObjAttr.Get(keyIdx).Get("bk_property_id").String()
+				if 0 == len(propertyID) {
+					blog.Error("not set the bk_property_id")
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedSet, "bk_property_id"))
+					if failed, ok := subResult["insert_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["insert_failed"] = failedArr
+					} else {
+						subResult["insert_failed"] = []string{
+							errStr,
+						}
+					}
+					result[objID] = subResult
+					continue
+				}
 				if nil != err {
 					blog.Error("failed to parse the bk_property_id, error info is %s", err.Error())
-					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsLostField, "bk_property_id"))
+					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedString, "bk_property_id"))
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
 						failedArr = append(failedArr, errStr)

@@ -1,19 +1,22 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
@@ -48,9 +51,29 @@ func (cli *BusinessWrapper) SetValue(key string, val interface{}) error {
 	return cli.business.SetValue(key, val)
 }
 
+// IsExists check the set
+func (cli *BusinessWrapper) IsExists() (bool, error) {
+	return cli.business.IsExists()
+}
+
+// Create only to create
+func (cli *BusinessWrapper) Create() error {
+	return cli.business.Create()
+}
+
+// Update only to update
+func (cli *BusinessWrapper) Update() error {
+	return cli.business.Update()
+}
+
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
+}
+
+// GetModel get the model for the business
+func (cli *BusinessWrapper) GetModel() model.Model {
+	return cli.business.GetModel()
 }
 
 // SetDeveloper set the biz developer
@@ -119,23 +142,18 @@ func (cli *BusinessWrapper) GetTester() (string, error) {
 	return vals.String(fieldBizTester), nil
 }
 
-/* TODO need to delete the follow code
-// SetSupplierAccount set the supplier account
-func (cli *BusinessWrapper) SetSupplierAccount(supplierAccount string) error {
-	id, _ := strconv.Atoi(supplierAccount)
-	cli.SetValue(fieldSupplierID, id)
-	return cli.business.SetValue(fieldSupplierAccount, supplierAccount)
-}
-
-// GetSupplierAccount get the supplier account
-func (cli *BusinessWrapper) GetSupplierAccount() (string, error) {
+// GetBusinessID get the id for the business
+func (cli *BusinessWrapper) GetBusinessID() (int64, error) {
 	vals, err := cli.business.GetValues()
 	if nil != err {
-		return "", err
+		return 0, err
 	}
-	return vals.String(fieldSupplierAccount), nil
+	if !vals.Exists(fieldBusinessID) {
+		return 0, fmt.Errorf("the business id is not set")
+	}
+	val, err := vals.Int(fieldBusinessID)
+	return int64(val), err
 }
-*/
 
 // SetLifeCycle set the life cycle
 func (cli *BusinessWrapper) SetLifeCycle(lifeCycle string) error {
