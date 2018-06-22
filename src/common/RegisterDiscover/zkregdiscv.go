@@ -13,15 +13,15 @@
 package RegisterDiscover
 
 import (
-	"configcenter/src/common/blog"
-	//"bcs/bcs-common/common/blog"
-	"configcenter/src/common/zkclient"
 	"context"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/common/zkclient"
 )
 
 //ZkRegDiscv do register and discover by zookeeper
@@ -108,8 +108,8 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 }
 
 // GetServNodes get server nodes by path
-func (zkRD *ZkRegDiscv) GetServNodes (path string) ([]string, error) {
-    return zkRD.zkcli.GetChildren(path)
+func (zkRD *ZkRegDiscv) GetServNodes(path string) ([]string, error) {
+	return zkRD.zkcli.GetChildren(path)
 }
 
 //Discover watch the children
