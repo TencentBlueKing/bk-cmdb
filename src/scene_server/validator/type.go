@@ -21,7 +21,15 @@ import (
 	"net/http"
 )
 
-var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
+var innerObject = map[string]bool{
+	common.BKInnerObjIDApp: true,
+	common.BKInnerObjIDSet: true,
+
+	common.BKInnerObjIDModule: true,
+	common.BKInnerObjIDProc:   true,
+	common.BKInnerObjIDHost:   true,
+	common.BKInnerObjIDPlat:   true,
+}
 
 // IntOption integer option
 type IntOption struct {
