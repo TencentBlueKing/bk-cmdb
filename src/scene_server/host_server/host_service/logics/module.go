@@ -20,7 +20,11 @@ import (
 	"configcenter/src/common/util"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 
+	"configcenter/src/source_controller/common/commondata"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
@@ -153,4 +157,95 @@ func GetSingleModuleID(req *restful.Request, conds interface{}, hostAddr string)
 	}
 
 	return moduleID, nil
+}
+
+// NewHostSyncValidModule
+// 1. check module is exist,
+// 2. multiple moduleID  Check whether  all the module default 0
+func NewHostSyncValidModule(req *restful.Request, appID int, moduleID []int, objAddr string) ([]int, error) {
+	if 0 == len(moduleID) {
+		return nil, fmt.Errorf("module id number must be > 1")
+	}
+
+	conds := common.KvMap{
+		common.BKAppIDField:    appID,
+		common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleID},
+	}
+
+	condition := new(commondata.ObjQueryInput)
+	condition.Sort = common.BKModuleIDField
+	condition.Start = 0
+	condition.Limit = 0
+	condition.Condition = conds
+	bodyContent, err := json.Marshal(condition)
+	if nil != err {
+		return nil, fmt.Errorf("query module parameters not json")
+	}
+	url := objAddr + "/object/v1/insts/module/search"
+	blog.Info("NewHostSyncValidModule url :%s", url)
+	blog.Info("NewHostSyncValidModule content :%s", string(bodyContent))
+	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
+	blog.Info("NewHostSyncValidModule return :%s", string(reply))
+
+	js, err := simplejson.NewJson([]byte(reply))
+	if nil != err {
+		blog.Errorf("NewHostSyncValidModule get module reply not json,  url:%s, params:%s, reply:%s", string(bodyContent), url, reply)
+		return nil, fmt.Errorf("get moduel reply not json, reply:%s", reply)
+	}
+
+	moduleInfos, err := js.Get("data").Get("info").Array()
+	if nil != err {
+		blog.Errorf("NewHostSyncValidModule get module reply not foound data.info,  url:%s, params:%s, reply:%s", string(bodyContent), url, reply)
+		return nil, fmt.Errorf("get moduel reply not found info from data, reply:%s", reply)
+	}
+
+	// only module  and module exist return true
+	if 1 == len(moduleID) && 1 == len(moduleInfos) {
+		return moduleID, nil
+	}
+
+	// use module id is exist
+	moduleIDMap := make(map[int64]bool)
+	for _, id := range moduleID {
+		moduleIDMap[int64(id)] = false
+	}
+
+	// multiple module all module default = 0
+	for _, module := range moduleInfos {
+		moduleMap, ok := module.(map[string]interface{})
+		if !ok {
+			blog.Errorf("NewHostSyncValidModule item not map[string]interface{},  module:%v", module)
+			return nil, fmt.Errorf("item not map[string]interface{},  module:%v", module)
+		}
+		moduelDefault, err := util.GetInt64ByInterface(moduleMap[common.BKDefaultField])
+		if nil != err {
+			blog.Errorf("NewHostSyncValidModule item not found default,  module:%v", module)
+			return nil, fmt.Errorf("module information not found default,  module:%v", module)
+		}
+		if 0 != moduelDefault {
+			return nil, fmt.Errorf("multiple module cannot appear system module")
+		}
+		moduleID, err := util.GetInt64ByInterface(moduleMap[common.BKModuleIDField])
+		if nil != err {
+			blog.Errorf("NewHostSyncValidModule item not found module id,  module:%v", module)
+			return nil, fmt.Errorf("module information not found module id,  module:%v", module)
+		}
+		moduleIDMap[moduleID] = true //module id  exist db
+
+	}
+
+	var dbModuleID []int
+	var notExistModuleId []string
+	for id, exist := range moduleIDMap {
+		if exist {
+			dbModuleID = append(dbModuleID, int(id))
+		} else {
+			notExistModuleId = append(notExistModuleId, strconv.FormatInt(id, 10))
+		}
+	}
+	if 0 < len(notExistModuleId) {
+		return nil, fmt.Errorf("module id %s not found", strings.Join(notExistModuleId, ","))
+	}
+
+	return dbModuleID, nil
 }
