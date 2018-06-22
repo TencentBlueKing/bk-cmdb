@@ -14,24 +14,27 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	_ "configcenter/src/common/blog"
-	_ "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/metadata"
 	api "configcenter/src/source_controller/api/object"
+	"context"
 	"encoding/json"
-	_ "fmt"
+	"net/http"
 )
 
 type ValRule struct {
+	ctx context.Context
+	*backbone.Engine
+	pheader        http.Header
 	IsRequireArr   []string
 	IsOnlyArr      []string
 	AllFiledArr    []string
 	NoEnumFiledArr []string
-	PropertyKv     map[string]string
+	PropertyKv     map[string]metadata.Attribute
 	FieldRule      map[string]map[string]interface{}
 	ownerID        string
 	objID          string
-	objCtrl        string
 	AllFieldAttDes []api.ObjAttDes
 }
 
@@ -42,9 +45,12 @@ type MetaRst struct {
 	Data    []map[string]interface{} `json:data`
 }
 
+// NewValRule returns a new ValRule
 func NewValRule(ownerID, objCtrl string) *ValRule {
 	return &ValRule{ownerID: ownerID, objCtrl: objCtrl}
 }
+
+// GetObjAttrByID fetch object attributes
 func (valid *ValRule) GetObjAttrByID(forward *api.ForwardParam, objID string) error {
 	fieldRule := make(map[string]map[string]interface{})
 	data := make(map[string]interface{})
@@ -54,6 +60,8 @@ func (valid *ValRule) GetObjAttrByID(forward *api.ForwardParam, objID string) er
 	info, _ := json.Marshal(data)
 	client := api.NewClient(valid.objCtrl)
 
+	re, _ := valid.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(valid.ctx, valid.pheader, dat)
+	re.Data
 	result, _ := client.SearchMetaObjectAttExceptInnerFiled(forward, []byte(info))
 	valid.AllFieldAttDes = result
 	blog.Infof("valid result:%+v selector:%s", result, info)

@@ -15,16 +15,21 @@ package validator
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/metadata"
+	"context"
 	"net/http"
+	"sync"
 )
 
 var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
 
+// IntOption integer option
 type IntOption struct {
 	Min string `bson:"min" json:"min"`
 	Max string `bson:"max" json:"max"`
 }
 
+// EnumVal enum option
 type EnumVal struct {
 	ID        string `bson:"id"           json:"id"`
 	Name      string `bson:"name"         json:"name"`
@@ -32,21 +37,16 @@ type EnumVal struct {
 	IsDefault bool   `bson:"is_default"   json:"is_default"`
 }
 
+// ValidMap define
 type ValidMap struct {
+	ctx context.Context
 	*backbone.Engine
-	pheader      http.Header
-	ownerID      string
-	objID        string
-	IsRequireArr []string
-	IsOnlyArr    []string
-	KeyFileds    map[string]interface{}
-	PropertyKv   map[string]string
-}
+	pheader http.Header
+	ownerID string
+	objID   string
 
-// InstRst define
-type InstRst struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
+	propertys    map[string]metadata.Attribute
+	require      map[string]bool
+	isOnly       map[string]bool
+	shouldIgnore map[string]bool
 }
