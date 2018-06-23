@@ -17,11 +17,12 @@ import (
 
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
 type BusinessIteratorWrapper struct {
-	business inst.Iterator
+	business inst.BusinessIterator
 }
 
 // Next next the business
@@ -36,14 +37,14 @@ func (cli *BusinessIteratorWrapper) Next() (*BusinessWrapper, error) {
 // ForEach the foreach function
 func (cli *BusinessIteratorWrapper) ForEach(callback func(business *BusinessWrapper) error) error {
 
-	return cli.business.ForEach(func(item inst.Inst) error {
+	return cli.business.ForEach(func(item inst.BusinessInterface) error {
 		return callback(&BusinessWrapper{business: item})
 	})
 }
 
 // BusinessWrapper the business wrapper
 type BusinessWrapper struct {
-	business inst.Inst
+	business inst.BusinessInterface
 }
 
 // SetValue set the key value
@@ -69,6 +70,11 @@ func (cli *BusinessWrapper) Update() error {
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
+}
+
+// GetValues return the values
+func (cli *BusinessWrapper) GetValues() (types.MapStr, error) {
+	return cli.business.GetValues()
 }
 
 // GetModel get the model for the business
