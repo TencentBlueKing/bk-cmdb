@@ -14,14 +14,26 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"errors"
 )
 
-var _ Inst = (*module)(nil)
+var _ ModuleInterface = (*module)(nil)
+
+// ModuleInterface the module interface
+type ModuleInterface interface {
+	Maintaince
+
+	GetModel() model.Model
+
+	GetInstID() (int64, error)
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type module struct {
 	target model.Model
@@ -32,22 +44,8 @@ func (cli *module) GetModel() model.Model {
 	return cli.target
 }
 
-func (cli *module) IsMainLine() bool {
-	// TODO：判断当前实例是否为主线实例
-	return true
-}
-
-func (cli *module) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
-}
-
-func (cli *module) GetInstID() int {
-	id, err := cli.datas.Int(ModuleID)
-	if nil != err {
-		log.Errorf("failed to get the inst id, %s", err.Error())
-	}
-	return id
+func (cli *module) GetInstID() (int64, error) {
+	return cli.datas.Int64(ModuleID)
 }
 func (cli *module) GetInstName() string {
 	return cli.datas.String(ModuleName)
@@ -55,28 +53,6 @@ func (cli *module) GetInstName() string {
 
 func (cli *module) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *module) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *module) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *module) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *module) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *module) GetChildren() ([]Topo, error) {
-	return nil, nil
 }
 
 func (cli *module) SetValue(key string, value interface{}) error {
@@ -139,41 +115,35 @@ func (cli *module) Create() error {
 }
 func (cli *module) Update() error {
 
-	businessID := cli.datas.String(BusinessID)
-	setID := cli.datas.String(SetID)
-
 	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
+	// clear the invalid field
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+		cli.datas.Remove(key)
+	})
+
 	for _, existItem := range existItems {
 
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
-
-		instID, err := existItem.Int(ModuleID)
+		instID, err := existItem.Int64(ModuleID)
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(ModuleID).Eq(instID).Field(BusinessID).Eq(businessID).Field(SetID).Eq(setID)
 
-		// clear the invalid field
-		existItem.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
-			}
-			existItem.Remove(key)
-		})
-		//fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3().Module().UpdateModule(existItem, updateCond)
+		updateCond := common.CreateCondition()
+		updateCond.Field(ModuleID).Eq(instID)
+
+		err = client.GetClient().CCV3().Module().UpdateModule(cli.datas, updateCond)
 		if nil != err {
 			return err
 		}
-		cli.datas.Set(ModuleID, instID)
 
 	}
 	return nil
