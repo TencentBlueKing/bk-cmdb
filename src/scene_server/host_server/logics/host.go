@@ -579,23 +579,25 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 			}
 			appID := setAppConfig[setID]
 			if false == isOk {
+				blog.Warnf("hostSearch not found set id, setID:%d, setAppConfig:%v, input:%v", setID, setAppConfig, data)
+
 				continue
 			}
 			appInfo, isOk := hostAppMap[appID]
 			if false == isOk {
-				blog.Warnf("hostSearch not found application id, appID:%d", appID)
+				blog.Warnf("hostSearch not found application id, appID:%d, hostAppMap:%v, input:%v", appID, hostAppMap, data)
 				continue
 			}
 
 			appName, err := appInfo.String(common.BKAppNameField)
 			if nil != err {
-				blog.Warnf("hostSearch not found application id, appID:%d", appID)
+				blog.Warnf("hostSearch not found application name,  appID:%d, appInfo:%v, input:%v", appID, appInfo, data)
 				continue
 			}
 
 			setName, err := setInfo.String(common.BKSetNameField)
 			if nil != err {
-				blog.Warnf("hostSearch not found set id, appID:%d", appID)
+				blog.Warnf("hostSearch not found set name, setInfo:%d, input:%v", setInfo, data)
 				continue
 			}
 			datacp := make(map[string]interface{})
@@ -614,29 +616,34 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		for _, ModuleID := range hostModuleIDArr {
 			moduleInfo, ok := hostModuleMap[ModuleID]
 			if false == ok {
+				blog.Warnf("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, input:%v", ModuleID, hostModuleMap, data)
 				continue
 			}
 			setID := moduleSetConfig[ModuleID]
 			if false == ok {
+				blog.Warnf("hostSearch not found application id, moduleID:%d, moduleSetConfig:%v, input:%v", ModuleID, moduleSetConfig, data)
 				continue
 			}
 			appID := setAppConfig[setID]
 			if false == ok {
+				blog.Warnf("hostSearch not found application id, moduleID:%d, moduleSetConfig:%v, input:%v", ModuleID, setAppConfig, data)
 				continue
 			}
 			appInfo, ok := hostAppMap[appID]
 			if false == ok {
+				blog.Warnf("hostSearch not found application info, moduleID:%d, moduleSetConfig:%v, input:%v", ModuleID, hostAppMap, data)
 				continue
 			}
 
 			appName, err := appInfo.String(common.BKAppNameField)
 			if nil != err {
+				blog.Warnf("hostSearch not found application name, moduleID:%d, moduleSetConfig:%v, input:%v", ModuleID, appInfo, data)
 				continue
 			}
 
 			moduleName, err := moduleInfo.String(common.BKModuleNameField)
 			if nil != err {
-				blog.Warnf("hostSearch not found module name,input:%v, item:%v", mainlineCond, moduleInfo)
+				blog.Warnf("hostSearch not found module name,input:%v, item:%v, input:%v", mainlineCond, moduleInfo, data)
 				continue
 			}
 			datacp := make(map[string]interface{})
