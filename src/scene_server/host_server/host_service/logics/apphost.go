@@ -143,7 +143,7 @@ func ParseHostSnap(data string) (common.KvMap, error) {
 	cronInfos, err := js.Get("env").Get("crontab").Array()
 
 	var crontabs common.KvMap = make(common.KvMap)
-	if nil != err {
+	if nil == err {
 		for _, cronI := range cronInfos {
 			cron, ok := cronI.(map[string]string)
 			if ok {
