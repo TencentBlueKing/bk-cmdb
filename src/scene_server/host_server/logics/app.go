@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -146,7 +147,7 @@ func (lgc *Logics) GetAppIDByCond(pheader http.Header, cond []metadata.Condition
 	return appIDs, nil
 }
 
-func (lgc *Logics) GetAppMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]interface{}, error) {
+func (lgc *Logics) GetAppMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]types.MapStr, error) {
 
 	query := &metadata.QueryInput{
 		Condition: cond,
@@ -160,7 +161,7 @@ func (lgc *Logics) GetAppMapByCond(pheader http.Header, fields string, cond inte
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
 	}
-	appMap := make(map[int64]interface{})
+	appMap := make(map[int64]types.MapStr)
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKAppIDField)
 		if err != nil {
