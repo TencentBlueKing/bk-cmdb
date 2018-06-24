@@ -301,9 +301,9 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	setAppConfig := make(map[int64]int64)
 	setIDNameMap := make(map[int64]string)
 
-	hostModuleMap := make(map[int64]interface{})
+	hostModuleMap := make(map[int64]mapstr.MapStr)
 	hostSetMap := make(map[int64]mapstr.MapStr)
-	hostAppMap := make(map[int64]interface{})
+	hostAppMap := make(map[int64]mapstr.MapStr)
 
 	totalInfo := make([]mapstr.MapStr, 0)
 	moduleHostConfig := make(map[string][]int64)
@@ -541,7 +541,10 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		celld[common.BKDBIN] = disModuleIDArr
 		cond[common.BKModuleIDField] = celld
 		fields := strings.Join(moduleCond.Fields, ",")
-		hostModuleMap, _ = lgc.GetModuleMapByCond(pheader, fields, cond)
+		hostModuleMap, err = lgc.GetModuleMapByCond(pheader, fields, cond)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//com host info
@@ -578,21 +581,21 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 			if false == isOk {
 				continue
 			}
-			appInfoI, isOk := hostAppMap[appID]
+			appInfo, isOk := hostAppMap[appID]
 			if false == isOk {
-				continue
-			}
-			appInfo, isOk := appInfoI.(map[string]interface{})
-			if false == isOk {
-				continue
-			}
-			appName, isOk := appInfo[common.BKAppNameField].(string)
-			if false == isOk {
+				blog.Warnf("hostSearch not found application id, appID:%d", appID)
 				continue
 			}
 
-			setName, isOk := setInfo[common.BKSetNameField].(string)
-			if false == isOk {
+			appName, err := appInfo.String(common.BKAppNameField)
+			if nil != err {
+				blog.Warnf("hostSearch not found application id, appID:%d", appID)
+				continue
+			}
+
+			setName, err := setInfo.String(common.BKSetNameField)
+			if nil != err {
+				blog.Warnf("hostSearch not found set id, appID:%d", appID)
 				continue
 			}
 			datacp := make(map[string]interface{})
@@ -621,29 +624,23 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 			if false == ok {
 				continue
 			}
-			appInfoI, ok := hostAppMap[appID]
-			if false == ok {
-				continue
-			}
-			appInfo, ok := appInfoI.(map[string]interface{})
-			if false == ok {
-				continue
-			}
-			appName, ok := appInfo[common.BKAppNameField].(string)
-			if false == ok {
-				continue
-			}
-			data, ok := moduleInfo.(map[string]interface{})
+			appInfo, ok := hostAppMap[appID]
 			if false == ok {
 				continue
 			}
 
-			moduleName, ok := data[common.BKModuleNameField].(string)
-			if false == ok {
+			appName, err := appInfo.String(common.BKAppNameField)
+			if nil != err {
+				continue
+			}
+
+			moduleName, err := moduleInfo.String(common.BKModuleNameField)
+			if nil != err {
+				blog.Warnf("hostSearch not found module name,input:%v, item:%v", mainlineCond, moduleInfo)
 				continue
 			}
 			datacp := make(map[string]interface{})
-			for key, val := range data {
+			for key, val := range moduleInfo {
 				datacp[key] = val
 			}
 			setName := setIDNameMap[setID]
@@ -670,11 +667,7 @@ func (lgc *Logics) GetHostIDByCond(pheader http.Header, cond map[string][]int64)
 
 	hostIDs := make([]int64, 0)
 	for _, val := range result.Data {
-		id, err := val.Int64(common.BKInstIDField)
-		if err != nil {
-			return nil, err
-		}
-		hostIDs = append(hostIDs, id)
+		hostIDs = append(hostIDs, val.HostID)
 	}
 
 	return hostIDs, nil
