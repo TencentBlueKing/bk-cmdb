@@ -721,16 +721,24 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 				return http.StatusInternalServerError, nil, defErr.Error(int(searchAsstJSON.Get(common.HTTPBKAPIErrorCode).Int()))
 			}
 
-			assts := []map[string]interface{}{}
-			json.Unmarshal([]byte(searchAsstJSON.Get("data").String()), &assts)
+			assts := []metadata.ObjectAsst{}
+			err = json.Unmarshal([]byte(searchAsstJSON.Get("data").String()), &assts)
+			if nil != err {
+				blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+			}
 
 			blog.Infof("copy asst for %s, %+v", ownerID, assts)
 
 			for index := range assts {
-				assts[index][common.BKOwnerIDField] = ownerID
+				assts[index].OwnerID = ownerID
 
 				createAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectasst"
-				createAsstData, _ := json.Marshal(assts[index])
+				createAsstData, err := json.Marshal(assts[index])
+				if nil != err {
+					blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+				}
 				createAsstReply, err := httpcli.ReqHttp(req, createAsstURL, common.HTTPSelectPost, []byte(createAsstData))
 				if nil != err {
 					blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
