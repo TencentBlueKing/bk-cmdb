@@ -227,13 +227,13 @@ type Inst struct {
 
 func (i *Inst) set(key string, value interface{}) {
 	i.data[key] = value
-
+	var err error
 	if i.objType == common.BKInnerObjIDHost {
 		switch key {
 		case "bk_host_name":
 			i.ident.HostName = fmt.Sprint(value)
 		case "bk_cloud_id":
-			i.ident.CloudID, _ = strconv.Atoi(fmt.Sprint(value))
+			i.ident.CloudID, err = strconv.Atoi(fmt.Sprint(value))
 		case "bk_host_innerip":
 			i.ident.InnerIP = fmt.Sprint(value)
 		case "bk_host_outerip":
@@ -243,11 +243,14 @@ func (i *Inst) set(key string, value interface{}) {
 		case "bk_os_name":
 			i.ident.OSName = fmt.Sprint(value)
 		case "bk_mem":
-			i.ident.Memory, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.Memory, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_cpu":
-			i.ident.CPU, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.CPU, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_disk":
-			i.ident.Disk, _ = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.Disk, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+		}
+		if nil != err {
+			blog.Errorf("key %s	convert error %s", key, err.Error())
 		}
 	}
 }
@@ -266,16 +269,29 @@ func (i *Inst) saveCache() error {
 }
 
 func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
+	var err error
 	ident := HostIdentifier{}
 	ident.HostName = fmt.Sprint(m["bk_host_name"])
-	ident.CloudID, _ = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	ident.CloudID, err = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v", "bk_cloud_id", m)
+	}
 	ident.InnerIP = fmt.Sprint(m["bk_host_innerip"])
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
-	ident.Memory, _ = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
-	ident.CPU, _ = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
-	ident.Disk, _ = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
+	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)
+	}
+	ident.CPU, err = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_cpu", m)
+	}
+	ident.Disk, err = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_disk", m)
+	}
 	ident.Module = map[string]*Module{}
 	return &ident
 }
