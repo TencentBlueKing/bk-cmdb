@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"net/http"
 	"regexp"
 	"strconv"
@@ -132,10 +133,8 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	//valid unique
 	if validType == common.ValidCreate {
 		return valid.validCreateUnique(valData)
-	} else {
-		return valid.validUpdateUnique(valData, instID)
 	}
-
+	return valid.validUpdateUnique(valData, instID)
 }
 
 //valid char
