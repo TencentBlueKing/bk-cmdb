@@ -43,11 +43,11 @@ type MetaInterface interface {
 	DeleteObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
 	CreateObjectAssociation(ctx context.Context, h http.Header, dat *metadata.Association) (resp *metadata.CreateResult, err error)
 	UpdateObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
-	SelectObjectAttByID(ctx context.Context, objID int64, h http.Header) (resp *metadata.QueryObjectAttributeResult, err error)
+	SelectObjectAttByID(ctx context.Context, attID int64, h http.Header) (resp *metadata.QueryObjectAttributeResult, err error)
 	SelectObjectAttWithParams(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectAttributeResult, err error)
-	DeleteObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	DeleteObjectAttByID(ctx context.Context, attID int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
 	CreateObjectAtt(ctx context.Context, h http.Header, dat *metadata.Attribute) (resp *metadata.CreateObjectAttributeResult, err error)
-	UpdateObjectAttByID(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
+	UpdateObjectAttByID(ctx context.Context, attID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 }
 
 func NewmetaInterface(client rest.ClientInterface) MetaInterface {
