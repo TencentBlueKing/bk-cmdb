@@ -15,9 +15,10 @@ package validator
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"encoding/json"
 
 	"gopkg.in/mgo.v2/bson"
+
+	"encoding/json"
 )
 
 func getString(val interface{}) string {

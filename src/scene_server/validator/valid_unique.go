@@ -22,7 +22,7 @@ import (
 // validCreateUnique  valid create unique
 func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	if 0 >= len(valid.isOnly) {
-		blog.Debug("is only array is zero for %s", valid.objID)
+		blog.V(3).Infof("is only array is zero for %s", valid.objID)
 		return nil
 	}
 
