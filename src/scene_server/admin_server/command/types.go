@@ -135,3 +135,6 @@ type ProcessTopo struct {
 	Data    map[string]interface{} `json:"data"`
 	Modules []string               `json:"modules"`
 }
+
+const actionCreate = "create"
+const actionUpdate = "update"
