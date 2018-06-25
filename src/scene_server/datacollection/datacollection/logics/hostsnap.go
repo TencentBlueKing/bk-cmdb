@@ -495,6 +495,13 @@ func (h *HostSnap) saveRunning() (ok bool) {
 
 // subChan subscribe message from redis channel
 func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
+	defer func() {
+		syserr := recover()
+		if syserr != nil {
+			blog.Errorf("subChan emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
+		}
+		h.subscribing = false
+	}()
 	h.subscribing = true
 	var chanlen int
 	subChan, err := snapcli.Subscribe(chanName...)
@@ -507,8 +514,8 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	defer func() {
 		h.subscribing = false
 		close(closeChan)
-		subChan.Unsubscribe(chanName...)
 		blog.Infof("subChan Close")
+		subChan.Unsubscribe(chanName...)
 	}()
 
 	var ts = time.Now()
