@@ -1,10 +1,11 @@
 package command
 
 import (
-	"configcenter/src/storage"
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"configcenter/src/storage"
 )
 
 func export(db storage.DI, opt *option) error {

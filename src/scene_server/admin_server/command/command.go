@@ -1,13 +1,15 @@
 package command
 
 import (
+	"fmt"
+	"os"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
 	"configcenter/src/common/core/cc/api"
-	"fmt"
+
 	"github.com/spf13/pflag"
-	"os"
 )
 
 const bkbizCmdName = "bkbiz"

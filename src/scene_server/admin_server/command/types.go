@@ -1,10 +1,12 @@
 package command
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/source_controller/common/instdata"
+	"configcenter/src/common"
 	"fmt"
 	"strings"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/source_controller/common/instdata"
 )
 
 type option struct {
@@ -51,25 +53,12 @@ func (n *Node) getChilDInstNames() (instnames []string) {
 }
 func (n *Node) getChilDInstNameField() string {
 	for _, child := range n.Childs {
-		return getInstnameField(child.ObjID)
+		return common.GetInstNameField(child.ObjID)
 	}
 	return ""
 }
 func (n *Node) getInstNameField() string {
-	return getInstnameField(n.ObjID)
-}
-
-func getInstnameField(obj string) string {
-	switch obj {
-	case "biz":
-		return "bk_biz_name"
-	case "set":
-		return "bk_set_name"
-	case "module":
-		return "bk_module_name"
-	default:
-		return "bk_inst_name"
-	}
+	return common.GetInstNameField(n.ObjID)
 }
 
 func getInt64(v interface{}) (int64, error) {

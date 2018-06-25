@@ -1,19 +1,21 @@
 package command
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/instdata"
-	"configcenter/src/storage"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/mgo.v2"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/source_controller/common/instdata"
+	"configcenter/src/storage"
+
+	"gopkg.in/mgo.v2"
 )
 
 func backup(db storage.DI, opt *option) error {

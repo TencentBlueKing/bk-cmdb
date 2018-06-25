@@ -1,11 +1,12 @@
 package command
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/storage"
-	"fmt"
 )
 
 func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
@@ -137,8 +138,8 @@ func getMainline(root string, assts []*metadata.ObjectAsst) ([]string, error) {
 func getAsst(db storage.DI, opt *option) ([]*metadata.ObjectAsst, error) {
 	assts := []*metadata.ObjectAsst{}
 	condition := map[string]interface{}{
-		common.BKOwnerIDField: opt.OwnerID,
-		"bk_object_att_id":    "bk_childid",
+		common.BKOwnerIDField:  opt.OwnerID,
+		common.BKObjAttIDField: common.BKChildStr,
 	}
 	err := db.GetMutilByCondition("cc_ObjAsst", nil, condition, &assts, "", 0, 0)
 	if nil != err {
@@ -162,7 +163,7 @@ func getProcessTopo(db storage.DI, opt *option) ([]*ProcessTopo, error) {
 		return nil, fmt.Errorf("get process faile %s", err.Error())
 	}
 
-	procmodMap := map[int64][]string{}
+	procmodMap := map[int64][]string{} // processID -> modules
 	for _, pm := range procmodules {
 		procmodMap[pm.ProcessID] = append(procmodMap[pm.ProcessID], pm.ModuleName)
 	}
