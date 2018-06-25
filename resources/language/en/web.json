@@ -5,7 +5,7 @@
     "web_bk_alias_name_required": "Chinese name (required)",
     "web_bk_data_type_required": "Data Type (required)",
     "web_excel_not_data": "No data in excel file",
-    "web_import_field_not_found": "Import nonexistent fields, %s",
+    "web_import_field_not_found": "Import nonexistent fields,Please re-download the template and do not delete the first three lines of excel, %s",
     "web_excel_row_handle_error": "%s%s column could not process content;",
     "web_excel_header_required": "(Required)",
     "web_excel_header_field_error": "[No Field Name (Error)]",

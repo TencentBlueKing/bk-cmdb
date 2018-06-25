@@ -12,20 +12,26 @@
 
 package common
 
-import (
-	"configcenter/src/common"
-	"gopkg.in/redis.v5"
-)
-
-// cache key define
-const (
-	RedisSnapKeyPrefix        = common.BKCacheKeyV3Prefix + "snapshot:"
-	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
-	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-)
-
-// redis clients
-var (
-	Snapcli  *redis.Client
-	Rediscli *redis.Client
-)
+// GetInstNameField returns the inst name field
+func GetInstNameField(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKAppNameField
+	case BKInnerObjIDSet:
+		return BKSetNameField
+	case BKInnerObjIDModule:
+		return BKModuleNameField
+	case BKINnerObjIDObject:
+		return BKInstNameField
+	case BKInnerObjIDHost:
+		return BKHostNameField
+	case BKInnerObjIDProc:
+		return BKProcNameField
+	case BKInnerObjIDPlat:
+		return BKCloudNameField
+	case BKTableNameInstAsst:
+		return BKFieldID
+	default:
+		return BKInstNameField
+	}
+}

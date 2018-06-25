@@ -10,22 +10,11 @@
  * limitations under the License.
  */
 
-package common
+package metadata
 
-import (
-	"configcenter/src/common"
-	"gopkg.in/redis.v5"
-)
-
-// cache key define
-const (
-	RedisSnapKeyPrefix        = common.BKCacheKeyV3Prefix + "snapshot:"
-	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
-	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-)
-
-// redis clients
-var (
-	Snapcli  *redis.Client
-	Rediscli *redis.Client
-)
+type HostCloneInputParams struct {
+	OrgIP  string `json:"bk_org_ip"`
+	DstIP  string `json:"bk_dst_ip"`
+	AppID  int64  `json:"bk_biz_id"`
+	PlatID int64  `json:"bk_cloud_id"`
+}
