@@ -21,6 +21,7 @@ import (
 )
 
 func (hi *history) AddHistory(ctx context.Context, user string, h http.Header, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error) {
+	resp = new(metadata.AddHistoryResult)
 	subPath := fmt.Sprintf("/history/%s", user)
 
 	err = hi.client.Post().
@@ -34,6 +35,7 @@ func (hi *history) AddHistory(ctx context.Context, user string, h http.Header, d
 }
 
 func (hi *history) GetHistorys(ctx context.Context, user string, start string, limit string, h http.Header) (resp *metadata.GetHistoryResult, err error) {
+	resp = new(metadata.GetHistoryResult)
 	subPath := fmt.Sprintf("/history/%s/%s/%s", user, start, limit)
 
 	err = hi.client.Get().

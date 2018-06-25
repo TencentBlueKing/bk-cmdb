@@ -21,6 +21,7 @@ import (
 )
 
 func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.HostInstanceResult, err error) {
+	resp = new(metadata.HostInstanceResult)
 	subPath := fmt.Sprintf("/host/%s", hostID)
 
 	err = t.client.Get().
@@ -34,6 +35,7 @@ func (t *hostctrl) GetHostByID(ctx context.Context, hostID string, h http.Header
 }
 
 func (t *hostctrl) GetHosts(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error) {
+	resp = new(metadata.GetHostsResult)
 	subPath := "/hosts/search"
 
 	err = t.client.Post().
@@ -47,6 +49,7 @@ func (t *hostctrl) GetHosts(ctx context.Context, h http.Header, opt *metadata.Qu
 }
 
 func (t *hostctrl) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/insts"
 
 	err = t.client.Post().
@@ -60,6 +63,7 @@ func (t *hostctrl) AddHost(ctx context.Context, h http.Header, dat interface{}) 
 }
 
 func (t *hostctrl) GetHostSnap(ctx context.Context, hostID string, h http.Header) (resp *metadata.GetHostSnapResult, err error) {
+	resp = new(metadata.GetHostSnapResult)
 	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
 
 	err = t.client.Get().

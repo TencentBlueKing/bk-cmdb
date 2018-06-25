@@ -239,7 +239,9 @@ func (lgc *Logics) getAddHostIDMap(pheader http.Header, hostInfos map[int64]map[
 		Sort:      common.BKHostIDField,
 	}
 	hResult, err := lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), pheader, query)
-	if err != nil || (err == nil && !hResult.Result) {
+	if err != nil {
+		return nil, errors.New(lgc.Language.Languagef("host_search_fail_with_errmsg", err.Error()))
+	} else if err == nil && !hResult.Result {
 		return nil, errors.New(lgc.Language.Languagef("host_search_fail_with_errmsg", hResult.ErrMsg))
 	}
 
@@ -592,15 +594,19 @@ func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, 
 
 	for _, item := range hostAsstData {
 		cResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, item)
-		if err != nil || (err == nil && cResult.Result) {
-			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error(), cResult.ErrMsg))
+		if err != nil {
+			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error()))
+		} else if err == nil && cResult.Result {
+			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], cResult.ErrMsg))
 		}
 	}
 
 	opt := hutil.NewOperation().WithAppID(appID).WithModuleIDs([]int64{moduleID}).WithHostID(hostID).Data()
 	hResult, err := h.CoreAPI.HostController().Host().AddHost(context.Background(), h.pheader, opt)
-	if err != nil || (err == nil && hResult.Result) {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error(), hResult.ErrMsg))
+	if err != nil {
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error()))
+	} else if err == nil && hResult.Result {
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], hResult.ErrMsg))
 	}
 
 	return hostID, nil
