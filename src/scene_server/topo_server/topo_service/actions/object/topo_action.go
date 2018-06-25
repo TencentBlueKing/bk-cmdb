@@ -328,12 +328,15 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 		}
 
 		// check the object level limit
-		level := common.BKNoLimit
+		level := common.BKTopoBusinessLevelDefault
 		if config, err := cli.CC.ParseConfig(); nil != err {
 			blog.Errorf("failed to get the parse the conigure, error info is %s", err.Error())
 		} else if cfg, ok := config[common.BKTopoBusinessLevelLimit]; ok {
-			level, _ = strconv.Atoi(cfg)
-			if level < 3 { // the min level limit is 3
+			level, err := strconv.Atoi(cfg)
+			if nil != err {
+				blog.Errorf("can not convert level(%s) to int, error info is %s", cfg, err.Error())
+			}
+			if level <= 0 { // the min level limit is 3
 				level = common.BKNoLimit
 			}
 		}
@@ -344,9 +347,9 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 			return http.StatusBadRequest, nil, ctrErr
 		}
 
-		blog.Debug("select module for insts:%v", rstItems)
+		//blog.Debug("select module for insts:%v", rstItems)
 
-		if level >= len(rstItems) {
+		if level <= len(rstItems) {
 			blog.Errorf("business topology level exceeds the limit, %d", level)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrTopoBizTopoLevelOverLimit)
 		}

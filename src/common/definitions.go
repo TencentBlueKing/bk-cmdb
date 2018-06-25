@@ -66,7 +66,11 @@ const (
 	// BKTimeTypeParseFlag the time flag
 	BKTimeTypeParseFlag = "cc_time_type"
 
-	BKTopoBusinessLevelLimit = "level.max"
+	// BKTopoBusinessLevelLimit the mainline topo level limit
+	BKTopoBusinessLevelLimit = "level.topomax"
+
+	// BKTopoBusinessLevelDefault the mainline topo level default level
+	BKTopoBusinessLevelDefault = 6
 )
 
 const (
