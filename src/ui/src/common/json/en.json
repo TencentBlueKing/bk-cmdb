@@ -467,7 +467,8 @@
         "恢复业务": "Recovery",
         "是否确认恢复业务？": "Are you sure you want to recovery business?",
         "恢复业务提示": "Business recovery will be renamed to “{bizName}(recovery)”",
-        "归档": "Archive"
+        "归档": "Archive",
+        "确定删除选中的实例": "Sure you want to delete the selected instance"
     },
     "Association": {
         "实例名": "Instance Name",

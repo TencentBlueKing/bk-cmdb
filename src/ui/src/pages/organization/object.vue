@@ -27,6 +27,9 @@
                     </button>
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
+                <button v-if="objId !== 'biz'" class="bk-button icon-btn del-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
+                    <i class="icon-cc-del"></i>
+                </button>
             </div>
             <div class="fr btn-group">
                 <button v-if="objId !== 'biz'" class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
@@ -603,6 +606,32 @@
                     })
                 }
             },
+            confirmBatchDel () {
+                this.$bkInfo({
+                    title: this.$t("Common['确定删除选中的实例']"),
+                    confirmFn: () => {
+                        this.batchDeleteInst()
+                    }
+                })
+            },
+            async batchDeleteInst () {
+                try {
+                    const params = {
+                        delete: {
+                            inst_ids: this.table.chooseId
+                        }
+                    }
+                    const res = await this.$axios.delete(`inst/${this.bkSupplierAccount}/${this.objId}/-1`, {data: params})
+                    if (res.result) {
+                        this.table.chooseId = []
+                        this.setTablePage(1)
+                    } else {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
             // 删除模型实例前进行确认
             confirmDelete (data) {
                 let {
@@ -703,13 +732,6 @@
         mounted () {
             this.initTable()
         },
-        // beforeRouteUpdate (to, from, next) {
-        //     this.isSelectShow = false
-        //     next()
-        //     this.$nextTick(() => {
-        //         this.isSelectShow = true
-        //     })
-        // },
         components: {
             vObjectTable,
             vObjectAttr,
@@ -754,8 +776,23 @@
         color: $primaryHoverColor;
         cursor: pointer;
         &:hover{
-            background: $primaryHoverColor;
             color: $defaultColor;
+        }
+    }
+    .icon-btn{
+        width: 36px;
+        padding: 0;
+        color: #737987;
+        &:not(:disabled):hover{
+            border-color: #ef4c4c;
+            .icon-cc-del{
+                color: #ef4c4c;
+            }
+        }
+        &:disabled{
+            .icon-cc-del{
+                color: #ccc;
+            }
         }
     }
     .no-border-btn{    //无边框按钮
@@ -1007,9 +1044,6 @@
     .bk-form-item.is-required .bk-label:after {
         position: absolute !important;
     }
-</style>
-
-<style lang="scss">
     .host-resource-wrapper{
         .slide-content{
             .bk-tab2{
@@ -1030,9 +1064,6 @@
             }
         }
     }
-</style>
-
-<style lang="scss">
     .business-wrapper{
         .bk-tab2{
             .bk-tab2-nav{
