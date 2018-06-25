@@ -2,11 +2,11 @@
     <div class="nav-wrapper">
         <v-nav-classify-list
             :classifications="staticNavigationClassify"
-            :activeClassify="activeClassify">
+            :activeClassify="activeClassifyId">
         </v-nav-classify-list>
         <v-nav-classify-list class="classify-list-custom" v-show="customNavigationClassify.length"
             :classifications="customNavigationClassify"
-            :activeClassify="activeClassify">
+            :activeClassify="activeClassifyId">
         </v-nav-classify-list>
     </div>
 </template>
@@ -55,8 +55,30 @@
             },
             activeClassify () {
                 const path = this.$route.fullPath
-                const activeClassify = this.authorizedNavigation.find(classify => classify.children.some(model => model.path === path))
-                return activeClassify ? activeClassify.id : path === '/index' ? 'bk_index' : null
+                return this.authorizedNavigation.find(classify => classify.children.some(model => model.path === path))
+            },
+            activeClassifyId () {
+                return this.activeClassify ? this.activeClassify.id : this.$route.fullPath === '/index' ? 'bk_index' : null
+            },
+            activeModel () {
+                if (this.activeClassify) {
+                    const path = this.$route.fullPath
+                    return this.activeClassify.children.find(model => model.path === path)
+                }
+                return null
+            }
+        },
+        watch: {
+            activeModel (activeModel) {
+                const index = this.staticNavigationClassify[0] || {}
+                let breadcrumbs = [{name: this.$t(index.i18n), path: index.path}]
+                if (activeModel) {
+                    breadcrumbs.push({
+                        name: activeModel.hasOwnProperty('i18n') ? this.$t(activeModel.i18n) : activeModel.name,
+                        path: activeModel.path
+                    })
+                }
+                this.$store.commit('main/updateBreadcrumbs', breadcrumbs)
             }
         },
         methods: {

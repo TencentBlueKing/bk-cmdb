@@ -11,6 +11,7 @@
 import Vue from 'vue'
 import Axios from 'axios'
 import bkMessage from '@/magicbox/bk-magic/components/message'
+import Transform from '@/utils/axios-transform'
 
 const alertMsg = (message, theme = 'error', delay = 3000) => {
     bkMessage({
@@ -29,7 +30,47 @@ const catchErrorMsg = (response) => {
     }
     alertMsg(msg)
 }
-
+const addQueue = (config) => {
+    const {state, commit} = window['CMDB_APP'].$store
+    const queue = state.common.axiosQueue
+    if (config.hasOwnProperty('id') && !queue.some(id => config.id === id)) {
+        commit('updateAxiosQueue', [...queue, config.id])
+    }
+}
+const removeQueue = (config) => {
+    const {state, commit} = window['CMDB_APP'].$store
+    if (config.hasOwnProperty('id')) {
+        let queue = [...state.common.axiosQueue]
+        queue.splice(queue.indexOf(config.id), 1)
+        commit('updateAxiosQueue', queue)
+    }
+}
+const transformRequest = (config) => {
+    if (typeof config.transform === 'object' && config.transform.hasOwnProperty('request')) {
+        let request = config.transform.request
+        request = Array.isArray(request) ? request : [request]
+        request.forEach(fnName => {
+            if (typeof fnName === 'string' && typeof Transform[fnName] === 'function') {
+                Transform[fnName](config)
+            }
+        })
+    }
+}
+const transformResponse = (config, data) => {
+    let response = []
+    if (typeof config.transform === 'string') {
+        response.push(config.transform)
+    } else if (config.transform === 'object' && config.transform.hasOwnProperty('response')) {
+        const originTransformResponse = config.transform.response
+        response = Array.isArray(originTransformResponse) ? originTransformResponse : [originTransformResponse]
+    }
+    response.forEach(fnName => {
+        if (typeof fnName === 'string' && typeof Transform[fnName] === 'function') {
+            data = Transform[fnName](data, config)
+        }
+    })
+    return data
+}
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
@@ -49,17 +90,14 @@ const updateLoadingStatus = (config) => {
 }
 
 axios.interceptors.request.use(config => {
-    const axiosQueue = window.CMDB_APP.$store.state.common.axiosQueue
-    if (config.hasOwnProperty('id') && !axiosQueue.some(id => config.id === id)) {
-        window.CMDB_APP.$store.commit('updateAxiosQueue', [...axiosQueue, config.id])
-    }
+    addQueue(config)
+    transformRequest(config)
     return config
 })
 axios.interceptors.response.use(
     response => {
-        const config = response.config
-        updateLoadingStatus(config)
-        return response.data
+        removeQueue(response.config)
+        return transformResponse(response.config, response.data)
     },
     error => {
         const config = error.config
