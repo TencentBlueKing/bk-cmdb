@@ -25,6 +25,36 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+// Group group opeartion interface declaration
+type Group interface {
+	Operation
+
+	Parse(data frtypes.MapStr) (*metadata.Group, error)
+	CreateAttribute() Attribute
+
+	GetAttributes() ([]Attribute, error)
+
+	SetID(groupID string)
+	GetID() string
+
+	SetName(groupName string)
+	GetName() string
+
+	SetIndex(groupIndex int64)
+	GetIndex() int64
+
+	SetSupplierAccount(supplierAccount string)
+	GetSupplierAccount() string
+
+	SetDefault(isDefault bool)
+	GetDefault() bool
+
+	SetIsPre(isPre bool)
+	GetIsPre() bool
+
+	ToMapStr() (frtypes.MapStr, error)
+}
+
 var _ Group = (*group)(nil)
 
 type group struct {

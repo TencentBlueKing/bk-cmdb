@@ -10,29 +10,27 @@
  * limitations under the License.
  */
 
-package privilege
+package operation
 
 import (
-	"encoding/json"
-
-	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/privilege"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// PermissionInterface the permission methods
-type PermissionInterface interface {
-	SetUserGroupPermission(supplierAccount, gourpID string, permission *metadata.PrivilegeUserGroup) error
-	GetUserGroupPermission(supplierAccount, groupID string) ([]*metadata.PrivilegeUserGroup, error)
-	GetUserPermission(supplierAccount, userName string)
+// PermissionOperationInterface the permission interface
+type PermissionOperationInterface interface {
+	Permission(params types.LogicParams) privilege.PermissionInterface
+	UserGroup(params types.LogicParams) privilege.UserGroupInterface
+	Role(params types.LogicParams) privilege.RolePermission
 }
 
-func NewPermission( )
-
-// userGroupPermission the permission user group definitions
-type userGroupPermission struct {
-	permission metadata.PrivilegeUserGroup
+type permissionOperation struct {
+	
 }
 
-// MarshalJSON marshal the data into json
-func (u *userGroupPermission) MarshalJSON() ([]byte, error) {
-	return json.Marshal(u.permission)
+func(p *permissionOperation)Permission(params types.LogicParams) privilege.PermissionInterface{
+    return p.permission
 }
+
+UserGroup(params types.LogicParams) privilege.UserGroupInterface
+Role(params types.LogicParams) privilege.RolePermission

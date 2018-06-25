@@ -24,15 +24,31 @@ type UserGroupInterface interface {
 	CreateUserGroup(supplierAccount string, userGroup *metadata.UserGroup) error
 	DeleteUserGroup(supplierAccount, groupID string) error
 	UpdateUserGroup(supplierAccount, groupID string, data types.MapStr) error
-	SearchUserGroup(supplierAccount string) ([]UserGroup, error)
+	SearchUserGroup(supplierAccount string) ([]*metadata.UserGroup, error)
 }
 
-// UserGroup the permission user group definitions
-type UserGroup struct {
+// userGroup the permission user group definitions
+type userGroup struct {
 	userGroup metadata.UserGroup
 }
 
 // MarshalJSON marshal the data into json
-func (u *UserGroup) MarshalJSON() ([]byte, error) {
+func (u *userGroup) MarshalJSON() ([]byte, error) {
 	return json.Marshal(u.userGroup)
+}
+
+func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.UserGroup) error {
+	return nil
+}
+
+func (u *userGroup) DeleteUserGroup(supplierAccount, groupID string) error {
+	return nil
+}
+
+func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data types.MapStr) error {
+	return nil
+}
+
+func (u *userGroup) SearchUserGroup(supplierAccount string) ([]*metadata.UserGroup, error) {
+	return nil, nil
 }

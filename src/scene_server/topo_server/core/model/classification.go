@@ -25,6 +25,31 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+// Classification classification operation interface declaration
+type Classification interface {
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Classification, error)
+
+	GetObjects() ([]Object, error)
+
+	SetID(classificationID string)
+	GetID() string
+
+	SetName(classificationName string)
+	GetName() string
+
+	SetType(classificationType string)
+	GetType() string
+
+	SetSupplierAccount(supplierAccount string)
+	GetSupplierAccount() string
+
+	SetIcon(classificationIcon string)
+	GetIcon() string
+
+	ToMapStr() (frtypes.MapStr, error)
+}
+
 var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
