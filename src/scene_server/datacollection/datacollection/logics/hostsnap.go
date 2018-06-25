@@ -22,6 +22,7 @@ import (
 	"github.com/tidwall/gjson"
 	"io"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,15 +49,18 @@ var (
 
 // HostSnap define HostSnap
 type HostSnap struct {
-	id       string
-	chanName string
-	msgChan  chan string
-	maxSize  int
-	ts       time.Time // life cycle timestamp
-	isMaster bool
+	id           string
+	hostChanName []string
+	msgChan      chan string
+	maxSize      int
+	ts           time.Time // life cycle timestamp
+	lastMesgTs   time.Time
+	isMaster     bool
 	sync.Mutex
 	interrupt     chan error
 	maxconcurrent int
+
+	doneCh chan struct{}
 
 	resetHandle chan struct{}
 
@@ -65,25 +69,25 @@ type HostSnap struct {
 
 	subscribing bool
 
-	cache *hostcache
+	cache *Cache
 
 	wg sync.WaitGroup
 }
 
-type hostcache struct {
-	cache map[bool]map[string]map[string]interface{}
+type Cache struct {
+	cache map[bool]*HostCache
 	flag  bool
 }
 
 // NewHostSnap  returns new hostsnap object
 //
 // chanName: redis channel name，maxSize: max buffer cache, redisCli: CC redis cli, snapCli: snap redis cli
-func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
+func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
 	}
 	hostSnapInstance := &HostSnap{
-		chanName:      chanName,
+		hostChanName:  chanName,
 		msgChan:       make(chan string, maxSize*4),
 		interrupt:     make(chan error),
 		resetHandle:   make(chan struct{}),
@@ -94,8 +98,9 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
 		wg:            sync.WaitGroup{},
-		cache: &hostcache{
-			cache: map[bool]map[string]map[string]interface{}{},
+		doneCh:        make(chan struct{}),
+		cache: &Cache{
+			cache: map[bool]*HostCache{},
 			flag:  false,
 		},
 	}
@@ -104,12 +109,26 @@ func NewHostSnap(chanName string, maxSize int, redisCli, snapCli *redis.Client) 
 
 // Start start main handle routines
 func (h *HostSnap) Start() {
-	go h.fetchDB()
-	go h.Run()
+	go func() {
+		h.Run()
+		for {
+			time.Sleep(time.Second * 10)
+			NewHostSnap(h.hostChanName, h.maxSize, h.redisCli, h.snapCli).Run()
+		}
+	}()
 }
 
 // Run hostsnap main functionality
 func (h *HostSnap) Run() {
+	defer func() {
+		syserr := recover()
+		if syserr != nil {
+			blog.Errorf("emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
+		}
+		close(h.doneCh)
+		h.isMaster = false
+		return
+	}()
 	blog.Infof("datacollection start with maxconcurrent: %d", h.maxconcurrent)
 	ticker := time.NewTicker(getMasterProcIntervalTime)
 	var err error
@@ -118,8 +137,10 @@ func (h *HostSnap) Run() {
 	var addCount int
 	var waitCnt int
 
+	go h.fetchDB()
+
 	if h.saveRunning() {
-		go h.subChan()
+		go h.subChan(h.snapCli, h.hostChanName)
 	} else {
 		blog.Infof("run: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 	}
@@ -128,7 +149,7 @@ func (h *HostSnap) Run() {
 		case <-ticker.C:
 			if h.saveRunning() {
 				if !h.subscribing {
-					go h.subChan()
+					go h.subChan(h.snapCli, h.hostChanName)
 				}
 			}
 		case msg = <-h.msgChan:
@@ -202,27 +223,42 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		case <-resetHandle:
 			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
 			return nil
+		case <-h.doneCh:
+			blog.Warnf("close handler, handled %d")
+			return nil
 		default:
-			data := gjson.Get(msg, "data").String()
+			var data = msg
+			if !gjson.Get(msg, "cloudid").Exists() {
+				data = gjson.Get(msg, "data").String()
+			}
 			val := gjson.Parse(data)
 			host := h.getHostByVal(&val)
 			if host == nil {
-				blog.Infof("host not found, continue, %s", val.String())
+				blog.Warnf("host not found, continue, %s", val.String())
 				continue
 			}
-			hostid := fmt.Sprint(host[bkcommon.BKHostIDField])
+			hostid := fmt.Sprint(host.get(bkcommon.BKHostIDField))
 			if hostid == "" {
-				blog.Infof("host id not found, continue, %s", val.String())
+				blog.Warnf("host id not found, continue, %s", val.String())
 				continue
 			}
 
 			// set snap cache
-			h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10)
+			if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
+				blog.Errorf("save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+			}
 
 			// update host fields value
-			condition := map[string]interface{}{bkcommon.BKHostIDField: host[bkcommon.BKHostIDField]}
-			innerip, _ := host[bkcommon.BKHostInnerIPField].(string)
-			outip, _ := host[bkcommon.BKHostOuterIPField].(string)
+			condition := map[string]interface{}{bkcommon.BKHostIDField: host.get(bkcommon.BKHostIDField)}
+			innerip, ok := host.get(bkcommon.BKHostInnerIPField).(string)
+			if !ok {
+				blog.Infof("innerip is empty, continue, %s", val.String())
+				continue
+			}
+			outip, ok := host.get(bkcommon.BKHostOuterIPField).(string)
+			if !ok {
+				blog.Warnf("outip is not string, %s", val.String())
+			}
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
 				blog.Infof("update by %v, to %v", condition, setter)
@@ -238,14 +274,14 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	return nil
 }
 
-func copyVal(a, b map[string]interface{}) {
+func copyVal(a map[string]interface{}, b *HostInst) {
 	for k, v := range a {
-		b[k] = v
+		b.set(k, v)
 	}
 }
-func needToUpdate(a, b map[string]interface{}) bool {
+func needToUpdate(a map[string]interface{}, b *HostInst) bool {
 	for k, v := range a {
-		if b[k] != v {
+		if b.get(k) != v {
 			return true
 		}
 	}
@@ -297,8 +333,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
-	// TODO add log when fields empty
-	return map[string]interface{}{
+	setter := map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
 		"bk_cpu_mhz":    CPUMhz,                    //Mhz
@@ -312,6 +347,42 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		"bk_mac":        InnerMAC,
 		"bk_os_bit":     osbit,
 	}
+
+	if cupnum <= 0 {
+		blog.Infof("bk_cpu not found in message for %s", innerIP)
+	}
+	if cpumodule == "" {
+		blog.Infof("bk_cpu_module not found in message for %s", innerIP)
+	}
+	if CPUMhz <= 0 {
+		blog.Infof("bk_cpu_mhz not found in message for %s", innerIP)
+	}
+	if disk <= 0 {
+		blog.Infof("bk_disk not found in message for %s", innerIP)
+	}
+	if mem <= 0 {
+		blog.Infof("bk_mem not found in message for %s", innerIP)
+	}
+	if ostype == "" {
+		blog.Infof("bk_os_type not found in message for %s", innerIP)
+	}
+	if osname == "" {
+		blog.Infof("bk_os_name not found in message for %s", innerIP)
+	}
+	if version == "" {
+		blog.Infof("bk_os_version not found in message for %s", innerIP)
+	}
+	if hostname == "" {
+		blog.Infof("bk_host_name not found in message for %s", innerIP)
+	}
+	if outerIP != "" && OuterMAC == "" {
+		blog.Infof("bk_outer_mac not found in message for %s", innerIP)
+	}
+	if InnerMAC == "" {
+		blog.Infof("bk_mac not found in message for %s", innerIP)
+	}
+
+	return setter
 }
 func getIPS(val *gjson.Result) (ips []string) {
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
@@ -330,7 +401,7 @@ func getIPS(val *gjson.Result) (ips []string) {
 	return ips
 }
 
-func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
+func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 	cloudid := val.Get("cloudid").String()
 	/*if cloudid == "0" || cloudid == "" {
 		cloudid := common.BKCloudIDField
@@ -339,13 +410,17 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 	if len(ips) > 0 {
 		blog.Infof("handle clouid: %s ips: %v", cloudid, ips)
 		for _, ip := range ips {
-			if host := h.getCache()[cloudid+"::"+ip]; host != nil {
+			if host := h.getCache().get(cloudid + "::" + ip); host != nil {
 				return host
 			}
 		}
 
 		blog.Infof("ips not in cache clouid: %s,ip: %v", cloudid, ips)
-		clouidInt, _ := strconv.Atoi(cloudid)
+		clouidInt, err := strconv.Atoi(cloudid)
+		if nil != err {
+			blog.Infof("cloudid \"%s\" not integer", cloudid)
+			return nil
+		}
 		condition := map[string]interface{}{
 			bkcommon.BKCloudIDField: clouidInt,
 			bkcommon.BKHostInnerIPField: map[string]interface{}{
@@ -353,15 +428,16 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) map[string]interface{} {
 			},
 		}
 		result := []map[string]interface{}{}
-		err := instdata.GetHostByCondition(nil, condition, &result, "", 0, 0)
+		err = instdata.GetHostByCondition(nil, condition, &result, "", 0, 0)
 		if err != nil {
 			blog.Errorf("fetch db error %v", err)
 		}
-		for _, host := range result {
-			cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
-			innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
-			h.setCache(cloudid+"::"+innerip, host)
-			return h.getCache()[cloudid+"::"+innerip]
+		for index := range result {
+			cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
+			innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+			inst := &HostInst{data: result[index]}
+			h.setCache(cloudid+"::"+innerip, inst)
+			return inst
 		}
 		blog.Infof("ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
 	} else {
@@ -384,23 +460,17 @@ func (h *HostSnap) concede() {
 // saveRunning lock master process
 func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
-	setNXChan := make(chan struct{})
-	go func() {
-		select {
-		case <-time.After(masterProcLockLiveTime):
-			blog.Fatalf("saveRunning check: set nx time out!! the network may be broken, redis stats: %v ", h.redisCli.PoolStats())
-		case <-setNXChan:
-		}
-	}()
 	if h.isMaster {
 		var val string
 		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
+			h.isMaster = false
 		} else if val == h.id {
 			blog.Infof("master check : i am still master")
 			h.redisCli.Set(common.MasterProcLockKey, h.id, masterProcLockLiveTime)
 			ok = true
+			h.isMaster = true
 		} else {
 			blog.Infof("exit master,val = %v, id = %v", val, h.id)
 			h.isMaster = false
@@ -410,38 +480,47 @@ func (h *HostSnap) saveRunning() (ok bool) {
 		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
+			h.isMaster = false
 		} else if ok {
 			blog.Infof("slave check: ok")
 			blog.Infof("i am master from now")
 			h.isMaster = true
 		} else {
 			blog.Infof("slave check: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
+			h.isMaster = false
 		}
 	}
-	close(setNXChan)
 	return ok
 }
 
-const mockmsg = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"127.0.0.1\\\",\\\"bizid\\\":0,\\\"cloudid\\\":1,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\",\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\",\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\",\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\",\\\"cores\\\":1,\\\"modelName\\\":\\\"Intel(R) Xeon(R) CPU E5-26xx v3\\\",\\\"mhz\\\":2294.01,\\\"cacheSize\\\":4096,\\\"flags\\\":[\\\"fpu\\\",\\\"vme\\\",\\\"de\\\",\\\"pse\\\",\\\"tsc\\\",\\\"msr\\\",\\\"pae\\\",\\\"mce\\\",\\\"cx8\\\",\\\"apic\\\",\\\"sep\\\",\\\"mtrr\\\",\\\"pge\\\",\\\"mca\\\",\\\"cmov\\\",\\\"pat\\\",\\\"pse36\\\",\\\"clflush\\\",\\\"mmx\\\",\\\"fxsr\\\",\\\"sse\\\",\\\"sse2\\\",\\\"ss\\\",\\\"ht\\\",\\\"syscall\\\",\\\"nx\\\",\\\"lm\\\",\\\"constant_tsc\\\",\\\"up\\\",\\\"rep_good\\\",\\\"unfair_spinlock\\\",\\\"pni\\\",\\\"pclmulqdq\\\",\\\"ssse3\\\",\\\"fma\\\",\\\"cx16\\\",\\\"pcid\\\",\\\"sse4_1\\\",\\\"sse4_2\\\",\\\"x2apic\\\",\\\"movbe\\\",\\\"popcnt\\\",\\\"tsc_deadline_timer\\\",\\\"aes\\\",\\\"xsave\\\",\\\"avx\\\",\\\"f16c\\\",\\\"rdrand\\\",\\\"hypervisor\\\",\\\"lahf_lm\\\",\\\"abm\\\",\\\"xsaveopt\\\",\\\"bmi1\\\",\\\"avx2\\\",\\\"bmi2\\\"],\\\"microcode\\\":\\\"1\\\"}],\\\"per_usage\\\":[3.0232169701043103],\\\"total_usage\\\":3.0232169701043103,\\\"per_stat\\\":[{\\\"cpu\\\":\\\"cpu0\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}],\\\"total_stat\\\":{\\\"cpu\\\":\\\"cpu-total\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}},\\\"env\\\":{\\\"crontab\\\":[{\\\"user\\\":\\\"root\\\",\\\"content\\\":\\\"#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\\\\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent \\\\u003e /dev/null 2\\\\u003e\\\\u00261\\\\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh \\\\u003e /dev/null 2\\\\u003e\\\\u00261 \\\\u0026\\\\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com \\\\u003e/dev/null \\\\u0026\\\\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1\\\\u003e/dev/null 2\\\\u003e\\\\u00261\\\\n\\\"}],\\\"host\\\":\\\"127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\\\\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\\\\n\\\",\\\"route\\\":\\\"Kernel IP routing table\\\\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\\\\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\\\\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\\\\n0.0.0.0         127.0.0.1        0.0.0.0         UG    0      0        0 eth0\\\\n\\\"},\\\"disk\\\":{\\\"diskstat\\\":{\\\"vda1\\\":{\\\"major\\\":252,\\\"minor\\\":1,\\\"readCount\\\":24347,\\\"mergedReadCount\\\":570,\\\"writeCount\\\":696357,\\\"mergedWriteCount\\\":4684783,\\\"readBytes\\\":783955968,\\\"writeBytes\\\":22041231360,\\\"readSectors\\\":1531164,\\\"writeSectors\\\":43049280,\\\"readTime\\\":80626,\\\"writeTime\\\":12704736,\\\"iopsInProgress\\\":0,\\\"ioTime\\\":822057,\\\"weightedIoTime\\\":12785026,\\\"name\\\":\\\"vda1\\\",\\\"serialNumber\\\":\\\"\\\",\\\"speedIORead\\\":0,\\\"speedByteRead\\\":0,\\\"speedIOWrite\\\":2.9,\\\"speedByteWrite\\\":171144.53333333333,\\\"util\\\":0.0025666666666666667,\\\"avgrq_sz\\\":115.26436781609195,\\\"avgqu_sz\\\":0.06568333333333334,\\\"await\\\":22.649425287356323,\\\"svctm\\\":0.8850574712643678}},\\\"partition\\\":[{\\\"device\\\":\\\"/dev/vda1\\\",\\\"mountpoint\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext3\\\",\\\"opts\\\":\\\"rw,noatime,acl,user_xattr\\\"}],\\\"usage\\\":[{\\\"path\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext2/ext3\\\",\\\"total\\\":52843638784,\\\"free\\\":47807447040,\\\"used\\\":2351915008,\\\"usedPercent\\\":4.4507060113962345,\\\"inodesTotal\\\":3276800,\\\"inodesUsed\\\":29554,\\\"inodesFree\\\":3247246,\\\"inodesUsedPercent\\\":0.9019165039062501}]},\\\"load\\\":{\\\"load_avg\\\":{\\\"load1\\\":0,\\\"load5\\\":0,\\\"load15\\\":0}},\\\"mem\\\":{\\\"meminfo\\\":{\\\"total\\\":1044832256,\\\"available\\\":805912576,\\\"used\\\":238919680,\\\"usedPercent\\\":22.866797864249705,\\\"free\\\":92041216,\\\"active\\\":521183232,\\\"inactive\\\":352964608,\\\"wired\\\":0,\\\"buffers\\\":110895104,\\\"cached\\\":602976256,\\\"writeback\\\":0,\\\"dirty\\\":151552,\\\"writebacktmp\\\":0},\\\"vmstat\\\":{\\\"total\\\":0,\\\"used\\\":0,\\\"free\\\":0,\\\"usedPercent\\\":0,\\\"sin\\\":0,\\\"sout\\\":0}},\\\"net\\\":{\\\"interface\\\":[{\\\"mtu\\\":65536,\\\"name\\\":\\\"lo\\\",\\\"hardwareaddr\\\":\\\"28:31:52:1d:c6:0a\\\",\\\"flags\\\":[\\\"up\\\",\\\"loopback\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/8\\\"}]},{\\\"mtu\\\":1500,\\\"name\\\":\\\"eth0\\\",\\\"hardwareaddr\\\":\\\"52:54:00:19:2e:e8\\\",\\\"flags\\\":[\\\"up\\\",\\\"broadcast\\\",\\\"multicast\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/24\\\"}]}],\\\"dev\\\":[{\\\"name\\\":\\\"lo\\\",\\\"speedSent\\\":0,\\\"speedRecv\\\":0,\\\"speedPacketsSent\\\":0,\\\"speedPacketsRecv\\\":0,\\\"bytesSent\\\":604,\\\"bytesRecv\\\":604,\\\"packetsSent\\\":2,\\\"packetsRecv\\\":2,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0},{\\\"name\\\":\\\"eth0\\\",\\\"speedSent\\\":574,\\\"speedRecv\\\":214,\\\"speedPacketsSent\\\":3,\\\"speedPacketsRecv\\\":2,\\\"bytesSent\\\":161709123,\\\"bytesRecv\\\":285910298,\\\"packetsSent\\\":1116625,\\\"packetsRecv\\\":1167796,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0}],\\\"netstat\\\":{\\\"established\\\":2,\\\"syncSent\\\":1,\\\"synRecv\\\":0,\\\"finWait1\\\":0,\\\"finWait2\\\":0,\\\"timeWait\\\":0,\\\"close\\\":0,\\\"closeWait\\\":0,\\\"lastAck\\\":0,\\\"listen\\\":2,\\\"closing\\\":0},\\\"protocolstat\\\":[{\\\"protocol\\\":\\\"udp\\\",\\\"stats\\\":{\\\"inDatagrams\\\":176253,\\\"inErrors\\\":0,\\\"noPorts\\\":1,\\\"outDatagrams\\\":199569,\\\"rcvbufErrors\\\":0,\\\"sndbufErrors\\\":0}}]},\\\"system\\\":{\\\"info\\\":{\\\"hostname\\\":\\\"VM_0_31_centos\\\",\\\"uptime\\\":348315,\\\"bootTime\\\":1505463112,\\\"procs\\\":142,\\\"os\\\":\\\"linux\\\",\\\"platform\\\":\\\"centos\\\",\\\"platformFamily\\\":\\\"rhel\\\",\\\"platformVersion\\\":\\\"6.2\\\",\\\"kernelVersion\\\":\\\"2.6.32-504.30.3.el6.x86_64\\\",\\\"virtualizationSystem\\\":\\\"\\\",\\\"virtualizationRole\\\":\\\"\\\",\\\"hostid\\\":\\\"96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C\\\",\\\"systemtype\\\":\\\"64-bit\\\"}}}}\", \"timestamp\": 1505811427, \"dtEventTime\": \"2017-09-19 16:57:07\", \"dtEventTimeStamp\": 1505811427000}"
-
 // subChan subscribe message from redis channel
-func (h *HostSnap) subChan() {
+func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
+	defer func() {
+		syserr := recover()
+		if syserr != nil {
+			blog.Errorf("subChan emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
+		}
+		h.subscribing = false
+	}()
 	h.subscribing = true
 	var chanlen int
-	subChan, err := h.snapCli.Subscribe(h.chanName)
+	subChan, err := snapcli.Subscribe(chanName...)
 	if nil != err {
 		h.interrupt <- err
 		blog.Error("subscribe channel faile ", err.Error())
 	}
+	closeChan := make(chan struct{})
+	go h.healthCheck(closeChan)
 	defer func() {
-		subChan.Unsubscribe(h.chanName)
 		h.subscribing = false
+		close(closeChan)
 		blog.Infof("subChan Close")
+		subChan.Unsubscribe(chanName...)
 	}()
 
 	var ts = time.Now()
 	var cnt int64
-	blog.Infof("subcribing channel %s", h.chanName)
+	blog.Infof("subcribing channel %v", chanName)
 	for {
 		if false == h.isMaster {
 			// not master again, close subscribe to prevent unnecessary subscript
@@ -475,7 +554,7 @@ func (h *HostSnap) subChan() {
 		if chanlen != 0 && chanlen%10 == 0 {
 			blog.Infof("buff len %d", chanlen)
 		}
-
+		h.lastMesgTs = time.Now()
 		h.msgChan <- msg.Payload
 		cnt++
 		if cnt%10000 == 0 {
@@ -511,17 +590,17 @@ func (h *HostSnap) clearMsgChan() {
 	blog.Warnf("cleared %d", cnt)
 }
 
-var cachelock = sync.Mutex{}
+var cachelock = sync.RWMutex{}
 
-func (h *HostSnap) getCache() map[string]map[string]interface{} {
-	cachelock.Lock()
-	defer cachelock.Unlock()
+func (h *HostSnap) getCache() *HostCache {
+	cachelock.RLock()
+	defer cachelock.RUnlock()
 	return h.cache.cache[h.cache.flag]
 }
 
-func (h *HostSnap) setCache(key string, val map[string]interface{}) {
+func (h *HostSnap) setCache(key string, val *HostInst) {
 	cachelock.Lock()
-	h.cache.cache[h.cache.flag][key] = val
+	h.cache.cache[h.cache.flag].set(key, val)
 	cachelock.Unlock()
 }
 
@@ -531,28 +610,97 @@ func (h *HostSnap) fetchDB() {
 	cachelock.Unlock()
 	go func() {
 		ticker := time.NewTicker(fetchDBInterval)
-		for range ticker.C {
-			cache := fetch()
-			cachelock.Lock()
-			h.cache.cache[!h.cache.flag] = cache
-			h.cache.flag = !h.cache.flag
-			cachelock.Unlock()
+		for {
+			select {
+			case <-ticker.C:
+				cache := fetch()
+				cachelock.Lock()
+				h.cache.cache[!h.cache.flag] = cache
+				h.cache.flag = !h.cache.flag
+				cachelock.Unlock()
+			case <-h.doneCh:
+				blog.Warnf("close fetchDB")
+				return
+			}
 		}
 	}()
 }
 
-func fetch() map[string]map[string]interface{} {
+func fetch() *HostCache {
 	result := []map[string]interface{}{}
 	err := instdata.GetHostByCondition(nil, nil, &result, "", 0, 0)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
-	hostcache := map[string]map[string]interface{}{}
-	for _, host := range result {
-		cloudid := fmt.Sprint(host[bkcommon.BKCloudIDField])
-		innerip := fmt.Sprint(host[bkcommon.BKHostInnerIPField])
-		hostcache[cloudid+"::"+innerip] = host
+	hostcache := &HostCache{data: map[string]*HostInst{}}
+	for index := range result {
+		cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
+		innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+		hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
 	return hostcache
+}
+
+// HostInst host inst cache
+type HostInst struct {
+	sync.RWMutex
+	data map[string]interface{}
+}
+
+func (h *HostInst) get(key string) interface{} {
+	h.RLock()
+	value := h.data[key]
+	h.RUnlock()
+	return value
+}
+
+func (h *HostInst) set(key string, value interface{}) {
+	h.Lock()
+	h.data[key] = value
+	h.Unlock()
+}
+
+type HostCache struct {
+	sync.RWMutex
+	data map[string]*HostInst
+}
+
+func (h *HostCache) get(key string) *HostInst {
+	h.RLock()
+	value := h.data[key]
+	h.RUnlock()
+	return value
+}
+
+func (h *HostCache) set(key string, value *HostInst) {
+	h.Lock()
+	h.data[key] = value
+	h.Unlock()
+}
+
+func (h *HostSnap) healthCheck(closeChan chan struct{}) {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-h.doneCh:
+			ticker.Stop()
+			return
+		case <-closeChan:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			channelstatus := 0
+			if err := h.snapCli.Ping().Err(); err != nil {
+				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
+				blog.Errorf("snap redis server connection error: %s", err.Error())
+			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
+				blog.Errorf("snap redis server connection error: %s", err.Error())
+				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
+			} else {
+				channelstatus = bkcommon.CCSuccess
+			}
+			h.redisCli.Set(common.RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
+		}
+	}
 }
