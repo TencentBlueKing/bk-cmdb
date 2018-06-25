@@ -2,53 +2,42 @@ package logics
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"time"
+	"fmt"
+	"strings"
+
+	"github.com/tidwall/gjson"
+
 	"configcenter/src/common/blog"
 	bkc "configcenter/src/common"
-	"fmt"
-	"github.com/tidwall/gjson"
-	"strings"
-	"configcenter/src/framework/core/log"
-	"time"
 )
 
-var Host = M{}
+const (
+	// 缓存时间5min
+	cacheTime = time.Minute * 5
+	// 配置文件路径
+	jsonFile = "/etc/gse/host/hostid"
+)
 
-func init() {
-	// todo parse json file
-	Host = M{
-		"bk_host_id":          1,              // 主机iD
-		"bk_host_name":        "etcd-1",       // 主机名
-		"bk_supplier_id":      0,              // 供应商ID
-		"bk_supplier_account": "0",            // 供应商账户
-		"bk_cloud_id":         0,              // 云区域ID
-		"bk_cloud_name":       "default area", // 云区域名
-		"bk_host_innerip":     "192.168.1.2",  // 内网IP
-		"bk_host_outerip":     "10.0.0.2",     // 外网IP
-		"bk_os_type":          "1",            // 系统类型: 1: Linux 2: Windows
-		"bk_os_name":          "linux centos", // 操作系统名称
-		"bk_mem":              64131,          // 内存大小,单位:MB
-		"bk_cpu":              24,             // cpu核心数,单位:个
-		"bk_disk":             271,            // 磁盘大小,单位:GB
-		"associations": M{
-			"module10": M{ // 与下面的bk_module_name一致
-				"bk_biz_id": 10,              // 业务ID
-				"bk_biz_name": "biz10",       //　业务名称
-				"bk_set_id": 10,              // 集群ID
-				"bk_set_name": "set10",       // 集群名称
-				"bk_module_id": 10,           // 模块ID
-				"bk_module_name": "module10", // 模块名称
-				"bk_service_status": "1",     // 集群状态, 1: 开放, 2: 关闭
-				"bk_set_env": "1",            // 集群环境, "1":测试, "2": 体验, "3": 正式
-			},
-		},
-	}
-
-	blog.Infof("Host Detail: \n")
-	Host.debug()
+var Host = M{
+	"bk_host_id": "",
 }
 
-// 缓存时间5min
-const cacheTime = time.Minute * 5
+func init() {
+	// parse json file
+	jf, err := ioutil.ReadFile(jsonFile)
+	if err != nil {
+		blog.Errorf("discover: read file error: %s")
+	} else {
+		err = json.Unmarshal(jf, &Host)
+		if err != nil {
+			blog.Errorf("discover: parse file error: %s")
+		}
+	}
+
+	blog.Infof("Host Detail: %s\n%v\n", jf, Host)
+}
 
 // 模型元数据结构
 type Model struct {
@@ -94,8 +83,10 @@ func (m M) toJson() ([]byte, error) {
 }
 
 func (m M) debug() {
-	if js, err := m.toJson(); err != nil {
-		log.Infof("=====\n%s\n====", js)
+	if js, err := m.toJson(); err == nil {
+		blog.Infof("=====\n%s\n====", js)
+	} else {
+		blog.Errorf("debug error: %s", err)
 	}
 }
 
@@ -200,28 +191,19 @@ func (d *Discover) parseObjID(msg string) string {
 }
 
 // GetAttrs 查询模型属性
-func (d *Discover) GetAttrs(msg string) (ListResult, error) {
+func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]Attr) (ListResult, error) {
 
 	var nilR = ListResult{}
 
-	model, err := d.parseModel(msg)
-	if err != nil {
-		return nilR, fmt.Errorf("parse model error: %s", err)
-	}
-
-	//create model attr
-	attrs, err := d.parseAttrs(msg)
-	if err != nil {
-		blog.Errorf("create model attr unmarshal error: %s", err)
-		return nilR, err
-	}
-
-	filterAttrs := make([]string, 0, len(attrs))
+	filterAttrs := make([]string, 0)
 	for k := range attrs {
+		// skip empty string
+		if k == "" {
+			continue
+		}
 		filterAttrs = append(filterAttrs, k)
 	}
 
-	modelAttrKey := d.CreateModelAttrKey(*model)
 	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
 
 	// 差异比较
@@ -262,12 +244,8 @@ func (d *Discover) GetAttrs(msg string) (ListResult, error) {
 
 	// construct the condition
 	cond := M{
-		bkc.BKPropertyIDField: M{
-			bkc.BKDBIN: filterAttrs,
-		},
-		bkc.BKObjIDField:   model.BkObjID,
+		bkc.BKObjIDField:   objID,
 		bkc.BKOwnerIDField: bkc.BKDefaultOwnerID,
-		//bkc.CreatorField:   bkc.CCSystemCollectorUserName,
 	}
 
 	// marshal the condition
@@ -295,25 +273,6 @@ func (d *Discover) GetAttrs(msg string) (ListResult, error) {
 		return nilR, err
 	}
 
-	// flush to redis
-	if dR.Result && len(dR.Data) > 0 {
-
-		filterJs, err := json.Marshal(filterAttrs)
-		if err != nil {
-			blog.Infof("%s: flush to redis marshal failed: %s\n", modelAttrKey, err)
-			return dR, nil
-		}
-
-		_, err = d.redisCli.Set(modelAttrKey, filterJs, cacheTime).Result()
-		if err != nil {
-			blog.Infof("%s: flush to redis failed: %s\n", modelAttrKey, err)
-			return dR, nil
-		}
-
-		blog.Errorf("%s: flush to redis success\n", modelAttrKey)
-
-	}
-
 	return dR, nil
 
 }
@@ -321,8 +280,25 @@ func (d *Discover) GetAttrs(msg string) (ListResult, error) {
 // UpdateOrAppendAttrs 创建或新增模型属性
 func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
+	// parse object_id
+	objID := d.parseObjID(msg)
+
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return fmt.Errorf("parse model error: %s", err)
+	}
+
+	// create model attr
+	attrs, err := d.parseAttrs(msg)
+	if err != nil {
+		blog.Errorf("create model attr unmarshal error: %s", err)
+		return err
+	}
+
+	modelAttrKey := d.CreateModelAttrKey(*model)
+
 	// get exist attr
-	dR, err := d.GetAttrs(msg)
+	dR, err := d.GetAttrs(objID, modelAttrKey, attrs)
 	if nil != err {
 		return fmt.Errorf("get attr error: %s", err)
 	}
@@ -339,36 +315,32 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		//blog.Infof("attr exist: %v\n", existAttrs)
 	}
 
-	// parse object_id
-	objID := d.parseObjID(msg)
-
-	// create model attr
-	fields, err := d.parseAttrs(msg)
-	if err != nil {
-		blog.Errorf("create model attr unmarshal error: %s", err)
-		return err
-	}
-
 	// add extra relation attr associate to host
-	fields["host"] = Attr{
+	attrs["host"] = Attr{
 		BkPropertyName: "主机",
 		BkPropertyType: bkc.FieldTypeSingleAsst,
 		BkAsstObjID:    "host",
 	}
 
 	// add collector key
-	fields["collector_key"] = Attr{
+	attrs[bkc.BKCollectorKeyField] = Attr{
 		BkPropertyName: "采集标识",
 		BkPropertyType: bkc.FieldTypeSingleChar,
 		Editable:       false,
 	}
 
+
+	// collect final attrs of model
+	finalAttrs := make([]string, 0)
+
 	// batch create model attrs
-	for instId, v := range fields {
+	for instId, v := range attrs {
+
+		finalAttrs = append(finalAttrs, instId)
 
 		// skip exist attr
 		if _, ok := existAttrHash[instId]; ok {
-			//log.Infof("skip exist field: %s", instId)
+			//blog.Infof("skip exist field: %s", instId)
 			continue
 		}
 
@@ -376,7 +348,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
 		// skip default field
 		if instId == bkc.BKInstNameField {
-			log.Infof("skip default field: %s", instId)
+			blog.Infof("skip default field: %s", instId)
 			continue
 		}
 
@@ -407,6 +379,24 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		if !resMap.Result {
 			return fmt.Errorf("create model attr failed: %s\n", resMap.Message)
 		}
+
+	}
+
+	// flush to redis
+	if dR.Result && len(dR.Data) > 0 {
+		attrJs, err := json.Marshal(finalAttrs)
+		if err != nil {
+			blog.Infof("%s: flush to redis marshal failed: %s\n", modelAttrKey, err)
+			return err
+		}
+
+		_, err = d.redisCli.Set(modelAttrKey, attrJs, cacheTime).Result()
+		if err != nil {
+			blog.Infof("%s: flush to redis failed: %s\n", modelAttrKey, err)
+			return err
+		}
+
+		blog.Errorf("%s: flush to redis success: %s\n", modelAttrKey, attrJs)
 
 	}
 
@@ -704,8 +694,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 		// add unique key to collector_key and reassign it to inst_name
 		//createJs := gjson.Get(msg, "data.data").String()
-		bodyData["collector_key"] = strings.Join(values, "-")
-		bodyData[bkc.BKInstNameField] = bodyData["collector_key"]
+		bodyData[bkc.BKCollectorKeyField] = strings.Join(values, "-")
+		bodyData[bkc.BKInstNameField] = bodyData[bkc.BKCollectorKeyField]
 		// add related host
 		bodyData["host"] = Host[bkc.BKHostIDField]
 
