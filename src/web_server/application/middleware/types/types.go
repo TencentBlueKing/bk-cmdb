@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package middleware
+package types
 
 import (
 	"regexp"
@@ -96,8 +96,8 @@ const (
 
 //system config privilege regexp
 var (
-	resPatternRegexp    = regexp.MustCompile(resPattern)
-	objectPatternRegexp = regexp.MustCompile(objectPattern)
+	ResPatternRegexp    = regexp.MustCompile(resPattern)
+	ObjectPatternRegexp = regexp.MustCompile(objectPattern)
 )
 
 //host update string
@@ -106,7 +106,7 @@ const BK_HOST_UPDATE string = "hosts/batch"
 //host manage search pattern
 const searchPattern = `(hosts/[\w]+/[\d]+)|(topo/internal/[\w]+/[\w]+)|(topo/inst/[\w]+/[\d]+)|(object/host/inst/[\d]+)`
 
-var searchPatternRegexp = regexp.MustCompile(searchPattern)
+var SearchPatternRegexp = regexp.MustCompile(searchPattern)
 
 var BK_CC_SYSCONFIG = []string{"event", "model", "audit"}
 
@@ -115,3 +115,36 @@ var BK_CC_MODEL_PRE = []string{"object", "objects"}
 var BK_CC_AUDIT_PRE = []string{"audit"}
 
 var BK_CC_EVENT_PRE = []string{"event"}
+
+type LoginResult struct {
+	Message string
+	Code    string
+	Result  bool
+	Data    interface{}
+}
+
+type RolePriResult struct {
+	Result  bool        `json:"result"`
+	Code    int         `json:"bk_error_code"`
+	Message interface{} `json:"bk_error_msg"`
+	Data    []string    `json:"data"`
+}
+
+type RoleAppResult struct {
+	Result  bool                     `json:"result"`
+	Code    int                      `json:"bk_error_code"`
+	Message interface{}              `json:"bk_error_msg"`
+	Data    []map[string]interface{} `json:"data"`
+}
+
+type SearchAppResult struct {
+	Result  bool        `json:"result"`
+	Code    int         `json:"bk_error_code"`
+	Message interface{} `json:"bk_error_msg"`
+	Data    AppResult   `json:"data"`
+}
+
+type AppResult struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
+}
