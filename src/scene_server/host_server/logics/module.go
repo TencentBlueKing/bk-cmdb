@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
@@ -87,7 +88,7 @@ func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []metadata.Conditi
 	return moduleIDArr, nil
 }
 
-func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]interface{}, error) {
+func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]types.MapStr, error) {
 
 	query := &metadata.QueryInput{
 		Condition: cond,
@@ -101,7 +102,7 @@ func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond i
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
 	}
-	moduleMap := make(map[int64]interface{})
+	moduleMap := make(map[int64]types.MapStr)
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKModuleIDField)
 		if err != nil {
