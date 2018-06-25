@@ -14,6 +14,7 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
 
@@ -40,10 +41,13 @@ func getBool(val interface{}) bool {
 }
 
 // fillLostedFieldValue fill the value in inst map data
-func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes) {
+func fillLostedFieldValue(valData map[string]interface{}, fields []api.ObjAttDes, isRequireArr []string) {
 	for _, field := range fields {
 		_, ok := valData[field.PropertyID]
 		if !ok {
+			if util.InStrArr(isRequireArr, field.PropertyID) {
+				continue
+			}
 			switch field.PropertyType {
 			case common.FieldTypeSingleChar:
 				valData[field.PropertyID] = ""
