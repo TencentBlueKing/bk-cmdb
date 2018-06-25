@@ -63,7 +63,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 
 	// walk to create new node
 	tar.BizTopo.walk(func(node *Node) error {
-		if node.mark == "create" {
+		if node.mark == actionCreate {
 			fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 			if !opt.dryrun {
 				_, err := db.Insert(commondata.GetInstTableName(node.ObjID), node.Data)
@@ -72,7 +72,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 				}
 			}
 		}
-		if node.mark == "update" {
+		if node.mark == actionUpdate {
 			// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 			if !opt.dryrun {
 				instID, err := node.getInstID()
@@ -286,14 +286,14 @@ func getModifyCondition(data map[string]interface{}, keys []string) map[string]i
 }
 
 var ignoreKeys = map[string]bool{
-	"_id":           true,
-	"create_time":   true,
-	"bk_parent_id":  true,
-	"default":       true,
-	"bk_biz_id":     true,
-	"bk_module_id":  true,
-	"bk_process_id": true,
-	"bk_inst_id":    true,
+	"_id":                   true,
+	"create_time":           true,
+	common.BKInstParentStr:  true,
+	"default":               true,
+	common.BKAppIDField:     true,
+	common.BKSetIDField:     true,
+	common.BKProcessIDField: true,
+	common.BKInstIDField:    true,
 }
 
 func getUpdateData(n *Node) map[string]interface{} {
@@ -354,7 +354,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 	}
 	if includeRoot {
 		switch node.ObjID {
-		case "biz":
+		case common.BKInnerObjIDApp:
 			condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
 			app := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &app)
@@ -374,19 +374,19 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			ipt.bizID = bizID
 			ipt.parentID = bizID
 			ipt.ownerID = ownerID
-			node.mark = "update"
-		case "set":
+			node.mark = actionUpdate
+		case common.BKInnerObjIDSet:
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
-			node.Data["bk_parent_id"] = ipt.parentID
-			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, "bk_parent_id"})
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &set)
 			if nil != err && mgo.ErrNotFound != err {
 				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
-				node.mark = "create"
+				node.mark = actionCreate
 				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
@@ -395,7 +395,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				ipt.parentID = nid
 				ipt.setID = nid
 			} else {
-				node.mark = "update"
+				node.mark = actionUpdate
 				setID, err := getInt64(set[common.BKSetIDField])
 				if nil != err {
 					return fmt.Errorf("get setID faile, data: %+v, error: %s", set, err.Error())
@@ -404,26 +404,26 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				ipt.parentID = setID
 				ipt.setID = setID
 			}
-		case "module":
+		case common.BKInnerObjIDModule:
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKSetIDField] = ipt.setID
-			node.Data["bk_parent_id"] = ipt.parentID
-			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, "bk_parent_id"})
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &module)
 			if nil != err && mgo.ErrNotFound != err {
 				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
-				node.mark = "create"
+				node.mark = actionCreate
 				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
 				}
 				node.Data[common.BKModuleIDField] = nid
 			} else {
-				node.mark = "update"
+				node.mark = actionUpdate
 				moduleID, err := getInt64(module[common.BKModuleIDField])
 				if nil != err {
 					return fmt.Errorf("get moduleID faile, data: %+v, error: %s", module, err.Error())
@@ -432,8 +432,8 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 		default:
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
-			node.Data["bk_parent_id"] = ipt.parentID
-			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), "bk_parent_id"})
+			node.Data[common.BKInstParentStr] = ipt.parentID
+			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), common.BKInstParentStr})
 			condition[common.BKObjIDField] = node.ObjID
 			inst := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &inst)
@@ -441,7 +441,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
-				node.mark = "create"
+				node.mark = actionCreate
 				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
@@ -449,7 +449,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				node.Data[instdata.GetIDNameByType(node.ObjID)] = nid
 				ipt.parentID = nid
 			} else {
-				node.mark = "update"
+				node.mark = actionUpdate
 				instID, err := getInt64(inst[instdata.GetIDNameByType(node.ObjID)])
 				if nil != err {
 					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
@@ -460,11 +460,11 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		}
 
 		// fetch datas that should delete
-		if node.ObjID != "module" {
+		if node.ObjID != common.BKInnerObjIDModule {
 			childtablename := commondata.GetInstTableName(node.getChildObjID())
 			instID, _ := node.getInstID()
 			childCondition := map[string]interface{}{
-				"bk_parent_id": instID,
+				common.BKInstParentStr: instID,
 				node.getChilDInstNameField(): map[string]interface{}{
 					"$nin": node.getChilDInstNames(),
 				},
@@ -486,7 +486,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 		}
 
-		if node.mark == "create" {
+		if node.mark == actionCreate {
 			ipt.screate[node.getChildObjID()] = append(ipt.screate[node.getChildObjID()], node)
 			parentID := ipt.parentID
 			bizID := ipt.bizID
@@ -499,7 +499,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			ipt.bizID = bizID
 			ipt.setID = setID
 		}
-		if node.mark == "update" {
+		if node.mark == actionUpdate {
 			ipt.supdate[node.getChildObjID()] = append(ipt.supdate[node.getChildObjID()], node)
 		}
 	}

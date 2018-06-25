@@ -60,7 +60,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 		return nil
 	}
 	condition := map[string]interface{}{
-		"bk_parent_id": instID,
+		common.BKInstParentStr: instID,
 	}
 
 	switch asst.ObjectID {
