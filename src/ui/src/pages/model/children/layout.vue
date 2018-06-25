@@ -34,7 +34,7 @@
                 <div class="layout-list-ul" v-for="(group, groupIndex) in groupAttrList" :key="groupIndex">
                     <div class="layout-list-title">
                         <span class="layout-title-text" v-if="!group.isEditTitle">{{group['bk_group_name']}}</span>
-                        <input v-else v-focus @blur="changeGroupName(group)" type="text" class="layout-title-text border" v-model="group['bk_group_name']"
+                        <input v-else v-focus maxlength="20" @blur="changeGroupName(group)" type="text" class="layout-title-text border" v-model="group['bk_group_name']"
                         >
                         <i class="icon-cc-edit" @click.stop.prevent="editGroupName(group)"></i>
                         <span class="layout-title-icon">

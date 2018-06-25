@@ -567,6 +567,12 @@ const (
 const (
 	// InputTypeExcel  data from excel
 	InputTypeExcel = "excel"
+
+	// InputTypeApiHostSync data from api for synchronize new host
+	InputTypeApiNewHostSync = "api_sync_host"
+
+	// BatchHostAddMaxRow batch sync add host max row
+	BatchHostAddMaxRow = 128
 )
 
 // table names

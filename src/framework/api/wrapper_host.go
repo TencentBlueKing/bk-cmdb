@@ -1,47 +1,134 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package api
 
 import (
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // HostIteratorWrapper the host iterator wrapper
 type HostIteratorWrapper struct {
-	host inst.Iterator
+	host inst.HostIterator
 }
 
 // Next next the business
 func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 
 	host, err := cli.host.Next()
-
 	return &HostWrapper{host: host}, err
-
 }
 
 // ForEach the foreach function
 func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) error {
 
-	return cli.host.ForEach(func(item inst.Inst) error {
+	return cli.host.ForEach(func(item inst.HostInterface) error {
 		return callback(&HostWrapper{host: item})
 	})
 }
 
 // HostWrapper the host wrapper
 type HostWrapper struct {
-	host inst.Inst
+	host inst.HostInterface
+}
+
+// GetBizs return all business for the host
+func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
+
+	bizWraps := make([]*BusinessWrapper, 0)
+	bizs := cli.host.GetBizs()
+	for _, biz := range bizs {
+
+		supplier := biz.String(fieldSupplierAccount)
+		bizWrap, err := CreateBusiness(supplier)
+		if nil != err {
+			return nil, err
+		}
+		biz.ForEach(func(key string, val interface{}) {
+			bizWrap.SetValue(key, val)
+		})
+
+		bizWraps = append(bizWraps, bizWrap)
+	}
+
+	return bizWraps, nil
+}
+
+// GetSets return all sets for the host
+func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
+
+	setWraps := make([]*SetWrapper, 0)
+	sets := cli.host.GetSets()
+	for _, set := range sets {
+
+		supplier := set.String(fieldSupplierAccount)
+		setWrap, err := CreateSet(supplier)
+		if nil != err {
+			return nil, err
+		}
+		set.ForEach(func(key string, val interface{}) {
+			setWrap.SetValue(key, val)
+		})
+
+		setWraps = append(setWraps, setWrap)
+	}
+
+	return setWraps, nil
+}
+
+// GetModules return all modules for the module
+func (cli *HostWrapper) GetModules() ([]*ModuleWrapper, error) {
+
+	moduleWraps := make([]*ModuleWrapper, 0)
+	modules := cli.host.GetModules()
+	for _, module := range modules {
+
+		supplier := module.String(fieldSupplierAccount)
+		moduleWrap, err := CreateModule(supplier)
+		if nil != err {
+			return nil, err
+		}
+
+		module.ForEach(func(key string, val interface{}) {
+			moduleWrap.SetValue(key, val)
+		})
+
+		moduleWraps = append(moduleWraps, moduleWrap)
+	}
+
+	return moduleWraps, nil
+}
+
+// Transfer transfer operation
+func (cli *HostWrapper) Transfer() inst.TransferInterface {
+	return cli.host.Transfer()
+}
+
+// SetTopo set the host topo
+func (cli *HostWrapper) SetTopo(bizID int64, moduleIDS []int64) {
+	cli.host.SetBusinessID(bizID)
+	cli.host.SetModuleIDS(moduleIDS)
+}
+
+// SetBusiness set the business id for the host
+func (cli *HostWrapper) SetBusiness(bizID int64) {
+	cli.host.SetBusinessID(bizID)
+}
+
+// SetModuleIDS set the modules
+func (cli *HostWrapper) SetModuleIDS(moduleIDS []int64) {
+	cli.host.SetModuleIDS(moduleIDS)
 }
 
 // GetModel get the model for the host
@@ -54,6 +141,21 @@ func (cli *HostWrapper) SetValue(key string, val interface{}) error {
 	return cli.host.SetValue(key, val)
 }
 
+// IsExists check the set
+func (cli *HostWrapper) IsExists() (bool, error) {
+	return cli.host.IsExists()
+}
+
+// Create only to create
+func (cli *HostWrapper) Create() error {
+	return cli.host.Create()
+}
+
+// Update only to update
+func (cli *HostWrapper) Update() error {
+	return cli.host.Update()
+}
+
 // Save save the data
 func (cli *HostWrapper) Save() error {
 
@@ -61,6 +163,11 @@ func (cli *HostWrapper) Save() error {
 		return err
 	}
 	return cli.host.Save()
+}
+
+// GetValues return the values
+func (cli *HostWrapper) GetValues() (types.MapStr, error) {
+	return cli.host.GetValues()
 }
 
 // SetBakOperator set the bak operator
