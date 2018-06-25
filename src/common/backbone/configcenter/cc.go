@@ -117,7 +117,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *%s* config has changed. event: %v", c.procName, *cur)
+	blog.Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
@@ -141,7 +141,7 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 }
 
 func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *ERROR CODE* config has changed. event: %v", *cur)
+	blog.Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *ERROR CODE* config has changed, but got err: %v", cur.Err)
@@ -166,7 +166,7 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 }
 
 func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *LANGUAGE* config has changed. event: %v", *cur)
+	blog.Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *LANGUAGE* config has changed, but got err: %v", cur.Err)

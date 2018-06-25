@@ -36,7 +36,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 	}
 	result, err := s.CoreAPI.HostController().Favorite().GetHostFavourites(context.Background(), user, pheader, query)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("add host favorite failed, query: %v, err: %v", query, err)
+		blog.Errorf("add host favorite failed, query: %v, err: %v, %v", query, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavGetFail)})
 		return
 	}
@@ -67,7 +67,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 
 	result, err := s.CoreAPI.HostController().Favorite().AddHostFavourite(context.Background(), user, pheader, para)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("add host favorite failed, para: %v, err: %v", para, err)
+		blog.Errorf("add host favorite failed, para: %v, err: %v, %v", para, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostEmptyFavName)})
 		return
 	}
@@ -105,7 +105,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 
 	result, err := s.CoreAPI.HostController().Favorite().UpdateHostFavouriteByID(context.Background(), user, ID, pheader, data)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("update host favorite failed, data: %v, err: %v", data, err)
+		blog.Errorf("update host favorite failed, data: %v, err: %v, %v", data, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavUpdateFail)})
 		return
 	}
@@ -126,7 +126,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 
 	result, err := s.CoreAPI.HostController().Favorite().DeleteHostFavouriteByID(context.Background(), user, ID, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("delete host favorite failed, ID: %v, err: %v", ID, err)
+		blog.Errorf("delete host favorite failed, ID: %v, err: %v, %v", ID, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavDeleteFail)})
 		return
 	}
@@ -151,7 +151,7 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 	}
 	result, err := s.CoreAPI.HostController().Favorite().GetHostFavourites(context.Background(), user, pheader, query)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("increase host favorite count failed, ID: %v, err: %v", ID, err)
+		blog.Errorf("increase host favorite count failed, ID: %v, err: %v, %v", ID, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavGetFail)})
 		return
 	}
@@ -159,7 +159,7 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 	data := map[string]interface{}{"count": result.Data.Count + 1}
 	uResult, err := s.CoreAPI.HostController().Favorite().UpdateHostFavouriteByID(context.Background(), user, ID, pheader, data)
 	if err != nil || (err == nil && !uResult.Result) {
-		blog.Errorf("increase host favorite count failed, ID: %v, err: %v", ID, err)
+		blog.Errorf("increase host favorite count failed, ID: %v, err: %v, %v", ID, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavUpdateFail)})
 		return
 	}

@@ -612,7 +612,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	log := common.KvMap{common.BKContentField: logLastConents, common.BKOpDescField: "update host", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	aResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pheader, log)
 	if err != nil || (err == nil && !aResult.Result) {
-		blog.Errorf("update host batch, but add host[%s] audit failed, err: %v", hostIDs, err)
+		blog.Errorf("update host batch, but add host[%s] audit failed, err: %v, %v", hostIDs, err, aResult.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
