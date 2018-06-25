@@ -182,8 +182,10 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		}
 
 		result, err := lgc.CoreAPI.HostController().Host().AddHost(context.Background(), pheader, host)
-		if err != nil || (err == nil && !result.Result) {
+		if err != nil {
 			return errors.New(lang.Languagef("host_agent_add_host_fail", err.Error()))
+		} else if err == nil && !result.Result {
+			return errors.New(lang.Languagef("host_agent_add_host_fail", result.ErrMsg))
 		}
 
 		retHost := result.Data.(map[string]interface{})
@@ -233,9 +235,12 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		HostID:        hostID,
 	}
 	result, err = lgc.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, cfg)
-	if err != nil || (err == nil && !result.Result) {
+	if err != nil {
 		blog.Error("enter ip, add module host config failed, err: %v", err)
 		return errors.New(lang.Languagef("host_agent_add_host_module_fail", err.Error()))
+	} else if err == nil && !result.Result {
+		blog.Errorf("enter ip, add module host config failed, err: %v", result.ErrMsg)
+		return errors.New(lang.Languagef("host_agent_add_host_module_fail", result.ErrMsg))
 	}
 
 	audit := lgc.NewHostLog(pheader, ownerID)
@@ -670,11 +675,7 @@ func (lgc *Logics) GetHostIDByCond(pheader http.Header, cond map[string][]int64)
 
 	hostIDs := make([]int64, 0)
 	for _, val := range result.Data {
-		id, err := val.Int64(common.BKInstIDField)
-		if err != nil {
-			return nil, err
-		}
-		hostIDs = append(hostIDs, id)
+		hostIDs = append(hostIDs, val.HostID)
 	}
 
 	return hostIDs, nil
