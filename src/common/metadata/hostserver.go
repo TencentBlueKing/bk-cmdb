@@ -10,15 +10,11 @@
  * limitations under the License.
  */
 
-package ccapi
+package metadata
 
-import (
-	_ "configcenter/src/scene_server/host_server/host_service/actions/delete"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/detail"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/hosts"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/phpapi"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/property"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/search"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/update"
-	_ "configcenter/src/scene_server/host_server/host_service/actions/userapi"
-)
+type HostCloneInputParams struct {
+	OrgIP  string `json:"bk_org_ip"`
+	DstIP  string `json:"bk_dst_ip"`
+	AppID  int64  `json:"bk_biz_id"`
+	PlatID int64  `json:"bk_cloud_id"`
+}
