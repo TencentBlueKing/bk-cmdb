@@ -40,11 +40,18 @@ type userResult struct {
 	Result  bool        `json:"result"`
 }
 
-var getUserFailData = map[string]interface{}{
-	"result":        false,
-	"bk_error_msg":  "get user list false",
-	"bk_error_code": "",
-	"data":          nil,
+type userDataResult struct {
+	Message string      `json:"bk_error_msg"`
+	Data    interface{} `json:"data"`
+	Code    string      `json:"bk_error_code"`
+	Result  bool        `json:"result"`
+}
+
+var getUserFailData = userDataResult{
+	Result:  false,
+	Message: "get user list false",
+	Code:    "",
+	Data:    nil,
 }
 
 // GetUserList get user list
@@ -67,22 +74,22 @@ func UpdateUserLanguage(c *gin.Context) {
 
 	if nil != err {
 		blog.Errorf("user update language error:%s", err.Error())
-		c.JSON(200, gin.H{
-			"result":        false,
-			"bk_error_msg":  "user update language error",
-			"bk_error_code": fmt.Sprintf("%d", common.CCErrCommHTTPDoRequestFailed),
-			"data":          nil,
+		c.JSON(200, userDataResult{
+			Result:  false,
+			Message: "user update language error",
+			Code:    fmt.Sprintf("%d", common.CCErrCommHTTPDoRequestFailed),
+			Data:    nil,
 		})
 		return
 	}
 
 	c.SetCookie("blueking_language", language, 0, "/", "", false, true)
 
-	c.JSON(200, gin.H{
-		"result":        true,
-		"bk_error_msg":  "",
-		"bk_error_code": "00",
-		"data":          nil,
+	c.JSON(200, userDataResult{
+		Result:  true,
+		Message: "",
+		Code:    "00",
+		Data:    nil,
 	})
 	return
 }
