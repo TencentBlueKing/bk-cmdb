@@ -26,16 +26,16 @@ type TransferInterface interface {
 	MoveToModule(newModuleIDS []int64, isIncrement bool) error
 
 	// MoveToFaultModule transfer host module to fault module
-	MoveToFaultModule(hostIDS []int64) error
+	MoveToFaultModule() error
 
 	// MoveToIdleModule transfer host module to idle module
-	MoveToIdleModule(hostIDS []int64) error
+	MoveToIdleModule() error
 
 	// MoveToResourcePools transfer host module to resource pools
 	MoveToResourcePools() error
 
 	// MoveToBusinessIdleModuleFromResourcePools transfer host to business module
-	MoveToBusinessIdleModuleFromResourcePools(bizID int64, hostIDS []int64) error
+	MoveToBusinessIdleModuleFromResourcePools(bizID int64) error
 
 	// MoveToAnotherBusinessModules transfer host to another business modules
 	MoveToAnotherBusinessModules(bizID int64, moduleID int64) error
@@ -61,7 +61,7 @@ func (t *transfer) MoveToModule(newModuleIDS []int64, isIncrement bool) error {
 }
 
 // MoveToFaultModule transfer host module to fault module
-func (t *transfer) MoveToFaultModule(hostIDS []int64) error {
+func (t *transfer) MoveToFaultModule() error {
 
 	hostID, err := t.targetHost.GetInstID()
 	if nil != err {
@@ -73,7 +73,7 @@ func (t *transfer) MoveToFaultModule(hostIDS []int64) error {
 }
 
 // MoveToIdleModule transfer host module to idle module
-func (t *transfer) MoveToIdleModule(hostIDS []int64) error {
+func (t *transfer) MoveToIdleModule() error {
 	hostID, err := t.targetHost.GetInstID()
 	if nil != err {
 		log.Errorf("failed to get the host id, error info is %s", err.Error())
@@ -95,7 +95,7 @@ func (t *transfer) MoveToResourcePools() error {
 }
 
 // MoveToBusinessIdleModuleFromResourcePools transfer host to business module
-func (t *transfer) MoveToBusinessIdleModuleFromResourcePools(bizID int64, hostIDS []int64) error {
+func (t *transfer) MoveToBusinessIdleModuleFromResourcePools(bizID int64) error {
 	hostID, err := t.targetHost.GetInstID()
 	if nil != err {
 		log.Errorf("failed to get the host id, error info is %s", err.Error())
