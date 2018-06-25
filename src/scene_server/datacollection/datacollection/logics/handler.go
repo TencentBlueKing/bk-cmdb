@@ -11,8 +11,44 @@ import (
 	"time"
 )
 
+var Host = M{}
+
+func init() {
+	// todo parse json file
+	Host = M{
+		"bk_host_id":          1,              // 主机iD
+		"bk_host_name":        "etcd-1",       // 主机名
+		"bk_supplier_id":      0,              // 供应商ID
+		"bk_supplier_account": "0",            // 供应商账户
+		"bk_cloud_id":         0,              // 云区域ID
+		"bk_cloud_name":       "default area", // 云区域名
+		"bk_host_innerip":     "192.168.1.2",  // 内网IP
+		"bk_host_outerip":     "10.0.0.2",     // 外网IP
+		"bk_os_type":          "1",            // 系统类型: 1: Linux 2: Windows
+		"bk_os_name":          "linux centos", // 操作系统名称
+		"bk_mem":              64131,          // 内存大小,单位:MB
+		"bk_cpu":              24,             // cpu核心数,单位:个
+		"bk_disk":             271,            // 磁盘大小,单位:GB
+		"associations": M{
+			"module10": M{ // 与下面的bk_module_name一致
+				"bk_biz_id": 10,              // 业务ID
+				"bk_biz_name": "biz10",       //　业务名称
+				"bk_set_id": 10,              // 集群ID
+				"bk_set_name": "set10",       // 集群名称
+				"bk_module_id": 10,           // 模块ID
+				"bk_module_name": "module10", // 模块名称
+				"bk_service_status": "1",     // 集群状态, 1: 开放, 2: 关闭
+				"bk_set_env": "1",            // 集群环境, "1":测试, "2": 体验, "3": 正式
+			},
+		},
+	}
+
+	blog.Infof("Host Detail: \n")
+	Host.debug()
+}
+
 // 缓存时间5min
-const cacheTime = time.Minute*5
+const cacheTime = time.Minute * 5
 
 // 模型元数据结构
 type Model struct {
@@ -26,6 +62,8 @@ type Model struct {
 type Attr struct {
 	BkPropertyName string `json:"bk_property_name"`
 	BkPropertyType string `json:"bk_property_type"`
+	BkAsstObjID    string `json:"bk_asst_obj_id"`
+	Editable       bool   `json:"editable"`
 }
 
 type M map[string]interface{}
@@ -53,6 +91,12 @@ type ListResult struct {
 
 func (m M) toJson() ([]byte, error) {
 	return json.Marshal(m)
+}
+
+func (m M) debug() {
+	if js, err := m.toJson(); err != nil {
+		log.Infof("=====\n%s\n====", js)
+	}
 }
 
 func (m M) Keys() (keys []string) {
@@ -298,11 +342,25 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	// parse object_id
 	objID := d.parseObjID(msg)
 
-	//create model attr
+	// create model attr
 	fields, err := d.parseAttrs(msg)
 	if err != nil {
 		blog.Errorf("create model attr unmarshal error: %s", err)
 		return err
+	}
+
+	// add extra relation attr associate to host
+	fields["host"] = Attr{
+		BkPropertyName: "主机",
+		BkPropertyType: bkc.FieldTypeSingleAsst,
+		BkAsstObjID:    "host",
+	}
+
+	// add collector key
+	fields["collector_key"] = Attr{
+		BkPropertyName: "采集标识",
+		BkPropertyType: bkc.FieldTypeSingleChar,
+		Editable:       false,
 	}
 
 	// batch create model attrs
@@ -326,10 +384,12 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			bkc.BKObjIDField:         objID,
 			bkc.BKPropertyGroupField: bkc.BKDefaultField,
 			bkc.BKPropertyIDField:    instId,
+			bkc.BKAsstObjIDField:     v.BkAsstObjID,
 			bkc.BKPropertyNameField:  v.BkPropertyName,
 			bkc.BKPropertyTypeField:  v.BkPropertyType,
 			bkc.BKOwnerIDField:       bkc.BKDefaultOwnerID,
 			bkc.CreatorField:         bkc.CCSystemCollectorUserName,
+			"editable":               v.Editable,
 		}
 
 		attrBodyJs, _ := attrBody.toJson()
@@ -544,17 +604,9 @@ func (d *Discover) TryCreateModel(msg string) error {
 }
 
 // GetInst 获取模型实例信息
-func (d *Discover) GetInst(msg string) (DetailResult, error) {
+func (d *Discover) GetInst(objID string, keys []string, bodyMap M) (DetailResult, error) {
 
 	var nilR = DetailResult{}
-
-	// parse object_id
-	objID := d.parseObjID(msg)
-
-	model, err := d.parseModel(msg)
-	if err != nil {
-		return nilR, fmt.Errorf("parse model error: %s", err)
-	}
 
 	// build condition
 	condition := M{
@@ -562,12 +614,6 @@ func (d *Discover) GetInst(msg string) (DetailResult, error) {
 		bkc.BKObjIDField: objID,
 	}
 
-	bodyMap, err := d.parseData(msg)
-	if err != nil {
-		return nilR, fmt.Errorf("parse data error: %s", err)
-	}
-
-	keys := strings.Split(model.Keys, ",")
 	for _, key := range keys {
 		keyStr := string(key)
 		condition[keyStr] = bodyMap[keyStr]
@@ -591,7 +637,7 @@ func (d *Discover) GetInst(msg string) (DetailResult, error) {
 	}
 
 	// search inst by condition
-	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, model.BkObjID)
+	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
 	blog.Infof("get inst url=%s, condition=%s\n", url, condJs)
 
 	res, err := d.requests.POST(url, nil, condJs)
@@ -619,22 +665,60 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	// parse object_id
 	objID := d.parseObjID(msg)
 
-	dR, err := d.GetInst(msg)
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return fmt.Errorf("parse model error: %s", err)
+	}
+
+	bodyMap, err := d.parseData(msg)
+	if err != nil {
+		return fmt.Errorf("parse data error: %s", err)
+	}
+
+	// fetch key's values
+	keys := strings.Split(model.Keys, ",")
+	dR, err := d.GetInst(objID, keys, bodyMap)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
 
 	blog.Infof("get inst result: count=%d\n", dR.Data.Count)
 
+	bodyData, err := d.parseData(msg)
+	if nil != err {
+		return fmt.Errorf("parse inst data error: %s", err)
+	}
+
 	// create inst
 	if dR.Data.Count == 0 {
 
-		createJs := gjson.Get(msg, "data.data").String()
+		values := make([]string, len(keys))
+		for i, key := range keys {
+			keyStr := string(key)
+			valueStr, ok := bodyMap[keyStr].(string)
+			if !ok {
+				return fmt.Errorf("parse key error: %v(%s)\n", bodyMap, keyStr)
+			}
+			values[i] = valueStr
+		}
+
+		// add unique key to collector_key and reassign it to inst_name
+		//createJs := gjson.Get(msg, "data.data").String()
+		bodyData["collector_key"] = strings.Join(values, "-")
+		bodyData[bkc.BKInstNameField] = bodyData["collector_key"]
+		// add related host
+		bodyData["host"] = Host[bkc.BKHostIDField]
+
+		// marshal the condition
+		createJs, err := bodyData.toJson()
+		if err != nil {
+			return fmt.Errorf("marshal condition error: %s", err)
+		}
 
 		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
 		blog.Infof("create inst url=%s, body=%s\n", url, createJs)
 
-		res, err := d.requests.POST(url, nil, []byte(createJs))
+		res, err := d.requests.POST(url, nil, createJs)
 		if nil != err {
 			return fmt.Errorf("create inst error: %s", err)
 		}
@@ -654,11 +738,6 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	instID, ok := info[bkc.BKInstIDField].(float64)
 	if !ok {
 		return fmt.Errorf("get bk_inst_id failed: %s", info[bkc.BKInstIDField])
-	}
-
-	bodyData, err := d.parseData(msg)
-	if nil != err {
-		return fmt.Errorf("parse inst data error: %s", err)
 	}
 
 	// update info by sample data
