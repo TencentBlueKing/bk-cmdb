@@ -11,3 +11,12 @@
  */
 
 package privilege
+
+// RolePermission role permission
+type RolePermission interface {
+	CreatePermission(supplierAccount, objID, propertyID string) error
+	GetPermission(supplierAccount, objID, propertyID string)
+}
+
+type rolePermission struct {
+}
