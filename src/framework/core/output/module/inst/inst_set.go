@@ -130,20 +130,22 @@ func (cli *set) Create() error {
 }
 func (cli *set) Update() error {
 
-	attrs, existItems, err := cli.search()
+	_, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
 	// clear the invalid field
-	cli.datas.ForEach(func(key string, val interface{}) {
-		for _, attrItem := range attrs {
-			if attrItem.GetID() == key {
-				return
+	/*
+		cli.datas.ForEach(func(key string, val interface{}) {
+			for _, attrItem := range attrs {
+				if attrItem.GetID() == key {
+					return
+				}
 			}
-		}
-		cli.datas.Remove(key)
-	})
+			cli.datas.Remove(key)
+		})
+	*/
 
 	for _, existItem := range existItems {
 
@@ -152,10 +154,15 @@ func (cli *set) Update() error {
 			return err
 		}
 
+		cli.datas.Remove(SetID)
+		cli.datas.ForEach(func(key string, val interface{}) {
+			existItem.Set(key, val)
+		})
+
 		updateCond := common.CreateCondition()
 		updateCond.Field(SetID).Eq(instID)
 
-		err = client.GetClient().CCV3().Set().UpdateSet(cli.datas, updateCond)
+		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
 		if nil != err {
 			return err
 		}

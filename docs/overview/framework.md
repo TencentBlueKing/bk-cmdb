@@ -518,12 +518,69 @@ ForEach(callback func(plat *PlatWrapper) error) error
 
 ### 主机管理 API
 
+#### 主机转移接口方法声明
+
+> 类型：TransferInterface
+
+> 方法列表:
+
+``` golang
+
+// MoveToModule 将主机转移到主机当前所在业务的其他模块，isIncrement true 主机原来所在模块不会被改变，false 会从原来所在模块中删除
+MoveToModule(newModuleIDS []int64, isIncrement bool) error
+
+// MoveToFaultModule 将主机移动到主机当前所在业务的故障机模块
+MoveToFaultModule() error
+
+// MoveToIdleModule 将主机移动到主机当前所在业务的空闲机模块
+MoveToIdleModule() error
+
+// MoveToResourcePools 将主机移动到资源池
+MoveToResourcePools() error
+
+// MoveToBusinessIdleModuleFromResourcePools 将主机从资源池分配到业务空闲机模块
+MoveToBusinessIdleModuleFromResourcePools(bizID int64) error
+
+// MoveToAnotherBusinessModules 将主机从当前业务转移到另一个业务的给定模块下
+MoveToAnotherBusinessModules(bizID int64, moduleID int64) error
+
+// ResetBusinessHosts 将主机从给定的模块和集群下清空，转移至业务的空闲机下
+ResetBusinessHosts(setID, moduleID int64) error
+
+```
+
+#### 主机管理包装器（用于查询接口返回的数据结构）
+
+> 类型：FinderHostWrapper
+
+> 方法列表：
+
+
+``` golang
+
+// GetBizs 获取业务信息
+GetBizs() ([]*BusinessWrapper, error) 
+
+// GetSets 获取业务信息
+GetSets() ([]*SetWrapper, error)
+
+// GetModules 获取模块信息
+GetModules() ([]*ModuleWrapper, error) 
+
+其余方法与HostWrapper一致
+
+```
+
 #### 主机管理包装器
 
 > 类型：HostWrapper
 > 方法列表：
 
 ``` golang
+
+// Transfer 返回主机转移操作方法
+Transfer() inst.TransferInterface
+
 // SetValue 为自定义字段进行复制，key 字段名，val 字段的值
 SetValue(key string, val interface{}) error
 
