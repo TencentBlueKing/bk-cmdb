@@ -138,6 +138,19 @@ func (cli *hostAction) addHostModuleMutiple(req *restful.Request, resp *restful.
 	io.WriteString(resp, rsp)
 }
 
+func (cli *hostAction) setHostMoveToIdleModules(req *restful.Request, resp *restful.Response) {
+	url := cli.cc.HostAPI() + "/host/v1/hosts/faultmodule/set"
+	defErr := cli.cc.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+
+	rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+	if nil != err {
+		blog.Errorf("newHostSyncAppTopo  http do err, url:%s, err:%s", url, err.Error())
+		cli.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	io.WriteString(resp, rsp)
+}
+
 func (cli *hostAction) cloneHostProperty(req *restful.Request, resp *restful.Response) {
 	url := cli.cc.HostAPI() + "/host/v1/propery/clone"
 	defErr := cli.cc.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
@@ -179,6 +192,7 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectGet, Path: "/hosts/snapshot/{bk_host_id}", Params: nil, Handler: host.Snapshot, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/agent", Params: nil, Handler: host.addHostFromAgent, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/biz/mutilple", Params: nil, Handler: host.addHostModuleMutiple, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules/idle/set", Params: nil, Handler: host.setHostMoveToIdleModules, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/hosts/propery/clone", Params: nil, Handler: host.cloneHostProperty, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/sync/new/host", Params: nil, Handler: host.newHostSyncAppTopo, FilterHandler: nil, Version: v3.APIVersion})
 	host.cc = api.NewAPIResource()

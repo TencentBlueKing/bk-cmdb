@@ -10,12 +10,13 @@
  * limitations under the License.
  */
 
-package middleware
+package auth
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+	"configcenter/src/web_server/application/middleware/types"
 	"encoding/json"
 	"strings"
 
@@ -47,22 +48,22 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 
 	//merge update&&create privilege
 	if method == common.HTTPUpdate || method == common.HTTPCreate {
-		if util.InArray(BK_CC_UPDATE, priviArr) {
+		if util.InArray(types.BK_CC_UPDATE, priviArr) {
 			return true
 		}
-		if util.InArray(BK_CC_CREATE, priviArr) && !util.InArray(BK_CC_SEARCH, pathArr) {
+		if util.InArray(types.BK_CC_CREATE, priviArr) && !util.InArray(types.BK_CC_SEARCH, pathArr) {
 			return true
 		}
 
 	}
 
 	//valid delete privilege
-	if method == common.HTTPDelete && util.InArray(BK_CC_DELETE, priviArr) {
+	if method == common.HTTPDelete && util.InArray(types.BK_CC_DELETE, priviArr) {
 		return true
 	}
 
 	//valid search privilege
-	if method == common.HTTPSelectPost && util.InArray(BK_CC_SEARCH, priviArr) && util.InArray(BK_CC_SEARCH, pathArr) {
+	if method == common.HTTPSelectPost && util.InArray(types.BK_CC_SEARCH, priviArr) && util.InArray(types.BK_CC_SEARCH, pathArr) {
 		return true
 	}
 	blog.Error("model privilege valid not pass")
@@ -73,27 +74,27 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 func validAppConfigPrivi(c *gin.Context, method, pathStr string) bool {
 
 	//validate host update privilege
-	if strings.Contains(pathStr, BK_HOST_UPDATE) && method == common.HTTPUpdate {
-		return validAppAccessPrivi(c, BK_CC_HOSTUPDATE)
+	if strings.Contains(pathStr, types.BK_HOST_UPDATE) && method == common.HTTPUpdate {
+		return validAppAccessPrivi(c, types.BK_CC_HOSTUPDATE)
 	}
 
 	//validate host trans privilege
-	if strings.Contains(pathStr, BK_HOST_TRANS) {
-		return validAppAccessPrivi(c, BK_CC_HOSTTRANS)
+	if strings.Contains(pathStr, types.BK_HOST_TRANS) {
+		return validAppAccessPrivi(c, types.BK_CC_HOSTTRANS)
 	}
 
 	//validate topo update privilege
-	if strings.Contains(pathStr, BK_SET) || strings.Contains(pathStr, BK_MODULE) || strings.Contains(pathStr, BK_INSTS) || strings.Contains(pathStr, BK_TOPO) {
-		return validAppAccessPrivi(c, BK_CC_TOPOUPDATE)
+	if strings.Contains(pathStr, types.BK_SET) || strings.Contains(pathStr, types.BK_MODULE) || strings.Contains(pathStr, types.BK_INSTS) || strings.Contains(pathStr, types.BK_TOPO) {
+		return validAppAccessPrivi(c, types.BK_CC_TOPOUPDATE)
 	}
 
 	//validate user customer api privilege
-	if strings.Contains(pathStr, BK_USER_API_S) {
-		return validAppAccessPrivi(c, BK_CC_CUSTOMAPI)
+	if strings.Contains(pathStr, types.BK_USER_API_S) {
+		return validAppAccessPrivi(c, types.BK_CC_CUSTOMAPI)
 	}
 	//validate process config privilege
-	if strings.Contains(pathStr, BK_PROC_S) {
-		return validAppAccessPrivi(c, BK_CC_PROCCONFIG)
+	if strings.Contains(pathStr, types.BK_PROC_S) {
+		return validAppAccessPrivi(c, types.BK_CC_PROCCONFIG)
 	}
 
 	return true
@@ -132,7 +133,7 @@ func validAppAccessPrivi(c *gin.Context, appResource string) bool {
 		return false
 	}
 	//maintainer role pass the valid
-	if util.InArray(BK_CC_MAINTAINERS, appRole) {
+	if util.InArray(types.BK_CC_MAINTAINERS, appRole) {
 		return true
 	}
 
@@ -192,10 +193,10 @@ func validInstsOpPrivi(modelPrivi, method string, pathArr []string) bool {
 		blog.Error("get object privilege  error")
 		return false
 	}
-	if util.InArray(BK_CC_UPDATE, priviArr) {
+	if util.InArray(types.BK_CC_UPDATE, priviArr) {
 		return true
 	}
-	if util.InArray(BK_CC_CREATE, priviArr) && !util.InArray(BK_CC_SEARCH, pathArr) {
+	if util.InArray(types.BK_CC_CREATE, priviArr) && !util.InArray(types.BK_CC_SEARCH, pathArr) {
 		return true
 	}
 
