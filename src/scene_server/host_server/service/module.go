@@ -80,7 +80,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		}
 		hResult, err := s.CoreAPI.HostController().Host().GetHosts(context.Background(), pheader, query)
 		if err != nil || (err == nil && !hResult.Result) {
-			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v", err)
+			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v, %v", err, hResult.ErrMsg)
 			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
 			continue
 		}
@@ -115,7 +115,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 				}
 				hResult, err := s.CoreAPI.HostController().Module().DelDefaultModuleHostConfig(context.Background(), pheader, &p)
 				if err != nil || (err == nil && !hResult.Result) {
-					blog.Errorf("add host multiple app module relation, but delete default module host conf failed, err: %v", err)
+					blog.Errorf("add host multiple app module relation, but delete default module host conf failed, err: %v, %v", err, hResult.ErrMsg)
 					errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
 					continue
 				}

@@ -38,7 +38,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Error("save user custom, but get user custom failed, err: %v", err)
+		blog.Error("save user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}
@@ -46,7 +46,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 	if len(result.Data) == 0 {
 		result, err := s.CoreAPI.HostController().User().AddUserCustom(context.Background(), user, pheader, params)
 		if err != nil || (err == nil && !result.Result) {
-			blog.Errorf("save user custom, add failed, err: %v", err)
+			blog.Errorf("save user custom, add failed, err: %v, %v", err, result.ErrMsg)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 			return
 		}
@@ -54,7 +54,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 	id := result.Data["id"].(string)
 	uResult, err := s.CoreAPI.HostController().User().UpdateUserCustomByID(context.Background(), user, id, pheader, params)
 	if err != nil || (err == nil && !uResult.Result) {
-		blog.Errorf("save user custom, but update failed, err: %v", err)
+		blog.Errorf("save user custom, but update failed, err: %v, %v", err, uResult.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}
@@ -68,7 +68,7 @@ func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
 	user := util.GetUser(pheader)
 	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Error("save user custom, but get user custom failed, err: %v", err)
+		blog.Error("save user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}

@@ -483,7 +483,7 @@ func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, d
 
 func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "openapi/host/clonehostproperty"
+	subPath := "/openapi/host/clonehostproperty"
 
 	err = hs.client.Put().
 		WithContext(ctx).

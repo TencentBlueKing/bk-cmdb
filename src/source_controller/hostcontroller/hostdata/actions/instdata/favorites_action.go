@@ -77,7 +77,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteCreateFail)})
 		return
 	}
-	//mogo 需要使用生产的id
+	//mogo 需要使用生成的id
 	xidDevice := xid.New()
 	params["id"] = xidDevice.String()
 	params["count"] = 1
