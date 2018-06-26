@@ -336,6 +336,8 @@ func (cli *host) Update() error {
 			return err
 		}
 
+		cli.datas.Set(HostID, hostID)
+
 	}
 
 	return nil

@@ -28,6 +28,8 @@ var _ SetInterface = (*set)(nil)
 type SetInterface interface {
 	Maintaince
 
+	SetBusinessID(bizID int64)
+
 	GetModel() model.Model
 
 	GetInstID() int
@@ -38,8 +40,13 @@ type SetInterface interface {
 }
 
 type set struct {
+	bizID  int64
 	target model.Model
 	datas  types.MapStr
+}
+
+func (cli *set) SetBusinessID(bizID int64) {
+	cli.bizID = bizID
 }
 
 func (cli *set) GetModel() model.Model {
@@ -111,8 +118,12 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 }
 func (cli *set) IsExists() (bool, error) {
 
+	if 0 <= cli.bizID {
+		cli.datas.Set(BusinessID, cli.bizID)
+	}
 	_, existItems, err := cli.search()
 	if nil != err {
+		log.Errorf("failed to search the set, error info is %s", err.Error())
 		return false, err
 	}
 
@@ -121,7 +132,7 @@ func (cli *set) IsExists() (bool, error) {
 
 func (cli *set) Create() error {
 
-	setID, err := client.GetClient().CCV3().Set().CreateSet(cli.datas)
+	setID, err := client.GetClient().CCV3().Set().CreateSet(cli.bizID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -130,22 +141,25 @@ func (cli *set) Create() error {
 }
 func (cli *set) Update() error {
 
-	_, existItems, err := cli.search()
+	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
 	// clear the invalid field
-	/*
-		cli.datas.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
+
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
 			}
-			cli.datas.Remove(key)
-		})
-	*/
+		}
+		cli.datas.Remove(key)
+	})
+
+	log.Infof("the business %d", cli.bizID)
+
+	cli.datas.Remove("create_time") //invalid check , need to delete
 
 	for _, existItem := range existItems {
 
@@ -155,17 +169,16 @@ func (cli *set) Update() error {
 		}
 
 		cli.datas.Remove(SetID)
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
 
 		updateCond := common.CreateCondition()
 		updateCond.Field(SetID).Eq(instID)
 
-		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
+		err = client.GetClient().CCV3().Set().UpdateSet(cli.bizID, cli.datas, updateCond)
 		if nil != err {
 			return err
 		}
+
+		cli.datas.Set(SetID, instID)
 
 	}
 	return nil
