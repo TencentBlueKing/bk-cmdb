@@ -581,6 +581,15 @@ GetModules() ([]*ModuleWrapper, error)
 // Transfer 返回主机转移操作方法
 Transfer() inst.TransferInterface
 
+// SetModuleIDS 设置主机所属业务的模块ID
+SetModuleIDS(moduleIDS []int64) 
+
+// SetBusiness 设置主机所属的业务
+SetBusiness(bizID int64)
+
+// SetTopo 设置主机所属的业务及业务下的模块ID
+SetTopo(bizID int64, moduleIDS []int64)
+
 // SetValue 为自定义字段进行复制，key 字段名，val 字段的值
 SetValue(key string, val interface{}) error
 
