@@ -348,7 +348,7 @@
         "变更内容": "Change Content",
         "操作时间": "Operation Time",
         "agent安装说明": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
-        "点此进入Agent安装APP": "Click here to enter the Agent installation APP",
+        "点此进入节点管理": "Click here to enter the Node Manager",
         "批量导入": "Batch Import",
         "自动导入": "Auto Import",
         "说明：内网IP为必填列": "Note: Intranet IP is required",
