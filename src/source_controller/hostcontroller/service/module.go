@@ -10,34 +10,4 @@
  * limitations under the License.
  */
 
-package logics
-
-import (
-	"net/http"
-
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
-	"context"
-	"fmt"
-)
-
-func (lgc *Logics) IsPlatExist(pheader http.Header, cond interface{}) (bool, error) {
-	query := &metadata.QueryInput{
-		Condition: cond,
-		Start:     0,
-		Limit:     1,
-		Sort:      common.BKAppIDField,
-		Fields:    common.BKAppIDField,
-	}
-
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return false, fmt.Errorf("%v, %v", err, result.ErrMsg)
-	}
-
-	if 1 == result.Data.Count {
-		return true, nil
-	}
-
-	return false, nil
-}
+package service

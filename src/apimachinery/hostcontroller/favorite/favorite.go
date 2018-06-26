@@ -35,6 +35,7 @@ func (f *favorites) AddHostFavourite(ctx context.Context, user string, h http.He
 }
 
 func (f *favorites) UpdateHostFavouriteByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
 
 	err = f.client.Put().
@@ -48,6 +49,7 @@ func (f *favorites) UpdateHostFavouriteByID(ctx context.Context, user string, id
 }
 
 func (f *favorites) DeleteHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
 
 	err = f.client.Delete().
@@ -60,8 +62,8 @@ func (f *favorites) DeleteHostFavouriteByID(ctx context.Context, user string, id
 	return
 }
 
-
 func (f *favorites) GetHostFavourites(ctx context.Context, user string, h http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
 	subPath := fmt.Sprintf("/hosts/favorites/search/%s", user)
 
 	err = f.client.Post().
@@ -75,6 +77,7 @@ func (f *favorites) GetHostFavourites(ctx context.Context, user string, h http.H
 }
 
 func (f *favorites) GetHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error) {
+	resp = new(metadata.GetHostFavoriteWithIDResult)
 	subPath := fmt.Sprintf("/hosts/favorites/search/%s/%s", user, id)
 
 	err = f.client.Post().

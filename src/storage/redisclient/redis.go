@@ -25,6 +25,14 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
+type RedisConfig struct {
+	Address  string
+	User     string
+	Password string
+	Database string
+	Port     string
+}
+
 type Redis struct {
 	host    string
 	port    string
