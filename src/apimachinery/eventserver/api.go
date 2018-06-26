@@ -17,12 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
-	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
-    "configcenter/src/common/metadata"
 )
 
-func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat paraparse.SubscribeCommonSearch) (resp *metadata.Response, err error) {
+func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.SubscribeCommonSearch) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/search/%s/%s", ownerID, appID)
 

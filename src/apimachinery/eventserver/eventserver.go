@@ -19,13 +19,12 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
-	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
-    "configcenter/src/common/metadata"
 )
 
 type EventServerClientInterface interface {
-	Query(ctx context.Context, ownerID string, appID string, h http.Header, dat paraparse.SubscribeCommonSearch) (resp *metadata.Response, err error)
+	Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.SubscribeCommonSearch) (resp *metadata.Response, err error)
 	Ping(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	Telnet(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *types.Subscription) (resp *metadata.Response, err error)
