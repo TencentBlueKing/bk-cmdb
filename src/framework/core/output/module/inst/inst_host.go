@@ -56,6 +56,7 @@ type host struct {
 	modules   []types.MapStr
 	bizID     int64
 	moduleIDS []int64
+	setIDS    []int64
 	target    model.Model
 	datas     types.MapStr
 }
@@ -104,6 +105,7 @@ func (cli *host) reset() error {
 		}
 
 		cli.moduleIDS = append(cli.moduleIDS, id)
+		//fmt.Println("the module id:", id)
 	}
 
 	// parse set
@@ -119,7 +121,7 @@ func (cli *host) reset() error {
 			return fmt.Errorf("failed to get set id, error info is %s", err.Error())
 		}
 
-		cli.moduleIDS = append(cli.moduleIDS, id)
+		cli.setIDS = append(cli.setIDS, id)
 	}
 
 	return nil
@@ -337,7 +339,13 @@ func (cli *host) Update() error {
 		}
 
 		cli.datas.Set(HostID, hostID)
-
+		if 0 != len(cli.moduleIDS) {
+			err = cli.Transfer().MoveToModule(cli.moduleIDS, false)
+			if nil != err {
+				log.Errorf("failed to biz(%d) set modules(%#v), error info is %s", cli.bizID, cli.moduleIDS, err.Error())
+				return err
+			}
+		}
 	}
 
 	return nil
