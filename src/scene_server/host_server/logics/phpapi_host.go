@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -48,7 +47,7 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 	valid := validator.NewValidMapWithKeyFields(ownerID, common.BKInnerObjIDHost, []string{common.CreateTimeField, common.LastTimeField, common.BKChildStr, common.BKOwnerIDField}, phpapi.header, phpapi.logic.Engine)
 	validErr := valid.ValidMap(data, common.ValidUpdate, hostIDArr[0])
 	if nil != validErr {
-		blog.Error("updateHostMain error: %v", validErr)
+		blog.Errorf("updateHostMain error: %v", validErr)
 		return "", validErr
 	}
 
@@ -205,21 +204,17 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		set := setMap[config[common.BKSetIDField]]
 		app := appMap[config[common.BKAppIDField]]
 
-		hostStr, _ := json.Marshal(host)
-		hostNew := make(map[string]interface{})
-		json.Unmarshal(hostStr, &hostNew)
+		host[common.BKModuleIDField] = module[common.BKModuleIDField]
+		host[common.BKModuleNameField] = module[common.BKModuleNameField]
+		host[common.BKSetIDField], _ = set.Int64(common.BKSetIDField) //[common.BKSetIDField]
+		host[common.BKSetNameField] = set[common.BKSetNameField]
+		host[common.BKAppIDField], _ = app.Int64(common.BKAppIDField) //[common.BKAppIDField]
+		host[common.BKAppNameField] = app[common.BKAppNameField]
+		host[common.BKOwnerIDField] = app[common.BKOwnerIDField]
+		host[common.BKOperatorField] = module[common.BKOperatorField]
+		host[common.BKBakOperatorField] = module[common.BKBakOperatorField]
 
-		hostNew[common.BKModuleIDField] = module[common.BKModuleIDField]
-		hostNew[common.BKModuleNameField] = module[common.BKModuleNameField]
-		hostNew[common.BKSetIDField], _ = set.Int64(common.BKSetIDField) //[common.BKSetIDField]
-		hostNew[common.BKSetNameField] = set[common.BKSetNameField]
-		hostNew[common.BKAppIDField], _ = app.Int64(common.BKAppIDField) //[common.BKAppIDField]
-		hostNew[common.BKAppNameField] = app[common.BKAppNameField]
-		hostNew[common.BKOwnerIDField] = app[common.BKOwnerIDField]
-		hostNew[common.BKOperatorField] = module[common.BKOperatorField]
-		hostNew[common.BKBakOperatorField] = module[common.BKBakOperatorField]
-
-		hostData = append(hostData, hostNew)
+		hostData = append(hostData, host)
 	}
 	return hostData, nil
 }

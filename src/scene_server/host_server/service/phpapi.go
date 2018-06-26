@@ -848,28 +848,28 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, req.Request.Header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)
 	if nil != validErr {
-		blog.Error("CreatePlat error: %v, input:%v", validErr, input)
+		blog.Errorf("CreatePlat error: %v, input:%v", validErr, input)
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrTopoInstCreateFailed)})
 		return
 	}
 
 	res, err := s.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDPlat, req.Request.Header, input)
 	if nil != err {
-		blog.Error("CreatePlat error: %s, input:%v", err.Error(), input)
+		blog.Errorf("CreatePlat error: %s, input:%v", err.Error(), input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrTopoInstCreateFailed)})
 		return
 	}
 
 	if false == res.Result {
-		blog.Error("GetPlat error: %s", res.ErrMsg)
+		blog.Errorf("GetPlat error: %s", res.ErrMsg)
 		resp.WriteHeaderAndJson(http.StatusBadGateway, res, common.BKHTTPMIMEJSON)
 
-	} else {
-		resp.WriteEntity(meta.Response{
-			BaseResp: meta.SuccessBaseResp,
-			Data:     res.Data,
-		})
 	}
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     res.Data,
+	})
+
 }
 
 func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
@@ -911,7 +911,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	if false == res.Result {
-		blog.Error("GetPlat error: %s", res.ErrMsg)
+		blog.Errorf("GetPlat error: %s", res.ErrMsg)
 		resp.WriteHeaderAndJson(http.StatusBadGateway, res, common.BKHTTPMIMEJSON)
 
 	} else {
@@ -929,7 +929,7 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
 	appID, err := util.GetInt64ByInterface(pathParams["appid"])
 	if nil != err {
-		blog.Error("GetAgentStatus error :%v", err)
+		blog.Errorf("GetAgentStatus error :%s", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}

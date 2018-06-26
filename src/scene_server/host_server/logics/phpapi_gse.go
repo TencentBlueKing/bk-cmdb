@@ -91,7 +91,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 	agentAbnorList := make([]map[string]interface{}, 0)
 	i := 0
 
-	blog.Debug("agentStatus:%v", agentStatus)
+	blog.V(3).Infof("agentStatus:%v", agentStatus)
 	agentStatuLen := len(agentStatus)
 	for _, host := range hosts {
 		platIdInt, err := util.GetIntByInterface(host[common.BKCloudIDField])
@@ -239,7 +239,7 @@ func (phpapi *PHPAPI) getGseAgentStatus(hostDataArr []interface{}, gseConfg *opt
 
 	rdClient, err := phpapi.getRedisSession(gseConfg)
 	if nil == rdClient {
-		blog.Error("getRedisSession error:%v", err)
+		blog.Errorf("getGseAgentStatus getRedisSession error:%v, hostDataArr:%v", err, hostDataArr)
 		return nil, err
 	}
 	length := len(hostDataArr)

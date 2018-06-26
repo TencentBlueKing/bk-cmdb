@@ -350,7 +350,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 	// 处理源IP
 	hostMap, hostIdArr, err := phpapi.GetHostMapByCond(condition)
 
-	blog.Debug("CloneHostPropertyhostMapData:%v", hostMap)
+	blog.V(3).Infof("CloneHostPropertyhostMapData:%v", hostMap)
 	if err != nil {
 		blog.Errorf("CloneHostPropertygetHostMapByCond error : %v, input:%v", err, input)
 
@@ -368,7 +368,10 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 	}
 
 	srcHostID, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
-
+	if nil != err {
+		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%v input:%v", hostMapData, input)
+		return nil, defError.Error(common.CCErrHostDetailFail)
+	}
 	configCond := map[string][]int64{
 		common.BKHostIDField: []int64{srcHostID},
 		common.BKAppIDField:  []int64{appID},
@@ -457,10 +460,10 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 			blog.V(3).Infof("clone host updateHostMain err:dstIp and orgIp cannot be the same,srcIP:%s, dstIP:%s, input:%v", input.OrgIP, dstIpV, input)
 			continue
 		}
-		blog.Debug("hostMapData:%v", hostMapData)
+		blog.V(3).Infof("hostMapData:%v", hostMapData)
 		hostID, oK := existIPMap[dstIpV]
 		if true == oK {
-			blog.Debug("clone update")
+			blog.V(3).Infof("clone update")
 			hostCondition := map[string]interface{}{
 				common.BKHostInnerIPField: dstIpV,
 			}
@@ -472,7 +475,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 				blog.Errorf("CloneHostProperty  update dst host error, error:%s, currentIP:%s, input:%v", err.Error(), dstIpV, input)
 				return nil, defError.Error(common.CCErrHostModifyFail)
 			}
-			blog.Debug("CloneHostPropertyclone host updateHostMain res:%v", res)
+			blog.V(3).Infof("CloneHostPropertyclone host updateHostMain res:%v", res)
 			params := new(meta.ModuleHostConfigParams)
 			params.HostID = hostID
 			params.ApplicationID = appID
