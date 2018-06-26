@@ -26,6 +26,8 @@ var _ ModuleInterface = (*module)(nil)
 type ModuleInterface interface {
 	Maintaince
 
+	SetTopo(bizID, setID int64)
+
 	GetModel() model.Model
 
 	GetInstID() (int64, error)
@@ -36,10 +38,17 @@ type ModuleInterface interface {
 }
 
 type module struct {
+	bizID  int64
+	setID  int64
 	target model.Model
 	datas  types.MapStr
 }
 
+func (cli *module) SetTopo(bizID, setID int64) {
+	cli.setID = setID
+	cli.bizID = bizID
+
+}
 func (cli *module) GetModel() model.Model {
 	return cli.target
 }
@@ -65,8 +74,6 @@ func (cli *module) SetValue(key string, value interface{}) error {
 }
 
 func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
-	businessID := cli.datas.String(BusinessID)
-	setID := cli.datas.String(SetID)
 
 	// get the attributes
 	attrs, err := cli.target.Attributes()
@@ -75,11 +82,11 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// construct the condition which is used to check the if it is exists
-	cond := common.CreateCondition().Field(BusinessID).Eq(businessID).Field(SetID).Eq(setID)
+	cond := common.CreateCondition().Field(BusinessID).Eq(cli.bizID).Field(SetID).Eq(cli.setID)
 
 	// extract the required id
 	for _, attrItem := range attrs {
-		if attrItem.GetKey() {
+		if attrItem.GetKey() && attrItem.GetID() != BusinessID && attrItem.GetID() != SetID {
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
@@ -106,7 +113,9 @@ func (cli *module) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 func (cli *module) Create() error {
-	moduleID, err := client.GetClient().CCV3().Module().CreateModule(cli.datas)
+
+	cli.datas.Set(ParentID, cli.setID)
+	moduleID, err := client.GetClient().CCV3().Module().CreateModule(cli.bizID, cli.setID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -130,6 +139,8 @@ func (cli *module) Update() error {
 		cli.datas.Remove(key)
 	})
 
+	cli.datas.Set(ParentID, cli.setID)
+	cli.datas.Remove("create_time") //invalid check , need to delete
 	for _, existItem := range existItems {
 
 		instID, err := existItem.Int64(ModuleID)
@@ -137,13 +148,14 @@ func (cli *module) Update() error {
 			return err
 		}
 
-		updateCond := common.CreateCondition()
-		updateCond.Field(ModuleID).Eq(instID)
+		cli.datas.Remove(ModuleID)
 
-		err = client.GetClient().CCV3().Module().UpdateModule(cli.datas, updateCond)
+		err = client.GetClient().CCV3().Module().UpdateModule(cli.bizID, cli.setID, instID, cli.datas)
 		if nil != err {
 			return err
 		}
+
+		cli.datas.Set(ModuleID, instID)
 
 	}
 	return nil

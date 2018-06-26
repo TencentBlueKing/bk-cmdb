@@ -275,13 +275,13 @@ func (cli *host) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 func (cli *host) Create() error {
-	log.Infof("the create host:%#v", cli.datas)
+	//log.Infof("the create host:%#v", cli.datas)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
 		return nil
 	}
-	log.Infof("the create host:%#v", cli.datas)
+	//log.Infof("the create host:%#v", cli.datas)
 	ids, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
 	if nil != err {
 		return err
@@ -313,7 +313,7 @@ func (cli *host) Update() error {
 				return
 			}
 		}
-		log.Infof("remove the invalid field:%s", key)
+		//log.Infof("remove the invalid field:%s", key)
 		cli.datas.Remove(key)
 	})
 
@@ -335,6 +335,8 @@ func (cli *host) Update() error {
 			log.Errorf("failed to update host, error info is %s", err.Error())
 			return err
 		}
+
+		cli.datas.Set(HostID, hostID)
 
 	}
 
