@@ -13,6 +13,9 @@
 package api
 
 import (
+	"fmt"
+
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
@@ -46,7 +49,8 @@ func (cli *HostIteratorWrapper) ForEach(callback func(host *FinderHostWrapper) e
 
 // HostWrapper the host wrapper
 type HostWrapper struct {
-	host inst.HostInterface
+	supplierAccount string
+	host            inst.HostInterface
 }
 
 // FinderHostWrapper find the host wrapper
@@ -128,9 +132,62 @@ func (cli *HostWrapper) Transfer() inst.TransferInterface {
 }
 
 // SetTopo set the host topo
-func (cli *HostWrapper) SetTopo(bizID int64, moduleIDS []int64) {
+func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string) error {
+
 	cli.host.SetBusinessID(bizID)
+
+	setCond := common.CreateCondition()
+	setCond.Field(fieldSetName).Eq(setName)
+	setCond.Field(fieldBizID).Eq(bizID)
+	setIter, err := FindSetByCondition(cli.supplierAccount, setCond)
+	if nil != err {
+		return err
+	}
+
+	moduleIDS := make([]int64, 0)
+	err = setIter.ForEach(func(set *SetWrapper) error {
+
+		setID, err := set.GetID()
+		if nil != err {
+			return err
+		}
+
+		moduleCond := common.CreateCondition()
+		moduleCond.Field(fieldModuleName).Eq(moduleName)
+		moduleCond.Field(fieldSetID).Eq(setID)
+		moduleCond.Field(fieldBizID).Eq(bizID)
+		moduleIter, err := FindModuleByCondition(cli.supplierAccount, moduleCond)
+		if nil != err {
+			return err
+		}
+
+		moduleIter.ForEach(func(module *ModuleWrapper) error {
+
+			moduleID, err := module.GetID()
+			if nil != err {
+				return err
+			}
+
+			moduleIDS = append(moduleIDS, moduleID)
+
+			return nil
+		})
+		return nil
+	})
+
+	if nil != err {
+		return err
+	}
+
+	if 0 == len(moduleIDS) {
+		return fmt.Errorf("not found the module(%s)", moduleName)
+	}
+
+	fmt.Println("moduleids:", moduleIDS)
 	cli.host.SetModuleIDS(moduleIDS)
+
+	// reset the module
+	return nil
 }
 
 // SetBusiness set the business id for the host
