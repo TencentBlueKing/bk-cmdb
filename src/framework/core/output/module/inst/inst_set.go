@@ -101,10 +101,10 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	// extract the required id
 	for _, attrItem := range attrs {
 		if attrItem.GetKey() {
-			if !cli.datas.Exists(attrItem.GetID()) {
-				return attrs, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			attrVal, exists := cli.datas.Get(attrItem.GetID())
+			if !exists {
+				return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
 			}
-			attrVal := cli.datas.String(attrItem.GetID())
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
