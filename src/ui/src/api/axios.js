@@ -88,8 +88,13 @@ axios.interceptors.request.use(config => {
 })
 axios.interceptors.response.use(
     response => {
-        removeQueue(response.config)
-        return transformResponse(response.config, response.data)
+        const globalError = response.config.hasOwnProperty('globalError') ? !!response.config.globalError : true
+        if (response.data.result || !globalError) {
+            removeQueue(response.config)
+            return transformResponse(response.config, response.data)
+        } else {
+            return Promise.reject(response)
+        }
     },
     error => {
         const config = error.config

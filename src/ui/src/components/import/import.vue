@@ -124,7 +124,7 @@
                     let formData = new FormData()
                     formData.append('file', files[0])
                     this.isLoading = true
-                    this.$axios.post(this.importUrl, formData).then(res => {
+                    this.$axios.post(this.importUrl, formData, {globalError: false}).then(res => {
                         this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
                         if (res.result) {
                             this.uploaded = true
@@ -146,6 +146,7 @@
                         })
                         this.isLoading = false
                     }).catch(error => {
+                        this.$alertMsg(error.message || error.data['bk_error_msg'] || error.statusText)
                         this.reset()
                         this.isLoading = false
                         this.$emit('error', error)
