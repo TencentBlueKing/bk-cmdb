@@ -24,7 +24,9 @@ func CreateHost(supplierAccount string) (*HostWrapper, error) {
 	}
 
 	hostInst := mgr.OutputerMgr.InstOperation().CreateHostInst(targetModel)
-	return &HostWrapper{host: hostInst}, err
+	return &HostWrapper{
+		supplierAccount: supplierAccount,
+		host:            hostInst}, err
 }
 
 // FindHostLikeName find all insts by the name
