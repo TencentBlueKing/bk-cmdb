@@ -21,23 +21,21 @@ import (
 func GetIntByInterface(a interface{}) (int, error) {
 	id := 0
 	var err error
-	switch a.(type) {
+	switch val := a.(type) {
 	case int:
-		id = a.(int)
+		id = val
 	case int32:
-		id = int(a.(int32))
+		id = int(val)
 	case int64:
-		id = int(a.(int64))
+		id = int(val)
 	case json.Number:
 		var tmpID int64
-		tmpID, err = a.(json.Number).Int64()
+		tmpID, err = val.Int64()
 		id = int(tmpID)
 	case float64:
-		tmpID := a.(float64)
-		id = int(tmpID)
+		id = int(val)
 	case float32:
-		tmpID := a.(float32)
-		id = int(tmpID)
+		id = int(val)
 	case string:
 		var tmpID int64
 		tmpID, err = strconv.ParseInt(a.(string), 10, 64)

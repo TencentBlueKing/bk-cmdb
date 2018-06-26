@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -38,7 +39,11 @@ func main() {
 
 	util.InitFlags()
 
-	if err := app.Run(op); err != nil {
+	if err := common.SavePid(); err != nil {
+		blog.Error("fail to save pid: err:%s", err.Error())
+	}
+
+	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}

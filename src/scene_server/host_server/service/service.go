@@ -26,7 +26,7 @@ type Service struct {
 
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON)
+	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
@@ -67,7 +67,7 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
 	ws.Route(ws.GET("/plat").To(s.GetPlat))
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
-	ws.Route(ws.DELETE("/plat/{" + common.BKCloudIDField + "}").To(s.DelPlat))
+	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.POST("/search").To(s.SearchHost))
 	ws.Route(ws.POST("/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	ws.Route(ws.PUT("/host/batch").To(s.UpdateHostBatch))
