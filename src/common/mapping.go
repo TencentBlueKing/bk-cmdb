@@ -12,8 +12,26 @@
 
 package common
 
-var ResourcePath string = "/tmp"
-
-const API_VERSION = "v3"
-
-const IsSkipLogin = "skiplogin"
+// GetInstNameField returns the inst name field
+func GetInstNameField(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKAppNameField
+	case BKInnerObjIDSet:
+		return BKSetNameField
+	case BKInnerObjIDModule:
+		return BKModuleNameField
+	case BKINnerObjIDObject:
+		return BKInstNameField
+	case BKInnerObjIDHost:
+		return BKHostNameField
+	case BKInnerObjIDProc:
+		return BKProcNameField
+	case BKInnerObjIDPlat:
+		return BKCloudNameField
+	case BKTableNameInstAsst:
+		return BKFieldID
+	default:
+		return BKInstNameField
+	}
+}

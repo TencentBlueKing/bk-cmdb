@@ -10,12 +10,13 @@
  * limitations under the License.
  */
 
-package middleware
+package auth
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+	"configcenter/src/web_server/application/middleware/types"
 	"encoding/json"
 	"strings"
 
@@ -23,8 +24,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//ValidResAccess valid resource access privilege
-func ValidResAccess(pathArr []string, c *gin.Context) bool {
+type publicAuth struct {
+}
+
+// ValidResAccess valid resource access privilege
+func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	var userName string
 	session := sessions.Default(c)
 	role := session.Get("role")
@@ -52,7 +56,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 
 	//valid privilege url must match session
-	if strings.Contains(pathStr, BK_CC_PRIVI_PATTERN) {
+	if strings.Contains(pathStr, types.BK_CC_PRIVI_PATTERN) {
 		if pathArr[len(pathArr)-1] == userName {
 			return true
 		}
@@ -60,62 +64,62 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return false
 	}
 	//search classfication return true
-	if strings.Contains(pathStr, BK_CC_CLASSIFIC) && method == common.HTTPSelectPost {
+	if strings.Contains(pathStr, types.BK_CC_CLASSIFIC) && method == common.HTTPSelectPost {
 		return true
 	}
 
 	//search object attr  return true
-	if strings.Contains(pathStr, BK_CC_OBJECT_ATTR) && method == common.HTTPSelectPost {
+	if strings.Contains(pathStr, types.BK_CC_OBJECT_ATTR) && method == common.HTTPSelectPost {
 		return true
 	}
 
 	//usercustom return true
-	if strings.Contains(pathStr, BK_CC_USER_CUSTOM) {
+	if strings.Contains(pathStr, types.BK_CC_USER_CUSTOM) {
 		return true
 	}
 
 	//objectatt group return true
-	if strings.Contains(pathStr, BK_OBJECT_ATT_GROUP) {
+	if strings.Contains(pathStr, types.BK_OBJECT_ATT_GROUP) {
 		return true
 	}
 
 	//favorites return true
-	if strings.Contains(pathStr, BK_CC_HOST_FAVORITES) {
+	if strings.Contains(pathStr, types.BK_CC_HOST_FAVORITES) {
 		return true
 	}
 
 	//search object return true
-	if objectPatternRegexp.MatchString(pathStr) {
+	if types.ObjectPatternRegexp.MatchString(pathStr) {
 		return true
 	}
 
 	//biz  search privilege, return true
-	if strings.Contains(pathStr, BK_APP_SEARCH) || strings.Contains(pathStr, BK_SET_SEARCH) || strings.Contains(pathStr, BK_MODULE_SEARCH) || strings.Contains(pathStr, BK_INST_SEARCH) || strings.Contains(pathStr, BK_HOSTS_SEARCH) {
+	if strings.Contains(pathStr, types.BK_APP_SEARCH) || strings.Contains(pathStr, types.BK_SET_SEARCH) || strings.Contains(pathStr, types.BK_MODULE_SEARCH) || strings.Contains(pathStr, types.BK_INST_SEARCH) || strings.Contains(pathStr, types.BK_HOSTS_SEARCH) {
 		return true
 	}
-	if strings.Contains(pathStr, BK_HOSTS_SNAP) || strings.Contains(pathStr, BK_HOSTS_HIS) {
+	if strings.Contains(pathStr, types.BK_HOSTS_SNAP) || strings.Contains(pathStr, types.BK_HOSTS_HIS) {
 		return true
 	}
-	if strings.Contains(pathStr, BK_TOPO_MODEL) {
+	if strings.Contains(pathStr, types.BK_TOPO_MODEL) {
 		return true
 	}
-	if strings.Contains(pathStr, BK_INST_SEARCH_OWNER) && strings.Contains(pathStr, BK_OBJECT_PLAT) {
+	if strings.Contains(pathStr, types.BK_INST_SEARCH_OWNER) && strings.Contains(pathStr, types.BK_OBJECT_PLAT) {
 		return true
 	}
-	if searchPatternRegexp.MatchString(pathStr) {
+	if types.SearchPatternRegexp.MatchString(pathStr) {
 		return true
 	}
 
 	//valid resource config
-	if resPatternRegexp.MatchString(pathStr) {
+	if types.ResPatternRegexp.MatchString(pathStr) {
 		blog.Debug("valid resource config: %v", pathStr)
 		sysPrivi := session.Get("sysPrivi")
-		return validSysConfigPrivi(sysPrivi, BK_CC_RESOURCE)
+		return validSysConfigPrivi(sysPrivi, types.BK_CC_RESOURCE)
 
 	}
 
 	//valid inst  privilege  op
-	if strings.Contains(pathStr, BK_INSTS) && !strings.Contains(pathStr, BK_TOPO) {
+	if strings.Contains(pathStr, types.BK_INSTS) && !strings.Contains(pathStr, types.BK_TOPO) {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
 			//common inst op valid
@@ -153,7 +157,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 
 	//valid inst import privilege
-	if strings.Contains(pathStr, BK_INSTSI) && !strings.Contains(pathStr, BK_IMPORT) {
+	if strings.Contains(pathStr, types.BK_INSTSI) && !strings.Contains(pathStr, types.BK_IMPORT) {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
 			modelPrivi := session.Get("modelPrivi").(string)
@@ -171,17 +175,17 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 	if len(pathArr) > 3 {
 		//valid system config exclude resource
 		path3 := pathArr[3]
-		if util.InArray(path3, BK_CC_MODEL_PRE) {
+		if util.InArray(path3, types.BK_CC_MODEL_PRE) {
 			//valid model config privilege
 			sysPrivi := session.Get("sysPrivi")
-			return validSysConfigPrivi(sysPrivi, BK_CC_MODEL)
+			return validSysConfigPrivi(sysPrivi, types.BK_CC_MODEL)
 		}
-		if util.InArray(path3, BK_CC_EVENT_PRE) {
+		if util.InArray(path3, types.BK_CC_EVENT_PRE) {
 			//valid event config privilege
 			sysPrivi := session.Get("sysPrivi")
-			return validSysConfigPrivi(sysPrivi, BK_CC_EVENT)
+			return validSysConfigPrivi(sysPrivi, types.BK_CC_EVENT)
 		}
-		if util.InArray(path3, BK_CC_AUDIT_PRE) {
+		if util.InArray(path3, types.BK_CC_AUDIT_PRE) {
 			//valid event config privilege
 			return true
 			//			sysPrivi := session.Get("sysPrivi")
@@ -190,7 +194,7 @@ func ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	}
 
-	//valid biz operaiton privilege
+	//valid biz operation privilege
 appvalid:
 	return validAppConfigPrivi(c, method, pathStr)
 

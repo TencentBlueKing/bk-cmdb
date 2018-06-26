@@ -13,6 +13,9 @@
 package api
 
 import (
+	"fmt"
+
+	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
@@ -31,20 +34,33 @@ func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 }
 
 // ForEach the foreach function
-func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) error {
+func (cli *HostIteratorWrapper) ForEach(callback func(host *FinderHostWrapper) error) error {
 
 	return cli.host.ForEach(func(item inst.HostInterface) error {
-		return callback(&HostWrapper{host: item})
+
+		finderHost := &FinderHostWrapper{}
+
+		finderHost.HostWrapper = &HostWrapper{host: item}
+		finderHost.host = item
+
+		return callback(finderHost)
 	})
 }
 
 // HostWrapper the host wrapper
 type HostWrapper struct {
+	supplierAccount string
+	host            inst.HostInterface
+}
+
+// FinderHostWrapper find the host wrapper
+type FinderHostWrapper struct {
+	*HostWrapper
 	host inst.HostInterface
 }
 
 // GetBizs return all business for the host
-func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
+func (cli *FinderHostWrapper) GetBizs() ([]*BusinessWrapper, error) {
 
 	bizWraps := make([]*BusinessWrapper, 0)
 	bizs := cli.host.GetBizs()
@@ -66,7 +82,7 @@ func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
 }
 
 // GetSets return all sets for the host
-func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
+func (cli *FinderHostWrapper) GetSets() ([]*SetWrapper, error) {
 
 	setWraps := make([]*SetWrapper, 0)
 	sets := cli.host.GetSets()
@@ -88,7 +104,7 @@ func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
 }
 
 // GetModules return all modules for the module
-func (cli *HostWrapper) GetModules() ([]*ModuleWrapper, error) {
+func (cli *FinderHostWrapper) GetModules() ([]*ModuleWrapper, error) {
 
 	moduleWraps := make([]*ModuleWrapper, 0)
 	modules := cli.host.GetModules()
@@ -116,9 +132,62 @@ func (cli *HostWrapper) Transfer() inst.TransferInterface {
 }
 
 // SetTopo set the host topo
-func (cli *HostWrapper) SetTopo(bizID int64, moduleIDS []int64) {
+func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string) error {
+
 	cli.host.SetBusinessID(bizID)
+
+	setCond := common.CreateCondition()
+	setCond.Field(fieldSetName).Eq(setName)
+	setCond.Field(fieldBizID).Eq(bizID)
+	setIter, err := FindSetByCondition(cli.supplierAccount, setCond)
+	if nil != err {
+		return err
+	}
+
+	moduleIDS := make([]int64, 0)
+	err = setIter.ForEach(func(set *SetWrapper) error {
+
+		setID, err := set.GetID()
+		if nil != err {
+			return err
+		}
+
+		moduleCond := common.CreateCondition()
+		moduleCond.Field(fieldModuleName).Eq(moduleName)
+		moduleCond.Field(fieldSetID).Eq(setID)
+		moduleCond.Field(fieldBizID).Eq(bizID)
+		moduleIter, err := FindModuleByCondition(cli.supplierAccount, moduleCond)
+		if nil != err {
+			return err
+		}
+
+		moduleIter.ForEach(func(module *ModuleWrapper) error {
+
+			moduleID, err := module.GetID()
+			if nil != err {
+				return err
+			}
+
+			moduleIDS = append(moduleIDS, moduleID)
+
+			return nil
+		})
+		return nil
+	})
+
+	if nil != err {
+		return err
+	}
+
+	if 0 == len(moduleIDS) {
+		return fmt.Errorf("not found the module(%s)", moduleName)
+	}
+
+	fmt.Println("moduleids:", moduleIDS)
 	cli.host.SetModuleIDS(moduleIDS)
+
+	// reset the module
+	return nil
 }
 
 // SetBusiness set the business id for the host

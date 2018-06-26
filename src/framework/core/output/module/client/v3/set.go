@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3
 
 import (
@@ -28,9 +28,9 @@ type SetGetter interface {
 
 // SetInterface the set interface
 type SetInterface interface {
-	CreateSet(data types.MapStr) (int, error)
+	CreateSet(bizID int64, data types.MapStr) (int, error)
 	DeleteSet(cond common.Condition) error
-	UpdateSet(data types.MapStr, cond common.Condition) error
+	UpdateSet(bizID int64, data types.MapStr, cond common.Condition) error
 	SearchSets(cond common.Condition) ([]types.MapStr, error)
 }
 
@@ -46,13 +46,10 @@ type Set struct {
 }
 
 // CreateSet create a new Set
-func (cli *Set) CreateSet(data types.MapStr) (int, error) {
-	appID := data.String(BusinessID)
-	if 0 == len(appID) {
-		return 0, errors.New("the business id is not set")
-	}
+func (cli *Set) CreateSet(bizID int64, data types.MapStr) (int, error) {
+
 	data.Set(SupplierAccount, cli.cli.GetSupplierAccount())
-	targetURL := fmt.Sprintf("%s/api/v3/set/%s", cli.cli.GetAddress(), appID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/%d", cli.cli.GetAddress(), bizID)
 
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -104,23 +101,13 @@ func (cli *Set) DeleteSet(cond common.Condition) error {
 }
 
 // UpdateSet update a set by condition
-func (cli *Set) UpdateSet(data types.MapStr, cond common.Condition) error {
+func (cli *Set) UpdateSet(bizID int64, data types.MapStr, cond common.Condition) error {
 
 	condData := cond.ToMapStr()
 
-	appID := condData.String(BusinessID)
-	if 0 == len(appID) {
-		return errors.New("the business id is not set")
-	}
-
-	condData.Remove(BusinessID)
-
 	setID := condData.String(SetID)
-	if 0 == len(appID) {
-		return errors.New("the set id is not set")
-	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/set/%s/%s", cli.cli.GetAddress(), appID, setID)
+	targetURL := fmt.Sprintf("%s/api/v3/set/%d/%s", cli.cli.GetAddress(), bizID, setID)
 
 	rst, err := cli.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {

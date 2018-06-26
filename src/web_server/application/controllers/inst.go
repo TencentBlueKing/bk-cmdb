@@ -40,7 +40,7 @@ func ImportInst(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 
 	cc := api.NewAPIResource()
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -107,7 +107,7 @@ func ImportInst(c *gin.Context) {
 func ExportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	cc := api.NewAPIResource()
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
