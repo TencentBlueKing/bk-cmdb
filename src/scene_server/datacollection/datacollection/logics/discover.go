@@ -119,18 +119,18 @@ func (d *Discover) Run() {
 			addCount = 0
 			d.ts = time.Now()
 
-		f:
+		RLoop:
 		// 持续读取1s通道内的消息，最多读取d.maxSize个
 			for {
 				select {
 				case <-time.After(time.Second):
-					break f
+					break RLoop
 				case msg = <-d.msgChan:
 					blog.Infof("continue read 1s from channel: %d", addCount)
 					addCount++
 					msgs = append(msgs, msg)
 					if addCount > d.maxSize {
-						break f
+						break RLoop
 					}
 				}
 			}
