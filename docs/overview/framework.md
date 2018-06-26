@@ -253,7 +253,7 @@ GetCapacity() (int, error)
 // SetBusinessID 设置集群所属的业务ID，调用此方法会同步将当前集群的父节点设置为传入的业务。
 SetBusinessID(businessID int64) error
 
-// GetBusiness 获取集群所属的业务ID
+// GetBusiness 获取集群所属的业务ID，在调用Save 和Update 之后此处返回的仅是最后一次被更新的业务的ID
 GetBusinessID() (int, error)
 
 // SetSupplierAccount 设置集群所属的开发商ID
@@ -263,7 +263,7 @@ SetSupplierAccount(supplierAccount string) error
 GetSupplierAccount() (string, error) 
 
 
-// GetID 获取集群的ID
+// GetID 获取集群的ID，在调用Save 和Update 之后此处返回的仅是最后一次被更新的集群的ID
 GetID() (int, error)
 
 // SetParent 设置当前节点的父实例节点，只有在当前集群的父实例不是业务的时候才需要设置此参数。
@@ -357,8 +357,8 @@ SetBakOperator(bakOperator string) error
 // GetBakOperator 获取备份维护人
 GetBakOperator() (string, error)
 
-// SetBusinessID 设置业务ID
-SetBusinessID(businessID int64) error
+// SetTopo 设置模块的层级
+SetTopo(bizID, setID int64) error
 
 // GetBusinessID 获取业务ID
 GetBusinessID() (int, error)
@@ -378,7 +378,7 @@ SetName(name string) error
 // GetName 获取模块的名字
 GetName() (string, error)
 
-// GetID 获取模块的ID
+// GetID 获取模块的ID, 在调用Save 和Update 之后此处返回的仅是最后一次被更新的模块的ID
 GetID() (int, error) 
 
 // Save 保存模块的信息。
@@ -455,7 +455,7 @@ SetValue(key string, val interface{}) error
 SetSupplierAccount(supplierAccount string) error
 // GetSupplierAccount 获取云区域开发商
 GetSupplierAccount() (string, error)
-// GetID 获取云区域ID
+// GetID 获取云区域ID,在调用Save 和Update 之后此处返回的仅是最后一次被更新的云区域的ID
 GetID() (int, error) 
 // SetName 设置云区域名字
 SetName(name string) error
