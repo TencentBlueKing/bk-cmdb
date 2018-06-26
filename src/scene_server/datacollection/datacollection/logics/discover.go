@@ -29,7 +29,6 @@ type Discover struct {
 	resetHandle chan struct{}
 	isMaster    bool
 	isSubing    bool
-	cache       *DiscoverCache
 
 	maxConcurrent          int
 	maxSize                int
@@ -39,11 +38,6 @@ type Discover struct {
 	requests *httpcli.HttpClient
 	cc       *api.APIResource
 	wg       *sync.WaitGroup
-}
-
-type DiscoverCache struct {
-	cache map[bool]map[string]map[string]interface{}
-	flag bool
 }
 
 var msgHandlerCnt = int64(0)
@@ -76,10 +70,6 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 		wg:                     wg,
 		cc:                     cc,
 		requests:               httpClient,
-		cache: &DiscoverCache{
-			cache: map[bool]map[string]map[string]interface{}{},
-			flag: false,
-		},
 	}
 }
 
