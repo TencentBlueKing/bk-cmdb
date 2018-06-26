@@ -588,7 +588,7 @@ SetModuleIDS(moduleIDS []int64)
 SetBusiness(bizID int64)
 
 // SetTopo 设置主机所属的业务及业务下的模块ID
-SetTopo(bizID int64, moduleIDS []int64)
+SetTopo(bizID int64, setName, moduleName string) error
 
 // SetValue 为自定义字段进行复制，key 字段名，val 字段的值
 SetValue(key string, val interface{}) error
