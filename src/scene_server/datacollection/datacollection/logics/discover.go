@@ -115,7 +115,7 @@ func (d *Discover) Run() {
 		case <-ticker.C:
 			if d.lockMaster() {
 				if !d.isSubing {
-					blog.Infof("try to subscribe channel: %s\n", d.chanName)
+					blog.Infof("try to subscribe channel: %s", d.chanName)
 					go d.subChan()
 				}
 			}
@@ -172,12 +172,12 @@ func (d *Discover) Run() {
 
 				// 消息处理进程数超限，延迟处理
 				delayHandleCnt++
-				blog.Warnf("msg process delay again(%d times)\n", delayHandleCnt)
+				blog.Warnf("msg process delay again(%d times)", delayHandleCnt)
 
 				time.Sleep(time.Millisecond * 100)
 			}
 		case err = <-d.interrupt:
-			blog.Warnf("release master, msg process interrupted by: %s\n", err.Error())
+			blog.Warnf("release master, msg process interrupted by: %s", err.Error())
 			d.releaseMaster()
 		}
 
@@ -209,12 +209,12 @@ func (d *Discover) subChan() {
 
 		if !d.isMaster {
 			// not master again, close subscribe to prevent unnecessary subscribe
-			blog.Infof("i am not master, stop subscribe\n")
+			blog.Infof("i am not master, stop subscribe")
 			return
 		}
 
 		received, err := subChan.Receive()
-		//blog.Debug("start receive message: %v\n", received)
+		//blog.Debug("start receive message: %v", received)
 		if nil != err {
 
 			if err == redis.Nil || err == io.EOF {
@@ -228,7 +228,7 @@ func (d *Discover) subChan() {
 
 		msg, ok := received.(*redis.Message)
 		if !ok || "" == msg.Payload {
-			blog.Warnf("receive message failed(%v) or empty!\n", ok)
+			blog.Warnf("receive message failed(%v) or empty!", ok)
 			continue
 		}
 
@@ -259,7 +259,7 @@ func (d *Discover) clearOldMsg() {
 	ts := d.ts
 	msgCnt := len(d.msgChan) - d.maxSize
 
-	blog.Warnf("start msgChan clear: %d\n", msgCnt)
+	blog.Warnf("start msgChan clear: %d", msgCnt)
 
 	var cnt int
 	for cnt < msgCnt {
@@ -285,7 +285,7 @@ func (d *Discover) clearOldMsg() {
 		close(d.resetHandle)
 	}
 
-	blog.Warnf("msgChan cleared: %d\n", cnt)
+	blog.Warnf("msgChan cleared: %d", cnt)
 }
 
 // releaseMaster releaseMaster when buffer fulled
@@ -364,28 +364,28 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			// 1- try create model
 			err := d.TryCreateModel(msg)
 			if err != nil {
-				blog.Errorf("create model err: %s\n"+
-					"##msg[%s]msg##\n", err, msg)
+				blog.Errorf("create model err: %s"+
+					"##msg[%s]msg##", err, msg)
 				continue
 			}
 
 			// 2- try create model attr
 			err = d.UpdateOrAppendAttrs(msg)
 			if err != nil {
-				blog.Errorf("create attr err: %s\n"+
-					"##msg[%s]msg##\n", err, msg)
+				blog.Errorf("create attr err: %s"+
+					"##msg[%s]msg##", err, msg)
 				continue
 			}
 
 			// 3- create inst
 			err = d.UpdateOrCreateInst(msg)
 			if err != nil {
-				blog.Errorf("create inst err: %s\n"+
-					"##msg[%s]msg##\n", err, msg)
+				blog.Errorf("create inst err: %s"+
+					"##msg[%s]msg##", err, msg)
 				continue
 			}
 
-			blog.Infof("==============\n[%d/%d] discover message finished\n", index, len(msgs))
+			blog.Infof("==============[%d/%d] discover message finished", index, len(msgs))
 		}
 
 	}

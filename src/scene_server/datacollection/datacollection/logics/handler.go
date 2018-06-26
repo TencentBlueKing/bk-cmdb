@@ -117,7 +117,7 @@ func parseListResult(res []byte) (ListResult, error) {
 	var lR ListResult
 
 	if err := json.Unmarshal(res, &lR); nil != err {
-		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		blog.Errorf("failed to unmarshal the result, error info is: %s", err)
 		return lR, err
 	}
 
@@ -129,7 +129,7 @@ func parseDetailResult(res []byte) (DetailResult, error) {
 	var dR DetailResult
 
 	if err := json.Unmarshal(res, &dR); nil != err {
-		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		blog.Errorf("failed to unmarshal the result, error info is: %s", err)
 		return dR, err
 	}
 
@@ -141,7 +141,7 @@ func parseResult(res []byte) (Result, error) {
 	var r Result
 
 	if err := json.Unmarshal(res, &r); nil != err {
-		blog.Errorf("failed to unmarshal the result, error info is: %s\n", err)
+		blog.Errorf("failed to unmarshal the result, error info is: %s", err)
 		return r, err
 	}
 
@@ -177,7 +177,7 @@ func (d *Discover) parseData(msg string) (data M, err error) {
 func (d *Discover) parseAttrs(msg string) (fields map[string]Attr, err error) {
 
 	fieldsStr := gjson.Get(msg, "data.meta.fields").String()
-	//blog.Debug("create model attr fieldsStr: %s\n", fieldsStr)
+	//blog.Debug("create model attr fieldsStr: %s", fieldsStr)
 	if err = json.Unmarshal([]byte(fieldsStr), &fields); err != nil {
 		blog.Errorf("create model attr unmarshal error: %s", err)
 		return
@@ -208,7 +208,7 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 
 	// 差异比较
 	if err == nil && len(cachedAttrs) == len(filterAttrs) {
-		blog.Infof("attr exist in redis: %s\n", modelAttrKey)
+		blog.Infof("attr exist in redis: %s", modelAttrKey)
 
 		var attrMap = make([]MapData, len(cachedAttrs))
 		var tmpHash = make(map[string]bool, len(cachedAttrs))
@@ -227,7 +227,7 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 		}
 
 		if totalEqual {
-			blog.Infof("attr exist in redis, and equal: %s\n", modelAttrKey)
+			blog.Infof("attr exist in redis, and equal: %s", modelAttrKey)
 			return ListResult{
 				ResultBase{
 					Result:  true,
@@ -238,7 +238,7 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 			}, nil
 		}
 
-		blog.Infof("attr exist in redis, but not equal: %s\n", modelAttrKey)
+		blog.Infof("attr exist in redis, but not equal: %s", modelAttrKey)
 
 	}
 
@@ -256,20 +256,20 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 
 	// search attr by condition
 	url := fmt.Sprintf("%s/topo/v1/objectattr/search", d.cc.TopoAPI())
-	blog.Infof("get model attr url=%s, body=%s\n", url, condJs)
+	blog.Infof("get model attr url=%s, body=%s", url, condJs)
 
 	res, err := d.requests.POST(url, nil, condJs)
 	if nil != err {
-		blog.Errorf("search model err: %s\n", err)
+		blog.Errorf("search model err: %s", err)
 		return nilR, err
 	}
 
-	//blog.Infof("search attr result: %s\n", res)
+	//blog.Infof("search attr result: %s", res)
 
 	// parse inst data
 	dR, err := parseListResult(res)
 	if err != nil {
-		blog.Errorf("parse result error: %s\n", err)
+		blog.Errorf("parse result error: %s", err)
 		return nilR, err
 	}
 
@@ -312,7 +312,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 				//existAttrs = append(existAttrs, idStr)
 			}
 		}
-		//blog.Infof("attr exist: %v\n", existAttrs)
+		//blog.Infof("attr exist: %v", existAttrs)
 	}
 
 	// add extra relation attr associate to host
@@ -344,7 +344,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			continue
 		}
 
-		blog.Infof("attr: %s -> %v\n", instId, v)
+		blog.Infof("attr: %s -> %v", instId, v)
 
 		// skip default field
 		if instId == bkc.BKInstNameField {
@@ -367,17 +367,17 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		attrBodyJs, _ := attrBody.toJson()
 		url := fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI())
 
-		blog.Infof("create model attr url=%s, body=%s\n", url, attrBody)
+		blog.Infof("create model attr url=%s, body=%s", url, attrBody)
 		res, err := d.requests.POST(url, nil, []byte(attrBodyJs))
 		if nil != err {
 			return fmt.Errorf("create model attr error: %s", err.Error())
 		}
 
-		blog.Infof("create model attr result: %s\n", res)
+		blog.Infof("create model attr result: %s", res)
 
 		resMap, err := parseResult(res)
 		if !resMap.Result {
-			return fmt.Errorf("create model attr failed: %s\n", resMap.Message)
+			return fmt.Errorf("create model attr failed: %s", resMap.Message)
 		}
 
 	}
@@ -386,17 +386,17 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	if dR.Result && len(dR.Data) > 0 {
 		attrJs, err := json.Marshal(finalAttrs)
 		if err != nil {
-			blog.Infof("%s: flush to redis marshal failed: %s\n", modelAttrKey, err)
+			blog.Infof("%s: flush to redis marshal failed: %s", modelAttrKey, err)
 			return err
 		}
 
 		_, err = d.redisCli.Set(modelAttrKey, attrJs, cacheTime).Result()
 		if err != nil {
-			blog.Infof("%s: flush to redis failed: %s\n", modelAttrKey, err)
+			blog.Infof("%s: flush to redis failed: %s", modelAttrKey, err)
 			return err
 		}
 
-		blog.Errorf("%s: flush to redis success: %s\n", modelAttrKey, attrJs)
+		blog.Errorf("%s: flush to redis success: %s", modelAttrKey, attrJs)
 
 	}
 
@@ -410,7 +410,7 @@ func (d *Discover) GetModelFromRedis(modelKey string) (MapData, error) {
 
 	val, err := d.redisCli.Get(modelKey).Result()
 	if err != nil {
-		return nilR, fmt.Errorf("%s: get model cache error: %s\n", modelKey, err)
+		return nilR, fmt.Errorf("%s: get model cache error: %s", modelKey, err)
 	}
 
 	var cacheData = MapData{}
@@ -430,7 +430,7 @@ func (d *Discover) GetModelAttrsFromRedis(modelAttrKey string) ([]string, error)
 
 	val, err := d.redisCli.Get(modelAttrKey).Result()
 	if err != nil {
-		return cacheData, fmt.Errorf("%s: get attr cache error: %s\n", modelAttrKey, err)
+		return cacheData, fmt.Errorf("%s: get attr cache error: %s", modelAttrKey, err)
 	}
 
 	err = json.Unmarshal([]byte(val), &cacheData)
@@ -484,7 +484,7 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 	modelKey := d.CreateModelKey(*model)
 	modelData, err := d.GetModelFromRedis(modelKey)
 	if err == nil {
-		blog.Infof("model exist in redis: %s\n", modelKey)
+		blog.Infof("model exist in redis: %s", modelKey)
 		return ListResult{
 			ResultBase{
 				Result:  true,
@@ -495,7 +495,7 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 		}, nil
 	}
 
-	blog.Infof("%s: get model from redis error: %s\n", modelKey, err)
+	blog.Infof("%s: get model from redis error: %s", modelKey, err)
 
 	// marshal the condition
 	condJs, err := cond.toJson()
@@ -505,20 +505,20 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 
 	// search object by condition
 	url := fmt.Sprintf("%s/topo/v1/objects", d.cc.TopoAPI())
-	blog.Infof("get model url=%s, condition=%s\n", url, condJs)
+	blog.Infof("get model url=%s, condition=%s", url, condJs)
 
 	res, err := d.requests.POST(url, nil, condJs)
 	if nil != err {
-		blog.Errorf("search model err: %s\n", err)
+		blog.Errorf("search model err: %s", err)
 		return nilR, err
 	}
 
-	blog.Infof("search model result: %s\n", res)
+	blog.Infof("search model result: %s", res)
 
 	// parse inst data
 	dR, err := parseListResult(res)
 	if err != nil {
-		blog.Errorf("parse result error: %s\n", err)
+		blog.Errorf("parse result error: %s", err)
 		return nilR, err
 	}
 
@@ -527,17 +527,17 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 
 		val, err := M(dR.Data[0]).toJson()
 		if err != nil {
-			blog.Infof("%s: flush to redis marshal failed: %s\n", modelKey, err)
+			blog.Infof("%s: flush to redis marshal failed: %s", modelKey, err)
 			return dR, nil
 		}
 
 		_, err = d.redisCli.Set(modelKey, val, cacheTime).Result()
 		if err != nil {
-			blog.Infof("%s: flush to redis failed: %s\n", modelKey, err)
+			blog.Infof("%s: flush to redis failed: %s", modelKey, err)
 			return dR, nil
 		}
 
-		blog.Errorf("%s: flush to redis success\n", modelKey)
+		blog.Errorf("%s: flush to redis success", modelKey)
 
 	}
 
@@ -555,7 +555,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 
 	// model exist
 	if dR.Result && len(dR.Data) > 0 {
-		blog.Infof("model exist, give up create operation\n")
+		blog.Infof("model exist, give up create operation")
 		return nil
 	}
 
@@ -576,18 +576,18 @@ func (d *Discover) TryCreateModel(msg string) error {
 
 	bodyJs, _ := body.toJson()
 	url := fmt.Sprintf("%s/topo/v1/object", d.cc.TopoAPI())
-	blog.Infof("create model url=%s, body=%s\n", bodyJs)
+	blog.Infof("create model url=%s, body=%s", bodyJs)
 
 	res, err := d.requests.POST(url, nil, bodyJs)
 	if nil != err {
 		return fmt.Errorf("create model error: %s", err.Error())
 	}
 
-	blog.Debug("create model result: %s\n", res)
+	blog.Debug("create model result: %s", res)
 
 	resMap, err := parseResult(res)
 	if !resMap.Result {
-		return fmt.Errorf("create model failed: %s\n", resMap.Message)
+		return fmt.Errorf("create model failed: %s", resMap.Message)
 	}
 
 	return nil
@@ -628,20 +628,20 @@ func (d *Discover) GetInst(objID string, keys []string, bodyMap M) (DetailResult
 
 	// search inst by condition
 	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
-	blog.Infof("get inst url=%s, condition=%s\n", url, condJs)
+	blog.Infof("get inst url=%s, condition=%s", url, condJs)
 
 	res, err := d.requests.POST(url, nil, condJs)
 	if nil != err {
-		blog.Errorf("search inst err: %s\n", err)
+		blog.Errorf("search inst err: %s", err)
 		return nilR, err
 	}
 
-	//blog.Debug("search inst result: %s\n", res)
+	//blog.Debug("search inst result: %s", res)
 
 	// parse inst data
 	dR, err := parseDetailResult(res)
 	if err != nil {
-		blog.Errorf("parse result error: %s\n", err)
+		blog.Errorf("parse result error: %s", err)
 		return nilR, err
 	}
 
@@ -672,7 +672,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("get inst error: %s", err)
 	}
 
-	blog.Infof("get inst result: count=%d\n", dR.Data.Count)
+	blog.Infof("get inst result: count=%d", dR.Data.Count)
 
 	bodyData, err := d.parseData(msg)
 	if nil != err {
@@ -687,7 +687,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			keyStr := string(key)
 			valueStr, ok := bodyMap[keyStr].(string)
 			if !ok {
-				return fmt.Errorf("parse key error: %v(%s)\n", bodyMap, keyStr)
+				return fmt.Errorf("parse key error: %v(%s)", bodyMap, keyStr)
 			}
 			values[i] = valueStr
 		}
@@ -706,18 +706,18 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		}
 
 		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
-		blog.Infof("create inst url=%s, body=%s\n", url, createJs)
+		blog.Infof("create inst url=%s, body=%s", url, createJs)
 
 		res, err := d.requests.POST(url, nil, createJs)
 		if nil != err {
 			return fmt.Errorf("create inst error: %s", err)
 		}
 
-		blog.Infof("create inst result: %s\n", res)
+		blog.Infof("create inst result: %s", res)
 
 		resMap, err := parseResult(res)
 		if !resMap.Result {
-			return fmt.Errorf("create inst failed: %s\n", resMap.Message)
+			return fmt.Errorf("create inst failed: %s", resMap.Message)
 		}
 
 		return nil
@@ -761,14 +761,14 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	}
 
 	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s/%d", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID, int(instID))
-	blog.Infof("update inst url=%s, body=%s\n", url, updateJs)
+	blog.Infof("update inst url=%s, body=%s", url, updateJs)
 
 	res, err := d.requests.PUT(url, nil, updateJs)
 	if nil != err {
 		return fmt.Errorf("update inst error: %s", err)
 	}
 
-	blog.Infof("update inst result: %s\n", res)
+	blog.Infof("update inst result: %s", res)
 
 	return nil
 }

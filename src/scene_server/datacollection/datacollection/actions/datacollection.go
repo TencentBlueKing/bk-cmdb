@@ -45,7 +45,7 @@ func init() {
 
 func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error {
 
-	blog.Infof("AutoExectueAction start...\n")
+	blog.Infof("AutoExectueAction start...")
 
 	var err error
 
@@ -83,7 +83,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
-	blog.Infof("get channel name: snap=%s, discover=%s\n", snapChan, discoverChan)
+	blog.Infof("get channel name: snap=%s, discover=%s", snapChan, discoverChan)
 	hostSnap := logics.NewHostSnap(snapChan, 2000, rediscli, snapcli, wg)
 	discover := logics.NewDiscover(discoverChan, 2000, rediscli, discli, wg, d.CC)
 
@@ -91,7 +91,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	discover.Start()
 
 	// go mock(config, chanName)
-	blog.Infof("AutoExectueAction finished\n")
+	blog.Infof("AutoExectueAction finished")
 	return nil
 }
 
