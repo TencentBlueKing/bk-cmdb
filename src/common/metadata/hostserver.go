@@ -10,10 +10,11 @@
  * limitations under the License.
  */
 
-package common
+package metadata
 
-var ResourcePath string = "/tmp"
-
-const API_VERSION = "v3"
-
-const IsSkipLogin = "skiplogin"
+type HostCloneInputParams struct {
+	OrgIP  string `json:"bk_org_ip"`
+	DstIP  string `json:"bk_dst_ip"`
+	AppID  int64  `json:"bk_biz_id"`
+	PlatID int64  `json:"bk_cloud_id"`
+}

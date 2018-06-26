@@ -64,7 +64,7 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				inst, err := getCache(e.ObjType, instID)
+				inst, err := getCache(e.ObjType, instID, false)
 				if err != nil {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
@@ -87,6 +87,7 @@ func handleInst(e *types.EventInst) {
 					hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 					d := types.EventData{CurData: inst.ident.fillIden()}
 					hostIdentify.Data = append(hostIdentify.Data, d)
+					// TODO handle error
 					redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 					blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 				} else {
@@ -114,6 +115,7 @@ func handleInst(e *types.EventInst) {
 							hostIdentify.Data = append(hostIdentify.Data, d)
 						}
 
+						// handle error
 						hostIdentify.ID = redisCli.Incr(types.EventCacheEventIDKey).Val()
 						redisCli.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 						blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
@@ -124,7 +126,7 @@ func handleInst(e *types.EventInst) {
 	} else if types.EventTypeRelation == e.EventType && "moduletransfer" == e.ObjType {
 		blog.Infof("identifier: handle inst %+v", e)
 		go func() {
-			time.Sleep(time.Second * 3) // delay to ensure moduletransfer ended
+			time.Sleep(time.Second * 60) // delay to ensure moduletransfer ended
 			for index := range e.Data {
 				var curdata map[string]interface{}
 
@@ -144,7 +146,7 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				inst, err := getCache(common.BKInnerObjIDHost, instID)
+				inst, err := getCache(common.BKInnerObjIDHost, instID, true)
 				if err != nil {
 					blog.Errorf("identifier: getCache error %+v", err)
 					continue
@@ -154,21 +156,22 @@ func handleInst(e *types.EventInst) {
 					continue
 				}
 
-				belong, ok := inst.data["associations"].(map[string]interface{})
+				// belong, ok := inst.data["associations"].(map[string]interface{})
 
-				moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
-				switch e.Action {
-				case types.EventActionCreate:
-					if ok {
-						belong[moduleID] = curdata
-					}
-					inst.ident.Module[moduleID] = NewModule(curdata)
-				case types.EventActionDelete:
-					if ok {
-						delete(belong, moduleID)
-					}
-					delete(inst.ident.Module, moduleID)
-				}
+				// // TODO 处理数据类型
+				// moduleID := fmt.Sprint(curdata[common.BKModuleIDField])
+				// switch e.Action {
+				// case types.EventActionCreate:
+				// 	if ok {
+				// 		belong[moduleID] = curdata
+				// 	}
+				// 	inst.ident.Module[moduleID] = NewModule(curdata)
+				// case types.EventActionDelete:
+				// 	if ok {
+				// 		delete(belong, moduleID)
+				// 	}
+				// 	delete(inst.ident.Module, moduleID)
+				// }
 				inst.saveCache()
 				d := types.EventData{CurData: inst.ident.fillIden()}
 				hostIdentify.Data = append(hostIdentify.Data, d)
@@ -202,12 +205,14 @@ func findHost(objType string, instID int) (hostIDs []string) {
 		util.GetObjIDByType(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
+		// TODO handle error
 		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
 	} else {
 		api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
 	}
 
 	for index := range relations {
+		// TODO 抽象拼key
 		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.Itoa(relations[index].HostID))
 	}
 	return hostIDs
@@ -222,13 +227,13 @@ type Inst struct {
 
 func (i *Inst) set(key string, value interface{}) {
 	i.data[key] = value
-
+	var err error
 	if i.objType == common.BKInnerObjIDHost {
 		switch key {
 		case "bk_host_name":
 			i.ident.HostName = fmt.Sprint(value)
 		case "bk_cloud_id":
-			i.ident.CloudID, _ = strconv.Atoi(fmt.Sprint(value))
+			i.ident.CloudID, err = strconv.Atoi(fmt.Sprint(value))
 		case "bk_host_innerip":
 			i.ident.InnerIP = fmt.Sprint(value)
 		case "bk_host_outerip":
@@ -238,11 +243,14 @@ func (i *Inst) set(key string, value interface{}) {
 		case "bk_os_name":
 			i.ident.OSName = fmt.Sprint(value)
 		case "bk_mem":
-			i.ident.Memory = fmt.Sprint(value)
+			i.ident.Memory, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_cpu":
-			i.ident.CPU = fmt.Sprint(value)
+			i.ident.CPU, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
 		case "bk_disk":
-			i.ident.Disk = fmt.Sprint(value)
+			i.ident.Disk, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+		}
+		if nil != err {
+			blog.Errorf("key %s	convert error %s", key, err.Error())
 		}
 	}
 }
@@ -261,24 +269,37 @@ func (i *Inst) saveCache() error {
 }
 
 func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
+	var err error
 	ident := HostIdentifier{}
 	ident.HostName = fmt.Sprint(m["bk_host_name"])
-	ident.CloudID, _ = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	ident.CloudID, err = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v", "bk_cloud_id", m)
+	}
 	ident.InnerIP = fmt.Sprint(m["bk_host_innerip"])
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
-	ident.Memory = fmt.Sprint(m["bk_mem"])
-	ident.CPU = fmt.Sprint(m["bk_cpu"])
-	ident.Disk = fmt.Sprint(m["bk_disk"])
+	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)
+	}
+	ident.CPU, err = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_cpu", m)
+	}
+	ident.Disk, err = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_disk", m)
+	}
 	ident.Module = map[string]*Module{}
 	return &ident
 }
-func getCache(objType string, instID int) (*Inst, error) {
+func getCache(objType string, instID int, fromdb bool) (*Inst, error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	ret := redisCli.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
-	if "" == ret || "nil" == ret {
+	if "" == ret || "nil" == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		err := instdata.GetObjectByID(objType, nil, instID, &inst.data, "")
 		if err != nil {
@@ -332,6 +353,7 @@ func StartHandleInsts() error {
 			fetchHostCache()
 		}
 	}()
+	// TODO add
 	for {
 		event := popEventInst()
 		if nil == event {
@@ -345,6 +367,8 @@ func StartHandleInsts() error {
 func popEventInst() *types.EventInst {
 
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+
+	// TODO handle error
 	eventstr := redisCli.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
 	if 0 >= len(eventstr) || "nil" == eventstr[1] || "" == eventstr[1] {
@@ -369,6 +393,8 @@ func fetchHostCache() {
 	// fetch host cache
 	relations := []metadata.ModuleHostConfig{}
 	hosts := []*HostIdentifier{}
+
+	// TODO handle db error, handle not found
 	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, map[string]interface{}{}, &relations, "", -1, -1)
 	api.GetAPIResource().InstCli.GetMutilByCondition(common.BKTableNameBaseHost, nil, map[string]interface{}{}, &hosts, "", -1, -1)
 
@@ -409,6 +435,8 @@ func fetchHostCache() {
 
 		blog.Infof("identifier: fetched %d %s", len(caches), objID)
 	}
+
+	// TODO compare data and build hostidentifier
 
 }
 

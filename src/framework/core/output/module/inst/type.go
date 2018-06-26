@@ -40,6 +40,8 @@ const (
 	// InstID the common inst id
 	InstID = "bk_inst_id"
 
+	ParentID = "bk_parent_id"
+
 	// InstName the common inst name
 	InstName = "bk_inst_name"
 

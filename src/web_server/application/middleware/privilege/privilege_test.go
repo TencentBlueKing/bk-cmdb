@@ -10,10 +10,4 @@
  * limitations under the License.
  */
 
-package common
-
-var ResourcePath string = "/tmp"
-
-const API_VERSION = "v3"
-
-const IsSkipLogin = "skiplogin"
+package privilege

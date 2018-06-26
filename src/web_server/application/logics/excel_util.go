@@ -52,18 +52,22 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 	}
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
-
 		field, ok := fields[strName]
-
 		if true == ok {
 			field.ExcelColIndex = index
 			fields[strName] = field
+		} else {
+			errCells = append(errCells, strName)
 		}
 		ret[index] = strName
 	}
-	if 0 != len(errCells) {
+	// valid excel three row is instance property fields,
+	// excel three row  values  exceeding 1/2 does not appear in the field array,
+	// indicating that the third line of the excel template was deleted
+	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 {
 		//web_import_field_not_found
-		return ret, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
+		blog.Errorf(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
+		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))
 	}
 	return ret, nil
 
@@ -169,8 +173,8 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
-
 			host[fieldName] = cellValue
+
 		case xlsx.CellTypeBool:
 			cellValue := cell.Bool()
 			host[fieldName] = cellValue
@@ -205,6 +209,14 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 
 				if optionOk {
 					host[fieldName] = getEnumIDByName(cell.Value, option)
+				}
+			case common.FieldTypeInt:
+				intVal, err := util.GetInt64ByInterface(host[fieldName])
+				//convertor int not err , set field value to correct type
+				if nil == err {
+					host[fieldName] = intVal
+				} else {
+					blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
 				}
 
 			}
