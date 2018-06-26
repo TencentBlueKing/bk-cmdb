@@ -81,14 +81,6 @@ let axios = Axios.create({
     }
 })
 
-const updateLoadingStatus = (config) => {
-    if (config.hasOwnProperty('id')) {
-        let queue = [...window.CMDB_APP.$store.state.common.axiosQueue]
-        queue.splice(queue.indexOf(config.id), 1)
-        window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
-    }
-}
-
 axios.interceptors.request.use(config => {
     addQueue(config)
     transformRequest(config)
@@ -101,7 +93,7 @@ axios.interceptors.response.use(
     },
     error => {
         const config = error.config
-        updateLoadingStatus(config)
+        removeQueue(config)
         const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
         if (globalError && error.response) {
             switch (error.response.status) {

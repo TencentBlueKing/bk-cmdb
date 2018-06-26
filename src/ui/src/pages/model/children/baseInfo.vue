@@ -78,7 +78,7 @@
             </div>
         </form>
         <div class="base-info" v-if="!isReadOnly">
-            <bk-button type="primary" @click="saveBaseInfo">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button type="primary" :loading="$loading('saveModel')" @click="saveBaseInfo">{{$t('Common["确定"]')}}</bk-button>
             <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
         </div>
     </div>
@@ -276,7 +276,7 @@
                             bk_supplier_account: this.bkSupplierAccount,
                             bk_asst_obj_id: this.associationId,
                             bk_obj_icon: this.iconValue
-                        }).then(res => {
+                        }, {id: 'saveModel'}).then(res => {
                             if (res.result) {
                                 this.$emit('baseInfoSuccess', {
                                     bk_obj_name: this.baseInfo['bk_obj_name'],
@@ -288,7 +288,7 @@
                             }
                         })
                     } else {
-                        this.$axios.post('object', params).then(res => {
+                        this.$axios.post('object', params, {id: 'saveModel'}).then(res => {
                             if (res.result) {
                                 this.$emit('baseInfoSuccess', {
                                     bk_obj_name: this.baseInfo['bk_obj_name'],
@@ -306,7 +306,7 @@
                         this.cancel()
                     } else {
                         params['bk_ispre'] = this.baseInfo['bk_ispre']
-                        this.$axios.put(`object/${this.baseInfo['id']}`, params).then(res => {
+                        this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveModel'}).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
                                 this.$emit('confirm', {
