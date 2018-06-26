@@ -49,19 +49,19 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 
 	var err error
 
-	discli, err := getSnapClient(config, "discover-redis")
+	discli, err := getSnapClient(config, dccommon.DiscoverRedis)
 	if nil != err {
 		return err
 	}
 	dccommon.Discli = discli
 
-	snapcli, err := getSnapClient(config, "snap-redis")
+	snapcli, err := getSnapClient(config, dccommon.SnapShotRedis)
 	if nil != err {
 		return err
 	}
 	dccommon.Snapcli = snapcli
 
-	rediscli, err := getSnapClient(config, "redis")
+	rediscli, err := getSnapClient(config, dccommon.CcRedis)
 	if nil != err {
 		return err
 	}
@@ -70,9 +70,9 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	snapChan, discoverChan := "", ""
 	var err1, err2 error
 	for {
-		snapChan, err1 = getChanName("snapshot")
-		discoverChan, err2 = getChanName("discover")
-		if err1 == nil && err2 == nil{
+		snapChan, err1 = getChanName(dccommon.SnapShotChan)
+		discoverChan, err2 = getChanName(dccommon.DiscoverChan)
+		if err1 == nil && err2 == nil {
 			break
 		}
 
@@ -84,8 +84,8 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	wg.Add(2)
 
 	blog.Infof("get channel name: snap=%s, discover=%s", snapChan, discoverChan)
-	hostSnap := logics.NewHostSnap(snapChan, 2000, rediscli, snapcli, wg)
-	discover := logics.NewDiscover(discoverChan, 2000, rediscli, discli, wg, d.CC)
+	hostSnap := logics.NewHostSnap(snapChan, dccommon.MaxSnapSize, rediscli, snapcli, wg)
+	discover := logics.NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli, wg, d.CC)
 
 	hostSnap.Start()
 	discover.Start()
@@ -115,10 +115,10 @@ func getChanName(funcType string) (string, error) {
 
 	// 通道类型映射
 	switch funcType {
-	case "discover":
-		return "hstest2", nil
-		//return defaultAppID + "_discover", nil
-	case "snapshot":
+	case dccommon.DiscoverChan:
+		//return "hstest2", nil
+		return defaultAppID + "_discover", nil
+	case dccommon.SnapShotChan:
 		return defaultAppID + "_snapshot", nil
 	default:
 		return "", errors.New("unknown func type: " + funcType)
