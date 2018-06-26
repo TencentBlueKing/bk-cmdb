@@ -25,7 +25,9 @@ type PermissionInterface interface {
 	GetUserPermission(supplierAccount, userName string)
 }
 
-func NewPermission( )
+func NewPermission() {
+
+}
 
 // userGroupPermission the permission user group definitions
 type userGroupPermission struct {

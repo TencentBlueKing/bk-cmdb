@@ -25,12 +25,16 @@ type PermissionOperationInterface interface {
 }
 
 type permissionOperation struct {
-	
 }
 
-func(p *permissionOperation)Permission(params types.LogicParams) privilege.PermissionInterface{
-    return p.permission
+func (p *permissionOperation) Permission(params types.LogicParams) privilege.PermissionInterface {
+	return nil
 }
 
-UserGroup(params types.LogicParams) privilege.UserGroupInterface
-Role(params types.LogicParams) privilege.RolePermission
+func (p *permissionOperation) UserGroup(params types.LogicParams) privilege.UserGroupInterface {
+	return nil
+}
+
+func (p *permissionOperation) Role(params types.LogicParams) privilege.RolePermission {
+	return nil
+}
