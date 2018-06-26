@@ -80,10 +80,8 @@ func (phpapi *PHPAPI) GetHostByIPAndSource(innerIP string, platID int64) ([]type
 }
 
 func (phpapi *PHPAPI) GetHostByCond(param *meta.QueryInput) ([]types.MapStr, error) {
-
-	blog.V(3).Infof("param:%v", param)
+	blog.V(3).Infof("GetHostByCond param:%v", param)
 	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDHost)
-
 	if nil != err {
 		return nil, err
 	}
@@ -134,9 +132,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[in
 
 // GetHostDataByConfig  get host info
 func (phpapi *PHPAPI) GetHostDataByConfig(configData []map[string]int64) ([]interface{}, error) {
-
 	hostIDArr := make([]int64, 0)
-
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
 	}
@@ -168,12 +164,12 @@ func (phpapi *PHPAPI) GetCustomerPropertyByOwner(objType string) ([]meta.Attribu
 	searchBody[common.BKOwnerIDField] = util.GetOwnerID(phpapi.header)
 	res, err := phpapi.logic.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), phpapi.header, searchBody)
 	if nil != err {
-		blog.Error("GetHostDetailById  attr error :%v", err)
+		blog.Errorf("GetHostDetailById  attr error :%v", err)
 		return nil, err
 	}
 
 	if false == res.Result {
-		blog.Error("GetHostDetailById  attr error :%v", err)
+		blog.Errorf("GetHostDetailById  attr error :%v", err)
 		return nil, fmt.Errorf(res.ErrMsg)
 	}
 	customAttrArr := make([]meta.Attribute, 0)
