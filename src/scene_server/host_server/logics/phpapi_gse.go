@@ -162,7 +162,7 @@ func (phpapi *PHPAPI) getRedisSession(gseConfg *options.Gse) (*redis.Client, err
 	newIp, port, auth, err := phpapi.getRedisIP(gseConfg)
 	blog.V(3).Infof("newIp:%v port:%v err:%v", newIp, port, err)
 
-	if "" == redisIp && "" == newIp || "" == fmt.Sprintf("%v", port) {
+	if "" == redisIp && "" == newIp || "" == port {
 		blog.Errorf("get gse redis ip error:ip:%s, port:%s", newIp, port)
 		return nil, err
 	}
