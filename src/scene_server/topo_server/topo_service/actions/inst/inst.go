@@ -680,9 +680,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 					blog.Error("failed to delete the inst, error info is %s ", err.Error())
 					return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
 				}
-				if 0 == len(objRes) {
-					return http.StatusOK, nil, nil
-				}
+
 				if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
 					blog.Error("failed to delete the inst , error inst is %s", objRes)
 					return http.StatusInternalServerError, objRes, defErr.Error(common.CCErrTopoInstDeleteFailed)
@@ -738,111 +736,136 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
 		instID, convErr := strconv.Atoi(req.PathParameter("inst_id"))
+
 		if nil != convErr {
 			blog.Error("the instid[%s], must be int value, error info is %s", req.PathParameter("inst_id"), convErr.Error())
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
 		}
 
-		//update object
+		isBatchUpdate := (instID < 0)
 
+		//update object
 		value, readErr := ioutil.ReadAll(req.Request.Body)
 		if nil != readErr {
 			blog.Error("failed to read the body , error info is %s", readErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		js, err := simplejson.NewJson([]byte(value))
-		if nil != err {
-			blog.Error("failed to create json object, error info is %s", err.Error())
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+		operationUpdate := &operation{}
+		if isBatchUpdate {
 
-		// take snapshot before update
-		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
-		if common.CCSuccess != retStrErr {
-			blog.Errorf("get inst detail error: %v", retStrErr)
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-		}
-
-		data, jsErr := js.Map()
-		if nil != jsErr {
-			blog.Error("failed to create json object, error info is %s", jsErr.Error())
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		if mapPreData, ok := preData.(map[string]interface{}); ok {
-			if val, ok := mapPreData[common.BKInstParentStr]; ok {
-				data[common.BKInstParentStr] = val
-			} else {
-				blog.Error("not found the inst parent id, inst %d", instID)
+			if err := json.Unmarshal([]byte(value), operationUpdate); nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
-		}
 
-		forward := &api.ForwardParam{Header: req.Request.Header}
-		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
-		_, err = valid.ValidMap(data, common.ValidUpdate, instID)
-		if nil != err {
-			blog.Error("failed to valid the params, error info is %s ", err.Error())
-			return http.StatusBadRequest, "", err
-		}
+		} else {
 
-		// set the inst association table
-		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
-			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
-		}
-
-		// update the inst value
-		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
-
-		input := make(map[string]interface{})
-
-		condition := make(map[string]interface{})
-		switch objID {
-		case common.BKInnerObjIDPlat:
-			condition[common.BKCloudIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
-		default:
-			condition[common.BKOwnerIDField] = ownerID
-			condition[common.BKObjIDField] = objID
-			condition[common.BKInstIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
-		}
-
-		input["condition"] = condition
-		input["data"] = data
-
-		inputJSON, jsErr := json.Marshal(input)
-		if nil != jsErr {
-			blog.Error("failed to create json object, error info is %s", jsErr.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
-		}
-
-		objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(inputJSON))
-		if nil != err {
-			blog.Error("failed to update the inst, error info is %s", err.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstUpdateFailed)
-		}
-
-		{
-			// save change log
-			headers, attErr := cli.getHeader(forward, ownerID, objID)
-			if common.CCSuccess != attErr {
-				return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+			js, err := simplejson.NewJson([]byte(value))
+			if nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
-			curData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+
+			data, err := js.Map()
+			if nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			}
+
+			operationUpdate.Update = append(operationUpdate.Update, updateCondition{InstID: instID, InstInfo: data})
+		}
+
+		for _, updateItem := range operationUpdate.Update {
+
+			data := updateItem.InstInfo
+			instID = updateItem.InstID
+
+			// take snapshot before update
+			preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
 			if common.CCSuccess != retStrErr {
 				blog.Errorf("get inst detail error: %v", retStrErr)
-				return http.StatusInternalServerError, objRes, defErr.Error(retStrErr)
+				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 			}
-			auditContent := metadata.Content{
-				PreData: preData,
-				CurData: curData,
-				Headers: headers,
-			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
-		}
 
-		return http.StatusOK, objRes, nil
+			if mapPreData, ok := preData.(map[string]interface{}); ok {
+				if val, ok := mapPreData[common.BKInstParentStr]; ok {
+					data[common.BKInstParentStr] = val
+				} else {
+					blog.Error("not found the inst parent id, inst %d", instID)
+				}
+			}
+
+			forward := &api.ForwardParam{Header: req.Request.Header}
+			valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
+			_, err := valid.ValidMap(data, common.ValidUpdate, instID)
+			if nil != err {
+				blog.Error("failed to valid the params, error info is %s ", err.Error())
+				return http.StatusBadRequest, "", err
+			}
+
+			// set the inst association table
+			if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
+				blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
+			}
+
+			// update the inst value
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+
+			input := make(map[string]interface{})
+
+			condition := make(map[string]interface{})
+			switch objID {
+			case common.BKInnerObjIDPlat:
+				condition[common.BKCloudIDField] = instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+			default:
+				condition[common.BKOwnerIDField] = ownerID
+				condition[common.BKObjIDField] = objID
+				condition[common.BKInstIDField] = instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+			}
+
+			input["condition"] = condition
+			input["data"] = data
+
+			inputJSON, jsErr := json.Marshal(input)
+			if nil != jsErr {
+				blog.Error("failed to create json object, error info is %s", jsErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
+			}
+
+			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(inputJSON))
+			if nil != err {
+				blog.Error("failed to update the inst, error info is %s", err.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstUpdateFailed)
+			}
+
+			if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+				blog.Error("failed to delete the inst , error inst is %s", objRes)
+				return http.StatusInternalServerError, objRes, defErr.Error(common.CCErrTopoInstDeleteFailed)
+			}
+
+			{
+				// save change log
+				headers, attErr := cli.getHeader(forward, ownerID, objID)
+				if common.CCSuccess != attErr {
+					return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+				}
+				curData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+				if common.CCSuccess != retStrErr {
+					blog.Errorf("get inst detail error: %v", retStrErr)
+					return http.StatusInternalServerError, objRes, defErr.Error(retStrErr)
+				}
+				auditContent := metadata.Content{
+					PreData: preData,
+					CurData: curData,
+					Headers: headers,
+				}
+				auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			}
+		}
+		return http.StatusOK, nil, nil
 
 	}, resp)
 

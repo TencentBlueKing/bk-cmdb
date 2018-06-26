@@ -12,12 +12,22 @@
 
 package inst
 
-type deleteCondition struct {
+type condition struct {
 	InstID []int `json:"inst_ids"`
+}
+
+type deleteCondition struct {
+	condition `json:",inline"`
+}
+
+type updateCondition struct {
+	InstID   int                    `json:"inst_id"`
+	InstInfo map[string]interface{} `json:"datas"`
 }
 
 type operation struct {
 	Delete deleteCondition `json:"delete"`
+	Update []updateCondition `json:"update"`
 }
 
 // instNameAsst  association inst name
