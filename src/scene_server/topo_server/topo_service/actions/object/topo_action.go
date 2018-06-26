@@ -337,7 +337,7 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 				blog.Errorf("can not convert level(%s) to int, error info is %s", cfg, err.Error())
 			}
 			if level <= 0 { // the min level limit is 3
-				level = common.BKNoLimit
+				level = common.BKTopoBusinessLevelDefault
 			}
 		}
 
