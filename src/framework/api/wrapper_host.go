@@ -31,10 +31,16 @@ func (cli *HostIteratorWrapper) Next() (*HostWrapper, error) {
 }
 
 // ForEach the foreach function
-func (cli *HostIteratorWrapper) ForEach(callback func(host *HostWrapper) error) error {
+func (cli *HostIteratorWrapper) ForEach(callback func(host *FinderHostWrapper) error) error {
 
 	return cli.host.ForEach(func(item inst.HostInterface) error {
-		return callback(&HostWrapper{host: item})
+
+		finderHost := &FinderHostWrapper{}
+
+		finderHost.HostWrapper = &HostWrapper{host: item}
+		finderHost.host = item
+
+		return callback(finderHost)
 	})
 }
 
@@ -43,8 +49,14 @@ type HostWrapper struct {
 	host inst.HostInterface
 }
 
+// FinderHostWrapper find the host wrapper
+type FinderHostWrapper struct {
+	*HostWrapper
+	host inst.HostInterface
+}
+
 // GetBizs return all business for the host
-func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
+func (cli *FinderHostWrapper) GetBizs() ([]*BusinessWrapper, error) {
 
 	bizWraps := make([]*BusinessWrapper, 0)
 	bizs := cli.host.GetBizs()
@@ -66,7 +78,7 @@ func (cli *HostWrapper) GetBizs() ([]*BusinessWrapper, error) {
 }
 
 // GetSets return all sets for the host
-func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
+func (cli *FinderHostWrapper) GetSets() ([]*SetWrapper, error) {
 
 	setWraps := make([]*SetWrapper, 0)
 	sets := cli.host.GetSets()
@@ -88,7 +100,7 @@ func (cli *HostWrapper) GetSets() ([]*SetWrapper, error) {
 }
 
 // GetModules return all modules for the module
-func (cli *HostWrapper) GetModules() ([]*ModuleWrapper, error) {
+func (cli *FinderHostWrapper) GetModules() ([]*ModuleWrapper, error) {
 
 	moduleWraps := make([]*ModuleWrapper, 0)
 	modules := cli.host.GetModules()
