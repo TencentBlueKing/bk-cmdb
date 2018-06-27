@@ -16,6 +16,70 @@ import (
 	types "configcenter/src/common/mapstr"
 )
 
+type PermissionSystemResponse struct {
+	BaseResp `json:",inline"`
+	Data     types.MapStr `json:"data"`
+}
+
+type PermissionGroupListResult struct {
+	BaseResp `json:",inline"`
+	Data     []UserGroup `json:"data"`
+}
+
+type Gprivilege struct {
+	ModelConfig    map[string]map[string][]string `json:"model_config"`
+	SysConfig      SysConfigStruct                `json:"sys_config,omitempty"`
+	IsHostCrossBiz bool                           `json:"is_host_cross_biz"`
+}
+
+type Privilege struct {
+	ModelConfig map[string]map[string][]string `json:"model_config,omitempty"`
+	SysConfig   *SysConfigStruct               `json:"sys_config,omitempty"`
+}
+
+type SysConfigStruct struct {
+	Globalbusi []string `json:"global_busi"`
+	BackConfig []string `json:"back_config"`
+}
+
+type UserPrivilege struct {
+	GroupID     string                         `json:"bk_group_id"`
+	ModelConfig map[string]map[string][]string `json:"model_config"`
+	SysConfig   SysConfigStruct                `json:"sys_config"`
+}
+
+type UserPriviResult struct {
+	Result  bool          `json:"result"`
+	Code    int           `json:"code"`
+	Message interface{}   `json:"message"`
+	Data    UserPrivilege `json:"data"`
+}
+
+type GroupPrivilege struct {
+	GroupID   string
+	OwnerID   string
+	Privilege Privilege `json:"privilege"`
+}
+
+type GroupPriviResult struct {
+	BaseResp `json:",inline"`
+	Data     GroupPrivilege `json:"data"`
+}
+
+type SearchGroup struct {
+	Code    int         `json:"code"`
+	Result  bool        `json:"result"`
+	Message interface{} `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
+type SearchMainLine struct {
+	Code    int                      `json:"code"`
+	Result  bool                     `json:"result"`
+	Message interface{}              `json:"message"`
+	Data    []map[string]interface{} `json:"data"`
+}
+
 // UserGroup the privilege user group definition
 type UserGroup struct {
 	GroupName       string `field:"group_name" json:"group_name"`

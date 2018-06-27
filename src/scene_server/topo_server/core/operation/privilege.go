@@ -34,7 +34,7 @@ type permissionOperation struct {
 }
 
 func (p *permissionOperation) Permission(params types.LogicParams) privilege.PermissionInterface {
-	return privilege.NewPermission()
+	return nil
 }
 
 func (p *permissionOperation) UserGroup(params types.LogicParams) privilege.UserGroupInterface {

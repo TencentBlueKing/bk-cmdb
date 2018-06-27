@@ -13,27 +13,38 @@
 package privilege
 
 import (
+	"context"
 	"encoding/json"
 
-	types "configcenter/src/common/mapstr"
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // UserGroupInterface the permission user groups methods
 type UserGroupInterface interface {
 	CreateUserGroup(supplierAccount string, userGroup *metadata.UserGroup) error
 	DeleteUserGroup(supplierAccount, groupID string) error
-	UpdateUserGroup(supplierAccount, groupID string, data types.MapStr) error
-	SearchUserGroup(supplierAccount string) ([]*metadata.UserGroup, error)
+	UpdateUserGroup(supplierAccount, groupID string, data mapstr.MapStr) error
+	SearchUserGroup(supplierAccount string, cond condition.Condition) ([]metadata.UserGroup, error)
 }
 
 // NewUserGroup create a user group instance
-func NewUserGroup() UserGroupInterface {
-	return &userGroup{}
+func NewUserGroup(params types.LogicParams, client apimachinery.ClientSetInterface) UserGroupInterface {
+	return &userGroup{
+		params: params,
+		client: client,
+	}
 }
 
 // userGroup the permission user group definitions
 type userGroup struct {
+	params    types.LogicParams
+	client    apimachinery.ClientSetInterface
 	userGroup metadata.UserGroup
 }
 
@@ -42,18 +53,111 @@ func (u *userGroup) MarshalJSON() ([]byte, error) {
 	return json.Marshal(u.userGroup)
 }
 
+func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName string) error {
+
+	if 0 == len(groupName) {
+		return u.params.Err.Errorf(common.CCErrCommParamsNeedSet, "group name")
+	}
+
+	cond := condition.CreateCondition()
+	if 0 != len(groupID) {
+		cond.Field("group_id").Eq(groupID)
+	}
+	cond.Field("goup_name").Eq(groupName)
+
+	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[permission] failed to check the user group, error info is %s", rsp.ErrMsg)
+		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	if 0 < len(rsp.Data) {
+		blog.Warnf("[permission] the group name (%s) repeated", groupName)
+		return u.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	return nil
+}
+
 func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.UserGroup) error {
+
+	if err := u.checkGroupNameRepeat(supplierAccount, "", userGroup.GroupName); nil != err {
+		return err
+	}
+
+	rspCreate, err := u.client.ObjectController().Privilege().CreateUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), userGroup.ToMapStr())
+	if nil != err {
+		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rspCreate.Result {
+		blog.Errorf("[permission] failed to create the user group name(%s), error info is %s", userGroup.GroupName, rspCreate.ErrMsg)
+		return u.params.Err.New(rspCreate.Code, rspCreate.ErrMsg)
+	}
+
 	return nil
 }
 
 func (u *userGroup) DeleteUserGroup(supplierAccount, groupID string) error {
+
+	rsp, err := u.client.ObjectController().Privilege().DeleteUserGroup(context.Background(), supplierAccount, groupID, u.params.Header.ToHeader())
+	if nil != err {
+		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[permission] failed to delete the group (%s), error info is %s", groupID, rsp.ErrMsg)
+		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
 	return nil
 }
 
-func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data types.MapStr) error {
+func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr.MapStr) error {
+
+	groupName, err := data.String("group_name")
+	if nil != err {
+		blog.Errorf("the group name (%#v) is invalid, error info is %s", data, err.Error())
+		return u.params.Err.Errorf(common.CCErrCommParamsNeedSet, "group name")
+	}
+
+	if err := u.checkGroupNameRepeat(supplierAccount, groupID, groupName); nil != err {
+		return err
+	}
+
+	rsp, err := u.client.ObjectController().Privilege().UpdateUserGroup(context.Background(), supplierAccount, groupID, u.params.Header.ToHeader(), data)
+	if nil != err {
+		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[permission] failed to update the group (%s), error info is %s", groupID, rsp.ErrMsg)
+		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
 	return nil
 }
 
-func (u *userGroup) SearchUserGroup(supplierAccount string) ([]*metadata.UserGroup, error) {
-	return nil, nil
+func (u *userGroup) SearchUserGroup(supplierAccount string, cond condition.Condition) ([]metadata.UserGroup, error) {
+
+	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[permission] failed to search, the condition (%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, u.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data, nil
 }
