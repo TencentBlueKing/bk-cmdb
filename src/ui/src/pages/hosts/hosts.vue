@@ -211,17 +211,7 @@
             outerParams: {
                 type: Object,
                 default () {
-                    return {
-                        condition: [{
-                            'bk_obj_id': 'biz',
-                            fields: [],
-                            condition: [{
-                                field: 'default',
-                                operator: '$ne',
-                                value: 1
-                            }]
-                        }]
-                    }
+                    return {}
                 }
             },
             isShowCrossImport: {
@@ -404,7 +394,9 @@
                 if (attrLoaded && this.bkBizId) {
                     this.setTableCurrentPage(1)
                 }
-                this.$emit('attrLoaded')
+                if (attrLoaded) {
+                    this.$emit('attrLoaded')
+                }
             },
             bkBizId (bkBizId) {
                 if (this.attrLoaded) {
@@ -920,46 +912,65 @@
             },
             mergeCondition (targetParams, sourceParams) {
                 let mergedParams = this.$deepClone(targetParams)
+                // if (sourceParams && sourceParams.hasOwnProperty('condition')) {
+                //     let newCondition = []
+                //     for (let i = 0; i < sourceParams['condition'].length; i++) {
+                //         let {
+                //             condition: sourceCondition,
+                //             bk_obj_id: sourceBkObjId,
+                //             fields: sourceFields
+                //         } = sourceParams['condition'][i]
+                //         let isIncludeCondition = false
+                //         for (let j = 0; j < mergedParams['condition'].length; j++) {
+                //             let {
+                //                 condition: targetCondition,
+                //                 bk_obj_id: targetBkObjId,
+                //                 fields: targetFields
+                //             } = mergedParams['condition'][j]
+                //             if (sourceBkObjId === targetBkObjId) {
+                //                 let mergedCondition = [...sourceCondition]
+                //                 for (let m = 0; m < targetCondition.length; m++) {
+                //                     let isExist = false
+                //                     for (let n = 0; n < sourceCondition.length; n++) {
+                //                         if (targetCondition[m]['field'] === sourceCondition[n]['field']) {
+                //                             isExist = true
+                //                             break
+                //                         }
+                //                     }
+                //                     if (!isExist) {
+                //                         mergedCondition.push(targetCondition[m])
+                //                     }
+                //                 }
+                //                 mergedParams['condition'][j]['condition'] = mergedCondition
+                //                 mergedParams['condition'][j]['fields'] = [...sourceFields, ...targetFields]
+                //                 isIncludeCondition = true
+                //                 break
+                //             }
+                //         }
+                //         if (!isIncludeCondition) {
+                //             newCondition.push(sourceParams['condition'][i])
+                //         }
+                //     }
+                //     mergedParams.condition = [...mergedParams.condition, ...newCondition]
+                // }
                 if (sourceParams && sourceParams.hasOwnProperty('condition')) {
-                    let newCondition = []
-                    for (let i = 0; i < sourceParams['condition'].length; i++) {
-                        let {
-                            condition: sourceCondition,
-                            bk_obj_id: sourceBkObjId,
-                            fields: sourceFields
-                        } = sourceParams['condition'][i]
-                        let isIncludeCondition = false
-                        for (let j = 0; j < mergedParams['condition'].length; j++) {
-                            let {
-                                condition: targetCondition,
-                                bk_obj_id: targetBkObjId,
-                                fields: targetFields
-                            } = mergedParams['condition'][j]
-                            if (sourceBkObjId === targetBkObjId) {
-                                let mergedCondition = [...sourceCondition]
-                                for (let m = 0; m < targetCondition.length; m++) {
-                                    let isExist = false
-                                    for (let n = 0; n < sourceCondition.length; n++) {
-                                        if (targetCondition[m]['field'] === sourceCondition[n]['field']) {
-                                            isExist = true
-                                            break
-                                        }
-                                    }
-                                    if (!isExist) {
-                                        mergedCondition.push(targetCondition[m])
-                                    }
+                    sourceParams.condition.forEach(sourceCondition => {
+                        let targetCondition = mergedParams.condition.find(targetCondition => targetCondition['bk_obj_id'] === sourceCondition['bk_obj_id'])
+                        if (targetCondition) {
+                            targetCondition.fields = [...new Set([...targetCondition.fields, ...sourceCondition.fields])]
+                            sourceCondition.condition.forEach(sourceMeta => {
+                                let targetMeta = targetCondition.condition.find(targetMeta => targetMeta.field === sourceMeta.field)
+                                if (targetMeta) {
+                                    targetMeta.operator = sourceMeta.operator
+                                    targetMeta.value = sourceMeta.value
+                                } else {
+                                    targetCondition.condition.push(this.$deepClone(sourceMeta))
                                 }
-                                mergedParams['condition'][j]['condition'] = mergedCondition
-                                mergedParams['condition'][j]['fields'] = [...sourceFields, ...targetFields]
-                                isIncludeCondition = true
-                                break
-                            }
+                            })
+                        } else {
+                            mergedParams.condition.push(sourceCondition)
                         }
-                        if (!isIncludeCondition) {
-                            newCondition.push(sourceParams['condition'][i])
-                        }
-                    }
-                    mergedParams.condition = [...mergedParams.condition, ...newCondition]
+                    })
                 }
                 if (sourceParams && sourceParams.hasOwnProperty('bk_biz_id')) {
                     mergedParams['bk_biz_id'] = sourceParams['bk_biz_id']
