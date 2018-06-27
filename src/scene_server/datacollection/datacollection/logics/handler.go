@@ -61,6 +61,12 @@ type ListResult struct {
 	Data []MapData `json:"data"`
 }
 
+// Result 接口返回信息结构
+type Result struct {
+	ResultBase
+	Data interface{} `json:"data"`
+}
+
 func (m M) toJson() ([]byte, error) {
 	return json.Marshal(m)
 }
@@ -79,12 +85,6 @@ func (m M) Keys() (keys []string) {
 	}
 
 	return
-}
-
-// Result 接口返回信息结构
-type Result struct {
-	ResultBase
-	Data interface{} `json:"data"`
 }
 
 func (r *Result) mapData() (MapData, error) {
@@ -107,6 +107,7 @@ func parseListResult(res []byte) (ListResult, error) {
 	return lR, nil
 }
 
+// parseDetailResult 接口返回数据解析
 func parseDetailResult(res []byte) (DetailResult, error) {
 
 	var dR DetailResult
@@ -119,6 +120,7 @@ func parseDetailResult(res []byte) (DetailResult, error) {
 	return dR, nil
 }
 
+// parseResult 接口返回数据解析
 func parseResult(res []byte) (Result, error) {
 
 	var r Result
@@ -196,7 +198,7 @@ func (d *Discover) parseOwnerId(msg string) string {
 }
 
 // GetAttrs 查询模型属性
-func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]Attr) (ListResult, error) {
+func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[string]Attr) (ListResult, error) {
 
 	var nilR = ListResult{}
 
@@ -245,7 +247,7 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 	// construct the condition
 	cond := M{
 		bkc.BKObjIDField:   objID,
-		bkc.BKOwnerIDField: bkc.BKDefaultOwnerID,
+		bkc.BKOwnerIDField: ownerID,
 	}
 
 	// marshal the condition
@@ -280,6 +282,9 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 // UpdateOrAppendAttrs 创建或新增模型属性
 func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
+	// parse owner id
+	ownerID := d.parseOwnerId(msg)
+
 	// parse object_id
 	objID := d.parseObjID(msg)
 
@@ -295,10 +300,10 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		return err
 	}
 
-	modelAttrKey := d.CreateModelAttrKey(*model)
+	modelAttrKey := d.CreateModelAttrKey(*model, ownerID)
 
 	// get exist attr
-	dR, err := d.GetAttrs(objID, modelAttrKey, attrs)
+	dR, err := d.GetAttrs(ownerID, objID, modelAttrKey, attrs)
 	if nil != err {
 		return fmt.Errorf("get attr error: %s", err)
 	}
@@ -341,7 +346,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			bkc.BKAsstObjIDField:     property.BkAsstObjID,
 			bkc.BKPropertyNameField:  property.BkPropertyName,
 			bkc.BKPropertyTypeField:  property.BkPropertyType,
-			bkc.BKOwnerIDField:       bkc.BKDefaultOwnerID,
+			bkc.BKOwnerIDField:       ownerID,
 			bkc.CreatorField:         bkc.CCSystemCollectorUserName,
 			"editable":               property.Editable,
 		}
@@ -444,19 +449,19 @@ func (d *Discover) GetInstFromRedis(instKey string) (DetailResult, error) {
 }
 
 // CreateModelKey 根据model生成key
-func (d *Discover) CreateModelKey(model Model) string {
+func (d *Discover) CreateModelKey(model Model, ownerID string) string {
 	return fmt.Sprintf("cc:v3:model[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
-		bkc.BKDefaultOwnerID,
+		ownerID,
 		model.BkObjID,
 	)
 }
 
 // CreateModelAttrKey 根据model生成mode-attr的key
-func (d *Discover) CreateModelAttrKey(model Model) string {
+func (d *Discover) CreateModelAttrKey(model Model, ownerID string) string {
 	return fmt.Sprintf("cc:v3:attr[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
-		bkc.BKDefaultOwnerID,
+		ownerID,
 		model.BkObjID,
 	)
 }
@@ -484,14 +489,14 @@ func (d *Discover) TryUnsetRedis(key string) {
 }
 
 // GetModel 查询模型元数据
-func (d *Discover) GetModel(model Model, modelKey string) (ListResult, error) {
+func (d *Discover) GetModel(model Model, modelKey, ownerID string) (ListResult, error) {
 
 	var nilR = ListResult{}
 
 	// construct the condition
 	cond := M{
 		bkc.BKObjIDField:   model.BkObjID,
-		bkc.BKOwnerIDField: bkc.BKDefaultOwnerID,
+		bkc.BKOwnerIDField: ownerID,
 		//bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
@@ -552,14 +557,17 @@ func (d *Discover) GetModel(model Model, modelKey string) (ListResult, error) {
 
 // TryCreateModel 创建模型元数据
 func (d *Discover) TryCreateModel(msg string) error {
+	// parse ownerID
+	ownerID := d.parseOwnerId(msg)
 
+	// parse model
 	model, err := d.parseModel(msg)
 	if err != nil {
 		return fmt.Errorf("parse model error: %s", err)
 	}
 
-	modelKey := d.CreateModelKey(*model)
-	dR, err := d.GetModel(*model, modelKey)
+	modelKey := d.CreateModelKey(*model, ownerID)
+	dR, err := d.GetModel(*model, modelKey, ownerID)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
@@ -575,7 +583,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 		bkc.BKClassificationIDField: model.BkClassificationID,
 		bkc.BKObjIDField:            model.BkObjID,
 		bkc.BKObjNameField:          model.BkObjName,
-		bkc.BKOwnerIDField:          bkc.BKDefaultOwnerID,
+		bkc.BKOwnerIDField:          ownerID,
 		bkc.BKObjIconField:          defaultModelIcon,
 		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
@@ -600,7 +608,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 }
 
 // GetInst 获取模型实例信息
-func (d *Discover) GetInst(objID string, keys []string, instKey string) (DetailResult, error) {
+func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string) (DetailResult, error) {
 
 	var nilR = DetailResult{}
 
@@ -634,7 +642,7 @@ func (d *Discover) GetInst(objID string, keys []string, instKey string) (DetailR
 	}
 
 	// search inst by condition
-	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
+	url := fmt.Sprintf("%s/topo/v1/inst/search/%s/%s", d.cc.TopoAPI(), ownerID, objID)
 	blog.Infof("get inst url=%s, condition=%s", url, condJs)
 
 	res, err := d.requests.POST(url, nil, condJs)
@@ -669,6 +677,9 @@ func (d *Discover) GetInst(objID string, keys []string, instKey string) (DetailR
 // UpdateOrCreateInst 更新或新增模型实例信息
 func (d *Discover) UpdateOrCreateInst(msg string) error {
 
+	// parse ownerID
+	ownerID := d.parseOwnerId(msg)
+
 	// parse object_id
 	objID := d.parseObjID(msg)
 
@@ -691,7 +702,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	// fetch key's values
 	keys := strings.Split(model.Keys, ",")
-	dR, err := d.GetInst(objID, keys, instKeyStr)
+	dR, err := d.GetInst(ownerID, objID, keys, instKeyStr)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
@@ -703,7 +714,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 		createJs := gjson.Get(msg, "data.data").String()
 
-		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
+		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), ownerID, objID)
 		blog.Infof("create inst url=%s, body=%s", url, createJs)
 
 		res, err := d.requests.POST(url, nil, []byte(createJs))
@@ -757,7 +768,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("marshal inst data error: %s", err)
 	}
 
-	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s/%d", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID, int(instID))
+	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s/%d", d.cc.TopoAPI(), ownerID, objID, int(instID))
 	blog.Infof("update inst url=%s, body=%s", url, updateJs)
 
 	res, err := d.requests.PUT(url, nil, updateJs)
