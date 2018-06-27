@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/topo_server/core/privilege"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -24,11 +25,16 @@ type PermissionOperationInterface interface {
 	Role(params types.LogicParams) privilege.RolePermission
 }
 
+// NewPermissionOperation create the permission operation
+func NewPermissionOperation(client apimachinery.ClientSetInterface) PermissionOperationInterface {
+	return &permissionOperation{}
+}
+
 type permissionOperation struct {
 }
 
 func (p *permissionOperation) Permission(params types.LogicParams) privilege.PermissionInterface {
-	return nil
+	return privilege.NewPermission()
 }
 
 func (p *permissionOperation) UserGroup(params types.LogicParams) privilege.UserGroupInterface {

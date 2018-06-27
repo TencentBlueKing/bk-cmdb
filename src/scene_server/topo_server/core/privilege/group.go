@@ -27,6 +27,11 @@ type UserGroupInterface interface {
 	SearchUserGroup(supplierAccount string) ([]*metadata.UserGroup, error)
 }
 
+// NewUserGroup create a user group instance
+func NewUserGroup() UserGroupInterface {
+	return &userGroup{}
+}
+
 // userGroup the permission user group definitions
 type userGroup struct {
 	userGroup metadata.UserGroup
