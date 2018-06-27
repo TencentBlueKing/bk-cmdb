@@ -99,3 +99,9 @@ type SearchHostResult struct {
 	BaseResp `json:",inline"`
 	Data     SearchHost `json:"data"`
 }
+type HostCloneInputParams struct {
+	OrgIP  string `json:"bk_org_ip"`
+	DstIP  string `json:"bk_dst_ip"`
+	AppID  int64  `json:"bk_biz_id"`
+	PlatID int64  `json:"bk_cloud_id"`
+}

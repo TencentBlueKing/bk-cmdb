@@ -88,7 +88,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//valid create request
 	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valid.propertys)
+		valid.fillLostedFieldValue(valData, valid.propertys)
 	}
 
 	for key, val := range valData {
@@ -129,8 +129,6 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		}
 	}
 
-	//fmt.Printf("valdata:%+v\n", valData)
-	//valid unique
 	if validType == common.ValidCreate {
 		return valid.validCreateUnique(valData)
 	}
