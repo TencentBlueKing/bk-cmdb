@@ -367,6 +367,7 @@
         },
         methods: {
             multipleUpdate () {
+                this.tab.activeName = 'attr'
                 this.slider.isShow = true
                 this.slider.title.text = this.$t('Inst[\'批量更新\']')
                 this.attr.isMultipleUpdate = true
@@ -594,7 +595,7 @@
             },
             // 保存新增/修改的属性
             saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {
-                if (this.attr.type === 'create' && !this.slider.isMultipleUpdate) {
+                if (this.attr.type === 'create' && this.attr.isMultipleUpdate) {
                     let params = {
                         update: []
                     }
@@ -709,6 +710,7 @@
             editObject (item) {
                 this.attr.formValues = Object.assign({}, item)
                 this.attr.type = 'update'
+                this.attr.isMultipleUpdate = false
                 this.openObjectSlider('update', item['bk_inst_name'])
             },
             // 打开侧滑界面
@@ -716,6 +718,7 @@
                 this.tab.activeName = 'attr'
                 this.attr.type = type
                 if (type === 'create') {
+                    this.attr.isMultipleUpdate = false
                     this.slider.title.icon = 'icon-cc-create-business'
                     this.slider.title.text = `${this.$t("Common['创建']")} ${this.objName}`
                 } else {
