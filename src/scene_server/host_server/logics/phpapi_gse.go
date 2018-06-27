@@ -89,7 +89,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 
 	agentNorList := make([]map[string]interface{}, 0)
 	agentAbnorList := make([]map[string]interface{}, 0)
-	i := 0
+	idx := 0
 
 	blog.V(3).Infof("agentStatus:%v", agentStatus)
 	agentStatuLen := len(agentStatus)
@@ -108,8 +108,8 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 			"PlatId":    platIdStr,
 		}
 		status := int64(0)
-		if i < agentStatuLen {
-			status = agentStatus[i]
+		if idx < agentStatuLen {
+			status = agentStatus[idx]
 		}
 		if status == 1 {
 			agentNorCnt++
@@ -119,7 +119,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 			agentAbnorList = append(agentAbnorList, hostMapTemp)
 		}
 
-		i++
+		idx++
 	}
 	ret := &meta.GetAgentStatusResult{
 		AgentNorCnt:    agentNorCnt,
