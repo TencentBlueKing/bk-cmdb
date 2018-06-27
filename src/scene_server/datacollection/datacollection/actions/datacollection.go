@@ -116,8 +116,8 @@ func getChanName(funcType string) (string, error) {
 	// 通道类型映射
 	switch funcType {
 	case dccommon.DiscoverChan:
-		//return "hstest2", nil
-		return defaultAppID + "_discover", nil
+		return "hstest2", nil
+		//return defaultAppID + "_discover", nil
 	case dccommon.SnapShotChan:
 		return defaultAppID + "_snapshot", nil
 	default:
