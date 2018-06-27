@@ -116,33 +116,35 @@ func (cli *business) Update() error {
 		return err
 	}
 
+	// clear the invalid field
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+		cli.datas.Remove(key)
+	})
+
+	cli.datas.Remove("create_time") //invalid check , need to delete
+
 	// update the exists
 	for _, existItem := range existItems {
-
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
 
 		bizID, err := existItem.Int(BusinessID)
 		if nil != err {
 			return err
 		}
 
-		// clear the invalid field
-		cli.datas.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
-			}
-			cli.datas.Remove(key)
-		})
+		cli.datas.Remove(BusinessID)
 
 		//fmt.Println("the new:", existItem)
 		err = client.GetClient().CCV3().Business().UpdateBusiness(cli.datas, bizID)
 		if nil != err {
 			return err
 		}
+
+		cli.datas.Set(BusinessID, bizID)
 
 	}
 

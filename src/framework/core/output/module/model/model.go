@@ -132,8 +132,7 @@ func (cli *model) Save() error {
 	} else if exists {
 		return cli.Update()
 	}
-
-	return nil
+	return cli.Create()
 }
 
 func (cli *model) CreateAttribute() Attribute {
