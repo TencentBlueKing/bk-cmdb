@@ -19,10 +19,10 @@ const (
 
 const (
 	defaultRelateAttr = "host"
-	defaultModelIcon = "icon-cc-middleware"
+	defaultModelIcon  = "icon-cc-middleware"
 )
 
-// 模型元数据结构
+// Model 模型元数据结构
 type Model struct {
 	BkClassificationID string `json:"bk_classification_id"`
 	BkObjID            string `json:"bk_obj_id"`
@@ -30,7 +30,7 @@ type Model struct {
 	Keys               string `json:"bk_obj_keys"`
 }
 
-// 属性元数据结构
+// Attr 属性元数据结构
 type Attr struct {
 	BkPropertyName string `json:"bk_property_name"`
 	BkPropertyType string `json:"bk_property_type"`
@@ -81,7 +81,7 @@ func (m M) Keys() (keys []string) {
 	return
 }
 
-// 接口返回信息结构
+// Result 接口返回信息结构
 type Result struct {
 	ResultBase
 	Data interface{} `json:"data"`
@@ -94,7 +94,7 @@ func (r *Result) mapData() (MapData, error) {
 	return nil, fmt.Errorf("parse map data error: %v", r)
 }
 
-// 接口返回数据解析
+// parseListResult 接口返回数据解析
 func parseListResult(res []byte) (ListResult, error) {
 
 	var lR ListResult
@@ -191,15 +191,10 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 
 	filterAttrs := make([]string, 0)
 	for attr := range attrs {
-		// skip empty string
-		//if attr == "" {
-		//	continue
-		//}
 		filterAttrs = append(filterAttrs, attr)
 	}
-	blog.Infof("--------> filterAttrs: %v <--------", filterAttrs)
-	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
 
+	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
 	// 差异比较
 	if err == nil && len(cachedAttrs) == len(filterAttrs) {
 		blog.Infof("attr exist in redis: %s", modelAttrKey)
@@ -310,6 +305,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	finalAttrs := make([]string, 0)
 
 	// batch create model attrs
+	hasDiff := false
 	for propertyId, property := range attrs {
 
 		finalAttrs = append(finalAttrs, propertyId)
@@ -319,13 +315,13 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			continue
 		}
 
-		blog.Infof("attr: %s -> %v", propertyId, property)
-
 		// skip default field
 		if propertyId == bkc.BKInstNameField {
 			blog.Infof("skip default field: %s", propertyId)
 			continue
 		}
+
+		blog.Infof("attr: %s -> %v", propertyId, property)
 
 		attrBody := M{
 			bkc.BKObjIDField:         objID,
@@ -359,10 +355,13 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			return fmt.Errorf("create model attr failed: %s", resMap.Message)
 		}
 
+		// updated
+		hasDiff = true
+
 	}
 
 	// flush to redis, ignore fail
-	if dR.Result && len(dR.Data) > 0 {
+	if dR.Result && len(dR.Data) > 0 && hasDiff {
 		attrJs, err := json.Marshal(finalAttrs)
 		if err != nil {
 			blog.Warnf("%s: flush to redis marshal failed: %s", modelAttrKey, err)
@@ -643,7 +642,7 @@ func (d *Discover) GetInst(objID string, keys []string, instKey string) (DetailR
 	}
 
 	// try flush to redis, maybe fail
-	if dR.Result {
+	if dR.Result && dR.Data.Count > 0 {
 
 		val, err := json.Marshal(dR)
 		if err != nil {
@@ -686,7 +685,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("get inst error: %s", err)
 	}
 
-	//blog.Infof("get inst result: count=%d", dR.Data.Count)
+	blog.Infof("get inst result: count=%d", dR.Data.Count)
 
 	// create inst
 	if dR.Data.Count == 0 {
