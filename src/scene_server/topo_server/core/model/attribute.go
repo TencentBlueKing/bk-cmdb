@@ -26,6 +26,74 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+// Attribute attribute opeartion interface declaration
+type Attribute interface {
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
+
+	SetSupplierAccount(supplierAccount string)
+	GetSupplierAccount() string
+
+	GetParentObject() (Object, error)
+	GetChildObject() (Object, error)
+
+	SetParentObject(objID string) error
+	SetChildObject(objID string) error
+
+	SetObjectID(objectID string)
+	GetObjectID() string
+
+	SetID(attributeID string)
+	GetID() string
+
+	SetName(attributeName string)
+	GetName() string
+
+	SetGroup(grp Group)
+	GetGroup() (Group, error)
+
+	SetGroupIndex(attGroupIndex int64)
+	GetGroupIndex() int64
+
+	SetUnint(unit string)
+	GetUnint() string
+
+	SetPlaceholder(placeHolder string)
+	GetPlaceholder() string
+
+	SetIsEditable(isEditable bool)
+	GetIsEditable() bool
+
+	SetIsPre(isPre bool)
+	GetIsPre() bool
+
+	SetIsReadOnly(isReadOnly bool)
+	GetIsReadOnly() bool
+
+	SetIsOnly(isOnly bool)
+	GetIsOnly() bool
+
+	SetIsSystem(isSystem bool)
+	GetIsSystem() bool
+
+	SetIsAPI(isAPI bool)
+	GetIsAPI() bool
+
+	SetType(attributeType string)
+	GetType() string
+
+	SetOption(attributeOption interface{})
+	GetOption() interface{}
+
+	SetDescription(attributeDescription string)
+	GetDescription() string
+
+	SetCreator(attributeCreator string)
+	GetCreator() string
+
+	ToMapStr() (frtypes.MapStr, error)
+}
+
 var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
