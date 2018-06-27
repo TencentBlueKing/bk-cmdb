@@ -21,7 +21,7 @@ import (
 	"configcenter/src/scene_server/event_server/types"
 )
 
-func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.SubscribeCommonSearch) (resp *metadata.Response, err error) {
+func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.ParamSubscriptionSearch) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/search/%s/%s", ownerID, appID)
 

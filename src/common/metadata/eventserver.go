@@ -12,15 +12,37 @@
 
 package metadata
 
-type CreateSubscription struct {
+import (
+	"configcenter/src/scene_server/event_server/types"
+)
+
+type RspSubscriptionCreate struct {
 	BaseResp `json:",inline"`
 	Data     struct {
 		SubscriptionID int64 `json:"subscription_id"`
 	} `json:"data"`
 }
 
-type SubscribeCommonSearch struct {
+type ParamSubscriptionSearch struct {
 	Fields    []string               `json:"fields"`
 	Condition map[string]interface{} `json:"condition"`
 	Page      BasePage               `json:"page"`
+}
+
+type RspSubscriptionSearch struct {
+	Count int                  `json:"count"`
+	Info  []types.Subscription `json:"info"`
+}
+
+type ParamSubscriptionTelnet struct {
+	CallbackUrl string `json:"callback_url"`
+}
+type ParamSubscriptionTestCallback struct {
+	ParamSubscriptionTelnet `json:",inline"`
+	Data                    string `json:"data"`
+}
+
+type RspSubscriptionTestCallback struct {
+	HttpStatus   int    `json:"http_status"`
+	ResponseBody string `json:"response_body"`
 }
