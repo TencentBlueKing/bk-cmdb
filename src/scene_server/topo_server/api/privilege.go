@@ -16,7 +16,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -33,8 +36,17 @@ func (cli *topoAPI) initPrivilege() {
 
 // UpdateUserGroupPrivi search user goup
 func (cli *topoAPI) UpdateUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	priviData := &metadata.PrivilegeUserGroup{}
+
+	_, err := priviData.Parse(data)
+	if nil != err {
+		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	err = cli.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.Header.OwnerID, pathParams("group_id"), priviData)
+	return nil, err
 }
 
 // GetUserGroupPrivi search user goup

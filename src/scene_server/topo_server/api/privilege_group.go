@@ -16,7 +16,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -34,23 +38,39 @@ func (cli *topoAPI) initPrivilegeGroup() {
 // CreateUserGroup create user goup
 func (cli *topoAPI) CreateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	userGroup := &metadata.UserGroup{}
+	_, err := userGroup.Parse(data)
+	if nil != err {
+		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	err = cli.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.Header.OwnerID, userGroup)
+	return nil, err
 }
 
 // DeleteUserGroup delete user goup
 func (cli *topoAPI) DeleteUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+	err := cli.core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
+	return nil, err
 }
 
 // UpdateUserGroup update user goup
 func (cli *topoAPI) UpdateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	err := cli.core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
+	return nil, err
 }
 
 // SearchUserGroup search user goup
 func (cli *topoAPI) SearchUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	cond := condition.CreateCondition()
+
+	data.ForEach(func(key string, val interface{}) {
+		cond.Field(key).Like(val)
+	})
+
+	return cli.core.PermissionOperation().UserGroup(params).SearchUserGroup(pathParams("bk_supplier_account"), cond)
 }

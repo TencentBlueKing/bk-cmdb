@@ -13,7 +13,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	frtypes "configcenter/src/common/mapstr"
@@ -27,12 +26,17 @@ func (cli *topoAPI) initPrivigeRole() {
 
 // CreatePrivilege search user goup
 func (cli *topoAPI) CreatePrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	datas := make([]string, 0)
+	data.ForEach(func(key string, val interface{}) {
+		datas = append(datas, key)
+	})
+
+	err := cli.core.PermissionOperation().Role(params).CreatePermission(params.Header.OwnerID, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
+	return nil, err
 }
 
 // GetPrivilege search user goup
 func (cli *topoAPI) GetPrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+	return cli.core.PermissionOperation().Role(params).GetPermission(params.Header.OwnerID, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }
