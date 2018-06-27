@@ -2,7 +2,6 @@ package logics
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"time"
 	"fmt"
 	"strings"
@@ -16,35 +15,19 @@ import (
 const (
 	// 缓存时间5min
 	cacheTime = time.Minute * 5
-	// 配置文件路径
-	jsonFile = "/etc/gse/host/hostid"
 )
 
-var Host = M{
-	"bk_host_id": "",
-}
-
-func init() {
-	// parse json file
-	jf, err := ioutil.ReadFile(jsonFile)
-	if err != nil {
-		blog.Errorf("discover: read file error: %s")
-	} else {
-		err = json.Unmarshal(jf, &Host)
-		if err != nil {
-			blog.Errorf("discover: parse file error: %s")
-		}
-	}
-
-	blog.Infof("Host Detail: %s\n%v\n", jf, Host)
-}
+const (
+	defaultRelateAttr = "host"
+	defaultModelIcon = "icon-cc-middleware"
+)
 
 // 模型元数据结构
 type Model struct {
 	BkClassificationID string `json:"bk_classification_id"`
 	BkObjID            string `json:"bk_obj_id"`
 	BkObjName          string `json:"bk_obj_name"`
-	Keys               string `json:"keys"`
+	Keys               string `json:"bk_obj_keys"`
 }
 
 // 属性元数据结构
@@ -91,8 +74,8 @@ func (m M) debug() {
 }
 
 func (m M) Keys() (keys []string) {
-	for k := range m {
-		keys = append(keys, k)
+	for key := range m {
+		keys = append(keys, key)
 	}
 
 	return
@@ -155,7 +138,7 @@ func (d *Discover) parseModel(msg string) (model *Model, err error) {
 	modelStr := gjson.Get(msg, "data.meta.model").String()
 
 	if err = json.Unmarshal([]byte(modelStr), &model); err != nil {
-		blog.Errorf("unmarshal error: %s", err)
+		blog.Errorf("parse model error: %s", err)
 		return
 	}
 
@@ -168,6 +151,17 @@ func (d *Discover) parseData(msg string) (data M, err error) {
 	dataStr := gjson.Get(msg, "data.data").String()
 	if err = json.Unmarshal([]byte(dataStr), &data); err != nil {
 		blog.Errorf("parse data error: %s", err)
+		return
+	}
+	return
+}
+
+// parseHost 解析主机身份数据
+func (d *Discover) parseHost(msg string) (data M, err error) {
+
+	dataStr := gjson.Get(msg, "data.host").String()
+	if err = json.Unmarshal([]byte(dataStr), &data); err != nil {
+		blog.Errorf("parse host error: %s", err)
 		return
 	}
 	return
@@ -196,14 +190,14 @@ func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]
 	var nilR = ListResult{}
 
 	filterAttrs := make([]string, 0)
-	for k := range attrs {
+	for attr := range attrs {
 		// skip empty string
-		if k == "" {
-			continue
-		}
-		filterAttrs = append(filterAttrs, k)
+		//if attr == "" {
+		//	continue
+		//}
+		filterAttrs = append(filterAttrs, attr)
 	}
-
+	blog.Infof("--------> filterAttrs: %v <--------", filterAttrs)
 	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
 
 	// 差异比较
@@ -304,67 +298,52 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	}
 
 	existAttrHash := make(map[string]int, len(dR.Data))
-	//existAttrs := make([]string, len(dR.Data))
 	if dR.Result && len(dR.Data) > 0 {
-		for i, v := range dR.Data {
-			if idStr, ok := v[bkc.BKPropertyIDField].(string); ok {
+		for i, propertyMap := range dR.Data {
+			if idStr, ok := propertyMap[bkc.BKPropertyIDField].(string); ok {
 				existAttrHash[idStr] = i
-				//existAttrs = append(existAttrs, idStr)
 			}
 		}
-		//blog.Infof("attr exist: %v", existAttrs)
 	}
-
-	// add extra relation attr associate to host
-	attrs["host"] = Attr{
-		BkPropertyName: "主机",
-		BkPropertyType: bkc.FieldTypeSingleAsst,
-		BkAsstObjID:    "host",
-	}
-
-	// add collector key
-	attrs[bkc.BKCollectorKeyField] = Attr{
-		BkPropertyName: "采集标识",
-		BkPropertyType: bkc.FieldTypeSingleChar,
-		Editable:       false,
-	}
-
 
 	// collect final attrs of model
 	finalAttrs := make([]string, 0)
 
 	// batch create model attrs
-	for instId, v := range attrs {
+	for propertyId, property := range attrs {
 
-		finalAttrs = append(finalAttrs, instId)
+		finalAttrs = append(finalAttrs, propertyId)
 
 		// skip exist attr
-		if _, ok := existAttrHash[instId]; ok {
-			//blog.Infof("skip exist field: %s", instId)
+		if _, ok := existAttrHash[propertyId]; ok {
 			continue
 		}
 
-		blog.Infof("attr: %s -> %v", instId, v)
+		blog.Infof("attr: %s -> %v", propertyId, property)
 
 		// skip default field
-		if instId == bkc.BKInstNameField {
-			blog.Infof("skip default field: %s", instId)
+		if propertyId == bkc.BKInstNameField {
+			blog.Infof("skip default field: %s", propertyId)
 			continue
 		}
 
 		attrBody := M{
 			bkc.BKObjIDField:         objID,
 			bkc.BKPropertyGroupField: bkc.BKDefaultField,
-			bkc.BKPropertyIDField:    instId,
-			bkc.BKAsstObjIDField:     v.BkAsstObjID,
-			bkc.BKPropertyNameField:  v.BkPropertyName,
-			bkc.BKPropertyTypeField:  v.BkPropertyType,
+			bkc.BKPropertyIDField:    propertyId,
+			bkc.BKAsstObjIDField:     property.BkAsstObjID,
+			bkc.BKPropertyNameField:  property.BkPropertyName,
+			bkc.BKPropertyTypeField:  property.BkPropertyType,
 			bkc.BKOwnerIDField:       bkc.BKDefaultOwnerID,
 			bkc.CreatorField:         bkc.CCSystemCollectorUserName,
-			"editable":               v.Editable,
+			"editable":               property.Editable,
 		}
 
-		attrBodyJs, _ := attrBody.toJson()
+		attrBodyJs, err := attrBody.toJson()
+		if err != nil {
+			return fmt.Errorf("marshal condition error: %s", err)
+		}
+
 		url := fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI())
 
 		blog.Infof("create model attr url=%s, body=%s", url, attrBody)
@@ -382,22 +361,14 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
 	}
 
-	// flush to redis
+	// flush to redis, ignore fail
 	if dR.Result && len(dR.Data) > 0 {
 		attrJs, err := json.Marshal(finalAttrs)
 		if err != nil {
-			blog.Infof("%s: flush to redis marshal failed: %s", modelAttrKey, err)
-			return err
+			blog.Warnf("%s: flush to redis marshal failed: %s", modelAttrKey, err)
+			return nil
 		}
-
-		_, err = d.redisCli.Set(modelAttrKey, attrJs, cacheTime).Result()
-		if err != nil {
-			blog.Infof("%s: flush to redis failed: %s", modelAttrKey, err)
-			return err
-		}
-
-		blog.Errorf("%s: flush to redis success: %s", modelAttrKey, attrJs)
-
+		d.TrySetRedis(modelAttrKey, attrJs, cacheTime)
 	}
 
 	return nil
@@ -442,46 +413,79 @@ func (d *Discover) GetModelAttrsFromRedis(modelAttrKey string) ([]string, error)
 
 }
 
+// GetInstFromRedis 从redis中获取实例数据
+func (d *Discover) GetInstFromRedis(instKey string) (DetailResult, error) {
+
+	var nilR = DetailResult{}
+
+	val, err := d.redisCli.Get(instKey).Result()
+	if err != nil {
+		return nilR, fmt.Errorf("%s: get inst cache error: %s", instKey, err)
+	}
+
+	var cacheData = DetailResult{}
+	err = json.Unmarshal([]byte(val), &cacheData)
+	if err != nil {
+		return nilR, fmt.Errorf("marshal condition error: %s", err)
+	}
+
+	return cacheData, nil
+
+}
+
 // CreateModelKey 根据model生成key
 func (d *Discover) CreateModelKey(model Model) string {
-	return fmt.Sprintf("cc:v3:model[%s:%s:%s:%s]",
+	return fmt.Sprintf("cc:v3:model[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
 		bkc.BKDefaultOwnerID,
-		model.BkClassificationID,
 		model.BkObjID,
 	)
 }
 
-// 根据model生成mode-attr的key
+// CreateModelAttrKey 根据model生成mode-attr的key
 func (d *Discover) CreateModelAttrKey(model Model) string {
-	return fmt.Sprintf("cc:v3:attr[%s:%s:%s:%s]",
+	return fmt.Sprintf("cc:v3:attr[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
 		bkc.BKDefaultOwnerID,
-		model.BkClassificationID,
 		model.BkObjID,
 	)
+}
+
+// TrySetRedis 尝试写入redis，忽略失败情况
+func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration) {
+	_, err := d.redisCli.Set(key, value, duration).Result()
+	if err != nil {
+		blog.Warnf("%s: flush to redis failed: %s", key, err)
+	} else {
+
+		blog.Infof("%s: flush to redis success", key)
+	}
+}
+
+// TryUnSetRedis 尝试移除redis缓存，忽略失败情况
+func (d *Discover) TryUnsetRedis(key string) {
+	_, err := d.redisCli.Del(key).Result()
+	if err != nil {
+		blog.Warnf("%s: remove from redis failed: %s", key, err)
+	} else {
+
+		blog.Infof("%s: remove from redis success", key)
+	}
 }
 
 // GetModel 查询模型元数据
-func (d *Discover) GetModel(msg string) (ListResult, error) {
+func (d *Discover) GetModel(model Model, modelKey string) (ListResult, error) {
 
 	var nilR = ListResult{}
 
-	model, err := d.parseModel(msg)
-	if err != nil {
-		return nilR, fmt.Errorf("parse model error: %s", err)
-	}
-
 	// construct the condition
 	cond := M{
-		bkc.BKObjIDField:            model.BkObjID,
-		bkc.BKClassificationIDField: model.BkClassificationID,
-		bkc.BKOwnerIDField:          bkc.BKDefaultOwnerID,
-		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
+		bkc.BKObjIDField:   model.BkObjID,
+		bkc.BKOwnerIDField: bkc.BKDefaultOwnerID,
+		//bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
 	// try fetch redis cache
-	modelKey := d.CreateModelKey(*model)
 	modelData, err := d.GetModelFromRedis(modelKey)
 	if err == nil {
 		blog.Infof("model exist in redis: %s", modelKey)
@@ -522,23 +526,14 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 		return nilR, err
 	}
 
-	// flush to redis
+	// try flush to redis, maybe fail
 	if dR.Result && len(dR.Data) > 0 {
 
 		val, err := M(dR.Data[0]).toJson()
 		if err != nil {
-			blog.Infof("%s: flush to redis marshal failed: %s", modelKey, err)
-			return dR, nil
+			blog.Errorf("%s: flush to redis marshal failed: %s", modelKey, err)
 		}
-
-		_, err = d.redisCli.Set(modelKey, val, cacheTime).Result()
-		if err != nil {
-			blog.Infof("%s: flush to redis failed: %s", modelKey, err)
-			return dR, nil
-		}
-
-		blog.Errorf("%s: flush to redis success", modelKey)
-
+		d.TrySetRedis(modelKey, val, cacheTime)
 	}
 
 	return dR, nil
@@ -548,7 +543,13 @@ func (d *Discover) GetModel(msg string) (ListResult, error) {
 // TryCreateModel 创建模型元数据
 func (d *Discover) TryCreateModel(msg string) error {
 
-	dR, err := d.GetModel(msg)
+	model, err := d.parseModel(msg)
+	if err != nil {
+		return fmt.Errorf("parse model error: %s", err)
+	}
+
+	modelKey := d.CreateModelKey(*model)
+	dR, err := d.GetModel(*model, modelKey)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
@@ -560,17 +561,12 @@ func (d *Discover) TryCreateModel(msg string) error {
 	}
 
 	//create model
-	model, err := d.parseModel(msg)
-	if err != nil {
-		return fmt.Errorf("parse model error: %s", err.Error())
-	}
-
 	body := M{
 		bkc.BKClassificationIDField: model.BkClassificationID,
 		bkc.BKObjIDField:            model.BkObjID,
 		bkc.BKObjNameField:          model.BkObjName,
 		bkc.BKOwnerIDField:          bkc.BKDefaultOwnerID,
-		bkc.BKObjIconField:          "icon-cc-middleware",
+		bkc.BKObjIconField:          defaultModelIcon,
 		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
@@ -594,34 +590,35 @@ func (d *Discover) TryCreateModel(msg string) error {
 }
 
 // GetInst 获取模型实例信息
-func (d *Discover) GetInst(objID string, keys []string, bodyMap M) (DetailResult, error) {
+func (d *Discover) GetInst(objID string, keys []string, instKey string) (DetailResult, error) {
 
 	var nilR = DetailResult{}
 
-	// build condition
-	condition := M{
-		//bkc.CreatorField: bkc.CCSystemCollectorUserName,
-		bkc.BKObjIDField: objID,
-	}
-
-	for _, key := range keys {
-		keyStr := string(key)
-		condition[keyStr] = bodyMap[keyStr]
+	// try fetch inst cache from redis
+	instData, err := d.GetInstFromRedis(instKey)
+	if err == nil {
+		blog.Infof("inst exist in redis: %s", instKey)
+		return instData, nil
+	} else {
+		blog.Errorf("get inst from redis error: %s", err)
 	}
 
 	// construct the condition
-	cond := M{
+	condition := M{
 		"fields": []string{},
 		"page": M{
 			"start": 0,
 			"limit": 1,
 			"sort":  bkc.BKInstNameField,
 		},
-		"condition": condition,
+		"condition": M{
+			bkc.BKCollectorKeyField: instKey,
+			bkc.BKObjIDField:        objID,
+		},
 	}
 
 	// marshal the condition
-	condJs, err := cond.toJson()
+	condJs, err := condition.toJson()
 	if err != nil {
 		return nilR, fmt.Errorf("marshal condition error: %s", err)
 	}
@@ -636,13 +633,23 @@ func (d *Discover) GetInst(objID string, keys []string, bodyMap M) (DetailResult
 		return nilR, err
 	}
 
-	//blog.Debug("search inst result: %s", res)
+	blog.Debug("search inst result: %s", res)
 
 	// parse inst data
 	dR, err := parseDetailResult(res)
 	if err != nil {
 		blog.Errorf("parse result error: %s", err)
 		return nilR, err
+	}
+
+	// try flush to redis, maybe fail
+	if dR.Result {
+
+		val, err := json.Marshal(dR)
+		if err != nil {
+			blog.Errorf("%s: flush to redis marshal failed: %s", instKey, err)
+		}
+		d.TrySetRedis(instKey, val, cacheTime)
 	}
 
 	return dR, nil
@@ -660,55 +667,36 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("parse model error: %s", err)
 	}
 
-	bodyMap, err := d.parseData(msg)
+	bodyData, err := d.parseData(msg)
 	if err != nil {
 		return fmt.Errorf("parse data error: %s", err)
 	}
 
+	// try fetch inst cache from redis
+	instKey := bodyData[bkc.BKCollectorKeyField]
+	instKeyStr, ok := instKey.(string)
+	if !ok || instKeyStr == "" {
+		return fmt.Errorf("skip inst because of empty collect_key: %s", instKeyStr)
+	}
+
 	// fetch key's values
 	keys := strings.Split(model.Keys, ",")
-	dR, err := d.GetInst(objID, keys, bodyMap)
+	dR, err := d.GetInst(objID, keys, instKeyStr)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
 
-	blog.Infof("get inst result: count=%d", dR.Data.Count)
-
-	bodyData, err := d.parseData(msg)
-	if nil != err {
-		return fmt.Errorf("parse inst data error: %s", err)
-	}
+	//blog.Infof("get inst result: count=%d", dR.Data.Count)
 
 	// create inst
 	if dR.Data.Count == 0 {
 
-		values := make([]string, len(keys))
-		for i, key := range keys {
-			keyStr := string(key)
-			valueStr, ok := bodyMap[keyStr].(string)
-			if !ok {
-				return fmt.Errorf("parse key error: %v(%s)", bodyMap, keyStr)
-			}
-			values[i] = valueStr
-		}
-
-		// add unique key to collector_key and reassign it to inst_name
-		//createJs := gjson.Get(msg, "data.data").String()
-		bodyData[bkc.BKCollectorKeyField] = strings.Join(values, "-")
-		bodyData[bkc.BKInstNameField] = bodyData[bkc.BKCollectorKeyField]
-		// add related host
-		bodyData["host"] = Host[bkc.BKHostIDField]
-
-		// marshal the condition
-		createJs, err := bodyData.toJson()
-		if err != nil {
-			return fmt.Errorf("marshal condition error: %s", err)
-		}
+		createJs := gjson.Get(msg, "data.data").String()
 
 		url := fmt.Sprintf("%s/topo/v1/inst/%s/%s", d.cc.TopoAPI(), bkc.BKDefaultOwnerID, objID)
 		blog.Infof("create inst url=%s, body=%s", url, createJs)
 
-		res, err := d.requests.POST(url, nil, createJs)
+		res, err := d.requests.POST(url, nil, []byte(createJs))
 		if nil != err {
 			return fmt.Errorf("create inst error: %s", err)
 		}
@@ -732,12 +720,13 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	// update info by sample data
 	hasDiff := false
-	for k, v := range bodyData {
-		if info[k] != v {
-			blog.Debug("[changed]%s: %v ---> %v", k, v, info[k])
+	for attrId, attrValue := range bodyData {
+		// skip single relation attr: host
+		if info[attrId] != attrValue && attrId != defaultRelateAttr {
+			blog.Debug("[changed]%s: %v ---> %v", attrId, attrValue, info[attrId])
 			hasDiff = true
 		}
-		info[k] = v
+		info[attrId] = attrValue
 	}
 
 	if !hasDiff {
@@ -745,15 +734,13 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return nil
 	}
 
-	// remove some keys
+	// remove some keys from query result
 	delete(info, bkc.BKObjIDField)
 	delete(info, bkc.BKOwnerIDField)
 	delete(info, bkc.BKDefaultField)
 	delete(info, bkc.BKInstIDField)
 	delete(info, bkc.LastTimeField)
 	delete(info, bkc.CreateTimeField)
-
-	//info[bkc.CreatorField] = bkc.CCSystemCollectorUserName
 
 	updateJs, err := json.Marshal(info)
 	if err != nil {
@@ -769,6 +756,9 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	}
 
 	blog.Infof("update inst result: %s", res)
+
+	// remove bad cache
+	d.TryUnsetRedis(instKeyStr)
 
 	return nil
 }
