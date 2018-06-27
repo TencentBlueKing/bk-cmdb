@@ -70,22 +70,14 @@
         },
         methods: {
             async initNetwork () {
-                try {
-                    const response = await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/search')
-                    if (response.result) {
-                        this.setNodes(response.data)
-                        this.setEdges(response.data)
-                        this.networkInstance = new Vis.Network(this.$el, {
-                            nodes: this.networkDataSet.nodes,
-                            edges: this.networkDataSet.edges
-                        }, this.network.options)
-                        this.addListener()
-                    } else {
-                        this.$alertMsg(response['bk_error_msg'])
-                    }
-                } catch (e) {
-                    this.$alertMsg(e.message)
-                }
+                const response = await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/search')
+                this.setNodes(response.data)
+                this.setEdges(response.data)
+                this.networkInstance = new Vis.Network(this.$el, {
+                    nodes: this.networkDataSet.nodes,
+                    edges: this.networkDataSet.edges
+                }, this.network.options)
+                this.addListener()
             },
             // 设置节点数据
             setNodes (data) {
@@ -180,7 +172,7 @@
                 })
             },
             // 批量更新节点位置信息
-            updateNodePosition (updateNodes) {
+            async updateNodePosition (updateNodes) {
                 if (!updateNodes.length) return
                 const nodePositions = this.networkInstance.getPositions(updateNodes.map(node => node.id))
                 const updateParams = updateNodes.map(node => {
@@ -195,11 +187,7 @@
                         }
                     }
                 })
-                this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/update', updateParams).then(res => {
-                    if (!res.result) {
-                        this.$alert(res['bk_error_msg'])
-                    }
-                })
+                await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/update', updateParams)
             },
             // 拓扑稳定后执行事件
             // 1.取消物理模拟

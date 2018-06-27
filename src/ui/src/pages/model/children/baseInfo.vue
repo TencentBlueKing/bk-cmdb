@@ -239,23 +239,18 @@
             /*
                 获取基本信息
             */
-            getBaseInfo (ObjId) {
+            async getBaseInfo (ObjId) {
                 let params = {
                     bk_obj_id: ObjId
                 }
-                this.$axios.post('objects', params).then(res => {
-                    if (res.result) {
-                        this.baseInfo = res.data[0]
-                        this.baseInfoCopy = this.$deepClone(res.data[0])
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                const res = await this.$axios.post('objects', params)
+                this.baseInfo = res.data[0]
+                this.baseInfoCopy = this.$deepClone(res.data[0])
             },
             /*
                 保存基本信息
             */
-            saveBaseInfo () {
+            async saveBaseInfo () {
                 $('#validate_form').parsley().validate()
                 if (!$('#validate_form').parsley().isValid()) return
                 let params = {
@@ -269,36 +264,27 @@
                 if (this.type === 'new') {
                     params['bk_obj_id'] = this.baseInfo['bk_obj_id']
                     if (this.isMainLine) { // 创建主线模型
-                        this.$axios.post('topo/model/mainline', {
+                        const mainLineParams = {
                             bk_classification_id: this.classificationId,
                             bk_obj_id: this.baseInfo['bk_obj_id'],
                             bk_obj_name: this.baseInfo['bk_obj_name'],
                             bk_supplier_account: this.bkSupplierAccount,
                             bk_asst_obj_id: this.associationId,
                             bk_obj_icon: this.iconValue
-                        }, {id: 'saveModel'}).then(res => {
-                            if (res.result) {
-                                this.$emit('baseInfoSuccess', {
-                                    bk_obj_name: this.baseInfo['bk_obj_name'],
-                                    bk_obj_id: this.baseInfo['bk_obj_id'],
-                                    id: res.data['id']
-                                })
-                            } else {
-                                this.$alertMsg(this.$t('ModelManagement["创建模型失败"]'))
-                            }
+                        }
+                        const res = await this.$axios.post('topo/model/mainline', mainLineParams, {id: 'saveModel'})
+                        this.$emit('baseInfoSuccess', {
+                            bk_obj_name: this.baseInfo['bk_obj_name'],
+                            bk_obj_id: this.baseInfo['bk_obj_id'],
+                            id: res.data['id']
                         })
                     } else {
-                        this.$axios.post('object', params, {id: 'saveModel'}).then(res => {
-                            if (res.result) {
-                                this.$emit('baseInfoSuccess', {
-                                    bk_obj_name: this.baseInfo['bk_obj_name'],
-                                    bk_obj_id: this.baseInfo['bk_obj_id'],
-                                    id: res.data['id'],
-                                    bk_obj_icon: this.iconValue
-                                })
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
+                        const res = await this.$axios.post('object', params, {id: 'saveModel'})
+                        this.$emit('baseInfoSuccess', {
+                            bk_obj_name: this.baseInfo['bk_obj_name'],
+                            bk_obj_id: this.baseInfo['bk_obj_id'],
+                            id: res.data['id'],
+                            bk_obj_icon: this.iconValue
                         })
                     }
                 } else if (this.type === 'change') {
@@ -306,21 +292,16 @@
                         this.cancel()
                     } else {
                         params['bk_ispre'] = this.baseInfo['bk_ispre']
-                        this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveModel'}).then(res => {
-                            if (res.result) {
-                                this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
-                                this.$emit('confirm', {
-                                    bk_obj_name: this.baseInfo['bk_obj_name'],
-                                    bk_obj_id: this.baseInfo['bk_obj_id']
-                                })
-                                this.$store.commit('navigation/updateModel', {
-                                    bk_classification_id: this.classificationId,
-                                    bk_obj_id: this.baseInfo['bk_obj_id'],
-                                    bk_obj_name: this.baseInfo['bk_obj_name']
-                                })
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
+                        await this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveModel'})
+                        this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
+                        this.$emit('confirm', {
+                            bk_obj_name: this.baseInfo['bk_obj_name'],
+                            bk_obj_id: this.baseInfo['bk_obj_id']
+                        })
+                        this.$store.commit('navigation/updateModel', {
+                            bk_classification_id: this.classificationId,
+                            bk_obj_id: this.baseInfo['bk_obj_id'],
+                            bk_obj_name: this.baseInfo['bk_obj_name']
                         })
                     }
                 }

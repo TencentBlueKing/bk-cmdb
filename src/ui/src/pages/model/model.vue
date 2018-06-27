@@ -350,9 +350,8 @@
                 this.curTabName = 'host'
                 this.curModel = item
                 this.curModel.type = 'change'
-                let self = this
-                setTimeout(function () {
-                    self.$refs.field.init()
+                setTimeout(() => {
+                    this.$refs.field.init()
                 }, 300)
                 this.slider.isBusinessShow = true
                 this.isEditClassify = false
@@ -367,17 +366,12 @@
             /*
                 重新启用模型
             */
-            restartModel (item) {
+            async restartModel (item) {
                 let params = {
                     bk_ispaused: false
                 }
-                this.$axios.put(`object/${item['id']}`, params).then(res => {
-                    if (res.result) {
-                        this.getTopogical()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                await this.$axios.put(`object/${item['id']}`, params)
+                this.getTopogical()
             },
             /*
                 新增分类
@@ -397,49 +391,39 @@
             /*
                 保存分类
             */
-            saveClassify (classification) {
+            async saveClassify (classification) {
                 if (this.category === 'edit') {   // 更新分类信息
-                    let params = {
+                    const params = {
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    this.$axios.put(`object/classification/${this.curClassify['id']}`, params, {id: 'saveClassify'}).then(res => {
-                        if (res.result) { // 保存时显示当前项
-                            for (var i = 0; i < this.classifyList.length; i++) {
-                                if (this.classifyList[i]['bk_classification_id'] === this.curClassify['bk_classification_id']) {
-                                    this.getClassifyList(i)
-                                }
-                            }
-                            this.isEditClassify = false
-                            this.isPopShow = false
-                            this.isChoose = true
-                            this.curClassify['bk_classification_name'] = classification['bk_classification_name']
-                            this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
-                            this.curTempClassify = this.$deepClone(this.curClassify)
-                            this.$store.commit('navigation/updateClassification', {
-                                bk_classification_id: classification['bk_classification_id'],
-                                bk_classification_name: classification['bk_classification_name'],
-                                bk_classification_icon: classification['bk_classification_icon']
-                            })
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
+                    await this.$axios.put(`object/classification/${this.curClassify['id']}`, params, {id: 'saveClassify'})
+                    for (var i = 0; i < this.classifyList.length; i++) {
+                        if (this.classifyList[i]['bk_classification_id'] === this.curClassify['bk_classification_id']) {
+                            this.getClassifyList(i)
                         }
+                    }
+                    this.isEditClassify = false
+                    this.isPopShow = false
+                    this.isChoose = true
+                    this.curClassify['bk_classification_name'] = classification['bk_classification_name']
+                    this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
+                    this.curTempClassify = this.$deepClone(this.curClassify)
+                    this.$store.commit('navigation/updateClassification', {
+                        bk_classification_id: classification['bk_classification_id'],
+                        bk_classification_name: classification['bk_classification_name'],
+                        bk_classification_icon: classification['bk_classification_icon']
                     })
                 } else { // 新增分类
-                    let createParams = {
+                    const createParams = {
                         bk_classification_id: classification['bk_classification_id'],
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    this.$axios.post('object/classification', createParams, {id: 'saveClassify'}).then((res) => {
-                        if (res.result) {
-                            this.getClassifyList(this.classifyList.length)
-                            this.isEditClassify = false
-                            this.isPopShow = false
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    await this.$axios.post('object/classification', createParams, {id: 'saveClassify'})
+                    this.getClassifyList(this.classifyList.length)
+                    this.isEditClassify = false
+                    this.isPopShow = false
                 }
             },
             /*
@@ -637,14 +621,9 @@
                     }
                 })
             },
-            deletes () {
-                this.$axios.delete(`object/classification/${this.curTempClassify['id']}`).then(res => {
-                    if (res.result) {
-                        this.getClassifyList()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async deletes () {
+                await this.$axios.delete(`object/classification/${this.curTempClassify['id']}`)
+                this.getClassifyList()
             },
             /*
                 保存基本信息成功
@@ -705,7 +684,7 @@
                 查询模型分类
                 index: 查完后当前显示项
             */
-            getClassifyList (index) {
+            async getClassifyList (index) {
                 // 默认查全部
                 let params = {}
                 this.isClassifyLoading = true
