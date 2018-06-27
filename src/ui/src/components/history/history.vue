@@ -49,7 +49,12 @@
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
-            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content" :height="300" :width="635"></v-history-details>
+            <v-history-details style="padding: 0 40px;" 
+                :details="details.data"
+                :isShow="this.details.isShow" 
+                slot="content" 
+                :height="342" 
+                :width="635"></v-history-details>
         </div>
     </div>
 </template>
@@ -148,6 +153,7 @@
                     $dateRangePicker.selectedDateRangeTmp = [this.initDate.start, this.initDate.end]
                     this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
                     this.filter.user = ''
+                    this.table.pagination.current = 1
                 }
             }
         },
@@ -246,7 +252,7 @@
         top:20px;
         left: 30px;
         width: 709px;
-        height: 524px;
+        height: 577px;
         background-color: #ffffff;
         box-shadow: 0px 2px 9px 0px rgba(0, 0, 0, 0.4);
         z-index: 1;
