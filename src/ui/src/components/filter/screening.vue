@@ -41,6 +41,19 @@
                     </label>
                 </div>
             </div>
+            <div class="screening-group screening-group-scope" v-if="isShowScope">
+                <label class="screening-group-label">{{$t("Hosts['搜索范围']")}}</label>
+                <div class="screening-group-item screening-group-item-scope">
+                    <label class="bk-form-checkbox">
+                        <input type="checkbox" v-model="scope" :true-value="1" :false-value="0">
+                        <span>{{$t("Hosts['未分配主机']")}}</span>
+                    </label>
+                    <label class="bk-form-checkbox">
+                        <input type="checkbox" v-model="scope" :true-value="0" :false-value="1">
+                        <span>{{$t("Hosts['已分配主机']")}}</span>
+                    </label>
+                </div>
+            </div>
             <template v-for="(column, index) in localQueryColumns">
                 <div class="screening-group" v-if="column['bk_property_id'] !== 'bk_host_innerip' && column['bk_property_id'] !== 'bk_host_outerip'">
                     <label class="screening-group-label">{{getColumnLabel(column)}}</label>
@@ -146,6 +159,10 @@
             isShowBiz: {
                 type: Boolean,
                 default: true
+            },
+            isShowScope: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -157,6 +174,7 @@
                     'bk_host_outerip': true,
                     'exact': 1
                 },
+                scope: 1, // 0 业务；1资源池
                 localQueryColumnData: {},
                 localQueryColumns: [],
                 operators: {
@@ -233,7 +251,15 @@
                         exact: this.ip.exact,
                         data: this.ipData
                     },
-                    condition: []
+                    condition: [{
+                        'bk_obj_id': 'biz',
+                        'condition': [{
+                            field: 'default',
+                            operator: this.scope === 1 ? '$eq' : '$ne',
+                            value: 1
+                        }],
+                        fields: []
+                    }]
                 }
                 Object.keys(this.localQueryColumnData).map(columnPropertyId => {
                     let column = this.localQueryColumnData[columnPropertyId]
@@ -469,6 +495,12 @@
     }
     .screening-group{
         padding: 20px 0 0 0;
+        &.screening-group-scope{
+            padding: 10px 0 0 0;
+            .screening-group-label{
+                padding: 0;
+            }
+        }
         .screening-group-label{
             display: block;
             font-size: 14px;
