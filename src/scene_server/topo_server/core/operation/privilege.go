@@ -27,20 +27,23 @@ type PermissionOperationInterface interface {
 
 // NewPermissionOperation create the permission operation
 func NewPermissionOperation(client apimachinery.ClientSetInterface) PermissionOperationInterface {
-	return &permissionOperation{}
+	return &permissionOperation{
+		client: client,
+	}
 }
 
 type permissionOperation struct {
+	client apimachinery.ClientSetInterface
 }
 
 func (p *permissionOperation) Permission(params types.LogicParams) privilege.PermissionInterface {
-	return nil
+	return privilege.NewPermission(params, p.client)
 }
 
 func (p *permissionOperation) UserGroup(params types.LogicParams) privilege.UserGroupInterface {
-	return nil
+	return privilege.NewUserGroup(params, p.client)
 }
 
 func (p *permissionOperation) Role(params types.LogicParams) privilege.RolePermission {
-	return nil
+	return privilege.NewRole(params, p.client)
 }
