@@ -14,8 +14,6 @@ package types
 
 import (
 	"configcenter/src/common"
-	"database/sql/driver"
-	"errors"
 )
 
 // Event Cache Keys
@@ -46,49 +44,3 @@ const (
 
 	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
 )
-
-// TableNames
-const (
-	TableNameSubscription = "cc_Subscription"
-)
-
-// EventAction
-const (
-	EventActionCreate = "create"
-	EventActionUpdate = "update"
-	EventActionDelete = "delete"
-)
-
-// EventType define
-type EventType string
-
-// EventType enumeration
-const (
-	EventTypeInstData           = "instdata"
-	EventTypeRelation           = "relation"
-	EventTypeResourcePoolModule = "resource"
-)
-
-// ConfirmMode define
-type ConfirmMode string
-
-// ConfirmMode define
-var (
-	ConfirmmodeHttpstatus = "httpstatus"
-	ConfirmmodeRegular    = "regular"
-)
-
-// Scan implement sql driver's Scan interface
-func (n *ConfirmMode) Scan(value interface{}) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.New("invalid type convert")
-	}
-	*n = ConfirmMode(string(b))
-	return nil
-}
-
-// Value implement sql driver's Value interface
-func (n ConfirmMode) Value() (driver.Value, error) {
-	return string(n), nil
-}

@@ -22,7 +22,15 @@ import (
 type Service struct {
 	*backbone.Engine
 	db    storage.DI
-	cache redis.Client
+	cache *redis.Client
+}
+
+func (s *Service) SetDB(db storage.DI) {
+	s.db = db
+}
+
+func (s *Service) SetCache(db *redis.Client) {
+	s.cache = db
 }
 
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {

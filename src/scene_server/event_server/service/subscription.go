@@ -38,7 +38,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	sub := &types.Subscription{}
+	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("add subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -49,7 +49,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
 	}
-	if sub.ConfirmMode == types.ConfirmmodeHttpstatus &&
+	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus &&
 		sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = "200"
 	}
@@ -104,7 +104,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	}
 
 	// query old Subscription
-	sub := types.Subscription{}
+	sub := metadata.Subscription{}
 	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
 	if err := instdata.GetOneSubscriptionByCondition(condiction, &sub); err != nil {
 		blog.Error("fail to get subscription by id %v, error information is %v", id, err)
@@ -148,14 +148,14 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	}
 	blog.Info("update subscription %v", id)
 
-	sub := &types.Subscription{}
+	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("update subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	// query old Subscription
-	oldsub := types.Subscription{}
+	oldsub := metadata.Subscription{}
 	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
 	if err := instdata.GetOneSubscriptionByCondition(condiction, &oldsub); err != nil {
 		blog.Error("fail to get subscription by id %v, error information is %v", id, err)
@@ -247,7 +247,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	results := []types.Subscription{}
+	results := []metadata.Subscription{}
 	blog.Debug("selector:%+v", condition)
 	if selerr := instdata.GetSubscriptionByCondition(fields, condition, &results, sort, skip, limit); nil != selerr {
 		blog.Error("select data failed, error information is %s, input:%v", selerr, dat)
@@ -259,7 +259,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
 		failue, _ := strconv.ParseInt(val["failue"], 10, 64)
 		total, _ := strconv.ParseInt(val["total"], 10, 64)
-		results[index].Statistics = &types.Statistics{
+		results[index].Statistics = &metadata.Statistics{
 			Total:   total,
 			Failure: failue,
 		}

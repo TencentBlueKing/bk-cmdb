@@ -50,6 +50,10 @@ type MgoCli struct {
 	session   *mgo.Session
 }
 
+func NewFromConfig(cfg MongoConfig) (*MgoCli, error) {
+	return NewMgoCli(cfg.Address, cfg.Port, cfg.User, cfg.Password, cfg.Mechanism, cfg.Database)
+}
+
 func NewMgoCli(host, port, usr, pwd, mechanism, database string) (*MgoCli, error) {
 	mgocli := new(MgoCli)
 	mgocli.host = host

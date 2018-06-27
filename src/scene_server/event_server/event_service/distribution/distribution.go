@@ -1,21 +1,22 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package distribution
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
@@ -43,15 +44,15 @@ func StartDistribute() (err error) {
 	// start distribution goroutines
 	chErr := make(chan error)
 	routines := map[int64]chan struct{}{}
-	renewMaps := map[int64]chan types.Subscription{}
+	renewMaps := map[int64]chan metadata.Subscription{}
 	for _, str := range subscribers {
-		subscriber := types.Subscription{}
+		subscriber := metadata.Subscription{}
 		if err := json.Unmarshal([]byte(str), &subscriber); err != nil {
 			return err
 		}
 
 		done := make(chan struct{})
-		renewCh := make(chan types.Subscription)
+		renewCh := make(chan metadata.Subscription)
 		go func() {
 			err := distToSubscribe(subscriber, renewCh, done)
 			if err != nil {
@@ -70,7 +71,7 @@ func StartDistribute() (err error) {
 		for {
 			mesg := <-MsgChan
 			action := mesg[:6]
-			subscriber := types.Subscription{}
+			subscriber := metadata.Subscription{}
 			blog.Infof("mesg: action:%s ,body:%s", mesg[:6], mesg[6:])
 			if err := json.Unmarshal([]byte(mesg[6:]), &subscriber); err != nil {
 				chErr <- err
@@ -80,7 +81,7 @@ func StartDistribute() (err error) {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
 				done := make(chan struct{})
-				renewCh := make(chan types.Subscription)
+				renewCh := make(chan metadata.Subscription)
 				go func() {
 					err := distToSubscribe(subscriber, renewCh, done)
 					if err != nil {
@@ -107,7 +108,7 @@ func StartDistribute() (err error) {
 
 }
 
-func distToSubscribe(param types.Subscription, chNew chan types.Subscription, done chan struct{}) (err error) {
+func distToSubscribe(param metadata.Subscription, chNew chan metadata.Subscription, done chan struct{}) (err error) {
 	blog.Infof("start handle dist %v", param.SubscriptionID)
 	defer func() {
 		if err == nil {
@@ -146,7 +147,7 @@ func distToSubscribe(param types.Subscription, chNew chan types.Subscription, do
 	}
 }
 
-func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
+func handleDist(sub *metadata.Subscription, dist *metadata.DistInstCtx) (err error) {
 	blog.Infof("handling dist %s", dist.Raw)
 	distID := fmt.Sprint(dist.DstbID - 1)
 	subscriberID := fmt.Sprint(dist.SubscriptionID)
@@ -207,7 +208,7 @@ func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
 	return
 }
 
-func popDistInst(subID int64) *types.DistInstCtx {
+func popDistInst(subID int64) *metadata.DistInstCtx {
 	eventseletor := common.KvMap{
 		"expire": time.Second * 60,
 		"key":    []string{types.EventCacheDistQueuePrefix + fmt.Sprint(subID)},
@@ -221,16 +222,16 @@ func popDistInst(subID int64) *types.DistInstCtx {
 
 	// Unmarshal event
 	eventbytes := []byte(eventslice[1])
-	event := types.DistInst{}
+	event := metadata.DistInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
 
-	return &types.DistInstCtx{DistInst: event, Raw: eventslice[1]}
+	return &metadata.DistInstCtx{DistInst: event, Raw: eventslice[1]}
 }
 
-func saveDistDone(dist *types.DistInstCtx) (err error) {
+func saveDistDone(dist *metadata.DistInstCtx) (err error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	if err = redisCli.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
 		return

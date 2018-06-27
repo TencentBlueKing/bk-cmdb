@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
@@ -64,7 +65,7 @@ func StartHandleInsts() (err error) {
 	}
 }
 
-func handleInst(event *types.EventInstCtx) (err error) {
+func handleInst(event *metadata.EventInstCtx) (err error) {
 	blog.Info("handling event inst : %v", event.Raw)
 	defer blog.Info("done event inst : %v", event.ID)
 	if err = saveRunning(types.EventCacheEventRunningPrefix+fmt.Sprint(event.ID), timeout); err != nil {
@@ -146,20 +147,20 @@ func handleInst(event *types.EventInstCtx) (err error) {
 	return
 }
 
-func GetDistInst(e *types.EventInst) []types.DistInst {
-	distinst := types.DistInst{
+func GetDistInst(e *metadata.EventInst) []metadata.DistInst {
+	distinst := metadata.DistInst{
 		EventInst: *e,
 	}
 	distinst.ID = 0
-	var ds []types.DistInst
+	var ds []metadata.DistInst
 	var m map[string]interface{}
-	if e.EventType == types.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
+	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
 		var ok bool
 
 		if len(e.Data) <= 0 {
 			return nil
 		}
-		if e.Action == types.EventActionDelete {
+		if e.Action == metadata.EventActionDelete {
 			m, ok = e.Data[0].PreData.(map[string]interface{})
 		} else {
 			m, ok = e.Data[0].CurData.(map[string]interface{})
@@ -201,7 +202,7 @@ func nextDistID(eventtype string) (nextid int64, err error) {
 	return int64(id), nil
 }
 
-func SaveEventDone(event *types.EventInstCtx) (err error) {
+func SaveEventDone(event *metadata.EventInstCtx) (err error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	if err = redisCli.HSet(types.EventCacheEventDoneKey, fmt.Sprint(event.ID), event.Raw).Err(); err != nil {
 		return
@@ -259,7 +260,7 @@ func findEventTypeSubscribers(eventtype string) []string {
 	return redisCli.SMembers(types.EventCacheSubscribeformKey + eventtype).Val()
 }
 
-func popEventInst() *types.EventInstCtx {
+func popEventInst() *metadata.EventInstCtx {
 	var eventstr string
 
 	// TODO 添加stop处理命令和退出流程
@@ -272,11 +273,11 @@ func popEventInst() *types.EventInstCtx {
 
 	// Unmarshal event
 	eventbytes := []byte(eventstr)
-	event := types.EventInst{}
+	event := metadata.EventInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
 
-	return &types.EventInstCtx{EventInst: event, Raw: eventstr}
+	return &metadata.EventInstCtx{EventInst: event, Raw: eventstr}
 }

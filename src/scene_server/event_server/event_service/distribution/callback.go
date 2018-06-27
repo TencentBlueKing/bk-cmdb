@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 	"fmt"
 	redis "gopkg.in/redis.v5"
@@ -26,7 +27,7 @@ import (
 	"time"
 )
 
-func SendCallback(receiver *types.Subscription, event string) (err error) {
+func SendCallback(receiver *metadata.Subscription, event string) (err error) {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	redisCli.HIncrBy(types.EventCacheDistCallBackCountPrefix+fmt.Sprint(receiver.SubscriptionID), "total", 1)
 
@@ -49,12 +50,12 @@ func SendCallback(receiver *types.Subscription, event string) (err error) {
 	}
 	defer resp.Body.Close()
 	respdata, _ := ioutil.ReadAll(resp.Body)
-	if receiver.ConfirmMode == types.ConfirmmodeHttpstatus {
+	if receiver.ConfirmMode == metadata.ConfirmmodeHttpstatus {
 		if strconv.Itoa(resp.StatusCode) != receiver.ConfirmPattern {
 			redisCli.HIncrBy(types.EventCacheDistCallBackCountPrefix+fmt.Sprint(receiver.SubscriptionID), "failue", 1)
 			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respdata, event)
 		}
-	} else if receiver.ConfirmMode == types.ConfirmmodeRegular {
+	} else if receiver.ConfirmMode == metadata.ConfirmmodeRegular {
 		pattern, err := regexp.Compile(receiver.ConfirmPattern)
 		if err != nil {
 			return fmt.Errorf("event distribute fail, build regexp error: %v", err)

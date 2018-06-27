@@ -14,6 +14,8 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/redisclient"
 
 	"github.com/spf13/pflag"
 )
@@ -41,24 +43,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB MonngoDB
-	Redis   Redis
-}
-
-type MonngoDB struct {
-	Host         string
-	Usr          string
-	Pwd          string
-	Database     string
-	Port         int
-	MaxOpenConns int
-	MaxIDleConns int
-}
-type Redis struct {
-	Host         string
-	Pwd          string
-	Database     string
-	Port         int
-	MaxOpenConns int
-	MaxIDleConns int
+	MongoDB mgoclient.MongoConfig
+	Redis   redisclient.RedisConfig
 }
