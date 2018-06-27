@@ -71,6 +71,17 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 			instID = int64(id)
 		case int64:
 			instID = int64(id)
+		case float32:
+			instID = int64(id)
+		case float64:
+			instID = int64(id)
+		}
+		if instID <= 0 {
+			instID, err = db.GetIncID(tablename)
+			if err != nil {
+				return 0, nil, err
+			}
+			data[idfieldname] = instID
 		}
 	}
 
