@@ -10,26 +10,29 @@
  * limitations under the License.
  */
 
-package privilege
+package compatiblev2
 
-// RolePermission role permission
-type RolePermission interface {
-	CreatePermission(supplierAccount, objID, propertyID string) error
-	GetPermission(supplierAccount, objID, propertyID string)
+// SetInterface set interface
+type SetInterface interface {
+	UpdateMultiSet()
+	DeleteMultiSet()
+	DeleteSetHost()
 }
 
-// NewRole create a new role instance
-func NewRole() RolePermission {
-	return &rolePermission{}
+// NewSet ceate a new set instance
+func NewSet() SetInterface {
+	return &set{}
 }
 
-type rolePermission struct {
+type set struct {
 }
 
-func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID string) error {
-	return nil
-}
+func (s *set) UpdateMultiSet() {
 
-func (r *rolePermission) GetPermission(supplierAccount, objID, propertyID string) {
-	return
+}
+func (s *set) DeleteMultiSet() {
+
+}
+func (s *set) DeleteSetHost() {
+
 }

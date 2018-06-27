@@ -10,26 +10,37 @@
  * limitations under the License.
  */
 
-package privilege
+package compatiblev2
 
-// RolePermission role permission
-type RolePermission interface {
-	CreatePermission(supplierAccount, objID, propertyID string) error
-	GetPermission(supplierAccount, objID, propertyID string)
+// ModuleInterface module interface
+type ModuleInterface interface {
+	UpdateMultiModule()
+	SearchModuleByApp()
+	SearchModuleByProperty()
+	AddMultiModule()
+	DeleteMultiModule()
 }
 
-// NewRole create a new role instance
-func NewRole() RolePermission {
-	return &rolePermission{}
+// NewModule create a module instance
+func NewModule() ModuleInterface {
+	return &module{}
 }
 
-type rolePermission struct {
+type module struct {
 }
 
-func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID string) error {
-	return nil
-}
+func (m *module) UpdateMultiModule() {
 
-func (r *rolePermission) GetPermission(supplierAccount, objID, propertyID string) {
-	return
+}
+func (m *module) SearchModuleByApp() {
+
+}
+func (m *module) SearchModuleByProperty() {
+
+}
+func (m *module) AddMultiModule() {
+
+}
+func (m *module) DeleteMultiModule() {
+
 }

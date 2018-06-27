@@ -25,8 +25,10 @@ type PermissionInterface interface {
 	GetUserPermission(supplierAccount, userName string)
 }
 
-func NewPermission() {
+// NewPermission create a new permission instance
+func NewPermission() PermissionInterface {
 
+	return &userGroupPermission{}
 }
 
 // userGroupPermission the permission user group definitions
@@ -37,4 +39,15 @@ type userGroupPermission struct {
 // MarshalJSON marshal the data into json
 func (u *userGroupPermission) MarshalJSON() ([]byte, error) {
 	return json.Marshal(u.permission)
+}
+
+func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, gourpID string, permission *metadata.PrivilegeUserGroup) error {
+	return nil
+}
+func (u *userGroupPermission) GetUserGroupPermission(supplierAccount, groupID string) ([]*metadata.PrivilegeUserGroup, error) {
+	return nil, nil
+}
+
+func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string) {
+	return
 }
