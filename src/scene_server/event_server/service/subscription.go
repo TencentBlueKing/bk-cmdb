@@ -14,21 +14,8 @@ package service
 
 import (
 	"bytes"
-	"configcenter/src/common"
-	"configcenter/src/common/bkbase"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/metadata"
-	paraparse "configcenter/src/common/paraparse"
-	commontypes "configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/instdata"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -36,6 +23,14 @@ import (
 	"strings"
 
 	"github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	commontypes "configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/event_server/types"
+	"configcenter/src/source_controller/common/instdata"
 )
 
 // Subscribe  Subscribe events
@@ -76,10 +71,6 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	// save to subscribeform in cache
 	events := strings.Split(sub.SubscriptionForm, ",")
 	for _, event := range events {
-		cacheValue := common.KvMap{
-			"key":    types.EventCacheSubscribeformKey + event,
-			"values": []string{fmt.Sprint(sub.SubscriptionID)},
-		}
 		if err := s.cache.SAdd(types.EventCacheSubscribeformKey+event, sub.SubscriptionID).Err(); err != nil {
 			blog.Error("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
@@ -91,7 +82,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	s.cache.Publish(types.EventCacheProcessChannel, "create"+string(mesg))
 	s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
 
-	resp.WriteEntity(metadata.CreateSubscription{
+	resp.WriteEntity(metadata.RspSubscriptionCreate{
 		BaseResp: metadata.SuccessBaseResp,
 		Data: struct {
 			SubscriptionID int64 `json:"subscription_id"`
@@ -232,10 +223,9 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	blog.Info("select subscription")
 
-	var dat metadata.SubscribeCommonSearch
-
+	var dat metadata.ParamSubscriptionSearch
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
-		blog.Errorf("update subscription, but decode body failed, err: %v", err)
+		blog.Errorf("search subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -252,22 +242,24 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	count, err := instdata.GetSubscriptionCntByCondition(condition)
 	if err != nil {
-		blog.Error("get host count error, input:%v error:%v", value, err)
-		return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribeSelectFailed)
+		blog.Error("get host count error, input:%+v error:%v", dat, err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
+		return
 	}
-	results := []*types.Subscription{}
+
+	results := []types.Subscription{}
 	blog.Debug("selector:%+v", condition)
 	if selerr := instdata.GetSubscriptionByCondition(fields, condition, &results, sort, skip, limit); nil != selerr {
 		blog.Error("select data failed, error information is %s, input:%v", selerr, dat)
-		return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribeSelectFailed)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
+		return
 	}
 
-	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	for _, sub := range results {
-		val := redisCli.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID)).Val()
+	for index := range results {
+		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
 		failue, _ := strconv.ParseInt(val["failue"], 10, 64)
 		total, _ := strconv.ParseInt(val["total"], 10, 64)
-		sub.Statistics = &types.Statistics{
+		results[index].Statistics = &types.Statistics{
 			Total:   total,
 			Failure: failue,
 		}
@@ -276,70 +268,74 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 	info := make(map[string]interface{})
 	info["count"] = count
 	info["info"] = results
-	return http.StatusOK, info, nil
-
+	resp.WriteEntity(
+		metadata.NewSuccessResp(
+			metadata.RspSubscriptionSearch{
+				Count: count,
+				Info:  results,
+			}))
 }
 
 func (s *Service) Ping(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	cli.CallResponseEx(func() (int, interface{}, error) {
 
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("read request body failed, error information is %s", err.Error())
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		pjson := gjson.ParseBytes(value)
-		callbackurl := pjson.Get("callback_url").String()
-		callbackBody := pjson.Get("data").String()
+	var dat metadata.ParamSubscriptionTestCallback
+	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
+		blog.Errorf("ping subscription, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
 
-		blog.Infof("requesting callback: %v,%s", callbackurl, callbackBody)
-		callbackreq, _ := http.NewRequest("POST", callbackurl, bytes.NewBufferString(callbackBody))
-		callbackResp, err := http.DefaultClient.Do(callbackreq)
-		if err != nil {
-			blog.Error("test distribute error:%v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribePingFailed)
-		}
-		defer callbackResp.Body.Close()
+	callbackurl := dat.CallbackUrl
+	callbackBody := dat.Data
 
-		callbackRespBody, err := ioutil.ReadAll(callbackResp.Body)
-		if err != nil {
-			blog.Error("test distribute error:%v", err)
-		}
-		result := map[string]interface{}{}
-		result["http_status"] = callbackResp.StatusCode
-		result["response_body"] = string(callbackRespBody)
+	blog.Infof("requesting callback: %v,%s", callbackurl, callbackBody)
+	callbackreq, _ := http.NewRequest("POST", callbackurl, bytes.NewBufferString(callbackBody))
+	callbackResp, err := http.DefaultClient.Do(callbackreq)
+	if err != nil {
+		blog.Error("test distribute error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribePingFailed)})
+		return
+	}
+	defer callbackResp.Body.Close()
 
-		return http.StatusOK, result, nil
-	}, resp)
+	callbackRespBody, err := ioutil.ReadAll(callbackResp.Body)
+	if err != nil {
+		blog.Error("test distribute error:%v", err)
+	}
+	result := metadata.RspSubscriptionTestCallback{}
+	result.HttpStatus = callbackResp.StatusCode
+	result.ResponseBody = string(callbackRespBody)
+
+	resp.WriteEntity(metadata.NewSuccessResp(result))
 }
 
 func (s *Service) Telnet(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("read request body failed, error information is %s", err.Error())
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		pjson := gjson.ParseBytes(value)
-		callbackurl := pjson.Get("callback_url").String()
-		uri, err := util.GetDailAddress(callbackurl)
-		if err != nil {
-			blog.Error("telent callback error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Errorf(common.CCErrCommParamsInvalid, "bk_callback_url")
-		}
-		blog.Infof("telnet %", uri)
+	var dat metadata.ParamSubscriptionTelnet
+	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
+		blog.Errorf("telnet subscription, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	callbackurl := dat.CallbackUrl
+	uri, err := util.GetDailAddress(callbackurl)
+	if err != nil {
+		blog.Error("telent callback error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_callback_url")})
+		return
+	}
+	blog.Infof("telnet %", uri)
 
-		conn, err := net.Dial("tcp", uri)
-		if err != nil {
-			blog.Error("telent callback error:%v", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeTelnetFailed)
-		}
-		conn.Close()
+	conn, err := net.Dial("tcp", uri)
+	if err != nil {
+		blog.Error("telent callback error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeTelnetFailed)})
+		return
+	}
+	conn.Close()
 
-		return http.StatusOK, nil, nil
-	}, resp)
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
