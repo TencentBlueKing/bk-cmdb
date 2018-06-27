@@ -184,6 +184,17 @@ func (d *Discover) parseObjID(msg string) string {
 	return gjson.Get(msg, "data.meta.model.bk_obj_id").String()
 }
 
+// parseObjID 解析开发商id
+func (d *Discover) parseOwnerId(msg string) string {
+	ownerId := gjson.Get(msg, "data.host.bk_supplier_account").String()
+
+	// 使用默认开发商ID
+	if ownerId == "" {
+		ownerId = bkc.BKDefaultOwnerID
+	}
+	return ownerId
+}
+
 // GetAttrs 查询模型属性
 func (d *Discover) GetAttrs(objID string, modelAttrKey string, attrs map[string]Attr) (ListResult, error) {
 
