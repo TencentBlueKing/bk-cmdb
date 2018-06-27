@@ -21,6 +21,12 @@ import (
 	"io"
 )
 
+// ModuleIterator the iterator interface for the module
+type ModuleIterator interface {
+	Next() (ModuleInterface, error)
+	ForEach(callbackItem func(item ModuleInterface) error) error
+}
+
 type iteratorInstModule struct {
 	targetModel model.Model
 	cond        common.Condition
@@ -28,7 +34,7 @@ type iteratorInstModule struct {
 	bufIdx      int
 }
 
-func newIteratorInstModule(target model.Model, cond common.Condition) (Iterator, error) {
+func newIteratorInstModule(target model.Model, cond common.Condition) (ModuleIterator, error) {
 
 	iter := &iteratorInstModule{
 		targetModel: target,
@@ -50,7 +56,7 @@ func newIteratorInstModule(target model.Model, cond common.Condition) (Iterator,
 
 }
 
-func (cli *iteratorInstModule) Next() (Inst, error) {
+func (cli *iteratorInstModule) Next() (ModuleInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -80,7 +86,7 @@ func (cli *iteratorInstModule) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInstModule) ForEach(callbackItem func(item Inst) error) error {
+func (cli *iteratorInstModule) ForEach(callbackItem func(item ModuleInterface) error) error {
 	for {
 
 		item, err := cli.Next()

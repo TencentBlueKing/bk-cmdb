@@ -13,16 +13,21 @@
 package inst
 
 import (
+	"io"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
-
-	"fmt"
 )
 
-var _ Iterator = (*hostIterator)(nil)
+var _ HostIterator = (*hostIterator)(nil)
+
+// HostIterator the iterator interface for the host
+type HostIterator interface {
+	Next() (HostInterface, error)
+	ForEach(callbackItem func(item HostInterface) error) error
+}
 
 type hostIterator struct {
 	targetModel model.Model
@@ -52,8 +57,8 @@ func newHostIterator(target model.Model, cond common.Condition) (*hostIterator, 
 	return grpIterator, nil
 }
 
-func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) (err error) {
-	var item Inst
+func (cli *hostIterator) ForEach(itemCallback func(item HostInterface) error) (err error) {
+	var item HostInterface
 	for {
 
 		item, err = cli.Next()
@@ -77,7 +82,7 @@ func (cli *hostIterator) ForEach(itemCallback func(item Inst) error) (err error)
 	return err
 }
 
-func (cli *hostIterator) Next() (Inst, error) {
+func (cli *hostIterator) Next() (HostInterface, error) {
 	if len(cli.buffer) == cli.bufIdx {
 
 		cli.cond.SetStart(cli.bufIdx)
@@ -86,7 +91,7 @@ func (cli *hostIterator) Next() (Inst, error) {
 		if nil != err {
 			return nil, err
 		}
-		fmt.Println("the err:", err)
+		//fmt.Println("the err:", err)
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
 			return nil, io.EOF
@@ -102,5 +107,10 @@ func (cli *hostIterator) Next() (Inst, error) {
 		target: cli.targetModel,
 		datas:  tmpItem,
 	}
+
+	if err := returnItem.reset(); nil != err {
+		return nil, err
+	}
+
 	return returnItem, nil
 }

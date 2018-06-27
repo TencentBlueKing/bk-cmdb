@@ -21,6 +21,12 @@ import (
 	"io"
 )
 
+// BusinessIterator the iterator interface for the business
+type BusinessIterator interface {
+	Next() (BusinessInterface, error)
+	ForEach(callbackItem func(item BusinessInterface) error) error
+}
+
 type iteratorInstBusiness struct {
 	targetModel model.Model
 	cond        common.Condition
@@ -28,7 +34,7 @@ type iteratorInstBusiness struct {
 	bufIdx      int
 }
 
-func newIteratorInstBusiness(target model.Model, cond common.Condition) (Iterator, error) {
+func newIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
 
 	iter := &iteratorInstBusiness{
 		targetModel: target,
@@ -50,7 +56,7 @@ func newIteratorInstBusiness(target model.Model, cond common.Condition) (Iterato
 
 }
 
-func (cli *iteratorInstBusiness) Next() (Inst, error) {
+func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -80,7 +86,7 @@ func (cli *iteratorInstBusiness) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInstBusiness) ForEach(callbackItem func(item Inst) error) error {
+func (cli *iteratorInstBusiness) ForEach(callbackItem func(item BusinessInterface) error) error {
 	for {
 
 		item, err := cli.Next()

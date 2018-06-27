@@ -13,10 +13,10 @@
 package privilege
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
-    "configcenter/src/common/metadata"
 )
 
 func (t *privilege) CreateUserGroup(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
@@ -61,8 +61,8 @@ func (t *privilege) DeleteUserGroup(ctx context.Context, ownerID string, groupID
 	return
 }
 
-func (t *privilege) SearchUserGroup(ctx context.Context, ownerID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *privilege) SearchUserGroup(ctx context.Context, ownerID string, h http.Header, dat interface{}) (resp *metadata.PermissionGroupListResult, err error) {
+	resp = new(metadata.PermissionGroupListResult)
 	subPath := fmt.Sprintf("/privilege/group/%s/search", ownerID)
 
 	err = t.client.Post().
@@ -103,8 +103,8 @@ func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, ownerID string, gr
 	return
 }
 
-func (t *privilege) GetUserGroupPrivi(ctx context.Context, ownerID string, groupID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *privilege) GetUserGroupPrivi(ctx context.Context, ownerID string, groupID string, h http.Header) (resp *metadata.GroupPriviResult, err error) {
+	resp = new(metadata.GroupPriviResult)
 	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", ownerID, groupID)
 
 	err = t.client.Get().
@@ -159,8 +159,8 @@ func (t *privilege) UpdateRolePri(ctx context.Context, ownerID string, objID str
 	return
 }
 
-func (t *privilege) GetSystemFlag(ctx context.Context, ownerID string, flag string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *privilege) GetSystemFlag(ctx context.Context, ownerID string, flag string, h http.Header) (resp *metadata.PermissionSystemResponse, err error) {
+	resp = new(metadata.PermissionSystemResponse)
 	subPath := fmt.Sprintf("/system/%s/%s", flag, ownerID)
 
 	err = t.client.Get().

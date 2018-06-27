@@ -36,13 +36,13 @@ func (cli *eventHost) constructEvent(hostID int, data types.MapStr) (types.MapSt
 
 	cond := common.CreateCondition()
 	cond.Field("bk_host_id").Eq(hostID)
-	hostIter, err := cli.outputerMgr.FindInstsByCondition(hostModel, cond)
+	hostIter, err := cli.outputerMgr.InstOperation().FindHostsByCondition(hostModel, cond)
 	if nil != err {
 		log.Errorf("failed to serch the host, %s", err.Error())
 		return nil, err
 	}
 
-	err = hostIter.ForEach(func(item inst.Inst) error {
+	err = hostIter.ForEach(func(item inst.HostInterface) error {
 
 		vals, err := item.GetValues()
 		if nil != err {
