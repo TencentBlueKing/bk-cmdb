@@ -13,6 +13,7 @@
 package upgrader
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/storage"
 	"errors"
 	"gopkg.in/mgo.v2"
@@ -59,6 +60,7 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 		return 0, nil, err
 	}
 
+	ignoreset := map[string]bool{idfieldname: true}
 	if "" != idfieldname {
 		switch id := existOne[idfieldname].(type) {
 		case nil:
@@ -82,10 +84,11 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 				return 0, nil, err
 			}
 			data[idfieldname] = instID
+			delete(ignoreset, idfieldname)
+			blog.Infof("reset %s %s to %d", tablename, idfieldname, instID)
 		}
 	}
 
-	ignoreset := map[string]bool{idfieldname: true}
 	for _, key := range ignores {
 		ignoreset[key] = true
 	}

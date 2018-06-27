@@ -71,7 +71,7 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 	blog.Infof("add data for  %s table ", tablename)
 	rows := getObjAttDescData(conf.OwnerID)
 	for _, row := range rows {
-		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{"id"})
+		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -97,7 +97,6 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 }
 
 func addObjDesData(db storage.DI, conf *upgrader.Config) error {
-	// TODO ensure column
 	tablename := metadata.ObjectDes{}.TableName()
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getObjectDesData(conf.OwnerID)
@@ -108,7 +107,6 @@ func addObjDesData(db storage.DI, conf *upgrader.Config) error {
 		}
 	}
 
-	blog.Errorf("add data for  %s table  ", tablename)
 	return nil
 }
 
