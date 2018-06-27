@@ -13,11 +13,22 @@
 package app
 
 import (
-	"configcenter/src/common"
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/redisclient"
+	"context"
+	"fmt"
+	"github.com/emicklei/go-restful"
+	"os"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -38,7 +49,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(hostsvc.Service)
+	service := new(svc.Service)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -54,21 +65,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	hostSvr := new(HostServer)
+	eventSvr := new(EventServer)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
+		types.CC_MODULE_EVENTSERVER,
 		op.ServConf.ExConfig,
-		hostSvr.onHostConfigUpdate,
+		eventSvr.onHostConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	service.Engine = engine
-	service.Logics = &logics.Logics{Engine: engine}
-	hostSvr.Core = engine
-	hostSvr.Service = service
-	hostSvr.Logic = service.Logics
+	eventSvr.Core = engine
+	eventSvr.Service = service
 	select {}
 	return nil
 }
@@ -77,15 +86,29 @@ type EventServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *svc.Service
-	Logic   *logics.Logics
 }
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
+	h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
+	h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
 	h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
-	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
-	h.Config.Gse.RedisPort = current.ConfigMap["gse.port"]
-	h.Config.Gse.RedisPassword = current.ConfigMap["gse.redis_pwd"]
+	h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
+	h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
+	h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
+
+	h.Config.Redis.Address = current.ConfigMap["redis.host"]
+	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
+	h.Config.Redis.Database = current.ConfigMap["redis.database"]
+	h.Config.Redis.Port = current.ConfigMap["redis.port"]
+
+	db, err := mgoclient.NewFromConfig(h.Config.MongoDB)
+	err = db.Open()
+	h.Service.SetDB(db)
+
+	cache, err := redisclient.NewFromConfig(h.Config.Redis)
+	h.Service.SetCache(cache)
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

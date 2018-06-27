@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/event_server/types"
 )
 
 func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.ParamSubscriptionSearch) (resp *metadata.Response, err error) {
@@ -63,7 +62,7 @@ func (e *eventServer) Telnet(ctx context.Context, h http.Header, dat interface{}
 	return
 }
 
-func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *types.Subscription) (resp *metadata.Response, err error) {
+func (e *eventServer) Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/%s/%s", ownerID, appID)
 
@@ -91,7 +90,7 @@ func (e *eventServer) UnSubscribe(ctx context.Context, ownerID string, appID str
 	return
 }
 
-func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *types.Subscription) (resp *metadata.Response, err error) {
+func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/subscribe/%s/%s/%s", ownerID, appID, subscribeID)
 
