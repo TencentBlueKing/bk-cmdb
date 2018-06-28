@@ -120,7 +120,7 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 			session.Set("owner_uin", cookieOwnerID)
 		} else if cookieOwnerID != session.Get("owner_uin") {
 			session.Set("owner_uin", cookieOwnerID)
-			ownerMan := NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
+			ownerMan := user.NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
 			if err := ownerMan.InitOwner(); nil != err {
 				blog.Errorf("init owner fail %s", err.Error())
 				return true
