@@ -94,11 +94,6 @@ func (r *RegDiscover) Stop() error {
 }
 
 func (r *RegDiscover) GetServer(servType string) (string, error) {
-	switch servType {
-	// case types.CC_MODULE_PROC:
-	// 	return r.GetProcServ()
-	}
-
 	err := fmt.Errorf("there is no server discover for type(%s)", servType)
 	blog.Errorf("%s", err.Error())
 	return "", err
