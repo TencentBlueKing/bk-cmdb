@@ -18,13 +18,14 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // BusinessInterface business methods
 type BusinessInterface interface {
-	SearchAllApp() (*metadata.InstResult, error)
+	SearchAllApp(fields string, cond mapstr.MapStr) (*metadata.InstResult, error)
 }
 
 // NewBusiness create a new business instance
@@ -40,9 +41,13 @@ type business struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (b *business) SearchAllApp() (*metadata.InstResult, error) {
+func (b *business) SearchAllApp(fields string, cond mapstr.MapStr) (*metadata.InstResult, error) {
 
 	query := &metadata.QueryInput{}
+
+	query.Condition = cond
+	query.Fields = fields
+
 	rsp, err := b.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, b.params.Header.ToHeader(), query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-biz] failed to request object controller, error info is %s", err.Error())
