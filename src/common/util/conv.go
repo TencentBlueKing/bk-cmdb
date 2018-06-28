@@ -126,6 +126,24 @@ func SliceStrToInt(sliceStr []string) ([]int, error) {
 	return sliceInt, nil
 }
 
+// SliceStrToInt64 将字符串切片转换为整型切片
+func SliceStrToInt64(sliceStr []string) ([]int64, error) {
+	sliceInt := make([]int64, 0)
+	for _, idStr := range sliceStr {
+
+		if idStr == "" {
+			continue
+		}
+
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			return []int64{}, err
+		}
+		sliceInt = append(sliceInt, id)
+	}
+	return sliceInt, nil
+}
+
 // GetStrValsFromArrMapInterfaceByKey get []string from []map[string]interface{}, Do not consider errors
 func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string {
 	var ret []string
