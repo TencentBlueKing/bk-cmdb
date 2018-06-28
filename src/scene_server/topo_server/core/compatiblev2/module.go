@@ -13,12 +13,12 @@
 package compatiblev2
 
 import (
-	"configcenter/src/common/condition"
 	"context"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -60,7 +60,7 @@ func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstRe
 
 	return &rsp.Data, nil
 }
-func (m *module) SearchModuleByProperty(bizID int64, cond condition.Condition) {
+func (m *module) SearchModuleByProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -95,18 +95,18 @@ func (m *module) SearchModuleByProperty(bizID int64, cond condition.Condition) {
 	cond.Field(common.BKSetIDField).In(setIDS)
 	query.Condition = cond.ToMapStr()
 
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
+	rspModule, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to search the sets, error info is %s", rsp.ErrMsg)
-		return nil, m.params.Err.New(rsp.Code, rsp.ErrMsg)
+	if !rspModule.Result {
+		blog.Errorf("[compatiblev2-module] failed to search the sets, error info is %s", rspModule.ErrMsg)
+		return nil, m.params.Err.New(rspModule.Code, rspModule.ErrMsg)
 	}
 
-	return &rsp.Data, nil
+	return &rspModule.Data, nil
 }
 func (m *module) AddMultiModule() {
 
