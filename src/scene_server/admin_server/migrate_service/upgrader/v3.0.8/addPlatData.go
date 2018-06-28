@@ -39,7 +39,7 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 			return err
 		}
 		// Direct connecting area id = 1
-		if common.BKDefaultDirSubArea == row[common.BKCloudIDField].(int) {
+		if common.BKDefaultDirSubArea == row[common.BKCloudIDField] {
 			platID = common.BKDefaultDirSubArea
 		}
 

@@ -13,6 +13,8 @@
 package host
 
 import (
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
@@ -20,7 +22,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/storage"
-	"github.com/emicklei/go-restful"
 )
 
 var clear *clearAction = &clearAction{}
