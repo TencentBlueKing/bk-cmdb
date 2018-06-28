@@ -71,7 +71,7 @@
             <v-object-table
                 :header="table.header" 
                 :list="table.list" 
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
                 :wrapperMinusHeight="150"

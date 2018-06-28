@@ -87,7 +87,7 @@
                     <v-table ref="table"
                         :header="tableHeader"
                         :list="tableList"
-                        :pagination="pagination"
+                        :pagination.sync="pagination"
                         :loading="isLoading"
                         :defaultSort="defaultSort"
                         :wrapperMinusHeight="150"

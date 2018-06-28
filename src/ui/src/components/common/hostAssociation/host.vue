@@ -29,7 +29,7 @@
                                     :header="table.header"
                                     :list="table.list"
                                     :defaultSort="table.defaultSort"
-                                    :pagination="table.pagination"
+                                    :pagination.sync="table.pagination"
                                     :checked.sync="table.chooseId"
                                     :loading="table.isLoading"
                                     :multipleCheck="multiple"
