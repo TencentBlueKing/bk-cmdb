@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
-	"configcenter/src/scene_server/host_server/logics"
 	"configcenter/src/scene_server/topo_server/app/options"
 	toposvr "configcenter/src/scene_server/topo_server/service"
 )
@@ -50,11 +49,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(toposvr.Service)
+	topoService := new(toposvr.Service)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService(rdapi.AllGlobalFilter())),
+		Handler:    restful.NewContainer().Add(topoService.WebService(rdapi.AllGlobalFilter())),
 		TLS:        backbone.TLSConfig{},
 	}
 
@@ -79,11 +78,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	service.Engine = engine
-	service.Logics = &logics.Logics{Engine: engine}
-	service.Config = &topoSvr.Config
+	topoService.Engine = engine
+	topoService.Config = &topoSvr.Config
+
 	topoSvr.Core = engine
-	topoSvr.Service = service
+	topoSvr.Service = topoService
 
 	select {
 	case <-ctx.Done():
@@ -128,29 +127,3 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 	}
 	return info, nil
 }
-
-/*
-//Run ccapi server
-func Run(op *options.ServerOption) error {
-
-	setConfig(op)
-
-	serv, err := NewCCAPIServer(op.ServConf)
-	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
-	}
-
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
-	}
-
-	serv.Start()
-
-	return nil
-}
-
-func setConfig(op *options.ServerOption) {
-}
-*/
