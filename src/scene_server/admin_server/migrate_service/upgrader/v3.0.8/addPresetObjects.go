@@ -167,20 +167,13 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 }
 
 func getAddAsstData(ownerID string) []*metadata.ObjectAsst {
-
 	dataRows := []*metadata.ObjectAsst{
-		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
-		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
-		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
-		&metadata.ObjectAsst{ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
+		&metadata.ObjectAsst{OwnerID: ownerID, ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
+		&metadata.ObjectAsst{OwnerID: ownerID, ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
+		&metadata.ObjectAsst{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
+		&metadata.ObjectAsst{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
 	}
-	for _, r := range dataRows {
-		r.OwnerID = ownerID
-		//r.AsstObjType = 0
-	}
-
 	return dataRows
-
 }
 
 func getObjAttDescData(ownerID string) []*metadata.ObjectAttDes {
