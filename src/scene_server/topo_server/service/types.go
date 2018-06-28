@@ -10,38 +10,30 @@
  * limitations under the License.
  */
 
-package main
+package service
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"runtime"
-
-	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/app"
-	"configcenter/src/scene_server/topo_server/app/options"
+	"configcenter/src/common/http/httpserver"
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_TOPO)
-	runtime.GOMAXPROCS(runtime.NumCPU())
+// LogicFunc the core logic function definition
+type LogicFunc func(params types.LogicParams, parthParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error)
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
+// ParamsGetter get param by key
+type ParamsGetter func(name string) string
 
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
+// Action the http action
+type action struct {
+	Method      string
+	Path        string
+	HandlerFunc LogicFunc
+}
 
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+// API the API interface
+type API interface {
+	SetCore(coreMgr core.Core)
+	Actions() []*httpserver.Action
 }

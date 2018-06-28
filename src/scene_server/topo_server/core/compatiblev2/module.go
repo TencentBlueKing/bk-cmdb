@@ -19,22 +19,26 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // ModuleInterface module interface
 type ModuleInterface interface {
-	UpdateMultiModule()
+	UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error
 	SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error)
-	SearchModuleByProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error)
-	AddMultiModule()
+	SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error)
+	AddMultiModule(bizID, setID int64, moduleNames []string) error
 	DeleteMultiModule()
 }
 
 // NewModule create a module instance
-func NewModule() ModuleInterface {
-	return &module{}
+func NewModule(params types.LogicParams, client apimachinery.ClientSetInterface) ModuleInterface {
+	return &module{
+		params: params,
+		client: client,
+	}
 }
 
 type module struct {
@@ -42,8 +46,69 @@ type module struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (m *module) UpdateMultiModule() {
+func (m *module) isRepeated(moduleName string, excludeModuleIDS interface{}) (bool, error) {
 
+	cond := condition.CreateCondition()
+	cond.Field(common.BKModuleNameField).Eq(moduleName)
+	cond.Field(common.BKModuleIDField).NotIn(excludeModuleIDS)
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+
+	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
+	if nil != err {
+		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
+		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[compatiblev2-module] failed to search the module, error info is %s", rsp.ErrMsg)
+		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return 0 != rsp.Data.Count, nil
+
+}
+
+func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error {
+
+	// check the module name
+	moduleName, err := innerData.String(common.BKModuleNameField)
+	if nil != err {
+		blog.Errorf("[compatiblev2-module] failed to parse the module name , error info is %s", err.Error())
+		return m.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	repeated, err := m.isRepeated(moduleName, moduleIDS)
+	if nil != err {
+		return err
+	}
+	if repeated {
+		blog.Error("[compatiblev2-module] the module name is repeated")
+		return m.params.Err.Errorf(common.CCErrCommDuplicateItem, moduleName)
+	}
+
+	// update module
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKModuleIDField).In(moduleIDS)
+
+	updateData := mapstr.New()
+	updateData.Set("condition", cond.ToMapStr())
+	updateData.Set("data", innerData)
+	rsp, err := m.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), updateData)
+	if nil != err {
+		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
+		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[compatiblev2-module] failed to search the module, error info is %s", rsp.ErrMsg)
+		return m.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
 }
 func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error) {
 
@@ -60,7 +125,7 @@ func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstRe
 
 	return &rsp.Data, nil
 }
-func (m *module) SearchModuleByProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
+func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -108,8 +173,8 @@ func (m *module) SearchModuleByProperty(bizID int64, cond condition.Condition) (
 
 	return &rspModule.Data, nil
 }
-func (m *module) AddMultiModule() {
-
+func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string) error {
+	return nil
 }
 func (m *module) DeleteMultiModule() {
 
