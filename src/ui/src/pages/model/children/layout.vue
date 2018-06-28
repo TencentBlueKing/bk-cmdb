@@ -10,7 +10,7 @@
 
 <template>
     <div class="tab-content">
-        <div class="table-content" v-bkloading="{isLoading: isLoading}">
+        <div class="table-content" v-bkloading="{isLoading: $loading('getAttr', 'getAttrGroup', 'updateGroup', 'updateGroupProperty', 'addGroup', 'deleteGroup')}">
             <div class="hidden-list">
                 <div class="hidden-list-title">
                     <i class="bk-icon icon-eye-slash-shape"></i>
@@ -67,7 +67,7 @@
             </div>
         </div>
         <div class="base-info">
-            <bk-button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" :loading="$loading('updatePropertyIndex')" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" :loading="$loading('getAttr', 'getAttrGroup', 'updateGroup', 'updateGroupProperty', 'addGroup', 'deleteGroup')" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
             <bk-button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </div>
     </div>
@@ -88,7 +88,6 @@
         },
         data () {
             return {
-                isLoading: false,
                 activeGroupName: '',    // 当前编辑的分组名
                 attrGroup: [],          // 属性分组
                 attrList: [],           // 全部属性
@@ -143,7 +142,6 @@
              * @param isSaveAll {Boolean} - 是否保存全部属性 只在点击确认按钮时需要保存全部
              */
             async confirm (isSaveAll = true) {
-                this.isLoading = true
                 let params = []
                 if (isSaveAll) {
                     this.groupAttrList.map(group => {
@@ -175,14 +173,8 @@
                         }
                     })
                 })
-                try {
-                    await this.$axios.put('/objectatt/group/property', params, {id: 'updatePropertyIndex'})
-                    this.$alertMsg(this.$t('Common["更新成功"]'), 'success')
-                } catch (e) {
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
-                } finally {
-                    this.isLoading = false
-                }
+                await this.$axios.put('/objectatt/group/property', params, {id: 'updateGroupProperty'})
+                this.$alertMsg(this.$t('Common["更新成功"]'), 'success')
             },
             /**
              * 取消
@@ -205,7 +197,6 @@
              * 更新属性分组信息
              */
             async updateGroupIndex (fromGroup, toGroup) {
-                this.isLoading = true
                 let groupList = [fromGroup, toGroup]
                 await this.$Axios.all(groupList.map((group, index) => {
                     let params = {
@@ -216,9 +207,8 @@
                             bk_group_index: index ? fromGroup['bk_group_index'] : toGroup['bk_group_index']
                         }
                     }
-                    return this.$axios.put('/objectatt/group/update', params)
+                    return this.$axios.put('/objectatt/group/update', params, {id: 'updateGroup'})
                 }))
-                this.isLoading = false
             },
             /**
              * 添加分组
@@ -227,7 +217,6 @@
                 if (this.isEditTitle || !this.checkGroupParams()) {
                     return
                 }
-                this.isLoading = true
                 // 取 groupId groupIndex
                 let reg = /^[0-9]+$/
                 let groupId = 0
@@ -241,28 +230,22 @@
                 groupId++
                 groupIndex++
 
-                let params = {
+                const params = {
                     bk_group_id: groupId.toString(),  // groupID唯一，前端不展示
                     bk_group_name: this.$t('ModelManagement["未命名"]'),
                     bk_group_index: groupIndex,
                     bk_obj_id: this.activeModel['bk_obj_id'],
                     bk_supplier_account: this.bkSupplierAccount
                 }
-                try {
-                    let res = await this.$axios.post('/objectatt/group/new', params)
-                    this.groupAttrList.push({
-                        bk_group_id: groupId.toString(),
-                        bk_group_index: groupIndex,
-                        bk_group_name: this.$t('ModelManagement["未命名"]'),
-                        isEditTitle: false,
-                        id: res.data.id,
-                        properties: []
-                    })
-                } catch (e) {
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
-                } finally {
-                    this.isLoading = false
-                }
+                let res = await this.$axios.post('/objectatt/group/new', params, {id: 'addGroup'})
+                this.groupAttrList.push({
+                    bk_group_id: groupId.toString(),
+                    bk_group_index: groupIndex,
+                    bk_group_name: this.$t('ModelManagement["未命名"]'),
+                    isEditTitle: false,
+                    id: res.data.id,
+                    properties: []
+                })
             },
             /**
              * 将分组名切换为编辑态
@@ -282,8 +265,7 @@
                 if (!this.checkGroupParams(group)) {
                     return
                 }
-                this.isLoading = true
-                let params = {
+                const params = {
                     condition: {
                         id: group.id
                     },
@@ -291,18 +273,12 @@
                         bk_group_name: group['bk_group_name']
                     }
                 }
-                try {
-                    await this.$axios.put('/objectatt/group/update', params)
-                    let activeGroup = this.groupAttrList.find(({id}) => {
-                        return id === group.id
-                    })
-                    activeGroup['bk_group_name'] = group['bk_group_name']
-                    group.isEditTitle = false
-                } catch (e) {
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
-                } finally {
-                    this.isLoading = false
-                }
+                await this.$axios.put('/objectatt/group/update', params, {id: 'updateGroup'})
+                let activeGroup = this.groupAttrList.find(({id}) => {
+                    return id === group.id
+                })
+                activeGroup['bk_group_name'] = group['bk_group_name']
+                group.isEditTitle = false
             },
             /**
              * 删除分组
@@ -323,63 +299,50 @@
                     this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
                     return
                 }
-                try {
-                    await this.$axios.delete(`/objectatt/group/groupid/${group['id']}`)
-                    // 该分组下有属性时更新属性分组为none
-                    if (group.properties.length) {
-                        this.confirm(false)
-                        group.properties.map(property => {
-                            property['bk_property_group'] = 'none'
-                            this.hideAttr.push(property)
-                        })
-                    } else {
-                        this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
-                    }
-                    this.groupAttrList.splice(groupIndex, 1)
-                } catch (e) {
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                await this.$axios.delete(`/objectatt/group/groupid/${group['id']}`, {id: 'deleteGroup'})
+                // 该分组下有属性时更新属性分组为none
+                if (group.properties.length) {
+                    this.confirm(false)
+                    group.properties.map(property => {
+                        property['bk_property_group'] = 'none'
+                        this.hideAttr.push(property)
+                    })
+                } else {
+                    this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
                 }
+                this.groupAttrList.splice(groupIndex, 1)
             },
             /**
              * 获取字段相关信息
              */
-            async getAttrData () {
-                this.isLoading = true
-                await this.getAttrGroup()
-                await this.getAttr()
-                this.setGroupAttrList()
-                this.isLoading = false
+            getAttrData () {
+                this.$Axios.all([
+                    this.getAttrGroup(),
+                    this.getAttr()
+                ]).then(this.$Axios.spread((groupRes, attrRes) => {
+                    this.attrGroup = groupRes.data
+                    this.attrGroup.sort((groupA, groupB) => {
+                        return groupA['bk_group_index'] - groupB['bk_group_index']
+                    })
+                    this.attrList = attrRes.data
+                    this.setGroupAttrList()
+                }))
             },
             /**
              * 获取属性分组
              */
-            async getAttrGroup () {
-                try {
-                    let res = await this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.activeModel['bk_obj_id']}`, {})
-                    this.attrGroup = res.data
-                    this.attrGroup.sort((groupA, groupB) => {
-                        return groupA['bk_group_index'] - groupB['bk_group_index']
-                    })
-                } catch (e) {
-                    this.isLoading = false
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
-                }
+            getAttrGroup () {
+                return this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.activeModel['bk_obj_id']}`, {}, {id: 'getAttrGroup'})
             },
             /**
              * 获取属性
              */
-            async getAttr () {
-                try {
-                    let params = {
-                        bk_obj_id: this.activeModel['bk_obj_id'],
-                        bk_supplier_account: this.bkSupplierAccount
-                    }
-                    let res = await this.$store.dispatch('object/getAttribute', {objId: this.activeModel['bk_obj_id'], force: true})
-                    this.attrList = res.data
-                } catch (e) {
-                    this.isLoading = false
-                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+            getAttr () {
+                const params = {
+                    bk_obj_id: this.activeModel['bk_obj_id'],
+                    bk_supplier_account: this.bkSupplierAccount
                 }
+                return this.$store.dispatch('object/getAttribute', {objId: this.activeModel['bk_obj_id'], force: true, requestId: 'getAttr'})
             },
             /**
              * 将属性分组

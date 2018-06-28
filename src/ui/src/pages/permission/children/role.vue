@@ -29,7 +29,7 @@
         </div>
         <v-role-table class="role-table"
             :sortable="false"
-            :loading="isLoading"
+            :loading="$loading('getRoleList', 'deleteRole')"
             :header="table.header"
             :list="table.list"
             :wrapperMinusHeight="240">
@@ -67,7 +67,6 @@
         },
         data () {
             return {
-                isLoading: false,
                 deleteInfo: {
                     isShow: false,
                     content: '',
@@ -142,19 +141,10 @@
                     this.getRoleList()
                 })
             },
-            getRoleList () {
-                this.isLoading = true
-                this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}/search`, this.filter).then((res) => {
-                    this.isLoading = false
-                    if (res.result) {
-                        this.table.list = res.data && res.data.length ? res.data : []
-                        this.$emit('on-search-success', this.table.list, this.hasFilter)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                }).catch(() => {
-                    this.isLoading = false
-                })
+            async getRoleList () {
+                const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}/search`, this.filter, {id: 'getRoleList'})
+                this.table.list = res.data && res.data.length ? res.data : []
+                this.$emit('on-search-success', this.table.list, this.hasFilter)
             },
             editRole (role) {
                 this.form.data = Object.assign({}, role, {'user_list': role['user_list'].split(';').join(',')})
@@ -169,16 +159,11 @@
             cancelDeleteRole () {
                 this.deleteInfo.isShow = false
             },
-            deleteRole (role) {
-                this.$axios.delete(`topo/privilege/group/${this.bkSupplierAccount}/${role['group_id']}`).then((res) => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t('Permission["删除成功"]'), 'success')
-                        this.getRoleList()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async deleteRole (role) {
                 this.deleteInfo.isShow = false
+                await this.$axios.delete(`topo/privilege/group/${this.bkSupplierAccount}/${role['group_id']}`, {id: 'deleteRole'})
+                this.$alertMsg(this.$t('Permission["删除成功"]'), 'success')
+                this.getRoleList()
             },
             createRole () {
                 this.form.data = {

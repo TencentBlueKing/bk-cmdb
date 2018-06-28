@@ -82,6 +82,7 @@ let axios = Axios.create({
 })
 
 axios.interceptors.request.use(config => {
+    console.log(config.id)
     addQueue(config)
     transformRequest(config)
     return config

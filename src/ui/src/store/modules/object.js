@@ -11,11 +11,11 @@ const getters = {
 }
 
 const actions = {
-    getAttribute ({commit, state, rootGetters}, {objId, force}) {
+    getAttribute ({commit, state, rootGetters}, {objId, force, requestId}) {
         if (!force && state.attribute.hasOwnProperty(objId)) {
             return Promise.resolve({result: true, data: state.attribute[objId]})
         }
-        return $axios.post('object/attr/search', {bk_obj_id: objId, bk_supplier_account: rootGetters.bkSupplierAccount}).then(res => {
+        return $axios.post('object/attr/search', { bk_obj_id: objId, bk_supplier_account: rootGetters.bkSupplierAccount }, {id: requestId}).then(res => {
             if (res.result) {
                 let attribute = {}
                 attribute[objId] = res.data

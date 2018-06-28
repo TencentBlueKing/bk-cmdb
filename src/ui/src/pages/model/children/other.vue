@@ -99,56 +99,36 @@
             /*
                 重新启用模型
             */
-            restartModel () {
-                let params = {
+            async restartModel () {
+                const params = {
                     bk_ispaused: false
                 }
-                this.$axios.put(`object/${this.id}`, params, {id: 'restartModel'}).then(res => {
-                    if (res.result) {
-                        this.$emit('closeSideSlider')
-                        this.$store.dispatch('navigation/getClassifications', true)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                await this.$axios.put(`object/${this.id}`, params, {id: 'restartModel'})
+                this.$emit('closeSideSlider')
+                this.$store.dispatch('navigation/getClassifications', true)
             },
             /*
                停用模型
             */
-            stopModel () {
+            async stopModel () {
                 let params = {
                     bk_ispaused: true
                 }
-                this.$axios.put(`object/${this.id}`, params, {id: 'stopModel'}).then(res => {
-                    if (res.result) {
-                        this.$emit('stopModel')
-                        this.$store.dispatch('navigation/getClassifications', true)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                await this.$axios.put(`object/${this.id}`, params, {id: 'stopModel'})
+                this.$emit('stopModel')
+                this.$store.dispatch('navigation/getClassifications', true)
             },
             /*
                删除模型
             */
-            deleteModel () {
+            async deleteModel () {
                 if (this.isMainLine) {
-                    this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`, {id: 'deleteModel'}).then(res => {
-                        if (res.result) {
-                            this.$emit('deleteModel', this.item)
-                        } else {
-                            this.$alertMsg(this.$t('ModelManagement["删除模型失败"]'))
-                        }
-                    })
+                    await this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`, {id: 'deleteModel'})
+                    this.$emit('deleteModel', this.item)
                 } else {
-                    this.$axios.delete(`object/${this.id}`, {id: 'deleteModel'}).then(res => {
-                        if (res.result) {
-                            this.$emit('deleteModel', this.item)
-                            this.$store.dispatch('navigation/getClassifications', true)
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    await this.$axios.delete(`object/${this.id}`, {id: 'deleteModel'})
+                    this.$emit('deleteModel', this.item)
+                    this.$store.dispatch('navigation/getClassifications', true)
                 }
             },
             /*
