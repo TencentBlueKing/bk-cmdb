@@ -13,6 +13,7 @@
 package main
 
 import (
+	"configcenter/src/common/util"
 	"flag"
 	"gopkg.in/mgo.v2"
 	"log"
@@ -80,7 +81,7 @@ func processCompare(srccli, tarcli *mgo.Database) error {
 		assertNotErr(err)
 		for _, srcData := range srcDatas {
 			tableKey := tableKeys(tablename)
-			condition := copyMap(srcData, tableKey.keys)
+			condition := util.CopyMap(srcData, tableKey.keys, []string{"_id"})
 			tarData := map[string]interface{}{}
 			err = tarcli.C(tablename).Find(condition).One(&tarData)
 			if err != nil {
@@ -134,20 +135,6 @@ func toInt64(val interface{}) int64 {
 		return int64(v)
 	}
 	return 0
-}
-
-func copyMap(data map[string]interface{}, keys []string) map[string]interface{} {
-	condition := map[string]interface{}{}
-	if len(keys) > 0 {
-		for _, key := range keys {
-			if key == "_id" {
-				continue
-			}
-			condition[key] = data[key]
-		}
-		return condition
-	}
-	return data
 }
 
 type tableKey struct {
