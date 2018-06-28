@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	//"configcenter/src/common/condition"
-	//"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	//"configcenter/src/scene_server/topo_server/core/compatiblev2"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -25,7 +25,7 @@ func init() {
 	apiInst.initFuncs = append(apiInst.initFuncs, apiInst.initObject)
 }
 
-func (cli *topoAPI) initPrivilegeGroup() {
+func (cli *topoAPI) initCompatiblev2() {
 	cli.actions = append(cli.actions, action{Method: http.MethodPost, Path: "/app/searchAll", HandlerFunc: cli.SearchAllApp})
 }
 

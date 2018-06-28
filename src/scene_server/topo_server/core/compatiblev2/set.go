@@ -12,10 +12,21 @@
 
 package compatiblev2
 
+import (
+	"context"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
+
 // SetInterface set interface
 type SetInterface interface {
-	UpdateMultiSet()
-	DeleteMultiSet()
+	UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Condition) error
+	DeleteMultiSet(bizID int64, setIDS []int64, cond condition.Condition) error
 	DeleteSetHost()
 }
 
@@ -25,13 +36,32 @@ func NewSet() SetInterface {
 }
 
 type set struct {
+	params types.LogicParams
+	client apimachinery.ClientSetInterface
 }
 
-func (s *set) UpdateMultiSet() {
+func (s *set) UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Condition) error {
 
+	input := mapstr.New()
+	input.Set("data", data)
+	input.Set("condition", cond.ToMapStr())
+
+	rsp, err := s.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDSet, s.params.Header.ToHeader(), input)
+	if nil != err {
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
+		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[compatiblev2-set]  failed to update the set, error info is %s", err.Error())
+		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
 }
-func (s *set) DeleteMultiSet() {
 
+func (s *set) DeleteMultiSet(bizID int64, setIDS []int64, cond condition.Condition) error {
+	return nil
 }
 func (s *set) DeleteSetHost() {
 
