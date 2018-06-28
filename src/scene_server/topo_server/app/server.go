@@ -13,11 +13,123 @@
 package app
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	"context"
+	"fmt"
+	"os"
+
+	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
+	"configcenter/src/scene_server/host_server/logics"
 	"configcenter/src/scene_server/topo_server/app/options"
+	toposvr "configcenter/src/scene_server/topo_server/service"
 )
 
+// Run main function
+func Run(ctx context.Context, op *options.ServerOption) error {
+	svrInfo, err := newServerInfo(op)
+	if err != nil {
+		return fmt.Errorf("wrap server info failed, err: %v", err)
+	}
+
+	c := &util.APIMachineryConfig{
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
+	}
+
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return fmt.Errorf("new api machinery failed, err: %v", err)
+	}
+
+	service := new(toposvr.Service)
+	server := backbone.Server{
+		ListenAddr: svrInfo.IP,
+		ListenPort: svrInfo.Port,
+		Handler:    restful.NewContainer().Add(service.WebService(rdapi.AllGlobalFilter())),
+		TLS:        backbone.TLSConfig{},
+	}
+
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
+	bonC := &backbone.Config{
+		RegisterPath: regPath,
+		RegisterInfo: *svrInfo,
+		CoreAPI:      machinery,
+		Server:       server,
+	}
+
+	topoSvr := new(TopoServer)
+	engine, err := backbone.NewBackbone(
+		ctx,
+		op.ServConf.RegDiscover,
+		types.CC_MODULE_TOPO,
+		op.ServConf.ExConfig,
+		topoSvr.onTopoConfigUpdate,
+		bonC)
+
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+
+	service.Engine = engine
+	service.Logics = &logics.Logics{Engine: engine}
+	service.Config = &topoSvr.Config
+	topoSvr.Core = engine
+	topoSvr.Service = service
+
+	select {
+	case <-ctx.Done():
+	}
+	return nil
+}
+
+// TopoServer the topo server
+type TopoServer struct {
+	Core    *backbone.Engine
+	Config  options.Config
+	Service *toposvr.Service
+}
+
+func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
+	//t.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
+}
+
+func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
+}
+
+/*
 //Run ccapi server
 func Run(op *options.ServerOption) error {
 
@@ -41,3 +153,4 @@ func Run(op *options.ServerOption) error {
 
 func setConfig(op *options.ServerOption) {
 }
+*/
