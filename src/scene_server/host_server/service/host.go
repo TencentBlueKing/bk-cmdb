@@ -389,78 +389,6 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
-
-}
-
 func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -527,9 +455,10 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	}
 	delete(data, common.BKHostIDField)
-	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, cli.CC.ObjCtrl(), forward, defErr)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDHost, req.Request.Header, s.Engine)
 
-	hostFields, err := s.Logics.GetHostAttributes(common.BKDefaultOwnerID, pheader)
+	hostFields, err := s.Logics.GetHostAttributes(ownerID, pheader)
 	if err != nil {
 		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
@@ -548,7 +477,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 		hostIDs = append(hostIDs, hostID)
 
-		_, err = valid.ValidMap(data, common.ValidUpdate, hostID)
+		err = valid.ValidMap(data, common.ValidUpdate, hostID)
 		if nil != err {
 			blog.Errorf("update host batch, but invalid host failed, id[%s], err: %v", id, err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFeildValidFail)})
@@ -618,28 +547,4 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
-}
-
-func (s *Service) Add(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) Update(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) Delete(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) Get(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) Detail(req *restful.Request, resp *restful.Response) {
-
-}
-
-func (s *Service) GetUserAPIData(req *restful.Request, resp *restful.Response) {
-
 }
