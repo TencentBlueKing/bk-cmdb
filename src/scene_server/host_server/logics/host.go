@@ -174,9 +174,8 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 				}
 			}
 		}
-
-		valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDHost, ObjAddr, forward, errHandle)
-		_, hasErr = valid.ValidMap(host, "create", 0)
+		valid := validator.NewValidMap(util.GetOwnerID(pheader), common.BKInnerObjIDHost, pheader, lgc.Engine)
+		hasErr = valid.ValidMap(host, "create", 0)
 
 		if nil != hasErr {
 			return hasErr
