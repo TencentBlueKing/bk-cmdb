@@ -29,7 +29,6 @@ import (
 	"configcenter/src/common/http/httpserver"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/host_server/logics"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -39,7 +38,6 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	*logics.Logics
 
 	actions []action
 	core    core.Core
