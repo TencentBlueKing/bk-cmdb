@@ -156,18 +156,18 @@ type tableKey struct {
 }
 
 var tableKeysCache = map[string]*tableKey{
-	"cc_ApplicationBase":   &tableKey{[]string{"bk_biz_name"}, []string{"bk_biz_id"}},
-	"cc_ModuleBase":        &tableKey{[]string{"bk_module_name"}, []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
-	"cc_ObjAttDes":         &tableKey{[]string{"bk_obj_id", "bk_property_id"}, []string{"id"}},
-	"cc_ObjClassification": &tableKey{[]string{"bk_classification_id"}, []string{"id"}},
-	"cc_ObjDes":            &tableKey{[]string{"bk_obj_id"}, []string{"id"}},
-	"cc_PlatBase":          &tableKey{[]string{"bk_cloud_name"}, []string{}},
-	"cc_Proc2Module":       &tableKey{[]string{"bk_module_name", "bk_process_id", "bk_biz_id"}, []string{}},
-	"cc_Process":           &tableKey{[]string{"bk_process_name"}, []string{}},
-	"cc_PropertyGroup":     &tableKey{[]string{"bk_obj_id", "bk_group_id"}, []string{}},
-	"cc_SetBase":           &tableKey{[]string{"bk_set_name", "bk_biz_id"}, []string{"bk_set_id"}},
-	"cc_OperationLog":      &tableKey{[]string{"op_type", "inst_id"}, []string{"op_time"}},
-	"cc_ObjAsst":           &tableKey{[]string{"bk_obj_id", "bk_object_att_id", "bk_asst_obj_id"}, []string{"id"}},
+	"cc_ApplicationBase":   &tableKey{keys: []string{"bk_biz_name"}, ignores: []string{"bk_biz_id"}},
+	"cc_ModuleBase":        &tableKey{keys: []string{"bk_module_name"}, ignores: []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
+	"cc_ObjAttDes":         &tableKey{keys: []string{"bk_obj_id", "bk_property_id"}, ignores: []string{"id"}},
+	"cc_ObjClassification": &tableKey{keys: []string{"bk_classification_id"}, ignores: []string{"id"}},
+	"cc_ObjDes":            &tableKey{keys: []string{"bk_obj_id"}, ignores: []string{"id"}},
+	"cc_PlatBase":          &tableKey{keys: []string{"bk_cloud_name"}, ignores: []string{}},
+	"cc_Proc2Module":       &tableKey{keys: []string{"bk_module_name", "bk_process_id", "bk_biz_id"}, ignores: []string{}},
+	"cc_Process":           &tableKey{keys: []string{"bk_process_name"}, ignores: []string{}},
+	"cc_PropertyGroup":     &tableKey{keys: []string{"bk_obj_id", "bk_group_id"}, ignores: []string{}},
+	"cc_SetBase":           &tableKey{keys: []string{"bk_set_name", "bk_biz_id"}, ignores: []string{"bk_set_id"}},
+	"cc_OperationLog":      &tableKey{keys: []string{"op_type", "inst_id"}, ignores: []string{"op_time"}},
+	"cc_ObjAsst":           &tableKey{keys: []string{"bk_obj_id", "bk_object_att_id", "bk_asst_obj_id"}, ignores: []string{"id"}},
 }
 
 func tableKeys(tablename string) *tableKey {
@@ -175,7 +175,7 @@ func tableKeys(tablename string) *tableKey {
 		tableKeysCache[tablename].ignores = append(tableKeysCache[tablename].ignores, "create_time", "last_time", "_id")
 		return tableKeysCache[tablename]
 	}
-	return &tableKey{[]string{}, []string{"create_time", "last_time"}}
+	return &tableKey{keys: []string{}, ignores: []string{"create_time", "last_time"}}
 }
 
 func assertNotErr(err error) {

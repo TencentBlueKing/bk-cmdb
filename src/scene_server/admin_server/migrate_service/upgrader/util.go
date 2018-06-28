@@ -13,11 +13,13 @@
 package upgrader
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/storage"
 	"errors"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/storage"
 )
 
 // Upsert inset row but updata it whitout ignores key if exists same value with keys

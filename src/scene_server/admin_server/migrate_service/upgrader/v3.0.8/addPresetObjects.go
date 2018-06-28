@@ -79,7 +79,7 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 	}
 	selector := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
-			"$in": []string{"bk_switch",
+			common.BKDBIN: []string{"bk_switch",
 				"bk_router",
 				"bk_load_balance",
 				"bk_firewall",

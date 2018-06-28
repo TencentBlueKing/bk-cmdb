@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package upgrader
 
 import (
@@ -59,9 +59,13 @@ func Upgrade(db storage.DI, conf *Config) (err error) {
 	if err != nil {
 		return err
 	}
-	currentVision := cmdbVision["current_version"]
+	cmdbVision.Distro = ccversion.CCDistro
+	cmdbVision.DistroVersion = ccversion.CCDistroVersion
 
+	currentVision := cmdbVision.CurrentVersion
+	lastVersion := ""
 	for _, v := range upgraderPool {
+		lastVersion = v.version
 		if v.version <= currentVision {
 			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVision, v.version)
 			continue
@@ -71,24 +75,36 @@ func Upgrade(db storage.DI, conf *Config) (err error) {
 			blog.Errorf("upgrade version %s error: %s", v.version, err.Error())
 			return err
 		}
-		err = saveVesion(db, v.version)
+		cmdbVision.CurrentVersion = v.version
+		err = saveVesion(db, cmdbVision)
 		if err != nil {
 			blog.Errorf("save version %s error: %s", v.version, err.Error())
 			return err
 		}
-		blog.Info("upgrade version success")
+		blog.Info("upgrade to version %s success", v.version)
+	}
+	if "" == cmdbVision.InitVersion {
+		cmdbVision.InitVersion = lastVersion
+		cmdbVision.InitDistroVersion = ccversion.CCDistroVersion
+		saveVesion(db, cmdbVision)
 	}
 	return nil
 }
 
-func getVersion(db storage.DI) (map[string]string, error) {
-	data := map[string]string{}
+func getVersion(db storage.DI) (*Version, error) {
+	data := new(Version)
 	condition := map[string]interface{}{
-		"type": "version",
+		"type": SystemTypeVersion,
 	}
 	err := db.GetOneByCondition(common.SystemTableName, nil, condition, &data)
 	if err == mgo.ErrNotFound {
-		return nil, nil
+		data = new(Version)
+		data.Type = SystemTypeVersion
+		_, err = db.Insert(common.SystemTableName, data)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
 	}
 	if err != nil {
 		blog.Error("get system version error", err.Error())
@@ -98,28 +114,24 @@ func getVersion(db storage.DI) (map[string]string, error) {
 	return data, nil
 }
 
-func saveVesion(db storage.DI, version string) error {
+func saveVesion(db storage.DI, version *Version) error {
 	condition := map[string]interface{}{
-		"type": "version",
+		"type": SystemTypeVersion,
 	}
-	data := map[string]string{
-		"type":            "version",
-		"current_version": version,
-		"distro":          ccversion.CCDistro,
-		"distro_version":  ccversion.CCDistroVersion,
-	}
-	count, err := db.GetCntByCondition(common.SystemTableName, condition)
-	if err != nil {
-		return err
-	}
-	if count <= 0 {
-		data["init_version"] = version
-		data["init_distro_version"] = ccversion.CCDistroVersion
-		_, err = db.Insert(common.SystemTableName, data)
-		if err != nil {
-			return err
-		}
-	}
-
-	return db.UpdateByCondition(common.SystemTableName, data, condition)
+	return db.UpdateByCondition(common.SystemTableName, version, condition)
 }
+
+type System struct {
+	Type string `bson:"type"`
+}
+
+type Version struct {
+	System            `bson:",inline"`
+	CurrentVersion    string `bson:"current_version"`
+	Distro            string `bson:"distro"`
+	DistroVersion     string `bson:"distro_version"`
+	InitVersion       string `bson:"init_version"`
+	InitDistroVersion string `bson:"init_distro_version"`
+}
+
+const SystemTypeVersion = "version"

@@ -14,6 +14,7 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	api "configcenter/src/source_controller/api/object"
 	"encoding/json"
@@ -100,7 +101,10 @@ func ParseEnumOption(val interface{}) []EnumVal {
 	case []EnumVal:
 		return options
 	case string:
-		json.Unmarshal([]byte(options), &enumOptions)
+		err := json.Unmarshal([]byte(options), &enumOptions)
+		if nil != err {
+			blog.Errorf("ParseEnumOption error : %s", err.Error())
+		}
 	case []interface{}:
 		for _, optionVal := range options {
 			if option, ok := optionVal.(map[string]interface{}); ok {
@@ -131,7 +135,10 @@ func parseIntOption(val interface{}) IntOption {
 	}
 	switch option := val.(type) {
 	case string:
-		json.Unmarshal([]byte(option), &intOption)
+		err := json.Unmarshal([]byte(option), &intOption)
+		if nil != err {
+			blog.Errorf("parseIntOption error : %s", err.Error())
+		}
 	case map[string]interface{}:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
