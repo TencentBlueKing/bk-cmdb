@@ -39,12 +39,7 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 		update := false
 		if len(exist) > 0 {
 			row.ID = exist[0].ID
-			if len(exist) > 0 {
-				row.ID = exist[0].ID
-				update = true
-
-				update = true
-			}
+			update = true
 		}
 		if row.ID <= 0 {
 			id, err := metaCli.GetIncID(tableName)
