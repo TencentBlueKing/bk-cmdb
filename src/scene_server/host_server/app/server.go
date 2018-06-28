@@ -26,9 +26,10 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
 	myCommon "configcenter/src/scene_server/host_server/common"
+	logics2 "configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
+
 	"github.com/emicklei/go-restful"
-    logics2 "configcenter/src/scene_server/host_server/logics"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
