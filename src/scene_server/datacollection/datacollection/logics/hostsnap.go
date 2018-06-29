@@ -696,7 +696,6 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("snap redis server connection error: %s", err.Error())
 			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
-				blog.Errorf("snap redis server connection error: %s", err.Error())
 				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
 			} else {
 				channelstatus = bkcommon.CCSuccess
