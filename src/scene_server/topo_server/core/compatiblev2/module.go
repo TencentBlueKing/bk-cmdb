@@ -28,7 +28,7 @@ import (
 type ModuleInterface interface {
 	UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error
 	SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error)
-	SearchModuleBySetProperty(bizID, cond condition.Condition) (*metadata.InstResult, error)
+	SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error)
 	AddMultiModule(bizID, setID int64, moduleNames []string) error
 	DeleteMultiModule()
 }
@@ -67,7 +67,6 @@ func (m *module) isRepeated(moduleName string, excludeModuleIDS interface{}) (bo
 	}
 
 	return 0 != rsp.Data.Count, nil
-
 }
 
 func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error {
@@ -173,8 +172,8 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 
 	return &rspModule.Data, nil
 }
-func (m *module) AddMultiModule() {
-
+func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string) error {
+	return nil
 }
 func (m *module) DeleteMultiModule() {
 
