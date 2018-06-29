@@ -47,7 +47,7 @@ func init() {
 // ImportHost import host
 func ImportHost(c *gin.Context) {
 	cc := api.NewAPIResource()
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -121,7 +121,7 @@ func ExportHost(c *gin.Context) {
 
 	logics.SetProxyHeader(c)
 
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -187,7 +187,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	if nil != err {
 		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
 	}
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 

@@ -13,6 +13,13 @@
 package actions
 
 import (
+	"fmt"
+	"gopkg.in/redis.v5"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
@@ -20,13 +27,6 @@ import (
 	dccommon "configcenter/src/scene_server/datacollection/common"
 	"configcenter/src/scene_server/datacollection/datacollection/logics"
 	"configcenter/src/source_controller/common/instdata"
-	"fmt"
-	"gopkg.in/redis.v5"
-	"strconv"
-	"strings"
-	"time"
-	"sync"
-	"configcenter/src/framework/core/errors"
 )
 
 var dataCollection = &dataCollectionAction{}
@@ -67,27 +67,29 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	}
 	dccommon.Rediscli = rediscli
 
-	snapChan, discoverChan := "", ""
-	var err1, err2 error
+	chanName := []string{}
 	for {
-		snapChan, err1 = getChanName(dccommon.SnapShotChan)
-		discoverChan, err2 = getChanName(dccommon.DiscoverChan)
-		if err1 == nil && err2 == nil {
+		chanName, err = getChanName(config)
+		if nil == err {
 			break
 		}
-
-		blog.Errorf("get channel name failed: %v, please init database first, we will try 10 second later", err)
+		blog.Errorf("get channame faile: %v, please init databae first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-
-	blog.Infof("get channel name: snap=%s, discover=%s", snapChan, discoverChan)
-	hostSnap := logics.NewHostSnap(snapChan, dccommon.MaxSnapSize, rediscli, snapcli, wg)
-	discover := logics.NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli, wg, d.CC)
-
+	hostSnap := logics.NewHostSnap(chanName, dccommon.MaxSnapSize, rediscli, snapcli)
 	hostSnap.Start()
+
+	discoverChan := ""
+	for {
+		discoverChan, err = getDiscoverChanName()
+		if nil == err {
+			break
+		}
+		blog.Errorf("get discover channel fail: %v, please init database first, we will try 10 second later", err)
+		time.Sleep(time.Second * 10)
+	}
+	discover := logics.NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli, d.CC)
 	discover.Start()
 
 	// go mock(config, chanName)
@@ -95,7 +97,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	return nil
 }
 
-func getChanName(funcType string) (string, error) {
+func getDiscoverChanName() (string, error) {
 
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
@@ -108,21 +110,46 @@ func getChanName(funcType string) (string, error) {
 		return "", fmt.Errorf("default app not found")
 	}
 
-	defaultAppID := fmt.Sprint(results[0][common.BKAppIDField])
-	if len(defaultAppID) == 0 {
-		return "", fmt.Errorf("default app not found")
+	var defaultAppID string
+	switch id := results[0][common.BKAppIDField].(type) {
+	case int:
+		defaultAppID = strconv.Itoa(id)
+	case int64:
+		defaultAppID = strconv.FormatInt(id, 10)
+	default:
+		return "", fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
 
-	// 通道类型映射
-	switch funcType {
-	case dccommon.DiscoverChan:
-		return "hstest2", nil
-		//return defaultAppID + "_discover", nil
-	case dccommon.SnapShotChan:
-		return defaultAppID + "_snapshot", nil
-	default:
-		return "", errors.New("unknown func type: " + funcType)
+	return "discover" + defaultAppID, nil
+
+}
+
+func getChanName(config map[string]string) ([]string, error) {
+	if config["snap-redis.snapchan"] != "" {
+		return []string{config["snap-redis.snapchan"]}, nil
 	}
+
+	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
+	results := []map[string]interface{}{}
+
+	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
+		return nil, err
+	}
+
+	if len(results) <= 0 {
+		return nil, fmt.Errorf("default app not found")
+	}
+
+	var defaultAppID string
+	switch id := results[0][common.BKAppIDField].(type) {
+	case int:
+		defaultAppID = strconv.Itoa(id)
+	case int64:
+		defaultAppID = strconv.FormatInt(id, 10)
+	default:
+		return nil, fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
+	}
+	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}, nil
 }
 
 func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {

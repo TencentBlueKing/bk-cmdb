@@ -34,7 +34,7 @@ import (
 )
 
 //AddHost, return error info
-func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID int, cc *api.APIResource) (error, []string, []string, []string) {
+func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]map[string]interface{}, inputType string, moduleID []int, cc *api.APIResource) (error, []string, []string, []string) {
 
 	hostsInst, err := NewHostsInstance(req, ownerID, inputType, common.BKDefaultDirSubArea, cc)
 	if nil != err {
@@ -53,6 +53,11 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 	if nil != err {
 		blog.Errorf("get host assocate info  error, errror:%s", err.Error())
 		return err, nil, nil, nil
+	}
+
+	// parase host excel assocate fields
+	for index, host := range hostInfos {
+		hostsInst.ParseHostInstanceAssocate(index, host)
 	}
 
 	var errMsg, updateErrMsg, succMsg []string
@@ -80,23 +85,43 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 		if nil == iSubArea {
 			iSubArea = common.BKDefaultDirSubArea
 		}
-		key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
-		iHost, isOk := hostMap[key]
+
+		var iHostID interface{}
+		var isOK bool
+		if inputType == common.InputTypeExcel {
+			// host not db ,check params host info with host id
+			iHostID, isOK = host[common.BKHostIDField]
+
+		}
+
+		if false == isOK {
+			key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
+			iHost, isDBOK := hostMap[key]
+			if isDBOK {
+				isOK = isDBOK
+				iHostID, _ = iHost[common.BKHostIDField]
+			}
+
+		}
+
+		// delete system fields
+		delete(host, common.BKHostIDField)
 
 		//生产日志
-		if isOk {
-			hostID, _ := util.GetIntByInterface(iHost[common.BKHostIDField])
+		if isOK {
+
+			hostID, _ := util.GetInt64ByInterface(iHostID)
 			//prepare the log
 			strHostID := fmt.Sprintf("%d", hostID)
 			logObj := NewHostLog(req, common.BKDefaultOwnerID, strHostID, cc.HostCtrl(), cc.ObjCtrl(), hostLogFields)
 
-			err := hostsInst.UpdateHostInstance(index, host, iHost)
+			err := hostsInst.UpdateHostInstance(index, host, hostID)
 			if nil != err {
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
 			logContent, _ := logObj.GetHostLog(strHostID, false)
-			logConents = append(logConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: innerIP})
+			logConents = append(logConents, auditoplog.AuditLogExt{ID: int(hostID), Content: logContent, ExtKey: innerIP})
 
 		} else {
 			//prepare the log
@@ -323,40 +348,41 @@ func NewHostsInstance(req *restful.Request, ownerID, inputType string, cloudID i
 	return h, nil
 }
 
-func (h *hostsInstance) UpdateHostInstance(index int, host, oldHost map[string]interface{}) error {
+func (h *hostsInstance) ParseHostInstanceAssocate(index int, host map[string]interface{}) {
 	if common.InputTypeExcel == h.inputType {
-		if err, ok := h.rowErr[index]; true == ok {
-			return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+		if _, ok := h.rowErr[index]; true == ok {
+			return
 		}
 		err := h.assObjectInt.SetObjAsstPropertyVal(host)
 		if nil != err {
 			blog.Error("host assocate property error %d %s", index, err.Error())
-			return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
+			h.rowErr[index] = err
 		}
 
 	}
+}
+
+func (h *hostsInstance) UpdateHostInstance(index int, host map[string]interface{}, hostID int64) error {
+	// InputTypeApiNewHostSync method used only for synchronizing new hosts, not allowed to update
+	if common.InputTypeApiNewHostSync == h.inputType {
+		return h.errHandle.Error(common.CCErrCommDuplicateItem)
+	}
+
 	//delete(host, common.BKCloudIDField)
 	delete(host, "import_from")
 	delete(host, common.CreateTimeField)
 
-	hostID, _ := util.GetIntByInterface(oldHost[common.BKHostIDField])
-	cloudID, err := util.GetIntByInterface(oldHost[common.BKCloudIDField])
-	if nil != err {
-		blog.Error("get cloud id error %d %s", index, err.Error())
-		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, "cloud id "+err.Error()))
-	}
-	host[common.BKCloudIDField] = cloudID
 	filterFields := []string{common.CreateTimeField}
 
 	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, h.objAddr, filterFields, h.forward, h.errHandle)
-	_, err = valid.ValidMap(host, common.ValidUpdate, hostID)
+	_, err := valid.ValidMap(host, common.ValidUpdate, int(hostID))
 	if nil != err {
 		blog.Error("host valid error %v %v", index, err)
 		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
 
 	}
 	//update host asst attr
-	err = scenecommon.UpdateInstAssociation(h.objAddr, h.req, hostID, h.ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
+	err = scenecommon.UpdateInstAssociation(h.objAddr, h.req, int(hostID), h.ownerID, common.BKInnerObjIDHost, host) //hostAsstData, ownerID, host)
 	if nil != err {
 		blog.Error("update host asst attr error : %v", err)
 		return fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
@@ -379,19 +405,14 @@ func (h *hostsInstance) UpdateHostInstance(index int, host, oldHost map[string]i
 	return nil
 }
 
-func (h *hostsInstance) AddHostInstance(index, appID, moduleID int, host map[string]interface{}, ts time.Time) (int, error) {
-	if common.InputTypeExcel == h.inputType {
-		if err, ok := h.rowErr[index]; true == ok {
-			return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-		}
+func (h *hostsInstance) AddHostInstance(index, appID int, moduleID []int, host map[string]interface{}, ts time.Time) (int, error) {
 
-		err := h.assObjectInt.SetObjAsstPropertyVal(host)
-		if nil != err {
-			blog.Error("host assocate property error %v %v", index, err)
-			return 0, fmt.Errorf(h.langHandle.Languagef("import_row_int_error_str", index, err.Error()))
-		}
+	switch h.inputType {
+	case common.InputTypeExcel:
+		host["import_from"] = common.HostAddMethodExcel
+	case common.InputTypeApiNewHostSync:
+		host["import_from"] = common.HostAddMethodAPI
 	}
-
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
 		host[common.BKCloudIDField] = h.cloudID
@@ -425,7 +446,7 @@ func (h *hostsInstance) AddHostInstance(index, appID, moduleID int, host map[str
 
 	addParams := make(map[string]interface{})
 	addParams[common.BKAppIDField] = appID
-	addParams[common.BKModuleIDField] = []int{moduleID}
+	addParams[common.BKModuleIDField] = moduleID
 	addModulesURL := h.hostAddr + "/host/v1/meta/hosts/modules/"
 	addParams[common.BKHostIDField] = hostID
 	innerIP := host[common.BKHostInnerIPField].(string)

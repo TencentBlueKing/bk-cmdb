@@ -5,7 +5,7 @@
     "web_bk_alias_name_required": "中文名(必填)",
     "web_bk_data_type_required": "数据类型(必填)",
     "web_excel_not_data": "excel文件中没有数据",
-    "web_import_field_not_found": "导入不存在的字段, %s",
+    "web_import_field_not_found": "导入不存在的字段,请重新下载模板，并且不要删除excel前三行, %s",
     "web_excel_row_handle_error": "%s%s列无法处理内容;",
     "web_excel_header_required": "(必填)",
     "web_excel_header_field_error": "[未发现字段名(错误)]",

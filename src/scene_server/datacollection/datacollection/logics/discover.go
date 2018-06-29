@@ -42,7 +42,7 @@ type Discover struct {
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, wg *sync.WaitGroup, cc *api.APIResource) *Discover {
+func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, cc *api.APIResource) *Discover {
 
 	if 0 == maxSize {
 		maxSize = 100
@@ -67,7 +67,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 		maxConcurrent:          runtime.NumCPU(),
 		getMasterInterval:      time.Second * 11,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
-		wg:                     wg,
+		//wg:                     wg,
 		cc:                     cc,
 		requests:               httpClient,
 	}
@@ -75,7 +75,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, w
 
 // Start start main handle routines
 func (d *Discover) Start() {
-	defer d.wg.Done()
+	//defer d.wg.Done()
 
 	go d.Run()
 }

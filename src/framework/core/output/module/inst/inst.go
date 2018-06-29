@@ -21,7 +21,20 @@ import (
 	"errors"
 )
 
-var _ Inst = (*inst)(nil)
+var _ CommonInstInterface = (*inst)(nil)
+
+// CommonInstInterface the inst interface
+type CommonInstInterface interface {
+	Maintaince
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type inst struct {
 	target model.Model
@@ -30,16 +43,6 @@ type inst struct {
 
 func (cli *inst) GetModel() model.Model {
 	return cli.target
-}
-
-func (cli *inst) IsMainLine() bool {
-	// TODO：判断当前实例是否为主线实例
-	return true
-}
-
-func (cli *inst) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
 }
 
 func (cli *inst) GetInstID() int {
@@ -55,28 +58,6 @@ func (cli *inst) GetInstName() string {
 
 func (cli *inst) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *inst) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *inst) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *inst) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *inst) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *inst) GetChildren() ([]Topo, error) {
-	return nil, nil
 }
 
 func (cli *inst) SetValue(key string, value interface{}) error {
@@ -182,7 +163,7 @@ func (cli *inst) Update() error {
 		if nil != err {
 			return err
 		}
-
+		cli.datas.Set(InstID, instID)
 	}
 
 	return nil

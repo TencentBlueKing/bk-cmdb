@@ -23,6 +23,7 @@ const (
 	RedisDisKeyPrefix  = common.BKCacheKeyV3Prefix + "discover:"
 	MasterProcLockKey  = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
 	MasterDisLockKey   = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
 )
 
 // message process related define

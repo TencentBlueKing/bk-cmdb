@@ -14,6 +14,8 @@ package api
 
 import (
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // PlatIteratorWrapper the plat iterator wrapper
@@ -33,14 +35,14 @@ func (cli *PlatIteratorWrapper) Next() (*PlatWrapper, error) {
 // ForEach the foreach function
 func (cli *PlatIteratorWrapper) ForEach(callback func(plat *PlatWrapper) error) error {
 
-	return cli.plat.ForEach(func(item inst.Inst) error {
+	return cli.plat.ForEach(func(item inst.CommonInstInterface) error {
 		return callback(&PlatWrapper{plat: item})
 	})
 }
 
 // PlatWrapper the plat wrapper
 type PlatWrapper struct {
-	plat inst.Inst
+	plat inst.CommonInstInterface
 }
 
 // SetValue set the key value
@@ -66,6 +68,16 @@ func (cli *PlatWrapper) Update() error {
 // Save save the data
 func (cli *PlatWrapper) Save() error {
 	return cli.plat.Save()
+}
+
+// GetValues return the values
+func (cli *PlatWrapper) GetValues() (types.MapStr, error) {
+	return cli.plat.GetValues()
+}
+
+// GetModel get the model for the plat
+func (cli *PlatWrapper) GetModel() model.Model {
+	return cli.plat.GetModel()
 }
 
 // SetSupplierAccount set the supplier account code of the set
