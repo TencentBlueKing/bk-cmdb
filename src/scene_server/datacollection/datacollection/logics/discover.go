@@ -147,7 +147,7 @@ func (d *Discover) Run() {
 					d.resetHandle = make(chan struct{})
 
 					// 延迟处理计数清零
-					//delayHandleCnt = 0
+					delayHandleCnt = 0
 				}
 
 				if atomic.LoadInt64(&msgHandlerCnt) < int64(d.maxConcurrent) {
@@ -292,25 +292,18 @@ func (d *Discover) releaseMaster() {
 // lockMaster lock master process
 func (d *Discover) lockMaster() (ok bool) {
 	var err error
-	setNXChan := make(chan struct{})
-
-	go func() {
-		select {
-		case <-time.After(d.masterProcLockLiveTime):
-			blog.Infof("lockMaster check: set nx time out!! the network may be broken, redis stats: %v ", d.redisCli.PoolStats())
-		case <-setNXChan:
-		}
-	}()
 
 	if d.isMaster {
 		var val string
 		val, err = d.redisCli.Get(common.MasterDisLockKey).Result()
 		if err != nil {
+			d.isMaster = false
 			blog.Errorf("discover-master: lock master err %v", err)
 		} else if val == d.id {
 			blog.Infof("discover-master check : i am still master")
 			d.redisCli.Set(common.MasterDisLockKey, d.id, d.masterProcLockLiveTime)
 			ok = true
+			d.isMaster = true
 		} else {
 			blog.Infof("discover-master: exit, val = %v, id = %v", val, d.id)
 			d.isMaster = false
@@ -319,16 +312,16 @@ func (d *Discover) lockMaster() (ok bool) {
 	} else {
 		ok, err = d.redisCli.SetNX(common.MasterDisLockKey, d.id, d.masterProcLockLiveTime).Result()
 		if err != nil {
+			d.isMaster = false
 			blog.Errorf("discover-slave: lock master err %v", err)
 		} else if ok {
 			blog.Infof("discover-slave: check ok, i am master from now")
 			d.isMaster = true
 		} else {
+			d.isMaster = false
 			blog.Infof("discover-slave: check failed, there is other master process exists, recheck after %v ", d.getMasterInterval)
 		}
 	}
-
-	close(setNXChan)
 
 	return ok
 }
