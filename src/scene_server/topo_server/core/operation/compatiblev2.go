@@ -13,6 +13,8 @@
 package operation
 
 import (
+	"configcenter/src/apimachinery"
+
 	"configcenter/src/scene_server/topo_server/core/compatiblev2"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -25,20 +27,23 @@ type CompatibleV2OperationInterface interface {
 }
 
 // NewCompatibleV2Operation create a new compatiblev2 operation instance
-func NewCompatibleV2Operation() CompatibleV2OperationInterface {
-	return &compatiblev2Operation{}
+func NewCompatibleV2Operation(client apimachinery.ClientSetInterface) CompatibleV2OperationInterface {
+	return &compatiblev2Operation{
+		client: client,
+	}
 }
 
 type compatiblev2Operation struct {
+	client apimachinery.ClientSetInterface
 }
 
 func (c *compatiblev2Operation) Business(params types.LogicParams) compatiblev2.BusinessInterface {
-	return nil
+	return compatiblev2.NewBusiness(params, c.client)
 }
 func (c *compatiblev2Operation) Module(params types.LogicParams) compatiblev2.ModuleInterface {
-	return nil
+	return compatiblev2.NewModule(params, c.client)
 }
 
 func (c *compatiblev2Operation) Set(params types.LogicParams) compatiblev2.SetInterface {
-	return nil
+	return compatiblev2.NewSet(params, c.client)
 }
