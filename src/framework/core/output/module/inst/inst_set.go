@@ -165,7 +165,7 @@ func (cli *set) Update() error {
 		cli.datas.Remove(key)
 	})
 
-	log.Infof("the business %d", cli.bizID)
+	//log.Infof("the business %d", cli.bizID)
 
 	cli.datas.Remove("create_time") //invalid check , need to delete
 
