@@ -35,7 +35,7 @@ type HostInterface interface {
 	Transfer() TransferInterface
 
 	SetBusinessID(bizID int64)
-	SetModuleIDS(moduleIDS []int64)
+	SetModuleIDS(moduleIDS []int64, isIncrement bool)
 
 	GetBizs() []types.MapStr
 	GetSets() []types.MapStr
@@ -51,14 +51,15 @@ type HostInterface interface {
 }
 
 type host struct {
-	bizs      []types.MapStr
-	sets      []types.MapStr
-	modules   []types.MapStr
-	bizID     int64
-	moduleIDS []int64
-	setIDS    []int64
-	target    model.Model
-	datas     types.MapStr
+	isIncrement bool
+	bizs        []types.MapStr
+	sets        []types.MapStr
+	modules     []types.MapStr
+	bizID       int64
+	moduleIDS   []int64
+	setIDS      []int64
+	target      model.Model
+	datas       types.MapStr
 }
 
 func (cli *host) GetBizs() []types.MapStr {
@@ -131,8 +132,9 @@ func (cli *host) SetBusinessID(bizID int64) {
 	cli.bizID = bizID
 }
 
-func (cli *host) SetModuleIDS(moduleIDS []int64) {
+func (cli *host) SetModuleIDS(moduleIDS []int64, isIncrement bool) {
 	cli.moduleIDS = moduleIDS
+	cli.isIncrement = isIncrement
 }
 
 func (cli *host) GetModel() model.Model {
@@ -341,7 +343,7 @@ func (cli *host) Update() error {
 
 		cli.datas.Set(HostID, hostID)
 		if 0 != len(cli.moduleIDS) {
-			err = cli.Transfer().MoveToModule(cli.moduleIDS, false)
+			err = cli.Transfer().MoveToModule(cli.moduleIDS, cli.isIncrement)
 			if nil != err {
 				log.Errorf("failed to biz(%d) set modules(%#v), error info is %s", cli.bizID, cli.moduleIDS, err.Error())
 				return err
