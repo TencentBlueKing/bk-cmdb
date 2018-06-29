@@ -76,6 +76,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
+	service.Config = &hostSvr.Config
 	hostSvr.Core = engine
 	hostSvr.Service = service
 	hostSvr.Logic = service.Logics
