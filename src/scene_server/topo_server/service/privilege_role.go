@@ -18,7 +18,7 @@ import (
 )
 
 // CreatePrivilege search user goup
-func (s *Service) CreatePrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreatePrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	datas := make([]string, 0)
 	data.ForEach(func(key string, val interface{}) {
@@ -30,6 +30,6 @@ func (s *Service) CreatePrivilege(params types.LogicParams, pathParams, queryPar
 }
 
 // GetPrivilege search user goup
-func (s *Service) GetPrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetPrivilege(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	return s.core.PermissionOperation().Role(params).GetPermission(params.Header.OwnerID, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }

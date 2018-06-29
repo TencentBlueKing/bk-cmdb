@@ -22,11 +22,11 @@ import (
 
 	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/language"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
@@ -34,26 +34,49 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// Service topo service
-type Service struct {
-	*options.Config
-	*backbone.Engine
+// TopoServiceInterface the topo service methods used to init
+type TopoServiceInterface interface {
+	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
+	WebService(filter restful.FilterFunction) *restful.WebService
+	SetConfig(cfg options.Config)
+}
 
-	actions []action
-	core    core.Core
+// New ceate topo servcie instance
+func New() TopoServiceInterface {
+	return &topoService{}
+}
+
+// topoService topo service
+type topoService struct {
+	language language.CCLanguageIf
+	err      errors.CCErrorIf
+	actions  []action
+	core     core.Core
+	cfg      options.Config
+}
+
+func (s *topoService) SetConfig(cfg options.Config) {
+	s.cfg = cfg
+}
+
+// SetOperation set the operation
+func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf) {
+
+	s.core = operation
+	s.err = err
+	s.language = language
+
 }
 
 // WebService the web service
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
-
-	// set core
-	s.core = core.New(s.CoreAPI)
+func (s *topoService) WebService(filter restful.FilterFunction) *restful.WebService {
 
 	// init service actions
 	s.initService()
 
 	ws := new(restful.WebService)
-	ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/topo/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -75,7 +98,7 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	return ws
 }
 
-func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
+func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {
 	rsp := api.BKAPIRsp{
 		Result:  true,
 		Code:    0,
@@ -96,7 +119,7 @@ func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error)
 	return string(data), err
 }
 
-func (s *Service) sendResponse(resp *restful.Response, dataMsg interface{}) {
+func (s *topoService) sendResponse(resp *restful.Response, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(common.CCSuccess, dataMsg); nil == rspErr {
 		io.WriteString(resp, rsp)
@@ -104,7 +127,7 @@ func (s *Service) sendResponse(resp *restful.Response, dataMsg interface{}) {
 }
 
 // Actions return the all actions
-func (s *Service) Actions() []*httpserver.Action {
+func (s *topoService) Actions() []*httpserver.Action {
 
 	var httpactions []*httpserver.Action
 	for _, a := range s.actions {
@@ -119,10 +142,10 @@ func (s *Service) Actions() []*httpserver.Action {
 				// get the language
 				language := util.GetActionLanguage(req)
 
-				defLang := s.Language.CreateDefaultCCLanguageIf(language)
+				defLang := s.language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
-				defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+				defErr := s.err.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
