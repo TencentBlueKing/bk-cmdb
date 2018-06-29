@@ -30,22 +30,30 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 			common.BKPropertyIDField: row.PropertyID,
 			common.BKOwnerIDField:    row.OwnerID,
 		}
-		isExist, err := metaCli.GetCntByCondition(tableName, selector)
+		exist := []metadata.ObjectAttDes{}
+		err := metaCli.GetMutilByCondition(tableName, nil, selector, &exist, "", 0, 1)
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tableName, err)
 			return err
 		}
-		if isExist > 0 {
-			metaCli.UpdateByCondition(tableName, row, selector)
-			continue
+		update := false
+		if len(exist) > 0 {
+			row.ID = exist[0].ID
+			update = true
 		}
-		id, err := metaCli.GetIncID(tableName)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tableName, err)
-			return err
+		if row.ID <= 0 {
+			id, err := metaCli.GetIncID(tableName)
+			if nil != err {
+				blog.Errorf("add data for  %s table error  %s", tableName, err)
+				return err
+			}
+			row.ID = int(id)
 		}
-		row.ID = int(id)
-		_, err = metaCli.Insert(tableName, row)
+		if update {
+			err = metaCli.UpdateByCondition(tableName, row, selector)
+		} else {
+			_, err = metaCli.Insert(tableName, row)
+		}
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tableName, err)
 			return err

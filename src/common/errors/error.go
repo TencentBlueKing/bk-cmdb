@@ -53,7 +53,7 @@ func (cli *ccErrorHelper) Errorf(language string, ErrorCode int, args ...interfa
 
 // load load language package file from dir
 func (cli *ccErrorHelper) Load(errcode map[string]ErrorCode) {
-	blog.InfoJSON("loaded error resource: %s", errcode)
+	blog.V(3).Infof("loaded error resource: %#v", errcode)
 	cli.errCode = errcode
 }
 
