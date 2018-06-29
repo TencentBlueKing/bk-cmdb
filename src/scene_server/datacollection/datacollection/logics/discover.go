@@ -78,8 +78,6 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, c
 
 // Start start main handle routines
 func (d *Discover) Start() {
-	//defer d.wg.Done()
-
 	go d.Run()
 }
 
@@ -189,6 +187,12 @@ func (d *Discover) Run() {
 
 // subChan subscribe message from redis channel
 func (d *Discover) subChan() {
+	defer func() {
+		if err := recover(); err != nil {
+			blog.Errorf("subChan fatal error happened %s, we will try again 10s later, stack: \n%s", err, debug.Stack())
+		}
+		d.isSubing = false
+	}()
 
 	d.isSubing = true
 
