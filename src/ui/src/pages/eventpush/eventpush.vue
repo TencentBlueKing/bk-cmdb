@@ -19,7 +19,7 @@
             :list="table.list"
             :defaultSort="table.defaultSort"
             :pagination="table.pagination"
-            :loading="table.isLoading"
+            :loading="$loading('getSubscribe', 'deleteEvent')"
             :wrapperMinusHeight="150"
             @handlePageChange="setCurrentPage"
             @handleSizeChange="setCurrentSize"
@@ -140,32 +140,24 @@
             /*
                 获取推送列表
             */
-            getTableList () {
+            async getTableList () {
                 let appid = 0
                 let pagination = this.table.pagination
-                this.table.isLoading = true
-                this.$axios.post(`event/subscribe/search/${this.bkSupplierAccount}/${appid}`, {
+                const params = {
                     page: {
                         start: (pagination.current - 1) * pagination.size,
                         limit: pagination.size,
                         sort: this.table.sort
                     }
-                }).then(res => {
-                    if (res.result) {
-                        res.data.info.map(val => {
-                            val['subscription_form'] = val['subscription_form'].split(',')
-                            val['last_time'] = this.$formatTime(val['last_time'])
-                        })
-                        
-                        this.table.list = res.data.info
-                        pagination.count = res.data.count
-                    } else {
-                        this.$alertMsg(this.$t('EventPush["获取推送列表失败"]'))
-                    }
-                    this.table.isLoading = false
-                }).catch(() => {
-                    this.table.isLoading = false
+                }
+                let res = await this.$axios.post(`event/subscribe/search/${this.bkSupplierAccount}/${appid}`, {}, {id: 'getSubscribe'})
+                res.data.info.map(val => {
+                    val['subscription_form'] = val['subscription_form'].split(',')
+                    val['last_time'] = this.$formatTime(val['last_time'])
                 })
+                
+                this.table.list = res.data.info
+                pagination.count = res.data.count
             },
             /*
                 编辑某一项事件推送
@@ -205,16 +197,11 @@
             /*
                 删除某一项事件推送
             */
-            delEvent (item) {
+            async delEvent (item) {
                 let appid = 0
-                this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${appid}/${item['subscription_id']}`).then(res => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
-                        this.getTableList()
-                    } else {
-                        this.$alertMsg(this.$t('EventPush["删除推送失败"]'))
-                    }
-                })
+                await this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${appid}/${item['subscription_id']}`, {id: 'deleteEvent'})
+                this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
+                this.getTableList()
             },
             /*
                 新增推送

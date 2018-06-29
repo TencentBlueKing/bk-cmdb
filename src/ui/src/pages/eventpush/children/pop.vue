@@ -98,24 +98,28 @@
             /*
                 测试推送
             */
-            testPing () {
+            async testPing () {
                 this.isResultShow = true
-                this.$axios.post(`event/subscribe/ping`, {
-                    callback_url: this.callbackURL
-                }, {id: 'testPush'}).then(res => {
+                try {
+                    const res = await this.$axios.post(`event/subscribe/ping123`, {
+                        callback_url: this.callbackURL
+                    }, {id: 'testPush'})
+                    console.log('done')
                     this.resultInfo = res
-                })
+                } catch (e) {
+                    console.log(e)
+                    // this.$alertMsg(e.message || e.data['bk_error_msg'])
+                }
             },
             /*
                 测试连通性
             */
-            testTelnet () {
+            async testTelnet () {
                 this.isResultShow = true
-                this.$axios.post(`event/subscribe/telnet`, {
+                const res = await this.$axios.post(`event/subscribe/telnet`, {
                     callback_url: this.callbackURL
-                }, {id: 'testPush'}).then(res => {
-                    this.resultInfo = res
-                })
+                }, {id: 'testPush'})
+                this.resultInfo = res
             },
             closePop () {
                 this.isResultShow = false
