@@ -87,7 +87,6 @@ func (cli *set) SetValue(key string, value interface{}) error {
 	return nil
 }
 func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
-	businessID := cli.datas.String(BusinessID)
 
 	// get the attributes
 	attrs, err := cli.target.Attributes()
@@ -96,11 +95,20 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// construct the condition which is used to check the if it is exists
-	cond := common.CreateCondition().Field(BusinessID).Eq(businessID)
+	cond := common.CreateCondition().Field(BusinessID).Eq(cli.bizID)
 
 	// extract the required id
 	for _, attrItem := range attrs {
 		if attrItem.GetKey() {
+
+			if attrItem.GetID() == BusinessID {
+				if 0 >= cli.bizID {
+					return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				}
+				cond.Field(BusinessID).Eq(cli.bizID)
+				continue
+			}
+
 			attrVal, exists := cli.datas.Get(attrItem.GetID())
 			if !exists {
 				return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
@@ -118,7 +126,7 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 }
 func (cli *set) IsExists() (bool, error) {
 
-	if 0 <= cli.bizID {
+	if 0 < cli.bizID {
 		cli.datas.Set(BusinessID, cli.bizID)
 	}
 	_, existItems, err := cli.search()
