@@ -13,8 +13,6 @@
 package common
 
 import (
-	"fmt"
-
 	cccommon "configcenter/src/common"
 	"configcenter/src/framework/core/types"
 )
@@ -72,8 +70,8 @@ func (cli *field) Eq(val interface{}) Condition {
 		cli.fieldValue = v
 		cli.fieldValue = v
 	case string:
-		cli.opeartor = cccommon.BKDBLIKE
-		cli.fieldValue = fmt.Sprintf("^%s$", val)
+		cli.opeartor = cccommon.BKDBIN
+		cli.fieldValue = []string{v}
 	}
 
 	return cli.condition
