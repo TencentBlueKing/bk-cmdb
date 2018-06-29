@@ -25,6 +25,7 @@ type ServerOption struct {
 
 // Config export
 type Config struct {
+	BusinessTopoLevelMax string `json:"level.businessTopoMax"`
 }
 
 //NewServerOption create a ServerOption object

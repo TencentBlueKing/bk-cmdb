@@ -25,7 +25,7 @@ import (
 )
 
 // CreateInst create a new inst
-func (s *Service) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/{owner_id}/{obj_id}
 
@@ -60,7 +60,7 @@ func (s *Service) CreateInst(params types.LogicParams, pathParams, queryParams P
 }
 
 // DeleteInst delete the inst
-func (s *Service) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -93,7 +93,7 @@ func (s *Service) DeleteInst(params types.LogicParams, pathParams, queryParams P
 }
 
 // UpdateInst update the inst
-func (s *Service) UpdateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
@@ -130,7 +130,7 @@ func (s *Service) UpdateInst(params types.LogicParams, pathParams, queryParams P
 }
 
 // SearchInst search the inst
-func (s *Service) SearchInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInst")
 	// /inst/search/{owner_id}/{obj_id}
 
@@ -190,7 +190,7 @@ func (s *Service) SearchInst(params types.LogicParams, pathParams, queryParams P
 }
 
 // SearchInstAndAssociationDetail search the inst with association details
-func (s *Service) SearchInstAndAssociationDetail(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstAndAssociationDetail(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstAndAssociationDetail")
 	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
 
@@ -233,7 +233,7 @@ func (s *Service) SearchInstAndAssociationDetail(params types.LogicParams, pathP
 }
 
 // SearchInstByObject search the inst of the object
-func (s *Service) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
@@ -277,7 +277,7 @@ func (s *Service) SearchInstByObject(params types.LogicParams, pathParams, query
 }
 
 // SearchInstByAssociation search inst by the association inst
-func (s *Service) SearchInstByAssociation(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByAssociation(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstByAssociation")
 	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
@@ -320,7 +320,7 @@ func (s *Service) SearchInstByAssociation(params types.LogicParams, pathParams, 
 }
 
 // SearchInstByInstID search the inst by inst ID
-func (s *Service) SearchInstByInstID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByInstID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstByInstID")
 	// /inst/search/{owner_id}/{obj_id}/{inst_id}
 
@@ -364,7 +364,7 @@ func (s *Service) SearchInstByInstID(params types.LogicParams, pathParams, query
 }
 
 // SearchInstChildTopo search the child inst topo for a inst
-func (s *Service) SearchInstChildTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstChildTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstChildTopo")
 	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
@@ -411,7 +411,7 @@ func (s *Service) SearchInstChildTopo(params types.LogicParams, pathParams, quer
 }
 
 // SearchInstTopo search the inst topo
-func (s *Service) SearchInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstTopo")
 	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
