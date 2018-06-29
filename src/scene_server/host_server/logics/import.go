@@ -495,8 +495,8 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 
 	filterFields := []string{common.CreateTimeField}
 
-	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
-	_, err := valid.ValidMap(host, common.ValidUpdate, hostID)
+	valid := validator.NewValidMapWithKeyFields(util.GetOwnerID(h.pheader), common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
+	err := valid.ValidMap(host, common.ValidUpdate, hostID)
 	if nil != err {
 		blog.Error("host valid error %v %v", index, err)
 		return fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
@@ -568,8 +568,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, 
 		host[common.BKCloudIDField] = cloudID
 	}
 	filterFields := []string{common.CreateTimeField}
-	valid := validator.NewValidMapWithKeyFields(common.BKDefaultOwnerID, common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
-	_, err := valid.ValidMap(host, common.ValidCreate, 0)
+	valid := validator.NewValidMapWithKeyFields(util.GetOwnerID(h.pheader), common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
+	err := valid.ValidMap(host, common.ValidCreate, 0)
 
 	if nil != err {
 		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
