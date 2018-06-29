@@ -55,7 +55,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 
 	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
 	permission := operation.NewPermissionOperation(client)
-	compatibleV2 := operation.NewCompatibleV2Operation()
+	compatibleV2 := operation.NewCompatibleV2Operation(client)
 
 	return &core{
 		inst:           inst,

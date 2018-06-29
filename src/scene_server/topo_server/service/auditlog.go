@@ -10,38 +10,17 @@
  * limitations under the License.
  */
 
-package main
+package service
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"runtime"
 
-	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/app"
-	"configcenter/src/scene_server/topo_server/app/options"
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_TOPO)
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+// SearchAuditLog search audit logs
+func (s *topoService) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	fmt.Println("SearchAuditLog")
+	return nil, nil
 }
