@@ -19,7 +19,6 @@ import (
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 	"errors"
-	"fmt"
 )
 
 var _ ModuleInterface = (*module)(nil)
@@ -196,7 +195,7 @@ func (cli *module) Update() error {
 }
 func (cli *module) Save() error {
 
-	fmt.Println("bizID:", cli.bizID, "setID:", cli.setID)
+	//fmt.Println("bizID:", cli.bizID, "setID:", cli.setID)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {

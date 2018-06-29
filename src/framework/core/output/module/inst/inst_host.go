@@ -268,7 +268,7 @@ func (cli *host) IsExists() (bool, error) {
 		cond.Field(attrItem.GetID()).Eq(cli.datas[attrItem.GetID()])
 
 	}
-	log.Infof("host search condition:%s %d", string(cond.ToMapStr().ToJSON()), 0)
+	//log.Infof("host search condition:%s %d", string(cond.ToMapStr().ToJSON()), 0)
 	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
 	if nil != err {
 		return false, err
@@ -278,7 +278,7 @@ func (cli *host) IsExists() (bool, error) {
 }
 func (cli *host) Create() error {
 	//log.Infof("the create host:%#v", cli.datas)
-	log.Infof("create the exists:%s %d", string(cli.datas.ToJSON()), 0)
+	//log.Infof("create the exists:%s %d", string(cli.datas.ToJSON()), 0)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
@@ -307,7 +307,7 @@ func (cli *host) Update() error {
 		return err
 	}
 
-	log.Infof("update the exists:%s %d", string(cli.datas.ToJSON()), 0)
+	//log.Infof("update the exists:%s %d", string(cli.datas.ToJSON()), 0)
 
 	// clear the invalid data
 	cli.datas.ForEach(func(key string, val interface{}) {
