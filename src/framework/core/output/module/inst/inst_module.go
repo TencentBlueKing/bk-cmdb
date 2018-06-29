@@ -115,7 +115,7 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 		}
 	}
 
-	log.Infof("the module search condition:%#v", cond.ToMapStr())
+	//log.Infof("the module search condition:%#v", cond.ToMapStr())
 	// search by condition
 	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
 

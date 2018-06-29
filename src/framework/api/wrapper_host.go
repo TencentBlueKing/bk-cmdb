@@ -283,7 +283,7 @@ func (cli *HostWrapper) GetSLA() (string, error) {
 
 // SetCloudID set the cloudid for the host
 func (cli *HostWrapper) SetCloudID(cloudID int64) error {
-	return cli.host.SetValue(fieldCloudID, fmt.Sprintf("%d", cloudID))
+	return cli.host.SetValue(fieldCloudID, cloudID)
 }
 
 // GetCloudID get the cloudid
