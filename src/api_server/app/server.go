@@ -17,17 +17,18 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/app/options"
+	"configcenter/src/api_server/ccapi/logics/v2"
 	apisvc "configcenter/src/api_server/service"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
-	//"configcenter/src/scene_server/host_server/logics"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -48,7 +49,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(hostsvc.Service)
+	service := new(apisvc.Service)
+
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -64,11 +66,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	hostSvr := new(HostServer)
+	apiSvr := new(APIServer)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_HOST,
 		op.ServConf.ExConfig,
-		hostSvr.onHostConfigUpdate,
+		apiSvr.onHostConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -76,18 +78,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
-	hostSvr.Core = engine
-	hostSvr.Service = service
-	hostSvr.Logic = service.Logics
+
+	apiSvr.Core = engine
+	apiSvr.Service = service
+	apiSvr.Logic = service.Logics
 	select {}
 	return nil
 }
 
-type HostServer struct {
+type APIServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
-	Service *hostsvc.Service
+	Service *apisvc.Service
 	Logic   *logics.Logics
+}
+
+func (h *APIServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
