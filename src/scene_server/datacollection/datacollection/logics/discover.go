@@ -297,7 +297,7 @@ func (d *Discover) lockMaster() (ok bool) {
 	go func() {
 		select {
 		case <-time.After(d.masterProcLockLiveTime):
-			blog.Fatalf("lockMaster check: set nx time out!! the network may be broken, redis stats: %v ", d.redisCli.PoolStats())
+			blog.Infof("lockMaster check: set nx time out!! the network may be broken, redis stats: %v ", d.redisCli.PoolStats())
 		case <-setNXChan:
 		}
 	}()
