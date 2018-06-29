@@ -117,7 +117,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
+	blog.V(3).Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
@@ -137,11 +137,11 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnProcessUpdate(*prev, *now)
 	}
-	blog.Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
+	blog.V(3).Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
 }
 
 func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
+	blog.V(3).Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *ERROR CODE* config has changed, but got err: %v", cur.Err)
@@ -150,7 +150,7 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 
 	now := make(map[string]errors.ErrorCode)
 	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config center received event that *ERROR CODE* config has changed, but unmarshal err: %v", c.procName, err)
+		blog.Errorf("config center received %s event that *ERROR CODE* config has changed, but unmarshal err: %v", c.procName, err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 }
 
 func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
-	blog.Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
+	blog.V(3).Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *LANGUAGE* config has changed, but got err: %v", cur.Err)
@@ -175,7 +175,7 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 
 	now := make(map[string]language.LanguageMap)
 	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config center received event that *LANGUAGE* config has changed, but unmarshal err: %v", c.procName, err)
+		blog.Errorf("config (%s) center received event that *LANGUAGE* config has changed, but unmarshal err: %v", c.procName, err)
 		return
 	}
 
@@ -214,6 +214,7 @@ func (c *CC) sync() {
 }
 
 func (c *CC) syncProc() {
+	blog.V(3).Infof("start sync proc config from config center.")
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
@@ -228,9 +229,9 @@ func (c *CC) syncProc() {
 	}
 
 	c.Lock()
-	defer c.Unlock()
 	if reflect.DeepEqual(conf, c.previousProc) {
 		blog.V(4).Infof("sync process config, but nothing is changed.")
+		c.Unlock()
 		return
 	}
 	blog.V(4).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
@@ -240,10 +241,14 @@ func (c *CC) syncProc() {
 		Err:  nil,
 		Data: []byte(data),
 	}
+
+	c.Unlock()
 	c.onProcChange(event)
+
 }
 
 func (c *CC) syncLang() {
+	blog.V(3).Infof("start sync lang config from config center.")
 	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
 	if err != nil {
 		blog.Errorf("sync process config failed, err: %v", err)
@@ -252,14 +257,15 @@ func (c *CC) syncLang() {
 
 	lang := make(map[string]language.LanguageMap)
 	if err := json.Unmarshal([]byte(data), &lang); err != nil {
-		blog.Errorf("sync *LANGUAGE* config, but unmarshal failed, err: %v", c.procName, err)
+		blog.Errorf("sync %s *LANGUAGE* config, but unmarshal failed, err: %v", c.procName, err)
 		return
 	}
 
 	c.Lock()
-	defer c.Unlock()
+
 	if reflect.DeepEqual(lang, c.previousLang) {
 		blog.V(4).Infof("sync language config, but nothing is changed.")
+		c.Unlock()
 		return
 	}
 
@@ -270,10 +276,12 @@ func (c *CC) syncLang() {
 		Err:  nil,
 		Data: []byte(data),
 	}
+	c.Unlock()
 	c.onLanguageChange(event)
 }
 
 func (c *CC) syncErr() {
+	blog.V(3).Infof("start sync error config from config center.")
 	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("sync process config failed, err: %v", err)
@@ -282,14 +290,14 @@ func (c *CC) syncErr() {
 
 	errCode := make(map[string]errors.ErrorCode)
 	if err := json.Unmarshal([]byte(data), &errCode); err != nil {
-		blog.Errorf("sync error code config, but unmarshal failed, err: %v", c.procName, err)
+		blog.Errorf("sync %s error code config, but unmarshal failed, err: %v", c.procName, err)
 		return
 	}
 
 	c.Lock()
-	defer c.Unlock()
 	if reflect.DeepEqual(errCode, c.previousError) {
 		blog.V(4).Infof("sync error code config, but nothing is changed.")
+		c.Unlock()
 		return
 	}
 
@@ -300,6 +308,7 @@ func (c *CC) syncErr() {
 		Err:  nil,
 		Data: []byte(data),
 	}
+	c.Unlock()
 	c.onErrorChange(event)
 }
 

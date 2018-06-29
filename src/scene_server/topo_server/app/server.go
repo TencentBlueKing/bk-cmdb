@@ -23,12 +23,35 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
+	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
 )
+
+// TopoServer the topo server
+type TopoServer struct {
+	Core    *backbone.Engine
+	Config  options.Config
+	Service toposvr.TopoServiceInterface
+}
+
+func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
+
+	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
+	if nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
+	}
+
+	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
+	}
+
+}
 
 // Run main function
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -36,6 +59,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
+
+	blog.V(3).Infof("srv conf:", svrInfo)
 
 	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
@@ -48,8 +73,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
 
-	topoService := new(toposvr.Service)
+	topoSvr := new(TopoServer)
+
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+
+	topoService := toposvr.New()
+	topoSvr.Service = topoService
+
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -57,7 +91,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -65,7 +98,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	topoSvr := new(TopoServer)
 	engine, err := backbone.NewBackbone(
 		ctx,
 		op.ServConf.RegDiscover,
@@ -74,31 +106,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		topoSvr.onTopoConfigUpdate,
 		bonC)
 
-	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
+	if nil != err {
+		return fmt.Errorf("new engine failed, error is %s", err.Error())
 	}
 
-	topoService.Engine = engine
-	topoService.Config = &topoSvr.Config
-
 	topoSvr.Core = engine
-	topoSvr.Service = topoService
+
+	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
+	topoService.SetConfig(topoSvr.Config)
 
 	select {
 	case <-ctx.Done():
 	}
 	return nil
-}
-
-// TopoServer the topo server
-type TopoServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service *toposvr.Service
-}
-
-func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-	//t.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

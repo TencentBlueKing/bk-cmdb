@@ -17,7 +17,7 @@ import (
 	"net/http"
 )
 
-func (s *Service) initAssociation() {
+func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/model/{owner_id}", HandlerFunc: s.SearchMainLineOBjectTopo})
@@ -26,12 +26,12 @@ func (s *Service) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 }
 
-func (s *Service) initAuditLog() {
+func (s *topoService) initAuditLog() {
 
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: s.SearchAuditLog})
 }
 
-func (s *Service) initCompatiblev2() {
+func (s *topoService) initCompatiblev2() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/searchAll", HandlerFunc: s.SearchAllApp})
 
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.UpdateMultiSet})
@@ -46,7 +46,7 @@ func (s *Service) initCompatiblev2() {
 
 }
 
-func (s *Service) initBusiness() {
+func (s *topoService) initBusiness() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/{owner_id}", HandlerFunc: s.CreateBusiness})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/app/{owner_id}/{app_id}", HandlerFunc: s.DeleteBusiness})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/app/{owner_id}/{app_id}", HandlerFunc: s.UpdateBusiness})
@@ -56,7 +56,7 @@ func (s *Service) initBusiness() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/default/{owner_id}", HandlerFunc: s.CreateDefaultBusiness})
 }
 
-func (s *Service) initModule() {
+func (s *topoService) initModule() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/module/{app_id}/{set_id}", HandlerFunc: s.CreateModule})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/module/{app_id}/{set_id}/{module_id}", HandlerFunc: s.DeleteModule})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/module/{app_id}/{set_id}/{module_id}", HandlerFunc: s.UpdateModule})
@@ -64,7 +64,7 @@ func (s *Service) initModule() {
 
 }
 
-func (s *Service) initSet() {
+func (s *topoService) initSet() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/{app_id}", HandlerFunc: s.CreateSet})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/set/{app_id}/{set_id}", HandlerFunc: s.DeleteSet})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/set/{app_id}/{set_id}", HandlerFunc: s.UpdateSet})
@@ -72,7 +72,7 @@ func (s *Service) initSet() {
 
 }
 
-func (s *Service) initInst() {
+func (s *topoService) initInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/{owner_id}/{obj_id}", HandlerFunc: s.CreateInst})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.DeleteInst})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.UpdateInst})
@@ -85,14 +85,14 @@ func (s *Service) initInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
 }
 
-func (s *Service) initObjectAttribute() {
+func (s *topoService) initObjectAttribute() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectattr", HandlerFunc: s.CreateObjectAttribute})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectattr/search", HandlerFunc: s.SearchObjectAttribute})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectattr/{id}", HandlerFunc: s.UpdateObjectAttribute})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectattr/{id}", HandlerFunc: s.DeleteObjectAttribute})
 }
 
-func (s *Service) initObjectClassification() {
+func (s *topoService) initObjectClassification() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classification", HandlerFunc: s.CreateClassification})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classification/{owner_id}/objects", HandlerFunc: s.SearchClassificationWithObjects})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classifications", HandlerFunc: s.SearchClassification})
@@ -100,7 +100,7 @@ func (s *Service) initObjectClassification() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/classification/{id}", HandlerFunc: s.DeleteClassification})
 }
 
-func (s *Service) initObjectGroup() {
+func (s *topoService) initObjectGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/new", HandlerFunc: s.CreateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/update", HandlerFunc: s.UpdateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/groupid/{id}", HandlerFunc: s.DeleteObjectGroup})
@@ -109,7 +109,7 @@ func (s *Service) initObjectGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{object_id}", HandlerFunc: s.SearchGroupByObject})
 }
 
-func (s *Service) initObject() {
+func (s *topoService) initObject() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/batch", HandlerFunc: s.CreateObjectBatch})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/search/batch", HandlerFunc: s.SearchObjectBatch})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object", HandlerFunc: s.CreateObject})
@@ -118,25 +118,25 @@ func (s *Service) initObject() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/{id}", HandlerFunc: s.UpdateObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/{id}", HandlerFunc: s.DeleteObject})
 }
-func (s *Service) initPrivilegeGroup() {
+func (s *topoService) initPrivilegeGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}", HandlerFunc: s.CreateUserGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: s.DeleteUserGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: s.UpdateUserGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/privilege/group/{bk_supplier_account}/search", HandlerFunc: s.SearchUserGroup})
 }
 
-func (s *Service) initPrivigeRole() {
+func (s *topoService) initPrivigeRole() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.CreatePrivilege})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.GetPrivilege})
 }
 
-func (s *Service) initPrivilege() {
+func (s *topoService) initPrivilege() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: s.UpdateUserGroupPrivi})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: s.GetUserGroupPrivi})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/privilege/user/detail/{bk_supplier_account}/{user_name}", HandlerFunc: s.GetUserPrivi})
 }
 
-func (s *Service) initService() {
+func (s *topoService) initService() {
 	s.initAssociation()
 	s.initAuditLog()
 	s.initCompatiblev2()

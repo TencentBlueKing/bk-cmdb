@@ -26,7 +26,7 @@ import (
 )
 
 // CreateSet create a new set
-func (s *Service) CreateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateSet")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
@@ -48,7 +48,7 @@ func (s *Service) CreateSet(params types.LogicParams, pathParams, queryParams Pa
 }
 
 // DeleteSet delete the set
-func (s *Service) DeleteSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -73,7 +73,7 @@ func (s *Service) DeleteSet(params types.LogicParams, pathParams, queryParams Pa
 }
 
 // UpdateSet update the set
-func (s *Service) UpdateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -101,7 +101,7 @@ func (s *Service) UpdateSet(params types.LogicParams, pathParams, queryParams Pa
 }
 
 // SearchSet search the set
-func (s *Service) SearchSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)

@@ -24,7 +24,7 @@ import (
 )
 
 // CreateUserGroup create user goup
-func (s *Service) CreateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 
 	userGroup := &metadata.UserGroup{}
@@ -39,20 +39,20 @@ func (s *Service) CreateUserGroup(params types.LogicParams, pathParams, queryPar
 }
 
 // DeleteUserGroup delete user goup
-func (s *Service) DeleteUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	err := s.core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
 	return nil, err
 }
 
 // UpdateUserGroup update user goup
-func (s *Service) UpdateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	err := s.core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
 	return nil, err
 }
 
 // SearchUserGroup search user goup
-func (s *Service) SearchUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
