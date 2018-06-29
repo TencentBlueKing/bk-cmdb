@@ -1,18 +1,20 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package common
 
 import (
+	"fmt"
+
 	cccommon "configcenter/src/common"
 	"configcenter/src/framework/core/types"
 )
@@ -63,8 +65,17 @@ func (cli *field) ToMapStr() types.MapStr {
 
 // Eqset a filed equal a value
 func (cli *field) Eq(val interface{}) Condition {
-	cli.opeartor = cccommon.BKDBEQ
-	cli.fieldValue = val
+
+	switch v := val.(type) {
+	default:
+		cli.opeartor = cccommon.BKDBEQ
+		cli.fieldValue = v
+		cli.fieldValue = v
+	case string:
+		cli.opeartor = cccommon.BKDBLIKE
+		cli.fieldValue = fmt.Sprintf("^%s$", val)
+	}
+
 	return cli.condition
 }
 
@@ -77,7 +88,7 @@ func (cli *field) NotEq(val interface{}) Condition {
 
 // Like field like value
 func (cli *field) Like(val interface{}) Condition {
-	cli.opeartor = "$regex"
+	cli.opeartor = cccommon.BKDBLIKE
 	cli.fieldValue = val
 	return cli.condition
 }
