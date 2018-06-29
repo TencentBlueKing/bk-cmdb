@@ -13,20 +13,49 @@
 package service
 
 import (
-	"configcenter/src/common/backbone"
-
 	"github.com/emicklei/go-restful"
+
+	"configcenter/src/api_server/ccapi/logics/v2"
+	"configcenter/src/common/backbone"
 )
 
 type Service struct {
 	*backbone.Engine
+	*logics.Logics
 }
 
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
 	ws.Path("/api/v2").Filter(filter).Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/host/batch").To(s.DeleteHostBatch))
+	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
+	ws.Route(ws.POST("app/getapplist").To(s.getAppList))
+	ws.Route(ws.POST("App/getAppByID").To(s.getAppByID))
+	ws.Route(ws.POST("app/getAppByID").To(s.getAppByID))
+	ws.Route(ws.POST("app/getappbyid").To(s.getAppByID))
+	ws.Route(ws.POST("App/getappbyuin").To(s.getAppByUin))
+	ws.Route(ws.POST("app/getappbyuin").To(s.getAppByUin))
+	ws.Route(ws.POST("User/getUserRoleApp").To(s.getUserRoleApp))
+	ws.Route(ws.POST("user/getUserRoleApp").To(s.getUserRoleApp))
+	ws.Route(ws.POST("TopSetModule/getappsetmoduletreebyappid").To(s.getAppSetModuleTreeByAppId))
+	ws.Route(ws.POST("app/addApp").To(s.addApp))
+	ws.Route(ws.POST("app/deleteApp").To(s.deleteApp))
+	ws.Route(ws.POST("app/editApp").To(s.editApp))
+	ws.Route(ws.POST("App/getHostAppByCompanyId").To(s.getHostAppByCompanyId))
+
+	ws.Route(ws.POST("Module/getmodules").To(s.getModulesByApp))
+	ws.Route(ws.POST("module/editmodule").To(s.updateModule))
+	ws.Route(ws.POST("module/addModule").To(s.addModule))
+	ws.Route(ws.POST("module/delModule").To(s.deleteModule))
+
+	ws.Route(ws.POST("Set/getsetsbyproperty").To(s.getSets))
+	ws.Route(ws.POST("Set/getsetproperty").To(s.getSets))
+	ws.Route(ws.POST("Set/getmodulesbyproperty").To(s.getModulesByProperty))
+	ws.Route(ws.POST("set/getmodulesbyproperty").To(s.getModulesByProperty))
+	ws.Route(ws.POST("set/addset").To(s.addSet))
+	ws.Route(ws.POST("set/updateSetServiceStatus").To(s.updateSetServiceStatus))
+	ws.Route(ws.POST("set/delset").To(s.delSet))
+	ws.Route(ws.POST("set/delSetHost").To(s.delSetHost))
 
 	return ws
 }
