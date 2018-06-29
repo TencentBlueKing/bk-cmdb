@@ -71,7 +71,9 @@ type ProcessConfig struct {
 }
 
 func ParseConfigWithFile(filePath string) (*ProcessConfig, error) {
-	c := config{}
+	c := config{
+		configmap: map[string]string{},
+	}
 	if err := c.parseWithFile(filePath); err != nil {
 		return nil, err
 	}
@@ -80,7 +82,9 @@ func ParseConfigWithFile(filePath string) (*ProcessConfig, error) {
 }
 
 func ParseConfigWithData(data []byte) (*ProcessConfig, error) {
-	c := config{}
+	c := config{
+		configmap: map[string]string{},
+	}
 	if err := c.parseWithData(data); err != nil {
 		return nil, err
 	}
