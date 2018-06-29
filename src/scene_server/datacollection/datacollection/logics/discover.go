@@ -13,6 +13,7 @@ import (
 	bkc "configcenter/src/common"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"runtime/debug"
 )
 
 type Discover struct {
@@ -26,6 +27,7 @@ type Discover struct {
 	ts          time.Time // life cycle timestamp
 	msgChan     chan string
 	interrupt   chan error
+	doneCh      chan struct{}
 	resetHandle chan struct{}
 	isMaster    bool
 	isSubing    bool
@@ -59,6 +61,7 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, c
 		msgChan:                make(chan string, maxSize*4),
 		interrupt:              make(chan error),
 		resetHandle:            make(chan struct{}),
+		doneCh:                 make(chan struct{}),
 		maxSize:                maxSize,
 		redisCli:               redisCli,
 		subCli:                 subCli,
@@ -68,8 +71,8 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, c
 		getMasterInterval:      time.Second * 11,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
 		//wg:                     wg,
-		cc:                     cc,
-		requests:               httpClient,
+		cc:       cc,
+		requests: httpClient,
 	}
 }
 
@@ -82,6 +85,16 @@ func (d *Discover) Start() {
 
 // Run discover main functionality
 func (d *Discover) Run() {
+	defer func() {
+		if err := recover(); err != nil {
+			blog.Errorf("fatal error happened: %s, we will try again 10s later, stack: \n%s", err, debug.Stack())
+		}
+
+		close(d.doneCh)
+		d.isMaster = false
+
+		return
+	}()
 
 	blog.Infof("discover start with maxConcurrent: %d", d.maxConcurrent)
 
@@ -341,6 +354,9 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		select {
 		case <-resetHandle:
 			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, d.maxSize)
+			return nil
+		case <-d.doneCh:
+			blog.Warnf("close handler, handled %d")
 			return nil
 		default:
 
