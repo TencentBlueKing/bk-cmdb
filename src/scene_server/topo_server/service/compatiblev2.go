@@ -251,11 +251,33 @@ func (s *Service) AddMultiModule(params types.LogicParams, pathParams, queryPara
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.CompatibleV2Operation().Module(params).AddMultiModule(bizID, setID, strings.Split(moduleNameStr, ","))
+	// prepare the data
+	data.ForEach(func(key string, val interface{}) {
+		switch key {
+		case common.BKSetIDField, common.BKOperatorField, common.BKBakOperatorField, common.BKModuleTypeField:
+			return
+		}
+		// clear the unused key
+		data.Remove(key)
+	})
+
+	err = s.core.CompatibleV2Operation().Module(params).AddMultiModule(bizID, setID, strings.Split(moduleNameStr, ","), data)
 	return nil, err
 }
 
 // DeleteMultiModule delete multi modules
 func (s *Service) DeleteMultiModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	return nil, nil
+
+	inputParams := &struct {
+		BizID     int64   `json:"bk_biz_id"`
+		ModuleIDS []int64 `json:"bk_module_id"`
+	}{}
+
+	if err := data.MarshalJSONInto(inputParams); nil != err {
+		blog.Errorf("[api-compatiblev2] failed to parse the data (%#v), error info is %s", data, err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	err := s.core.CompatibleV2Operation().Module(params).DeleteMultiModule(inputParams.BizID, inputParams.ModuleIDS)
+	return nil, err
 }
