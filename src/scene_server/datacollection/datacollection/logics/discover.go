@@ -78,7 +78,17 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, c
 
 // Start start main handle routines
 func (d *Discover) Start() {
-	go d.Run()
+
+	// run discover in another goroutine
+	go func() {
+		d.Run()
+
+		// restart discover after panic recover
+		for {
+			time.Sleep(10 * time.Second)
+			NewDiscover(d.chanName, d.maxSize, d.redisCli, d.subCli, d.cc).Run()
+		}
+	}()
 }
 
 // Run discover main functionality
