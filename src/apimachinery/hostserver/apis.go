@@ -201,13 +201,13 @@ func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -481,13 +481,13 @@ func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.HostCloneInputParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/openapi/host/clonehostproperty"
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(nil).
+		Body(dat).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
