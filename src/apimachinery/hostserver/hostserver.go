@@ -40,7 +40,7 @@ type HostServerClientInterface interface {
 	GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error)
 
 	AddHostMultiAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error)
-	HostModuleRelation(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+	HostModuleRelation(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error)
 
 	MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 	MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
@@ -62,7 +62,7 @@ type HostServerClientInterface interface {
 	HostSearchByProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	CloneHostProperty(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.HostCloneInputParams) (resp *metadata.Response, err error)
 	GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)

@@ -25,8 +25,14 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
+<<<<<<< HEAD
 	"configcenter/src/scene_server/host_server/logics"
+=======
+	myCommon "configcenter/src/scene_server/host_server/common"
+	logics2 "configcenter/src/scene_server/host_server/logics"
+>>>>>>> origin/apimachinery
 	hostsvc "configcenter/src/scene_server/host_server/service"
+
 	"github.com/emicklei/go-restful"
 )
 

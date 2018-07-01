@@ -57,5 +57,51 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.POST("set/delset").To(s.delSet))
 	ws.Route(ws.POST("set/delSetHost").To(s.delSetHost))
 
+	ws.Route(ws.POST("host/addhost").To(s.addHost))
+	ws.Route(ws.POST("host/enterIp").To(s.enterIP))
+	ws.Route(ws.POST("host/enterip").To(s.enterIP))
+
+	ws.Route(ws.POST("host/getAgentStatus").To(s.getAgentStatus))
+
+	ws.Route(ws.POST("Host/gethostlistbyip").To(s.getHostListByIP))
+	ws.Route(ws.POST("host/gethostlistbyip").To(s.getHostListByIP))
+	ws.Route(ws.POST("Host/getsethostlist").To(s.getSetHostList))
+	ws.Route(ws.POST("host/getmodulehostlist").To(s.getModuleHostList))
+	ws.Route(ws.POST("Host/getmodulehostlist").To(s.getModuleHostList))
+	ws.Route(ws.POST("host/getapphostlist").To(s.getAppHostList))
+	ws.Route(ws.POST("Host/getapphostlist").To(s.getAppHostList))
+	ws.Route(ws.POST("set/gethostsbyproperty").To(s.getHostsByProperty))
+	ws.Route(ws.POST("Set/gethostsbyproperty").To(s.getHostsByProperty))
+	ws.Route(ws.POST("Host/updateHostStatus").To(s.updateHostStatus))
+
+	ws.Route(ws.POST("Host/updateHostByAppId").To(s.updateHostByAppID))
+	ws.Route(ws.POST("Host/getCompanyIdByIps").To(s.getCompanyIDByIps))
+	ws.Route(ws.POST("host/getCompanyIdByIps").To(s.getCompanyIDByIps))
+	ws.Route(ws.POST("Host/getHostListByAppidAndField").To(s.getCompanyIDByIps))
+	ws.Route(ws.POST("host/getHostListByAppidAndField").To(s.getCompanyIDByIps))
+	ws.Route(ws.POST("Host/getIPAndProxyByCompany").To(s.getIPAndProxyByCompany))
+	ws.Route(ws.POST("Host/updatehostmodule").To(s.updateHostModule))
+	ws.Route(ws.POST("host/updatehostmodule").To(s.updateHostModule))
+	ws.Route(ws.POST("host/updateCustomProperty").To(s.updateCustomProperty))
+	ws.Route(ws.POST("host/cloneHostProperty").To(s.cloneHostProperty))
+	ws.Route(ws.POST("host/delHostInApp").To(s.delHostInApp))
+	ws.Route(ws.POST("host/getgitServerIp").To(s.getGitServerIp))
+
+	ws.Route(ws.POST("/CustomerGroup/getContentByCustomerGroupID").To(s.getContentByCustomerGroupID))
+	ws.Route(ws.POST("CustomerGroup/getContentByCustomerGroupId").To(s.getContentByCustomerGroupID))
+	ws.Route(ws.POST("/CustomerGroup/getCustomerGroupList").To(s.getCustomerGroupList))
+
+	ws.Route(ws.POST("Plat/updateHost").To(s.updateHost))
+	ws.Route(ws.POST("Plat/get").To(s.getPlats))
+	ws.Route(ws.POST("Plat/get").To(s.getPlats))
+	ws.Route(ws.POST("Plat/delete").To(s.deletePlats))
+	ws.Route(ws.POST("Plat/add").To(s.createPlats))
+
+	ws.Route(ws.POST("process/getProcessPortByApplicationID").To(s.getProcessPortByApplicationID))
+	ws.Route(ws.POST("process/getProcessPortByIP").To(s.getProcessPortByIP))
+
+	ws.Route(ws.POST("Property/getList").To(s.getObjProperty))
+
 	return ws
+
 }

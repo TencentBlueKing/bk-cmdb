@@ -68,17 +68,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	apiSvr := new(APIServer)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
+		types.CC_MODULE_APISERVER,
 		op.ServConf.ExConfig,
 		apiSvr.onHostConfigUpdate,
 		bonC)
+
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
-
 	apiSvr.Core = engine
 	apiSvr.Service = service
 	apiSvr.Logic = service.Logics
