@@ -55,7 +55,7 @@ var _ Classification = (*classification)(nil)
 // classification the model classification definition
 type classification struct {
 	cls       metadata.Classification
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 

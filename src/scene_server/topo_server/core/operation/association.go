@@ -25,13 +25,13 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateMainlineAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
-	DeleteMainlineAssociaton(params types.LogicParams, objID string) error
-	SearchMainlineAssociationTopo(params types.LogicParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(params types.LogicParams, bizID int64) ([]*metadata.TopoInstRst, error)
-	CreateCommonAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error)
-	DeleteAssociation(params types.LogicParams, cond condition.Condition) error
-	UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error
+	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
+	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
+	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
+	SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error)
+	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
+	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
+	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
 }
 
 type association struct {
@@ -57,7 +57,7 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface, cls Classif
 	}
 }
 
-func (cli *association) CreateCommonAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error) {
+func (cli *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	//  check the association
 	//	cond := condition.CreateCondition()
@@ -71,9 +71,9 @@ func (cli *association) CreateCommonAssociation(params types.LogicParams, data *
 
 	return nil, nil
 }
-func (cli *association) DeleteAssociation(params types.LogicParams, cond condition.Condition) error {
+func (cli *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
 	return nil
 }
-func (cli *association) UpdateAssociation(params types.LogicParams, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }

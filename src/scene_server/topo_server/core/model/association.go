@@ -26,7 +26,7 @@ var _ Association = (*association)(nil)
 type association struct {
 	asst       metadata.Association
 	isMainLine bool
-	params     types.LogicParams
+	params     types.ContextParams
 	clientSet  apimachinery.ClientSetInterface
 }
 

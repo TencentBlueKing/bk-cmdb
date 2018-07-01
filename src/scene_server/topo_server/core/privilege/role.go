@@ -29,7 +29,7 @@ type RolePermission interface {
 }
 
 // NewRole create a new role instance
-func NewRole(params types.LogicParams, client apimachinery.ClientSetInterface) RolePermission {
+func NewRole(params types.ContextParams, client apimachinery.ClientSetInterface) RolePermission {
 	return &rolePermission{
 		params: params,
 		client: client,
@@ -37,7 +37,7 @@ func NewRole(params types.LogicParams, client apimachinery.ClientSetInterface) R
 }
 
 type rolePermission struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 

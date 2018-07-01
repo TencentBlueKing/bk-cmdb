@@ -10,19 +10,26 @@
  * limitations under the License.
  */
 
-package types
+package supplementary
 
-import (
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
-)
+// Supplementary supplementary methods
+type Supplementary interface {
+	Audit() AuditInterface
+	Validator() ValidatorInterface
+}
 
-// ContextParams the logic function params
-type ContextParams struct {
-	Support supplementary.Supplementary
-	Header  util.Headers
-	Err     errors.DefaultCCErrorIf
-	Lang    language.DefaultCCLanguageIf
+// New create a supplementary instance
+func New() Supplementary {
+	return &supplementary{}
+}
+
+type supplementary struct {
+}
+
+func (s *supplementary) Audit() AuditInterface {
+	return &auditLog{}
+}
+
+func (s *supplementary) Validator() ValidatorInterface {
+	return &validator{}
 }

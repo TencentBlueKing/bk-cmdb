@@ -20,7 +20,7 @@ import (
 )
 
 // SearchAuditLog search audit logs
-func (s *topoService) SearchAuditLog(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchAuditLog(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchAuditLog")
 	return nil, nil
 }
