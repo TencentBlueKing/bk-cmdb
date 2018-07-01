@@ -23,7 +23,7 @@ import (
 )
 
 // UpdateUserGroupPrivi search user goup
-func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	priviData := &metadata.PrivilegeUserGroup{}
 
@@ -38,13 +38,13 @@ func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams,
 }
 
 // GetUserGroupPrivi search user goup
-func (s *topoService) GetUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // GetUserPrivi search user goup
-func (s *topoService) GetUserPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }

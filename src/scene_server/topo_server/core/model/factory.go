@@ -26,7 +26,7 @@ func New(clientSet apimachinery.ClientSetInterface) Factory {
 }
 
 // CreateClassification create classification objects
-func CreateClassification(params types.LogicParams, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
+func CreateClassification(params types.ContextParams, clientSet apimachinery.ClientSetInterface, clsItems []metadata.Classification) []Classification {
 	results := make([]Classification, 0)
 	for _, cls := range clsItems {
 
@@ -41,7 +41,7 @@ func CreateClassification(params types.LogicParams, clientSet apimachinery.Clien
 }
 
 // CreateObject create  objects
-func CreateObject(params types.LogicParams, clientSet apimachinery.ClientSetInterface, objItems []metadata.Object) []Object {
+func CreateObject(params types.ContextParams, clientSet apimachinery.ClientSetInterface, objItems []metadata.Object) []Object {
 	results := make([]Object, 0)
 	for _, obj := range objItems {
 
@@ -56,7 +56,7 @@ func CreateObject(params types.LogicParams, clientSet apimachinery.ClientSetInte
 }
 
 // CreateGroup create group  objects
-func CreateGroup(params types.LogicParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
+func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
 	results := make([]Group, 0)
 	for _, grp := range groupItems {
 
@@ -71,7 +71,7 @@ func CreateGroup(params types.LogicParams, clientSet apimachinery.ClientSetInter
 }
 
 // CreateAttribute create attribute  objects
-func CreateAttribute(params types.LogicParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
+func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
 	results := make([]Attribute, 0)
 	for _, attr := range attrItems {
 
@@ -89,7 +89,7 @@ type factory struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *factory) CreaetObject(params types.LogicParams) Object {
+func (cli *factory) CreaetObject(params types.ContextParams) Object {
 	obj := &object{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -98,7 +98,7 @@ func (cli *factory) CreaetObject(params types.LogicParams) Object {
 	return obj
 }
 
-func (cli *factory) CreaetClassification(params types.LogicParams) Classification {
+func (cli *factory) CreaetClassification(params types.ContextParams) Classification {
 	cls := &classification{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -107,7 +107,7 @@ func (cli *factory) CreaetClassification(params types.LogicParams) Classificatio
 	return cls
 }
 
-func (cli *factory) CreateAttribute(params types.LogicParams) Attribute {
+func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
 	attr := &attribute{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -116,21 +116,21 @@ func (cli *factory) CreateAttribute(params types.LogicParams) Attribute {
 	return attr
 }
 
-func (cli *factory) CreateGroup(params types.LogicParams) Group {
+func (cli *factory) CreateGroup(params types.ContextParams) Group {
 	return &group{
 		params:    params,
 		clientSet: cli.clientSet,
 	}
 }
 
-func (cli *factory) CreateMainLineAssociatin(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
+func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
 	return &association{
 		isMainLine: true,
 		params:     params,
 		clientSet:  cli.clientSet,
 	}
 }
-func (cli *factory) CreateCommonAssociation(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association {
+func (cli *factory) CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
 
 	return &association{
 		isMainLine: false,

@@ -34,7 +34,7 @@ type ModuleInterface interface {
 }
 
 // NewModule create a module instance
-func NewModule(params types.LogicParams, client apimachinery.ClientSetInterface) ModuleInterface {
+func NewModule(params types.ContextParams, client apimachinery.ClientSetInterface) ModuleInterface {
 	return &module{
 		params: params,
 		client: client,
@@ -42,7 +42,7 @@ func NewModule(params types.LogicParams, client apimachinery.ClientSetInterface)
 }
 
 type module struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 

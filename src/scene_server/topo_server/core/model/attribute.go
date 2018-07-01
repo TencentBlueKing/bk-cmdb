@@ -100,7 +100,7 @@ var _ Attribute = (*attribute)(nil)
 type attribute struct {
 	attr      metadata.Attribute
 	isNew     bool
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 

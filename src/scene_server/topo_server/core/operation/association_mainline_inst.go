@@ -24,7 +24,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (cli *association) ResetMainlineInstAssociatoin(params types.LogicParams, current model.Object) error {
+func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
 
@@ -76,7 +76,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.LogicParams, c
 	return nil
 }
 
-func (cli *association) SetMainlineInstAssociation(params types.LogicParams, parent, current, child model.Object) error {
+func (cli *association) SetMainlineInstAssociation(params types.ContextParams, parent, current, child model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
 
@@ -124,7 +124,7 @@ func (cli *association) SetMainlineInstAssociation(params types.LogicParams, par
 	return nil
 }
 
-func (cli *association) SearchMainlineAssociationInstTopo(params types.LogicParams, bizID int64) ([]*metadata.TopoInstRst, error) {
+func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error) {
 
 	bizObj, err := cli.obj.FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {

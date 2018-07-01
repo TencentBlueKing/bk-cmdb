@@ -60,7 +60,7 @@ var _ Group = (*group)(nil)
 type group struct {
 	grp       metadata.Group
 	isNew     bool
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 

@@ -10,19 +10,27 @@
  * limitations under the License.
  */
 
-package types
+package supplementary
 
 import (
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
+	"net/http"
+
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
-// ContextParams the logic function params
-type ContextParams struct {
-	Support supplementary.Supplementary
-	Header  util.Headers
-	Err     errors.DefaultCCErrorIf
-	Lang    language.DefaultCCLanguageIf
+// ValidatorInterface the validator methods
+type ValidatorInterface interface {
+	ValidatorCreate(header http.Header, attr metadata.Attribute, data mapstr.MapStr) (bool, error)
+	ValidatorUpdate(header http.Header, attr metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error)
+}
+
+type validator struct {
+}
+
+func (v *validator) ValidatorCreate(header http.Header, attr metadata.Attribute, data mapstr.MapStr) (bool, error) {
+	return false, nil
+}
+func (v *validator) ValidatorUpdate(header http.Header, attr metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error) {
+	return true, nil
 }

@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -165,9 +166,10 @@ func (s *topoService) Actions() []*httpserver.Action {
 					return
 				}
 
-				data, dataErr := act.HandlerFunc(types.LogicParams{
-					Err:  defErr,
-					Lang: defLang,
+				data, dataErr := act.HandlerFunc(types.ContextParams{
+					Support: supplementary.New(),
+					Err:     defErr,
+					Lang:    defLang,
 					Header: apiutil.Headers{
 						Language: language,
 						User:     user,

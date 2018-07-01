@@ -34,7 +34,7 @@ type UserGroupInterface interface {
 }
 
 // NewUserGroup create a user group instance
-func NewUserGroup(params types.LogicParams, client apimachinery.ClientSetInterface) UserGroupInterface {
+func NewUserGroup(params types.ContextParams, client apimachinery.ClientSetInterface) UserGroupInterface {
 	return &userGroup{
 		params: params,
 		client: client,
@@ -43,7 +43,7 @@ func NewUserGroup(params types.LogicParams, client apimachinery.ClientSetInterfa
 
 // userGroup the permission user group definitions
 type userGroup struct {
-	params    types.LogicParams
+	params    types.ContextParams
 	client    apimachinery.ClientSetInterface
 	userGroup metadata.UserGroup
 }
