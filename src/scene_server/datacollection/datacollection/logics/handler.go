@@ -32,10 +32,24 @@ type Model struct {
 
 // Attr 属性元数据结构
 type Attr struct {
-	BkPropertyName string `json:"bk_property_name"`
-	BkPropertyType string `json:"bk_property_type"`
-	BkAsstObjID    string `json:"bk_asst_obj_id"`
-	Editable       bool   `json:"editable"`
+	ID            int    `json:"id"`
+	OwnerID       string `json:"bk_supplier_account"`
+	ObjID         string `json:"bk_obj_id"`
+	PropertyGroup string `json:"bk_property_group"`
+
+	PropertyID    string `json:"bk_property_id"`
+	PropertyName  string `json:"bk_property_name"`
+	PropertyType  string `json:"bk_property_type"`
+	AssociationID string `json:"bk_asst_obj_id"`
+	//AssociationID string      `json:"bk_association_id"`
+	Option  interface{} `json:"option"`
+	Creator string      `json:"creator"`
+
+	Editable    bool   `json:"editable"`
+	IsRequired  bool   `json:"isrequired"`
+	IsReadOnly  bool   `json:"isreadonly"`
+	IsOnly      bool   `json:"isonly"`
+	Description string `json:"description"`
 }
 
 // Related 关联数据
@@ -352,26 +366,20 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
 		blog.Infof("attr: %s -> %v", propertyId, property)
 
-		attrBody := M{
-			bkc.BKObjIDField:         objID,
-			bkc.BKPropertyGroupField: bkc.BKDefaultField,
-			bkc.BKPropertyIDField:    propertyId,
-			bkc.BKAsstObjIDField:     property.BkAsstObjID,
-			bkc.BKPropertyNameField:  property.BkPropertyName,
-			bkc.BKPropertyTypeField:  property.BkPropertyType,
-			bkc.BKOwnerIDField:       ownerID,
-			bkc.CreatorField:         bkc.CCSystemCollectorUserName,
-			"editable":               property.Editable,
-		}
+		property.ObjID = objID
+		property.OwnerID = ownerID
+		property.PropertyID = propertyId
+		property.PropertyGroup = bkc.BKDefaultField
+		property.Creator = bkc.CCSystemCollectorUserName
 
-		attrBodyJs, err := attrBody.toJson()
+		attrBodyJs, err := json.Marshal(property)
 		if err != nil {
 			return fmt.Errorf("marshal condition error: %s", err)
 		}
 
 		url := fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI())
 
-		blog.Infof("create model attr url=%s, body=%s", url, attrBody)
+		blog.Infof("create model attr url=%s, body=%s", url, attrBodyJs)
 		res, err := d.requests.POST(url, nil, []byte(attrBodyJs))
 		if nil != err {
 			return fmt.Errorf("create model attr error: %s", err.Error())
@@ -776,7 +784,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				continue
 			}
 
-			blog.Errorf("parse relation data failed, skip update")
+			blog.Errorf("parse relation data failed, skip update: \n%v\n", info[defaultRelateAttr])
 			continue
 
 		}
