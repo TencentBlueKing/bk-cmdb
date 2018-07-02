@@ -10,21 +10,27 @@
  * limitations under the License.
  */
 
-package logics
+package v3v0v8
 
 import (
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
 	"configcenter/src/storage"
+	"gopkg.in/mgo.v2"
 )
 
-func CreateIndex() error {
-	a := api.GetAPIResource()
-
-	tableindexs := getIndex()
-	for tablename, indexs := range tableindexs {
-		for _, index := range indexs {
-			ii := index
-			if err := a.InstCli.Index(tablename, &ii); err != nil {
+func createTable(db storage.DI, conf *upgrader.Config) (err error) {
+	for tablename, indexs := range tables {
+		exists, err := db.HasTable(tablename)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+				return err
+			}
+		}
+		for index := range indexs {
+			if err = db.Index(tablename, &indexs[index]); err != nil && !mgo.IsDup(err) {
 				return err
 			}
 		}
@@ -32,22 +38,20 @@ func CreateIndex() error {
 	return nil
 }
 
-func getIndex() map[string][]storage.Index {
-	index := map[string][]storage.Index{}
-
-	index["cc_ApplicationBase"] = []storage.Index{
+var tables = map[string][]storage.Index{
+	"cc_ApplicationBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_biz_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"default"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
+	},
 
-	index["cc_HostBase"] = []storage.Index{
+	"cc_HostBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_host_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_host_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_host_innerip"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_host_outerip"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ModuleBase"] = []storage.Index{
+	},
+	"cc_ModuleBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_module_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_module_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"default"}, Type: storage.INDEX_TYPE_BACKGROUP},
@@ -55,72 +59,83 @@ func getIndex() map[string][]storage.Index {
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_parent_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ModuleHostConfig"] = []storage.Index{
+	},
+	"cc_ModuleHostConfig": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_host_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_module_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ObjAsst"] = []storage.Index{
+	},
+	"cc_ObjAsst": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_asst_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ObjAttDes"] = []storage.Index{
+	},
+	"cc_ObjAttDes": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ObjClassification"] = []storage.Index{
+	},
+	"cc_ObjClassification": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_classification_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_classification_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ObjDes"] = []storage.Index{
+	},
+	"cc_ObjDes": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_classification_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_obj_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ObjectBase"] = []storage.Index{
+	},
+	"cc_ObjectBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_OperationLog"] = []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	},
+	"cc_OperationLog": []storage.Index{
+		storage.Index{Name: "", Columns: []string{"op_target", "inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_PlatBase"] = []storage.Index{
+	},
+	"cc_PlatBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_Proc2Module"] = []storage.Index{
+	},
+	"cc_Proc2Module": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_process_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_ApplicationBase"] = []storage.Index{
+	},
+	"cc_Process": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_process_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_PropertyGroup"] = []storage.Index{
+	},
+	"cc_PropertyGroup": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_group_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_SetBase"] = []storage.Index{
+	},
+	"cc_SetBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_parent_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_set_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_Subscription"] = []storage.Index{
+	},
+	"cc_Subscription": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"subscription_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}
-	index["cc_TopoGraphics"] = []storage.Index{
+	},
+	"cc_TopoGraphics": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"scope_type", "scope_id", "node_type", "bk_obj_id", "bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP_UNIQUE},
-	}
+	},
+	"cc_InstAsst": []storage.Index{
+		storage.Index{Name: "", Columns: []string{"bk_obj_id", "bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	},
 
-	return index
+	"cc_Privilege":          []storage.Index{},
+	"cc_History":            []storage.Index{},
+	"cc_HostFavourite":      []storage.Index{},
+	"cc_UserAPI":            []storage.Index{},
+	"cc_UserCustom":         []storage.Index{},
+	"cc_UserGroup":          []storage.Index{},
+	"cc_UserGroupPrivilege": []storage.Index{},
+	"cc_idgenerator":        []storage.Index{},
+	"cc_System":             []storage.Index{},
 }

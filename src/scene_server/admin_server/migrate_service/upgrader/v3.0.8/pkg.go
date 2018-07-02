@@ -10,15 +10,42 @@
  * limitations under the License.
  */
  
-package models
+package v3v0v8
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
+	"configcenter/src/storage"
 )
 
-func TestGetAddAsstData(t *testing.T) {
-	metaArr := getAddAsstData("0")
-	require.Equal(t, len(metaArr), 4)
+func init() {
+	upgrader.RegistUpgrader("v3.0.8", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = createTable(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPresetObjects(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPlatData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addSystemData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addDefaultBiz(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addBKApp(db, conf)
+	if err != nil {
+		return err
+	}
+
+	return
 }
