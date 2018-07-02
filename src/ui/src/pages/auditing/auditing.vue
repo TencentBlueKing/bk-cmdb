@@ -327,15 +327,10 @@
         methods: {
             ...mapActions(['getBkBizList']),
             /* 获取表格数据 */
-            getTableList () {
-                this.$axios.post('audit/search/', this.searchParams, {id: 'auditSearch'}).then((res) => {
-                    if (res.result) {
-                        this.initTableList(res.data.info)
-                        this.pagination.count = res.data.count
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async getTableList () {
+                const res = await this.$axios.post('audit/search/', this.searchParams, {id: 'auditSearch'})
+                this.initTableList(res.data.info)
+                this.pagination.count = res.data.count
             },
             /* 根据返回的结果设置一些表格显示内容 */
             initTableList (list) {

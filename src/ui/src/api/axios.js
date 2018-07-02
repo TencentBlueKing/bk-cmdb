@@ -91,6 +91,7 @@ axios.interceptors.response.use(
     response => {
         const globalError = response.config.hasOwnProperty('globalError') ? !!response.config.globalError : true
         removeQueue(response.config)
+        console.log(response)
         if (response.data.result || !globalError) {
             return transformResponse(response.config, response.data)
         } else {

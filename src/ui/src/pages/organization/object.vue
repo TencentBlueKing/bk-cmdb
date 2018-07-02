@@ -398,17 +398,13 @@
                 this.tab.activeName = name
             },
             async getUsercustom () {
-                await this.$axios.post('usercustom/user/search').then(res => {
-                    if (res.result) {
-                        this.$store.commit('setUsercustom', res.data)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                const res = await this.$axios.post('usercustom/user/search')
+                this.$store.commit('setUsercustom', res.data)
             },
             // 初始化表格，先获取表格字段再获取表格列表
             initTable () {
                 this.getTableHeader().then(properties => {
+                    console.log(properties)
                     this.attr.formFields = [...properties]
                     this.filterList = properties.map(property => {
                         return {
@@ -508,7 +504,6 @@
             },
             // 获取表格列表
             getTableList () {
-                this.table.loading = true
                 return this.$axios.post(this.axiosConfig.url, this.axiosConfig.params, {id: 'instSearch'}).then(res => {
                     let data = {
                         count: 0,
@@ -527,30 +522,21 @@
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t("Inst['您没有当前模型的权限']"))
                     }
-                }).finally(() => {
-                    this.table.loading = false
                 })
             },
-            getAllObjectId (isAllCheck) {
+            async getAllObjectId (isAllCheck) {
                 if (isAllCheck) {
                     this.table.loading = true
                     let idKey = this.objId === 'biz' ? 'bk_biz_id' : 'bk_inst_id'
                     let params = this.$deepClone(this.axiosConfig.params)
                     params.page = {}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
-                    this.$axios.post(this.axiosConfig.url, params).then(res => {
-                        if (res.result) {
-                            let chooseId = []
-                            res.data.info.map(attr => {
-                                chooseId.push(attr[idKey])
-                            })
-                            this.table.chooseId = chooseId
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    }).finally(() => {
-                        this.table.loading = false
+                    const res = await this.$axios.post(this.axiosConfig.url, params, {id: 'getAllObjId'})
+                    let chooseId = []
+                    res.data.info.map(attr => {
+                        chooseId.push(attr[idKey])
                     })
+                    this.table.chooseId = chooseId
                 } else {
                     this.table.chooseId = []
                 }

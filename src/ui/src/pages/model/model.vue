@@ -420,7 +420,7 @@
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    await this.$axios.post('object/classification123', createParams, {id: 'saveClassify'})
+                    await this.$axios.post('object/classification', createParams, {id: 'saveClassify'})
                     this.getClassifyList(this.classifyList.length)
                     this.isEditClassify = false
                     this.isPopShow = false

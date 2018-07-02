@@ -102,7 +102,7 @@
                 }
             },
             async createRole () {
-                const res = await this.$axios.post(`topo/privilege1/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'})
+                const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'})
                 this.closeRoleForm()
                 this.$alertMsg('新建角色成功', 'success')
                 this.$emit('on-success', res)
