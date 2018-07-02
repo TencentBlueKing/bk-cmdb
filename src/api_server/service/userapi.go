@@ -36,7 +36,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get customer group list error:%v", err)
+		blog.Error("getCustomerGroupList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -45,7 +45,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	strAppIDs := formData.Get("ApplicationIDs")
 
 	if "" == strAppIDs {
-		blog.Error("get customer group list error: param ApplicationIDs is empty!")
+		blog.Error("getCustomerGroupList error: param ApplicationIDs is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationIDs").Error(), resp)
 		return
 	}
@@ -63,7 +63,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 		result, err := s.CoreAPI.HostServer().GetUserCustomQuery(context.Background(), appID, pheader, &postInput)
 		if err != nil {
-			blog.Error("get customer group list error:%v", err)
+			blog.Error("getCustomerGroupList error:%v", err)
 			converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 			return
 		}
@@ -73,7 +73,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 		//translate cmdb v3 to v2 api result error,
 		if err != nil {
-			blog.Error("get customer group list error:%s, reply:%v", err.Error(), result.Data)
+			blog.Error("getCustomerGroupList error:%s, reply:%v", err.Error(), result.Data)
 			converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 			return
 		}
@@ -177,7 +177,7 @@ func (s *Service) GetNameByID(appID, id string, pheader http.Header) (string, er
 	result, err := s.CoreAPI.HostServer().GetUserCustomQueryDetail(context.Background(), appID, id, pheader)
 	//http request error
 	if err != nil {
-		blog.Error("get customer group detail error:%v", err)
+		blog.Error("GetNameByID error:%v", err)
 		return "", nil, common.CCErrCommHTTPDoRequestFailed
 	}
 

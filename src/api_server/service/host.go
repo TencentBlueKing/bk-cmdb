@@ -35,18 +35,18 @@ func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update host status error:%v", err)
+		blog.Errorf("updateHostStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("update host status data:%v", formData)
+	blog.Infof("updateHostStatus data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "platId", "ip"})
 	if !res {
-		blog.Error("update host status error: %s", msg)
+		blog.Errorf("updateHostStatus error: %s", msg)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -68,13 +68,13 @@ func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response)
 	}
 
 	if err != nil {
-		blog.Error("update host status error:%v", err)
+		blog.Errorf("updateHostStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommJSONMarshalFailed, defErr.Error(common.CCErrCommJSONMarshalFailed).Error(), resp)
 		return
 	}
 	result, err := s.CoreAPI.HostServer().UpdateHost(context.Background(), appID, pheader, param)
 	if err != nil {
-		blog.Error("update host status  error:%v", err)
+		blog.Errorf("updateHostStatus  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -91,18 +91,18 @@ func (s *Service) updateHostByAppID(req *restful.Request, resp *restful.Response
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update host by app id error:%v", err)
+		blog.Errorf("updateHostByAppID error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("update host by app id data:%v", formData)
+	blog.Infof("updateHostByAppID data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "platId", "proxyList"})
 	if !res {
-		blog.Error("update host by app id error: %s", msg)
+		blog.Errorf("updateHostByAppID error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -124,14 +124,14 @@ func (s *Service) updateHostByAppID(req *restful.Request, resp *restful.Response
 		proxyNew, inputErr := s.Logics.AutoInputV3Field(proxyNew, common.BKInnerObjIDHost, user, pheader)
 
 		if inputErr != nil {
-			blog.Error("AutoInputV3Field error:%v", inputErr)
+			blog.Errorf("AutoInputV3Field error:%v", inputErr)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, inputErr.Error()).Error(), resp)
 			return
 		}
 		proxyListArrV3 = append(proxyListArrV3, proxyNew)
 	}
 
-	blog.Debug("proxyListArrV3:%v", proxyListArrV3)
+	blog.Infof("proxyListArrV3:%v", proxyListArrV3)
 	param := map[string]interface{}{
 
 		common.BKCloudIDField:   platID,
@@ -140,7 +140,7 @@ func (s *Service) updateHostByAppID(req *restful.Request, resp *restful.Response
 
 	result, err := s.CoreAPI.HostServer().UpdateHostByAppID(context.Background(), appID, pheader, param)
 	if err != nil {
-		blog.Error("update host by app id   error:%v", err)
+		blog.Errorf("updateHostByAppID   error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -156,16 +156,16 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get company id by ips error:%v", err)
+		blog.Errorf("getCompanyIDByIps error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
-	blog.Debug("get company id by ips data: %v", formData)
+	blog.Infof("getCompanyIDByIps data: %v", formData)
 
 	if len(formData["Ips"]) == 0 {
-		blog.Error("get company id by ips error: param ips is empty!")
+		blog.Errorf("getCompanyIDByIps error: param ips is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "Ips").Error(), resp)
 		return
 	}
@@ -178,7 +178,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	result, err := s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("get company id by ips  error:%v", err)
+		blog.Errorf("getCompanyIDByIps  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -200,7 +200,7 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get host list by appid and field error:%v", err)
+		blog.Errorf("getHostListByAppIDAndField error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -209,14 +209,14 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "field"})
 	if !res {
-		blog.Error("get host list by appid and field error: %s", msg)
+		blog.Errorf("getHostListByAppIDAndField error: %s", msg)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	appID := formData["appId"][0]
 	if nil != err {
-		blog.Error("get host list by appid and field error: %v", err)
+		blog.Errorf("getHostListByAppIDAndField error: %v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "appId").Error(), resp)
 		return
 	}
@@ -224,7 +224,7 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 	field := formData["field"][0]
 	result, err := s.CoreAPI.HostServer().GetHostListByAppidAndField(context.Background(), appID, converter.ConverterV2FieldsToV3(field, common.BKInnerObjIDHost), pheader)
 	if err != nil {
-		blog.Error("get host list by appid and field  error:%v", err)
+		blog.Errorf("getHostListByAppIDAndField  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -256,13 +256,13 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 
 	err = req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update host module error %v", err)
+		blog.Errorf("updateHostModule error %v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
 
-	blog.Infof("update host module data:%v", formData)
+	blog.Infof("updateHostModule data:%v", formData)
 
 	appID := formData.Get("ApplicationID")
 	platID := formData.Get("platId")
@@ -270,29 +270,29 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	ips := formData.Get("ip")
 
 	if "" == appID {
-		blog.Errorf("update host module error ApplicationID empty")
+		blog.Error("updateHostModule error ApplicationID empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
 	if "" == platID {
-		blog.Errorf("update host module error platID empty")
+		blog.Error("updateHostModule error platID empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platID").Error(), resp)
 		return
 	}
 	if "" == moduleID {
-		blog.Errorf("update host module error moduleID empty")
+		blog.Error("updateHostModule error moduleID empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "dstModuleID").Error(), resp)
 		return
 	}
 	if "" == ips {
-		blog.Errorf("update host module error ips empty")
+		blog.Error("updateHostModule error ips empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ips").Error(), resp)
 		return
 	}
 	ipArr := strings.Split(ips, ",")
 	moduleIDArr, err := utils.SliceStrToInt(strings.Split(moduleID, ","))
 	if nil != err {
-		blog.Error("update host module error: %v", err)
+		blog.Errorf("updateHostModule error: %v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2MultiModuleIDErr, defErr.Error(common.CCErrAPIServerV2MultiModuleIDErr).Error(), resp)
 		return
 	}
@@ -310,7 +310,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 
 	hostsMap, ok := result.Data.([]interface{})
 	if false == ok {
-		blog.Errorf("update host module error js.Map error, data:%v", result.Data)
+		blog.Errorf("updateHostModule error js.Map error, data:%v", result.Data)
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
@@ -334,7 +334,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	moduleMap, err := s.getModuleInfoByApp(inputparam, pheader)
 
 	if nil != err {
-		blog.Error("GetModulesByApp error: %v", err)
+		blog.Errorf("updateHostModule error: %v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Errorf(common.CCErrCommReplyDataFormatError, err.Error()).Error(), resp)
 		return
 	}
@@ -349,7 +349,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 			moduleName := moduleMap[moduleId].(map[string]interface{})[common.BKModuleNameField].(string)
 			if moduleName == common.DefaultFaultModuleName || moduleName == common.DefaultResModuleName {
 				msg := defErr.Error(common.CCErrAPIServerV2HostModuleContainDefaultModuleErr).Error()
-				blog.Error("update host module error: %v", msg)
+				blog.Errorf("updateHostModule error: %v", msg)
 				converter.RespFailV2(common.CCErrAPIServerV2HostModuleContainDefaultModuleErr, msg, resp)
 				return
 			}
@@ -379,7 +379,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	}
 
 	if err != nil {
-		blog.Error("update host module  error:%v ", err)
+		blog.Errorf("updateHostModule  error:%v ", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -393,22 +393,24 @@ func (s *Service) updateCustomProperty(req *restful.Request, resp *restful.Respo
 
 	err := req.Request.ParseForm()
 	if nil != err {
-		blog.Error("update custom property Error %v", err)
+		blog.Errorf("updateCustomProperty Error %v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.Error("formData:%v", formData)
+
+	blog.Errorf("formData:%v", formData)
+
 	appId := formData.Get("ApplicationID")
 	hostId := formData.Get("HostID")
 	property := formData.Get("Property")
 	if "" == appId {
-		blog.Errorf("update custom property error platId empty")
+		blog.Error("updateCustomProperty error platId empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
 	if "" == hostId {
-		blog.Errorf("update custom property error host empty")
+		blog.Error("updateCustomProperty error host empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "HostID").Error(), resp)
 		return
 	}
@@ -419,7 +421,7 @@ func (s *Service) updateCustomProperty(req *restful.Request, resp *restful.Respo
 
 	result, err := s.CoreAPI.HostServer().UpdateCustomProperty(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("update custom property error:%v ", err)
+		blog.Errorf("updateCustomProperty error:%v ", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -439,19 +441,20 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 	err := req.Request.ParseForm()
 
 	if nil != err {
-		blog.Error("clone host property Error %v", err)
+		blog.Errorf("cloneHostProperty Error %v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.Error("formData:%v", formData)
+
+	blog.Infof("formData: %v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
 		"orgIp",
 		"dstIp",
 	})
 	if !res {
-		blog.Error("clone host property  error: %s", msg)
+		blog.Errorf("cloneHostProperty error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -462,7 +465,7 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 
 	appIdI, err := strconv.ParseInt(appId, 10, 64)
 	if nil != err {
-		blog.Error("clone host property  error: %s", msg)
+		blog.Errorf("cloneHostProperty  error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -470,7 +473,7 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 	platIdI, err := strconv.ParseInt(platId, 10, 64)
 
 	if nil != err {
-		blog.Error("clone host property  error: %s", msg)
+		blog.Errorf("cloneHostProperty  error: %s", msg)
 		platIdI = 0
 	}
 
@@ -482,7 +485,7 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 
 	result, err := s.CoreAPI.HostServer().CloneHostProperty(context.Background(), pheader, &param)
 	if err != nil {
-		blog.Error("clone host property error:%v", err)
+		blog.Errorf("cloneHostProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -497,18 +500,20 @@ func (s *Service) delHostInApp(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if nil != err {
-		blog.Error("delete host in app Error %v", err)
+		blog.Errorf("delHostInApp Error %v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.Debug("formData:%v", formData)
+
+	blog.Infof("formData:%v", formData)
+
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
 		"HostID",
 	})
 	if !res {
-		blog.Error("DelHostInApp error: %s", msg)
+		blog.Errorf("delHostInApp error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -520,7 +525,7 @@ func (s *Service) delHostInApp(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().DelHostInApp(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("delete host in app error:%v", err)
+		blog.Errorf("delHostInApp error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -542,7 +547,7 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().GetGitServerIp(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("get git server ip, error:%v ", err)
+		blog.Errorf("getGitServerIp, error:%v ", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}

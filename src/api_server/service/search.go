@@ -73,27 +73,29 @@ func (s *Service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	err := req.Request.ParseForm()
+
 	if err != nil {
-		blog.Error("get ip and proxy by company Error %v", err)
+		blog.Errorf("getIPAndProxyByCompany Error %v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
+
 	formData := req.Request.Form
 	appID := formData.Get("appId")
 	platID := formData.Get("platId")
 	ips := formData.Get("ipList")
 	if "" == appID {
-		blog.Errorf("get ip and proxy by company error appID empty")
+		blog.Errorf("getIPAndProxyByCompany error appID empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "appId").Error(), resp)
 		return
 	}
 	if "" == platID {
-		blog.Errorf("get ip and proxy by company error platID empty")
+		blog.Errorf("getIPAndProxyByCompany error platID empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platId").Error(), resp)
 		return
 	}
 	if "" == ips {
-		blog.Errorf("get ip and proxy by company error ipList empty")
+		blog.Errorf("getIPAndProxyByCompany error ipList empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ipList").Error(), resp)
 		return
 	}
@@ -104,7 +106,7 @@ func (s *Service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 	input[common.BKCloudIDField] = platID
 	result, err := s.CoreAPI.HostServer().GetIPAndProxyByCompany(context.Background(), pheader, input)
 	if err != nil {
-		blog.Error("get ip and proxy by company  error:%s ", err.Error())
+		blog.Errorf("getIPAndProxyByCompany  error:%s ", err.Error())
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -123,7 +125,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get host list by ip error:%v", err)
+		blog.Errorf("getHostListByIP error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -131,7 +133,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 	formData := req.Request.Form
 
 	if len(formData["IP"]) == 0 || formData["IP"][0] == "" {
-		blog.Error("get host list by ip error: param IP is empty!")
+		blog.Errorf("getHostListByIP error: param IP is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "IP").Error(), resp)
 		return
 	}
@@ -146,7 +148,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 		appIDStrArr := strings.Split(formData["ApplicationID"][0], ",")
 		appIDArr, sliceErr := utils.SliceStrToInt(appIDStrArr)
 		if nil != sliceErr {
-			blog.Error("get host list by ip error: %v", sliceErr)
+			blog.Errorf("getHostListByIP error: %v", sliceErr)
 			converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 			return
 		}
@@ -159,7 +161,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 
 	result, err := s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("get host list by ip  error:%v", err)
+		blog.Errorf("getHostListByIP  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -180,7 +182,7 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get set host list error:%v", err)
+		blog.Errorf("getSetHostList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -189,14 +191,14 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
-		blog.Error("get set host list error: %s", msg)
+		blog.Errorf("getSetHostList error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	appID, err := strconv.Atoi(formData["ApplicationID"][0])
 	if nil != err {
-		blog.Error("get set host list error: %v", err)
+		blog.Errorf("getSetHostList error: %v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -204,7 +206,7 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 	setIDStrArr := strings.Split(formData["SetID"][0], ",")
 	setIDArr, err := utils.SliceStrToInt(setIDStrArr)
 	if nil != err {
-		blog.Error("get set host list error: %v", err)
+		blog.Errorf("getSetHostList error: %v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2MultiSetIDErr, defErr.Error(common.CCErrAPIServerV2MultiSetIDErr).Error(), resp)
 		return
 	}
@@ -216,7 +218,7 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().HostSearchBySetID(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("get set host list error:%v", err)
+		blog.Errorf("getSetHostList error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -238,7 +240,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get module host list error:%v", err)
+		blog.Error("getModuleHostList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -247,14 +249,14 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "ModuleID"})
 	if !res {
-		blog.Error("get module host list error: %s", msg)
+		blog.Errorf("getModuleHostList error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	appID, err := strconv.Atoi(formData["ApplicationID"][0])
 	if nil != err {
-		blog.Error("get module host listerror: %v", err)
+		blog.Errorf("getModuleHostList error: %v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -262,7 +264,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 	moduleIDStrArr := strings.Split(formData["ModuleID"][0], ",")
 	moduleIDArr, err := utils.SliceStrToInt(moduleIDStrArr)
 	if nil != err {
-		blog.Error("get module host list error: %v", err)
+		blog.Errorf("getModuleHostList error: %v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2MultiModuleIDErr, defErr.Error(common.CCErrAPIServerV2MultiModuleIDErr).Error(), resp)
 		return
 	}
@@ -275,7 +277,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 	result, err := s.CoreAPI.HostServer().HostSearchByModuleID(context.Background(), pheader, param)
 
 	if err != nil {
-		blog.Error("get module host list  error:%v", err)
+		blog.Errorf("getModuleHostList list  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -297,25 +299,25 @@ func (s *Service) getAppHostList(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get app host list error:%v", err)
+		blog.Errorf("getAppHostList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("get app host list data: %v", formData)
+	blog.Infof("getAppHostList data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID"})
 	if !res {
-		blog.Error("get app host list error: %s", msg)
+		blog.Errorf("getAppHostList error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	appID, err := strconv.Atoi(formData["ApplicationID"][0])
 	if nil != err {
-		blog.Error("get app host list error: %v", err)
+		blog.Errorf("getAppHostList error: %v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -326,19 +328,19 @@ func (s *Service) getAppHostList(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.HostServer().HostSearchByAppID(context.Background(), pheader, param)
 
 	if err != nil {
-		blog.Error("get app host list  error:%v", err)
+		blog.Errorf("getAppHostList  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
 
-	blog.Debug("get app host list success, data length: %d", len(resDataV2.([]map[string]interface{})))
+	blog.Infof("getAppHostList success, data length: %d", len(resDataV2.([]map[string]interface{})))
 
 	converter.RespSuccessV2(resDataV2, resp)
 }
@@ -350,7 +352,7 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get hosts by property error:%v", err)
+		blog.Errorf("getHostsByProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -359,14 +361,14 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID"})
 	if !res {
-		blog.Error("get hosts by property error: %s", msg)
+		blog.Errorf("getHostsByProperty error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	appID, err := strconv.Atoi(formData["ApplicationID"][0])
 	if nil != err {
-		blog.Error("get hosts by property error: %v", err)
+		blog.Errorf("getHostsByProperty error: %v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -379,7 +381,7 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 	if len(formData["SetID"]) > 0 && "" != formData["SetID"][0] {
 		setIDArr, sliceErr := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
 		if nil != sliceErr {
-			blog.Error("get hosts by property error: %v", sliceErr)
+			blog.Errorf("getHostsByProperty error: %v", sliceErr)
 			converter.RespFailV2(common.CCErrAPIServerV2MultiSetIDErr, defErr.Errorf(common.CCErrAPIServerV2MultiSetIDErr).Error(), resp)
 			return
 		}
@@ -388,7 +390,6 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	if len(formData["SetEnviType"]) > 0 && "" != formData["SetEnviType"][0] {
 
-		//env 1：测试 2：体验 3：正式，默认为3
 		setEnvArrTemp := strings.Split(formData["SetEnviType"][0], ",")
 		setEnvArr := make([]string, 0)
 		for _, setEnv := range setEnvArrTemp {
@@ -406,7 +407,6 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	if len(formData["SetServiceStatus"]) > 0 && "" != formData["SetServiceStatus"][0] {
 
-		//service status，包含0：关闭，1：开启，默认为1
 		setStatusArrTemp := strings.Split(formData["SetServiceStatus"][0], ",")
 		setStatusArr := make([]string, 0)
 		for _, setStatus := range setStatusArrTemp {
@@ -425,14 +425,14 @@ func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	result, err := s.CoreAPI.HostServer().HostSearchByProperty(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("get hosts by property  error:%v", err)
+		blog.Errorf("getHostsByProperty  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

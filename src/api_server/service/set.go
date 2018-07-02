@@ -39,17 +39,17 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get sets error:%v", err)
+		blog.Errorf("getSets error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Infof("get sets data:%v", formData)
+	blog.Infof("getSets data:%v", formData)
 
 	if len(formData["ApplicationID"]) == 0 {
-		blog.Error("get sets error: ApplicationID is empty!")
+		blog.Error("getSets error: ApplicationID is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
@@ -95,14 +95,14 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), user, appID, pheader, param)
 
 	if err != nil {
-		blog.Error("get sets  error:%v", err)
+		blog.Errorf("getSets  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForSetList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert set res to v2 error:%v, rspV3:%v", err, result.Data)
+		blog.Errorf("convert set res to v2 error:%v, rspV3:%v", err, result.Data)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -117,17 +117,17 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get modules by property error:%v", err)
+		blog.Error("getModulesByProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("get modules by property data:%v", formData)
+	blog.Infof("getModulesByProperty data:%v", formData)
 
 	if len(formData["ApplicationID"]) == 0 {
-		blog.Error("get modules by property error: ApplicationID is empty!")
+		blog.Error("getModulesByProperty error: ApplicationID is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -139,7 +139,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 	if len(formData["SetID"]) > 0 && formData["SetID"][0] != "" {
 		setIDArr, sliceErr := utils.SliceStrToInt(strings.Split(formData["SetID"][0], ","))
 		if sliceErr != nil {
-			blog.Error("SliceStrToInt error:%v", sliceErr)
+			blog.Errorf("SliceStrToInt error:%v", sliceErr)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, sliceErr.Error()).Error(), resp)
 			return
 		}
@@ -157,13 +157,13 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByProperty(context.Background(), appID, pheader, param)
 	if err != nil {
-		blog.Error("get modules by property  error:%v", err)
+		blog.Errorf("getModulesByProperty  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	resDataV2, err := converter.ResToV2ForModuleMapList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert module res to v2 error:%v", err)
+		blog.Errorf("convert module res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -181,18 +181,18 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("add set error:%v", err)
+		blog.Errorf("addSet error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("add set  data: %v", formData)
+	blog.Infof("addSet  data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetName"})
 	if !res {
-		blog.Error("add set error: %s", msg)
+		blog.Errorf("addSet error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -200,7 +200,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 	reqParam := make(map[string]interface{})
 	if len(formData["SetName"][0]) > 24 {
 		msg = defLang.Language("apiv2_set_name_lt_24")
-		blog.Error("add set error:%v", msg)
+		blog.Errorf("addSet error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2SetNameLenErr, defErr.Errorf(common.CCErrAPIServerV2SetNameLenErr, msg).Error(), resp)
 		return
 	}
@@ -212,7 +212,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 	appID := formData["ApplicationID"][0]
 	reqParam[common.BKInstParentStr], err = strconv.Atoi(appID)
 	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
+		blog.Errorf("convert appid to int error:%v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -222,7 +222,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 		propertiesMap := make(map[string]interface{})
 		err := json.Unmarshal([]byte(propertiesJson), &propertiesMap)
 		if nil != err {
-			blog.Error("addSet error:%v", err)
+			blog.Errorf("addSet error:%v", err)
 			converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 			return
 		}
@@ -230,7 +230,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 			if k == "EnviType" {
 				vInt, err := util.GetIntByInterface(v)
 				if nil != err {
-					blog.Error("addSet error:%v", err)
+					blog.Errorf("addSet error:%v", err)
 					converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "EnviType").Error(), resp)
 					return
 				}
@@ -243,7 +243,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 			if k == "ServiceStatus" {
 				vInt, err := util.GetIntByInterface(v)
 				if nil != err {
-					blog.Error("addSet error:%v", err)
+					blog.Errorf("addSet error:%v", err)
 					converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "ServiceStatus").Error(), resp)
 					return
 				}
@@ -259,7 +259,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 			if k == "Capacity" {
 				reqParam[common.BKSetCapacityField], err = util.GetIntByInterface(v)
 				if nil != err {
-					blog.Error("add set GetIntByInterface error:%v", err)
+					blog.Errorf("addSet GetIntByInterface error:%v", err)
 					converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsIsInvalid, "Capacity").Error(), resp)
 					return
 				}
@@ -270,17 +270,17 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 	}
 	delete(reqParam, "ChnName")
 	reqParam, err = s.Logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, user, pheader)
-	blog.Debug("add set reqParam:%v", reqParam)
+	blog.Infof("addSet reqParam:%v", reqParam)
 
 	result, err := s.CoreAPI.TopoServer().Instance().CreateSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
-		blog.Error("add set error:%v", err)
+		blog.Errorf("addSet error:%v", err)
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
 		msg = fmt.Sprintf("%s", result.ErrMsg)
-		blog.Error("CreatePlats error:%s", msg)
+		blog.Errorf("addSet error:%s", msg)
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
@@ -353,18 +353,18 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update set error:%v", err)
+		blog.Errorf("updateSet error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("update set error data: %v", formData)
+	blog.Infof("updateSet error data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
-		blog.Error("update set error error: %s", msg)
+		blog.Errorf("updateSet error error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -375,7 +375,7 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 	setIDStrArr := strings.Split(formData["SetID"][0], ",")
 	setIDArr, err := utils.SliceStrToInt(setIDStrArr)
 	if nil != err {
-		blog.Error("updateSet error:%v", err)
+		blog.Errorf("updateSet error:%v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "SetID").Error(), resp)
 		return
 	}
@@ -390,13 +390,13 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 		reqData[common.BKSetNameField] = setName
 	} else {
 		msg := "once can only update one set"
-		blog.Error("update set error:%v", msg)
+		blog.Errorf("update set error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	if len(formData["SetName"][0]) > 24 {
 		msg = "set name over 24"
-		blog.Error("add set error:%v", msg)
+		blog.Errorf("add set error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2SetNameLenErr, defErr.Error(common.CCErrAPIServerV2SetNameLenErr).Error(), resp)
 		return
 	}
@@ -427,7 +427,7 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.TopoServer().OpenAPI().UpdateMultiSet(context.Background(), appID, pheader, reqParam)
 
 	if nil != err {
-		blog.Errorf("update set ,error:%v", err)
+		blog.Errorf("updateSet ,error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -442,18 +442,18 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update set service status error:%v", err)
+		blog.Errorf("updateSetServiceStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("update set service status  data: %v", formData)
+	blog.Infof("updateSetServiceStatus  data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID", "Status"})
 	if !res {
-		blog.Error("updateSetServiceStatus error: %s", msg)
+		blog.Errorf("updateSetServiceStatus error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -464,7 +464,7 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 	setIDStrArr := strings.Split(formData["SetID"][0], ",")
 	setIDArr, err := utils.SliceStrToInt(setIDStrArr)
 	if nil != err {
-		blog.Error("updateSetServiceStatus error:%v", err)
+		blog.Errorf("updateSetServiceStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "SetID").Error(), resp)
 		return
 	}
@@ -472,6 +472,7 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 	appID := formData["ApplicationID"][0]
 
 	reqData[common.BKSetStatusField] = formData["Status"][0]
+
 	// service status  combin 0：关闭，1：开启，默认为1
 	switch reqData[common.BKSetStatusField] {
 	case "0":
@@ -486,7 +487,7 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().UpdateMultiSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
-		blog.Error("update set service status  error:%v", err)
+		blog.Errorf("updateSetServiceStatus  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -501,18 +502,18 @@ func (s *Service) delSet(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("delete set error:%v", err)
+		blog.Errorf("delSet error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("delete set data: %v", formData)
+	blog.Infof("delSet data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
-		blog.Error("delSet error: %s", msg)
+		blog.Errorf("delSet error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -524,7 +525,7 @@ func (s *Service) delSet(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().DeleteMultiSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
-		blog.Errorf("delete set  error:%v", err)
+		blog.Errorf("delSet  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -538,18 +539,18 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("delSetHost error:%v", err)
+		blog.Errorf("delSetHost error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("delSetHost http body data: %s", formData)
+	blog.Debug("delSetHost data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
-		blog.Error("delSetHost error: %s", msg)
+		blog.Errorf("delSetHost error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -562,7 +563,7 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().DeleteSetHost(context.Background(), appID, pheader, reqParam)
 	if err != nil {
-		blog.Error("delSetHost  error:%v", err)
+		blog.Errorf("delSetHost  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
