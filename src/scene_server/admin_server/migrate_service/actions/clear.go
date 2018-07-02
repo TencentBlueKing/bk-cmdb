@@ -13,15 +13,15 @@
 package host
 
 import (
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
-
-	"configcenter/src/scene_server/admin_server/migrate_service/logics"
-
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common/version"
+	"configcenter/src/storage"
 )
 
 var clear *clearAction = &clearAction{}
@@ -41,7 +41,13 @@ func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-	err := logics.Clear(cli.CC.InstCli)
+
+	if version.CCRunMode == version.CCRunModeProduct {
+		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
+		return
+	}
+
+	err := clearDatabase(cli.CC.InstCli)
 	if nil != err {
 		blog.Errorf("clear error: %v", err)
 		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
@@ -51,4 +57,47 @@ func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
 	cli.ResponseSuccess("migrate success", resp)
 	return
 
+}
+
+var (
+	tablenames = []string{
+		"cc_ApplicationBase",
+		"cc_History",
+		"cc_HostBase",
+		"cc_HostFavourite",
+		"cc_ModuleBase",
+		"cc_ModuleHostConfig",
+		"cc_ObjectBase",
+		"cc_OperationLog",
+		"cc_PlatBase",
+		"cc_Privilege",
+		"cc_Proc2Module",
+		"cc_Process",
+		"cc_SetBase",
+		"cc_Subscription",
+		"cc_UserAPI",
+		"cc_UserCustom",
+		"cc_UserGroup",
+		"cc_UserGroupPrivilege",
+		"cc_idgenerator",
+		"cc_ObjAsst",
+		"cc_ObjAttDes",
+		"cc_ObjClassification",
+		"cc_ObjDes",
+		"cc_PropertyGroup",
+		"cc_InstAsst",
+		"cc_System",
+	}
+)
+
+func clearDatabase(instData storage.DI) error {
+
+	// clear mongodb
+	for _, tablename := range tablenames {
+		instData.DropTable(tablename)
+	}
+
+	// clear redis
+
+	return nil
 }
