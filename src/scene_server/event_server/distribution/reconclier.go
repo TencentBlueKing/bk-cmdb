@@ -1,34 +1,24 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package distribution
 
 import (
+	"fmt"
+	"io"
+	"strings"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 	"configcenter/src/storage/dbclient"
-	"fmt"
-	redis "gopkg.in/redis.v5"
-	"io"
-	"strings"
 )
 
 type reconciler struct {
+	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
 	cachedSubscribers    []string
@@ -36,8 +26,9 @@ type reconciler struct {
 	processID            string
 }
 
-func newReconciler() *reconciler {
+func newReconciler(cache *redis.Client) *reconciler {
 	return &reconciler{
+		cache:                cache,
 		cached:               map[string][]string{},
 		persisted:            map[string][]string{},
 		persistedSubscribers: []string{},
@@ -52,10 +43,9 @@ func (r *reconciler) loadAll() {
 }
 
 func (r *reconciler) loadAllCached() {
-	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	for _, formkey := range redisCli.Keys(types.EventCacheSubscribeformKey + "*").Val() {
+	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
 		if formkey != "" && formkey != "nil" && formkey != "redis" {
-			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = redisCli.SMembers(formkey).Val()
+			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
 		}
 	}
 }
@@ -76,19 +66,18 @@ func (r *reconciler) loadAllPersisted() {
 }
 
 func (r *reconciler) reconcile() {
-	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 
 	for k, v := range r.persisted {
 		subs, plugs := util.CalSliceDiff(r.cached[k], v)
 		if len(subs) > 0 {
 			subss, _ := util.GetMapInterfaceByInerface(subs)
-			if err := redisCli.SRem(types.EventCacheSubscribeformKey+k, subss...).Err(); err != nil {
+			if err := r.cache.SRem(types.EventCacheSubscribeformKey+k, subss...).Err(); err != nil {
 				blog.Errorf("reconcile err: %v", err)
 			}
 		}
 		if len(plugs) > 0 {
 			plugss, _ := util.GetMapInterfaceByInerface(plugs)
-			if err := redisCli.SAdd(types.EventCacheSubscribeformKey+k, plugss...).Err(); err != nil {
+			if err := r.cache.SAdd(types.EventCacheSubscribeformKey+k, plugss...).Err(); err != nil {
 				blog.Errorf("reconcile err: %v", err)
 			}
 		}
@@ -96,7 +85,7 @@ func (r *reconciler) reconcile() {
 	}
 
 	for k := range r.cached {
-		redisCli.Del(types.EventCacheSubscribeformKey + k)
+		r.cache.Del(types.EventCacheSubscribeformKey + k)
 	}
 }
 
