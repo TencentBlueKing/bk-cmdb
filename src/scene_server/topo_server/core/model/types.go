@@ -31,9 +31,10 @@ const (
 
 // Operation the saver interface method
 type Operation interface {
+	IsExists() (bool, error)
 	Create() error
-	Update() error
 	Delete() error
+	Update() error
 	Save() error
 }
 
@@ -42,185 +43,17 @@ type Topo interface {
 	Current() Object
 	Prev() Object
 	Next() Object
-	ToMapStr() frtypes.MapStr
 }
 
 // Association association operation interface declaration
 type Association interface {
-	Parse(data frtypes.MapStr) error
+	Operation
+	Parse(data frtypes.MapStr) (*metadata.Association, error)
+
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
 	GetTopo(obj Object) (Topo, error)
-
 	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Group group opeartion interface declaration
-type Group interface {
-	Operation
-
-	Parse(data frtypes.MapStr) (*metadata.Group, error)
-	CreateAttribute() Attribute
-
-	GetAttributes() ([]Attribute, error)
-
-	SetID(groupID string)
-	GetID() string
-
-	SetName(groupName string)
-	GetName() string
-
-	SetIndex(groupIndex int64)
-	GetIndex() int64
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetDefault(isDefault bool)
-	GetDefault() bool
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Attribute attribute opeartion interface declaration
-type Attribute interface {
-	Operation
-	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetObjectID(objectID string)
-	GetObjectID() string
-
-	SetID(attributeID string)
-	GetID() string
-
-	SetName(attributeName string)
-	GetName() string
-
-	SetGroup(grp Group)
-	GetGroup() (Group, error)
-
-	SetGroupIndex(attGroupIndex int64)
-	GetGroupIndex() int64
-
-	SetUnint(unit string)
-	GetUnint() string
-
-	SetPlaceholder(placeHolder string)
-	GetPlaceholder() string
-
-	SetIsEditable(isEditable bool)
-	GetIsEditable() bool
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	SetIsReadOnly(isReadOnly bool)
-	GetIsReadOnly() bool
-
-	SetIsOnly(isOnly bool)
-	GetIsOnly() bool
-
-	SetIsSystem(isSystem bool)
-	GetIsSystem() bool
-
-	SetIsAPI(isAPI bool)
-	GetIsAPI() bool
-
-	SetType(attributeType string)
-	GetType() string
-
-	SetOption(attributeOption interface{})
-	GetOption() interface{}
-
-	SetDescription(attributeDescription string)
-	GetDescription() string
-
-	SetCreator(attributeCreator string)
-	GetCreator() string
-
-	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Classification classification operation interface declaration
-type Classification interface {
-	Operation
-	Parse(data frtypes.MapStr) (*metadata.Classification, error)
-
-	GetObjects() ([]Object, error)
-
-	SetID(classificationID string)
-	GetID() string
-
-	SetName(classificationName string)
-	GetName() string
-
-	SetType(classificationType string)
-	GetType() string
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetIcon(classificationIcon string)
-	GetIcon() string
-
-	ToMapStr() (frtypes.MapStr, error)
-}
-
-// Object model operation interface declaration
-type Object interface {
-	Operation
-
-	Parse(data frtypes.MapStr) (*metadata.Object, error)
-
-	CreateGroup() Group
-	CreateAttribute() Attribute
-
-	GetGroups() ([]Group, error)
-	GetAttributes() ([]Attribute, error)
-
-	SetClassification(class Classification)
-	GetClassification() (Classification, error)
-
-	SetIcon(objectIcon string)
-	GetIcon() string
-
-	SetID(objectID string)
-	GetID() string
-
-	SetName(objectName string)
-	GetName() string
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	SetIsPaused(isPaused bool)
-	GetIsPaused() bool
-
-	SetPosition(position string)
-	GetPosition() string
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetDescription(description string)
-	GetDescription() string
-
-	SetCreator(creator string)
-	GetCreator() string
-
-	SetModifier(modifier string)
-	GetModifier() string
-
-	ToMapStr() (frtypes.MapStr, error)
-
-	GetInstIDFieldName() string
-	GetInstNameFieldName() string
 }
 
 // Factory used to create object  classification attribute etd.
@@ -229,5 +62,6 @@ type Factory interface {
 	CreaetClassification(params types.LogicParams) Classification
 	CreateAttribute(params types.LogicParams) Attribute
 	CreateGroup(params types.LogicParams) Group
-	CreateAssociation(params types.LogicParams) Association
+	CreateCommonAssociation(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association
+	CreateMainLineAssociatin(params types.LogicParams, obj Object, asstKey string, asstObj Object) Association
 }

@@ -13,6 +13,7 @@
 package main
 
 import (
+	"context"
 	"runtime"
 
 	"configcenter/src/common"
@@ -36,7 +37,11 @@ func main() {
 
 	util.InitFlags()
 
-	if err := app.Run(op); err != nil {
+	if err := common.SavePid(); err != nil {
+		blog.Error("fail to save pid: err:%s", err.Error())
+	}
+
+	if err := app.Run(context.Background(), op); err != nil {
 		blog.Fatal(err)
 	}
 }

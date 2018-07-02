@@ -564,4 +564,12 @@
             height: calc(100% - 80px);
         }
     }
+    .topo-wrapper .hosts-wrapper{
+        .table-container{
+            padding: 20px 0;
+        }
+        .breadcrumbs{
+            display: none;
+        }
+    }
 </style>

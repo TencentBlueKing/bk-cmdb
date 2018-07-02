@@ -74,16 +74,6 @@ type CustomOutputer interface {
 	CreateCustomOutputer(name string, run func(data types.MapStr) error) (OutputerKey, Puter)
 }
 
-// InstOutputer the inst outputer interface
-type InstOutputer interface {
-	// CreateInst create a instance for the model
-	CreateInst(target model.Model) (inst.Inst, error)
-	// FindInstsLikeName find all insts by the name
-	FindInstsLikeName(target model.Model, instName string) (inst.Iterator, error)
-	// FindInstsByCondition find all insts by the condition
-	FindInstsByCondition(target model.Model, cond common.Condition) (inst.Iterator, error)
-}
-
 // Manager is the interface that must be implemented by every output manager.
 type Manager interface {
 	// Model interface
@@ -92,6 +82,6 @@ type Manager interface {
 	// Custom outputer
 	CustomOutputer
 
-	// InstOutputer
-	InstOutputer
+	// InstOperation operation
+	InstOperation() inst.OperationInterface
 }

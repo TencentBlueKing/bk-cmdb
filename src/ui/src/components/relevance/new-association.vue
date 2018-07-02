@@ -36,8 +36,8 @@
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="default" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
-                <bk-button type="primary" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
+                <bk-button type="default" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
+                <bk-button type="primary" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
             </template>
         </v-table>
     </div>
@@ -182,6 +182,14 @@
                     limit: pagination.size,
                     sort: this.table.sort
                 }
+            },
+            searchValue () {
+                let value = this.filter.property.value
+                let property = this.getProperty(this.filter.property.id, this.filter.objId)
+                if (property && property['bk_property_type'] === 'bool') {
+                    value = ['true', 'false'].includes(this.filter.property.value) ? this.filter.property.value === 'true' : this.filter.property.value
+                }
+                return value
             }
         },
         watch: {
@@ -333,14 +341,14 @@
                             'condition': [{
                                 'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : 'bk_inst_name',
                                 'operator': this.filter.property.operator,
-                                'value': this.filter.property.value
+                                'value': this.searchValue
                             }]
                         })
                     } else {
                         condition[0]['condition'].push({
                             'field': this.filter.property.id,
                             'operator': this.filter.property.operator,
-                            'value': this.filter.property.value
+                            'value': this.searchValue
                         })
                     }
                 }
@@ -355,7 +363,7 @@
                     page: this.page
                 }
                 if (this.filter.property.value !== '') {
-                    params.condition[this.filter.property.id] = this.filter.property.value
+                    params.condition[this.filter.property.id] = this.searchValue
                 }
                 return this.$axios.post(`biz/search/${this.bkSupplierAccount}`, params, {cancelToken})
             },
@@ -374,7 +382,7 @@
                     condition[objId] = [{
                         'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : this.filter.property.id,
                         'operator': this.filter.property.operator,
-                        'value': this.filter.property.value
+                        'value': this.searchValue
                     }]
                 }
                 return condition

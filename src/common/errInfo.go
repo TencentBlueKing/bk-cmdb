@@ -130,6 +130,9 @@ const (
 	// CCErrCommParamsShouldBeEnum set enum
 	CCErrCommParamsShouldBeEnum = 1199034
 
+	// CCErrCommXXExceedLimit  xx exceed limit number
+	CCErrCommXXExceedLimit = 1199035
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -231,8 +234,15 @@ const (
 
 	// CCErrTopoGetCloudErrStrFaild get cloud error
 	CCErrTopoGetCloudErrStrFaild = 1101031
-	//CCErrTopoCloudNotFound   cloud area not found
+	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
+
+	// CCErrTopoGetAppFaild search app err %s
+	CCErrTopoGetAppFaild = 1101033
+	// CCErrTopoGetModuleFailed search  module err %s
+	CCErrTopoGetModuleFailed = 1101034
+	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
+	CCErrTopoBizTopoLevelOverLimit = 1101035
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -321,7 +331,9 @@ const (
 	CCErrHostFavouriteCreateFail         = 1106015
 	CCErrHostFavouriteUpdateFail         = 1106016
 	CCErrHostFavouriteDeleteFail         = 1106017
-	CCErrHostFavouriteDupFail            = 1106017
+	CCErrHostFavouriteDupFail            = 1106018
+	CCErrHostGetSnapshotChannelEmpty     = 1106019
+	CCErrHostGetSnapshotChannelClose     = 1106020
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module = 1107001
@@ -373,6 +385,19 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
+
+	// hostserver api machinery new error code
+	CCErrAddUserCustomQueryFaild       = 1110040
+	CCErrUpdateUserCustomQueryFaild    = 1110041
+	CCErrDeleteUserCustomQueryFaild    = 1110042
+	CCErrSearchUserCustomQueryFaild    = 1110043
+	CCErrGetUserCustomQueryDetailFaild = 1110044
+	CCErrHostModuleConfigFaild         = 1110045
+	CCErrHostGetSetFaild               = 1110046
+	CCErrHostGetAPPFail                = 1110047
+	CCErrHostAPPNotFoundFail           = 1110048
+	CCErrHostGetModuleFail             = 1110049
+	CCErrHostAgentStatusFail           = 1110050
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001

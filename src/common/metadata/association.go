@@ -31,13 +31,16 @@ const (
 
 // Association define object association struct
 type Association struct {
-	ID          int    `field:"id"`
-	ObjectID    string `field:"bk_obj_id"`
-	ObjectAttID string `field:"bk_object_att_id"`
-	OwnerID     string `field:"bk_supplier_account"`
-	AsstForward string `field:"bk_asst_forward"`
-	AsstObjID   string `field:"bk_asst_obj_id"`
-	AsstName    string `field:"bk_asst_name"`
+	ID               int64  `field:"id" json:"id"`
+	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id"`
+	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account"`
+	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward"`
+	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	AsstName         string `field:"bk_asst_name" json:"bk_asst_name"`
+	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id"`
+	ClassificationID string `field:"bk_classification_id"`
+	ObjectIcon       string `field:"bk_obj_icon"`
+	ObjectName       string `field:"bk_obj_name"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance
@@ -54,4 +57,85 @@ func (cli *Association) Parse(data types.MapStr) (*Association, error) {
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() types.MapStr {
 	return SetValueToMapStrByTags(cli)
+}
+
+// InstAsst an association definition between instances.
+type InstAsst struct {
+	ID           int64  `field:"id" json:"-"`
+	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
+	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+}
+
+// Parse load the data from mapstr attribute into attribute instance
+func (cli *InstAsst) Parse(data types.MapStr) (*InstAsst, error) {
+
+	err := SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
+}
+
+// ToMapStr to mapstr
+func (cli *InstAsst) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(cli)
+}
+
+// MainlineObjectTopo the mainline object topo
+type MainlineObjectTopo struct {
+	ObjID      string `field:"bk_obj_id"`
+	ObjName    string `field:"bk_obj_name"`
+	OwnerID    string `field:"bk_supplier_account"`
+	NextObj    string `field:"bk_next_obj"`
+	NextName   string `field:"bk_next_name"`
+	PreObjID   string `field:"bk_pre_obj_id"`
+	PreObjName string `field:"bk_pre_obj_name"`
+}
+
+// Parse load the data from mapstr attribute into attribute instance
+func (cli *MainlineObjectTopo) Parse(data types.MapStr) (*MainlineObjectTopo, error) {
+
+	err := SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
+}
+
+// ToMapStr to mapstr
+func (cli *MainlineObjectTopo) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(cli)
+}
+
+// TopoInst 实例拓扑结构
+type TopoInst struct {
+	InstID   int64  `json:"bk_inst_id"`
+	InstName string `json:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id"`
+	ObjName  string `json:"bk_obj_name"`
+	Default  int    `json:"default"`
+}
+
+// TopoInstRst 拓扑实例
+type TopoInstRst struct {
+	TopoInst `json:",inline"`
+	Child    []TopoInstRst `json:"child"`
+}
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
+}
+
+// AssociationParams  association params
+type AssociationParams struct {
+	Page      BasePage                   `json:"page,omitempty"`
+	Fields    map[string][]string        `json:"fields,omitempty"`
+	Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }

@@ -12,7 +12,9 @@
 
 package metadata
 
-import "time"
+import (
+	"time"
+)
 
 type ID struct {
 	ID string `json:"id"`
@@ -40,7 +42,7 @@ type GetHostFavoriteResult struct {
 
 type GetHostFavoriteWithIDResult struct {
 	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
+	Data     FavouriteMeta `json:"data"`
 }
 
 type HistoryContent struct {
@@ -52,9 +54,16 @@ type AddHistoryResult struct {
 	Data     ID `json:"data"`
 }
 
+type HistoryMeta struct {
+	ID         string    `json:"id,omitempty" bson:"id,omitempty" `
+	User       string    `json:"user,omitempty" bson:"user,omitempty"`
+	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
+	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+}
+
 type HistoryResult struct {
 	Count int           `json:"count"`
-	Info  []interface{} `json:"info"`
+	Info  []HistoryMeta `json:"info"`
 }
 
 type GetHistoryResult struct {
@@ -83,33 +92,40 @@ type GetHostSnapResult struct {
 
 type GetHostModuleIDsResult struct {
 	BaseResp `json:",inline"`
-	Data     []int `json:"data"`
+	Data     []int64 `json:"data"`
 }
 
 type ParamData struct {
-	ApplicationID       int   `json:"bk_biz_id"`
-	HostID              []int `json:"bk_host_id"`
-	OwnerModuleID       int   `json:"bk_owner_module_id"`
-	OwnerAppplicationID int   `json:"bk_owner_biz_id"`
+	ApplicationID       int64   `json:"bk_biz_id"`
+	HostID              []int64 `json:"bk_host_id"`
+	OwnerModuleID       int64   `json:"bk_owner_module_id"`
+	OwnerAppplicationID int64   `json:"bk_owner_biz_id"`
 }
 
 type AssignHostToAppParams struct {
-	ApplicationID      int   `json:"bk_biz_id"`
-	HostID             []int `json:"bk_host_id"`
-	ModuleID           int   `json:"bk_module_id"`
-	OwnerApplicationID int   `json:"bk_owner_biz_id"`
-	OwnerModuleID      int   `json:"bk_owner_module_id"`
+	ApplicationID      int64   `json:"bk_biz_id"`
+	HostID             []int64 `json:"bk_host_id"`
+	ModuleID           int64   `json:"bk_module_id"`
+	OwnerApplicationID int64   `json:"bk_owner_biz_id"`
+	OwnerModuleID      int64   `json:"bk_owner_module_id"`
+}
+
+type ModuleHost struct {
+	AppID    int64 `json:"bk_biz_id"`
+	HostID   int64 `json:"bk_host_id"`
+	ModuleID int64 `json:"bk_module_id"`
+	SetID    int64 `json:"bk_set_id"`
 }
 
 type HostConfig struct {
 	BaseResp `json:",inline"`
-	Data     []interface{} `json:"data"`
+	Data     []ModuleHost `json:"data"`
 }
 
 type ModuleHostConfigParams struct {
-	ApplicationID int64 `json:"bk_biz_id"`
-	HostID        int64 `json:"bk_host_id"`
-	ModuleID      []int `json:"bk_module_id"`
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        int64   `json:"bk_host_id"`
+	ModuleID      []int64 `json:"bk_module_id"`
 }
 
 type UserConfig struct {
@@ -133,12 +149,51 @@ type GetUserConfigResult struct {
 	Data     UserConfigResult `json:"data"`
 }
 
-type GetUserConfigDetailResult struct {
+type GetUserCustomResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
 }
 
-type GetUserCustomResult struct {
+type FavouriteParms struct {
+	ID          string `json:"id,omitempty"`
+	Info        string `json:"info,omitempty"`
+	QueryParams string `json:"query_params,omitempty"`
+	Name        string `json:"name,omitempty"`
+	IsDefault   int    `json:"is_default,omitempty"`
+	Count       int    `json:"count,omitempty"`
+}
+
+type FavouriteMeta struct {
+	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
+	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
+	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
+	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
+	User        string    `json:"user,omitempty" bson:"user,omitempty"`
+	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
+	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
+	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+}
+
+type GetUserConfigDetailResult struct {
 	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
+	Data     UserConfigMeta `json:"data"`
+}
+
+type UserConfigMeta struct {
+	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
+	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
+	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
+	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	CreateUser string    `json:"create_user,omitempty" bson:"create_user,omitempty"`
+	ModifyUser string    `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
+	UpdateTime time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+}
+
+type AddConfigQuery struct {
+	AppID      int64  `json:"bk_biz_id,omitempty"`
+	Info       string `json:"info,omitempty"`
+	Name       string `json:"name,omitempty"`
+	CreateUser string `json:"create_user,omitempty"`
 }

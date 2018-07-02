@@ -13,12 +13,16 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // BusinessIteratorWrapper the business iterator wrapper
 type BusinessIteratorWrapper struct {
-	business inst.Iterator
+	business inst.BusinessIterator
 }
 
 // Next next the business
@@ -33,14 +37,14 @@ func (cli *BusinessIteratorWrapper) Next() (*BusinessWrapper, error) {
 // ForEach the foreach function
 func (cli *BusinessIteratorWrapper) ForEach(callback func(business *BusinessWrapper) error) error {
 
-	return cli.business.ForEach(func(item inst.Inst) error {
+	return cli.business.ForEach(func(item inst.BusinessInterface) error {
 		return callback(&BusinessWrapper{business: item})
 	})
 }
 
 // BusinessWrapper the business wrapper
 type BusinessWrapper struct {
-	business inst.Inst
+	business inst.BusinessInterface
 }
 
 // SetValue set the key value
@@ -66,6 +70,16 @@ func (cli *BusinessWrapper) Update() error {
 // Save save the data
 func (cli *BusinessWrapper) Save() error {
 	return cli.business.Save()
+}
+
+// GetValues return the values
+func (cli *BusinessWrapper) GetValues() (types.MapStr, error) {
+	return cli.business.GetValues()
+}
+
+// GetModel get the model for the business
+func (cli *BusinessWrapper) GetModel() model.Model {
+	return cli.business.GetModel()
 }
 
 // SetDeveloper set the biz developer
@@ -134,23 +148,18 @@ func (cli *BusinessWrapper) GetTester() (string, error) {
 	return vals.String(fieldBizTester), nil
 }
 
-/* TODO need to delete the follow code
-// SetSupplierAccount set the supplier account
-func (cli *BusinessWrapper) SetSupplierAccount(supplierAccount string) error {
-	id, _ := strconv.Atoi(supplierAccount)
-	cli.SetValue(fieldSupplierID, id)
-	return cli.business.SetValue(fieldSupplierAccount, supplierAccount)
-}
-
-// GetSupplierAccount get the supplier account
-func (cli *BusinessWrapper) GetSupplierAccount() (string, error) {
+// GetBusinessID get the id for the business
+func (cli *BusinessWrapper) GetBusinessID() (int64, error) {
 	vals, err := cli.business.GetValues()
 	if nil != err {
-		return "", err
+		return 0, err
 	}
-	return vals.String(fieldSupplierAccount), nil
+	if !vals.Exists(fieldBusinessID) {
+		return 0, fmt.Errorf("the business id is not set")
+	}
+	val, err := vals.Int(fieldBusinessID)
+	return int64(val), err
 }
-*/
 
 // SetLifeCycle set the life cycle
 func (cli *BusinessWrapper) SetLifeCycle(lifeCycle string) error {
