@@ -33,5 +33,6 @@
     "1199032": "params needs to be a string",
     "1199033": "Failed to get field property, error: %s",
     "1199034": "'%s' data type should be enum",
+    "1199035": " %s exceed the limit %d",
     "":""
 }

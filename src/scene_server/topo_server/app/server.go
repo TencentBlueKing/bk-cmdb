@@ -13,31 +13,137 @@
 package app
 
 import (
-	"configcenter/src/common"
+	"context"
+	"fmt"
+	"os"
+
+	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
+	"configcenter/src/scene_server/topo_server/core"
+	toposvr "configcenter/src/scene_server/topo_server/service"
 )
 
-//Run ccapi server
-func Run(op *options.ServerOption) error {
+// TopoServer the topo server
+type TopoServer struct {
+	Core    *backbone.Engine
+	Config  options.Config
+	Service toposvr.TopoServiceInterface
+}
 
-	setConfig(op)
+func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 
-	serv, err := NewCCAPIServer(op.ServConf)
+	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
+	if nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
+	}
+
+	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
+		blog.Errorf("failed to update config, error info is %s", err.Error())
+	}
+
+}
+
+// Run main function
+func Run(ctx context.Context, op *options.ServerOption) error {
+	svrInfo, err := newServerInfo(op)
 	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
+		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
+	blog.V(3).Infof("srv conf:", svrInfo)
+
+	c := &util.APIMachineryConfig{
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
 	}
 
-	serv.Start()
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return fmt.Errorf("new api machinery failed, err: %v", err)
+	}
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
 
+	topoSvr := new(TopoServer)
+
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+
+	topoService := toposvr.New()
+	topoSvr.Service = topoService
+
+	server := backbone.Server{
+		ListenAddr: svrInfo.IP,
+		ListenPort: svrInfo.Port,
+		Handler:    restful.NewContainer().Add(topoService.WebService(rdapi.AllGlobalFilter())),
+		TLS:        backbone.TLSConfig{},
+	}
+
+	bonC := &backbone.Config{
+		RegisterPath: regPath,
+		RegisterInfo: *svrInfo,
+		CoreAPI:      machinery,
+		Server:       server,
+	}
+
+	engine, err := backbone.NewBackbone(
+		ctx,
+		op.ServConf.RegDiscover,
+		types.CC_MODULE_TOPO,
+		op.ServConf.ExConfig,
+		topoSvr.onTopoConfigUpdate,
+		bonC)
+
+	if nil != err {
+		return fmt.Errorf("new engine failed, error is %s", err.Error())
+	}
+
+	topoSvr.Core = engine
+
+	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
+	topoService.SetConfig(topoSvr.Config)
+
+	select {
+	case <-ctx.Done():
+	}
 	return nil
 }
 
-func setConfig(op *options.ServerOption) {
+func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
 }

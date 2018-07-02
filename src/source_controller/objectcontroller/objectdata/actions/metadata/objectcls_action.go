@@ -83,7 +83,7 @@ func (cli *objectClassificationAction) CreateClassification(req *restful.Request
 			blog.Error("create objectcls failed, error:%s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
-		return http.StatusOK, []*metadata.ObjClassification{obj}, nil
+		return http.StatusOK, obj, nil
 	}, resp)
 }
 

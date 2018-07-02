@@ -21,6 +21,12 @@ import (
 	"io"
 )
 
+// Iterator the iterator interface for the Inst
+type Iterator interface {
+	Next() (CommonInstInterface, error)
+	ForEach(callbackItem func(item CommonInstInterface) error) error
+}
+
 type iteratorInst struct {
 	targetModel model.Model
 	cond        common.Condition
@@ -51,7 +57,7 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 
 }
 
-func (cli *iteratorInst) Next() (Inst, error) {
+func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -81,7 +87,7 @@ func (cli *iteratorInst) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInst) ForEach(callbackItem func(item Inst) error) error {
+func (cli *iteratorInst) ForEach(callbackItem func(item CommonInstInterface) error) error {
 	for {
 
 		item, err := cli.Next()

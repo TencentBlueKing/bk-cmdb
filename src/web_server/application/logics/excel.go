@@ -144,7 +144,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	var err error
 	nameIndexMap, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
 	if nil != err {
-
 		return nil, err
 	}
 	hosts := make(map[int]map[string]interface{})

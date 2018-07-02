@@ -15,18 +15,20 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
+	*options.Config
 	*backbone.Engine
 	*logics.Logics
 }
 
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON)
+	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
@@ -40,7 +42,7 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
 	ws.Route(ws.POST("/history").To(s.AddHistory))
 	ws.Route(ws.GET("/history/{start}/{limit}").To(s.GetHistorys))
-	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMutiltAppModuleRelation))
+	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/emptymodule").To(s.MoveHost2EmptyModule))
 	ws.Route(ws.POST("/hosts/faultmodule").To(s.MoveHost2FaultModule))
@@ -67,14 +69,16 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
 	ws.Route(ws.GET("/plat").To(s.GetPlat))
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
-	ws.Route(ws.DELETE("/plat/{" + common.BKCloudIDField + "}").To(s.DelPlat))
-	ws.Route(ws.POST("/search").To(s.HostSearch))
-	ws.Route(ws.POST("/search/asstdetail").To(s.HostSearchWithAsstDetail))
+	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
+	ws.Route(ws.POST("/search").To(s.SearchHost))
+	ws.Route(ws.POST("/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	ws.Route(ws.PUT("/host/batch").To(s.UpdateHostBatch))
-	ws.Route(ws.POST("/userapi").To(s.Add))
-	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.Update))
-	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.Delete))
-	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.Get))
-	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.Detail))
-	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserAPIData))
+	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
+	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
+	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
+	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.GetUserCustomQuery))
+	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
+	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
+
+	return ws
 }

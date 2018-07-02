@@ -14,17 +14,44 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
-	api "configcenter/src/source_controller/api/object"
+	"configcenter/src/common/metadata"
+
+	"context"
+	"net/http"
 )
 
-var innerObject = []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDHost, common.BKInnerObjIDPlat} //{"app", "set", "module", "process", "host", "plat"}
+var innerObject = map[string]bool{
+	common.BKInnerObjIDApp: true,
+	common.BKInnerObjIDSet: true,
 
+	common.BKInnerObjIDModule: true,
+	common.BKInnerObjIDProc:   true,
+	common.BKInnerObjIDHost:   true,
+	common.BKInnerObjIDPlat:   true,
+}
+
+// IntOption integer option
 type IntOption struct {
 	Min string `bson:"min" json:"min"`
 	Max string `bson:"max" json:"max"`
 }
 
+// EnumOption enum option
+type EnumOption []EnumVal
+
+// GetDefault returns EnumOption's default value
+func (opt EnumOption) GetDefault() *EnumVal {
+	for index := range opt {
+		if opt[index].IsDefault {
+			return &opt[index]
+		}
+	}
+	return nil
+}
+
+// EnumVal enum option val
 type EnumVal struct {
 	ID        string `bson:"id"           json:"id"`
 	Name      string `bson:"name"         json:"name"`
@@ -32,22 +59,17 @@ type EnumVal struct {
 	IsDefault bool   `bson:"is_default"   json:"is_default"`
 }
 
+// ValidMap define
 type ValidMap struct {
-	ownerID      string
-	objID        string
-	objCtrl      string
-	IsRequireArr []string
-	IsOnlyArr    []string
-	KeyFileds    map[string]interface{}
-	PropertyKv   map[string]string
-	ccError      errors.DefaultCCErrorIf
-	forward      *api.ForwardParam
-}
+	ctx context.Context
+	*backbone.Engine
+	pheader http.Header
+	ownerID string
+	objID   string
+	errif   errors.DefaultCCErrorIf
 
-// InstRst define
-type InstRst struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
+	propertys    map[string]metadata.Attribute
+	require      map[string]bool
+	isOnly       map[string]bool
+	shouldIgnore map[string]bool
 }

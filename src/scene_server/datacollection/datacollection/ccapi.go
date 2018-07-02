@@ -106,7 +106,7 @@ func (ccAPI *CCAPIServer) Start() error {
 	err := a.GetDataCli(config, "mongodb")
 	if err != nil {
 		blog.Error("connect mongodb error exit! err:%s", err.Error())
-		chErr <- err
+		return err
 	}
 	instdata.DataH = a.InstCli
 
@@ -149,8 +149,9 @@ func (ccAPI *CCAPIServer) initHTTPServ() error {
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
 	for _, metricAction := range metricActions {
-		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		newmetricAction := metricAction
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: newmetricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			newmetricAction.HandlerFunc(resp.ResponseWriter, req.Request)
 		}})
 	}
 	ccAPI.httpServ.RegisterWebServer("/", nil, as)

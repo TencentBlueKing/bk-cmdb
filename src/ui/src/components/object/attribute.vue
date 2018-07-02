@@ -743,7 +743,6 @@
             }
             .attribute-item-field{
                 display: inline-block;
-                margin-left: 24px;
             }
         }
     }

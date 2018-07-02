@@ -27,10 +27,10 @@ func CreateCondition() Condition {
 // Condition condition interface
 type Condition interface {
 	SetPage(page types.MapStr) error
-	SetStart(start int)
-	GetStart() int
-	SetLimit(limit int)
-	GetLimit() int
+	SetStart(start int64)
+	GetStart() int64
+	SetLimit(limit int64)
+	GetLimit() int64
 	SetSort(sort string)
 	GetSort() string
 	Field(fieldName string) Field
@@ -40,8 +40,8 @@ type Condition interface {
 
 // Condition the condition definition
 type condition struct {
-	start  int
-	limit  int
+	start  int64
+	limit  int64
 	sort   string
 	fields []Field
 }
@@ -49,7 +49,7 @@ type condition struct {
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	start, err := page.Int(metadata.PageStart)
+	start, err := page.Int64(metadata.PageStart)
 	if nil != err {
 		return err
 	}
@@ -114,22 +114,22 @@ func (cli *condition) Parse(data types.MapStr) error {
 }
 
 // SetStart set the start
-func (cli *condition) SetStart(start int) {
+func (cli *condition) SetStart(start int64) {
 	cli.start = start
 }
 
 // GetStart return the start
-func (cli *condition) GetStart() int {
+func (cli *condition) GetStart() int64 {
 	return cli.start
 }
 
 // SetLimit set the limit num
-func (cli *condition) SetLimit(limit int) {
+func (cli *condition) SetLimit(limit int64) {
 	cli.limit = limit
 }
 
 // GetLimit return the limit num
-func (cli *condition) GetLimit() int {
+func (cli *condition) GetLimit() int64 {
 	return cli.limit
 }
 

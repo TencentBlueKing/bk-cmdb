@@ -29,6 +29,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type MongoConfig struct {
+	Address      string
+	User         string
+	Password     string
+	Database     string
+	Port         string
+	MaxOpenConns string
+	MaxIdleConns string
+	Mechanism    string
+}
+
 type MgoCli struct {
 	host      string
 	port      string

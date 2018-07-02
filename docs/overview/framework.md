@@ -253,7 +253,7 @@ GetCapacity() (int, error)
 // SetBusinessID 设置集群所属的业务ID，调用此方法会同步将当前集群的父节点设置为传入的业务。
 SetBusinessID(businessID int64) error
 
-// GetBusiness 获取集群所属的业务ID
+// GetBusiness 获取集群所属的业务ID，在调用Save 和Update 之后此处返回的仅是最后一次被更新的业务的ID
 GetBusinessID() (int, error)
 
 // SetSupplierAccount 设置集群所属的开发商ID
@@ -263,7 +263,7 @@ SetSupplierAccount(supplierAccount string) error
 GetSupplierAccount() (string, error) 
 
 
-// GetID 获取集群的ID
+// GetID 获取集群的ID，在调用Save 和Update 之后此处返回的仅是最后一次被更新的集群的ID
 GetID() (int, error)
 
 // SetParent 设置当前节点的父实例节点，只有在当前集群的父实例不是业务的时候才需要设置此参数。
@@ -357,8 +357,8 @@ SetBakOperator(bakOperator string) error
 // GetBakOperator 获取备份维护人
 GetBakOperator() (string, error)
 
-// SetBusinessID 设置业务ID
-SetBusinessID(businessID int64) error
+// SetTopo 设置模块的层级
+SetTopo(bizID, setID int64) error
 
 // GetBusinessID 获取业务ID
 GetBusinessID() (int, error)
@@ -378,7 +378,7 @@ SetName(name string) error
 // GetName 获取模块的名字
 GetName() (string, error)
 
-// GetID 获取模块的ID
+// GetID 获取模块的ID, 在调用Save 和Update 之后此处返回的仅是最后一次被更新的模块的ID
 GetID() (int, error) 
 
 // Save 保存模块的信息。
@@ -455,7 +455,7 @@ SetValue(key string, val interface{}) error
 SetSupplierAccount(supplierAccount string) error
 // GetSupplierAccount 获取云区域开发商
 GetSupplierAccount() (string, error)
-// GetID 获取云区域ID
+// GetID 获取云区域ID,在调用Save 和Update 之后此处返回的仅是最后一次被更新的云区域的ID
 GetID() (int, error) 
 // SetName 设置云区域名字
 SetName(name string) error
@@ -518,12 +518,78 @@ ForEach(callback func(plat *PlatWrapper) error) error
 
 ### 主机管理 API
 
+#### 主机转移接口方法声明
+
+> 类型：TransferInterface
+
+> 方法列表:
+
+``` golang
+
+// MoveToModule 将主机转移到主机当前所在业务的其他模块，isIncrement true 主机原来所在模块不会被改变，false 会从原来所在模块中删除
+MoveToModule(newModuleIDS []int64, isIncrement bool) error
+
+// MoveToFaultModule 将主机移动到主机当前所在业务的故障机模块
+MoveToFaultModule() error
+
+// MoveToIdleModule 将主机移动到主机当前所在业务的空闲机模块
+MoveToIdleModule() error
+
+// MoveToResourcePools 将主机移动到资源池
+MoveToResourcePools() error
+
+// MoveToBusinessIdleModuleFromResourcePools 将主机从资源池分配到业务空闲机模块
+MoveToBusinessIdleModuleFromResourcePools(bizID int64) error
+
+// MoveToAnotherBusinessModules 将主机从当前业务转移到另一个业务的给定模块下
+MoveToAnotherBusinessModules(bizID int64, moduleID int64) error
+
+// ResetBusinessHosts 将主机从给定的模块和集群下清空，转移至业务的空闲机下
+ResetBusinessHosts(setID, moduleID int64) error
+
+```
+
+#### 主机管理包装器（用于查询接口返回的数据结构）
+
+> 类型：FinderHostWrapper
+
+> 方法列表：
+
+
+``` golang
+
+// GetBizs 获取业务信息
+GetBizs() ([]*BusinessWrapper, error) 
+
+// GetSets 获取业务信息
+GetSets() ([]*SetWrapper, error)
+
+// GetModules 获取模块信息
+GetModules() ([]*ModuleWrapper, error) 
+
+其余方法与HostWrapper一致
+
+```
+
 #### 主机管理包装器
 
 > 类型：HostWrapper
 > 方法列表：
 
 ``` golang
+
+// Transfer 返回主机转移操作方法
+Transfer() inst.TransferInterface
+
+// SetModuleIDS 设置主机所属业务的模块ID
+SetModuleIDS(moduleIDS []int64) 
+
+// SetBusiness 设置主机所属的业务
+SetBusiness(bizID int64)
+
+// SetTopo 设置主机所属的业务及业务下的模块ID
+SetTopo(bizID int64, setName, moduleName string) error
+
 // SetValue 为自定义字段进行复制，key 字段名，val 字段的值
 SetValue(key string, val interface{}) error
 

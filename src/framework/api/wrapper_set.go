@@ -13,12 +13,16 @@
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // SetIteratorWrapper the set iterator wrapper
 type SetIteratorWrapper struct {
-	set inst.Iterator
+	set inst.SetIterator
 }
 
 // Next next the set
@@ -33,14 +37,19 @@ func (cli *SetIteratorWrapper) Next() (*SetWrapper, error) {
 // ForEach the foreach function
 func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) error {
 
-	return cli.set.ForEach(func(item inst.Inst) error {
+	return cli.set.ForEach(func(item inst.SetInterface) error {
 		return callback(&SetWrapper{set: item})
 	})
 }
 
 // SetWrapper the set wrapper
 type SetWrapper struct {
-	set inst.Inst
+	set inst.SetInterface
+}
+
+// GetValues return the values
+func (cli *SetWrapper) GetValues() (types.MapStr, error) {
+	return cli.set.GetValues()
 }
 
 // SetValue set the key value
@@ -105,16 +114,18 @@ func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 	if err := cli.SetParent(businessID); nil != err {
 		return err
 	}
-	return cli.set.SetValue(fieldBusinessID, businessID)
+	cli.set.SetBusinessID(businessID)
+	return nil
 }
 
 // GetBusinessID get the business id
-func (cli *SetWrapper) GetBusinessID() (int, error) {
+func (cli *SetWrapper) GetBusinessID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldBusinessID)
+	val, err := vals.Int(fieldBusinessID)
+	return int64(val), err
 }
 
 // SetSupplierAccount set the supplier account code of the set
@@ -132,12 +143,12 @@ func (cli *SetWrapper) GetSupplierAccount() (string, error) {
 }
 
 // GetID get the set id
-func (cli *SetWrapper) GetID() (int, error) {
+func (cli *SetWrapper) GetID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldSetID)
+	return vals.Int64(fieldSetID)
 }
 
 // SetParent set the parent id of the set
@@ -148,6 +159,19 @@ func (cli *SetWrapper) SetParent(parentInstID int64) error {
 // SetName the name of the set
 func (cli *SetWrapper) SetName(name string) error {
 	return cli.set.SetValue(fieldSetName, name)
+}
+
+// GetSetID get the id for the set
+func (cli *SetWrapper) GetSetID() (int64, error) {
+	vals, err := cli.set.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldSetID) {
+		return 0, fmt.Errorf("the set id is not set")
+	}
+	val, err := vals.Int(fieldSetID)
+	return int64(val), err
 }
 
 // GetName get the set name
@@ -177,4 +201,9 @@ func (cli *SetWrapper) Update() error {
 // Save save the data
 func (cli *SetWrapper) Save() error {
 	return cli.set.Save()
+}
+
+// GetModel get the model for the set
+func (cli *SetWrapper) GetModel() model.Model {
+	return cli.set.GetModel()
 }

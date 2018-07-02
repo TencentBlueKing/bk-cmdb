@@ -20,6 +20,7 @@ import (
 )
 
 func (m *mod) GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
+	resp = new(metadata.GetHostModuleIDsResult)
 	subPath := "/meta/hosts/modules/search"
 
 	err = m.client.Post().
@@ -33,6 +34,7 @@ func (m *mod) GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadat
 }
 
 func (m *mod) AddModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/meta/hosts/modules"
 
 	err = m.client.Post().
@@ -46,6 +48,7 @@ func (m *mod) AddModuleHostConfig(ctx context.Context, h http.Header, dat *metad
 }
 
 func (m *mod) DelModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/meta/hosts/modules"
 
 	err = m.client.Delete().
@@ -59,6 +62,7 @@ func (m *mod) DelModuleHostConfig(ctx context.Context, h http.Header, dat *metad
 }
 
 func (m *mod) DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/meta/hosts/defaultmodules"
 
 	err = m.client.Delete().
@@ -72,6 +76,7 @@ func (m *mod) DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat
 }
 
 func (m *mod) MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/meta/hosts/resource"
 
 	err = m.client.Put().
@@ -85,6 +90,7 @@ func (m *mod) MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *met
 }
 
 func (m *mod) AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := "/meta/hosts/assign"
 
 	err = m.client.Post().
@@ -97,7 +103,8 @@ func (m *mod) AssignHostToApp(ctx context.Context, h http.Header, dat interface{
 	return
 }
 
-func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int) (resp *metadata.HostConfig, err error) {
+func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
+	resp = new(metadata.HostConfig)
 	subPath := "/meta/hosts/module/config/search"
 
 	err = m.client.Post().

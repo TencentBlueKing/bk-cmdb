@@ -25,14 +25,12 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	myCommon "configcenter/src/scene_server/host_server/common"
+	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"github.com/emicklei/go-restful"
-    logics2 "configcenter/src/scene_server/host_server/logics"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -77,19 +75,28 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service.Engine = engine
-	_ := logics2.Logics{Engine: engine}
+	service.Logics = &logics.Logics{Engine: engine}
+	service.Config = &hostSvr.Config
 	hostSvr.Core = engine
+	hostSvr.Service = service
+	hostSvr.Logic = service.Logics
 	select {}
 	return nil
 }
 
 type HostServer struct {
-	Core *backbone.Engine
+	Core    *backbone.Engine
+	Config  options.Config
+	Service *hostsvc.Service
+	Logic   *logics.Logics
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	config := current.ConfigMap
-	myCommon.SetGseConfig(config["gse.addr"], config["gse.user"], config["gse.pwd"], config["gse.port"], config["gse.redis_pwd"])
+	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
+	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
+	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
+	h.Config.Gse.RedisPort = current.ConfigMap["gse.port"]
+	h.Config.Gse.RedisPassword = current.ConfigMap["gse.redis_pwd"]
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

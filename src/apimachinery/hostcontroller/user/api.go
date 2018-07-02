@@ -21,6 +21,7 @@ import (
 )
 
 func (u *user) AddUserConfig(ctx context.Context, h http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
 	subPath := "/userapi"
 
 	err = u.client.Post().
@@ -34,6 +35,7 @@ func (u *user) AddUserConfig(ctx context.Context, h http.Header, dat *metadata.U
 }
 
 func (u *user) UpdateUserConfig(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
 	err = u.client.Put().
@@ -47,6 +49,7 @@ func (u *user) UpdateUserConfig(ctx context.Context, businessID string, id strin
 }
 
 func (u *user) DeleteUserConfig(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
 	err = u.client.Delete().
@@ -59,7 +62,8 @@ func (u *user) DeleteUserConfig(ctx context.Context, businessID string, id strin
 	return
 }
 
-func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *metadata.ObjQueryInput) (resp *metadata.GetUserConfigResult, err error) {
+func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error) {
+	resp = new(metadata.GetUserConfigResult)
 	subPath := "/userapi/search"
 
 	err = u.client.Post().
@@ -73,6 +77,7 @@ func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *metadata.O
 }
 
 func (u *user) GetUserConfigDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.GetUserConfigDetailResult, err error) {
+	resp = new(metadata.GetUserConfigDetailResult)
 	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
 
 	err = u.client.Get().
@@ -86,6 +91,7 @@ func (u *user) GetUserConfigDetail(ctx context.Context, businessID string, id st
 }
 
 func (u *user) AddUserCustom(ctx context.Context, user string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/usercustom/%s", user)
 
 	err = u.client.Post().
@@ -99,6 +105,7 @@ func (u *user) AddUserCustom(ctx context.Context, user string, h http.Header, da
 }
 
 func (u *user) UpdateUserCustomByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
 	subPath := fmt.Sprintf("/usercustom/%s/%s", user, id)
 
 	err = u.client.Put().
@@ -112,6 +119,7 @@ func (u *user) UpdateUserCustomByID(ctx context.Context, user string, id string,
 }
 
 func (u *user) GetUserCustomByUser(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
 	subPath := fmt.Sprintf("/usercustom/user/search/%s", user)
 
 	err = u.client.Post().
@@ -125,6 +133,7 @@ func (u *user) GetUserCustomByUser(ctx context.Context, user string, h http.Head
 }
 
 func (u *user) GetDefaultUserCustom(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
 	subPath := fmt.Sprintf("/usercustom/default/search/%s", user)
 
 	err = u.client.Post().
