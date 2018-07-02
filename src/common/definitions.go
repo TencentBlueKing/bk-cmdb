@@ -420,8 +420,8 @@ const (
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
 
-	// BKCollectorKeyField the collector_key field
-	BKCollectorKeyField = "collector_key"
+	// BKInstKeyField the inst key field for metric discover
+	BKInstKeyField = "bk_inst_key"
 )
 
 // DefaultResSetName the inner module set
