@@ -38,6 +38,19 @@ type Attr struct {
 	Editable       bool   `json:"editable"`
 }
 
+// Related 关联数据
+type Related struct {
+	BkInstId   int    `json:"bk_inst_id"`
+	BkInstName string `json:"bk_inst_name"`
+	BkObjIcon  string `json:"bk_obj_icon"`
+	BkObjId    string `json:"bk_obj_id"`
+	BkObjName  string `json:"bk_obj_name"`
+	Id         string `json:"id"`
+}
+
+// SingleRelated 单关联数据
+type SingleRelated []Related
+
 type M map[string]interface{}
 
 type MapData M
@@ -630,8 +643,8 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 			"sort":  bkc.BKInstNameField,
 		},
 		"condition": M{
-			bkc.BKCollectorKeyField: instKey,
-			bkc.BKObjIDField:        objID,
+			bkc.BKInstKeyField: instKey,
+			bkc.BKObjIDField:   objID,
 		},
 	}
 
@@ -694,7 +707,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	}
 
 	// try fetch inst cache from redis
-	instKey := bodyData[bkc.BKCollectorKeyField]
+	instKey := bodyData[bkc.BKInstKeyField]
 	instKeyStr, ok := instKey.(string)
 	if !ok || instKeyStr == "" {
 		return fmt.Errorf("skip inst because of empty collect_key: %s", instKeyStr)
@@ -742,12 +755,23 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	// update info by sample data
 	hasDiff := false
 	for attrId, attrValue := range bodyData {
-		// skip single relation attr: host
-		if info[attrId] != attrValue && attrId != defaultRelateAttr {
+
+		// default single relation attr: host
+		if attrId == defaultRelateAttr {
+			if relateList, ok := info[defaultRelateAttr].([]interface{}); ok && len(relateList) == 1 {
+				if relateObj, ok := relateList[0].(map[string]interface{}); ok && relateObj["id"] != "" {
+					blog.Debug("skip update exist single relation attr: %s->%s", attrId, attrValue)
+					continue
+				}
+			}
+		}
+
+		if info[attrId] != attrValue {
 			blog.Debug("[changed]%s: %v ---> %v", attrId, attrValue, info[attrId])
 			hasDiff = true
 		}
 		info[attrId] = attrValue
+
 	}
 
 	if !hasDiff {
