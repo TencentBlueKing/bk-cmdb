@@ -49,8 +49,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
 	}
-	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus &&
-		sub.ConfirmPattern == "" {
+	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = "200"
 	}
 	sub.LastTime = &now
