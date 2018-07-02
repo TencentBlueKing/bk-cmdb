@@ -759,18 +759,33 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		// default single relation attr: host
 		if attrId == defaultRelateAttr {
 			if relateList, ok := info[defaultRelateAttr].([]interface{}); ok && len(relateList) == 1 {
-				if relateObj, ok := relateList[0].(map[string]interface{}); ok && relateObj["id"] != "" {
-					blog.Debug("skip update exist single relation attr: %s->%s", attrId, attrValue)
-					continue
+				// relation exist continue
+				relateObj, ok := relateList[0].(map[string]interface{})
+
+				if ok && relateObj["id"] != "" {
+					blog.Infof("skip update exist single relation attr: %s->%s", attrId, attrValue)
+				} else {
+					// update single relation if relation empty
+					if attrValue != "" {
+						blog.Debug("[relation changed]  %s: %v ---> %v", attrId, attrValue)
+						info[attrId] = attrValue
+						hasDiff = true
+					}
 				}
+
+				continue
 			}
+
+			blog.Errorf("parse relation data failed, skip update")
+			continue
+
 		}
 
 		if info[attrId] != attrValue {
-			blog.Debug("[changed]%s: %v ---> %v", attrId, attrValue, info[attrId])
+			info[attrId] = attrValue
+			blog.Debug("[changed]  %s: %v ---> %v", attrId, attrValue, info[attrId])
 			hasDiff = true
 		}
-		info[attrId] = attrValue
 
 	}
 
