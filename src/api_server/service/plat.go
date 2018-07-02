@@ -14,8 +14,6 @@ package service
 
 import (
 	"context"
-	//	"fmt"
-	//	"strconv"
 	"strings"
 
 	"github.com/emicklei/go-restful"
@@ -24,8 +22,6 @@ import (
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	//	"configcenter/src/common/mapstr"
-	//	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 )
 
@@ -36,18 +32,18 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("update host error:%v", err)
+		blog.Errorf("updateHost error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("updateHost http body data:%v", formData)
+	blog.Infof("updateHost data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "orgPlatId", "ip", "dstPlatId"})
 	if !res {
-		blog.Error("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -69,7 +65,7 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().UpdateHost(context.Background(), appID, pheader, param)
 	if err != nil {
-		blog.Error("updateHost u error:%v", err)
+		blog.Errorf("updateHost u error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -85,7 +81,7 @@ func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().GetPlat(context.Background(), pheader)
 	if err != nil {
-		blog.Error("get plats error:%v", err)
+		blog.Errorf("getPlats error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -107,14 +103,14 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("delete plats error:%v", err)
+		blog.Errorf("deletePlats error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("delete platsdata:%v", formData)
+	blog.Infof("deletePlats data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platId"})
 	if !res {
@@ -127,7 +123,7 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().DelPlat(context.Background(), platID, pheader)
 	if err != nil {
-		blog.Error("DeletePlats error:%v", err)
+		blog.Errorf("deletePlats error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -143,14 +139,14 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("create plats error:%v", err)
+		blog.Errorf("createPlats error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("create plats data:%v", formData)
+	blog.Infof("createPlats data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platName"})
 	if !res {
@@ -168,13 +164,13 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostServer().CreatePlat(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("create plats  error:%v", err)
+		blog.Errorf("createPlats  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if !result.Result {
-		blog.Error("CreatePlats error:%s", result.ErrMsg)
+		blog.Errorf("createPlats error:%s", result.ErrMsg)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}

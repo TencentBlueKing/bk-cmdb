@@ -31,42 +31,42 @@ func (s *Service) getAgentStatus(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get agent status  error:%v", err)
+		blog.Errorf("getAgentStatus  error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
-	blog.Debug("get agent status  data:%v", formData)
+	blog.Infof("getAgentStatus  data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId"})
 	if !res {
-		blog.Error("get agent status  error: %s", msg)
+		blog.Errorf("getAgentStatus  error: %s", msg)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "appId").Error(), resp)
 		return
 	}
 
 	appID := formData["appId"][0]
 	if nil != err {
-		blog.Error("get agent status error: ApplicationID is not number")
+		blog.Errorf("getAgentStatus error: ApplicationID is not number")
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "appId").Error(), resp)
 		return
 	}
 
 	result, err := s.CoreAPI.HostServer().GetAgentStatus(context.Background(), appID, pheader)
 	if err != nil {
-		blog.Error("get agent status error:%v", err)
+		blog.Errorf("getAgentStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if result.Result {
-		blog.Error("get agent status error:%s", result.ErrMsg)
+		blog.Errorf("getAgentStatus error:%s", result.ErrMsg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, result.ErrMsg).Error(), resp)
 		return
 	} else {
 		msg = "get agent Status faliure"
-		blog.Errorf("get agent status error rspMap:%v", result.ErrMsg)
+		blog.Errorf("getAgentStatus error rspMap:%v", result.ErrMsg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}

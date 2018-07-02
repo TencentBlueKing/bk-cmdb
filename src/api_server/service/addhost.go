@@ -33,7 +33,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("add host error:%v", err)
+		blog.Errorf("addHost error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -46,7 +46,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 	platID := formData.Get("platId")
 
 	if "" == ips {
-		blog.Errorf("add host error ip empty")
+		blog.Errorf("addHost error ip empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
 		return
 	}
@@ -54,7 +54,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 
 	intPlatID, err := util.GetInt64ByInterface(platID)
 	if nil != err {
-		blog.Errorf("add host error ip empty")
+		blog.Errorf("addHost error ip empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platId").Error(), resp)
 		return
 	}
@@ -68,7 +68,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 		IsIncrement: true}
 	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("add host  error:%v", err)
+		blog.Errorf("addHost  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -76,7 +76,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 	err = converter.ResToV2ForEnterIP(result.Result, result.ErrMsg, result.Data)
 
 	if err != nil {
-		blog.Error("convert addhost result to v2 error:%s, reply:%v", err.Error(), result.Data)
+		blog.Errorf("convert addHost result to v2 error:%s, reply:%v", err.Error(), result.Data)
 		converter.RespFailV2(common.CCErrAddHostToModuleFailStr, err.Error(), resp)
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("enter ip error:%v", err)
+		blog.Errorf("enterIP error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -105,7 +105,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 	osType := formData.Get("osType")
 
 	if "" == ips {
-		blog.Errorf("EnterIP error ips empty")
+		blog.Errorf("enterIP error ips empty")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
 		return
 	}
@@ -138,7 +138,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(context.Background(), pheader, param)
 
 	if err != nil {
-		blog.Error("enter ip  error:%v", err)
+		blog.Errorf("enterIP  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}

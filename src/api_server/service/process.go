@@ -38,18 +38,18 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("GetProcessPortByApplicationID error:%v", err)
+		blog.Errorf("getProcessPortByApplicationID error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.Debug("GetProcessPortByApplicationID http body data:%v", formData)
+	blog.Infof("getProcessPortByApplicationID  data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID"})
 	if !res {
-		blog.Error("GetProcessPortByApplicationID error: %s", msg)
+		blog.Errorf("getProcessPortByApplicationID error: %s", msg)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
@@ -57,7 +57,7 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	appID := formData.Get("ApplicationID")
 	if nil != err {
 
-		blog.Error("GetProcessPortByApplicationID error: ApplicationID is not number")
+		blog.Error("getProcessPortByApplicationID error: ApplicationID is not number")
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -65,7 +65,7 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	modules, err := s.getModulesByAppId(appID, user, pheader)
 	blog.Debug("modules:%v", modules)
 	if nil != err {
-		blog.Error("getModulesByAppId error:%v", err)
+		blog.Errorf("getProcessPortByApplicationID error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 		return
 	}
@@ -73,14 +73,14 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 
 	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByApplicationID(context.Background(), appID, pheader, modulesMap)
 	if err != nil {
-		blog.Error("GetProcessPortByApplicationID  error:%v", err)
+		blog.Errorf("getProcessPortByApplicationID  error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if !result.Result {
 		code, _ := util.GetIntByInterface(result.Code)
-		blog.Error("GetProcessPortByApplicationID error:%s", result.ErrMsg)
+		blog.Errorf("getProcessPortByApplicationID error:%s", result.ErrMsg)
 		converter.RespFailV2(code, result.ErrMsg, resp)
 		return
 	}
@@ -101,23 +101,23 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("GetProcessPortByIP error:%v", err)
+		blog.Errorf("getProcessPortByIP error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.Debug("GetProcessPortByIP http body data:%v", formData)
+	blog.Infof("getProcessPortByIP data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ips"})
 	if !res {
-		blog.Error("GetProcessPortByIP error: %s", msg)
+		blog.Errorf("getProcessPortByIP error: %v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	ips := formData.Get("ips")
 	ipArr := strings.Split(ips, ",")
 	if len(ipArr) == 0 {
-		blog.Error("GetProcessPortByIP error: ips is required")
+		blog.Errorf("getProcessPortByIP error: ips is required")
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ips").Error(), resp)
 		return
 	}
@@ -125,13 +125,13 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 	param["ipArr"] = ipArr
 	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByIP(context.Background(), pheader, param)
 	if err != nil {
-		blog.Error("GetProcessPortByIP url error:%v", err)
+		blog.Errorf("getProcessPortByIP url error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if !result.Result {
-		blog.Error("GetProcessPortByIP error:%s", result.ErrMsg)
+		blog.Errorf("getProcessPortByIP error:%s", result.ErrMsg)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}

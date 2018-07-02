@@ -32,7 +32,7 @@ func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("get obj property error:%v", err)
+		blog.Errorf("getObjProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -40,7 +40,7 @@ func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
 	formData := req.Request.Form
 	res, msg := utils.ValidateFormData(formData, []string{"type"})
 	if !res {
-		blog.Error("get obj property error: %s", msg)
+		blog.Errorf("getObjProperty error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -49,7 +49,7 @@ func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
 
 	obj, ok := defs.ObjMap[objType]
 	if !ok {
-		blog.Error("get obj propertyerror, non match objType: %s", objType)
+		blog.Errorf("getObjProperty error, non match objType: %s", objType)
 		converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "type").Error(), resp)
 		return
 	}
@@ -63,7 +63,7 @@ func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.TopoServer().Object().SelectObjectAttWithParams(context.Background(), pheader, reqParam)
 	if err != nil {
-		blog.Errorf("get obj property error:%v", err)
+		blog.Errorf("getObjProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
