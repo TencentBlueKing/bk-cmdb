@@ -135,7 +135,4 @@ func SubscribeChannel(config map[string]string) (err error) {
 		MsgChan <- msg.Payload
 	}
 }
-
-func init() {
-	actions.RegisterNewAutoAction(actions.AutoAction{"SubscribeChannel", SubscribeChannel})
-}
+func init() { actions.RegisterNewAutoAction(actions.AutoAction{"SubscribeChannel", SubscribeChannel}) }

@@ -49,14 +49,14 @@ func TestHandleDist(t *testing.T) {
 	s.Start()
 	defer s.Close()
 	sub := &types.Subscription{
-		SubscriptionID:		1,
-		SubscriptionName:	"testsubscription",
-		SystemName:		"testsystem",
-		CallbackURL:		s.URL,
-		ConfirmMode:		types.ConfirmmodeHttpstatus,
-		ConfirmPattern:		"200",
-		TimeOut:		10,
-		SubscriptionForm:	"hostadd",
+		SubscriptionID:   1,
+		SubscriptionName: "testsubscription",
+		SystemName:       "testsystem",
+		CallbackURL:      s.URL,
+		ConfirmMode:      types.ConfirmmodeHttpstatus,
+		ConfirmPattern:   "200",
+		TimeOut:          10,
+		SubscriptionForm: "hostadd",
 	}
 	distCtx := &types.DistInstCtx{}
 	distCtx.DistInst = *dist

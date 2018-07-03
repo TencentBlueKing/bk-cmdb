@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -240,13 +240,11 @@ func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
 	if eventstr == "" || eventstr == "nil" {
 		return nil
 	}
-
 	eventbytes := []byte(eventstr)
 	event := metadata.EventInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
-
 	return &metadata.EventInstCtx{EventInst: event, Raw: eventstr}
 }
