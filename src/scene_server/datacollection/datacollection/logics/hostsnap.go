@@ -182,6 +182,7 @@ func (h *HostSnap) Run() {
 				if waitCnt > h.maxconcurrent*2 {
 					blog.Warnf("reset handlers")
 					close(h.resetHandle)
+					waitCnt = 0
 					h.resetHandle = make(chan struct{})
 				}
 				if atomic.LoadInt64(&routeCnt) < int64(h.maxconcurrent) {
@@ -696,6 +697,7 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("snap redis server connection error: %s", err.Error())
 			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
+				blog.Errorf("snapchannel was empty in last 1 min ")
 				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
 			} else {
 				channelstatus = bkcommon.CCSuccess
