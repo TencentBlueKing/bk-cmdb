@@ -19,14 +19,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Response) {
@@ -177,13 +177,12 @@ func (s *Service) GetNameByID(appID, id string, pheader http.Header) (string, er
 	result, err := s.CoreAPI.HostServer().GetUserCustomQueryDetail(context.Background(), appID, id, pheader)
 	//http request error
 	if err != nil {
-		blog.Error("GetNameByID error:%v", err)
+		blog.Errorf("GetNameByID error:%v", err)
 		return "", nil, common.CCErrCommHTTPDoRequestFailed
 	}
 
 	if result.Result {
-		data, _ := result.Data.(map[string]interface{})
-		name, _ := data["name"].(string)
+		name, _ := result.Data["name"].(string)
 		return name, nil, 0
 	} else {
 		return "", errors.New(result.ErrMsg), common.CCErrCommHTTPDoRequestFailed

@@ -16,13 +16,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) addHost(req *restful.Request, resp *restful.Response) {

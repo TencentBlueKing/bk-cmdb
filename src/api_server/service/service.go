@@ -13,10 +13,10 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2"
 	"configcenter/src/common/backbone"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {

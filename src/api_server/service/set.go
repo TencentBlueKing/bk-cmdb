@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
@@ -29,6 +27,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
