@@ -10,17 +10,8 @@
  * limitations under the License.
  */
  
-package models
+package main
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	_ "configcenter/src/scene_server/admin_server/migrate_service/upgrader/v3.0.8"
 )
-
-func TestGetObjectDesData(t *testing.T) {
-	data := getObjectDesData("0")
-	for _, da := range data {
-		require.Equal(t, da.IsPre, true)
-	}
-}
