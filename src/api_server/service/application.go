@@ -18,8 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
@@ -28,6 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 const (

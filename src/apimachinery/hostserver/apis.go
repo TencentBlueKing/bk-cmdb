@@ -677,8 +677,8 @@ func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string,
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error) {
+	resp = new(metadata.UserCustomQueryDetailResult)
 	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
 
 	err = hs.client.Get().

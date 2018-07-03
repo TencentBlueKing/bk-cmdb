@@ -21,8 +21,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
@@ -30,6 +28,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getModuleInfoByApp(condition map[string]interface{}, pheader http.Header) (map[int]interface{}, error) {

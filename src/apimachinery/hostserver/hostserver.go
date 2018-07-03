@@ -76,7 +76,7 @@ type HostServerClientInterface interface {
 	UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error)
 	GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error)
-	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error)
+	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error)
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
 }
 
