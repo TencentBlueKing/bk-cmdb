@@ -13,6 +13,12 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -24,10 +30,6 @@ import (
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
-	"context"
-	"fmt"
-	"github.com/emicklei/go-restful"
-	"os"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {

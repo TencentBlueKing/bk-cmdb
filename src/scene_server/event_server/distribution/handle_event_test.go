@@ -3,8 +3,8 @@ package distribution
 import (
 	"encoding/json"
 	"testing"
-	"configcenter/src/common"
 
+	"configcenter/src/common"
 	"configcenter/src/scene_server/event_server/types"
 )
 
@@ -99,6 +99,5 @@ func testEventCtx() *types.EventInstCtx {
 	eventCtx := &types.EventInstCtx{}
 	eventCtx.Raw = string(out)
 	eventCtx.EventInst = *event
-
 	return eventCtx
 }

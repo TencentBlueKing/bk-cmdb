@@ -43,5 +43,4 @@ func TestSendCallback(t *testing.T) {
 	if err := SendCallback(receiver, "test message"); err != nil {
 		t.Fail()
 	}
-
 }

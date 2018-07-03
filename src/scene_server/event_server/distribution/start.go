@@ -28,10 +28,5 @@ func Start(cache *redis.Client, db storage.DI) error {
 	return <-chErr
 }
 
-type EventHandler struct {
-	cache *redis.Client
-}
-
-type DistHandler struct {
-	cache *redis.Client
-}
+type EventHandler struct{ cache *redis.Client }
+type DistHandler struct{ cache *redis.Client }
