@@ -102,16 +102,24 @@
                 }
             },
             async createRole () {
-                const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'})
-                this.closeRoleForm()
-                this.$alertMsg('新建角色成功', 'success')
-                this.$emit('on-success', res)
+                try {
+                    const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'})
+                    this.closeRoleForm()
+                    this.$alertMsg('新建角色成功', 'success')
+                    this.$emit('on-success', res)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             async updateRole () {
-                const res = await this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params, {id: 'saveRole'})
-                this.closeRoleForm()
-                this.$alertMsg('更新角色成功', 'success')
-                this.$emit('on-success', res)
+                try {
+                    const res = await this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params, {id: 'saveRole'})
+                    this.closeRoleForm()
+                    this.$alertMsg('更新角色成功', 'success')
+                    this.$emit('on-success', res)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             closeRoleForm () {
                 this.$emit('update:isShow', false)

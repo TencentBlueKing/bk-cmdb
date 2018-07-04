@@ -243,9 +243,13 @@
                 let params = {
                     bk_obj_id: ObjId
                 }
-                const res = await this.$axios.post('objects', params)
-                this.baseInfo = res.data[0]
-                this.baseInfoCopy = this.$deepClone(res.data[0])
+                try {
+                    const res = await this.$axios.post('objects', params)
+                    this.baseInfo = res.data[0]
+                    this.baseInfoCopy = this.$deepClone(res.data[0])
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 保存基本信息
@@ -272,37 +276,49 @@
                             bk_asst_obj_id: this.associationId,
                             bk_obj_icon: this.iconValue
                         }
-                        const res = await this.$axios.post('topo/model/mainline', mainLineParams, {id: 'saveModel'})
-                        this.$emit('baseInfoSuccess', {
-                            bk_obj_name: this.baseInfo['bk_obj_name'],
-                            bk_obj_id: this.baseInfo['bk_obj_id'],
-                            id: res.data['id']
-                        })
+                        try {
+                            const res = await this.$axios.post('topo/model/mainline', mainLineParams, {id: 'saveModel'})
+                            this.$emit('baseInfoSuccess', {
+                                bk_obj_name: this.baseInfo['bk_obj_name'],
+                                bk_obj_id: this.baseInfo['bk_obj_id'],
+                                id: res.data['id']
+                            })
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     } else {
-                        const res = await this.$axios.post('object', params, {id: 'saveModel'})
-                        this.$emit('baseInfoSuccess', {
-                            bk_obj_name: this.baseInfo['bk_obj_name'],
-                            bk_obj_id: this.baseInfo['bk_obj_id'],
-                            id: res.data['id'],
-                            bk_obj_icon: this.iconValue
-                        })
+                        try {
+                            const res = await this.$axios.post('object', params, {id: 'saveModel'})
+                            this.$emit('baseInfoSuccess', {
+                                bk_obj_name: this.baseInfo['bk_obj_name'],
+                                bk_obj_id: this.baseInfo['bk_obj_id'],
+                                id: res.data['id'],
+                                bk_obj_icon: this.iconValue
+                            })
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 } else if (this.type === 'change') {
                     if (this.baseInfo['bk_obj_name'] === this.baseInfoCopy['bk_obj_name'] && this.baseInfo['bk_obj_icon'] === this.baseInfoCopy['bk_obj_icon']) {
                         this.cancel()
                     } else {
                         params['bk_ispre'] = this.baseInfo['bk_ispre']
-                        await this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveModel'})
-                        this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
-                        this.$emit('confirm', {
-                            bk_obj_name: this.baseInfo['bk_obj_name'],
-                            bk_obj_id: this.baseInfo['bk_obj_id']
-                        })
-                        this.$store.commit('navigation/updateModel', {
-                            bk_classification_id: this.classificationId,
-                            bk_obj_id: this.baseInfo['bk_obj_id'],
-                            bk_obj_name: this.baseInfo['bk_obj_name']
-                        })
+                        try {
+                            await this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveModel'})
+                            this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
+                            this.$emit('confirm', {
+                                bk_obj_name: this.baseInfo['bk_obj_name'],
+                                bk_obj_id: this.baseInfo['bk_obj_id']
+                            })
+                            this.$store.commit('navigation/updateModel', {
+                                bk_classification_id: this.classificationId,
+                                bk_obj_id: this.baseInfo['bk_obj_id'],
+                                bk_obj_name: this.baseInfo['bk_obj_name']
+                            })
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 }
             }

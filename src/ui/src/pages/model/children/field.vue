@@ -1330,32 +1330,28 @@
                 // 校验模型名
                 return this.$refs.baseInfo.isCloseConfirmShow()
             },
-            handleFile (e) {
+            async handleFile (e) {
                 this.isLoading = true
                 let files = e.target.files
                 let formData = new FormData()
                 formData.append('file', files[0])
-                this.$axios.post(this.importUrl, formData).then(res => {
-                    if (res.result) {
-                        let data = res.data[this.objId]
-                        if (data.hasOwnProperty('insert_failed')) {
-                            this.$alertMsg(data['insert_failed'][0])
-                        } else if (data.hasOwnProperty('update_failed')) {
-                            this.$alertMsg(data['update_failed'][0])
-                        } else {
-                            this.$alertMsg(this.$t('ModelManagement["导入成功"]'), 'success')
-                            this.getModelField()
-                        }
+                try {
+                    const res = await this.$axios.post(this.importUrl, formData)
+                    let data = res.data[this.objId]
+                    if (data.hasOwnProperty('insert_failed')) {
+                        this.$alertMsg(data['insert_failed'][0])
+                    } else if (data.hasOwnProperty('update_failed')) {
+                        this.$alertMsg(data['update_failed'][0])
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        this.$alertMsg(this.$t('ModelManagement["导入成功"]'), 'success')
+                        this.getModelField()
                     }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
                     this.$refs.fileInput.value = ''
                     this.isLoading = false
-                }).catch(reject => {
-                    this.$alertMsg(this.$t('ModelManagement["导入失败"]'))
-                    this.$refs.fileInput.value = ''
-                    this.isLoading = false
-                })
+                }
             },
             /*
                 保存基本信息成功
@@ -1631,8 +1627,12 @@
                 index: 索引
             */
             async deleteField (id, index) {
-                await this.$axios.delete(`object/attr/${id}`)
-                this.fieldList.splice(index, 1)
+                try {
+                    await this.$axios.delete(`object/attr/${id}`)
+                    this.fieldList.splice(index, 1)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 二次确认弹窗
@@ -1747,10 +1747,14 @@
                     unit: this.newFieldInfo.unit,
                     bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
-                await this.$axios.post('object/attr', params, {id: 'saveNew'})
-                this.getModelField()
-                this.closeAddFieldBox()
-                this.$emit('newField') // 更新字段分栏列表
+                try {
+                    await this.$axios.post('object/attr', params, {id: 'saveNew'})
+                    this.getModelField()
+                    this.closeAddFieldBox()
+                    this.$emit('newField') // 更新字段分栏列表
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 关闭添加字段弹窗
@@ -1825,9 +1829,13 @@
                     params['bk_obj_id'] = this.objId
                     params['bk_supplier_account'] = this.bkSupplierAccount
                 }
-                await this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'})
-                this.getModelField()
-                this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
+                try {
+                    await this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'})
+                    this.getModelField()
+                    this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 取消变更
@@ -1942,23 +1950,27 @@
                 获取模型分类以及模型信息
             */
             async getClassification () {
-                const res = await this.$axios.post(`object/classification/${this.bkSupplierAccount}/objects`, {})
-                this.modelList = []
-                res.data.map(val => {
-                    if (val.hasOwnProperty('bk_objects') && val['bk_objects'].length) {
-                        // 不显示自己 obj[i].ObjId === this.objId
-                        // 暂时不显示主机 进程 业务 集群 模块
-                        for (let obj = val['bk_objects'], i = obj.length - 1; i >= 0; i--) {
-                            if (obj[i]['bk_obj_id'] === 'plat' || obj[i]['bk_obj_id'] === 'process' || obj[i]['bk_obj_id'] === 'set' || obj[i]['bk_obj_id'] === 'module' || obj[i]['bk_obj_id'] === this.objId) {
-                                obj.splice(i, 1)
+                try {
+                    let res = await this.$axios.post(`object/classification/${this.bkSupplierAccount}/objects`, {})
+                    this.modelList = []
+                    res.data.map(val => {
+                        if (val.hasOwnProperty('bk_objects') && val['bk_objects'].length) {
+                            // 不显示自己 obj[i].ObjId === this.objId
+                            // 暂时不显示主机 进程 业务 集群 模块
+                            for (let obj = val['bk_objects'], i = obj.length - 1; i >= 0; i--) {
+                                if (obj[i]['bk_obj_id'] === 'plat' || obj[i]['bk_obj_id'] === 'process' || obj[i]['bk_obj_id'] === 'set' || obj[i]['bk_obj_id'] === 'module' || obj[i]['bk_obj_id'] === this.objId) {
+                                    obj.splice(i, 1)
+                                }
+                            }
+                            // 去掉临时不显示的内容后长度不为0时才添加到列表中
+                            if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
+                                this.modelList.push(val)
                             }
                         }
-                        // 去掉临时不显示的内容后长度不为0时才添加到列表中
-                        if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
-                            this.modelList.push(val)
-                        }
-                    }
-                })
+                    })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             modelChange (item) {
                 this.fieldList[this.curIndex].option = item

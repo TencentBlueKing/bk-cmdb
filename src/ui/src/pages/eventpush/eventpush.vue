@@ -150,14 +150,18 @@
                         sort: this.table.sort
                     }
                 }
-                let res = await this.$axios.post(`event/subscribe/search/${this.bkSupplierAccount}/${appid}`, {}, {id: 'getSubscribe'})
-                res.data.info.map(val => {
-                    val['subscription_form'] = val['subscription_form'].split(',')
-                    val['last_time'] = this.$formatTime(val['last_time'])
-                })
-                
-                this.table.list = res.data.info
-                pagination.count = res.data.count
+                try {
+                    let res = await this.$axios.post(`event/subscribe/search/${this.bkSupplierAccount}/${appid}`, {}, {id: 'getSubscribe'})
+                    res.data.info.map(val => {
+                        val['subscription_form'] = val['subscription_form'].split(',')
+                        val['last_time'] = this.$formatTime(val['last_time'])
+                    })
+                    
+                    this.table.list = res.data.info
+                    pagination.count = res.data.count
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 编辑某一项事件推送
@@ -198,10 +202,14 @@
                 删除某一项事件推送
             */
             async delEvent (item) {
-                let appid = 0
-                await this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${appid}/${item['subscription_id']}`, {id: 'deleteEvent'})
-                this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
-                this.getTableList()
+                const APPID = 0
+                try {
+                    await this.$axios.delete(`event/subscribe/${this.bkSupplierAccount}/${APPID}/${item['subscription_id']}`, {id: 'deleteEvent'})
+                    this.$alertMsg(this.$t('EventPush["删除推送成功"]'), 'success')
+                    this.getTableList()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 新增推送

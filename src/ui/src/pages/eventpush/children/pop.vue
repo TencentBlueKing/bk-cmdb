@@ -81,7 +81,7 @@
                 isResultOpen: false,
                 isResultShow: false,
                 resultInfo: {
-                    result: true,
+                    result: false,
                     bk_error_msg: '',
                     data: ''
                 }
@@ -101,14 +101,12 @@
             async testPing () {
                 this.isResultShow = true
                 try {
-                    const res = await this.$axios.post(`event/subscribe/ping123`, {
+                    const res = await this.$axios.post(`event/subscribe/ping`, {
                         callback_url: this.callbackURL
-                    }, {id: 'testPush'})
-                    console.log('done')
+                    }, {id: 'testPush', globalError: false})
                     this.resultInfo = res
                 } catch (e) {
-                    console.log(e)
-                    // this.$alertMsg(e.message || e.data['bk_error_msg'])
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
             /*
@@ -116,10 +114,14 @@
             */
             async testTelnet () {
                 this.isResultShow = true
-                const res = await this.$axios.post(`event/subscribe/telnet`, {
-                    callback_url: this.callbackURL
-                }, {id: 'testPush'})
-                this.resultInfo = res
+                try {
+                    const res = await this.$axios.post(`event/subscribe/telnet`, {
+                        callback_url: this.callbackURL
+                    }, {id: 'testPush', globalError: false})
+                    this.resultInfo = res
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             closePop () {
                 this.isResultShow = false

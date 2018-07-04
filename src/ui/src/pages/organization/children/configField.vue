@@ -146,28 +146,26 @@
                 }
                 let params = {}
                 params[`${this.objId}DisplayColumn`] = this.localHasSelectionList
-                await this.$axios.post('usercustom', params).then(res => {
-                    if (res.result) {
-                        this.hasSelectionList = this.$deepClone(this.localHasSelectionList)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-                this.$emit('apply', this.$deepClone(this.hasSelectionList))
-                this.updateUsercustom()
+                try {
+                    await this.$axios.post('usercustom', params)
+                    this.hasSelectionList = this.$deepClone(this.localHasSelectionList)
+                    this.$emit('apply', this.$deepClone(this.hasSelectionList))
+                    this.updateUsercustom()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 获取用户定义的字段
             */
             async getUserAttr () {
                 if (JSON.stringify(this.usercustom) === '{}') {
-                    await this.$axios.post('usercustom/user/search').then(res => {
-                        if (res.result) {
-                            this.$store.commit('setUsercustom', res.data)
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        const res = await this.$axios.post('usercustom/user/search')
+                        this.$store.commit('setUsercustom', res.data)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
                 if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
                     let selectedList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])

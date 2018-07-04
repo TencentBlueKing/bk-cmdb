@@ -142,9 +142,13 @@
                 })
             },
             async getRoleList () {
-                const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}/search`, this.filter, {id: 'getRoleList'})
-                this.table.list = res.data && res.data.length ? res.data : []
-                this.$emit('on-search-success', this.table.list, this.hasFilter)
+                try {
+                    const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}/search`, this.filter, {id: 'getRoleList'})
+                    this.table.list = res.data && res.data.length ? res.data : []
+                    this.$emit('on-search-success', this.table.list, this.hasFilter)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             editRole (role) {
                 this.form.data = Object.assign({}, role, {'user_list': role['user_list'].split(';').join(',')})
@@ -161,9 +165,13 @@
             },
             async deleteRole (role) {
                 this.deleteInfo.isShow = false
-                await this.$axios.delete(`topo/privilege/group/${this.bkSupplierAccount}/${role['group_id']}`, {id: 'deleteRole'})
-                this.$alertMsg(this.$t('Permission["删除成功"]'), 'success')
-                this.getRoleList()
+                try {
+                    await this.$axios.delete(`topo/privilege/group/${this.bkSupplierAccount}/${role['group_id']}`, {id: 'deleteRole'})
+                    this.$alertMsg(this.$t('Permission["删除成功"]'), 'success')
+                    this.getRoleList()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             createRole () {
                 this.form.data = {

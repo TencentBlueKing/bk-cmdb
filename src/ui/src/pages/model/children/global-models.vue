@@ -70,14 +70,18 @@
         },
         methods: {
             async initNetwork () {
-                const response = await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/search')
-                this.setNodes(response.data)
-                this.setEdges(response.data)
-                this.networkInstance = new Vis.Network(this.$el, {
-                    nodes: this.networkDataSet.nodes,
-                    edges: this.networkDataSet.edges
-                }, this.network.options)
-                this.addListener()
+                try {
+                    const response = await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/search')
+                    this.setNodes(response.data)
+                    this.setEdges(response.data)
+                    this.networkInstance = new Vis.Network(this.$el, {
+                        nodes: this.networkDataSet.nodes,
+                        edges: this.networkDataSet.edges
+                    }, this.network.options)
+                    this.addListener()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             // 设置节点数据
             setNodes (data) {
@@ -187,7 +191,11 @@
                         }
                     }
                 })
-                await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/update', updateParams)
+                try {
+                    await this.$axios.post('objects/topographics/scope_type/global/scope_id/0/action/update', updateParams)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             // 拓扑稳定后执行事件
             // 1.取消物理模拟

@@ -95,25 +95,37 @@
         },
         methods: {
             async getBusinessRoles () {
-                const res = await this.$axios.post('object/attr/search', {bk_obj_id: 'biz', bk_supplier_account: this.bkSupplierAccount})
-                let roles = []
-                res.data.map((role) => {
-                    if (role['bk_property_type'] === 'objuser') {
-                        roles.push(Object.assign(role, {selectedAuthorities: []}))
-                    }
-                })
-                this.businessRoles = roles
-                this.selectedBusinessRole = roles[0]['bk_property_id']
+                try {
+                    const res = await this.$axios.post('object/attr/search', {bk_obj_id: 'biz', bk_supplier_account: this.bkSupplierAccount})
+                    let roles = []
+                    res.data.map((role) => {
+                        if (role['bk_property_type'] === 'objuser') {
+                            roles.push(Object.assign(role, {selectedAuthorities: []}))
+                        }
+                    })
+                    this.businessRoles = roles
+                    this.selectedBusinessRole = roles[0]['bk_property_id']
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             async getBusinessRoleAuthorities () {
-                const res = await this.$axios.get(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`)
-                if (!this.isMaintainers) {
-                    this.authorities.selected = res.data.length ? res.data : []
+                try {
+                    const res = await this.$axios.get(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`)
+                    if (!this.isMaintainers) {
+                        this.authorities.selected = res.data.length ? res.data : []
+                    }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
             updateAuthorities: Throttle(function () {
-                this.$nextTick(() => {
-                    this.$axios.post(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`, this.authorities.selected)
+                this.$nextTick(async () => {
+                    try {
+                        await this.$axios.post(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`, this.authorities.selected)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 })
             }, 300, {leading: false, trailing: true})
         },

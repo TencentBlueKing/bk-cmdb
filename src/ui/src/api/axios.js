@@ -99,9 +99,8 @@ axios.interceptors.response.use(
     error => {
         const config = error.config
         removeQueue(config)
-        // const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
-        // if (globalError && error.response) {
-        if (error.response) {
+        const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
+        if (globalError && error.response) {
             switch (error.response.status) {
                 case 401:
                     window.location.href = window.loginUrl
@@ -114,7 +113,6 @@ axios.interceptors.response.use(
                     alert('系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!')
                     break
                 default:
-                    console.log('catchError')
                     catchErrorMsg(error.response)
             }
         }

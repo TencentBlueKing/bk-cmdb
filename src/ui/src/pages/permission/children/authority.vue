@@ -239,15 +239,23 @@
                 bus.$emit('changePermissionTab')
             },
             async getGroupAuthorities (groupID) {
-                const res = await this.$axios.get(`topo/privilege/group/detail/${this.bkSupplierAccount}/${groupID}`)
-                this.groupAuthorities = res.data.privilege
-                this.initSystemAuthorities()
-                this.initClassifications()
+                try {
+                    const res = await this.$axios.get(`topo/privilege/group/detail/${this.bkSupplierAccount}/${groupID}`)
+                    this.groupAuthorities = res.data.privilege
+                    this.initSystemAuthorities()
+                    this.initClassifications()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             // 勾选后直接发起请求，并做函数节流
             updateGroupAuthorities: Throttle(function () {
-                this.$nextTick(() => {
-                    this.$axios.post(`topo/privilege/group/detail/${this.bkSupplierAccount}/${this.localRoles.selected}`, this.updateParams)
+                this.$nextTick(async () => {
+                    try {
+                        await this.$axios.post(`topo/privilege/group/detail/${this.bkSupplierAccount}/${this.localRoles.selected}`, this.updateParams)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 })
             }, 500, {leading: false, trailing: true}),
             // 获取到分组权限后设置系统权限

@@ -103,9 +103,13 @@
                 const params = {
                     bk_ispaused: false
                 }
-                await this.$axios.put(`object/${this.id}`, params, {id: 'restartModel'})
-                this.$emit('closeSideSlider')
-                this.$store.dispatch('navigation/getClassifications', true)
+                try {
+                    await this.$axios.put(`object/${this.id}`, params, {id: 'restartModel'})
+                    this.$emit('closeSideSlider')
+                    this.$store.dispatch('navigation/getClassifications', true)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                停用模型
@@ -114,21 +118,33 @@
                 let params = {
                     bk_ispaused: true
                 }
-                await this.$axios.put(`object/${this.id}`, params, {id: 'stopModel'})
-                this.$emit('stopModel')
-                this.$store.dispatch('navigation/getClassifications', true)
+                try {
+                    await this.$axios.put(`object/${this.id}`, params, {id: 'stopModel'})
+                    this.$emit('stopModel')
+                    this.$store.dispatch('navigation/getClassifications', true)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                删除模型
             */
             async deleteModel () {
                 if (this.isMainLine) {
-                    await this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`, {id: 'deleteModel'})
-                    this.$emit('deleteModel', this.item)
+                    try {
+                        await this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`, {id: 'deleteModel'})
+                        this.$emit('deleteModel', this.item)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
-                    await this.$axios.delete(`object/${this.id}`, {id: 'deleteModel'})
-                    this.$emit('deleteModel', this.item)
-                    this.$store.dispatch('navigation/getClassifications', true)
+                    try {
+                        await this.$axios.delete(`object/${this.id}`, {id: 'deleteModel'})
+                        this.$emit('deleteModel', this.item)
+                        this.$store.dispatch('navigation/getClassifications', true)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             /*

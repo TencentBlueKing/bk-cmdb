@@ -204,46 +204,43 @@
                 this.slider.tab.attribute.formValues = {}
                 this.slider.isShow = true
             },
-            saveProcess (formData, originalData) {
+            async saveProcess (formData, originalData) {
                 if (this.slider.tab.attribute.type === 'create') {
-                    this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData, {id: 'editAttr'}).then(res => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t("ProcessManagement['新增进程成功']"), 'success')
-                            this.setCurrentPage(1)
-                            this.closeSlider()
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        await this.$axios.post(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, formData, {id: 'editAttr'})
+                        this.$alertMsg(this.$t("ProcessManagement['新增进程成功']"), 'success')
+                        this.setCurrentPage(1)
+                        this.closeSlider()
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
-                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData, {id: 'editAttr'}).then(res => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
-                            this.setCurrentPage(1)
-                            this.closeSlider()
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData, {id: 'editAttr'})
+                        this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
+                        this.setCurrentPage(1)
+                        this.closeSlider()
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             deleteProcess (data) {
                 this.$bkInfo({
                     title: this.$t("ProcessManagement['确认要删除进程']", {processName: data['bk_process_name']}),
-                    confirmFn: () => {
-                        this.$axios.delete(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${data['bk_process_id']}`, {id: 'instDelete'}).then((res) => {
-                            if (res.result) {
-                                this.closeSlider()
-                                this.setCurrentPage(1)
-                                this.$alertMsg(this.$t("ProcessManagement['删除进程成功']"), 'success')
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
-                        })
+                    confirmFn: async () => {
+                        try {
+                            await this.$axios.delete(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${data['bk_process_id']}`, {id: 'instDelete'})
+                            this.closeSlider()
+                            this.setCurrentPage(1)
+                            this.$alertMsg(this.$t("ProcessManagement['删除进程成功']"), 'success')
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 })
             },
-            showProcessAttribute (item) {
+            async showProcessAttribute (item) {
                 this.slider.title.text = this.$t("ProcessManagement['编辑进程']")
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'update'
@@ -252,53 +249,50 @@
                 this.slider.tab.module.bkProcessId = item['bk_process_id']
                 this.slider.tab.history.bkProcessId = item['bk_process_id']
                 this.slider.isShow = true
-                this.$axios.get(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${item['bk_process_id']}`).then(res => {
-                    if (res.result) {
-                        let values = {
-                            'bk_process_id': item['bk_process_id']
-                        }
-                        res.data.map(column => {
-                            values[column['bk_property_id']] = column['bk_property_value']
-                        })
-                        this.slider.tab.attribute.formValues = values
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                try {
+                    const res = await this.$axios.get(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${item['bk_process_id']}`)
+                    let values = {
+                        'bk_process_id': item['bk_process_id']
                     }
-                })
+                    res.data.map(column => {
+                        values[column['bk_property_id']] = column['bk_property_value']
+                    })
+                    this.slider.tab.attribute.formValues = values
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             tabChanged (active) {
                 this.slider.tab.active = active
             },
-            getProcessAttribute () {
+            async getProcessAttribute () {
                 let params = {
                     'bk_obj_id': 'process',
                     'bk_supplier_account': this.bkSupplierAccount
                 }
-                this.$axios.post('object/attr/search', params).then(res => {
-                    if (res.result) {
-                        this.attribute = res.data
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                try {
+                    const res = await this.$axios.post('object/attr/search', params)
+                    this.attribute = res.data
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            getTableList () {
+            async getTableList () {
                 this.table.isLoading = true
-                this.$axios.post(`proc/search/${this.bkSupplierAccount}/${this.filter.bkBizId}`, this.searchParams).then(res => {
-                    if (res.result) {
-                        this.table.list = res.data.info
-                        this.table.pagination.count = res.data.count
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+                try {
+                    const res = await this.$axios.post(`proc/search1/${this.bkSupplierAccount}/${this.filter.bkBizId}`, this.searchParams, {globalError: false})
+                    this.table.list = res.data.info
+                    this.table.pagination.count = res.data.count
                     this.table.isLoading = false
-                }).catch((e) => {
+                } catch (e) {
                     this.table.isLoading = false
                     this.table.list = []
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t("Common['您没有当前业务的权限']"))
+                    } else {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                     }
-                })
+                }
             },
             setCurrentSize (size) {
                 this.table.pagination.size = size

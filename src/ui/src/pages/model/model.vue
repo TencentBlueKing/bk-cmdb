@@ -11,7 +11,7 @@
 <template lang="html">
     <div class="model-wrapper">
         <div class="left-tap-contain">
-            <div class="list-tap" v-bkloading="{isLoading: isClassifyLoading}">
+            <div class="list-tap" v-bkloading="{isLoading: $loading('getClassList')}">
                 <ul>
                     <li :class="{'active': topoView === 'models' && curClassify['bk_classification_id']===item['bk_classification_id']}" v-for="(item, index) in classifyList" @click="changeClassify(item)" @click.stop="topoView = 'models'">
                         <i :class="item['bk_classification_icon']"></i>
@@ -186,7 +186,6 @@
                 topoView: 'models',
                 isShowDisableList: false,
                 isTopoLoading: false,           // 拓扑loading
-                isClassifyLoading: false,       // 分组列表loading
                 isNewField: false,
                 topo: {                           // 普通拓扑
                     nodes: [],                      // 节点
@@ -370,8 +369,12 @@
                 let params = {
                     bk_ispaused: false
                 }
-                await this.$axios.put(`object/${item['id']}`, params)
-                this.getTopogical()
+                try {
+                    await this.$axios.put(`object/${item['id']}`, params)
+                    this.getTopogical()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 新增分类
@@ -397,33 +400,41 @@
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    await this.$axios.put(`object/classification/${this.curClassify['id']}`, params, {id: 'saveClassify'})
-                    for (var i = 0; i < this.classifyList.length; i++) {
-                        if (this.classifyList[i]['bk_classification_id'] === this.curClassify['bk_classification_id']) {
-                            this.getClassifyList(i)
+                    try {
+                        await this.$axios.put(`object/classification/${this.curClassify['id']}`, params, {id: 'saveClassify'})
+                        for (var i = 0; i < this.classifyList.length; i++) {
+                            if (this.classifyList[i]['bk_classification_id'] === this.curClassify['bk_classification_id']) {
+                                this.getClassifyList(i)
+                            }
                         }
+                        this.isEditClassify = false
+                        this.isPopShow = false
+                        this.isChoose = true
+                        this.curClassify['bk_classification_name'] = classification['bk_classification_name']
+                        this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
+                        this.curTempClassify = this.$deepClone(this.curClassify)
+                        this.$store.commit('navigation/updateClassification', {
+                            bk_classification_id: classification['bk_classification_id'],
+                            bk_classification_name: classification['bk_classification_name'],
+                            bk_classification_icon: classification['bk_classification_icon']
+                        })
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                     }
-                    this.isEditClassify = false
-                    this.isPopShow = false
-                    this.isChoose = true
-                    this.curClassify['bk_classification_name'] = classification['bk_classification_name']
-                    this.curClassify['bk_classification_icon'] = classification['bk_classification_icon']
-                    this.curTempClassify = this.$deepClone(this.curClassify)
-                    this.$store.commit('navigation/updateClassification', {
-                        bk_classification_id: classification['bk_classification_id'],
-                        bk_classification_name: classification['bk_classification_name'],
-                        bk_classification_icon: classification['bk_classification_icon']
-                    })
                 } else { // 新增分类
                     const createParams = {
                         bk_classification_id: classification['bk_classification_id'],
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    await this.$axios.post('object/classification', createParams, {id: 'saveClassify'})
-                    this.getClassifyList(this.classifyList.length)
-                    this.isEditClassify = false
-                    this.isPopShow = false
+                    try {
+                        await this.$axios.post('object/classification', createParams, {id: 'saveClassify'})
+                        this.getClassifyList(this.classifyList.length)
+                        this.isEditClassify = false
+                        this.isPopShow = false
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             /*
@@ -622,8 +633,12 @@
                 })
             },
             async deletes () {
-                await this.$axios.delete(`object/classification/${this.curTempClassify['id']}`)
-                this.getClassifyList()
+                try {
+                    await this.$axios.delete(`object/classification/${this.curTempClassify['id']}`)
+                    this.getClassifyList()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 保存基本信息成功
@@ -687,34 +702,25 @@
             async getClassifyList (index) {
                 // 默认查全部
                 let params = {}
-                this.isClassifyLoading = true
                 this.isTopoLoading = true
-                this.$axios.post('object/classifications', params).then((res) => {
-                    if (res.result) {
-                        this.classifyList = res.data
-                        if (!index) {
-                            index = 0
-                        }
-                        // this.curClassify = this.classifyList[index]
-                        this.curTempClassify = {
-                            id: this.classifyList[index]['id'],
-                            bk_classification_type: this.classifyList[index]['bk_classification_type'],
-                            bk_classification_name: this.classifyList[index]['bk_classification_name'],
-                            bk_classification_id: this.classifyList[index]['bk_classification_id'],
-                            bk_classification_icon: this.classifyList[index]['bk_classification_icon']
-                        }
-                        this.changeClassify(this.curClassify)
-                    } else {
-                        this.$bkInfo({
-                            statusOpts: {
-                                title: res['bk_error_msg'],
-                                subtitle: false
-                            },
-                            type: 'error'
-                        })
+                try {
+                    const res = await this.$axios.post('object/classifications', params, {id: 'getClassList'})
+                    this.classifyList = res.data
+                    if (!index) {
+                        index = 0
                     }
-                    this.isClassifyLoading = false
-                })
+                    // this.curClassify = this.classifyList[index]
+                    this.curTempClassify = {
+                        id: this.classifyList[index]['id'],
+                        bk_classification_type: this.classifyList[index]['bk_classification_type'],
+                        bk_classification_name: this.classifyList[index]['bk_classification_name'],
+                        bk_classification_id: this.classifyList[index]['bk_classification_id'],
+                        bk_classification_icon: this.classifyList[index]['bk_classification_icon']
+                    }
+                    this.changeClassify(this.curClassify)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 删除模型
@@ -741,35 +747,32 @@
                 this.editModel(item, isDisable)
             },
             /* *****************模型拓扑相关回调 end********************* */
-            init () {
+            async init () {
                 // 默认查全部
                 let params = {}
-                this.isClassifyLoading = true
-                this.$axios.post('object/classifications', params).then((res) => {
-                    if (res.result) {
-                        this.classifyList = res.data
-                        let curClassifyIndex = 0
-                        if (this.isAutoRouter) {
-                            res.data.forEach((classify, classifyIndex) => {
-                                if (classify.bk_classification_id === this.$route.query.bk_classification_id) {
-                                    curClassifyIndex = classifyIndex
-                                }
-                            })
-                        }
-                        this.curClassify = this.classifyList[curClassifyIndex]
-                        this.curTempClassify = {
-                            id: this.classifyList[curClassifyIndex]['id'],
-                            bk_classification_type: this.classifyList[curClassifyIndex]['bk_classification_type'],
-                            bk_classification_name: this.classifyList[curClassifyIndex]['bk_classification_name'],
-                            bk_classification_id: this.classifyList[curClassifyIndex]['bk_classification_id'],
-                            bk_classification_icon: this.classifyList[curClassifyIndex]['bk_classification_icon']
-                        }
-                        this.changeClassify(res.data[curClassifyIndex])
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                try {
+                    const res = await this.$axios.post('object/classifications', params, {id: 'getClassList'})
+                    this.classifyList = res.data
+                    let curClassifyIndex = 0
+                    if (this.isAutoRouter) {
+                        res.data.forEach((classify, classifyIndex) => {
+                            if (classify.bk_classification_id === this.$route.query.bk_classification_id) {
+                                curClassifyIndex = classifyIndex
+                            }
+                        })
                     }
-                    this.isClassifyLoading = false
-                })
+                    this.curClassify = this.classifyList[curClassifyIndex]
+                    this.curTempClassify = {
+                        id: this.classifyList[curClassifyIndex]['id'],
+                        bk_classification_type: this.classifyList[curClassifyIndex]['bk_classification_type'],
+                        bk_classification_name: this.classifyList[curClassifyIndex]['bk_classification_name'],
+                        bk_classification_id: this.classifyList[curClassifyIndex]['bk_classification_id'],
+                        bk_classification_icon: this.classifyList[curClassifyIndex]['bk_classification_icon']
+                    }
+                    this.changeClassify(res.data[curClassifyIndex])
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             }
         },
         mounted () {

@@ -398,13 +398,16 @@
                 this.tab.activeName = name
             },
             async getUsercustom () {
-                const res = await this.$axios.post('usercustom/user/search')
-                this.$store.commit('setUsercustom', res.data)
+                try {
+                    const res = await this.$axios.post('usercustom/user/search')
+                    this.$store.commit('setUsercustom', res.data)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             // 初始化表格，先获取表格字段再获取表格列表
             initTable () {
                 this.getTableHeader().then(properties => {
-                    console.log(properties)
                     this.attr.formFields = [...properties]
                     this.filterList = properties.map(property => {
                         return {
@@ -531,12 +534,16 @@
                     let params = this.$deepClone(this.axiosConfig.params)
                     params.page = {}
                     this.objId === 'biz' ? void 0 : params.fields[this.objId] = [idKey]
-                    const res = await this.$axios.post(this.axiosConfig.url, params, {id: 'getAllObjId'})
-                    let chooseId = []
-                    res.data.info.map(attr => {
-                        chooseId.push(attr[idKey])
-                    })
-                    this.table.chooseId = chooseId
+                    try {
+                        const res = await this.$axios.post(this.axiosConfig.url, params, {id: 'getAllObjId'})
+                        let chooseId = []
+                        res.data.info.map(attr => {
+                            chooseId.push(attr[idKey])
+                        })
+                        this.table.chooseId = chooseId
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
                     this.table.chooseId = []
                 }
@@ -562,31 +569,29 @@
                 this.setTablePage(1)
             },
             // 保存新增/修改的属性
-            saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {
+            async saveObjectAttr (formData, {bk_biz_id: bizId, bk_inst_id: instId}) {
                 if (this.attr.type === 'update') {
                     let updateUrl = this.objId === 'biz'
                         ? `biz/${this.bkSupplierAccount}/${bizId}`
                         : `inst/${this.bkSupplierAccount}/${this.objId}/${instId}`
-                    this.$axios.put(updateUrl, formData, {id: 'editAttr'}).then(res => {
-                        if (res.result) {
-                            this.setTablePage(1)
-                            this.closeObjectSlider()
-                            this.$alertMsg(this.$t("Common['修改成功']"), 'success')
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        await this.$axios.put(updateUrl, formData, {id: 'editAttr'})
+                        this.setTablePage(1)
+                        this.closeObjectSlider()
+                        this.$alertMsg(this.$t("Common['修改成功']"), 'success')
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
                     let createUrl = this.objId === 'biz' ? `biz/${this.bkSupplierAccount}` : `inst/${this.bkSupplierAccount}/${this.objId}`
-                    this.$axios.post(createUrl, formData, {id: 'editAttr'}).then(res => {
-                        if (res.result) {
-                            this.setTablePage(1)
-                            this.closeObjectSlider()
-                            this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        await this.$axios.post(createUrl, formData, {id: 'editAttr'})
+                        this.setTablePage(1)
+                        this.closeObjectSlider()
+                        this.$alertMsg(this.$t("Inst['创建成功']"), 'success')
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             // 删除模型实例前进行确认
