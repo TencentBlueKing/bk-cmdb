@@ -36,7 +36,7 @@ func Parse(args []string) error {
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
 	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
-	bkbizfs.StringVar(&scope, "scope", "all", "export model, could be [biz] or [process], default all")
+	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
 	bkbizfs.StringVar(&filepath, "file", "", "export or import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	err := bkbizfs.Parse(args[1:])
