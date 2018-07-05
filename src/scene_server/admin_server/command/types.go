@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"configcenter/src/common"
-
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/common/instdata"
 )

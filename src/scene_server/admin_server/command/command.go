@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
 	"configcenter/src/common/core/cc/api"
-
-	"github.com/spf13/pflag"
 )
 
 const bkbizCmdName = "bkbiz"
