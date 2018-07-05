@@ -19,6 +19,7 @@
                     :isShowBiz="isShowBiz"
                     :isShowCollect="isShowCollect"
                     :isShowHistory="isShowHistory"
+                    :isShowScope="isShowScope"
                     @refresh="setTableCurrentPage(1)"
                     @bkBizSelected="bkBizSelected"
                     @showField="setFilterField"
@@ -231,6 +232,10 @@
                 default: true
             },
             isShowRefresh: {
+                type: Boolean,
+                default: false
+            },
+            isShowScope: {
                 type: Boolean,
                 default: false
             },
@@ -502,6 +507,7 @@
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
+                    return res
                 }).catch((e) => {
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
@@ -912,47 +918,6 @@
             },
             mergeCondition (targetParams, sourceParams) {
                 let mergedParams = this.$deepClone(targetParams)
-                // if (sourceParams && sourceParams.hasOwnProperty('condition')) {
-                //     let newCondition = []
-                //     for (let i = 0; i < sourceParams['condition'].length; i++) {
-                //         let {
-                //             condition: sourceCondition,
-                //             bk_obj_id: sourceBkObjId,
-                //             fields: sourceFields
-                //         } = sourceParams['condition'][i]
-                //         let isIncludeCondition = false
-                //         for (let j = 0; j < mergedParams['condition'].length; j++) {
-                //             let {
-                //                 condition: targetCondition,
-                //                 bk_obj_id: targetBkObjId,
-                //                 fields: targetFields
-                //             } = mergedParams['condition'][j]
-                //             if (sourceBkObjId === targetBkObjId) {
-                //                 let mergedCondition = [...sourceCondition]
-                //                 for (let m = 0; m < targetCondition.length; m++) {
-                //                     let isExist = false
-                //                     for (let n = 0; n < sourceCondition.length; n++) {
-                //                         if (targetCondition[m]['field'] === sourceCondition[n]['field']) {
-                //                             isExist = true
-                //                             break
-                //                         }
-                //                     }
-                //                     if (!isExist) {
-                //                         mergedCondition.push(targetCondition[m])
-                //                     }
-                //                 }
-                //                 mergedParams['condition'][j]['condition'] = mergedCondition
-                //                 mergedParams['condition'][j]['fields'] = [...sourceFields, ...targetFields]
-                //                 isIncludeCondition = true
-                //                 break
-                //             }
-                //         }
-                //         if (!isIncludeCondition) {
-                //             newCondition.push(sourceParams['condition'][i])
-                //         }
-                //     }
-                //     mergedParams.condition = [...mergedParams.condition, ...newCondition]
-                // }
                 if (sourceParams && sourceParams.hasOwnProperty('condition')) {
                     sourceParams.condition.forEach(sourceCondition => {
                         let targetCondition = mergedParams.condition.find(targetCondition => targetCondition['bk_obj_id'] === sourceCondition['bk_obj_id'])
@@ -980,7 +945,7 @@
             async init () {
                 await this.setTopoAttribute()
                 await this.getAllAttribute()
-                this.getUserCustomColumn()
+                await this.getUserCustomColumn()
             }
         },
         created () {
