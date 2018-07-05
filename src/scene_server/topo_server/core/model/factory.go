@@ -94,7 +94,7 @@ func (cli *factory) CreaetObject(params types.ContextParams) Object {
 		params:    params,
 		clientSet: cli.clientSet,
 	}
-	obj.SetSupplierAccount(params.Header.OwnerID)
+	obj.SetSupplierAccount(params.SupplierAccount)
 	return obj
 }
 
@@ -103,7 +103,7 @@ func (cli *factory) CreaetClassification(params types.ContextParams) Classificat
 		params:    params,
 		clientSet: cli.clientSet,
 	}
-	cls.SetSupplierAccount(params.Header.OwnerID)
+	cls.SetSupplierAccount(params.SupplierAccount)
 	return cls
 }
 
@@ -112,7 +112,7 @@ func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
 		params:    params,
 		clientSet: cli.clientSet,
 	}
-	attr.SetSupplierAccount(params.Header.OwnerID)
+	attr.SetSupplierAccount(params.SupplierAccount)
 	return attr
 }
 

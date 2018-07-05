@@ -65,7 +65,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 	}
 	cond.Field("goup_name").Eq(groupName)
 
-	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -90,7 +90,7 @@ func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.
 		return err
 	}
 
-	rspCreate, err := u.client.ObjectController().Privilege().CreateUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), userGroup.ToMapStr())
+	rspCreate, err := u.client.ObjectController().Privilege().CreateUserGroup(context.Background(), supplierAccount, u.params.Header, userGroup.ToMapStr())
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -106,7 +106,7 @@ func (u *userGroup) CreateUserGroup(supplierAccount string, userGroup *metadata.
 
 func (u *userGroup) DeleteUserGroup(supplierAccount, groupID string) error {
 
-	rsp, err := u.client.ObjectController().Privilege().DeleteUserGroup(context.Background(), supplierAccount, groupID, u.params.Header.ToHeader())
+	rsp, err := u.client.ObjectController().Privilege().DeleteUserGroup(context.Background(), supplierAccount, groupID, u.params.Header)
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -132,7 +132,7 @@ func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr
 		return err
 	}
 
-	rsp, err := u.client.ObjectController().Privilege().UpdateUserGroup(context.Background(), supplierAccount, groupID, u.params.Header.ToHeader(), data)
+	rsp, err := u.client.ObjectController().Privilege().UpdateUserGroup(context.Background(), supplierAccount, groupID, u.params.Header, data)
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -148,7 +148,7 @@ func (u *userGroup) UpdateUserGroup(supplierAccount, groupID string, data mapstr
 
 func (u *userGroup) SearchUserGroup(supplierAccount string, cond condition.Condition) ([]metadata.UserGroup, error) {
 
-	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

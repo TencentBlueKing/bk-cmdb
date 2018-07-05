@@ -67,7 +67,7 @@ func (cli *commonInst) CreateInst(params types.ContextParams, obj model.Object, 
 
 func (cli *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -84,7 +84,7 @@ func (cli *commonInst) DeleteInst(params types.ContextParams, obj model.Object, 
 
 func (cli *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond)
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -105,7 +105,7 @@ func (cli *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapSt
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
 	blog.Infof("data condition:%#v", inputParams)
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), inputParams)
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())

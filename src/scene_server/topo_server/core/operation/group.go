@@ -13,9 +13,10 @@
 package operation
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"context"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
@@ -71,7 +72,7 @@ func (cli *group) CreateObjectGroup(params types.ContextParams, data frtypes.Map
 
 func (cli *group) DeleteObjectGroup(params types.ContextParams, groupID string) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header.ToHeader())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header)
 	if nil != err {
 		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -87,7 +88,7 @@ func (cli *group) DeleteObjectGroup(params types.ContextParams, groupID string) 
 
 func (cli *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
@@ -104,7 +105,7 @@ func (cli *group) FindObjectGroup(params types.ContextParams, cond condition.Con
 
 func (cli *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.Header.OwnerID, objID, params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.SupplierAccount, objID, params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -119,7 +120,7 @@ func (cli *group) FindGroupByObject(params types.ContextParams, objID string, co
 }
 func (cli *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header.ToHeader(), cond)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
 
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s ", cond.Data, cond.Condition, err.Error())

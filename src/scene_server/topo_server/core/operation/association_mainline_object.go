@@ -13,13 +13,14 @@
 package operation
 
 import (
+	"io"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"io"
 )
 
 func (cli *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
@@ -59,7 +60,7 @@ func (cli *association) SearchMainlineAssociationTopo(params types.ContextParams
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = targetObj.GetID()
 		tmpRst.ObjName = targetObj.GetName()
-		tmpRst.OwnerID = params.Header.OwnerID
+		tmpRst.OwnerID = params.SupplierAccount
 
 		parentObj, err := targetObj.GetMainlineParentObject()
 		if nil == err {

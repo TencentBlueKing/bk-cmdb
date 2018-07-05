@@ -13,6 +13,8 @@
 package operation
 
 import (
+	"context"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -21,7 +23,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"context"
 )
 
 // AttributeOperationInterface attribute operation methods
@@ -67,7 +68,7 @@ func (cli *attribute) CreateObjectAttribute(params types.ContextParams, data frt
 
 func (cli *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
@@ -84,7 +85,7 @@ func (cli *attribute) DeleteObjectAttribute(params types.ContextParams, id int64
 
 func (cli *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
@@ -101,7 +102,7 @@ func (cli *attribute) FindObjectAttribute(params types.ContextParams, cond condi
 
 func (cli *attribute) UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header.ToHeader(), data)
+	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header, data)
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
