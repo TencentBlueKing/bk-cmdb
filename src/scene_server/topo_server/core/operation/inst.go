@@ -28,10 +28,10 @@ import (
 
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
-	CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
-	DeleteInst(params types.LogicParams, obj model.Object, cond condition.Condition) error
-	FindInst(params types.LogicParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error)
-	UpdateInst(params types.LogicParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
+	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
+	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
+	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error)
+	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
 }
 
 type commonInst struct {
@@ -49,7 +49,7 @@ func NewInstOperation(client apimachinery.ClientSetInterface, modelFactory model
 	}
 }
 
-func (cli *commonInst) CreateInst(params types.LogicParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
+func (cli *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	blog.Infof("the data inst:%#v", data)
 	item := cli.instFactory.CreateInst(params, obj)
@@ -65,7 +65,7 @@ func (cli *commonInst) CreateInst(params types.LogicParams, obj model.Object, da
 	return item, nil
 }
 
-func (cli *commonInst) DeleteInst(params types.LogicParams, obj model.Object, cond condition.Condition) error {
+func (cli *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond.ToMapStr())
 
@@ -82,7 +82,7 @@ func (cli *commonInst) DeleteInst(params types.LogicParams, obj model.Object, co
 	return nil
 }
 
-func (cli *commonInst) FindInst(params types.LogicParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
+func (cli *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
 
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header.ToHeader(), cond)
 
@@ -99,7 +99,7 @@ func (cli *commonInst) FindInst(params types.LogicParams, obj model.Object, cond
 	return rsp.Data.Count, inst.CreateInst(params, cli.clientSet, obj, rsp.Data.Info), nil
 }
 
-func (cli *commonInst) UpdateInst(params types.LogicParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
+func (cli *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
 
 	inputParams := frtypes.New()
 	inputParams.Set("data", data)

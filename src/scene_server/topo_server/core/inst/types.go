@@ -51,5 +51,5 @@ type Inst interface {
 
 // Factory used to all inst
 type Factory interface {
-	CreateInst(params types.LogicParams, obj model.Object) Inst
+	CreateInst(params types.ContextParams, obj model.Object) Inst
 }

@@ -96,7 +96,7 @@ var _ Object = (*object)(nil)
 type object struct {
 	obj       meta.Object
 	isNew     bool
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 

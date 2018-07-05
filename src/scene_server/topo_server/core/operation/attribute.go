@@ -26,10 +26,10 @@ import (
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
-	CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error)
-	DeleteObjectAttribute(params types.LogicParams, id int64, cond condition.Condition) error
-	FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error)
-	UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
+	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error)
+	DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error
+	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
+	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 }
 
 type attribute struct {
@@ -47,7 +47,7 @@ func NewAttributeOperation(client apimachinery.ClientSetInterface, modelFactory 
 	}
 }
 
-func (cli *attribute) CreateObjectAttribute(params types.LogicParams, data frtypes.MapStr) (model.Attribute, error) {
+func (cli *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
 	att := cli.modelFactory.CreateAttribute(params)
 
 	_, err := att.Parse(data)
@@ -65,7 +65,7 @@ func (cli *attribute) CreateObjectAttribute(params types.LogicParams, data frtyp
 	return att, nil
 }
 
-func (cli *attribute) DeleteObjectAttribute(params types.LogicParams, id int64, cond condition.Condition) error {
+func (cli *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
 
@@ -82,7 +82,7 @@ func (cli *attribute) DeleteObjectAttribute(params types.LogicParams, id int64, 
 	return nil
 }
 
-func (cli *attribute) FindObjectAttribute(params types.LogicParams, cond condition.Condition) ([]model.Attribute, error) {
+func (cli *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 
@@ -99,7 +99,7 @@ func (cli *attribute) FindObjectAttribute(params types.LogicParams, cond conditi
 	return model.CreateAttribute(params, cli.clientSet, rsp.Data), nil
 }
 
-func (cli *attribute) UpdateObjectAttribute(params types.LogicParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
+func (cli *attribute) UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header.ToHeader(), data)
 

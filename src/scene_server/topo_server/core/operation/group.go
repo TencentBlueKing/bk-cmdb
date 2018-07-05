@@ -28,11 +28,11 @@ import (
 
 // GroupOperationInterface group operation methods
 type GroupOperationInterface interface {
-	CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error)
-	DeleteObjectGroup(params types.LogicParams, groupID string) error
-	FindObjectGroup(params types.LogicParams, cond condition.Condition) ([]model.Group, error)
-	FindGroupByObject(params types.LogicParams, objID string, cond condition.Condition) ([]model.Group, error)
-	UpdateObjectGroup(params types.LogicParams, cond *metadata.UpdateGroupCondition) error
+	CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error)
+	DeleteObjectGroup(params types.ContextParams, groupID string) error
+	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
+	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
+	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
 }
 
 type group struct {
@@ -50,7 +50,7 @@ func NewGroupOperation(client apimachinery.ClientSetInterface, modelFactory mode
 	}
 }
 
-func (cli *group) CreateObjectGroup(params types.LogicParams, data frtypes.MapStr) (model.Group, error) {
+func (cli *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error) {
 
 	grp := cli.modelFactory.CreateGroup(params)
 
@@ -69,7 +69,7 @@ func (cli *group) CreateObjectGroup(params types.LogicParams, data frtypes.MapSt
 	return grp, nil
 }
 
-func (cli *group) DeleteObjectGroup(params types.LogicParams, groupID string) error {
+func (cli *group) DeleteObjectGroup(params types.ContextParams, groupID string) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header.ToHeader())
 	if nil != err {
@@ -85,7 +85,7 @@ func (cli *group) DeleteObjectGroup(params types.LogicParams, groupID string) er
 	return nil
 }
 
-func (cli *group) FindObjectGroup(params types.LogicParams, cond condition.Condition) ([]model.Group, error) {
+func (cli *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 
@@ -102,7 +102,7 @@ func (cli *group) FindObjectGroup(params types.LogicParams, cond condition.Condi
 	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
 }
 
-func (cli *group) FindGroupByObject(params types.LogicParams, objID string, cond condition.Condition) ([]model.Group, error) {
+func (cli *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.Header.OwnerID, objID, params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
@@ -117,7 +117,7 @@ func (cli *group) FindGroupByObject(params types.LogicParams, objID string, cond
 
 	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
 }
-func (cli *group) UpdateObjectGroup(params types.LogicParams, cond *metadata.UpdateGroupCondition) error {
+func (cli *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header.ToHeader(), cond)
 

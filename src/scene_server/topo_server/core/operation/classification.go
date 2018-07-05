@@ -28,11 +28,11 @@ import (
 
 // ClassificationOperationInterface classification opoeration methods
 type ClassificationOperationInterface interface {
-	FindSingleClassification(params types.LogicParams, classificationID string) (model.Classification, error)
-	CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error)
-	DeleteClassification(params types.LogicParams, id int64, data frtypes.MapStr, cond condition.Condition) error
-	FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error)
-	UpdateClassification(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	FindSingleClassification(params types.ContextParams, classificationID string) (model.Classification, error)
+	CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error)
+	DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error
+	FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error)
+	UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 }
 
 type classification struct {
@@ -50,7 +50,7 @@ func NewClassificationOperation(client apimachinery.ClientSetInterface, modelFac
 	}
 }
 
-func (cli *classification) FindSingleClassification(params types.LogicParams, classificationID string) (model.Classification, error) {
+func (cli *classification) FindSingleClassification(params types.ContextParams, classificationID string) (model.Classification, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(classificationID)
@@ -66,7 +66,7 @@ func (cli *classification) FindSingleClassification(params types.LogicParams, cl
 	return nil, params.Err.Error(common.CCErrTopoObjectClassificationSelectFailed)
 }
 
-func (cli *classification) CreateClassification(params types.LogicParams, data frtypes.MapStr) (model.Classification, error) {
+func (cli *classification) CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error) {
 
 	cls := cli.modelFactory.CreaetClassification(params)
 
@@ -85,7 +85,7 @@ func (cli *classification) CreateClassification(params types.LogicParams, data f
 	return cls, nil
 }
 
-func (cli *classification) DeleteClassification(params types.LogicParams, id int64, data frtypes.MapStr, cond condition.Condition) error {
+func (cli *classification) DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
@@ -101,7 +101,7 @@ func (cli *classification) DeleteClassification(params types.LogicParams, id int
 	return nil
 }
 
-func (cli *classification) FindClassification(params types.LogicParams, cond condition.Condition) ([]model.Classification, error) {
+func (cli *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
@@ -118,7 +118,7 @@ func (cli *classification) FindClassification(params types.LogicParams, cond con
 	return clsItems, nil
 }
 
-func (cli *classification) UpdateClassification(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (cli *classification) UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
 	cls := cli.modelFactory.CreaetClassification(params)
 	data.Set("id", id)
