@@ -10,48 +10,31 @@
  * limitations under the License.
  */
 
-package models
+package v3v0v8
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	dbStorage "configcenter/src/storage"
+	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
+	"configcenter/src/storage"
 )
 
-func InitSystemData(tableName string, insCli dbStorage.DI) error {
-	blog.Errorf("add data for  %s table ", tableName)
+func addSystemData(db storage.DI, conf *upgrader.Config) error {
+	tablename := "cc_System"
+	blog.Errorf("add data for  %s table ", tablename)
 	data := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue}
-	isExist, err := insCli.GetCntByCondition(tableName, data)
+	isExist, err := db.GetCntByCondition(tablename, data)
 	if nil != err {
-		blog.Errorf("add data for  %s table error  %s", tableName, err)
+		blog.Errorf("add data for  %s table error  %s", tablename, err)
 		return err
 	}
 	if isExist > 0 {
 		return nil
 	}
-	_, err = insCli.Insert(tableName, data)
+	_, err = db.Insert(tablename, data)
 	if nil != err {
-		blog.Errorf("add data for  %s table error  %s", tableName, err)
-		return err
-	}
-
-	return nil
-
-	blog.Errorf("add data for  %s table  ", tableName)
-	return nil
-}
-
-func ModifySystemData(tableName, ownerID string, insCli dbStorage.DI) error {
-	blog.Errorf("modify data for  %s table ", tableName)
-	cond := map[string]interface{}{
-		common.HostCrossBizField: common.HostCrossBizValue}
-	data := map[string]interface{}{
-		common.HostCrossBizField: common.HostCrossBizValue + ownerID}
-
-	err := insCli.UpdateByCondition(tableName, data, cond)
-	if nil != err {
-		blog.Errorf("modify data for  %s table error  %s", tableName, err)
+		blog.Errorf("add data for  %s table error  %s", tablename, err)
 		return err
 	}
 
