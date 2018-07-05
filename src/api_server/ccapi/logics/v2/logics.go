@@ -10,39 +10,12 @@
  * limitations under the License.
  */
 
-package main
+package logics
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"runtime"
-
-	"configcenter/src/api_server/app"
-	"configcenter/src/api_server/app/options"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	_ "net/http/pprof"
-
-	"github.com/spf13/pflag"
+	"configcenter/src/common/backbone"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_APISERVER)
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+type Logics struct {
+	*backbone.Engine
 }
