@@ -48,10 +48,10 @@ func importBKBiz(db storage.DI, opt *option) error {
 		return fmt.Errorf("get src topo faile %s", err.Error())
 	}
 
-	// err = backup(db, opt)
-	// if err != nil {
-	// 	return fmt.Errorf("backup faile %s", err)
-	// }
+	err = backup(db, opt)
+	if err != nil {
+		return fmt.Errorf("backup faile %s", err)
+	}
 
 	if tar.BizTopo != nil {
 		//topo check
