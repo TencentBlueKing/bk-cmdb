@@ -3,9 +3,8 @@ package command
 import (
 	"fmt"
 
-	"configcenter/src/common/util"
-
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/storage"

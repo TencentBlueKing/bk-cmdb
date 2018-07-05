@@ -13,15 +13,14 @@
 package upgrader
 
 import (
+	"sort"
+	"sync"
+
 	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccversion "configcenter/src/common/version"
-
-	"sort"
-	"sync"
-
 	"configcenter/src/storage"
 )
 
