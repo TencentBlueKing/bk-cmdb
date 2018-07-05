@@ -27,11 +27,11 @@ import (
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error)
-	DeleteObject(params types.LogicParams, id int64, cond condition.Condition) error
-	FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error)
-	FindSingleObject(params types.LogicParams, objectID string) (model.Object, error)
-	UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
+	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
+	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
+	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
+	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 }
 
 type object struct {
@@ -49,7 +49,7 @@ func NewObjectOperation(client apimachinery.ClientSetInterface, modelFactory mod
 	}
 }
 
-func (cli *object) FindSingleObject(params types.LogicParams, objectID string) (model.Object, error) {
+func (cli *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -65,7 +65,7 @@ func (cli *object) FindSingleObject(params types.LogicParams, objectID string) (
 	}
 	return nil, params.Err.Error(common.CCErrTopoObjectSelectFailed)
 }
-func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (model.Object, error) {
+func (cli *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
 	obj := cli.modelFactory.CreaetObject(params)
 
 	_, err := obj.Parse(data)
@@ -83,7 +83,7 @@ func (cli *object) CreateObject(params types.LogicParams, data frtypes.MapStr) (
 	return obj, nil
 }
 
-func (cli *object) DeleteObject(params types.LogicParams, id int64, cond condition.Condition) error {
+func (cli *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
 
@@ -100,7 +100,7 @@ func (cli *object) DeleteObject(params types.LogicParams, id int64, cond conditi
 	return nil
 }
 
-func (cli *object) FindObject(params types.LogicParams, cond condition.Condition) ([]model.Object, error) {
+func (cli *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
 	if nil != err {
@@ -116,7 +116,7 @@ func (cli *object) FindObject(params types.LogicParams, cond condition.Condition
 	return model.CreateObject(params, cli.clientSet, rsp.Data), nil
 }
 
-func (cli *object) UpdateObject(params types.LogicParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (cli *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), id, params.Header.ToHeader(), data)
 

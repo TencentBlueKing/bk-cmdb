@@ -25,7 +25,7 @@ import (
 )
 
 // SearchAllApp search all business
-func (s *topoService) SearchAllApp(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) SearchAllApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond, err := data.MapStr("condition")
 	if nil != err {
@@ -47,7 +47,7 @@ func (s *topoService) SearchAllApp(params types.LogicParams, pathParams, queryPa
 }
 
 // UpdateMultiSet update multi sets
-func (s *topoService) UpdateMultiSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) UpdateMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams("appid"))
@@ -78,7 +78,7 @@ func (s *topoService) UpdateMultiSet(params types.LogicParams, pathParams, query
 }
 
 // DeleteMultiSet delete multi sets
-func (s *topoService) DeleteMultiSet(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) DeleteMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams("appid"))
@@ -106,7 +106,7 @@ func (s *topoService) DeleteMultiSet(params types.LogicParams, pathParams, query
 }
 
 // DeleteSetHost delete hosts in some sets
-func (s *topoService) DeleteSetHost(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams("appid"))
@@ -131,7 +131,7 @@ func (s *topoService) DeleteSetHost(params types.LogicParams, pathParams, queryP
 }
 
 // UpdateMultiModule update multi modules
-func (s *topoService) UpdateMultiModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams(common.BKAppIDField))
@@ -158,7 +158,7 @@ func (s *topoService) UpdateMultiModule(params types.LogicParams, pathParams, qu
 }
 
 // SearchModuleByApp search module by business
-func (s *topoService) SearchModuleByApp(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) SearchModuleByApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams(common.BKAppIDField))
@@ -211,7 +211,7 @@ func (s *topoService) SearchModuleByApp(params types.LogicParams, pathParams, qu
 }
 
 // SearchModuleBySetProperty search module by set property
-func (s *topoService) SearchModuleBySetProperty(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams(common.BKAppIDField))
@@ -231,7 +231,7 @@ func (s *topoService) SearchModuleBySetProperty(params types.LogicParams, pathPa
 }
 
 // AddMultiModule add multi modules
-func (s *topoService) AddMultiModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) AddMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := data.Int64(common.BKAppIDField)
 	if nil != err {
@@ -266,7 +266,7 @@ func (s *topoService) AddMultiModule(params types.LogicParams, pathParams, query
 }
 
 // DeleteMultiModule delete multi modules
-func (s *topoService) DeleteMultiModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *topoService) DeleteMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputParams := &struct {
 		BizID     int64   `json:"bk_biz_id"`

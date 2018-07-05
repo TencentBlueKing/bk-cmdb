@@ -29,7 +29,7 @@ type BusinessInterface interface {
 }
 
 // NewBusiness create a new business instance
-func NewBusiness(params types.LogicParams, client apimachinery.ClientSetInterface) BusinessInterface {
+func NewBusiness(params types.ContextParams, client apimachinery.ClientSetInterface) BusinessInterface {
 	return &business{
 		params: params,
 		client: client,
@@ -37,7 +37,7 @@ func NewBusiness(params types.LogicParams, client apimachinery.ClientSetInterfac
 }
 
 type business struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 

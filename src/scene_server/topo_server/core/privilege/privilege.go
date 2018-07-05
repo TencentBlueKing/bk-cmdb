@@ -33,7 +33,7 @@ type PermissionInterface interface {
 }
 
 // NewPermission create a new permission instance
-func NewPermission(params types.LogicParams, client apimachinery.ClientSetInterface) PermissionInterface {
+func NewPermission(params types.ContextParams, client apimachinery.ClientSetInterface) PermissionInterface {
 
 	return &userGroupPermission{
 		params: params,
@@ -43,7 +43,7 @@ func NewPermission(params types.LogicParams, client apimachinery.ClientSetInterf
 
 // userGroupPermission the permission user group definitions
 type userGroupPermission struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 
 	permission metadata.PrivilegeUserGroup

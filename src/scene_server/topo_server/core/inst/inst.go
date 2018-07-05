@@ -28,7 +28,7 @@ import (
 
 type inst struct {
 	clientSet apimachinery.ClientSetInterface
-	params    types.LogicParams
+	params    types.ContextParams
 	datas     frtypes.MapStr
 	target    model.Object
 }

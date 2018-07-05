@@ -25,7 +25,7 @@ import (
 )
 
 // CreateBusiness create a new business
-func (s *topoService) CreateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	fmt.Println("CreateBusiness")
 
@@ -50,7 +50,7 @@ func (s *topoService) CreateBusiness(params types.LogicParams, pathParams, query
 }
 
 // DeleteBusiness delete the business
-func (s *topoService) DeleteBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -74,7 +74,7 @@ func (s *topoService) DeleteBusiness(params types.LogicParams, pathParams, query
 }
 
 // UpdateBusiness update the business
-func (s *topoService) UpdateBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -98,7 +98,7 @@ func (s *topoService) UpdateBusiness(params types.LogicParams, pathParams, query
 }
 
 // UpdateBusinessStatus update the business status
-func (s *topoService) UpdateBusinessStatus(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /app/status/{flag}/{owner_id}/{app_id}
 
@@ -125,7 +125,7 @@ func (s *topoService) UpdateBusinessStatus(params types.LogicParams, pathParams,
 }
 
 // SearchBusiness search the business by condition
-func (s *topoService) SearchBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// "/app/search/{owner_id}
 
@@ -162,7 +162,7 @@ func (s *topoService) SearchBusiness(params types.LogicParams, pathParams, query
 }
 
 // SearchDefaultBusiness search the business by condition
-func (s *topoService) SearchDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -196,7 +196,7 @@ func (s *topoService) SearchDefaultBusiness(params types.LogicParams, pathParams
 }
 
 // CreateDefaultBusiness create the default business
-func (s *topoService) CreateDefaultBusiness(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateDefaultBusiness")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)

@@ -25,7 +25,7 @@ import (
 )
 
 // CreateModule create a new module
-func (s *topoService) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
@@ -48,7 +48,7 @@ func (s *topoService) CreateModule(params types.LogicParams, pathParams, queryPa
 }
 
 // DeleteModule delete the module
-func (s *topoService) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("DeleteModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -74,7 +74,7 @@ func (s *topoService) DeleteModule(params types.LogicParams, pathParams, queryPa
 }
 
 // UpdateModule update the module
-func (s *topoService) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("UpdateModule")
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
@@ -103,7 +103,7 @@ func (s *topoService) UpdateModule(params types.LogicParams, pathParams, queryPa
 }
 
 // SearchModule search the modules
-func (s *topoService) SearchModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchModule")
 	// {owner_id}/{app_id}/{set_id}
 

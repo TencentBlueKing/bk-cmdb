@@ -31,7 +31,7 @@ type SetInterface interface {
 }
 
 // NewSet ceate a new set instance
-func NewSet(params types.LogicParams, client apimachinery.ClientSetInterface) SetInterface {
+func NewSet(params types.ContextParams, client apimachinery.ClientSetInterface) SetInterface {
 	return &set{
 		params: params,
 		client: client,
@@ -39,7 +39,7 @@ func NewSet(params types.LogicParams, client apimachinery.ClientSetInterface) Se
 }
 
 type set struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 
