@@ -13,6 +13,8 @@
 package actions
 
 import (
+    "net/http"
+    
 	"configcenter/src/common"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
@@ -20,11 +22,10 @@ import (
 	"configcenter/src/common/util"
 	eventtypes "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/eventdata"
-	"io/ioutil"
-	"net/http"
-
-	"github.com/bitly/go-simplejson"
+    meta "configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
+    "github.com/gin-gonic/gin/json"
+    
 )
 
 var proc *proc2moduleAction = &proc2moduleAction{}
@@ -40,139 +41,98 @@ func init() {
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/module", Params: nil, Handler: proc.DeleteProc2Module})
 	proc.CreateAction()
 }
-/*
+
 // DeleteProc2Module delete proc module config
 func (pm *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
     language := util.GetActionLanguage(req)
     defErr := pm.CC.Error.CreateDefaultCCErrorIf(language)
-}
-*/
-//DeleteProc2Module delete proc module config
-func (cli *proc2moduleAction) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
-
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("DeleteProc2Module read json fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		js, err := simplejson.NewJson([]byte(value))
-		if err != nil {
-			blog.Error("DeleteProc2Module json decode fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		input, err := js.Map()
-		if err != nil {
-			blog.Error("DeleteProc2Module json not array", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
-		}
-
-		// retrieve original data
-		var originals []interface{}
-		err = proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0)
-		if err != nil {
-			blog.Error("retrieve original error:%v", err)
-		}
-
-		blog.Info("delete proc module config %v", input)
-		err = proc.CC.InstCli.DelByCondition(common.BKTableNameProcModule, input)
-		if err != nil {
-			blog.Error("delete proc module config error:%v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcDeleteProc2Module)
-		}
-
-		// send event
-		if len(originals) > 0 {
-			ec := eventdata.NewEventContextByReq(req)
-			for _, i := range originals {
-				err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionDelete, nil, i)
-				if err != nil {
-					blog.Error("create event error:%s", err.Error())
-				}
-			}
-		}
-		return http.StatusOK, nil, nil
-	}, resp)
+    
+    input := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+        blog.Errorf("delete process2module failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return 
+    }
+    
+    // retrieve original data
+    var originals []interface{}
+    if err := proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil {
+        blog.Warnf("retrieve original error:%v", err)
+    }
+    
+    // delete proc module config
+    blog.Infof("delete proc module config %v", input)
+    if err := proc.CC.InstCli.DelByCondition(common.BKTableNameProcModule, input); err != nil {
+        blog.Errorf("delete proc module config error: %v", err)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
+        return 
+    }
+    
+    //send  event
+    if len(originals) > 0 {
+        ec := eventdata.NewEventContextByReq(req)
+        for _, i := range originals {
+            if err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionDelete, nil, i); err != nil {
+                blog.Warnf("create event error:%s", err.Error())
+            }
+        }
+    }
+    
+    resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-//CreateProc2Module create proc module config
-func (cli *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+// CreateProc2Module create proc module config
+func (pm *proc2moduleAction) CreateProc2Module(req *restful.Request, resp *restful.Response) {
+    // get the language
+    language := util.GetActionLanguage(req)
+    // get the error factory by the language
+    defErr := pm.CC.Error.CreateDefaultCCErrorIf(language)
+    
+    input := make([]interface{}, 0)
+    if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+        blog.Errorf("create process2module failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
+    blog.Infof("create proc module config: %v ", input)
+    ec := eventdata.NewEventContextByReq(req)
+    for _, i := range input {
+        if _, err := proc.CC.InstCli.Insert(common.BKTableNameProcModule, i); err != nil {
+            blog.Errorf("create proc module config error:%v", err)
+            resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
+            return
+        }
+        //  record events
+        if err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionCreate, i, nil); err != nil {
+            blog.Errorf("create event error: %v", err)
+        }
+    }
 
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("CreateProc2Module read json fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		js, err := simplejson.NewJson([]byte(value))
-		if err != nil {
-			blog.Error("CreateProc2Module json decode fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		input, err := js.Array()
-		if err != nil {
-			blog.Error("CreateProc2Module json not array", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
-		}
-
-		blog.Info("create proc module config ", input)
-		ec := eventdata.NewEventContextByReq(req)
-		for _, i := range input {
-			_, err = proc.CC.InstCli.Insert(common.BKTableNameProcModule, i)
-			if err != nil {
-				blog.Error("create proc module config error:%v", err)
-				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcCreateProc2Module)
-			}
-			//  record events
-			err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionCreate, i, nil)
-			if err != nil {
-				blog.Error("create event error:%v", err)
-			}
-		}
-
-		return http.StatusOK, nil, nil
-	}, resp)
+    resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-//GetProc2Module get proc module config
-func (cli *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+// GetProc2Module get process module config
+func (pm *proc2moduleAction) GetProc2Module(req *restful.Request, resp *restful.Response) {
+    // get the language
+    language := util.GetActionLanguage(req)
+    // get the error factory by the language
+    defErr := pm.CC.Error.CreateDefaultCCErrorIf(language)
 
-	cli.CallResponseEx(func() (int, interface{}, error) {
-		value, err := ioutil.ReadAll(req.Request.Body)
-		if err != nil {
-			blog.Error("GetProc2Module fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-		}
-		js, err := simplejson.NewJson([]byte(value))
-		if err != nil {
-			blog.Error("GetProc2Module fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		input, err := js.Map()
-		if err != nil {
-			blog.Error("GetProc2Module fail", err)
-			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommParamsInvalid)
-		}
+    input := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+        blog.Errorf("get process2module failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
 
-		blog.Info("get proc module config condition ", input)
-		var result []interface{}
-		err = proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &result, "", 0, 0)
-		if err != nil {
-			blog.Error("create proc module config error:%v", err)
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrProcSelectProc2Module)
-		}
-		return http.StatusOK, result, nil
-	}, resp)
+    blog.Infof("get proc module config condition: %v ", input)
+    var result []interface{}
+    if err := proc.CC.InstCli.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &result, "", 0, 0); err != nil {
+        blog.Errorf("get process2module config failed. err: %v", err)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
+        return
+    }
+    
+    resp.WriteEntity(meta.NewSuccessResp(result))
 }

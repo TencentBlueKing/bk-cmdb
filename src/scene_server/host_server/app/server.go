@@ -27,6 +27,7 @@ import (
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -76,6 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
+	service.Config = &hostSvr.Config
 	hostSvr.Core = engine
 	hostSvr.Service = service
 	hostSvr.Logic = service.Logics

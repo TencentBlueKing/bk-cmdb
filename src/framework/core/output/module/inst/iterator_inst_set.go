@@ -22,6 +22,11 @@ import (
 	"io"
 )
 
+// SetIterator the iterator interface for the set
+type SetIterator interface {
+	Next() (SetInterface, error)
+	ForEach(callbackItem func(item SetInterface) error) error
+}
 type iteratorInstSet struct {
 	targetModel model.Model
 	cond        common.Condition
@@ -29,7 +34,7 @@ type iteratorInstSet struct {
 	bufIdx      int
 }
 
-func newIteratorInstSet(target model.Model, cond common.Condition) (Iterator, error) {
+func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
 
 	iter := &iteratorInstSet{
 		targetModel: target,
@@ -52,7 +57,7 @@ func newIteratorInstSet(target model.Model, cond common.Condition) (Iterator, er
 
 }
 
-func (cli *iteratorInstSet) Next() (Inst, error) {
+func (cli *iteratorInstSet) Next() (SetInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -82,7 +87,7 @@ func (cli *iteratorInstSet) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInstSet) ForEach(callbackItem func(item Inst) error) error {
+func (cli *iteratorInstSet) ForEach(callbackItem func(item SetInterface) error) error {
 	for {
 
 		item, err := cli.Next()

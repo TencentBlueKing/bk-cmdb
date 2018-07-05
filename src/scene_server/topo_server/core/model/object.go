@@ -28,6 +28,69 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+// Object model operation interface declaration
+type Object interface {
+	Operation
+
+	Parse(data frtypes.MapStr) (*meta.Object, error)
+
+	IsCommon() bool
+
+	GetMainlineParentObject() (Object, error)
+	GetMainlineChildObject() (Object, error)
+
+	GetParentObject() ([]Object, error)
+	GetChildObject() ([]Object, error)
+
+	SetMainlineParentObject(objID string) error
+	SetMainlineChildObject(objID string) error
+
+	CreateGroup() Group
+	CreateAttribute() Attribute
+
+	GetGroups() ([]Group, error)
+	GetAttributes() ([]Attribute, error)
+
+	SetClassification(class Classification)
+	GetClassification() (Classification, error)
+
+	SetIcon(objectIcon string)
+	GetIcon() string
+
+	SetID(objectID string)
+	GetID() string
+
+	SetName(objectName string)
+	GetName() string
+
+	SetIsPre(isPre bool)
+	GetIsPre() bool
+
+	SetIsPaused(isPaused bool)
+	GetIsPaused() bool
+
+	SetPosition(position string)
+	GetPosition() string
+
+	SetSupplierAccount(supplierAccount string)
+	GetSupplierAccount() string
+
+	SetDescription(description string)
+	GetDescription() string
+
+	SetCreator(creator string)
+	GetCreator() string
+
+	SetModifier(modifier string)
+	GetModifier() string
+
+	ToMapStr() (frtypes.MapStr, error)
+
+	GetInstIDFieldName() string
+	GetInstNameFieldName() string
+	GetObjectType() string
+}
+
 var _ Object = (*object)(nil)
 
 type object struct {

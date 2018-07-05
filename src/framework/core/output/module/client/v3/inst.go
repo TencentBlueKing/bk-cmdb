@@ -21,9 +21,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// CommonInstGetter inst getter
 type CommonInstGetter interface {
 	CommonInst() CommonInstInterface
 }
+
+// CommonInstInterface inst operation interface
 type CommonInstInterface interface {
 	CreateCommonInst(data types.MapStr) (int, error)
 	DeleteCommonInst(cond common.Condition) error
@@ -31,6 +34,7 @@ type CommonInstInterface interface {
 	SearchInst(cond common.Condition) ([]types.MapStr, error)
 }
 
+// CommonInst inst data
 type CommonInst struct {
 	cli *Client
 }

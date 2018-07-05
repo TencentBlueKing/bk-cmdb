@@ -15,13 +15,25 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/errors"
-	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
 )
 
-var _ Inst = (*business)(nil)
+var _ BusinessInterface = (*business)(nil)
+
+// BusinessInterface the business interface
+type BusinessInterface interface {
+	Maintaince
+
+	GetModel() model.Model
+
+	GetInstID() (int, error)
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type business struct {
 	target model.Model
@@ -32,21 +44,8 @@ func (cli *business) GetModel() model.Model {
 	return cli.target
 }
 
-func (cli *business) IsMainLine() bool {
-	return false
-}
-
-func (cli *business) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
-}
-
-func (cli *business) GetInstID() int {
-	instID, err := cli.datas.Int(BusinessID)
-	if err != nil {
-		log.Errorf("get bk_biz_id faile %v", err)
-	}
-	return instID
+func (cli *business) GetInstID() (int, error) {
+	return cli.datas.Int(BusinessID)
 }
 func (cli *business) GetInstName() string {
 
@@ -55,28 +54,6 @@ func (cli *business) GetInstName() string {
 
 func (cli *business) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *business) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *business) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *business) SetParent(parentInstID int) error {
-	return errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *business) GetParent() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
-}
-
-func (cli *business) GetChildren() ([]Topo, error) {
-	return nil, errors.ErrNotSuppportedFunctionality
 }
 
 func (cli *business) SetValue(key string, value interface{}) error {
@@ -139,39 +116,42 @@ func (cli *business) Update() error {
 		return err
 	}
 
+	// clear the invalid field
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+		cli.datas.Remove(key)
+	})
+
+	cli.datas.Remove("create_time") //invalid check , need to delete
+
 	// update the exists
 	for _, existItem := range existItems {
 
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
+		bizID, err := existItem.Int(BusinessID)
+		if nil != err {
+			return err
+		}
 
-		instID, err := existItem.Int(BusinessID)
-		if nil != err {
-			return err
-		}
-		// clear the invalid field
-		existItem.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
-			}
-			existItem.Remove(key)
-		})
+		cli.datas.Remove(BusinessID)
+
 		//fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3().Business().UpdateBusiness(existItem, instID)
+		err = client.GetClient().CCV3().Business().UpdateBusiness(cli.datas, bizID)
 		if nil != err {
 			return err
 		}
-		cli.datas.Set(BusinessID, instID)
+
+		cli.datas.Set(BusinessID, bizID)
 
 	}
 
 	return nil
 }
-func (cli *business) Save() error {
 
+func (cli *business) Save() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
@@ -179,5 +159,4 @@ func (cli *business) Save() error {
 	}
 
 	return cli.Create()
-
 }
