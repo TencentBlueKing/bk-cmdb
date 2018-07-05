@@ -18,6 +18,7 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 	if nil != err {
 		return nil, err
 	}
+	getModelAttributes(db, opt, cur)
 	root, err := getBKAppNode(db, opt)
 	if nil != err {
 		return nil, err

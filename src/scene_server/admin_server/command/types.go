@@ -1,9 +1,10 @@
 package command
 
 import (
-	"configcenter/src/common"
 	"fmt"
 	"strings"
+
+	"configcenter/src/common"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/common/instdata"
@@ -13,6 +14,7 @@ type option struct {
 	OwnerID  string
 	position string
 	dryrun   bool
+	mini     bool
 }
 
 // Node topo node define

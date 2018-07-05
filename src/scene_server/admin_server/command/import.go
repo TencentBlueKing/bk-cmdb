@@ -522,17 +522,17 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 }
 
 // getModelAttributes returns the model attributes
-func getModelAttributes(db storage.DI, opt *option, cur *Topo) (modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string, err error) {
+func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string, err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
-			"$in": cur.Mainline,
+			"$in": objIDs,
 		},
 	}
 
 	attributes := []metadata.ObjectAttDes{}
 	err = db.GetMutilByCondition("cc_ObjAttDes", nil, condition, &attributes, "", 0, 0)
 	if nil != err {
-		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", cur.Mainline, err.Error())
+		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}
 
 	modelAttributes = map[string][]metadata.ObjectAttDes{}
