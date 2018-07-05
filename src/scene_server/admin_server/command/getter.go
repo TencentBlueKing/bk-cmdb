@@ -67,7 +67,7 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 
 		if result.ProcTopos != nil {
 			for _, proc := range result.ProcTopos.Procs {
-				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id"})
+				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id", "bk_supplier_account"})
 			}
 		}
 	}
