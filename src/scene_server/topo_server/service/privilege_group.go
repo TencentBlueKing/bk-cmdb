@@ -34,7 +34,7 @@ func (s *topoService) CreateUserGroup(params types.ContextParams, pathParams, qu
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.Header.OwnerID, userGroup)
+	err = s.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
 	return nil, err
 }
 

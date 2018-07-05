@@ -92,7 +92,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		// create the default inst
 		defaultInst := cli.instFactory.CreateInst(params, current)
-		defaultInst.SetValue(common.BKOwnerIDField, params.Header.OwnerID)
+		defaultInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
 		defaultInst.SetValue(current.GetInstNameFieldName(), current.GetName())
 		defaultInst.SetValue(common.BKDefaultField, 0)
 

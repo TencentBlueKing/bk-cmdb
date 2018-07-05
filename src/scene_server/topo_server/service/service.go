@@ -13,15 +13,15 @@
 package service
 
 import (
-	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/scene_server/topo_server/core/supplementary"
+
 	"github.com/emicklei/go-restful"
 
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -138,7 +138,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				//user := util.GetActionUser(req)
 
 				// get the language
 				language := util.GetActionLanguage(req)
@@ -152,7 +152,10 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err != nil {
 					blog.Errorf("read http request body failed, error:%s", err.Error())
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-					respData, _ := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
+					respData, err := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
+					if nil != err {
+						blog.Errorf("failed to create response result, error info is %s", err.Error())
+					}
 					s.sendResponse(resp, respData)
 					return
 				}
@@ -161,20 +164,20 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err := json.Unmarshal(value, &mData); nil != err {
 					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					respData, _ := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
+					respData, err := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
+					if nil != err {
+						blog.Errorf("failed to create response result, error info is %s", err.Error())
+					}
 					s.sendResponse(resp, respData)
 					return
 				}
 
 				data, dataErr := act.HandlerFunc(types.ContextParams{
-					Support: supplementary.New(),
-					Err:     defErr,
-					Lang:    defLang,
-					Header: apiutil.Headers{
-						Language: language,
-						User:     user,
-						OwnerID:  ownerID,
-					},
+					Support:         supplementary.New(),
+					Err:             defErr,
+					Lang:            defLang,
+					Header:          req.Request.Header,
+					SupplierAccount: ownerID,
 				},
 					req.PathParameter,
 					req.QueryParameter,

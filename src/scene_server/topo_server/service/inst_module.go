@@ -28,7 +28,7 @@ import (
 func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateModule")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
 
@@ -51,7 +51,7 @@ func (s *topoService) CreateModule(params types.ContextParams, pathParams, query
 func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("DeleteModule")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))
@@ -77,7 +77,7 @@ func (s *topoService) DeleteModule(params types.ContextParams, pathParams, query
 func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("UpdateModule")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 	cond.Field(common.BKModuleIDField).Eq(pathParams("module_id"))
@@ -108,7 +108,7 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 	// {owner_id}/{app_id}/{set_id}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))

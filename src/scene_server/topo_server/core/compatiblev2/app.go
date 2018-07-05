@@ -48,7 +48,7 @@ func (b *business) SearchAllApp(fields string, cond mapstr.MapStr) (*metadata.In
 	query.Condition = cond
 	query.Fields = fields
 
-	rsp, err := b.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, b.params.Header.ToHeader(), query)
+	rsp, err := b.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, b.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-biz] failed to request object controller, error info is %s", err.Error())
 		return nil, err

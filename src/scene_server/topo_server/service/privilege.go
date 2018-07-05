@@ -33,7 +33,7 @@ func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParam
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.Header.OwnerID, pathParams("group_id"), priviData)
+	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
 	return nil, err
 }
 

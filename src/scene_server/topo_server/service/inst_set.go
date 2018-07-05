@@ -29,7 +29,7 @@ import (
 func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateSet")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount).Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
 
@@ -51,7 +51,7 @@ func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryPar
 func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))
@@ -76,7 +76,7 @@ func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryPar
 func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))
@@ -104,7 +104,7 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 

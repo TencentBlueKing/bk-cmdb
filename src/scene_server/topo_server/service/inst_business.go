@@ -30,7 +30,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 	fmt.Println("CreateBusiness")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -40,7 +40,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
+	data.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	for _, item := range objItems {
 		return s.core.InstOperation().CreateInst(params, item, data) // should only one item
@@ -53,7 +53,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -77,7 +77,7 @@ func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, que
 func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -103,7 +103,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 	// /app/status/{flag}/{owner_id}/{app_id}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
 
@@ -130,7 +130,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	// "/app/search/{owner_id}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -165,7 +165,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -199,7 +199,7 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateDefaultBusiness")
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -209,7 +209,7 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	data.Set(common.BKOwnerIDField, params.Header.OwnerID)
+	data.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	for _, item := range objItems {
 		setInst, err := s.core.InstOperation().CreateInst(params, item, data)
