@@ -15,6 +15,7 @@ type option struct {
 	position string
 	dryrun   bool
 	mini     bool
+	scope    string
 }
 
 // Node topo node define
@@ -111,9 +112,9 @@ func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
 
 // Topo define
 type Topo struct {
-	Mainline  []string       `json:"mainline"`
-	BizTopo   *Node          `json:"biz_topo"`
-	ProcTopos []*ProcessTopo `json:"proc_topo"`
+	Mainline  []string     `json:"mainline,omitempty"`
+	BizTopo   *Node        `json:"biz_topo,omitempty"`
+	ProcTopos *ProcessTopo `json:"proc_topo,omitempty"`
 }
 
 type ProModule struct {
@@ -122,9 +123,13 @@ type ProModule struct {
 	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
 }
 
-type ProcessTopo struct {
+type Process struct {
 	Data    map[string]interface{} `json:"data"`
 	Modules []string               `json:"modules"`
+}
+type ProcessTopo struct {
+	BizName string     `json:"bk_biz_name"`
+	Procs   []*Process `json:"procs"`
 }
 
 const actionCreate = "create"

@@ -53,125 +53,132 @@ func importBKBiz(db storage.DI, opt *option) error {
 	// 	return fmt.Errorf("backup faile %s", err)
 	// }
 
-	//topo check
-	if !compareSlice(tar.Mainline, cur.Mainline) {
-		return fmt.Errorf("different topo mainline found, your expecting import topo is [%s], but the existing topo is [%s]",
-			strings.Join(tar.Mainline, "->"), strings.Join(cur.Mainline, "->"))
-	}
+	if tar.BizTopo != nil {
+		//topo check
+		if !compareSlice(tar.Mainline, cur.Mainline) {
+			return fmt.Errorf("different topo mainline found, your expecting import topo is [%s], but the existing topo is [%s]",
+				strings.Join(tar.Mainline, "->"), strings.Join(cur.Mainline, "->"))
+		}
 
-	// walk blueking biz and get difference
-	ipt := newImporter(db, opt)
-	ipt.walk(true, tar.BizTopo)
+		// walk blueking biz and get difference
+		ipt := newImporter(db, opt)
+		ipt.walk(true, tar.BizTopo)
 
-	// walk to create new node
-	tar.BizTopo.walk(func(node *Node) error {
-		if node.mark == actionCreate {
-			fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
-			if !opt.dryrun {
-				_, err := db.Insert(commondata.GetInstTableName(node.ObjID), node.Data)
-				if nil != err {
-					return fmt.Errorf("insert to %s, data:%+v, error: %s", node.ObjID, node.Data, err.Error())
+		// walk to create new node
+		tar.BizTopo.walk(func(node *Node) error {
+			if node.mark == actionCreate {
+				fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+				if !opt.dryrun {
+					_, err := db.Insert(commondata.GetInstTableName(node.ObjID), node.Data)
+					if nil != err {
+						return fmt.Errorf("insert to %s, data:%+v, error: %s", node.ObjID, node.Data, err.Error())
+					}
 				}
 			}
-		}
-		if node.mark == actionUpdate {
-			// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
-			if !opt.dryrun {
-				instID, err := node.getInstID()
+			if node.mark == actionUpdate {
+				// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+				if !opt.dryrun {
+					instID, err := node.getInstID()
+					if nil != err {
+						return err
+					}
+					updateCondition := map[string]interface{}{
+						instdata.GetIDNameByType(node.ObjID): instID,
+					}
+					err = db.UpdateByCondition(commondata.GetInstTableName(node.ObjID), node.Data, updateCondition)
+					if nil != err {
+						return fmt.Errorf("update to %s by %+v data:%+v, error: %s", node.ObjID, updateCondition, node.Data, err.Error())
+					}
+				}
+			}
+			return nil
+		})
+
+		// walk to delete unuse node
+		for objID, sdeletes := range ipt.sdelete {
+			for _, sdelete := range sdeletes {
+				// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
+
+				instID, err := getInt64(sdelete[instdata.GetIDNameByType(objID)])
 				if nil != err {
 					return err
 				}
-				updateCondition := map[string]interface{}{
-					instdata.GetIDNameByType(node.ObjID): instID,
-				}
-				err = db.UpdateByCondition(commondata.GetInstTableName(node.ObjID), node.Data, updateCondition)
-				if nil != err {
-					return fmt.Errorf("update to %s by %+v data:%+v, error: %s", node.ObjID, updateCondition, node.Data, err.Error())
-				}
-			}
-		}
-		return nil
-	})
 
-	// walk to delete unuse node
-	for objID, sdeletes := range ipt.sdelete {
-		for _, sdelete := range sdeletes {
-			// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
-
-			instID, err := getInt64(sdelete[instdata.GetIDNameByType(objID)])
-			if nil != err {
-				return err
-			}
-
-			cur.BizTopo.walk(func(node *Node) error {
-				nodeID, err := node.getInstID()
-				if nil != err {
-					return err
-				}
-				if node.ObjID == objID && nodeID == instID {
-					node.walk(func(child *Node) error {
-						childID, err := child.getInstID()
-						if nil != err {
-							return err
-						}
-						if child.ObjID == common.BKInnerObjIDModule {
-							// if should delete module then check whether it has host
-							modulehostcondition := map[string]interface{}{
-								common.BKModuleIDField: childID,
-							}
-							count, err := db.GetCntByCondition(common.BKTableNameModuleHostConfig, modulehostcondition)
+				cur.BizTopo.walk(func(node *Node) error {
+					nodeID, err := node.getInstID()
+					if nil != err {
+						return err
+					}
+					if node.ObjID == objID && nodeID == instID {
+						node.walk(func(child *Node) error {
+							childID, err := child.getInstID()
 							if nil != err {
-								return fmt.Errorf("get host count error: %s", err.Error())
+								return err
 							}
-							if count > 0 {
-								return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", node.Data[common.BKModuleNameField], err.Error())
+							if child.ObjID == common.BKInnerObjIDModule {
+								// if should delete module then check whether it has host
+								modulehostcondition := map[string]interface{}{
+									common.BKModuleIDField: childID,
+								}
+								count, err := db.GetCntByCondition(common.BKTableNameModuleHostConfig, modulehostcondition)
+								if nil != err {
+									return fmt.Errorf("get host count error: %s", err.Error())
+								}
+								if count > 0 {
+									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", node.Data[common.BKModuleNameField], err.Error())
+								}
 							}
-						}
 
-						//
-						deleteconition := map[string]interface{}{
-							instdata.GetIDNameByType(child.ObjID): childID,
-						}
-						switch child.ObjID {
-						case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-						default:
-							deleteconition[common.BKObjIDField] = child.ObjID
-						}
-						fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
-						if !opt.dryrun {
-							err = db.DelByCondition(commondata.GetInstTableName(child.ObjID), deleteconition)
-							if nil != err {
-								return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
+							//
+							deleteconition := map[string]interface{}{
+								instdata.GetIDNameByType(child.ObjID): childID,
 							}
-						}
-						return nil
-					})
-					return fmt.Errorf("break")
-				}
-				return nil
-			})
+							switch child.ObjID {
+							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
+							default:
+								deleteconition[common.BKObjIDField] = child.ObjID
+							}
+							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
+							if !opt.dryrun {
+								err = db.DelByCondition(commondata.GetInstTableName(child.ObjID), deleteconition)
+								if nil != err {
+									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
+								}
+							}
+							return nil
+						})
+						return fmt.Errorf("break")
+					}
+					return nil
+				})
 
+			}
 		}
 	}
 
-	return importProcess(db, opt, cur, tar)
-}
-
-func importProcess(db storage.DI, opt *option, cur, tar *Topo) error {
 	bizID, err := cur.BizTopo.getInstID()
 	if nil != err {
 		return err
 	}
 
-	curProcs := map[string]*ProcessTopo{}
-	for _, topo := range cur.ProcTopos {
+	return importProcess(db, opt, cur.ProcTopos, tar.ProcTopos, bizID)
+}
+
+func importProcess(db storage.DI, opt *option, cur, tar *ProcessTopo, bizID int64) (err error) {
+	if tar == nil {
+		return nil
+	}
+
+	curProcs := map[string]*Process{}
+	for _, topo := range cur.Procs {
 		curProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 	}
-	tarProcs := map[string]*ProcessTopo{}
-	for _, topo := range tar.ProcTopos {
+	tarProcs := map[string]*Process{}
+	for _, topo := range tar.Procs {
 		tarProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 
 		topo.Data[common.BKAppIDField] = bizID
+		topo.Data[common.BKOwnerIDField] = opt.OwnerID
 		curTopo := curProcs[topo.Data[common.BKProcessNameField].(string)]
 		if curTopo != nil {
 			procID, err := getInt64(curTopo.Data[common.BKProcessIDField])
@@ -538,7 +545,7 @@ func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttri
 	modelAttributes = map[string][]metadata.ObjectAttDes{}
 	modelKeys = map[string][]string{}
 	for _, att := range attributes {
-		if att.IsOnly {
+		if att.IsRequired {
 			modelKeys[att.ObjectID] = append(modelKeys[att.ObjectID], att.PropertyID)
 		}
 		modelAttributes[att.ObjectID] = append(modelAttributes[att.ObjectID], att)

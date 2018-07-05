@@ -27,14 +27,16 @@ func Parse(args []string) error {
 		dryrunflag     bool
 		filepath       string
 		configposition string
+		scope          string
 	)
 
 	// set flags
 	bkbizfs := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
 	bkbizfs.BoolVar(&dryrunflag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
-	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
 	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
+	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
+	bkbizfs.StringVar(&scope, "scope", "all", "export model, could be [biz] or [process], default all")
 	bkbizfs.StringVar(&filepath, "file", "", "export or import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	err := bkbizfs.Parse(args[1:])
@@ -59,9 +61,18 @@ func Parse(args []string) error {
 		OwnerID:  common.BKDefaultOwnerID,
 		dryrun:   dryrunflag,
 		mini:     miniflag,
+		scope:    scope,
 	}
 
 	if exportflag {
+		mode := ""
+		if miniflag {
+			mode = "mini"
+		} else {
+			mode = "verbose"
+
+		}
+		fmt.Printf("exporting blueking business to %s in \033[34m%s\033[0m mode\n", filepath, mode)
 		if err := export(a.InstCli, opt); err != nil {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
@@ -69,6 +80,8 @@ func Parse(args []string) error {
 		fmt.Printf("blueking business has been export to %s\n", filepath)
 	} else if importflag {
 		fmt.Printf("importing blueking business from %s\n", filepath)
+		opt.mini = false
+		opt.scope = "all"
 		if err := importBKBiz(a.InstCli, opt); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
