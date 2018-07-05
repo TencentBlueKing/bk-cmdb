@@ -374,6 +374,11 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleUpdateFailed)
 		}
 
+		if rsp, ok := cli.IsSuccess([]byte(moduleRes)); !ok {
+			blog.Error("failed to update the module, error info is %v", rsp.Message)
+			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleUpdateFailed)
+		}
+
 		{
 			// save change log
 			instID := moduleID
@@ -395,7 +400,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 			auditlog.NewClient(cli.CC.AuditCtrl()).AuditModuleLog(instID, auditContent, "update module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 		}
 
-		return http.StatusOK, moduleRes, nil
+		return http.StatusOK, nil, nil
 
 	}, resp)
 

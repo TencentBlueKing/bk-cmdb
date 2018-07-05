@@ -149,8 +149,11 @@ func (cli *hostAction) HostSnapInfo(req *restful.Request, resp *restful.Response
 		isSucc, _ := output["result"].(bool)
 		if !isSucc {
 			blog.Error("query host snapshot   error, error:%s", string(reply))
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSnap)
-
+			errcode, err := js.Get("bk_error_code").Int()
+			if err != nil {
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostSnap)
+			}
+			return http.StatusInternalServerError, nil, defErr.Error(errcode)
 		} else {
 			snap, err := js.Get("data").Get("data").String()
 

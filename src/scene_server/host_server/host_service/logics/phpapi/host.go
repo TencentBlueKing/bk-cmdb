@@ -251,6 +251,7 @@ func SetHostData(req *restful.Request, moduleHostConfig []map[string]int, hostMa
 
 		hostNew[common.BKModuleIDField] = module[common.BKModuleIDField]
 		hostNew[common.BKModuleNameField] = module[common.BKModuleNameField]
+		hostNew[common.BKModuleTypeField] = module[common.BKModuleTypeField]
 		hostNew[common.BKSetIDField] = set[common.BKSetIDField]
 		hostNew[common.BKSetNameField] = set[common.BKSetNameField]
 		hostNew[common.BKAppIDField] = app[common.BKAppIDField]

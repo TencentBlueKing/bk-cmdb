@@ -198,84 +198,112 @@ func (cli *setAction) DeleteSet(req *restful.Request, resp *restful.Response) {
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "set_id")
 		}
 
-		// check wether it can be delete
-		rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{
-			common.BKAppIDField: []int{appID},
-			common.BKSetIDField: []int{setID},
-		})
-		if nil != rstErr {
-			blog.Error("failed to check set wether it has hosts, error info is %s", rstErr.Error())
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoHasHostCheckFailed)
+		operationInst := &operation{}
+		operationInst.Delete.InstID = append(operationInst.Delete.InstID, setID)
+		if setID < 0 { // if the inst less than zeor, it means to batch to delete the inst
+			//create default module
+			value, err := ioutil.ReadAll(req.Request.Body)
+			if nil != err {
+				blog.Error("read request body failed, error:%v", err)
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			}
+			if 0 == len(value) {
+
+				blog.Error("read request body failed, it is empty")
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			}
+			if err = json.Unmarshal(value, operationInst); nil != err {
+				blog.Errorf("failed to unmarshal the body params, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			}
 		}
+		for _, operate := range operationInst.Delete.InstID {
 
-		if !rstOk {
-			blog.Error("failed to delete set, because of it has some hosts")
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoHasHost)
-		}
+			setID = operate
 
-		// take snapshot before operation
-		ownerID := app.getOwnerIDByAppID(req, appID)
-		if ownerID == "" {
-			blog.Errorf("owner id not found")
-		}
-		preData, retStrErr := inst.getInstDetail(req, setID, common.BKInnerObjIDSet, ownerID)
-		if common.CCSuccess != retStrErr {
-			blog.Errorf("get inst detail error: %v", retStrErr)
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-		}
+			// check wether it can be delete
+			rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{
+				common.BKAppIDField: []int{appID},
+				common.BKSetIDField: []int{setID},
+			})
+			if nil != rstErr {
+				blog.Error("failed to check set wether it has hosts, error info is %s", rstErr.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoHasHostCheckFailed)
+			}
 
-		//delete set
-		input := make(map[string]interface{})
-		input[common.BKAppIDField] = appID
-		input[common.BKSetIDField] = setID
+			if !rstOk {
+				blog.Error("failed to delete set, because of it has some hosts")
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrTopoHasHost)
+			}
 
-		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/set"
+			// take snapshot before operation
+			ownerID := app.getOwnerIDByAppID(req, appID)
+			if ownerID == "" {
+				blog.Errorf("owner id not found")
+			}
+			preData, retStrErr := inst.getInstDetail(req, setID, common.BKInnerObjIDSet, ownerID)
+			if common.CCSuccess != retStrErr {
+				blog.Errorf("get inst detail error: %v", retStrErr)
+				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+			}
 
-		inputJSON, jsErr := json.Marshal(input)
-		if nil != jsErr {
-			blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
-		}
+			//delete set
+			input := make(map[string]interface{})
+			input[common.BKAppIDField] = appID
+			input[common.BKSetIDField] = setID
 
-		_, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
-		if nil != err {
-			blog.Error("failed to delete the set, error info is %s", err.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
-		}
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/set"
 
-		//delete module
-		input = make(map[string]interface{})
-		input[common.BKAppIDField] = appID
-		input[common.BKSetIDField] = setID
+			inputJSON, jsErr := json.Marshal(input)
+			if nil != jsErr {
+				blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
+			}
 
-		uURL = cli.CC.ObjCtrl() + "/object/v1/insts/module"
-		inputJSON, jsErr = json.Marshal(input)
-		if nil != jsErr {
-			blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
-		}
-
-		moduleRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
-		if nil != err {
-			blog.Error("failed to delete the module, error info is %s", err.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleDeleteFailed)
-		}
-
-		{
-			// save change log
-			instID := gjson.Get(moduleRes, "data.bk_set_id").Int()
-			headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
-			if common.CCSuccess != attErr {
+			_, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+			if nil != err {
+				blog.Error("failed to delete the set, error info is %s", err.Error())
 				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
 			}
 
-			auditContent := metadata.Content{
-				PreData: preData,
-				Headers: headers,
+			//delete module
+			input = make(map[string]interface{})
+			input[common.BKAppIDField] = appID
+			input[common.BKSetIDField] = setID
+
+			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/module"
+			inputJSON, jsErr = json.Marshal(input)
+			if nil != jsErr {
+				blog.Error("failed to marshal the data, error info is %s", jsErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditSetLog(instID, auditContent, "delete set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
-		}
-		return http.StatusOK, moduleRes, nil
+
+			moduleRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+			if nil != err {
+				blog.Error("failed to delete the module, error info is %s", err.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoModuleDeleteFailed)
+			}
+			if rsp, ok := cli.IsSuccess([]byte(moduleRes)); !ok {
+				blog.Error("failed to update the module, error info is %v", rsp.Message)
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetUpdateFailed)
+			}
+
+			{
+				// save change log
+				instID := gjson.Get(moduleRes, "data.bk_set_id").Int()
+				headers, attErr := inst.getHeader(forward, ownerID, common.BKInnerObjIDSet)
+				if common.CCSuccess != attErr {
+					return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoSetDeleteFailed)
+				}
+
+				auditContent := metadata.Content{
+					PreData: preData,
+					Headers: headers,
+				}
+				auditlog.NewClient(cli.CC.AuditCtrl()).AuditSetLog(instID, auditContent, "delete set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
+			}
+		} // delete the set
+		return http.StatusOK, nil, nil
 	}, resp)
 }
 
