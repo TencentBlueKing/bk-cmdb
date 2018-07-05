@@ -28,8 +28,10 @@ type Service struct {
 
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON)
-
+	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+    restful.DefaultRequestContentType(restful.MIME_JSON)
+	restful.DefaultResponseContentType(restful.MIME_JSON)
+	
 	ws.Route(ws.POST("/hosts/favorites/{user}").To(s.AddHostFavourite))
 	ws.Route(ws.PUT("/hosts/favorites/{user}/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("/hosts/favorites/{user}/{id}").To(s.DeleteHostFavouriteByID))
