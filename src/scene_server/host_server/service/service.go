@@ -15,11 +15,13 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
+	*options.Config
 	*backbone.Engine
 	*logics.Logics
 }
@@ -73,12 +75,12 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.POST("/search").To(s.SearchHost))
 	ws.Route(ws.POST("/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	ws.Route(ws.PUT("/host/batch").To(s.UpdateHostBatch))
-	ws.Route(ws.POST("/userapi").To(s.Add))
-	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.Update))
-	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.Delete))
-	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.Get))
-	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.Detail))
-	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserAPIData))
+	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
+	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
+	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
+	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.GetUserCustomQuery))
+	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
+	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
 
 	return ws
 }

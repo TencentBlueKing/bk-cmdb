@@ -13,17 +13,19 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"runtime"
+
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app"
 	"configcenter/src/scene_server/topo_server/app/options"
-	"fmt"
-	"os"
-	"runtime"
-
-	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -38,7 +40,7 @@ func main() {
 
 	util.InitFlags()
 
-	if err := app.Run(op); err != nil {
+	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}

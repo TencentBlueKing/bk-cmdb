@@ -27,6 +27,8 @@ type Core interface {
 	GroupOperation() operation.GroupOperationInterface
 	InstOperation() operation.InstOperationInterface
 	ObjectOperation() operation.ObjectOperationInterface
+	PermissionOperation() operation.PermissionOperationInterface
+	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 }
 
 type core struct {
@@ -36,6 +38,8 @@ type core struct {
 	group          operation.GroupOperationInterface
 	inst           operation.InstOperationInterface
 	object         operation.ObjectOperationInterface
+	permission     operation.PermissionOperationInterface
+	compatibleV2   operation.CompatibleV2OperationInterface
 }
 
 // New create a core manager
@@ -50,6 +54,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	object := operation.NewObjectOperation(client, targetModel, targetInst)
 
 	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
+	permission := operation.NewPermissionOperation(client)
+	compatibleV2 := operation.NewCompatibleV2Operation(client)
 
 	return &core{
 		inst:           inst,
@@ -58,6 +64,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 		classification: classification,
 		group:          group,
 		object:         object,
+		permission:     permission,
+		compatibleV2:   compatibleV2,
 	}
 }
 
@@ -78,4 +86,10 @@ func (cli *core) InstOperation() operation.InstOperationInterface {
 }
 func (cli *core) ObjectOperation() operation.ObjectOperationInterface {
 	return cli.object
+}
+func (cli *core) PermissionOperation() operation.PermissionOperationInterface {
+	return cli.permission
+}
+func (cli *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
+	return cli.compatibleV2
 }
