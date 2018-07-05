@@ -10,17 +10,4 @@
  * limitations under the License.
  */
  
-package models
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
-
-func TestGetPropertyGroupData(t *testing.T) {
-	data := getPropertyGroupData("0")
-	for _, da := range data {
-		require.Equal(t, da.ID, 0)
-	}
-}
+package logics
