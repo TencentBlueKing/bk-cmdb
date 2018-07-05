@@ -15,6 +15,7 @@
             :isShowBiz="false" 
             :isShowCollect="false" 
             :isShowHistory="false" 
+            :isShowScope="true"
             :outerParams="hosts.searchParams"
             @choose="setSelectedHost" 
             @attrLoaded="search">

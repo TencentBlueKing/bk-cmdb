@@ -244,6 +244,81 @@
                 return ipData
             },
             filter () {
+                return this.calcSearchParams()
+            }
+        },
+        watch: {
+            'ip.text' (text) {
+                bus.$emit('setQuickSearchParams', {type: 'ip', text: text})
+            },
+            queryColumns (queryColumns) {
+                let localQueryColumns = []
+                let localQueryColumnData = {}
+                queryColumns.map(column => {
+                    let {
+                        bk_property_id: bkPropertyId,
+                        bk_property_type: bkPropertyType,
+                        bk_obj_id: bkObjId
+                    } = column
+                    let columnProperty = this.getColumnProperty(bkPropertyId, bkObjId)
+                    if (columnProperty) {
+                        localQueryColumns.push(column)
+                        let operatorType = 'default'
+                        if (this.typeOfChar.indexOf(bkPropertyType) !== -1) {
+                            operatorType = 'char'
+                        } else if (this.typeOfDate.indexOf(bkPropertyType) !== -1) {
+                            operatorType = 'date'
+                        }
+                        localQueryColumnData[bkPropertyId] = {
+                            field: bkPropertyId,
+                            value: operatorType === 'date' ? [] : '',
+                            operator: this.operators[operatorType][0]['value'],
+                            'bk_obj_id': bkObjId
+                        }
+                    }
+                })
+                this.localQueryColumns = localQueryColumns
+                this.localQueryColumnData = localQueryColumnData
+            },
+            filter (filter) {
+                this.$emit('filterChange', this.$deepClone(filter))
+            },
+            queryColumnData ({bk_biz_id: bkBizId, ip, condition}) {
+                if (bkBizId) {
+                    this.bkBizId = bkBizId
+                }
+                if (ip) {
+                    this['ip']['text'] = ip['data'].join(',')
+                    this['ip']['bk_host_innerip'] = ip['bk_host_innerip']
+                    this['ip']['bk_host_outerip'] = ip['bk_host_outerip']
+                    this['ip']['exact'] = ip['exact']
+                }
+                if (condition) {
+                    condition.map(queryCondition => {
+                        queryCondition.condition.map(({field, operator, value}) => {
+                            if (this.localQueryColumnData.hasOwnProperty(field)) {
+                                this.localQueryColumnData[field]['operator'] = operator
+                                this.localQueryColumnData[field]['value'] = value
+                            }
+                        })
+                    })
+                }
+            },
+            quickSearchParams (quickSearchParams) {
+                this.initQuickSearchParams()
+            },
+            localQueryColumns () {
+                this.$nextTick(() => {
+                    this.calcRefreshPosition()
+                })
+            }
+        },
+        created () {
+            this.initQuickSearchParams()
+            this.$emit('filterChange', this.$deepClone(this.filter))
+        },
+        methods: {
+            calcSearchParams () {
                 let filter = {
                     bk_biz_id: this.bkBizId,
                     ip: {
@@ -255,7 +330,7 @@
                         'bk_obj_id': 'biz',
                         'condition': [{
                             field: 'default',
-                            operator: this.scope === 1 ? '$eq' : '$ne',
+                            operator: this.isShowScope ? this.scope === 1 ? '$eq' : '$ne' : '$ne',
                             value: 1
                         }],
                         fields: []
@@ -328,78 +403,7 @@
                     }
                 })
                 return filter
-            }
-        },
-        watch: {
-            'ip.text' (text) {
-                bus.$emit('setQuickSearchParams', {type: 'ip', text: text})
             },
-            queryColumns (queryColumns) {
-                let localQueryColumns = []
-                let localQueryColumnData = {}
-                queryColumns.map(column => {
-                    let {
-                        bk_property_id: bkPropertyId,
-                        bk_property_type: bkPropertyType,
-                        bk_obj_id: bkObjId
-                    } = column
-                    let columnProperty = this.getColumnProperty(bkPropertyId, bkObjId)
-                    if (columnProperty) {
-                        localQueryColumns.push(column)
-                        let operatorType = 'default'
-                        if (this.typeOfChar.indexOf(bkPropertyType) !== -1) {
-                            operatorType = 'char'
-                        } else if (this.typeOfDate.indexOf(bkPropertyType) !== -1) {
-                            operatorType = 'date'
-                        }
-                        localQueryColumnData[bkPropertyId] = {
-                            field: bkPropertyId,
-                            value: operatorType === 'date' ? [] : '',
-                            operator: this.operators[operatorType][0]['value'],
-                            'bk_obj_id': bkObjId
-                        }
-                    }
-                })
-                this.localQueryColumns = localQueryColumns
-                this.localQueryColumnData = localQueryColumnData
-            },
-            filter (filter) {
-                this.$emit('filterChange', Object.assign({}, filter))
-            },
-            queryColumnData ({bk_biz_id: bkBizId, ip, condition}) {
-                if (bkBizId) {
-                    this.bkBizId = bkBizId
-                }
-                if (ip) {
-                    this['ip']['text'] = ip['data'].join(',')
-                    this['ip']['bk_host_innerip'] = ip['bk_host_innerip']
-                    this['ip']['bk_host_outerip'] = ip['bk_host_outerip']
-                    this['ip']['exact'] = ip['exact']
-                }
-                if (condition) {
-                    condition.map(queryCondition => {
-                        queryCondition.condition.map(({field, operator, value}) => {
-                            if (this.localQueryColumnData.hasOwnProperty(field)) {
-                                this.localQueryColumnData[field]['operator'] = operator
-                                this.localQueryColumnData[field]['value'] = value
-                            }
-                        })
-                    })
-                }
-            },
-            quickSearchParams (quickSearchParams) {
-                this.initQuickSearchParams()
-            },
-            localQueryColumns () {
-                this.$nextTick(() => {
-                    this.calcRefreshPosition()
-                })
-            }
-        },
-        created () {
-            this.initQuickSearchParams()
-        },
-        methods: {
             bkBizSelected (app) {
                 this.$emit('bkBizSelected', app.value)
             },
