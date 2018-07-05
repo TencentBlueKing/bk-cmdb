@@ -135,22 +135,21 @@
                 this.activeParentNode = nodeOptions.parent
                 this.checkNode(activeNode)
             },
-            handleNodeToggle (isOpen, node, nodeOptions) {
+            async handleNodeToggle (isOpen, node, nodeOptions) {
                 if (!node.child || !node.child.length) {
                     this.$set(node, 'isLoading', true)
-                    this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.bkBizId}/${node['bk_inst_id']}`).then(res => {
-                        if (res.result) {
-                            let child = res['data'][0]['child']
-                            if (Array.isArray(child) && child.length) {
-                                node.child = child
-                            } else {
-                                this.$set(node, 'isFolder', false)
-                            }
+                    try {
+                        const res = await this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.bkBizId}/${node['bk_inst_id']}`)
+                        let child = res['data'][0]['child']
+                        if (Array.isArray(child) && child.length) {
+                            node.child = child
                         } else {
-                            this.$alertMsg(res['bk_error_msg'])
+                            this.$set(node, 'isFolder', false)
                         }
                         node.isLoading = false
-                    })
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             checkNode (node) {
@@ -181,48 +180,46 @@
                     }
                 }
             },
-            doTransfer (type) {
+            async doTransfer (type) {
                 if (this.selectedList[0]['bk_obj_id'] === 'source') {
-                    this.$axios.post('hosts/modules/resource', {
-                        'bk_biz_id': this.bkBizId,
-                        'bk_host_id': this.chooseId
-                    }, {id: 'transfer'}).then(res => {
-                        if (res.result) {
-                            this.$emit('success', res)
-                            this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
-                            this.cancel()
+                    try {
+                        const res = await this.$axios.post('hosts/modules/resource', {
+                            'bk_biz_id': this.bkBizId,
+                            'bk_host_id': this.chooseId
+                        }, {id: 'transfer'})
+                        this.$emit('success', res)
+                        this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
+                        this.cancel()
+                    } catch (e) {
+                        if (e.data && e.data['bk_host_id']) {
+                            this.$alertMsg(`${e['bk_error_msg']} : ${e.data['bk_host_id']}`)
                         } else {
-                            if (res.data && res.data['bk_host_id']) {
-                                this.$alertMsg(`${res['bk_error_msg']} : ${res.data['bk_host_id']}`)
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
+                            this.$alertMsg(e.message || e['bk_error_msg'] || e.statusText)
                         }
-                    })
+                    }
                 } else {
                     let modulesDefault = this.selectedList[0]['default']
                     let transferType = {0: '', 1: 'idle', 2: 'fault'}
                     let url = `hosts/modules/${transferType[modulesDefault]}`
-                    this.$axios.post(url, {
-                        'bk_biz_id': this.bkBizId,
-                        'bk_host_id': this.chooseId,
-                        'bk_module_id': this.selectedList.map(node => {
-                            return node['bk_inst_id']
-                        }),
-                        'is_increment': type
-                    }, {id: 'transfer'}).then(res => {
-                        if (res.result) {
-                            this.$emit('success', res)
-                            this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
-                            this.cancel()
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    }).catch(e => {
-                        if (e.response && e.response.status === 403) {
+                    try {
+                        const res = await this.$axios.post(url, {
+                            'bk_biz_id': this.bkBizId,
+                            'bk_host_id': this.chooseId,
+                            'bk_module_id': this.selectedList.map(node => {
+                                return node['bk_inst_id']
+                            }),
+                            'is_increment': type
+                        }, {id: 'transfer'})
+                        this.$emit('success', res)
+                        this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
+                        this.cancel()
+                    } catch (e) {
+                        if (e.status === 403) {
                             this.$alertMsg(this.$t('Common[\'您没有主机转移的权限\']'))
+                        } else {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                         }
-                    })
+                    }
                 }
             },
             removeSelected (index) {

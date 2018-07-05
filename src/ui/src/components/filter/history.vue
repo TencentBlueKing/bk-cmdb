@@ -57,63 +57,62 @@
             }
         },
         methods: {
-            getHistory () {
-                this.$axios.get(`hosts/history/${this.start}/${this.limit}`).then((res) => {
-                    if (res.result) {
-                        if (res.data.count) {
-                            let historyList = res.data.info.map(history => {
-                                let content = JSON.parse(history['content'])
-                                let time = this.$formatTime(history['bk_create_time'], 'YYYY-MM-DD HH:mm')
-                                let paramsStr = []
-                                let queryParams = []
-                                let filters = {
-                                    'biz': [],
-                                    'host': [],
-                                    'module': [],
-                                    'set': []
-                                }
-                                let info = {
-                                    'bk_biz_id': content['bk_biz_id'],
-                                    'exact_search': content.ip.exact,
-                                    'inner_ip': content.ip.flag.indexOf('bk_host_innerip') !== -1,
-                                    'outer_ip': content.ip.flag.indexOf('bk_host_outerip') !== -1,
-                                    'ip_list': content.ip.data
-                                }
-                                paramsStr.push(`bk_biz_id:${content['bk_biz_id']}`)
-                                if (content.ip.data.length) {
-                                    paramsStr.push(`IP:${content.ip.data.join(',')}`)
-                                }
-                                content.condition.map((condition, index) => {
-                                    condition.condition.map(filter => {
-                                        if (filter.field !== 'default' && filters.hasOwnProperty(condition['bk_obj_id'])) {
-                                            filters[condition['bk_obj_id']].push(`${filter.field}${this.operatorMap[filter.operator]}${filter.value}`)
-                                            queryParams.push({
-                                                'bk_obj_id': condition['bk_obj_id'],
-                                                'field': filter.field,
-                                                'operator': filter.operator,
-                                                'value': filter.value
-                                            })
-                                        }
-                                    })
-                                })
-                                Object.keys(filters).map(filterType => {
-                                    if (filters[filterType].length) {
-                                        paramsStr.push(`${filterType}:${filters[filterType].join('; ')}`)
+            async getHistory () {
+                try {
+                    const res = await this.$axios.get(`hosts/history/${this.start}/${this.limit}`)
+                    if (res.data.count) {
+                        let historyList = res.data.info.map(history => {
+                            let content = JSON.parse(history['content'])
+                            let time = this.$formatTime(history['bk_create_time'], 'YYYY-MM-DD HH:mm')
+                            let paramsStr = []
+                            let queryParams = []
+                            let filters = {
+                                'biz': [],
+                                'host': [],
+                                'module': [],
+                                'set': []
+                            }
+                            let info = {
+                                'bk_biz_id': content['bk_biz_id'],
+                                'exact_search': content.ip.exact,
+                                'inner_ip': content.ip.flag.indexOf('bk_host_innerip') !== -1,
+                                'outer_ip': content.ip.flag.indexOf('bk_host_outerip') !== -1,
+                                'ip_list': content.ip.data
+                            }
+                            paramsStr.push(`bk_biz_id:${content['bk_biz_id']}`)
+                            if (content.ip.data.length) {
+                                paramsStr.push(`IP:${content.ip.data.join(',')}`)
+                            }
+                            content.condition.map((condition, index) => {
+                                condition.condition.map(filter => {
+                                    if (filter.field !== 'default' && filters.hasOwnProperty(condition['bk_obj_id'])) {
+                                        filters[condition['bk_obj_id']].push(`${filter.field}${this.operatorMap[filter.operator]}${filter.value}`)
+                                        queryParams.push({
+                                            'bk_obj_id': condition['bk_obj_id'],
+                                            'field': filter.field,
+                                            'operator': filter.operator,
+                                            'value': filter.value
+                                        })
                                     }
                                 })
-                                return {
-                                    time: time,
-                                    paramsStr: paramsStr.join(' | '),
-                                    info: info,
-                                    queryParams: queryParams
+                            })
+                            Object.keys(filters).map(filterType => {
+                                if (filters[filterType].length) {
+                                    paramsStr.push(`${filterType}:${filters[filterType].join('; ')}`)
                                 }
                             })
-                            this.historyList = historyList.reverse()
-                        }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                            return {
+                                time: time,
+                                paramsStr: paramsStr.join(' | '),
+                                info: info,
+                                queryParams: queryParams
+                            }
+                        })
+                        this.historyList = historyList.reverse()
                     }
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             apply ({info, queryParams}) {
                 let isAppExist = false

@@ -10,7 +10,7 @@
 
 <template lang="html">
     <div>
-        <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
+        <div class="up-file upload-file" v-bkloading="{isLoading: $loading('importHost')}">
             <img src="../../common/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
             <i18n path="Inst['导入提示']" tag="p" :places="{allowType: allowType.join(','), maxSize: maxSize}">
@@ -85,7 +85,6 @@
         },
         data () {
             return {
-                isLoading: false,
                 uploaded: false,
                 failed: false,
                 fileInfo: {
@@ -106,7 +105,7 @@
             }
         },
         methods: {
-            handleFile (e) {
+            async handleFile (e) {
                 this.reset()
                 let files = e.target.files
                 let fileInfo = files[0]
@@ -123,8 +122,8 @@
                     this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
                     let formData = new FormData()
                     formData.append('file', files[0])
-                    this.isLoading = true
-                    this.$axios.post(this.importUrl, formData, {globalError: false}).then(res => {
+                    try {
+                        const res = await this.$axios.post(this.importUrl, formData, {id: 'importHost', globalError: false})
                         this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
                         if (res.result) {
                             this.uploaded = true
@@ -144,13 +143,11 @@
                         this.$nextTick(() => {
                             this.calcFailListHeight()
                         })
-                        this.isLoading = false
-                    }).catch(error => {
-                        this.$alertMsg(error.message || error.data['bk_error_msg'] || error.statusText)
+                    } catch (e) {
                         this.reset()
-                        this.isLoading = false
-                        this.$emit('error', error)
-                    })
+                        this.$emit('error', e)
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             calcFailListHeight () {

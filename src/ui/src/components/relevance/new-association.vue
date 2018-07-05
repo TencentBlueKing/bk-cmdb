@@ -253,16 +253,15 @@
                 }
                 this.table.header = header
             },
-            getAssociationTopo () {
+            async getAssociationTopo () {
                 if (this.instance && this.instance.hasOwnProperty(this.dataIdKey)) {
                     const topoUrl = `inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.instance[this.dataIdKey]}`
-                    this.$axios.post(topoUrl).then(res => {
-                        if (res.result) {
-                            this.association = res.data.length ? res.data[0]['next'] : []
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        const res = await this.$axios.post(topoUrl)
+                        this.association = res.data.length ? res.data[0]['next'] : []
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             async updateAssociation (instId, updateType = 'new') {
@@ -281,17 +280,17 @@
                 } else {
                     payload[this.dataIdKey] = this.instance[this.dataIdKey]
                 }
-                const response = await this.$store.dispatch({
-                    type: 'association/updateAssociation',
-                    ...payload
-                })
-                if (response.result) {
+                try {
+                    const response = await this.$store.dispatch({
+                        type: 'association/updateAssociation',
+                        ...payload
+                    })
                     this.getAssociationTopo()
                     const msg = updateType === 'remove' ? this.$t('Association["取消关联成功"]') : this.$t('Association["添加关联成功"]')
                     this.$alertMsg(msg, 'success')
                     this.$emit('handleUpdate')
-                } else {
-                    this.$alertMsg(response['bk_error_msg'])
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
             async getInstance () {
@@ -311,7 +310,7 @@
                             await this.getObjInstance(cancelToken, filterObjId).then(res => this.setTableList(res, filterObjId))
                     }
                 } catch (e) {
-                    this.$alertMsg(e.message)
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 } finally {
                     this.table.loading = false
                     this.cancelSource = null

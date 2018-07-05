@@ -99,21 +99,23 @@
         },
         methods: {
             // 函数节流，500ms发起一次主机查询
-            handleSearch: Throttle(function () {
+            handleSearch: Throttle(async function () {
                 this.cancelSource && this.cancelSource.cancel()
                 if (this.keyword.length > 2) {
                     this.cancelSource = this.$Axios.CancelToken.source()
                     this.loading = true
-                    this.$axios.post('hosts/search', this.searchParams, {cancelToken: this.cancelSource.token}).then(res => {
+                    try {
+                        const res = await this.$axios.post('hosts/search', this.searchParams, {cancelToken: this.cancelSource.token})
                         this.searchList = this.initSearchList(res.data.info)
                         this.loading = false
                         this.cancelSource = null
-                    }).catch((e) => {
+                    } catch (e) {
                         if (!this.$Axios.isCancel(e)) {
                             this.cancelSource = null
                             this.loading = false
                         }
-                    })
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             }, 500, {leading: false, trailing: true}),
             initSearchList (data) {

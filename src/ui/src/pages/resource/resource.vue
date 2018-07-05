@@ -215,46 +215,38 @@
                     }
                 })
             },
-            transferHost () {
-                this.$axios.post('hosts/modules/resource/idle', {
-                    'bk_biz_id': this.hosts.bkBizId,
-                    'bk_host_id': this.hosts.selectedHost
-                }).then(res => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t("HostResourcePool['分配成功']"), 'success')
-                        this.hosts.selectedHost = []
-                        this.$refs.hosts.transferSuccess()
-                        this.hosts.bkBizId = ''
-                        this.search()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async transferHost () {
+                try {
+                    await this.$axios.post('hosts/modules/resource/idle', {
+                        'bk_biz_id': this.hosts.bkBizId,
+                        'bk_host_id': this.hosts.selectedHost
+                    })
+                    this.$alertMsg(this.$t("HostResourcePool['分配成功']"), 'success')
+                    this.hosts.selectedHost = []
+                    this.$refs.hosts.transferSuccess()
+                    this.hosts.bkBizId = ''
+                    this.search()
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             confirmDel () {
                 this.$bkInfo({
                     title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
-                    confirmFn: () => {
-                        this.$axios.delete('hosts/batch', {
-                            data: JSON.stringify({
-                                'bk_host_id': this.hosts.selectedHost.join(','),
-                                'bk_supplier_account': this.bkSupplierAccount
-                            })
-                        }).then(res => {
-                            if (res.result) {
-                                this.$bkInfo({
-                                    statusOpts: {
-                                        title: this.$t("HostResourcePool['成功删除选中的主机']"),
-                                        subtitle: false
-                                    },
-                                    type: 'success'
+                    confirmFn: async () => {
+                        try {
+                            await this.$axios.delete('hosts/batch', {
+                                data: JSON.stringify({
+                                    'bk_host_id': this.hosts.selectedHost.join(','),
+                                    'bk_supplier_account': this.bkSupplierAccount
                                 })
-                                this.search()
-                                this.$refs.hosts.clearChooseId()
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
-                        })
+                            })
+                            this.$alertMsg(this.$t("HostResourcePool['成功删除选中的主机']"))
+                            this.search()
+                            this.$refs.hosts.clearChooseId()
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 })
             },

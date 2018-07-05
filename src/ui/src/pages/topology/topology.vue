@@ -189,7 +189,7 @@
             },
             /* 获取业务拓扑实例 */
             getTopoInst () {
-                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.tree.bkBizId}`).then(res => {
+                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.tree.bkBizId}`, {globalError: false}).then(res => {
                     return res
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
@@ -199,7 +199,7 @@
             },
             /* 获取内置业务拓扑 */
             getTopoInternal () {
-                return this.$axios.get(`topo/internal/${this.bkSupplierAccount}/${this.tree.bkBizId}`).then(res => {
+                return this.$axios.get(`topo/internal/${this.bkSupplierAccount}/${this.tree.bkBizId}`, {globalError: false}).then(res => {
                     return res
                 }).catch(e => {
                     if (e.response && e.response.status === 403) {
@@ -208,14 +208,13 @@
                 })
             },
             /* 获取主线拓扑模型 */
-            getTopoModel () {
-                this.$axios.get(`topo/model/${this.bkSupplierAccount}`).then(res => {
-                    if (res.result) {
-                        this.tree.model = res.data
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async getTopoModel () {
+                try {
+                    const res = await this.$axios.get(`topo/model/${this.bkSupplierAccount}`)
+                    this.tree.model = res.data
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /* 初始化拓扑树 */
             getTopoTree () {
@@ -237,14 +236,12 @@
                     } else {
                         this.$alertMsg(internalRes.result ? instRes.message : internalRes.message)
                     }
-                })).then(() => {
-                    this.tree.loading = false
-                }).catch(() => {
+                })).finally(() => {
                     this.tree.loading = false
                 })
             },
             /* 获取当前节点的具体属性 */
-            getNodeDetails () {
+            async getNodeDetails () {
                 let {
                     bk_inst_id: bkInstId,
                     bk_inst_name: bkInstName,
@@ -267,16 +264,13 @@
                     url = `inst/search/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`
                 }
                 this.view.attribute.isLoading = true
-                this.$axios.post(url, params).then(res => {
-                    if (res.result) {
-                        this.view.attribute.formValues = res.data.info[0]
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+                try {
+                    const res = await this.$axios.post(url, params)
+                    this.view.attribute.formValues = res.data.info[0]
                     this.view.attribute.isLoading = false
-                }).catch(() => {
-                    this.view.attribute.isLoading = false
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /* 新增拓扑，切换到属性表单 */
             handleAddNode () {
@@ -286,7 +280,7 @@
                 this.view.tab.active = 'attribute'
             },
             /* 新增拓扑节点/修改拓扑节点 */
-            submitNode (formData, originalData) {
+            async submitNode (formData, originalData) {
                 let url
                 let method
                 let submitType = this.view.attribute.type
@@ -319,26 +313,25 @@
                         url = `inst/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`
                     }
                 }
-                this.$axios({
-                    url: url,
-                    method: method,
-                    data: formData,
-                    id: 'editAttr'
-                }).then(res => {
-                    if (res.result) {
-                        this.updateTopoTree(this.view.attribute.type, res.data, formData)
-                        this.$alertMsg(submitType === 'create' ? this.$t('Common[\'新建成功\']') : this.$t('Common[\'修改成功\']'), 'success')
-                        if (this.view.attribute.type === 'create') {
-                            this.view.tab.active = 'host'
-                        } else {
-                            this.getNodeDetails()
-                        }
-                        this.view.attribute.type = 'update'
-                        this.$refs.topoAttribute.displayType = 'list'
+                try {
+                    const res = await this.$axios({
+                        url: url,
+                        method: method,
+                        data: formData,
+                        id: 'editAttr'
+                    })
+                    this.updateTopoTree(this.view.attribute.type, res.data, formData)
+                    this.$alertMsg(submitType === 'create' ? this.$t('Common[\'新建成功\']') : this.$t('Common[\'修改成功\']'), 'success')
+                    if (this.view.attribute.type === 'create') {
+                        this.view.tab.active = 'host'
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        this.getNodeDetails()
                     }
-                })
+                    this.view.attribute.type = 'update'
+                    this.$refs.topoAttribute.displayType = 'list'
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /* 新增、修改拓扑节点成功后更新拓扑树 */
             updateTopoTree (type, response, formData) {
@@ -376,7 +369,7 @@
                     content: this.tree.activeNode['bk_obj_id'] === 'module'
                         ? this.$t('Common["请先转移其下所有的主机"]')
                         : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
-                    confirmFn: () => {
+                    confirmFn: async () => {
                         let url
                         let {
                             bk_obj_id: bkObjId,
@@ -389,21 +382,20 @@
                         } else {
                             url = `inst/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`
                         }
-                        this.$axios.delete(url, {id: 'deleteAttr'}).then(res => {
-                            if (res.result) {
-                                this.view.tab.active = 'host'
-                                this.tree.activeParentNode.child.splice(this.tree.activeNodeOptions.index, 1)
-                                this.tree.initNode = {
-                                    level: 1,
-                                    open: true,
-                                    active: true,
-                                    bk_inst_id: this.tree.treeData['bk_inst_id']
-                                }
-                                this.$alertMsg(this.$t('Common[\'删除成功\']'), 'success')
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
+                        try {
+                            await this.$axios.delete(url, {id: 'deleteAttr'})
+                            this.view.tab.active = 'host'
+                            this.tree.activeParentNode.child.splice(this.tree.activeNodeOptions.index, 1)
+                            this.tree.initNode = {
+                                level: 1,
+                                open: true,
+                                active: true,
+                                bk_inst_id: this.tree.treeData['bk_inst_id']
                             }
-                        })
+                            this.$alertMsg(this.$t('Common[\'删除成功\']'), 'success')
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 })
             },
@@ -417,22 +409,21 @@
                 this.setSearchParams()
             },
             /* node节点展开时，判断是否加载下级节点 */
-            handleNodeToggle (isOpen, node, nodeOptions) {
+            async handleNodeToggle (isOpen, node, nodeOptions) {
                 if (!node.child || !node.child.length) {
                     this.$set(node, 'isLoading', true)
-                    this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.tree.bkBizId}/${node['bk_inst_id']}`).then(res => {
-                        if (res.result) {
-                            let child = res['data'][0]['child']
-                            if (Array.isArray(child) && child.length) {
-                                node.child = child
-                            } else {
-                                this.$set(node, 'isFolder', false)
-                            }
+                    try {
+                        const res = this.$axios.get(`topo/inst/child/${this.bkSupplierAccount}/${node['bk_obj_id']}/${this.tree.bkBizId}/${node['bk_inst_id']}`)
+                        let child = res['data'][0]['child']
+                        if (Array.isArray(child) && child.length) {
+                            node.child = child
                         } else {
-                            this.$alertMsg(res['bk_error_msg'])
+                            this.$set(node, 'isFolder', false)
                         }
                         node.isLoading = false
-                    })
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
             /* 设置主机查询参数 */

@@ -37,7 +37,7 @@
                 :list="table.list"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :loading="table.isLoading"
+                :loading="$loading('getUserAPIList')"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setCurrentPage"
                 @handleSizeChange="setCurrentSize"
@@ -118,8 +118,7 @@
                         current: 1,
                         count: 0,
                         size: 10
-                    },
-                    isLoading: false
+                    }
                 },
                 slider: {
                     isShow: false,
@@ -157,31 +156,27 @@
                 this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
             },
             /* 获取自定义API列表 */
-            getUserAPIList () {
-                this.table.isLoading = true
-                this.$axios.post(`userapi/search/${this.filter.bkBizId}`, this.searchParams).then((res) => {
-                    if (res.result) {
-                        if (res.data.count) {
-                            res.data.info.forEach((listItem) => {
-                                listItem['create_time'] = this.$formatTime(listItem['create_time'])
-                                listItem['last_time'] = this.$formatTime(listItem['last_time'])
-                            })
-                            this.table.list = res.data.info
-                        } else {
-                            this.table.list = []
-                        }
-                        this.table.pagination.count = res.data.count
+            async getUserAPIList () {
+                try {
+                    let res = await this.$axios.post(`userapi/search/${this.filter.bkBizId}`, this.searchParams, {id: 'getUserAPIList'})
+                    if (res.data.count) {
+                        res.data.info.forEach((listItem) => {
+                            listItem['create_time'] = this.$formatTime(listItem['create_time'])
+                            listItem['last_time'] = this.$formatTime(listItem['last_time'])
+                        })
+                        this.table.list = res.data.info
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        this.table.list = []
                     }
-                    this.table.isLoading = false
-                }).catch((e) => {
-                    this.table.isLoading = false
+                    this.table.pagination.count = res.data.count
+                } catch (e) {
                     this.table.list = []
-                    if (e.response && e.response.status === 403) {
+                    if (e.status === 403) {
                         this.$alertMsg(this.$t("Common['您没有当前业务的权限']"))
+                    } else {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                     }
-                })
+                }
             },
             handleCreate (data) {
                 this.slider.id = data['id']

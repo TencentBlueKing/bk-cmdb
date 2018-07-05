@@ -236,21 +236,18 @@
                     })
                 }
             },
-            getAttribute () {
+            async getAttribute () {
                 this.attributeLoading = true
-                this.$axios.post('object/attr/search', {
-                    'bk_obj_id': this.bkObjId,
-                    'bk_supplier_account': this.bkSupplierAccount
-                }).then(res => {
-                    if (res.result) {
-                        this.$set(this.attribute, this.bkObjId, res.data)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+                try {
+                    const res = await this.$axios.post('object/attr/search', {
+                        'bk_obj_id': this.bkObjId,
+                        'bk_supplier_account': this.bkSupplierAccount
+                    })
+                    this.$set(this.attribute, this.bkObjId, res.data)
                     this.attributeLoading = false
-                }).catch(() => {
-                    this.attributeLoading = false
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             getAsstLabel (value) {
                 if (Array.isArray(value)) {

@@ -85,7 +85,7 @@
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
                 :pagination="table.pagination"
-                :loading="table.isLoading || outerLoading"
+                :loading="$loading('hostSearch') || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
                 :visible="tableVisible"
@@ -270,8 +270,7 @@
                         current: 1,
                         count: 0
                     },
-                    chooseId: [],
-                    isLoading: true
+                    chooseId: []
                 },
                 filter: {
                     queryColumns: [],
@@ -490,7 +489,7 @@
             },
             async getUserCustomColumn () {
                 const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
-                return this.$axios.post('usercustom/user/search', {}).then(res => {
+                return this.$axios.post('usercustom/user/search', {}, {globalError: false}).then(res => {
                     if (res.result) {
                         let hostDisplayColumns = res.data['host_display_column'] || []
                         let hostQueryColumns = (res.data[`${customPrefix}_query_column`] || []).filter(({bk_obj_id: bkObjId}) => !['biz'].includes(bkObjId))
@@ -740,20 +739,20 @@
                     this.setTableCurrentPage(1)
                 })
             },
-            updateUserCustomDisplayColumn (fields) {
+            async updateUserCustomDisplayColumn (fields) {
                 const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
                 let updateParams = {}
                 updateParams['host_display_column'] = fields.map(({bk_property_id, bk_property_name, bk_obj_id}) => {
                     return {bk_property_id, bk_property_name, bk_obj_id}
                 })
-                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                try {
+                    await this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'})
                     this.cancelSetField()
-                    if (!res.result) {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            updateUserCustomQueryColumn (fields) {
+            async updateUserCustomQueryColumn (fields) {
                 let columns = fields.map(property => {
                     let {
                         bk_property_id: bkPropertyId,
@@ -777,44 +776,40 @@
                 const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
                 let updateParams = {}
                 updateParams[`${customPrefix}_query_column`] = columns
-                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                try {
+                    await this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'})
                     this.cancelSetField()
-                    if (!res.result) {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             cancelSetField () {
                 this.sideslider.isShow = false
             },
-            getTableList () {
-                this.table.isLoading = true
-                this.$axios.post('hosts/search', this.searchParams, {id: 'hostSearch'}).then(res => {
-                    this.table.isLoading = false
-                    if (res.result) {
-                        this.table.pagination.count = res.data.count
-                        this.table.tableList = res.data.info
-                        this.forSelectedList = this.$deepClone(res.data.info)
-                        this.historyParams = {
-                            content: JSON.stringify(this.searchParams)
-                        }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+            async getTableList () {
+                try {
+                    const res = await this.$axios.post('hosts/search', this.searchParams, {id: 'hostSearch', globalError: false})
+                    this.table.pagination.count = res.data.count
+                    this.table.tableList = res.data.info
+                    this.forSelectedList = this.$deepClone(res.data.info)
+                    this.historyParams = {
+                        content: JSON.stringify(this.searchParams)
                     }
-                }).catch((e) => {
-                    this.table.isLoading = false
+                } catch (e) {
                     this.table.tableList = []
-                    if (e.response && e.response.status === 403) {
+                    if (e.status === 403) {
                         this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
+                    } else {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                     }
-                })
+                }
             },
-            saveHistorySearch () {
-                this.$axios.post('hosts/history', this.historyParams).then(res => {
-                    if (!res.result) {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async saveHistorySearch () {
+                try {
+                    await this.$axios.post('hosts/history', this.historyParams)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             showHostAttribute (item, index) {
                 this.sideslider.hostRelation = getHostRelation(item)
@@ -830,50 +825,49 @@
                 attribute.form.type = 'update'
                 this.getHostDetails(bkHostId)
             },
-            getHostDetails (bkHostId) {
-                this.$axios.get(`hosts/${this.bkSupplierAccount}/${bkHostId}`).then((res) => {
-                    if (res.result) {
+            async getHostDetails (bkHostId) {
+                try {
+                    await this.$Axios.all([
+                        this.$axios.get(`hosts/${this.bkSupplierAccount}/${bkHostId}`),
+                        this.$axios.get(`hosts/snapshot/${bkHostId}`)
+                    ]).then(this.$Axios.spread((detailRes, snapshotRes) => {
                         let values = {
                             bk_host_id: bkHostId
                         }
-                        res.data.map(({bk_property_id: bkPropertyId, bk_property_value: bkPropertyValue}) => {
+                        detailRes.data.map(({bk_property_id: bkPropertyId, bk_property_value: bkPropertyValue}) => {
                             values[bkPropertyId] = bkPropertyValue !== null ? bkPropertyValue : ''
                             if (bkPropertyId === 'OSType') {
                                 this.sideslider.attribute.isWindowsOSType = bkPropertyValue !== 'Linux'
                             }
                         })
                         this.sideslider.attribute.form.formValues = values
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-                this.$axios.get(`hosts/snapshot/${bkHostId}`).then(res => {
-                    if (res.result) {
+
                         this.sideslider.attribute.status.isLoaded = true
-                        this.$store.commit('setHostSnapshot', res.data)
-                    }
-                })
+                        this.$store.commit('setHostSnapshot', snapshotRes.data)
+                    }))
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            saveHostAttribute (formData, formValues) {
+            async saveHostAttribute (formData, formValues) {
                 let { bk_host_id: bkHostID } = formValues
-                this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()}), {id: 'editAttr'}).then(res => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t('Common[\'保存成功\']'), 'success')
-                        this.setTableCurrentPage(1)
-                        if (!this.sideslider.attribute.form.isMultipleUpdate) {
-                            this.$refs.hostAttribute.displayType = 'list'
-                            this.getHostDetails(bkHostID)
-                        }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                try {
+                    await this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()}), {id: 'editAttr'})
+                    this.$alertMsg(this.$t('Common[\'保存成功\']'), 'success')
+                    this.setTableCurrentPage(1)
+                    if (!this.sideslider.attribute.form.isMultipleUpdate) {
+                        this.$refs.hostAttribute.displayType = 'list'
+                        this.getHostDetails(bkHostID)
                     }
-                }).catch(e => {
-                    if (e.response && e.response.status === 403) {
+                } catch (e) {
+                    if (e.status === 403) {
                         this.$alertMsg(this.$t('Common[\'权限不足\']'))
+                    } else {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                     }
-                })
+                }
             },
-            getAllHostID (isChecked) {
+            async getAllHostID (isChecked) {
                 if (isChecked) {
                     let allHostId = []
                     let searchParams = JSON.parse(this.historyParams['content'])
@@ -883,21 +877,16 @@
                     //         fields.push('bk_host_id')
                     //     }
                     // })
-                    this.table.isLoading = true
-                    this.$axios.post('hosts/search/', searchParams).then(res => {
-                        if (res.result) {
-                            res.data.info.forEach((item, index) => {
-                                allHostId.push(item['host']['bk_host_id'])
-                            })
-                            this.forSelectedList = res.data.info
-                            this.table.chooseId = allHostId
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                        this.table.isLoading = false
-                    }).catch(() => {
-                        this.table.isLoading = false
-                    })
+                    try {
+                        const res = await this.$axios.post('hosts/search/', searchParams, {id: 'hostSearch'})
+                        res.data.info.forEach((item, index) => {
+                            allHostId.push(item['host']['bk_host_id'])
+                        })
+                        this.forSelectedList = res.data.info
+                        this.table.chooseId = allHostId
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
                     this.table.chooseId = []
                 }

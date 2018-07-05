@@ -446,20 +446,19 @@
                     return property['editable'] && !property['bk_isapi']
                 }
             },
-            getbkPropertyGroups () {
-                this.$axios.post(`objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.objId}`, {}).then(res => {
-                    if (res.result) {
-                        let groups = res.data.sort((groupA, groupB) => {
-                            return groupA['bk_group_index'] - groupB['bk_group_index']
-                        })
-                        let groupOrder = groups.map(({bk_group_id: bkGroupId}) => {
-                            return bkGroupId
-                        })
-                        this.groupOrder = [...groupOrder, 'none']
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async getbkPropertyGroups () {
+                try {
+                    const res = await this.$axios.post(`objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.objId}`, {})
+                    let groups = res.data.sort((groupA, groupB) => {
+                        return groupA['bk_group_index'] - groupB['bk_group_index']
+                    })
+                    let groupOrder = groups.map(({bk_group_id: bkGroupId}) => {
+                        return bkGroupId
+                    })
+                    this.groupOrder = [...groupOrder, 'none']
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             setUpdateInitData () {
                 let filteredValues = this.filterValues()

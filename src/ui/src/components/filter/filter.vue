@@ -185,37 +185,35 @@
                 this.tab.screening.collectName = ''
             },
             makeSureCollect () {
-                this.$validator.validateAll().then(res => {
+                this.$validator.validateAll().then(async res => {
                     if (res) {
-                        this.$axios.post('hosts/favorites', this.getCollectParams(), {id: 'collect'}).then(res => {
-                            if (res.result) {
-                                this.$alertMsg(this.$t('Common[\'收藏成功\']'), 'success')
-                                this.hideCollectBox()
-                                this.updateFavoriteCount(res.data.id)
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
-                        })
+                        try {
+                            const res = await this.$axios.post('hosts/favorites', this.getCollectParams(), {id: 'collect'})
+                            this.$alertMsg(this.$t('Common[\'收藏成功\']'), 'success')
+                            this.hideCollectBox()
+                            this.updateFavoriteCount(res.data.id)
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 })
             },
-            getFavoriteList () {
-                this.$axios.post('hosts/favorites/search', {}).then(res => {
-                    if (res.result) {
-                        let list = res.data.info
-                        this.tab.favorite.list = list
-                        this.tab.favorite.loaded = true
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async getFavoriteList () {
+                try {
+                    const res = await this.$axios.post('hosts/favorites/search', {})
+                    let list = res.data.info
+                    this.tab.favorite.list = list
+                    this.tab.favorite.loaded = true
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            updateFavoriteCount (favoriteId) {
-                this.$axios.put(`hosts/favorites/${favoriteId}/incr`).then(res => {
-                    if (!res.result) {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async updateFavoriteCount (favoriteId) {
+                try {
+                    await this.$axios.put(`hosts/favorites/${favoriteId}/incr`)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             updateFavoriteList (updateItem) {
                 let originItem = this.tab.favorite.list.find(({id}) => id === updateItem.id)

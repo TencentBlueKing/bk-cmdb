@@ -79,42 +79,43 @@
                     this.getInstChild(node)
                 }
             },
-            getInstChild (node) {
+            async getInstChild (node) {
                 node.loadNode = 1
-                this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${node['bk_obj_id']}/inst/${node['bk_inst_id']}`, {
-                    page: {
-                        start: 0,
-                        limit: 10
-                    }
-                }).then(res => {
-                    if (res.result) {
-                        this.$set(node, 'children', [])
-                        res.data.map(model => {
-                            model.name = model['bk_obj_name']
-                            // 加入分页相关信息 默认是第一页 每页10条
-                            model.page = 1
-                            model.pageSize = 10
-                            
-                            model.isExpand = false
-                            model.isFolder = false
-                            model.level = node.level + 1
-                            model.id = this.treeItemId++
-                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                                model.children.map(inst => {
-                                    inst.name = inst['bk_inst_name']
-                                    inst.level = node.level + 2
-                                    inst.id = this.treeItemId++
-                                    inst.children = []
-                                })
-                            } else {
-                                model.children = []
-                            }
-                            model.loadNode = 2
-                        })
-                        this.$set(node, 'children', res.data)
-                        node.loadNode = 2
-                    }
-                })
+                try {
+                    const res = await this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${node['bk_obj_id']}/inst/${node['bk_inst_id']}`, {
+                        page: {
+                            start: 0,
+                            limit: 10
+                        }
+                    })
+                    this.$set(node, 'children', [])
+                    res.data.map(model => {
+                        model.name = model['bk_obj_name']
+                        // 加入分页相关信息 默认是第一页 每页10条
+                        model.page = 1
+                        model.pageSize = 10
+                        
+                        model.isExpand = false
+                        model.isFolder = false
+                        model.level = node.level + 1
+                        model.id = this.treeItemId++
+                        if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
+                            model.children.map(inst => {
+                                inst.name = inst['bk_inst_name']
+                                inst.level = node.level + 2
+                                inst.id = this.treeItemId++
+                                inst.children = []
+                            })
+                        } else {
+                            model.children = []
+                        }
+                        model.loadNode = 2
+                    })
+                    this.$set(node, 'children', res.data)
+                    node.loadNode = 2
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             pageSize (node) {
                 this.getInstByPage(node)
@@ -122,41 +123,40 @@
             pageTurning (node) {
                 this.getInstByPage(node)
             },
-            getInstByPage (node) {
+            async getInstByPage (node) {
                 let method = 'post'
-                this.$axios({
-                    url: `inst/search/${this.bkSupplierAccount}/${node['bk_obj_id']}`,
-                    method: method,
-                    data: {
-                        condition: {},
-                        fields: [],
-                        page: {
-                            start: (node.page - 1) * node.pageSize,
-                            limit: parseInt(node.pageSize)
+                try {
+                    const res = await this.$axios({
+                        url: `inst/search/${this.bkSupplierAccount}/${node['bk_obj_id']}`,
+                        method: method,
+                        data: {
+                            condition: {},
+                            fields: [],
+                            page: {
+                                start: (node.page - 1) * node.pageSize,
+                                limit: parseInt(node.pageSize)
+                            }
                         }
-                    }
-                }).then(res => {
-                    if (res.result) {
-                        let children = []
-                        res.data.info.map(inst => {
-                            children.push({
-                                bk_obj_id: inst['bk_obj_id'],
-                                bk_inst_id: inst['bk_inst_id'],
-                                id: this.treeItemId++,
-                                name: inst['bk_inst_name'],
-                                pageSize: node.pageSize,
-                                page: node.page,
-                                level: node.level + 1,
-                                isExpand: false,
-                                isFolder: false,
-                                children: []
-                            })
+                    })
+                    let children = []
+                    res.data.info.map(inst => {
+                        children.push({
+                            bk_obj_id: inst['bk_obj_id'],
+                            bk_inst_id: inst['bk_inst_id'],
+                            id: this.treeItemId++,
+                            name: inst['bk_inst_name'],
+                            pageSize: node.pageSize,
+                            page: node.page,
+                            level: node.level + 1,
+                            isExpand: false,
+                            isFolder: false,
+                            children: []
                         })
-                        node.children = children
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                    })
+                    node.children = children
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 获取树形图信息
@@ -195,7 +195,7 @@
                     })
                     this.ztreeDataSourceList = res.data
                 } catch (e) {
-                    this.$alertMsg(e.data['bk_error_msg'])
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 } finally {
                     this.isLoading = false
                 }

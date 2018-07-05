@@ -216,7 +216,7 @@
                     }
                 } else {
                     try {
-                        this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData, {id: 'editAttr'})
+                        await this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}/${originalData['bk_process_id']}`, formData, {id: 'editAttr'})
                         this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
                         this.setCurrentPage(1)
                         this.closeSlider()
@@ -280,14 +280,14 @@
             async getTableList () {
                 this.table.isLoading = true
                 try {
-                    const res = await this.$axios.post(`proc/search1/${this.bkSupplierAccount}/${this.filter.bkBizId}`, this.searchParams, {globalError: false})
+                    const res = await this.$axios.post(`proc/search/${this.bkSupplierAccount}/${this.filter.bkBizId}`, this.searchParams, {globalError: false})
                     this.table.list = res.data.info
                     this.table.pagination.count = res.data.count
                     this.table.isLoading = false
                 } catch (e) {
                     this.table.isLoading = false
                     this.table.list = []
-                    if (e.response && e.response.status === 403) {
+                    if (e.status === 403) {
                         this.$alertMsg(this.$t("Common['您没有当前业务的权限']"))
                     } else {
                         this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)

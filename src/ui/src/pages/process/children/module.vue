@@ -12,7 +12,7 @@
     <v-table class="module-table"
         :header="table.header"
         :list="table.list"
-        :loading="table.isLoading"
+        :loading="$loading('getModuleList')"
         :width="754"
         :wrapperMinusHeight="150"
         :sortable="false">
@@ -51,7 +51,6 @@
                         name: this.$t("ProcessManagement['状态']")
                     }],
                     list: [],
-                    isLoading: false,
                     maxHeight: 0
                 }
             }
@@ -67,41 +66,34 @@
             }
         },
         methods: {
-            changeBinding (item) {
+            async changeBinding (item) {
                 let moduleName = item['bk_module_name'].replace(' ', '')
                 if (item['is_bind'] === 0) {
-                    this.$axios.put(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {}, {id: `${item['bk_module_name']}Bind`}).then((res) => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块成功']"), 'success')
-                            item['is_bind'] = 1
-                        } else {
-                            this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块失败']"))
-                        }
-                    })
+                    try {
+                        await this.$axios.put(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {}, {id: `${item['bk_module_name']}Bind`})
+                        this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块成功']"), 'success')
+                        item['is_bind'] = 1
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
-                    this.$axios.delete(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {id: `${item['bk_module_name']}Bind`}).then(res => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t("ProcessManagement['解绑进程模块成功']"), 'success')
-                            item['is_bind'] = 0
-                        } else {
-                            this.$alertMsg(this.$t("ProcessManagement['解绑进程模块失败']"))
-                        }
-                    })
+                    try {
+                        const res = await this.$axios.delete(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {id: `${item['bk_module_name']}Bind`})
+                        this.$alertMsg(this.$t("ProcessManagement['解绑进程模块成功']"), 'success')
+                        item['is_bind'] = 0
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
-            getModuleList () {
-                this.isLoading = true
-                this.$axios.get(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}`).then((res) => {
-                    if (res.result) {
-                        this.table.list = this.sortModule(res.data)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+            async getModuleList () {
+                try {
+                    let res = await this.$axios.get(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}`, {id: 'getModuleList'})
+                    this.table.list = this.sortModule(res.data)
                     this.calcMaxHeight()
-                    this.isLoading = false
-                }).catch(() => {
-                    this.isLoading = false
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             sortModule (data) {
                 let bindedModule = []

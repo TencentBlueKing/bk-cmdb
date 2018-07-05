@@ -166,18 +166,17 @@
                     this.details.data = null
                 }
             },
-            getHistory () {
-                this.$axios.post('audit/search', this.searchParams, {id: 'auditHistory'}).then(res => {
-                    if (res.result) {
-                        res.data.info.map(history => {
-                            history['op_time'] = this.$formatTime(history['op_time'])
-                        })
-                        this.table.list = res.data.info
-                        this.table.pagination.count = res.data.count
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async getHistory () {
+                try {
+                    const res = await this.$axios.post('audit/search', this.searchParams, {id: 'auditHistory'})
+                    res.data.info.map(history => {
+                        history['op_time'] = this.$formatTime(history['op_time'])
+                    })
+                    this.table.list = res.data.info
+                    this.table.pagination.count = res.data.count
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             setFilterDate (oldDate, newDate) {
                 if (newDate) {

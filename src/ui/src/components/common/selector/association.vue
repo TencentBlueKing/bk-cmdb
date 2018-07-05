@@ -61,7 +61,7 @@
         methods: {
             getAssociateInst () {
                 let url = this.asstObjId === 'biz' ? `biz/search/${this.bkSupplierAccount}` : `inst/search/${this.bkSupplierAccount}/${this.asstObjId}`
-                return this.$axios.post(url, {}).then(res => {
+                return this.$axios.post(url, {}, {globalError: false}).then(res => {
                     if (res.result) {
                         this.associateInst = res.data.info || []
                     } else {

@@ -31,7 +31,7 @@
                                     :defaultSort="table.defaultSort"
                                     :pagination="table.pagination"
                                     :checked.sync="table.chooseId"
-                                    :loading="table.isLoading"
+                                    :loading="$loading('hostSearch')"
                                     :multipleCheck="multiple"
                                     :maxHeight="202"
                                     @handlePageChange="setCurrentPage"
@@ -93,8 +93,7 @@
                         sizeDirection: 'top'
                     },
                     chooseId: [],
-                    allHost: null,
-                    isLoading: false
+                    allHost: null
                 },
                 attribute: [{
                     'bk_obj_id': 'host',
@@ -296,7 +295,7 @@
                 }
                 this.table.chooseId = chooseId
             },
-            getAllHost () {
+            async getAllHost () {
                 let searchParams = this.$deepClone(this.filter.params)
                 searchParams.page = {}
                 searchParams.condition.map(({bk_obj_id: bkObjId, fields}) => {
@@ -305,42 +304,32 @@
                         fields.push('bk_host_innerip')
                     }
                 })
-                this.table.isLoading = true
-                this.$axios.post('hosts/search', searchParams).then(res => {
-                    if (res.result) {
-                        this.table.allHost = res.data.info.map(item => {
-                            return {
-                                'bk_host_id': item['host']['bk_host_id'],
-                                'bk_host_innerip': item['host']['bk_host_innerip']
-                            }
-                        })
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                    this.table.isLoading = false
-                }).catch(() => {
-                    this.table.isLoading = false
-                })
+                try {
+                    const res = await this.$axios.post('hosts/search', searchParams, {id: 'hostSearch'})
+                    this.table.allHost = res.data.info.map(item => {
+                        return {
+                            'bk_host_id': item['host']['bk_host_id'],
+                            'bk_host_innerip': item['host']['bk_host_innerip']
+                        }
+                    })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            getTableList () {
+            async getTableList () {
                 let params = this.$deepClone(this.filter.params)
                 params.page = {
                     start: (this.table.pagination.current - 1) * this.table.pagination.size,
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.table.isLoading = true
-                this.$axios.post('hosts/search', params).then(res => {
-                    this.table.isLoading = false
-                    if (res.result) {
-                        this.table.pagination.count = res.data.count
-                        this.table.list = res.data.info
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                }).catch(() => {
-                    this.table.isLoading = false
-                })
+                try {
+                    const res = await this.$axios.post('hosts/search', params, {id: 'hostSearch'})
+                    this.table.pagination.count = res.data.count
+                    this.table.list = res.data.info
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             getCellValue (property, item) {
                 if (!property) {
