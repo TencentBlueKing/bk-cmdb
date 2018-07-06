@@ -157,7 +157,8 @@
             },
             confirmTransfer (selected, index) {
                 if (this.hasAssignedHosts()) {
-                    this.$alertMsg(this.$t('Common["请勿选择已分配主机"]'))
+                    this.$alertMsg(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.hosts.bkBizId = ''
                     return
                 }
                 let h = this.$createElement
