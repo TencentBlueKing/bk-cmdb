@@ -27,8 +27,6 @@ import (
 // CreateBusiness create a new business
 func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	fmt.Println("CreateBusiness")
-
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
@@ -43,7 +41,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 	data.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	for _, item := range objItems {
-		return s.core.InstOperation().CreateInst(params, item, data) // should only one item
+		return s.core.BusinessOperation().CreateBusiness(params, item, data) // should only one item
 	}
 
 	return nil, nil
@@ -65,7 +63,7 @@ func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, que
 	}
 
 	for _, item := range objItems {
-		if err = s.core.InstOperation().DeleteInst(params, item, cond); nil != err {
+		if err = s.core.BusinessOperation().DeleteBusiness(params, item, cond); nil != err {
 			return nil, err
 		}
 	}
@@ -89,7 +87,7 @@ func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, que
 	}
 
 	for _, item := range objItems {
-		if err = s.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
+		if err = s.core.BusinessOperation().UpdateBusiness(params, data, item, cond); nil != err {
 			return nil, err
 		}
 	}
@@ -116,7 +114,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 
 	data.Set("flag", pathParams("flag"))
 	for _, item := range objItems {
-		if err = s.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
+		if err = s.core.BusinessOperation().UpdateBusiness(params, data, item, cond); nil != err {
 			return nil, err
 		}
 	}
@@ -145,7 +143,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	queryCond := &metadata.QueryInput{}
 	for _, objItem := range objItems {
 
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
+		cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, objItem, queryCond)
 		if nil != err {
 			blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
@@ -180,7 +178,7 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 	queryCond := &metadata.QueryInput{}
 	for _, objItem := range objItems {
 
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
+		cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, objItem, queryCond)
 		if nil != err {
 			blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
@@ -209,10 +207,8 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-
 	for _, item := range objItems {
-		setInst, err := s.core.InstOperation().CreateInst(params, item, data)
+		setInst, err := s.core.BusinessOperation().CreateBusiness(params, item, data)
 		if nil != err {
 			blog.Errorf("failed to create a new business, %s", err.Error())
 			return nil, err

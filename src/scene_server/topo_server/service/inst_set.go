@@ -41,7 +41,7 @@ func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryPar
 	data.Set(common.BKAppIDField, pathParams("app_id"))
 
 	for _, item := range objItems {
-		return s.core.InstOperation().CreateInst(params, item, data) // should only item
+		return s.core.SetOperation().CreateSet(params, item, data) // should only item
 	}
 
 	return nil, nil
@@ -64,7 +64,7 @@ func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryPar
 	}
 
 	for _, item := range objItems {
-		if err = s.core.InstOperation().DeleteInst(params, item, cond); nil != err {
+		if err = s.core.SetOperation().DeleteSet(params, item, cond); nil != err {
 			return nil, err
 		}
 	}
@@ -92,7 +92,7 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 	data.Set(common.BKSetIDField, pathParams("set_id"))
 
 	for _, item := range objItems {
-		if err = s.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
+		if err = s.core.SetOperation().UpdateSet(params, data, item, cond); nil != err {
 			return nil, err
 		}
 	}
@@ -120,7 +120,7 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	queryCond := &metadata.QueryInput{}
 	for _, objItem := range objItems {
 
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
+		cnt, instItems, err := s.core.SetOperation().FindSet(params, objItem, queryCond)
 		if nil != err {
 			blog.Errorf("[api-set] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 			return nil, err
