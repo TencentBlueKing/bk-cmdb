@@ -22,6 +22,7 @@
                     </div>
                 </div>
                 <div class="section-right fr">
+                    <h3 class="section-title">{{$t('Hosts["已选中模块"]')}}</h3>
                     <ul class="selected-list">
                         <li class="selected-item clearfix" v-for="(node, index) in selectedList" :key="node['bk_inst_id']">
                             <div class="module-info fl">
@@ -44,11 +45,11 @@
                     <template v-if="chooseId.length > 1 && !isNotModule">
                         <label class="transfer-type" for="increment">
                             <input type="radio" id="increment" v-model="isIncrement" :value="true">
-                            <span class="transfer-description">增量更新，保留主机已有模块</span>
+                            <span class="transfer-description">{{$t('Hosts["增量更新"]')}}</span>
                         </label>
                         <label class="transfer-type" for="replacement">
                             <input type="radio" id="replacement" v-model="isIncrement" :value="false">
-                            <span class="transfer-description">完全替换，不保留现有主机模块</span>
+                            <span class="transfer-description">{{$t('Hosts["完全替换"]')}}</span>
                         </label>
                     </template>
                     <div class="fr">
@@ -416,8 +417,15 @@
         .section-right {
             height: 100%;
             width: 353px;
-            overflow: auto;
-            @include scrollbar;
+            .section-title{
+                padding: 0 0 0 25px;
+                margin: 0;
+                height: 64px;
+                line-height: 63px;
+                font-size: 14px;
+                font-weight: normal;
+                border-bottom: 1px solid #e7e9ef;
+            }
         }
     }
     .content-footer{
@@ -449,12 +457,15 @@
         @include scrollbar;
     }
     .selected-list{
+        height: calc(100% - 64px);
         color: #3c96ff;
         font-size: 12px;
+        overflow-y: auto;
+        @include scrollbar;
         .selected-item{
             height: 44px;
-            line-height: 18px;
-            padding: 4px 0 4px 25px;
+            line-height: 16px;
+            padding: 6px 0 6px 25px;
             &:hover:not(.disabled){
                 background-color: #e2efff;
                 .module-info-name{

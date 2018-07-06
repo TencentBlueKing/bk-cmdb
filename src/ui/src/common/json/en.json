@@ -440,7 +440,10 @@
         "清空": "Refresh",
         "主机名称": "Hosts Name",
         "操作系统类型": "Operating System Type",
-        "关联关系": "Association Relationship"
+        "关联关系": "Association Relationship",
+        "已选中模块": "Selected Modules",
+        "增量更新": "Increment update, keep exist modules",
+        "完全替换": "Replacement update，do not keep exist modules"
     },
     "Inst": {
         "立即创建": "Add",
