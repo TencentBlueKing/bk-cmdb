@@ -21,16 +21,16 @@ import (
 
 // ValidatorInterface the validator methods
 type ValidatorInterface interface {
-	ValidatorCreate(header http.Header, attr metadata.Attribute, data mapstr.MapStr) (bool, error)
-	ValidatorUpdate(header http.Header, attr metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error)
+	ValidatorCreate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr) (bool, error)
+	ValidatorUpdate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error)
 }
 
 type validator struct {
 }
 
-func (v *validator) ValidatorCreate(header http.Header, attr metadata.Attribute, data mapstr.MapStr) (bool, error) {
+func (v *validator) ValidatorCreate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr) (bool, error) {
 	return false, nil
 }
-func (v *validator) ValidatorUpdate(header http.Header, attr metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error) {
+func (v *validator) ValidatorUpdate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error) {
 	return true, nil
 }

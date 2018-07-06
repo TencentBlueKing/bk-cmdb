@@ -21,20 +21,20 @@ import (
 
 // AuditInterface audit log methods
 type AuditInterface interface {
-	SaveCreateActionLog(header http.Header, instID int64, attr metadata.Attribute, data mapstr.MapStr)
-	SaveUpdateActionLog(header http.Header, instID int64, attr metadata.Attribute, newData mapstr.MapStr)
-	SaveDeleteActionLog(header http.Header, instID int64)
+	SaveCreateActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr)
+	SaveUpdateActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute, newData mapstr.MapStr)
+	SaveDeleteActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute)
 }
 
 type auditLog struct {
 }
 
-func (a *auditLog) SaveCreateActionLog(header http.Header, instID int64, attr metadata.Attribute, data mapstr.MapStr) {
+func (a *auditLog) SaveCreateActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr) {
 
 }
-func (a *auditLog) SaveUpdateActionLog(header http.Header, instID int64, attr metadata.Attribute, newData mapstr.MapStr) {
+func (a *auditLog) SaveUpdateActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute, newData mapstr.MapStr) {
 
 }
-func (a *auditLog) SaveDeleteActionLog(header http.Header, instID int64) {
+func (a *auditLog) SaveDeleteActionLog(header http.Header, instID int64, obj *metadata.Object, attr *metadata.Attribute) {
 
 }
