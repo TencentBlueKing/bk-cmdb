@@ -23,9 +23,18 @@
                 </div>
                 <div class="section-right fr">
                     <ul class="selected-list">
-                        <li class="selected-item clearfix" v-for="(node, index) in selectedList" :key="index">
-                            <span>{{node['bk_inst_name']}}</span>
+                        <li class="selected-item clearfix" v-for="(node, index) in selectedList" :key="node['bk_inst_id']">
+                            <div class="module-info fl">
+                                <span class="module-info-name">{{node['bk_inst_name']}}</span>
+                                <span class="module-info-path">{{getModulePathLabel(node)}}</span>
+                            </div>
                             <i class="bk-icon icon-close fr" @click="removeSelected(index)"></i>
+                        </li>
+                        <li class="selected-item disabled" v-for="(node, index) in otherBizNodes" :key="index">
+                            <div class="module-info">
+                                <span class="module-info-name">{{node['module']['bk_module_name']}}</span>
+                                <span class="module-info-path">{{node['biz']['bk_biz_name']}}-{{node['set']['bk_set_name']}}</span>
+                            </div>
                         </li>
                     </ul>
                 </div>
@@ -53,7 +62,8 @@
     export default {
         props: {
             isShow: Boolean,
-            chooseId: Array
+            chooseId: Array,
+            hosts: Array
         },
         data () {
             return {
@@ -84,13 +94,23 @@
                 activeParentNode: {},
                 selectedList: [],
                 allowType: ['source', 'module'],
-                isNotModule: true
+                isNotModule: true,
+                otherBizNodes: []
             }
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
             maxExpandedLevel () {
                 return this.getLevel(this.treeData) - 1
+            },
+            allModulesNodes () {
+                return this.getNodes(this.treeData, 'module')
+            },
+            allSetNodes () {
+                return this.getNodes(this.treeData, 'set')
+            },
+            allBizNodes () {
+                return this.getNodes(this.treeData, 'biz')
             }
         },
         watch: {
@@ -119,9 +139,64 @@
             }
         },
         methods: {
-            init () {
-                this.getTopoTree()
+            async init () {
                 this.selectedList = []
+                this.otherBizNodes = []
+                await this.getTopoTree()
+                if (this.hosts.length === 1) {
+                    this.setSelectedList()
+                }
+            },
+            setSelectedList () {
+                let selected = []
+                let otherBizNodes = []
+                const hostData = this.hosts[0]
+                const moduleArr = hostData.module
+                const setArr = hostData.set
+                const bizArr = hostData.biz
+                moduleArr.forEach(module => {
+                    const targetSet = setArr.find(set => set['bk_biz_id'] === module['bk_biz_id'] && set['bk_set_id'] === module['bk_set_id'])
+                    const targetBiz = bizArr.find(biz => biz['bk_biz_id'] === module['bk_biz_id'])
+                    if (targetBiz['bk_biz_id'] === this.bkBizId) {
+                        const node = this.allModulesNodes.find(moduleNode => moduleNode['bk_inst_id'] === module['bk_module_id'])
+                        selected.push(node)
+                    } else {
+                        otherBizNodes.push({
+                            module,
+                            set: targetSet,
+                            biz: targetBiz
+                        })
+                    }
+                })
+                this.selectedList = selected
+                this.otherBizNodes = otherBizNodes
+            },
+            getNodes (node, type) {
+                let result = []
+                if (node['bk_obj_id'] === type) {
+                    result.push(node)
+                } else if (node.child && node.child.length) {
+                    node.child.forEach(childNode => {
+                        result = [...result, ...this.getNodes(childNode, type)]
+                    })
+                }
+                return result
+            },
+            getModulePath (node) {
+                return {
+                    biz: this.allBizNodes.find(biz => biz['bk_inst_id'] === this.bkBizId),
+                    set: this.allSetNodes.find(set => {
+                        if (set.child && set.child.length) {
+                            return set.child.find(module => module['bk_inst_id'] === node['bk_inst_id'])
+                        }
+                        return false
+                    }),
+                    module: node
+                }
+            },
+            getModulePathLabel (node) {
+                const path = this.getModulePath(node)
+                return `${path['biz']['bk_inst_name']}-${path['set']['bk_inst_name']}`
             },
             getLevel (node) {
                 let level = node.level || 1
@@ -229,7 +304,7 @@
                 this.selectedList.splice(index, 1)
             },
             getTopoInst () {
-                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}`).then(res => {
+                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}`, {level: -1}).then(res => {
                     return res
                 })
             },
@@ -267,6 +342,8 @@
                 }))
             },
             cancel () {
+                this.selectedList = []
+                this.otherBizNodes = []
                 this.$emit('update:isShow', false)
             }
         },
@@ -287,8 +364,8 @@
         background: rgba(0, 0, 0, 0.6);
     }
     .transfer-content{
-        width: 643px;
-        height: 588px;
+        width: 720px;
+        height: 590px;
         background: #fff;
         position: absolute;
         top: 50%;
@@ -319,8 +396,7 @@
         }
         .section-right {
             height: 100%;
-            width: 273px;
-            padding: 20px 20px 20px 30px;
+            width: 353px;
             overflow: auto;
             @include scrollbar;
         }
@@ -355,13 +431,40 @@
     }
     .selected-list{
         color: #3c96ff;
-        font-weight: bold;
         font-size: 12px;
         .selected-item{
-            padding: 5px 0;
+            height: 44px;
+            line-height: 18px;
+            padding: 4px 0 4px 25px;
+            &:hover:not(.disabled){
+                background-color: #e2efff;
+                .module-info-name{
+                    color: #498fe0;
+                }
+                .module-info-path{
+                    color: #93bff5;
+                }
+            }
+            .module-info{
+                width: 250px;
+            }
+            .module-info-name{
+                display: block;
+                font-size: 14px;
+                color: $textColor;
+                @include ellipsis;
+            }
+            .module-info-path{
+                display: block;
+                font-size: 12px;
+                color: #b9bdc1;
+                @include ellipsis;
+            }
             .icon-close{
                 cursor: pointer;
                 color: #9196a1;
+                font-size: 15px;
+                margin: 10px 25px 0 0;
                 &:hover{
                     color: #3c96ff;
                 }
