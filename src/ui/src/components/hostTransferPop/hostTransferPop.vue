@@ -1,6 +1,6 @@
 <template>
     <div class="transfer-pop" v-show="isShow">
-        <div class="transfer-content" ref="drag" v-drag="'#drag'">
+        <div class="transfer-content" ref="drag" v-drag="'#drag'" v-bkloading="{isLoading: loading}">
             <div class="content-title" id="drag">
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
@@ -102,7 +102,8 @@
                 allowType: ['source', 'module'],
                 isNotModule: true,
                 otherBizNodes: [],
-                isIncrement: true
+                isIncrement: true,
+                loading: true
             }
         },
         computed: {
@@ -149,7 +150,9 @@
             async init () {
                 this.selectedList = []
                 this.otherBizNodes = []
-                await this.getTopoTree()
+                await this.getTopoTree().then(() => {
+                    this.loading = false
+                })
                 if (this.hosts.length === 1) {
                     this.setSelectedList()
                 }
