@@ -45,11 +45,11 @@
                 <label class="screening-group-label">{{$t("Hosts['搜索范围']")}}</label>
                 <div class="screening-group-item screening-group-item-scope">
                     <label class="bk-form-checkbox">
-                        <input type="checkbox" v-model="scope" :true-value="1" :false-value="0">
+                        <input type="checkbox" checked disabled>
                         <span>{{$t("Hosts['未分配主机']")}}</span>
                     </label>
                     <label class="bk-form-checkbox">
-                        <input type="checkbox" v-model="scope" :true-value="0" :false-value="1">
+                        <input type="checkbox" v-model="isShowAssigned">
                         <span>{{$t("Hosts['已分配主机']")}}</span>
                     </label>
                 </div>
@@ -172,9 +172,9 @@
                     'text': '',
                     'bk_host_innerip': true,
                     'bk_host_outerip': true,
-                    'exact': 1
+                    'exact': 0
                 },
-                scope: 1, // 0 业务；1资源池
+                isShowAssigned: false,
                 localQueryColumnData: {},
                 localQueryColumns: [],
                 operators: {
@@ -328,13 +328,25 @@
                     },
                     condition: [{
                         'bk_obj_id': 'biz',
-                        'condition': [{
-                            field: 'default',
-                            operator: this.isShowScope ? this.scope === 1 ? '$eq' : '$ne' : '$ne',
-                            value: 1
-                        }],
+                        'condition': [],
                         fields: []
                     }]
+                }
+                let bizCondition = filter.condition[0]['condition']
+                if (this.isShowScope) {
+                    if (!this.isShowAssigned) {
+                        bizCondition.push({
+                            field: 'default',
+                            operator: '$eq',
+                            value: 1
+                        })
+                    }
+                } else {
+                    bizCondition.push({
+                        field: 'default',
+                        operator: '$ne',
+                        value: 1
+                    })
                 }
                 Object.keys(this.localQueryColumnData).map(columnPropertyId => {
                     let column = this.localQueryColumnData[columnPropertyId]
