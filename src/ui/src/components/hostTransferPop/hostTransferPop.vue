@@ -39,17 +39,22 @@
                     </ul>
                 </div>
             </div>
-            <div class="content-footer clearfix">
-                <i18n path="Common['已选N项']" tag="div" class="selected-count fl">
-                    <span class="color-info" place="N">{{selectedList.length}}</span>
-                </i18n>
-                <div class="button-group fr">
-                    <bk-button type="primary" v-if="isNotModule" v-show="selectedList.length" @click="doTransfer(false)">{{$t('Common[\'确认转移\']')}}</bk-button>
-                    <template v-else v-show="selectedList.length">
-                        <bk-button type="primary" @click="doTransfer(false)">{{$t('Common[\'覆盖\']')}}</bk-button>
-                        <bk-button type="primary" @click="doTransfer(true)">{{$t('Common[\'更新\']')}}</bk-button>
+            <div class="content-footer">
+                <div class="button-group clearfix">
+                    <template v-if="chooseId.length > 1 && !isNotModule">
+                        <label class="transfer-type" for="increment">
+                            <input type="radio" id="increment" v-model="isIncrement" :value="true">
+                            <span class="transfer-description">增量更新，保留主机已有模块</span>
+                        </label>
+                        <label class="transfer-type" for="replacement">
+                            <input type="radio" id="replacement" v-model="isIncrement" :value="false">
+                            <span class="transfer-description">完全替换，不保留现有主机模块</span>
+                        </label>
                     </template>
-                    <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
+                    <div class="fr">
+                        <bk-button type="primary" v-show="selectedList.length" @click="doTransfer">{{$t('Common[\'确认转移\']')}}</bk-button>
+                        <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,7 +100,8 @@
                 selectedList: [],
                 allowType: ['source', 'module'],
                 isNotModule: true,
-                otherBizNodes: []
+                otherBizNodes: [],
+                isIncrement: true
             }
         },
         computed: {
@@ -195,8 +201,15 @@
                 }
             },
             getModulePathLabel (node) {
-                const path = this.getModulePath(node)
-                return `${path['biz']['bk_inst_name']}-${path['set']['bk_inst_name']}`
+                if (node['bk_inst_id'] === 'source') {
+                    return this.$t('Common["主机资源池"]')
+                } else {
+                    const path = this.getModulePath(node)
+                    if ([1, 2].includes(node.default)) {
+                        return `${path['biz']['bk_inst_name']}-${path['module']['bk_inst_name']}`
+                    }
+                    return `${path['biz']['bk_inst_name']}-${path['set']['bk_inst_name']}`
+                }
             },
             getLevel (node) {
                 let level = node.level || 1
@@ -236,12 +249,12 @@
                                 title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
                                 confirmFn: () => {
                                     this.selectedList = [node]
+                                    this.isNotModule = true
                                 }
                             })
                         } else {
                             this.selectedList = [node]
                         }
-                        this.isNotModule = true
                     } else {
                         if (this.selectedList.length && (this.selectedList[0]['default'] || this.selectedList[0]['bk_inst_id'] === 'source')) {
                             this.selectedList = []
@@ -256,7 +269,7 @@
                     }
                 }
             },
-            doTransfer (type) {
+            doTransfer () {
                 if (this.selectedList[0]['bk_obj_id'] === 'source') {
                     this.$axios.post('hosts/modules/resource', {
                         'bk_biz_id': this.bkBizId,
@@ -275,6 +288,12 @@
                         }
                     })
                 } else {
+                    let isIncrement
+                    if (this.chooseId.length === 1) {
+                        isIncrement = false
+                    } else {
+                        isIncrement = this.isNotModule ? false : this.isIncrement
+                    }
                     let modulesDefault = this.selectedList[0]['default']
                     let transferType = {0: '', 1: 'idle', 2: 'fault'}
                     let url = `hosts/modules/${transferType[modulesDefault]}`
@@ -284,7 +303,7 @@
                         'bk_module_id': this.selectedList.map(node => {
                             return node['bk_inst_id']
                         }),
-                        'is_increment': type
+                        'is_increment': isIncrement
                     }).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
@@ -304,7 +323,7 @@
                 this.selectedList.splice(index, 1)
             },
             getTopoInst () {
-                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}`, {level: -1}).then(res => {
+                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}?level=-1`).then(res => {
                     return res
                 })
             },
@@ -479,6 +498,16 @@
     }
     .button-group{
         padding: 0 20px 0 0;
+        .transfer-type{
+            line-height: normal;
+            font-size: 14px;
+            margin: 0 0 0 20px;
+            .transfer-description,
+            input[type="radio"]{
+                display: inline-block;
+                vertical-align: middle;
+            }
+        }
         .bk-button{
             margin: 0 5px;
         }
