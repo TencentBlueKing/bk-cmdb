@@ -152,7 +152,14 @@
             tabChanged (active) {
                 this.slider.tab.active = active
             },
+            hasAssignedHosts () {
+                return !this.selectedList.find(host => host['biz']['bk_biz_id'] !== 1)
+            },
             confirmTransfer (selected, index) {
+                if (this.hasAssignedHosts()) {
+                    this.$alertMsg(this.$t('Common["请勿选择已分配主机"]'))
+                    return
+                }
                 let h = this.$createElement
                 let content = ''
                 if (this.language === 'en') {
@@ -192,6 +199,9 @@
                     content,
                     confirmFn: () => {
                         this.transferHost()
+                    },
+                    cancelFn: () => {
+                        this.hosts.bkBizId = ''
                     }
                 })
             },
