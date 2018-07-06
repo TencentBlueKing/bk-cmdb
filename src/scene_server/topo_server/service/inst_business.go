@@ -27,8 +27,6 @@ import (
 // CreateBusiness create a new business
 func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	fmt.Println("CreateBusiness")
-
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDApp)
