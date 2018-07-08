@@ -9,7 +9,6 @@
  */
 
 import { $Axios, $axios } from '@/api/axios'
-import { promises } from 'fs';
 
 const state = {
 
@@ -21,11 +20,11 @@ const getters = {
 
 const actions = {
     /**
-     * 订阅事件
+     * 更新主机属性
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Object} params  参数
+     * @param {Object} params 参数
      * @return {promises} promises 对象
      */
     updateHost ({ commit, state, dispatch }, { params }) {
