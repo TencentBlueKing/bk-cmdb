@@ -32,15 +32,40 @@ const actions = {
     },
 
     /**
-     * 根据条件查询主机
+     * 获取主机详情
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {String} bkSupplierAccount 开发商账号
+     * @param {Number} bkHostId 主机id
+     * @return {Promise} promise 对象
+     */
+    getHostBaseInfo ({ commit, state, dispatch }, { bkSupplierAccount, bkHostId }) {
+        return $axios.get(`hosts/${bkSupplierAccount}/${bkHostId}`)
+    },
+
+    /**
+     * 根据主机id获取主机快照数据
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Number} bkHostId 主机id
+     * @return {Promise} promise 对象
+     */
+    getHostSnapshot ({ commit, state, dispatch }, { bkHostId }) {
+        return $axios.get(`hosts/snapshot/${bkHostId}`)
+    },
+
+    /**
+     * 根据主机id获取主机快照数据
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/search`, params)
+    searchHostByCondition ({ commit, state, dispatch }, { params }) {
+        return $axios.post(`hosts/snapshot/asstdetail`, params)
     }
 }
 
