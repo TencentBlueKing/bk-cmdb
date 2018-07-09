@@ -36,12 +36,12 @@ type identifierAction struct {
 }
 
 func init() {
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/identifier/{obj_type}/search", Params: nil, Handler: app.SearchIdentifier})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/identifier/{obj_type}/search", Params: nil, Handler: app.SearchIdentifier})
 	// create CC object
 	app.CreateAction()
 }
 
-//search application
+// SearchIdentifier search identifier
 func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
