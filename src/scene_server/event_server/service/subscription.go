@@ -62,7 +62,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	}
 	// save to the storage
 	if _, err := instdata.CreateSubscription(sub); err != nil {
-		blog.Error("create subscription failed, error:%s", err.Error())
+		blog.Errorf("create subscription failed, error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 		return
 	}
@@ -256,8 +256,14 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	for index := range results {
 		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
-		failue, _ := strconv.ParseInt(val["failue"], 10, 64)
-		total, _ := strconv.ParseInt(val["total"], 10, 64)
+		failue, err := strconv.ParseInt(val["failue"], 10, 64)
+		if nil != err {
+			blog.Errorf("get failue value error %s", err.Error())
+		}
+		total, err := strconv.ParseInt(val["total"], 10, 64)
+		if nil != err {
+			blog.Errorf("get total value error %s", err.Error())
+		}
 		results[index].Statistics = &metadata.Statistics{
 			Total:   total,
 			Failure: failue,
