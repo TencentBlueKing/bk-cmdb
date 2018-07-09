@@ -16,17 +16,15 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/common/blog"
-
+	"github.com/emicklei/go-restful"
 	"github.com/tidwall/gjson"
 
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 var app = &identifierAction{}
@@ -58,7 +56,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 		sAppURL := cli.CC.ObjCtrl() + "/object/v1/identifier/" + objtype + "/search"
 		appInfo, err := httpcli.ReqHttp(req, sAppURL, common.HTTPSelectPost, value)
 		result := gjson.Parse(appInfo)
-		if !result.Get("resule").Bool() {
+		if !result.Get("result").Bool() {
 			return http.StatusInternalServerError, nil, defErr.Error(int(result.Get(common.HTTPBKAPIErrorCode).Int()))
 		}
 		resultData := result.Get("data").Value()
