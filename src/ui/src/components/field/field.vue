@@ -48,7 +48,7 @@
             </div>
         </div>
         <div class="bk-form-item bk-form-action content-button">
-            <bk-button class="btn" type="primary" @click="apply">
+            <bk-button class="btn" type="primary" :loading="$loading('userCustom')" @click="apply">
                 {{$t('Inst[\'应用\']')}}
             </bk-button>
             <bk-button class="vice-btn btn reinstate cancel" type="default" @click="cancel">
@@ -174,7 +174,6 @@
             },
             apply () {
                 this.$emit('apply', this.shownList.slice(0))
-                this.cancel()
             },
             cancel () {
                 this.$emit('cancel')
