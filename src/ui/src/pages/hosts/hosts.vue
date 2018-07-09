@@ -47,7 +47,7 @@
                     </ul>
                 </bk-dropdown-menu>
                 <slot name="btnGroup">
-                    <div class="btn-group bk-button-group clearfix">
+                    <div class="bk-group btn-group bk-button-group clearfix">
                         <button class="bk-button bk-default"
                             v-tooltip="$t('BusinessTopology[\'修改\']')"
                             :disabled="!table.chooseId.length" 
@@ -63,17 +63,18 @@
                         <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
                             <input type="hidden" name="bk_host_id" :value="table.chooseId">
                             <input type="hidden" name="bk_biz_id" value="-1">
-                            <button class="bk-button"
+                            <bk-button type="default" class="bk-button"
+                                :btnType="'submit'"
                                 :disabled="!table.chooseId.length"
                                 v-tooltip="$t('HostResourcePool[\'导出选中\']')"
                                 @click.prevent="exportChoose">
                                 <i class="icon-cc-derivation"></i>
-                            </button>
+                            </bk-button>
                         </form>
-                        <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
-                        <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                        <bk-button type="default" class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</bk-button>
+                        <bk-button type="default" class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
-                        </button>
+                        </bk-button>
                         <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
