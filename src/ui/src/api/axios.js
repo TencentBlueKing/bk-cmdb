@@ -11,6 +11,7 @@
 import Vue from 'vue'
 import Axios from 'axios'
 import bkMessage from '@/magicbox/bk-magic/components/message'
+import Transform from '@/utils/axios-transform'
 
 const alertMsg = (message, theme = 'error', delay = 3000) => {
     bkMessage({
@@ -20,6 +21,56 @@ const alertMsg = (message, theme = 'error', delay = 3000) => {
     })
 }
 
+const catchErrorMsg = (response) => {
+    let msg = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+    if (response.data && response.data['bk_error_msg']) {
+        msg = response.data['bk_error_msg']
+    } else if (response.statusText) {
+        msg = response.statusText
+    }
+    alertMsg(msg)
+}
+const addQueue = (config) => {
+    const {state, commit} = window['CMDB_APP'].$store
+    const queue = state.common.axiosQueue
+    if (config.hasOwnProperty('id') && !queue.some(id => config.id === id)) {
+        commit('updateAxiosQueue', [...queue, config.id])
+    }
+}
+const removeQueue = (config) => {
+    const {state, commit} = window['CMDB_APP'].$store
+    if (config.hasOwnProperty('id')) {
+        let queue = [...state.common.axiosQueue]
+        queue.splice(queue.indexOf(config.id), 1)
+        commit('updateAxiosQueue', queue)
+    }
+}
+const transformRequest = (config) => {
+    if (typeof config.transform === 'object' && config.transform.hasOwnProperty('request')) {
+        let request = config.transform.request
+        request = Array.isArray(request) ? request : [request]
+        request.forEach(fnName => {
+            if (typeof fnName === 'string' && typeof Transform[fnName] === 'function') {
+                Transform[fnName](config)
+            }
+        })
+    }
+}
+const transformResponse = (config, data) => {
+    let response = []
+    if (typeof config.transform === 'string') {
+        response.push(config.transform)
+    } else if (config.transform === 'object' && config.transform.hasOwnProperty('response')) {
+        const originTransformResponse = config.transform.response
+        response = Array.isArray(originTransformResponse) ? originTransformResponse : [originTransformResponse]
+    }
+    response.forEach(fnName => {
+        if (typeof fnName === 'string' && typeof Transform[fnName] === 'function') {
+            data = Transform[fnName](data, config)
+        }
+    })
+    return data
+}
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
@@ -30,28 +81,35 @@ let axios = Axios.create({
     }
 })
 
-const catchErrorMsg = (response) => {
-    let msg = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
-    if (response.data && response.data['bk_error_msg']) {
-        msg = response.data['bk_error_msg']
-    } else if (response.statusText) {
-        msg = response.statusText
+const updateLoadingStatus = (config) => {
+    if (config.hasOwnProperty('id')) {
+        let queue = [...window.CMDB_APP.$store.state.common.axiosQueue]
+        queue.splice(queue.indexOf(config.id), 1)
+        window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
     }
-    $alertMsg(msg)
 }
 
-Vue.prototype.$axiosResponseInterceptor = axios.interceptors.response.use(
+axios.interceptors.request.use(config => {
+    addQueue(config)
+    transformRequest(config)
+    return config
+})
+axios.interceptors.response.use(
     response => {
-        return response.data
+        removeQueue(response.config)
+        return transformResponse(response.config, response.data)
     },
     error => {
-        if (error.response) {
+        const config = error.config
+        updateLoadingStatus(config)
+        const globalError = config.hasOwnProperty('globalError') ? !!config.globalError : true
+        if (globalError && error.response) {
             switch (error.response.status) {
                 case 401:
                     window.location.href = window.loginUrl
                     break
                 case 403:
-                    $alertMsg(error.response.statusText)
+                    alertMsg(error.response.statusText)
                     break
                 case 500:
                     // 异常

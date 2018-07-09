@@ -5,7 +5,7 @@
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
             </div>
-            <div class="content-section clearfix">
+            <div class="content-section clearfix" v-bkloading="{isLoading: $loading('transfer')}">
                 <div class="section-left fl">
                     <div class="section-biz">
                         <label class="biz-label">{{$t('Common[\'业务\']')}}</label>
@@ -53,7 +53,7 @@
                         </label>
                     </template>
                     <div class="fr">
-                        <bk-button type="primary" v-show="selectedList.length" @click="doTransfer">{{$t('Common[\'确认转移\']')}}</bk-button>
+                        <bk-button type="primary" v-show="selectedList.length" :loading="$loading('transfer')" @click="doTransfer">{{$t('Common[\'确认转移\']')}}</bk-button>
                         <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
                     </div>
                 </div>
@@ -278,7 +278,7 @@
                     this.$axios.post('hosts/modules/resource', {
                         'bk_biz_id': this.bkBizId,
                         'bk_host_id': this.chooseId
-                    }).then(res => {
+                    }, {id: 'transfer'}).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
                             this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
@@ -308,7 +308,7 @@
                             return node['bk_inst_id']
                         }),
                         'is_increment': isIncrement
-                    }).then(res => {
+                    }, {id: 'transfer'}).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
                             this.$alertMsg(this.$t('Common[\'转移成功\']'), 'success')
