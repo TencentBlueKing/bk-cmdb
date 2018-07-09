@@ -17,9 +17,9 @@
                     <div class="bk-group bk-button-group mr10">
                         <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
                             <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
-                            <button v-tooltip="$t('ModelManagement[\'导出\']')" title="导出" class="bk-button vice-btn first" :disabled="!table.chooseId.length">
+                            <bk-button btnType="submit" v-tooltip="$t('ModelManagement[\'导出\']')"class="bk-button vice-btn first" :disabled="!table.chooseId.length">
                                 <i class="icon-cc-derivation"></i>
-                            </button>
+                            </bk-button>
                         </form>
                         <bk-button v-tooltip="$t('ModelManagement[\'导入\']')" type="default" class="bk-button vice-btn" @click="importSlider.isShow = true" :disabled="unauthorized.update">
                             <i class="icon-cc-import"></i>
@@ -29,23 +29,23 @@
                             @click="multipleUpdate">
                             <i class="icon-cc-edit"></i>
                         </bk-button>
-                        <button v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
+                        <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
                             <i class="icon-cc-del"></i>
-                        </button>
+                        </bk-button>
                     </div>
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn mr10" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
             <div class="fr bk-group bk-button-group">
-                <button v-if="objId !== 'biz'" class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
+                <bk-button v-if="objId !== 'biz'" class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
                     <i class="icon-cc-history"></i>
-                </button>
-                <button v-else class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
+                </bk-button>
+                <bk-button v-else class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
                     <i class="icon-cc-history2"></i>
-                </button>
-                <button class="bk-button " @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                </bk-button>
+                <bk-button class="bk-button " @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
-                </button>
+                </bk-button>
             </div>
             <div class="quick-search fr">
                 <div class="fl left-select">
