@@ -16,6 +16,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/redisclient"
 
 	"github.com/emicklei/go-restful"
 
@@ -28,8 +33,6 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -79,37 +82,53 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	eventSvr.Core = engine
 	eventSvr.Service = service
+	for {
+		if eventSvr.Config == nil {
+			time.Sleep(time.Second * 2)
+			blog.V(3).Info("config not found, retry 2s later")
+		}
+		db, err := mgoclient.NewFromConfig(eventSvr.Config.MongoDB)
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		}
+		err = db.Open()
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		}
+		eventSvr.Service.SetDB(db)
+
+		cache, err := redisclient.NewFromConfig(eventSvr.Config.Redis)
+		if err != nil {
+			return fmt.Errorf("connect redis server failed %s", err.Error())
+		}
+		eventSvr.Service.SetCache(cache)
+	}
 	select {}
 	return nil
 }
 
 type EventServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
+	Config  *options.Config
 	Service *svc.Service
 }
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
-	h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
-	h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
-	h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-	h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
-	h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
-	h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
+	if len(current.ConfigMap) > 0 {
+		h.Config = new(options.Config)
+		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
+		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
+		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
+		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
+		h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
+		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
+		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
 
-	h.Config.Redis.Address = current.ConfigMap["redis.host"]
-	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-	h.Config.Redis.Database = current.ConfigMap["redis.database"]
-	h.Config.Redis.Port = current.ConfigMap["redis.port"]
-
-	db, err := mgoclient.NewFromConfig(h.Config.MongoDB)
-	err = db.Open()
-	h.Service.SetDB(db)
-
-	cache, err := redisclient.NewFromConfig(h.Config.Redis)
-	h.Service.SetCache(cache)
-
+		h.Config.Redis.Address = current.ConfigMap["redis.host"]
+		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
+		h.Config.Redis.Database = current.ConfigMap["redis.database"]
+		h.Config.Redis.Port = current.ConfigMap["redis.port"]
+	}
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
