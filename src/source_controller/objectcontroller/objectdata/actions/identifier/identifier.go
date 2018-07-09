@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"configcenter/src/storage"
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/base"
@@ -27,8 +27,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/instdata"
-
-	"github.com/emicklei/go-restful"
+	"configcenter/src/storage"
 )
 
 var obj = &identifierAction{}
@@ -58,9 +57,9 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			blog.Error("SearchIdentifier error:%s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
+		blog.Infof("SearchIdentifier %v", param)
 
 		var (
-			insts     = []*metadata.HostIdentifier{} //result
 			setIDs    = []int{}
 			moduleIDs = []int{}
 			bizIDs    = []int{}
@@ -90,21 +89,26 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 		}
 
 		// fetch hosts
-		hosts := []map[string]interface{}{}
-		instdata.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
+		hosts := []*metadata.HostIdentifier{}
+		err = instdata.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
+		if err != nil {
+			blog.Error("SearchIdentifier error:%s", err.Error())
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
+		}
 		for _, host := range hosts {
-			inst := NewHostIdentifier(host)
 			relations := []metadata.ModuleHostConfig{}
 			condiction := map[string]interface{}{
-				common.BKInnerObjIDHost: host[common.BKHostIDField],
+				common.BKHostIDField: host.HostID,
 			}
-			err := cli.CC.InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
+			blog.Infof("SearchIdentifier relations condition %v ", condiction)
+			err = cli.CC.InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			if err != nil {
 				blog.Error("SearchIdentifier error:%s", err.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 			}
+			host.HostIdentModule = map[string]*metadata.HostIdentModule{}
 			for _, rela := range relations {
-				inst.HostIdentModule[fmt.Sprint(rela.ModuleID)] = &metadata.HostIdentModule{
+				host.HostIdentModule[fmt.Sprint(rela.ModuleID)] = &metadata.HostIdentModule{
 					SetID:    rela.SetID,
 					ModuleID: rela.ModuleID,
 					BizID:    rela.ApplicationID,
@@ -113,10 +117,10 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 				moduleIDs = append(moduleIDs, rela.ModuleID)
 				bizIDs = append(bizIDs, rela.ApplicationID)
 			}
-			cloudIDs = append(cloudIDs, inst.CloudID)
-			insts = append(insts, inst)
+			cloudIDs = append(cloudIDs, host.CloudID)
 		}
 
+		blog.Infof("sets: %v, modules: %v, bizs: %v, clouds: %v", setIDs, moduleIDs, bizIDs, cloudIDs)
 		// fetch cache
 		if len(setIDs) > 0 {
 			tmps := []metadata.SetInst{}
@@ -161,8 +165,10 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			}
 		}
 
+		blog.Infof("sets: %v, modules: %v, bizs: %v, clouds: %v", sets, modules, bizs, clouds)
+
 		// fill hostidentifier
-		for _, inst := range insts {
+		for _, inst := range hosts {
 			for _, mod := range inst.HostIdentModule {
 				if _, ok := bizs[mod.BizID]; ok {
 					biz := bizs[mod.BizID]
@@ -191,8 +197,8 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 
 		// returns
 		info := make(map[string]interface{})
-		info["count"] = len(insts)
-		info["info"] = insts
+		info["count"] = len(hosts)
+		info["info"] = hosts
 		return http.StatusOK, info, nil
 	}, resp)
 }
