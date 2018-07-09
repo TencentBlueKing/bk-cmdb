@@ -87,6 +87,7 @@
                     <v-table ref="table"
                         :header="tableHeader"
                         :list="tableList"
+                        :pagination.sync="pagination"
                         :pagination="pagination"
                         :loading="$loading('auditSearch')"
                         :defaultSort="defaultSort"

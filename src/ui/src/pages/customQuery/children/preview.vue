@@ -16,7 +16,7 @@
                 :sortable="false"
                 :header="table.header"
                 :list="table.list"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="table.isLoading"
                 :maxHeight="325"
                 :width="515"
