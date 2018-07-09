@@ -33,7 +33,7 @@
                         <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                     </bk-button>
                     <form :action="exportUrl" method="POST" class="form">
-                        <bk-button type="default" :title="$t('ModelManagement[\'导出\']')" class="btn">
+                        <bk-button type="default" btnType="submit" :title="$t('ModelManagement[\'导出\']')" class="btn">
                             {{$t('ModelManagement["导出"]')}}
                         </bk-button>
                     </form>

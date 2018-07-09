@@ -248,6 +248,14 @@ func (ccWeb *CCWebServer) Start() error {
 			session.Set("mainLineObjID", string(mainLineObjIDStr))
 			session.Save()
 
+			//set cookie
+			appIDArr := make([]string, 0)
+			for key, _ := range userPriviApp {
+				appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+			}
+			appIDStr := strings.Join(appIDArr, "-")
+			c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
+
 			c.HTML(200, "index.html", gin.H{
 				"site":        site,
 				"version":     version,
