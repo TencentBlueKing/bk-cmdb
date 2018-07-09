@@ -21,6 +21,7 @@
                     :queryColumnData="queryColumnData"
                     :attribute="attribute"
                     :isShowBiz="isShowBiz"
+                    :isShowScope="isShowScope"
                     @bkBizSelected="bkBizSelected"
                     @refresh="refresh"
                     @filterChange="filterChange">
@@ -111,6 +112,10 @@
             isShowHistory: {
                 type: Boolean,
                 default: true
+            },
+            isShowScope: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
