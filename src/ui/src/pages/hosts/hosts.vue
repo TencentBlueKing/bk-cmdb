@@ -46,27 +46,27 @@
                     </ul>
                 </bk-dropdown-menu>
                 <slot name="btnGroup">
-                    <div class="btn-group clearfix">
+                    <div class="btn-group bk-button-group clearfix">
                         <button class="bk-button bk-default"
+                            v-tooltip="$t('BusinessTopology[\'修改\']')"
                             :disabled="!table.chooseId.length" 
                             @click="multipleUpdate">
                             <i class="icon-cc-edit"></i>
-                            <span>{{$t("BusinessTopology['修改']")}}</span>
                         </button>
                         <button class="bk-button"
                             :disabled="!table.chooseId.length"
+                            v-tooltip="$t('BusinessTopology[\'转移\']')"
                             @click="transferHost">
                             <i class="icon-cc-shift"></i>
-                            <span>{{$t("BusinessTopology['转移']")}}</span>
                         </button>
                         <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
                             <input type="hidden" name="bk_host_id" :value="table.chooseId">
                             <input type="hidden" name="bk_biz_id" value="-1">
                             <button class="bk-button"
                                 :disabled="!table.chooseId.length"
+                                v-tooltip="$t('HostResourcePool[\'导出选中\']')"
                                 @click.prevent="exportChoose">
                                 <i class="icon-cc-derivation"></i>
-                                <span>{{$t("HostResourcePool['导出选中']")}}</span>
                             </button>
                         </form>
                         <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
@@ -1018,19 +1018,13 @@
     }
     .btn-group{
         display: inline-block;
-        width: calc(100% - 110px);
+        width: calc(100% - 111px);
         vertical-align: middle;
         font-size: 0;
         .bk-button{
             font-size: 14px;
-            margin-right: 10px;
             &:disabled{
                 cursor: not-allowed !important;
-            }
-            &.button-setting{
-                width: 36px;
-                padding: 0;
-                min-width: auto;
             }
             &.button-search{
                 width: 178px;
