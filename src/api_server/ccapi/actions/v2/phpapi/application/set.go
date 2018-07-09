@@ -180,7 +180,7 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 	appID := formData["ApplicationID"][0]
 	reqParam[common.BKInstParentStr], err = strconv.Atoi(appID)
 	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
+		blog.Error("AddSet convert appid to int error:%v", err)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
@@ -237,13 +237,24 @@ func (cli *setAction) AddSet(req *restful.Request, resp *restful.Response) {
 		}
 	}
 	delete(reqParam, "ChnName")
+
+	topoLevel, err := logics.CheckAppTopoIsThreeLevel(req, cli.CC)
+	if err != nil {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel error:%v", err)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		return
+	}
+	if false == topoLevel {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel  mainline topology level not three")
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "business topology level is more than three, please use the v3 api instead").Error(), resp)
+		return
+	}
 	reqParam, err = logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, set.CC.TopoAPI(), req.Request.Header)
 	blog.Debug("add set reqParam:%v", reqParam)
 
 	if err != nil {
 		blog.Error("AutoInputV3Field error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
-
 		return
 	}
 	reqParamJson, err := json.Marshal(reqParam)
