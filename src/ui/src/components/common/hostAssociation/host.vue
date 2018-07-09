@@ -33,6 +33,7 @@
                                     :checked.sync="table.chooseId"
                                     :loading="table.isLoading"
                                     :multipleCheck="multiple"
+                                    :emptyHeight="160"
                                     :maxHeight="202"
                                     @handlePageChange="setCurrentPage"
                                     @handleSizeChange="setCurrentSize"
@@ -154,6 +155,7 @@
             },
             isSelectBoxShow (isSelectBoxShow) {
                 if (isSelectBoxShow) {
+                    this.resetFilterParams()
                     this.initChoosed()
                 } else {
                     this.table.chooseId = []

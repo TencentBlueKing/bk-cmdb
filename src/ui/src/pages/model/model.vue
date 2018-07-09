@@ -638,7 +638,7 @@
                 })
             },
             deletes () {
-                this.$axios.delete(`object/classification/${this.curTempClassify['id']}`).then(res => {
+                this.$axios.delete(`object/classification/${this.curClassify['id']}`).then(res => {
                     if (res.result) {
                         this.getClassifyList()
                     } else {
@@ -716,7 +716,7 @@
                         if (!index) {
                             index = 0
                         }
-                        // this.curClassify = this.classifyList[index]
+                        this.curClassify = this.classifyList[index]
                         this.curTempClassify = {
                             id: this.classifyList[index]['id'],
                             bk_classification_type: this.classifyList[index]['bk_classification_type'],
