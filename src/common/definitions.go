@@ -652,6 +652,12 @@ const (
 	BKCacheKeyV3Prefix = "cc:v3:"
 )
 
+// event cache keys
+const (
+	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
+)
+
 const (
 
 	// LocalHostName the local host name definition
