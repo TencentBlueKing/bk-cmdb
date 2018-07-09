@@ -331,7 +331,8 @@
                 this.$axios({
                     url: url,
                     method: method,
-                    data: formData
+                    data: formData,
+                    id: 'editAttr'
                 }).then(res => {
                     if (res.result) {
                         this.updateTopoTree(this.view.attribute.type, res.data, formData)
@@ -397,7 +398,7 @@
                         } else {
                             url = `inst/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`
                         }
-                        this.$axios.delete(url).then(res => {
+                        this.$axios.delete(url, {id: 'deleteAttr'}).then(res => {
                             if (res.result) {
                                 this.view.tab.active = 'host'
                                 this.tree.activeParentNode.child.splice(this.tree.activeNodeOptions.index, 1)

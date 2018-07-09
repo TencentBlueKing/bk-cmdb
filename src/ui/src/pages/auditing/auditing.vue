@@ -80,7 +80,7 @@
                         </div>
                     </div>
                     <div class="group-content group-content-btn fr">
-                        <bk-button type="primary" class="" @click="setCurrentPage(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('auditSearch')" class="" @click="setCurrentPage(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
                     </div>
                 </div>
                 <div class="table-content">
@@ -88,7 +88,7 @@
                         :header="tableHeader"
                         :list="tableList"
                         :pagination="pagination"
-                        :loading="isLoading"
+                        :loading="$loading('auditSearch')"
                         :defaultSort="defaultSort"
                         :wrapperMinusHeight="150"
                         @handlePageChange="setCurrentPage"
@@ -121,7 +121,6 @@
         },
         data () {
             return {
-                isLoading: false,
                 isShowClearIcon: {
                     'classify': false,
                     'biz': false
@@ -329,17 +328,13 @@
             ...mapActions(['getBkBizList']),
             /* 获取表格数据 */
             getTableList () {
-                this.isLoading = true
-                this.$axios.post('audit/search/', this.searchParams).then((res) => {
+                this.$axios.post('audit/search/', this.searchParams, {id: 'auditSearch'}).then((res) => {
                     if (res.result) {
                         this.initTableList(res.data.info)
                         this.pagination.count = res.data.count
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
-                    this.isLoading = false
-                }).catch(() => {
-                    this.isLoading = false
                 })
             },
             /* 根据返回的结果设置一些表格显示内容 */

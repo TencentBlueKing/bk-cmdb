@@ -38,7 +38,7 @@
             </div>
             <div class="role-form-btn">
                 <div class="fr">
-                    <bk-button type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
+                    <bk-button :loading="$loading('saveRole')" type="primary" class="form-btn" :disabled="!data['group_name'] || !data['user_list']" @click.prevent="submitRoleForm">{{$t('Common["确定"]')}}</bk-button>
                     <bk-button type="default" class="form-btn vice-btn" @click.prevent="closeRoleForm">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
@@ -102,7 +102,7 @@
                 }
             },
             createRole () {
-                this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params).then((res) => {
+                this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'}).then((res) => {
                     if (res.result) {
                         this.closeRoleForm()
                         this.$alertMsg('新建角色成功', 'success')
@@ -114,7 +114,7 @@
                 })
             },
             updateRole () {
-                this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params).then(res => {
+                this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params, {id: 'saveRole'}).then(res => {
                     if (res.result) {
                         this.closeRoleForm()
                         this.$alertMsg('更新角色成功', 'success')
