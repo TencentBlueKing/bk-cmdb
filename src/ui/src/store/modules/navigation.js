@@ -97,7 +97,7 @@ const getters = {
                         if (state.interceptStaticModel[classificationId].includes(id)) {
                             return sysConfig[classificationId].includes(id)
                         }
-                        return id !== 'permission' // 权限管理仅管理员拥有切后台接口不返回其配置
+                        return !['permission', 'model'].includes(id) // 权限管理、模型管理仅管理员拥有且后台接口不返回其配置
                     })
                 }
             }
