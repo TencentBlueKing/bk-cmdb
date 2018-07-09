@@ -90,6 +90,8 @@ func getIndex() map[string][]storage.Index {
 	index["cc_OperationLog"] = []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"bk_biz_id", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"ext_key", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	}
 	index["cc_PlatBase"] = []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
