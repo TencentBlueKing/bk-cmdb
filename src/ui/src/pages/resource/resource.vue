@@ -31,19 +31,21 @@
                         :label="bkBiz['bk_biz_name']">
                     </bk-select-option>
                 </bk-select>
-                <form ref="exportForm" :action="exportUrl" method="POST" class="fl mr10">
-                    <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
-                    <input type="hidden" name="bk_biz_id" value="-1">
-                    <button class="bk-button"
-                        :disabled="!hasSelectedHost"
-                        @click.prevent="exportChoose">
-                        <i class="icon-cc-derivation"></i>
-                        <span>{{$t('HostResourcePool[\'导出选中\']')}}</span>
+                <div class="fl bk-group bk-button-group">
+                    <form ref="exportForm" :action="exportUrl" method="POST" class="fl">
+                        <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
+                        <input type="hidden" name="bk_biz_id" value="-1">
+                        <button class="bk-button"
+                            v-tooltip="$t('HostResourcePool[\'导出选中\']')"
+                            :disabled="!hasSelectedHost"
+                            @click.prevent="exportChoose">
+                            <i class="icon-cc-derivation"></i>
+                        </button>
+                    </form>
+                    <button class="bk-button delete-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
+                        <i class="icon-cc-del"></i>
                     </button>
-                </form>
-                <button class="bk-button icon-btn del-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
-                    <i class="icon-cc-del"></i>
-                </button>
+                </div>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
                     <button class="bk-button icon-btn icon-history fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">

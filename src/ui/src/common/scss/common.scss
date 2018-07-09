@@ -252,11 +252,15 @@ textarea {
     }
 }
 
-.bk-button-group{
+.bk-button-group,
+.bk-group.bk-button-group{
     .bk-button{
         position: relative;
         z-index: 2;
         padding: 0 17px;
+        &.bk-default{
+            background: #fff;
+        }
         &.first{
             border-radius: 2px 0 0 2px;
         }
@@ -276,7 +280,7 @@ textarea {
                 }
             }
         }
-        &.icon-btn{
+        &.delete-button{
             color: #737987;
             &:not(:disabled):hover{
                 border-color: #ef4c4c;

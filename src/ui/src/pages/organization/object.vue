@@ -14,7 +14,7 @@
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
-                    <div class="bk-button-group mr10">
+                    <div class="bk-group bk-button-group mr10">
                         <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
                             <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
                             <button v-tooltip="$t('ModelManagement[\'导出\']')" title="导出" class="bk-button vice-btn first" :disabled="!table.chooseId.length">
@@ -29,14 +29,14 @@
                             @click="multipleUpdate">
                             <i class="icon-cc-edit"></i>
                         </bk-button>
-                        <button v-if="objId !== 'biz'" class="bk-button icon-btn del-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
+                        <button v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
                             <i class="icon-cc-del"></i>
                         </button>
                     </div>
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn mr10" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
-            <div class="fr bk-button-group">
+            <div class="fr bk-group bk-button-group">
                 <button v-if="objId !== 'biz'" class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
                     <i class="icon-cc-history"></i>
                 </button>
@@ -797,14 +797,6 @@
         background: $primaryHoverColor;
         &:hover{
             background: #4d597d;
-        }
-    }
-    .icon-btn{  //单纯图标的按钮
-        background: #ffffff;
-        color: $primaryHoverColor;
-        cursor: pointer;
-        &:hover{
-            color: $defaultColor;
         }
     }
     .no-border-btn{    //无边框按钮
