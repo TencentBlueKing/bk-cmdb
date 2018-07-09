@@ -260,37 +260,43 @@ textarea {
         padding: 0 17px;
         &.bk-default{
             background: #fff;
-        }
-        &.first{
-            border-radius: 2px 0 0 2px;
-        }
-        &:hover{
-            color: #0082ff;
-            border-color: #0082ff;
-            z-index: 3;
-            .icon-cc-edit{
-                color: #0082ff;
+            &.first{
+                border-radius: 2px 0 0 2px;
             }
-        }
-        &:disabled{
-            z-index: 1;
+            &.center{
+                border-radius: 0;
+            }
+            &.last{
+                border-radius: 0 2px 2px 0;
+            }
             &:hover{
+                color: #0082ff;
+                border-color: #0082ff;
+                z-index: 3;
                 .icon-cc-edit{
-                    color: #ccc;
-                }
-            }
-        }
-        &.delete-button{
-            color: #737987;
-            &:not(:disabled):hover{
-                border-color: #ef4c4c;
-                .icon-cc-del{
-                    color: #ef4c4c;
+                    color: #0082ff;
                 }
             }
             &:disabled{
-                .icon-cc-del{
-                    color: #ccc;
+                z-index: 1;
+                &:hover{
+                    .icon-cc-edit{
+                        color: #ccc;
+                    }
+                }
+            }
+            &.delete-button{
+                color: #737987;
+                &:not(:disabled):hover{
+                    border-color: #ef4c4c;
+                    .icon-cc-del{
+                        color: #ef4c4c;
+                    }
+                }
+                &:disabled{
+                    .icon-cc-del{
+                        color: #ccc;
+                    }
                 }
             }
         }

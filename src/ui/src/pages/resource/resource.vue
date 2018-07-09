@@ -35,16 +35,16 @@
                     <form ref="exportForm" :action="exportUrl" method="POST" class="fl">
                         <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
                         <input type="hidden" name="bk_biz_id" value="-1">
-                        <button class="bk-button"
+                        <bk-button type="default" class="first"
                             v-tooltip="$t('HostResourcePool[\'导出选中\']')"
                             :disabled="!hasSelectedHost"
                             @click.prevent="exportChoose">
                             <i class="icon-cc-derivation"></i>
-                        </button>
+                        </bk-button>
                     </form>
-                    <button class="bk-button delete-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
+                    <bk-button type="default" class="delete-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
                         <i class="icon-cc-del"></i>
-                    </button>
+                    </bk-button>
                 </div>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
