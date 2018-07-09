@@ -440,7 +440,11 @@
         "清空": "Refresh",
         "主机名称": "Hosts Name",
         "操作系统类型": "Operating System Type",
-        "关联关系": "Association Relationship"
+        "关联关系": "Association Relationship",
+        "搜索范围": "Search Scope",
+        "已分配主机": "Assigned Hosts",
+        "未分配主机": "Unassigned Hosts",
+        "请勿选择已分配主机": "Please do not select assigned host"
     },
     "Inst": {
         "立即创建": "Add",
