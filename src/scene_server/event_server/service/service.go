@@ -13,10 +13,11 @@
 package service
 
 import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/storage"
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common/backbone"
+	"configcenter/src/storage"
 )
 
 type Service struct {
