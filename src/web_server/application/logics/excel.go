@@ -13,11 +13,9 @@
 package logics
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 
 	//simplejson "github.com/bitly/go-simplejson"
@@ -30,12 +28,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-var (
-	headerRow = common.HostAddMethodExcelIndexOffset
-)
-
 // BuildExcelFromData product excel from data
 func BuildExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
+	addSystemField(fields, common.BKINnerObjIDObject, defLang)
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
 	} else {
@@ -66,11 +61,11 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 // BuildHostExcelFromData product excel from data
 func BuildHostExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
 	extFieldsTopoID := "cc_ext_field_topo"
-
 	extFields := map[string]string{
 		extFieldsTopoID: defLang.Language("web_ext_field_topo"),
 	}
 	fields = addExtFields(fields, extFields)
+	addSystemField(fields, common.BKInnerObjIDHost, defLang)
 
 	productExcelHealer(fields, filter, sheet, defLang)
 	//indexID := getFieldsIDIndexMap(fields)
@@ -130,86 +125,6 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 	return nil
 }
 
-// ProductExcelHealer Excel文件头部，
-func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
-
-	type excelHeader struct {
-		first  string
-		second string
-		third  string
-	}
-
-	styleCell := getHeaderCellGeneralStyle()
-
-	for _, field := range fields {
-		index := field.ExcelColIndex
-		sheet.Col(index).Width = 18
-		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip {
-			//不需要用户输入的类型continue
-			continue
-		}
-		isRequire := ""
-
-		if field.IsRequire {
-			isRequire = defLang.Language("web_excel_header_required") //"(必填)"
-		}
-		if util.Contains(filter, field.ID) {
-			continue
-		}
-		cellName := sheet.Cell(0, index)
-		cellName.Value = field.Name + isRequire
-		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
-
-		asstPrimaryKey := ""
-		if 0 < len(field.AsstObjPrimaryProperty) {
-			var primaryKeys []string
-			for _, f := range field.AsstObjPrimaryProperty {
-				primaryKeys = append(primaryKeys, f.Name)
-			}
-			asstPrimaryKey = fmt.Sprintf("(%s)", strings.Join(primaryKeys, common.ExcelAsstPrimaryKeySplitChar))
-		}
-
-		cellType := sheet.Cell(1, index)
-		cellType.Value = fieldTypeName + asstPrimaryKey
-		cellType.SetStyle(styleCell)
-
-		cellEnName := sheet.Cell(2, index)
-		cellEnName.Value = field.ID
-		cellEnName.SetStyle(styleCell)
-
-		switch field.PropertyType {
-		case common.FieldTypeInt:
-			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-		case common.FieldTypeEnum:
-			option := field.Option
-			optionArr, ok := option.([]interface{})
-
-			if ok {
-				enumVals := getEnumNames(optionArr)
-
-				if len(enumVals) < common.ExcelDataValidationListLen {
-					dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-					dd.SetDropList(enumVals)
-					sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
-
-				}
-			}
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-
-		case common.FieldTypeBool:
-			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-			dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse})
-			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-		default:
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-		}
-
-	}
-
-}
-
 func AddDownExcelHttpHeader(c *gin.Context, name string) {
 	if strings.HasSuffix(name, ".xls") {
 		c.Header("Content-Type", "application/vnd.ms-excel")
@@ -229,7 +144,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	var err error
 	nameIndexMap, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
 	if nil != err {
-
 		return nil, err
 	}
 	hosts := make(map[int]map[string]interface{})
@@ -263,345 +177,4 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 //GetFilterFields 不需要展示字段
 func GetFilterFields(objID string) []string {
 	return getFilterFields(objID)
-}
-
-//getFilterFields 不需要展示字段
-func getFilterFields(objID string) []string {
-	switch objID {
-	case common.BKInnerObjIDHost:
-		return []string{"create_time", "import_from", "bk_cloud_id", "bk_agent_status", "bk_agent_version"}
-	default:
-		return []string{"create_time"}
-	}
-	return []string{"create_time"}
-}
-
-// checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
-
-	//rowLen := len(sheet.Rows[headerRow-1].Cells)
-	var errCells []string
-	ret := make(map[int]string)
-	if headerRow > len(sheet.Rows) {
-		return ret, errors.New(defLang.Language("web_excel_not_data"))
-	}
-	for index, name := range sheet.Rows[headerRow-1].Cells {
-		strName := name.Value
-
-		field, ok := fields[strName]
-
-		if true == ok {
-			field.ExcelColIndex = index
-			fields[strName] = field
-		}
-		ret[index] = strName
-	}
-	if 0 != len(errCells) {
-		//web_import_field_not_found
-		return ret, errors.New(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
-	}
-	return ret, nil
-
-}
-
-// setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
-// mapHeaderIndex:Correspondence between head and field
-// fields each field description,  field type, isrequire, validate role
-func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) {
-	for id, val := range rowMap {
-		property, ok := fields[id]
-		if false == ok {
-			continue
-		}
-		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
-		//cell.NumFmt = "@"
-
-		switch property.PropertyType {
-		case common.FieldTypeMultiAsst:
-			arrVal, ok := val.([]interface{})
-			if true == ok {
-				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
-				cell.SetString(strings.Join(vals, "\n"))
-				style := cell.GetStyle()
-				style.Alignment.WrapText = true
-			}
-
-		case common.FieldTypeSingleAsst:
-			arrVal, ok := val.([]interface{})
-			if true == ok {
-				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
-				cell.SetString(strings.Join(vals, "\n"))
-				style := cell.GetStyle()
-				style.Alignment.WrapText = true
-			}
-
-		case common.FieldTypeEnum:
-			var cellVal string
-			arrVal, ok := property.Option.([]interface{})
-			strEnumID, enumIDOk := val.(string)
-			if true == ok || true == enumIDOk {
-				cellVal = getEnumNameByID(strEnumID, arrVal)
-				cell.SetString(cellVal)
-			}
-
-		case common.FieldTypeBool:
-			bl, ok := val.(bool)
-			if ok {
-				if bl {
-					cell.SetValue(fieldTypeBoolTrue)
-				} else {
-					cell.SetValue(fieldTypeBoolFalse)
-				}
-
-			}
-
-		case common.FieldTypeInt:
-			intVal, err := util.GetInt64ByInterface(val)
-			if nil == err {
-				cell.SetInt64(intVal)
-			}
-
-		default:
-			switch val.(type) {
-			case string:
-				strVal := val.(string)
-				if "" != strVal {
-					cell.SetString(val.(string))
-				}
-
-			default:
-				cell.SetValue(val)
-			}
-		}
-	}
-
-}
-
-func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (map[string]interface{}, error) {
-	host := make(map[string]interface{})
-	errMsg := ""
-	for celIDnex, cell := range row.Cells {
-		fieldName, ok := nameIndexMap[celIDnex]
-		if false == ok {
-			continue
-		}
-		if "" == strings.Trim(fieldName, "") {
-			continue
-		}
-		if "" == cell.Value {
-			continue
-		}
-		switch cell.Type() {
-		case xlsx.CellTypeString:
-			host[fieldName] = cell.String()
-		case xlsx.CellTypeStringFormula:
-			host[fieldName] = cell.String()
-		case xlsx.CellTypeNumeric:
-
-			cellValue, err := cell.Int()
-			if nil != err {
-				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
-				continue
-			}
-
-			host[fieldName] = cellValue
-		case xlsx.CellTypeBool:
-			cellValue := cell.Bool()
-			host[fieldName] = cellValue
-		case xlsx.CellTypeDate:
-			cellValue, err := cell.GetTime(true)
-			if nil != err {
-				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
-				continue
-			}
-			host[fieldName] = cellValue
-		default:
-			errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
-			continue
-		}
-		field, ok := fields[fieldName]
-
-		if true == ok {
-			switch field.PropertyType {
-			case common.FieldTypeBool:
-
-				switch cell.Value {
-				case fieldTypeBoolFalse:
-					host[fieldName] = false
-				case fieldTypeBoolTrue:
-					host[fieldName] = true
-				}
-
-			case common.FieldTypeEnum:
-				option, optionOk := field.Option.([]interface{})
-
-				if optionOk {
-					host[fieldName] = getEnumIDByName(cell.Value, option)
-				}
-
-			}
-		}
-	}
-	if "" != errMsg {
-		return nil, errors.New(errMsg)
-	}
-	if 0 == len(host) {
-		return host, nil
-	}
-	for k, v := range defFields {
-		host[k] = v
-	}
-
-	return host, nil
-
-}
-
-// ProductExcelHealer Excel comment sheet，
-func ProductExcelCommentSheet(excel *xlsx.File, defLang lang.DefaultCCLanguageIf) {
-	sheetName := defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + "_sheet_name")
-	if "" == sheetName {
-		sheetName = "comment"
-	}
-
-	sheet, err := excel.AddSheet(sheetName)
-	if nil != err {
-		blog.Errorf("add comment sheet error,sheet name:%s, error:%s ", sheetName, err.Error())
-		return
-	}
-	strJSON := defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + "_sheet")
-	if "" == strJSON {
-		blog.Errorf("excel comment sheet content is empty")
-		return
-	}
-	var jsSheet jsonSheet
-	err = json.Unmarshal([]byte(strJSON), &jsSheet)
-	if nil != err {
-		blog.Errorf("excel comment sheet content not json format ")
-		return
-	}
-
-	for idx, col := range jsSheet.Cols {
-		if nil == col {
-			continue
-		}
-		c := sheet.Col(idx)
-		c.Collapsed = c.Collapsed
-		c.Hidden = c.Hidden
-		c.Max = col.Max
-		c.Min = col.Min
-		c.Width = col.Width
-		if nil != col.Style {
-			s := c.GetStyle()
-			if nil == s {
-				s = xlsx.NewStyle()
-			}
-			s.Alignment = col.Style.Alignment
-			s.ApplyAlignment = col.Style.ApplyAlignment
-			s.ApplyBorder = col.Style.ApplyBorder
-			s.ApplyFill = col.Style.ApplyFill
-			s.ApplyFont = col.Style.ApplyFont
-			s.Border = col.Style.Border
-			s.Fill = col.Style.Fill
-			s.Font = col.Style.Font
-
-			c.SetStyle(s)
-		}
-
-	}
-
-	for idx, row := range jsSheet.Rows {
-		if nil == row {
-			continue
-		}
-		r := sheet.Row(idx)
-		if 0 < row.Height {
-			r.SetHeight(row.Height)
-
-		}
-		r.Hidden = row.Hidden
-
-		for cIdx, c := range row.Cells {
-			if nil == c {
-				continue
-			}
-			cell := sheet.Cell(idx, cIdx)
-			cell.SetFormula(c.Formula)
-			cell.Hidden = c.Hidden
-			cell.HMerge = c.HMerge
-			value := c.Value
-
-			if strings.HasPrefix(c.Value, "_") && !strings.HasPrefix(c.Value, "__") {
-				value = defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + c.Value)
-				if "" == value {
-					value = c.Value
-				}
-			}
-			cell.SetValue(value)
-
-			cell.VMerge = c.VMerge
-			if nil != c.Style {
-				s := cell.GetStyle()
-				if nil == s {
-					s = xlsx.NewStyle()
-				}
-				s.Alignment = c.Style.Alignment
-				s.ApplyAlignment = c.Style.ApplyAlignment
-				s.ApplyBorder = c.Style.ApplyBorder
-				s.ApplyFill = c.Style.ApplyFill
-				s.ApplyFont = c.Style.ApplyFont
-				s.Border = c.Style.Border
-				s.Fill = c.Style.Fill
-				s.Font = c.Style.Font
-
-				cell.SetStyle(s)
-			}
-
-		}
-
-	}
-
-}
-
-type style struct {
-	Border         xlsx.Border
-	Fill           xlsx.Fill
-	Font           xlsx.Font
-	ApplyBorder    bool
-	ApplyFill      bool
-	ApplyFont      bool
-	ApplyAlignment bool
-	Alignment      xlsx.Alignment
-}
-
-type cell struct {
-	Value   string
-	Formula string
-	Style   *style
-	Hidden  bool
-	HMerge  int
-	VMerge  int
-}
-type col struct {
-	Min       int
-	Max       int
-	Hidden    bool
-	Width     float64
-	Collapsed bool
-	Style     *style
-}
-
-type row struct {
-	Cells        []*cell
-	Hidden       bool
-	Height       float64
-	OutlineLevel uint8
-	isCustom     bool
-}
-
-type jsonSheet struct {
-	Cols []*col
-	Rows []*row
 }

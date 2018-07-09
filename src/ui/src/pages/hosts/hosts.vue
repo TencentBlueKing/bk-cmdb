@@ -19,7 +19,8 @@
                     :isShowBiz="isShowBiz"
                     :isShowCollect="isShowCollect"
                     :isShowHistory="isShowHistory"
-                    @refresh="setTableCurrentPage(1)"
+                    :isShowScope="isShowScope"
+                    @refresh="setTableCurrentPage(1, true)"
                     @bkBizSelected="bkBizSelected"
                     @showField="setFilterField"
                     @applyCollect="setQueryColumnData"
@@ -73,7 +74,7 @@
                         <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
                         </button>
-                        <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
+                        <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
                     </div>
@@ -184,6 +185,7 @@
         <v-host-transfer-pop
             :isShow.sync="transfer.isShow"
             :chooseId="table.chooseId"
+            :hosts="selectedList"
             @success="transferSuccess">
         </v-host-transfer-pop>
     </div>
@@ -211,17 +213,7 @@
             outerParams: {
                 type: Object,
                 default () {
-                    return {
-                        condition: [{
-                            'bk_obj_id': 'biz',
-                            fields: [],
-                            condition: [{
-                                field: 'default',
-                                operator: '$ne',
-                                value: 1
-                            }]
-                        }]
-                    }
+                    return {}
                 }
             },
             isShowCrossImport: {
@@ -241,6 +233,10 @@
                 default: true
             },
             isShowRefresh: {
+                type: Boolean,
+                default: false
+            },
+            isShowScope: {
                 type: Boolean,
                 default: false
             },
@@ -404,7 +400,9 @@
                 if (attrLoaded && this.bkBizId) {
                     this.setTableCurrentPage(1)
                 }
-                this.$emit('attrLoaded')
+                if (attrLoaded) {
+                    this.$emit('attrLoaded')
+                }
             },
             bkBizId (bkBizId) {
                 if (this.attrLoaded) {
@@ -510,6 +508,7 @@
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
+                    return res
                 }).catch((e) => {
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
@@ -746,7 +745,8 @@
                 updateParams['host_display_column'] = fields.map(({bk_property_id, bk_property_name, bk_obj_id}) => {
                     return {bk_property_id, bk_property_name, bk_obj_id}
                 })
-                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
+                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                    this.cancelSetField()
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -776,7 +776,8 @@
                 const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
                 let updateParams = {}
                 updateParams[`${customPrefix}_query_column`] = columns
-                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
+                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                    this.cancelSetField()
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -787,7 +788,7 @@
             },
             getTableList () {
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.searchParams).then(res => {
+                this.$axios.post('hosts/search', this.searchParams, {id: 'hostSearch'}).then(res => {
                     this.table.isLoading = false
                     if (res.result) {
                         this.table.pagination.count = res.data.count
@@ -854,7 +855,7 @@
             },
             saveHostAttribute (formData, formValues) {
                 let { bk_host_id: bkHostID } = formValues
-                this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()})).then(res => {
+                this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()}), {id: 'editAttr'}).then(res => {
                     if (res.result) {
                         this.$alertMsg(this.$t('Common[\'保存成功\']'), 'success')
                         this.setTableCurrentPage(1)
@@ -906,8 +907,11 @@
             attributeTabChanged (activeName) {
                 this.sideslider.attribute.active = activeName
             },
-            setTableCurrentPage (current) {
+            setTableCurrentPage (current, reset = false) {
                 this.table.pagination.current = current
+                if (reset) {
+                    this.table.chooseId = []
+                }
                 this.getTableList()
             },
             setTablePageSize (size) {
@@ -921,45 +925,23 @@
             mergeCondition (targetParams, sourceParams) {
                 let mergedParams = this.$deepClone(targetParams)
                 if (sourceParams && sourceParams.hasOwnProperty('condition')) {
-                    let newCondition = []
-                    for (let i = 0; i < sourceParams['condition'].length; i++) {
-                        let {
-                            condition: sourceCondition,
-                            bk_obj_id: sourceBkObjId,
-                            fields: sourceFields
-                        } = sourceParams['condition'][i]
-                        let isIncludeCondition = false
-                        for (let j = 0; j < mergedParams['condition'].length; j++) {
-                            let {
-                                condition: targetCondition,
-                                bk_obj_id: targetBkObjId,
-                                fields: targetFields
-                            } = mergedParams['condition'][j]
-                            if (sourceBkObjId === targetBkObjId) {
-                                let mergedCondition = [...sourceCondition]
-                                for (let m = 0; m < targetCondition.length; m++) {
-                                    let isExist = false
-                                    for (let n = 0; n < sourceCondition.length; n++) {
-                                        if (targetCondition[m]['field'] === sourceCondition[n]['field']) {
-                                            isExist = true
-                                            break
-                                        }
-                                    }
-                                    if (!isExist) {
-                                        mergedCondition.push(targetCondition[m])
-                                    }
+                    sourceParams.condition.forEach(sourceCondition => {
+                        let targetCondition = mergedParams.condition.find(targetCondition => targetCondition['bk_obj_id'] === sourceCondition['bk_obj_id'])
+                        if (targetCondition) {
+                            targetCondition.fields = [...new Set([...targetCondition.fields, ...sourceCondition.fields])]
+                            sourceCondition.condition.forEach(sourceMeta => {
+                                let targetMeta = targetCondition.condition.find(targetMeta => targetMeta.field === sourceMeta.field)
+                                if (targetMeta) {
+                                    targetMeta.operator = sourceMeta.operator
+                                    targetMeta.value = sourceMeta.value
+                                } else {
+                                    targetCondition.condition.push(this.$deepClone(sourceMeta))
                                 }
-                                mergedParams['condition'][j]['condition'] = mergedCondition
-                                mergedParams['condition'][j]['fields'] = [...sourceFields, ...targetFields]
-                                isIncludeCondition = true
-                                break
-                            }
+                            })
+                        } else {
+                            mergedParams.condition.push(sourceCondition)
                         }
-                        if (!isIncludeCondition) {
-                            newCondition.push(sourceParams['condition'][i])
-                        }
-                    }
-                    mergedParams.condition = [...mergedParams.condition, ...newCondition]
+                    })
                 }
                 if (sourceParams && sourceParams.hasOwnProperty('bk_biz_id')) {
                     mergedParams['bk_biz_id'] = sourceParams['bk_biz_id']
@@ -969,7 +951,7 @@
             async init () {
                 await this.setTopoAttribute()
                 await this.getAllAttribute()
-                this.getUserCustomColumn()
+                await this.getUserCustomColumn()
             }
         },
         created () {
