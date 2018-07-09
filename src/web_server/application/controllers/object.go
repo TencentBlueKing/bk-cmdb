@@ -58,7 +58,7 @@ func ImportObject(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 
 	cc := api.NewAPIResource()
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -225,7 +225,7 @@ func ExportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 

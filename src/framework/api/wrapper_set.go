@@ -17,11 +17,12 @@ import (
 
 	"configcenter/src/framework/core/output/module/inst"
 	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // SetIteratorWrapper the set iterator wrapper
 type SetIteratorWrapper struct {
-	set inst.Iterator
+	set inst.SetIterator
 }
 
 // Next next the set
@@ -36,14 +37,19 @@ func (cli *SetIteratorWrapper) Next() (*SetWrapper, error) {
 // ForEach the foreach function
 func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) error {
 
-	return cli.set.ForEach(func(item inst.Inst) error {
+	return cli.set.ForEach(func(item inst.SetInterface) error {
 		return callback(&SetWrapper{set: item})
 	})
 }
 
 // SetWrapper the set wrapper
 type SetWrapper struct {
-	set inst.Inst
+	set inst.SetInterface
+}
+
+// GetValues return the values
+func (cli *SetWrapper) GetValues() (types.MapStr, error) {
+	return cli.set.GetValues()
 }
 
 // SetValue set the key value
@@ -108,7 +114,8 @@ func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 	if err := cli.SetParent(businessID); nil != err {
 		return err
 	}
-	return cli.set.SetValue(fieldBusinessID, businessID)
+	cli.set.SetBusinessID(businessID)
+	return nil
 }
 
 // GetBusinessID get the business id
@@ -136,12 +143,12 @@ func (cli *SetWrapper) GetSupplierAccount() (string, error) {
 }
 
 // GetID get the set id
-func (cli *SetWrapper) GetID() (int, error) {
+func (cli *SetWrapper) GetID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldSetID)
+	return vals.Int64(fieldSetID)
 }
 
 // SetParent set the parent id of the set
