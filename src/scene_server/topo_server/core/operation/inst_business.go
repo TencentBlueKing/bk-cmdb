@@ -15,18 +15,19 @@ import (
 // BusinessOperationInterface business operation methods
 type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
-	DeleteBusiness(params types.ContextParams, obj model.Object, cond condition.Condition) error
+	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
 	FindBusiness(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
-	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition) error
+	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 }
 
 // NewBusinessOperation create a business instance
-func NewBusinessOperation(set SetOperationInterface, module ModuleOperationInterface, client apimachinery.ClientSetInterface, inst InstOperationInterface) BusinessOperationInterface {
+func NewBusinessOperation(set SetOperationInterface, module ModuleOperationInterface, client apimachinery.ClientSetInterface, inst InstOperationInterface, obj ObjectOperationInterface) BusinessOperationInterface {
 	return &business{
 		clientSet: client,
 		set:       set,
 		module:    module,
 		inst:      inst,
+		obj:       obj,
 	}
 }
 
@@ -35,6 +36,7 @@ type business struct {
 	inst      InstOperationInterface
 	set       SetOperationInterface
 	module    ModuleOperationInterface
+	obj       ObjectOperationInterface
 }
 
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
@@ -47,21 +49,107 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return bizInst, err
 	}
 
+	bizID, err := bizInst.GetInstID()
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
 	// create set
+	objSet, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	setData := mapstr.New()
+	setData.Set(common.BKAppIDField, bizID)
+	setData.Set(common.BKInstParentStr, bizID)
+	setData.Set(common.BKSetNameField, common.DefaultResSetName)
+	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
+	setData.Set(common.BKOwnerIDField, params.SupplierAccount)
+
+	setInst, err := b.set.CreateSet(params, objSet, bizID, setData)
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	setID, err := setInst.GetInstID()
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
 
 	// create module
+	objModule, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
 
-	return nil, nil
+	moduleData := mapstr.New()
+	moduleData.Set(common.BKSetIDField, setID)
+	moduleData.Set(common.BKInstParentStr, setID)
+	moduleData.Set(common.BKAppIDField, bizID)
+	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
+	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	moduleData.Set(common.BKOwnerIDField, params.SupplierAccount)
+
+	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	// create fault module
+	faultModuleData := mapstr.New()
+	faultModuleData.Set(common.BKSetIDField, setID)
+	faultModuleData.Set(common.BKInstParentStr, setID)
+	faultModuleData.Set(common.BKAppIDField, bizID)
+	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
+	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
+	faultModuleData.Set(common.BKOwnerIDField, params.SupplierAccount)
+
+	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	return bizInst, nil
 }
 
-func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, cond condition.Condition) error {
-	return nil
+func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error {
+
+	obj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return err
+	}
+
+	if err = b.set.DeleteSet(params, obj, bizID, nil); nil != err {
+		blog.Errorf("[operation-biz] failed to delete the set, error info is %s", err.Error())
+		return params.Err.New(common.CCErrTopoAppDeleteFailed, err.Error())
+	}
+
+	innerCond := condition.CreateCondition()
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	innerCond.Field(common.BKAppIDField).Eq(bizID)
+
+	return b.inst.DeleteInst(params, obj, innerCond)
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
 	return 0, nil, nil
 }
 
-func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition) error {
-	return nil
+func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error {
+
+	innerCond := condition.CreateCondition()
+
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	innerCond.Field(common.BKAppIDField).Eq(bizID)
+
+	return b.inst.UpdateInst(params, data, obj, innerCond)
 }
