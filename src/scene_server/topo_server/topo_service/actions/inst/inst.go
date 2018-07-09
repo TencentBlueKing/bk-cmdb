@@ -91,101 +91,134 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 	ignorItems = append(ignorItems, common.BKInstParentStr)
 	ignorItems = append(ignorItems, common.BKAppIDField)
 	blog.Debug("the ignore items:%+v", ignorItems)
+
 	valid := validator.NewValidMapWithKeyFields(ownerID, objID, cli.CC.ObjCtrl(), ignorItems, &api.ForwardParam{Header: req.Request.Header}, defErr)
 	user := util.GetActionUser(req)
-	isUpdate := false
+
 	blog.Debug("the non exists filed items:%+v", nonExistsFiled)
 	// extract the data for the associated field
 	asstFieldVal := cli.extractDataFromAssociationField(0, targetInput, asstDes)
 
-	// check
-	_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
+	isUpdate := false
 	targetMethod := common.HTTPSelectPost
 	input := make(map[string]interface{})
-	switch e := err.(type) {
-	case nil:
-		// clear the association field
-		if isBatch {
-			for _, item := range asstDes {
-				if _, ok := targetInput[item.ObjectAttID]; ok {
-					delete(targetInput, item.ObjectAttID)
-				}
-			}
 
-			// set the nonexist
-			for _, j := range nonExistsFiled {
-				propertyID := j.PropertyID
-				fieldType := j.PropertyType
-				switch fieldType {
-				case common.FieldTypeSingleChar:
-					targetInput[propertyID] = ""
-				case common.FieldTypeLongChar:
-					targetInput[propertyID] = ""
-				default:
-					targetInput[propertyID] = nil
+	// if include inst id, it will only update the data by id
+	if id, ok := targetInput[common.BKInstIDField]; ok {
+		targetMethod = common.HTTPUpdate
+		isUpdate = true
+		condition := make(map[string]interface{})
+		condition[common.BKInstIDField] = id
+
+		tmpID, err := util.GetInt64ByInterface(id)
+		if nil != err {
+			blog.Errorf("the instid (%v) is invalid, error info is %s", id, err.Error())
+			return http.StatusBadRequest, nil, isUpdate, err
+		}
+		delete(targetInput, common.BKInstIDField)
+		if _, err := valid.ValidMap(targetInput, common.ValidUpdate, int(tmpID)); nil != err {
+			switch e := err.(type) {
+			case nil:
+				break
+			case errors.CCErrorCoder:
+				if e.GetCode() == common.CCErrCommDuplicateItem {
+					break
 				}
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
+			default:
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
 			}
 		}
 
-		input = targetInput
+		input["data"] = targetInput
+		input["condition"] = condition
 
-	case errors.CCErrorCoder:
-		if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
+	} else {
 
-			isUpdate = true
-			condition := make(map[string]interface{})
+		// check
+		_, err := valid.ValidMap(targetInput, common.ValidCreate, 0)
 
-			// if the import data from excel include instid, it will only use the inst id as the condition
-			if id, ok := targetInput[common.BKInstIDField]; ok {
-				condition[common.BKInstIDField] = id
-				delete(targetInput, common.BKInstIDField)
-			} else {
-				condition[common.BKOwnerIDField] = ownerID
-				condition[common.BKObjIDField] = objID
-				condition[InstName] = targetInput[InstName]
-			}
-
-			if _, ok := targetInput[InstName]; !ok {
-				blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
-				return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
-			}
-
-			if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
-				switch e := err.(type) {
-				case nil:
-					break
-				case errors.CCErrorCoder:
-					if e.GetCode() == common.CCErrCommDuplicateItem {
-						break
-					}
-					blog.Error("failed valid the input data, error info is %s", err.Error())
-					return http.StatusBadRequest, nil, isUpdate, err
-				default:
-					blog.Error("failed valid the input data, error info is %s", err.Error())
-					return http.StatusBadRequest, nil, isUpdate, err
-				}
-			}
-
-			targetMethod = common.HTTPUpdate
+		switch e := err.(type) {
+		case nil:
 			// clear the association field
-			/*if isBatch {
+			if isBatch {
 				for _, item := range asstDes {
 					if _, ok := targetInput[item.ObjectAttID]; ok {
 						delete(targetInput, item.ObjectAttID)
 					}
 				}
-			}*/
 
-			input["data"] = targetInput
-			input["condition"] = condition
+				// set the nonexist
+				for _, j := range nonExistsFiled {
+					propertyID := j.PropertyID
+					fieldType := j.PropertyType
+					switch fieldType {
+					case common.FieldTypeSingleChar:
+						targetInput[propertyID] = ""
+					case common.FieldTypeLongChar:
+						targetInput[propertyID] = ""
+					default:
+						targetInput[propertyID] = nil
+					}
+				}
+			}
 
-		} else {
+			input = targetInput
+
+		case errors.CCErrorCoder:
+			if e.GetCode() == common.CCErrCommDuplicateItem && isBatch {
+
+				isUpdate = true
+				condition := make(map[string]interface{})
+
+				condition[common.BKOwnerIDField] = ownerID
+				condition[common.BKObjIDField] = objID
+				condition[InstName] = targetInput[InstName]
+
+				if _, ok := targetInput[InstName]; !ok {
+					blog.Error("lost the 'InstName' field, the error data is %+v", targetInput)
+					return http.StatusBadRequest, nil, isUpdate, defErr.Errorf(common.CCErrCommParamsLostField, InstName)
+				}
+
+				if _, err = valid.ValidMap(targetInput, common.ValidUpdate, 0); nil != err {
+					switch e := err.(type) {
+					case nil:
+						break
+					case errors.CCErrorCoder:
+						if e.GetCode() == common.CCErrCommDuplicateItem {
+							break
+						}
+						blog.Error("failed valid the input data, error info is %s", err.Error())
+						return http.StatusBadRequest, nil, isUpdate, err
+					default:
+						blog.Error("failed valid the input data, error info is %s", err.Error())
+						return http.StatusBadRequest, nil, isUpdate, err
+					}
+				}
+
+				targetMethod = common.HTTPUpdate
+				// clear the association field
+				/*if isBatch {
+					for _, item := range asstDes {
+						if _, ok := targetInput[item.ObjectAttID]; ok {
+							delete(targetInput, item.ObjectAttID)
+						}
+					}
+				}*/
+
+				input["data"] = targetInput
+				input["condition"] = condition
+
+			} else {
+				blog.Error("failed valid the input data, error info is %s", err.Error())
+				return http.StatusBadRequest, nil, isUpdate, err
+			}
+		default:
 			blog.Error("failed valid the input data, error info is %s", err.Error())
 			return http.StatusBadRequest, nil, isUpdate, err
 		}
-	default:
-		blog.Error("failed valid the input data, error info is %s", err.Error())
-		return http.StatusBadRequest, nil, isUpdate, err
 	}
 
 	// take snapshot before operation if is update
@@ -497,167 +530,188 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
 		}
 
-		// chceck the inst wether it has 'host' inst child
-		type nextInst struct {
-			instID  int
-			ownerID string
-			objID   string
+		operationInst := &operation{}
+		operationInst.Delete.InstID = append(operationInst.Delete.InstID, instID)
+		if instID < 0 { // if the inst less than zeor, it means to batch to delete the inst
+			//create default module
+			value, err := ioutil.ReadAll(req.Request.Body)
+			if nil != err {
+				blog.Error("read request body failed, error:%v", err)
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			}
+			if 0 == len(value) {
+
+				blog.Error("read request body failed, it is empty")
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
+			}
+			if err = json.Unmarshal(value, operationInst); nil != err {
+				blog.Errorf("failed to unmarshal the body params, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			}
 		}
+		for _, operate := range operationInst.Delete.InstID {
+			// chceck the inst wether it has 'host' inst child
+			type nextInst struct {
+				instID  int
+				ownerID string
+				objID   string
+			}
 
-		nextOne := nextInst{instID: instID, ownerID: ownerID, objID: objID}
-		willDelete := []nextInst{}
-		willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instID, objID: objID})
+			instID = operate
 
-		// define inner function to parse the object deleted
-		var parseChildFunc func(child []manager.TopoInstRst) (int, interface{}, error)
-		parseChildFunc = func(child []manager.TopoInstRst) (int, interface{}, error) {
+			nextOne := nextInst{instID: instID, ownerID: ownerID, objID: objID}
+			willDelete := []nextInst{}
+			willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instID, objID: objID})
 
-			for _, instItem := range child {
-				blog.Debug("the inst child:%v", instItem)
-				// store all child inst
-				switch instItem.ObjID {
-				case common.BKInnerObjIDModule:
-					// check wether it can be delete
-					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
-					if nil != rstErr {
-						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
-						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+			// define inner function to parse the object deleted
+			var parseChildFunc func(child []manager.TopoInstRst) (int, interface{}, error)
+			parseChildFunc = func(child []manager.TopoInstRst) (int, interface{}, error) {
+
+				for _, instItem := range child {
+					blog.Debug("the inst child:%v", instItem)
+					// store all child inst
+					switch instItem.ObjID {
+					case common.BKInnerObjIDModule:
+						// check wether it can be delete
+						rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKModuleIDField: []int{instItem.InstID}})
+						if nil != rstErr {
+							blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+							return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+						}
+
+						if !rstOk {
+							blog.Error("failed to delete app, because of it has some hosts")
+							return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+						}
+					case common.BKInnerObjIDSet:
+						// check wether it can be delete
+						rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKSetIDField: []int{instItem.InstID}})
+						if nil != rstErr {
+							blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
+							return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+						}
+
+						if !rstOk {
+							blog.Error("failed to delete app, because of it has some hosts")
+							return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+						}
 					}
 
-					if !rstOk {
-						blog.Error("failed to delete app, because of it has some hosts")
-						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
-					}
-				case common.BKInnerObjIDSet:
-					// check wether it can be delete
-					rstOk, rstErr := hasHost(req, cli.CC.HostCtrl(), map[string][]int{common.BKSetIDField: []int{instItem.InstID}})
-					if nil != rstErr {
-						blog.Error("failed to check app wether it has hosts, error info is %s", rstErr.Error())
-						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
-					}
-
-					if !rstOk {
-						blog.Error("failed to delete app, because of it has some hosts")
-						return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoHasHostCheckFailed)
+					willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
+					//  if it is the last one, then will try next group
+					if len(instItem.Child) != 0 {
+						retStatus, retRst, retErr := parseChildFunc(instItem.Child)
+						if nil != retErr {
+							return retStatus, retRst, retErr
+						}
 					}
 				}
+
+				return http.StatusOK, nil, nil
+			}
+
+			// read all child inst, level -1 is no limit
+			topoInstItems, topoErr := cli.metaHelperFunc.SelectInstTopo(forward, nextOne.ownerID, nextOne.objID, 0, nextOne.instID, -1, req)
+			if nil != topoErr {
+				blog.Error("failed to get the inst topo , error info is %s", topoErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
+			}
+			for _, instItem := range topoInstItems {
 
 				willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
 				//  if it is the last one, then will try next group
 				if len(instItem.Child) != 0 {
 					retStatus, retRst, retErr := parseChildFunc(instItem.Child)
 					if nil != retErr {
+						blog.Error("failed to delete inst, error info is %s", retErr.Error())
 						return retStatus, retRst, retErr
 					}
 				}
 			}
 
-			return http.StatusOK, nil, nil
-		}
+			attDesCache := map[string][]metadata.Header{}
 
-		// read all child inst, level -1 is no limit
-		topoInstItems, topoErr := cli.metaHelperFunc.SelectInstTopo(forward, nextOne.ownerID, nextOne.objID, 0, nextOne.instID, -1, req)
-		if nil != topoErr {
-			blog.Error("failed to get the inst topo , error info is %s", topoErr.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
-		}
-		for _, instItem := range topoInstItems {
+			blog.Debug("will delete:%+v", willDelete)
 
-			willDelete = append(willDelete, nextInst{ownerID: ownerID, instID: instItem.InstID, objID: instItem.ObjID})
-			//  if it is the last one, then will try next group
-			if len(instItem.Child) != 0 {
-				retStatus, retRst, retErr := parseChildFunc(instItem.Child)
-				if nil != retErr {
-					blog.Error("failed to delete inst, error info is %s", retErr.Error())
-					return retStatus, retRst, retErr
+			// already id
+			ids := map[int]struct{}{}
+			//delete module
+			for _, delItem := range willDelete {
+
+				if _, ok := ids[delItem.instID]; ok {
+					continue
 				}
-			}
-		}
+				ids[delItem.instID] = struct{}{}
 
-		attDesCache := map[string][]metadata.Header{}
+				// delete the association
+				if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID, ""); nil != err {
+					blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
+				}
 
-		blog.Debug("will delete:%+v", willDelete)
+				// take snapshot before operation
+				preData, retStrErr := cli.getInstDetail(req, delItem.instID, delItem.objID, delItem.ownerID)
+				if common.CCSuccess != retStrErr {
+					blog.Errorf("get inst detail error: %v", retStrErr)
+					return http.StatusInternalServerError, "", defErr.Error(retStrErr)
+				}
 
-		// already id
-		ids := map[int]struct{}{}
-		//delete module
-		for _, delItem := range willDelete {
+				uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
 
-			if _, ok := ids[delItem.instID]; ok {
-				continue
-			}
-			ids[delItem.instID] = struct{}{}
+				input := make(map[string]interface{})
 
-			// delete the association
-			if err := cli.deleteInstAssociation(req, delItem.instID, delItem.ownerID, delItem.objID, ""); nil != err {
-				blog.Errorf("failed to delete the association (%d %s %s), error info is %s", delItem.instID, delItem.ownerID, delItem.objID, err.Error())
-			}
+				switch delItem.objID {
+				case common.BKInnerObjIDPlat:
+					input[common.BKCloudIDField] = delItem.instID
+					uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+				default:
+					input[common.BKOwnerIDField] = delItem.ownerID
+					input[common.BKObjIDField] = delItem.objID
+					input[common.BKInstIDField] = delItem.instID
+				}
 
-			// take snapshot before operation
-			preData, retStrErr := cli.getInstDetail(req, delItem.instID, delItem.objID, delItem.ownerID)
-			if common.CCSuccess != retStrErr {
-				blog.Errorf("get inst detail error: %v", retStrErr)
-				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-			}
+				inputJSON, jsErr := json.Marshal(input)
+				if nil != jsErr {
+					blog.Error("unmarshal the data[%+v], error is %s", input, jsErr.Error())
+					return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
+				}
 
-			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+				objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
+				if nil != err {
+					blog.Error("failed to delete the inst, error info is %s ", err.Error())
+					return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
+				}
 
-			input := make(map[string]interface{})
+				if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+					blog.Error("failed to delete the inst , error inst is %s", objRes)
+					return http.StatusInternalServerError, objRes, defErr.Error(common.CCErrTopoInstDeleteFailed)
+				}
 
-			switch delItem.objID {
-			case common.BKInnerObjIDPlat:
-				input[common.BKCloudIDField] = delItem.instID
-				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
-			default:
-				input[common.BKOwnerIDField] = delItem.ownerID
-				input[common.BKObjIDField] = delItem.objID
-				input[common.BKInstIDField] = delItem.instID
-			}
-
-			inputJSON, jsErr := json.Marshal(input)
-			if nil != jsErr {
-				blog.Error("unmarshal the data[%+v], error is %s", input, jsErr.Error())
-				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
-			}
-
-			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPDelete, []byte(inputJSON))
-			if nil != err {
-				blog.Error("failed to delete the inst, error info is %s ", err.Error())
-				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstDeleteFailed)
-			}
-			if 0 == len(objRes) {
-				return http.StatusOK, nil, nil
-			}
-			if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
-				blog.Error("failed to delete the inst , error inst is %s", objRes)
-				return http.StatusInternalServerError, objRes, defErr.Error(common.CCErrTopoInstDeleteFailed)
-			}
-
-			{
-				// save change log
-				if attDesCache[delItem.objID] == nil {
-					attDes, attErr := cli.getObjAttDes(forward, delItem.ownerID, delItem.objID)
-					if common.CCSuccess != attErr {
-						return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+				{
+					// save change log
+					if attDesCache[delItem.objID] == nil {
+						attDes, attErr := cli.getObjAttDes(forward, delItem.ownerID, delItem.objID)
+						if common.CCSuccess != attErr {
+							return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+						}
+						headers := []metadata.Header{}
+						for _, item := range attDes {
+							headers = append(headers, metadata.Header{
+								PropertyID:   item.PropertyID,
+								PropertyName: item.PropertyName,
+							})
+						}
+						attDesCache[objID] = headers
 					}
-					headers := []metadata.Header{}
-					for _, item := range attDes {
-						headers = append(headers, metadata.Header{
-							PropertyID:   item.PropertyID,
-							PropertyName: item.PropertyName,
-						})
+
+					auditContent := metadata.Content{
+						PreData: preData,
+						Headers: attDesCache[delItem.objID],
 					}
-					attDesCache[objID] = headers
+					auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(delItem.instID, auditContent, "delete inst", delItem.objID, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 				}
 
-				auditContent := metadata.Content{
-					PreData: preData,
-					Headers: attDesCache[delItem.objID],
-				}
-				auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(delItem.instID, auditContent, "delete inst", delItem.objID, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 			}
-
-		}
+		} // delete the instid
 
 		return http.StatusOK, nil, nil
 	}, resp)
@@ -682,111 +736,136 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 		objID := req.PathParameter("obj_id")
 		user := util.GetActionUser(req)
 		instID, convErr := strconv.Atoi(req.PathParameter("inst_id"))
+
 		if nil != convErr {
 			blog.Error("the instid[%s], must be int value, error info is %s", req.PathParameter("inst_id"), convErr.Error())
 			return http.StatusBadRequest, "", defErr.Errorf(common.CCErrCommParamsNeedInt, "inst_id")
 		}
 
-		//update object
+		isBatchUpdate := (instID < 0)
 
+		//update object
 		value, readErr := ioutil.ReadAll(req.Request.Body)
 		if nil != readErr {
 			blog.Error("failed to read the body , error info is %s", readErr.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
 
-		js, err := simplejson.NewJson([]byte(value))
-		if nil != err {
-			blog.Error("failed to create json object, error info is %s", err.Error())
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+		operationUpdate := &operation{}
+		if isBatchUpdate {
 
-		// take snapshot before update
-		preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
-		if common.CCSuccess != retStrErr {
-			blog.Errorf("get inst detail error: %v", retStrErr)
-			return http.StatusInternalServerError, "", defErr.Error(retStrErr)
-		}
-
-		data, jsErr := js.Map()
-		if nil != jsErr {
-			blog.Error("failed to create json object, error info is %s", jsErr.Error())
-			return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		if mapPreData, ok := preData.(map[string]interface{}); ok {
-			if val, ok := mapPreData[common.BKInstParentStr]; ok {
-				data[common.BKInstParentStr] = val
-			} else {
-				blog.Error("not found the inst parent id, inst %d", instID)
+			if err := json.Unmarshal([]byte(value), operationUpdate); nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
-		}
 
-		forward := &api.ForwardParam{Header: req.Request.Header}
-		valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
-		_, err = valid.ValidMap(data, common.ValidUpdate, instID)
-		if nil != err {
-			blog.Error("failed to valid the params, error info is %s ", err.Error())
-			return http.StatusBadRequest, "", err
-		}
+		} else {
 
-		// set the inst association table
-		if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
-			blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
-		}
-
-		// update the inst value
-		uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
-
-		input := make(map[string]interface{})
-
-		condition := make(map[string]interface{})
-		switch objID {
-		case common.BKInnerObjIDPlat:
-			condition[common.BKCloudIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
-		default:
-			condition[common.BKOwnerIDField] = ownerID
-			condition[common.BKObjIDField] = objID
-			condition[common.BKInstIDField] = instID
-			uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
-		}
-
-		input["condition"] = condition
-		input["data"] = data
-
-		inputJSON, jsErr := json.Marshal(input)
-		if nil != jsErr {
-			blog.Error("failed to create json object, error info is %s", jsErr.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
-		}
-
-		objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(inputJSON))
-		if nil != err {
-			blog.Error("failed to update the inst, error info is %s", err.Error())
-			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstUpdateFailed)
-		}
-
-		{
-			// save change log
-			headers, attErr := cli.getHeader(forward, ownerID, objID)
-			if common.CCSuccess != attErr {
-				return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+			js, err := simplejson.NewJson([]byte(value))
+			if nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 			}
-			curData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+
+			data, err := js.Map()
+			if nil != err {
+				blog.Error("failed to create json object, error info is %s", err.Error())
+				return http.StatusBadRequest, "", defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+			}
+
+			operationUpdate.Update = append(operationUpdate.Update, updateCondition{InstID: instID, InstInfo: data})
+		}
+
+		for _, updateItem := range operationUpdate.Update {
+
+			data := updateItem.InstInfo
+			instID = updateItem.InstID
+
+			// take snapshot before update
+			preData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
 			if common.CCSuccess != retStrErr {
 				blog.Errorf("get inst detail error: %v", retStrErr)
-				return http.StatusInternalServerError, objRes, defErr.Error(retStrErr)
+				return http.StatusInternalServerError, "", defErr.Error(retStrErr)
 			}
-			auditContent := metadata.Content{
-				PreData: preData,
-				CurData: curData,
-				Headers: headers,
-			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
-		}
 
-		return http.StatusOK, objRes, nil
+			if mapPreData, ok := preData.(map[string]interface{}); ok {
+				if val, ok := mapPreData[common.BKInstParentStr]; ok {
+					data[common.BKInstParentStr] = val
+				} else {
+					blog.Error("not found the inst parent id, inst %d", instID)
+				}
+			}
+
+			forward := &api.ForwardParam{Header: req.Request.Header}
+			valid := validator.NewValidMap(ownerID, objID, cli.CC.ObjCtrl(), forward, defErr)
+			_, err := valid.ValidMap(data, common.ValidUpdate, instID)
+			if nil != err {
+				blog.Error("failed to valid the params, error info is %s ", err.Error())
+				return http.StatusBadRequest, "", err
+			}
+
+			// set the inst association table
+			if err := cli.updateInstAssociation(req, instID, ownerID, objID, data); nil != err {
+				blog.Errorf("failed to update the inst association, error info is %s ", err.Error())
+			}
+
+			// update the inst value
+			uURL := cli.CC.ObjCtrl() + "/object/v1/insts/object"
+
+			input := make(map[string]interface{})
+
+			condition := make(map[string]interface{})
+			switch objID {
+			case common.BKInnerObjIDPlat:
+				condition[common.BKCloudIDField] = instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/" + common.BKInnerObjIDPlat
+			default:
+				condition[common.BKOwnerIDField] = ownerID
+				condition[common.BKObjIDField] = objID
+				condition[common.BKInstIDField] = instID
+				uURL = cli.CC.ObjCtrl() + "/object/v1/insts/object"
+			}
+
+			input["condition"] = condition
+			input["data"] = data
+
+			inputJSON, jsErr := json.Marshal(input)
+			if nil != jsErr {
+				blog.Error("failed to create json object, error info is %s", jsErr.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrCommJSONMarshalFailed)
+			}
+
+			objRes, err := httpcli.ReqHttp(req, uURL, common.HTTPUpdate, []byte(inputJSON))
+			if nil != err {
+				blog.Error("failed to update the inst, error info is %s", err.Error())
+				return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstUpdateFailed)
+			}
+
+			if _, ok := cli.IsSuccess([]byte(objRes)); !ok {
+				blog.Error("failed to delete the inst , error inst is %s", objRes)
+				return http.StatusInternalServerError, objRes, defErr.Error(common.CCErrTopoInstDeleteFailed)
+			}
+
+			{
+				// save change log
+				headers, attErr := cli.getHeader(forward, ownerID, objID)
+				if common.CCSuccess != attErr {
+					return http.StatusInternalServerError, objRes, defErr.Error(attErr)
+				}
+				curData, retStrErr := cli.getInstDetail(req, instID, objID, ownerID)
+				if common.CCSuccess != retStrErr {
+					blog.Errorf("get inst detail error: %v", retStrErr)
+					return http.StatusInternalServerError, objRes, defErr.Error(retStrErr)
+				}
+				auditContent := metadata.Content{
+					PreData: preData,
+					CurData: curData,
+					Headers: headers,
+				}
+				auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			}
+		}
+		return http.StatusOK, nil, nil
 
 	}, resp)
 

@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except 
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-
+ 
 package models
 
 import (
@@ -30,22 +30,30 @@ func AddObjAttDescData(tableName, ownerID string, metaCli dbStorage.DI) error {
 			common.BKPropertyIDField: row.PropertyID,
 			common.BKOwnerIDField:    row.OwnerID,
 		}
-		isExist, err := metaCli.GetCntByCondition(tableName, selector)
+		exist := []metadata.ObjectAttDes{}
+		err := metaCli.GetMutilByCondition(tableName, nil, selector, &exist, "", 0, 1)
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tableName, err)
 			return err
 		}
-		if isExist > 0 {
-			metaCli.UpdateByCondition(tableName, row, selector)
-			continue
+		update := false
+		if len(exist) > 0 {
+			row.ID = exist[0].ID
+			update = true
 		}
-		id, err := metaCli.GetIncID(tableName)
-		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tableName, err)
-			return err
+		if row.ID <= 0 {
+			id, err := metaCli.GetIncID(tableName)
+			if nil != err {
+				blog.Errorf("add data for  %s table error  %s", tableName, err)
+				return err
+			}
+			row.ID = int(id)
 		}
-		row.ID = int(id)
-		_, err = metaCli.Insert(tableName, row)
+		if update {
+			err = metaCli.UpdateByCondition(tableName, row, selector)
+		} else {
+			_, err = metaCli.Insert(tableName, row)
+		}
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tableName, err)
 			return err

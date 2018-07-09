@@ -15,27 +15,20 @@ package middleware
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-
 	"configcenter/src/common/http/httpclient"
-	"encoding/json"
+	"configcenter/src/web_server/application/middleware/auth"
+	"configcenter/src/web_server/application/middleware/user"
+	webCommon "configcenter/src/web_server/common"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-type LoginResult struct {
-	Message string
-	Code    string
-	Result  bool
-	Data    interface{}
-}
-
 var APIAddr func() string
 var sLoginURL string
-var check_url string
+var checkUrl string
 
 //ValidLogin   valid the user login status
 func ValidLogin(params ...string) gin.HandlerFunc {
@@ -43,7 +36,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 	appCode := params[1]
 	site := params[2]
 
-	check_url = params[3]
+	checkUrl = params[3]
 	skipLogin := params[5]
 	multipleOwner := params[6]
 	isMultiOwner := true
@@ -55,7 +48,6 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		url := site + c.Request.URL.Path
 		loginPage := fmt.Sprintf(loginURL, appCode, url)
-		//		blog.Info("login page:%v", loginPage)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
@@ -67,7 +59,8 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 
 		if isAuthed(c, isMultiOwner, skipLogin, defaultlanguage) {
 			//valid resource acess privilege
-			ok := ValidResAccess(pathArr, c)
+			auth := auth.NewAuth()
+			ok := auth.ValidResAccess(pathArr, c)
 			if false == ok {
 				c.JSON(403, gin.H{
 					"status": "access forbidden",
@@ -107,7 +100,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 
 }
 
-//isAuthed check user is authed
+// IsAuthed check user is authed
 func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
 		session := sessions.Default(c)
@@ -124,109 +117,21 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 		session.Set("userName", "admin")
 		session.Set("role", "1")
 		session.Set("owner_uin", "0")
-		session.Set("skiplogin", "1")
+		session.Set(webCommon.IsSkipLogin, "1")
 		session.Save()
 		return true
 	}
 	session := sessions.Default(c)
 	cc_token := session.Get("bk_token")
+	user := user.NewUser()
 	if nil == cc_token {
-		return loginUser(c, isMultiOwner)
+		return user.LoginUser(c, checkUrl, isMultiOwner)
 	}
-	//	blog.Info("valid user login session token %s", cc_token)
 	bk_token, err := c.Cookie("bk_token")
-	//	blog.Info("valid user login cookie token %s", bk_token)
+	blog.Info("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
-		return loginUser(c, isMultiOwner)
+		return user.LoginUser(c, checkUrl, isMultiOwner)
 	}
 	return true
 
-}
-
-//loginUser  user login
-func loginUser(c *gin.Context, isMultiOwner bool) bool {
-	bk_token, err := c.Cookie("bk_token")
-	if nil != err {
-		return false
-	}
-	if nil != err || 0 == len(bk_token) {
-		return false
-	}
-	loginURL := check_url + bk_token
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetTimeOut(30 * time.Second)
-	blog.Info("get user info cond: %s", string(loginURL))
-	loginResult, err := httpCli.GET(loginURL, nil, nil)
-
-	if nil != err {
-		blog.Error("get user info return error: %v", err)
-		return false
-	}
-	blog.Info("get user info return: %s", string(loginResult))
-	var resultData LoginResult
-	err = json.Unmarshal([]byte(loginResult), &resultData)
-	if nil != err {
-		blog.Error("get user info json error: %v", err)
-		return false
-	}
-	userInfo, ok := resultData.Data.(map[string]interface{})
-	if false == ok {
-		blog.Error("get user info decode error: %v", err)
-		return false
-	}
-	userName, ok := userInfo["username"]
-	if false == ok {
-		blog.Error("get user info username error: %v", err)
-		return false
-	}
-	chName, ok := userInfo["chname"]
-	if false == ok {
-		blog.Error("get user info chname error: %v", err)
-		return false
-	}
-	phone, ok := userInfo["phone"]
-	if false == ok {
-		blog.Error("get user info phone error: %v", err)
-		return false
-	}
-	email, ok := userInfo["email"]
-	if false == ok {
-		blog.Error("get user info email error: %v", err)
-		return false
-	}
-	role, ok := userInfo["role"]
-	if false == ok {
-		blog.Error("get user info role error: %v", err)
-		return false
-	}
-
-	language, ok := userInfo["language"]
-	if false == ok {
-		blog.Error("get language info role error: %v", err)
-	}
-	ownerID := common.BKDefaultOwnerID
-	if true == isMultiOwner {
-		ownerID, ok = userInfo["owner_uin"].(string)
-		if false == ok {
-			blog.Error("get owner_uin info role error: %v", err)
-			return false
-		}
-	}
-
-	cookielanguage, _ := c.Cookie("blueking_language")
-	session := sessions.Default(c)
-	session.Set("userName", userName)
-	session.Set("chName", chName)
-	session.Set("phone", phone)
-	session.Set("email", email)
-	session.Set("role", role)
-	session.Set("bk_token", bk_token)
-	session.Set("owner_uin", ownerID)
-	if "" != cookielanguage {
-		session.Set("language", cookielanguage)
-	} else {
-		session.Set("language", language)
-	}
-	session.Save()
-	return true
 }

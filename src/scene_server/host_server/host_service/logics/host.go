@@ -305,6 +305,7 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 		if false == ok {
 			continue
 		}
+		hostAppIDArr = util.IntArrayUnique(hostAppIDArr)
 		hostAppData := make([]interface{}, 0)
 		for _, appID := range hostAppIDArr {
 			appInfo, mapOk := hostAppMap[appID]
@@ -316,6 +317,10 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 
 		//setdata
 		hostSetIDArr, ok := hostSetConfig[hostID32]
+		if false == ok {
+			continue
+		}
+		hostSetIDArr = util.IntArrayUnique(hostSetIDArr)
 		hostSetData := make([]interface{}, 0)
 		for _, setID := range hostSetIDArr {
 			setInfo, isOk := hostSetMap[setID]
@@ -359,6 +364,10 @@ func HostSearch(req *restful.Request, data hostParse.HostCommonSearch, isDetail 
 
 		//moduledata
 		hostModuleIDArr, ok := hostModuleConfig[hostID32]
+		if false == ok {
+			continue
+		}
+		hostModuleIDArr = util.IntArrayUnique(hostModuleIDArr)
 		hostModuleData := make([]interface{}, 0)
 		for _, ModuleID := range hostModuleIDArr {
 			moduleInfo, ok := hostModuleMap[ModuleID]
