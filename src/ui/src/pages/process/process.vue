@@ -301,7 +301,7 @@
                     let {
                         bk_process_id: bkProcessId
                     } = originalData
-                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, {...formData, ...{bk_process_id: bkProcessId.toString()}}).then(res => {
+                    this.$axios.put(`proc/${this.bkSupplierAccount}/${this.filter.bkBizId}`, {...formData, ...{bk_process_id: bkProcessId.toString()}}, {id: 'editAttr'}).then(res => {
                         if (res.result) {
                             this.$alertMsg(this.$t("ProcessManagement['修改进程成功']"), 'success')
                             this.setCurrentPage(1)
