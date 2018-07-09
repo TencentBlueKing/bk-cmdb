@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -17,26 +18,31 @@ type ModuleOperationInterface interface {
 	UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition) error
 }
 
-// NewModule create a new module
-func NewModule() ModuleOperationInterface {
-	return &module{}
+// NewModuleOperation create a new module
+func NewModuleOperation(client apimachinery.ClientSetInterface, inst InstOperationInterface) ModuleOperationInterface {
+	return &module{
+		clientSet: client,
+		inst:      inst,
+	}
 }
 
 type module struct {
+	clientSet apimachinery.ClientSetInterface
+	inst      InstOperationInterface
 }
 
 func (m *module) CreateModule(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
-	return nil, nil
+	return m.inst.CreateInst(params, obj, data)
 }
 
 func (m *module) DeleteModule(params types.ContextParams, obj model.Object, cond condition.Condition) error {
-	return nil
+	return m.inst.DeleteInst(params, obj, cond)
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return 0, nil, nil
+	return m.inst.FindInst(params, obj, cond)
 }
 
 func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition) error {
-	return nil
+	return m.UpdateModule(params, data, obj, cond)
 }

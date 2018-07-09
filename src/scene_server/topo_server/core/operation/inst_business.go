@@ -1,6 +1,9 @@
 package operation
 
 import (
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -17,15 +20,37 @@ type BusinessOperationInterface interface {
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition) error
 }
 
-// NewBusiness create a business instance
-func NewBusiness() BusinessOperationInterface {
-	return &business{}
+// NewBusinessOperation create a business instance
+func NewBusinessOperation(set SetOperationInterface, module ModuleOperationInterface, client apimachinery.ClientSetInterface, inst InstOperationInterface) BusinessOperationInterface {
+	return &business{
+		clientSet: client,
+		set:       set,
+		module:    module,
+		inst:      inst,
+	}
 }
 
 type business struct {
+	clientSet apimachinery.ClientSetInterface
+	inst      InstOperationInterface
+	set       SetOperationInterface
+	module    ModuleOperationInterface
 }
 
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
+
+	data.Set(common.BKDefaultField, 0)
+	data.Set(common.BKOwnerIDField, params.SupplierAccount)
+	bizInst, err := b.inst.CreateInst(params, obj, data)
+	if nil != err {
+		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())
+		return bizInst, err
+	}
+
+	// create set
+
+	// create module
+
 	return nil, nil
 }
 
