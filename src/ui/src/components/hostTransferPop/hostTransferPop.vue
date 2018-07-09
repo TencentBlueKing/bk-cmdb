@@ -1,6 +1,6 @@
 <template>
     <div class="transfer-pop" v-show="isShow">
-        <div class="transfer-content" ref="drag" v-drag="'#drag'">
+        <div class="transfer-content" ref="drag" v-drag="'#drag'" v-bkloading="{isLoading: loading}">
             <div class="content-title" id="drag">
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
@@ -22,25 +22,40 @@
                     </div>
                 </div>
                 <div class="section-right fr">
+                    <h3 class="section-title">{{$t('Hosts["已选中模块"]')}}</h3>
                     <ul class="selected-list">
-                        <li class="selected-item clearfix" v-for="(node, index) in selectedList" :key="index">
-                            <span>{{node['bk_inst_name']}}</span>
+                        <li class="selected-item clearfix" v-for="(node, index) in selectedList" :key="node['bk_inst_id']">
+                            <div class="module-info fl">
+                                <span class="module-info-name">{{node['bk_inst_name']}}</span>
+                                <span class="module-info-path">{{getModulePathLabel(node)}}</span>
+                            </div>
                             <i class="bk-icon icon-close fr" @click="removeSelected(index)"></i>
+                        </li>
+                        <li class="selected-item disabled" v-for="(node, index) in otherBizNodes" :key="index">
+                            <div class="module-info">
+                                <span class="module-info-name">{{node['module']['bk_module_name']}}</span>
+                                <span class="module-info-path">{{node['biz']['bk_biz_name']}}-{{node['set']['bk_set_name']}}</span>
+                            </div>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="content-footer clearfix">
-                <i18n path="Common['已选N项']" tag="div" class="selected-count fl">
-                    <span class="color-info" place="N">{{selectedList.length}}</span>
-                </i18n>
-                <div class="button-group fr">
-                    <bk-button type="primary" v-if="isNotModule" v-show="selectedList.length" @click="doTransfer(false)">{{$t('Common[\'确认转移\']')}}</bk-button>
-                    <template v-else v-show="selectedList.length">
-                        <bk-button type="primary" @click="doTransfer(false)">{{$t('Common[\'覆盖\']')}}</bk-button>
-                        <bk-button type="primary" @click="doTransfer(true)">{{$t('Common[\'更新\']')}}</bk-button>
+            <div class="content-footer">
+                <div class="button-group clearfix">
+                    <template v-if="chooseId.length > 1 && !isNotModule">
+                        <label class="transfer-type" for="increment">
+                            <input type="radio" id="increment" v-model="isIncrement" :value="true">
+                            <span class="transfer-description">{{$t('Hosts["增量更新"]')}}</span>
+                        </label>
+                        <label class="transfer-type" for="replacement">
+                            <input type="radio" id="replacement" v-model="isIncrement" :value="false">
+                            <span class="transfer-description">{{$t('Hosts["完全替换"]')}}</span>
+                        </label>
                     </template>
-                    <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
+                    <div class="fr">
+                        <bk-button type="primary" v-show="selectedList.length" @click="doTransfer">{{$t('Common[\'确认转移\']')}}</bk-button>
+                        <button class="bk-button vice-btn" @click="cancel">{{$t('Common[\'取消\']')}}</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -53,7 +68,8 @@
     export default {
         props: {
             isShow: Boolean,
-            chooseId: Array
+            chooseId: Array,
+            hosts: Array
         },
         data () {
             return {
@@ -84,13 +100,25 @@
                 activeParentNode: {},
                 selectedList: [],
                 allowType: ['source', 'module'],
-                isNotModule: true
+                isNotModule: true,
+                otherBizNodes: [],
+                isIncrement: true,
+                loading: true
             }
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
             maxExpandedLevel () {
                 return this.getLevel(this.treeData) - 1
+            },
+            allModulesNodes () {
+                return this.getNodes(this.treeData, 'module')
+            },
+            allSetNodes () {
+                return this.getNodes(this.treeData, 'set')
+            },
+            allBizNodes () {
+                return this.getNodes(this.treeData, 'biz')
             }
         },
         watch: {
@@ -119,9 +147,73 @@
             }
         },
         methods: {
-            init () {
-                this.getTopoTree()
+            async init () {
                 this.selectedList = []
+                this.otherBizNodes = []
+                await this.getTopoTree().then(() => {
+                    this.loading = false
+                })
+                if (this.hosts.length === 1) {
+                    this.setSelectedList()
+                }
+            },
+            setSelectedList () {
+                let selected = []
+                let otherBizNodes = []
+                const hostData = this.hosts[0]
+                const moduleArr = hostData.module
+                const setArr = hostData.set
+                const bizArr = hostData.biz
+                moduleArr.forEach(module => {
+                    const targetSet = setArr.find(set => set['bk_biz_id'] === module['bk_biz_id'] && set['bk_set_id'] === module['bk_set_id'])
+                    const targetBiz = bizArr.find(biz => biz['bk_biz_id'] === module['bk_biz_id'])
+                    if (targetBiz['bk_biz_id'] === this.bkBizId) {
+                        const node = this.allModulesNodes.find(moduleNode => moduleNode['bk_inst_id'] === module['bk_module_id'])
+                        selected.push(node)
+                    } else {
+                        otherBizNodes.push({
+                            module,
+                            set: targetSet,
+                            biz: targetBiz
+                        })
+                    }
+                })
+                this.selectedList = selected
+                this.otherBizNodes = otherBizNodes
+            },
+            getNodes (node, type) {
+                let result = []
+                if (node['bk_obj_id'] === type) {
+                    result.push(node)
+                } else if (node.child && node.child.length) {
+                    node.child.forEach(childNode => {
+                        result = [...result, ...this.getNodes(childNode, type)]
+                    })
+                }
+                return result
+            },
+            getModulePath (node) {
+                return {
+                    biz: this.allBizNodes.find(biz => biz['bk_inst_id'] === this.bkBizId),
+                    set: this.allSetNodes.find(set => {
+                        if (set.child && set.child.length) {
+                            return set.child.find(module => module['bk_inst_id'] === node['bk_inst_id'])
+                        }
+                        return false
+                    }),
+                    module: node
+                }
+            },
+            getModulePathLabel (node) {
+                if (node['bk_inst_id'] === 'source') {
+                    return this.$t('Common["主机资源池"]')
+                } else {
+                    const path = this.getModulePath(node)
+                    if ([1, 2].includes(node.default)) {
+                        return `${path['biz']['bk_inst_name']}-${path['module']['bk_inst_name']}`
+                    }
+                    return `${path['biz']['bk_inst_name']}-${path['set']['bk_inst_name']}`
+                }
             },
             getLevel (node) {
                 let level = node.level || 1
@@ -161,12 +253,12 @@
                                 title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
                                 confirmFn: () => {
                                     this.selectedList = [node]
+                                    this.isNotModule = true
                                 }
                             })
                         } else {
                             this.selectedList = [node]
                         }
-                        this.isNotModule = true
                     } else {
                         if (this.selectedList.length && (this.selectedList[0]['default'] || this.selectedList[0]['bk_inst_id'] === 'source')) {
                             this.selectedList = []
@@ -181,7 +273,7 @@
                     }
                 }
             },
-            doTransfer (type) {
+            doTransfer () {
                 if (this.selectedList[0]['bk_obj_id'] === 'source') {
                     this.$axios.post('hosts/modules/resource', {
                         'bk_biz_id': this.bkBizId,
@@ -200,6 +292,12 @@
                         }
                     })
                 } else {
+                    let isIncrement
+                    if (this.chooseId.length === 1) {
+                        isIncrement = false
+                    } else {
+                        isIncrement = this.isNotModule ? false : this.isIncrement
+                    }
                     let modulesDefault = this.selectedList[0]['default']
                     let transferType = {0: '', 1: 'idle', 2: 'fault'}
                     let url = `hosts/modules/${transferType[modulesDefault]}`
@@ -209,7 +307,7 @@
                         'bk_module_id': this.selectedList.map(node => {
                             return node['bk_inst_id']
                         }),
-                        'is_increment': type
+                        'is_increment': isIncrement
                     }).then(res => {
                         if (res.result) {
                             this.$emit('success', res)
@@ -229,7 +327,7 @@
                 this.selectedList.splice(index, 1)
             },
             getTopoInst () {
-                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}`).then(res => {
+                return this.$axios.get(`topo/inst/${this.bkSupplierAccount}/${this.bkBizId}?level=-1`).then(res => {
                     return res
                 })
             },
@@ -267,6 +365,8 @@
                 }))
             },
             cancel () {
+                this.selectedList = []
+                this.otherBizNodes = []
                 this.$emit('update:isShow', false)
             }
         },
@@ -287,8 +387,8 @@
         background: rgba(0, 0, 0, 0.6);
     }
     .transfer-content{
-        width: 643px;
-        height: 588px;
+        width: 720px;
+        height: 590px;
         background: #fff;
         position: absolute;
         top: 50%;
@@ -319,10 +419,16 @@
         }
         .section-right {
             height: 100%;
-            width: 273px;
-            padding: 20px 20px 20px 30px;
-            overflow: auto;
-            @include scrollbar;
+            width: 353px;
+            .section-title{
+                padding: 0 0 0 25px;
+                margin: 0;
+                height: 64px;
+                line-height: 63px;
+                font-size: 14px;
+                font-weight: normal;
+                border-bottom: 1px solid #e7e9ef;
+            }
         }
     }
     .content-footer{
@@ -354,14 +460,44 @@
         @include scrollbar;
     }
     .selected-list{
+        height: calc(100% - 64px);
         color: #3c96ff;
-        font-weight: bold;
         font-size: 12px;
+        overflow-y: auto;
+        @include scrollbar;
         .selected-item{
-            padding: 5px 0;
+            height: 44px;
+            line-height: 16px;
+            padding: 6px 0 6px 25px;
+            &:hover:not(.disabled){
+                background-color: #e2efff;
+                .module-info-name{
+                    color: #498fe0;
+                }
+                .module-info-path{
+                    color: #93bff5;
+                }
+            }
+            .module-info{
+                width: 250px;
+            }
+            .module-info-name{
+                display: block;
+                font-size: 14px;
+                color: $textColor;
+                @include ellipsis;
+            }
+            .module-info-path{
+                display: block;
+                font-size: 12px;
+                color: #b9bdc1;
+                @include ellipsis;
+            }
             .icon-close{
                 cursor: pointer;
                 color: #9196a1;
+                font-size: 15px;
+                margin: 10px 25px 0 0;
                 &:hover{
                     color: #3c96ff;
                 }
@@ -376,6 +512,16 @@
     }
     .button-group{
         padding: 0 20px 0 0;
+        .transfer-type{
+            line-height: normal;
+            font-size: 14px;
+            margin: 0 0 0 20px;
+            .transfer-description,
+            input[type="radio"]{
+                display: inline-block;
+                vertical-align: middle;
+            }
+        }
         .bk-button{
             margin: 0 5px;
         }
