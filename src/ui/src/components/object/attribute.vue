@@ -250,7 +250,13 @@
                 this.groupOrder.map(group => {
                     if (this.bkPropertyGroups.hasOwnProperty(group)) {
                         groupEditable[group] = this.bkPropertyGroups[group]['properties'].some(property => {
-                            return property['editable'] && !property['bk_isapi']
+                            if (this.isMultipleUpdate) {
+                                return property['editable'] && !property['bk_isapi'] && !property['isonly']
+                            } else if (this.type === 'create') {
+                                return !property['bk_isapi']
+                            } else {
+                                return property['editable'] && !property['bk_isapi']
+                            }
                         })
                     }
                 })
