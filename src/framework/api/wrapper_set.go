@@ -114,7 +114,8 @@ func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 	if err := cli.SetParent(businessID); nil != err {
 		return err
 	}
-	return cli.set.SetValue(fieldBusinessID, businessID)
+	cli.set.SetBusinessID(businessID)
+	return nil
 }
 
 // GetBusinessID get the business id
@@ -142,12 +143,12 @@ func (cli *SetWrapper) GetSupplierAccount() (string, error) {
 }
 
 // GetID get the set id
-func (cli *SetWrapper) GetID() (int, error) {
+func (cli *SetWrapper) GetID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldSetID)
+	return vals.Int64(fieldSetID)
 }
 
 // SetParent set the parent id of the set

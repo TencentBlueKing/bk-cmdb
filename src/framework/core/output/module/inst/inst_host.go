@@ -35,7 +35,7 @@ type HostInterface interface {
 	Transfer() TransferInterface
 
 	SetBusinessID(bizID int64)
-	SetModuleIDS(moduleIDS []int64)
+	SetModuleIDS(moduleIDS []int64, isIncrement bool)
 
 	GetBizs() []types.MapStr
 	GetSets() []types.MapStr
@@ -51,13 +51,15 @@ type HostInterface interface {
 }
 
 type host struct {
-	bizs      []types.MapStr
-	sets      []types.MapStr
-	modules   []types.MapStr
-	bizID     int64
-	moduleIDS []int64
-	target    model.Model
-	datas     types.MapStr
+	isIncrement bool
+	bizs        []types.MapStr
+	sets        []types.MapStr
+	modules     []types.MapStr
+	bizID       int64
+	moduleIDS   []int64
+	setIDS      []int64
+	target      model.Model
+	datas       types.MapStr
 }
 
 func (cli *host) GetBizs() []types.MapStr {
@@ -104,6 +106,7 @@ func (cli *host) reset() error {
 		}
 
 		cli.moduleIDS = append(cli.moduleIDS, id)
+		//fmt.Println("the module id:", id)
 	}
 
 	// parse set
@@ -119,7 +122,7 @@ func (cli *host) reset() error {
 			return fmt.Errorf("failed to get set id, error info is %s", err.Error())
 		}
 
-		cli.moduleIDS = append(cli.moduleIDS, id)
+		cli.setIDS = append(cli.setIDS, id)
 	}
 
 	return nil
@@ -129,8 +132,9 @@ func (cli *host) SetBusinessID(bizID int64) {
 	cli.bizID = bizID
 }
 
-func (cli *host) SetModuleIDS(moduleIDS []int64) {
+func (cli *host) SetModuleIDS(moduleIDS []int64, isIncrement bool) {
 	cli.moduleIDS = moduleIDS
+	cli.isIncrement = isIncrement
 }
 
 func (cli *host) GetModel() model.Model {
@@ -260,13 +264,13 @@ func (cli *host) IsExists() (bool, error) {
 		}
 
 		if !cli.datas.Exists(attrItem.GetID()) {
-			continue
+			return false, errors.New("the key field(" + attrItem.GetID() + ") is not set")
 		}
 
 		cond.Field(attrItem.GetID()).Eq(cli.datas[attrItem.GetID()])
 
 	}
-
+	//log.Infof("host search condition:%s %d", string(cond.ToMapStr().ToJSON()), 0)
 	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
 	if nil != err {
 		return false, err
@@ -275,13 +279,14 @@ func (cli *host) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 func (cli *host) Create() error {
-	log.Infof("the create host:%#v", cli.datas)
+	//log.Infof("the create host:%#v", cli.datas)
+	//log.Infof("create the exists:%s %d", string(cli.datas.ToJSON()), 0)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
 		return nil
 	}
-	log.Infof("the create host:%#v", cli.datas)
+	//log.Infof("the create host:%#v", cli.datas)
 	ids, err := client.GetClient().CCV3().Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
 	if nil != err {
 		return err
@@ -304,7 +309,7 @@ func (cli *host) Update() error {
 		return err
 	}
 
-	//log.Infof("the exists:%s %d", string(cli.datas.ToJSON()), 0)
+	//log.Infof("update the exists:%s %d", string(cli.datas.ToJSON()), 0)
 
 	// clear the invalid data
 	cli.datas.ForEach(func(key string, val interface{}) {
@@ -313,7 +318,7 @@ func (cli *host) Update() error {
 				return
 			}
 		}
-		log.Infof("remove the invalid field:%s", key)
+		//log.Infof("remove the invalid field:%s", key)
 		cli.datas.Remove(key)
 	})
 
@@ -336,6 +341,14 @@ func (cli *host) Update() error {
 			return err
 		}
 
+		cli.datas.Set(HostID, hostID)
+		if 0 != len(cli.moduleIDS) {
+			err = cli.Transfer().MoveToModule(cli.moduleIDS, cli.isIncrement)
+			if nil != err {
+				log.Errorf("failed to biz(%d) set modules(%#v), error info is %s", cli.bizID, cli.moduleIDS, err.Error())
+				return err
+			}
+		}
 	}
 
 	return nil
