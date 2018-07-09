@@ -35,7 +35,7 @@ const getters = {
     bkBizId: state => state.biz.selected,
     bkBizList: state => state.biz.list,
     bkPrivBizList: state => {
-        const priviBiz = (Cookies.get('bk_privi_biz_id') || '-1').split(',')
+        const priviBiz = (Cookies.get('bk_privi_biz_id') || '-1').split('-')
         return state.biz.list.filter(({ bk_biz_id: bkBizId }) => priviBiz.includes(bkBizId.toString()))
     },
     memberList: state => state.memberList,
