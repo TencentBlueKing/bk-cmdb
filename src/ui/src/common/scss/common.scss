@@ -252,6 +252,47 @@ textarea {
     }
 }
 
+.bk-button-group{
+    .bk-button{
+        position: relative;
+        z-index: 2;
+        padding: 0 17px;
+        &.first{
+            border-radius: 2px 0 0 2px;
+        }
+        &:hover{
+            color: #0082ff;
+            border-color: #0082ff;
+            z-index: 3;
+            .icon-cc-edit{
+                color: #0082ff;
+            }
+        }
+        &:disabled{
+            z-index: 1;
+            &:hover{
+                .icon-cc-edit{
+                    color: #ccc;
+                }
+            }
+        }
+        &.icon-btn{
+            color: #737987;
+            &:not(:disabled):hover{
+                border-color: #ef4c4c;
+                .icon-cc-del{
+                    color: #ef4c4c;
+                }
+            }
+            &:disabled{
+                .icon-cc-del{
+                    color: #ccc;
+                }
+            }
+        }
+    }
+}
+
 .del-btn ,
 .del-btn.bk-button{
     /* 删除按钮 */
