@@ -54,15 +54,15 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
-	inst := operation.NewInstOperation(client, targetModel, targetInst)
-	set := operation.NewSetOperation(client, inst)
-	module := operation.NewModuleOperation(client, inst)
-	business := operation.NewBusinessOperation(set, module, client, inst)
-
 	attribute := operation.NewAttributeOperation(client, targetModel, targetInst)
 	classification := operation.NewClassificationOperation(client, targetModel, targetInst)
 	group := operation.NewGroupOperation(client, targetModel, targetInst)
 	object := operation.NewObjectOperation(client, targetModel, targetInst)
+
+	inst := operation.NewInstOperation(client, targetModel, targetInst)
+	module := operation.NewModuleOperation(client, inst)
+	set := operation.NewSetOperation(client, object, inst, module)
+	business := operation.NewBusinessOperation(set, module, client, inst, object)
 
 	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
 	permission := operation.NewPermissionOperation(client)

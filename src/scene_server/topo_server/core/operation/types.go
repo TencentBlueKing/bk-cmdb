@@ -11,3 +11,22 @@
  */
 
 package operation
+
+type opcondition struct {
+	InstID []int64 `json:"inst_ids"`
+}
+
+type deleteCondition struct {
+	opcondition `json:",inline"`
+}
+
+type updateCondition struct {
+	InstID   int64                  `json:"inst_id"`
+	InstInfo map[string]interface{} `json:"datas"`
+}
+
+// OpCondition the condition operation
+type OpCondition struct {
+	Delete deleteCondition   `json:"delete"`
+	Update []updateCondition `json:"update"`
+}
