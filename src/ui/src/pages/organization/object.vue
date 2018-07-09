@@ -14,37 +14,36 @@
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
-                    <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
-                        <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
-                        <button class="bk-button" :disabled="!table.chooseId.length">
-                            <i class="icon-cc-derivation"></i>
-                            <span>{{$t("ModelManagement['导出']")}}</span>
+                    <div class="bk-button-group mr10">
+                        <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
+                            <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
+                            <button v-tooltip="$t('ModelManagement[\'导出\']')" title="导出" class="bk-button vice-btn first" :disabled="!table.chooseId.length">
+                                <i class="icon-cc-derivation"></i>
+                            </button>
+                        </form>
+                        <bk-button v-tooltip="$t('ModelManagement[\'导入\']')" type="default" class="bk-button vice-btn" @click="importSlider.isShow = true" :disabled="unauthorized.update">
+                            <i class="icon-cc-import"></i>
+                        </bk-button>
+                        <bk-button v-tooltip="$t('BusinessTopology[\'修改\']')" type="default" class="vice-btn"
+                            :disabled="!table.chooseId.length" 
+                            @click="multipleUpdate">
+                            <i class="icon-cc-edit"></i>
+                        </bk-button>
+                        <button v-if="objId !== 'biz'" class="bk-button icon-btn del-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
+                            <i class="icon-cc-del"></i>
                         </button>
-                    </form>
-                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.update">
-                        <i class="icon-cc-import"></i>
-                        <span>{{$t("ModelManagement['导入']")}}</span>
-                    </button>
-                    <bk-button type="default"
-                        :disabled="!table.chooseId.length" 
-                        @click="multipleUpdate">
-                        <i class="icon-cc-edit"></i>
-                        <span>{{$t("BusinessTopology['修改']")}}</span>
-                    </bk-button>
+                    </div>
                 </template>
-                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
-                <button v-if="objId !== 'biz'" class="bk-button icon-btn del-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
-                    <i class="icon-cc-del"></i>
-                </button>
+                <button class="bk-button bk-primary bk-button-componey create-btn mr10" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
-            <div class="fr btn-group">
-                <button v-if="objId !== 'biz'" class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
+            <div class="fr bk-button-group">
+                <button v-if="objId !== 'biz'" class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
                     <i class="icon-cc-history"></i>
                 </button>
-                <button v-else class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
+                <button v-else class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
                     <i class="icon-cc-history2"></i>
                 </button>
-                <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                <button class="bk-button " @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
                 </button>
             </div>
@@ -800,36 +799,12 @@
             background: #4d597d;
         }
     }
-    .vice-btn{  //次要按钮 取消按钮
-        border: 1px solid #e6e9f2;
-        color:  $primaryHoverColor;
-        cursor: pointer;
-        &:hover{
-            border-color: $primaryHoverColor;
-        }
-    }
     .icon-btn{  //单纯图标的按钮
         background: #ffffff;
         color: $primaryHoverColor;
         cursor: pointer;
         &:hover{
             color: $defaultColor;
-        }
-    }
-    .icon-btn{
-        width: 36px;
-        padding: 0;
-        color: #737987;
-        &:not(:disabled):hover{
-            border-color: #ef4c4c;
-            .icon-cc-del{
-                color: #ef4c4c;
-            }
-        }
-        &:disabled{
-            .icon-cc-del{
-                color: #ccc;
-            }
         }
     }
     .no-border-btn{    //无边框按钮
@@ -845,7 +820,6 @@
         font-size: 0;
     }
     .bk-button{
-        margin-right: 10px;
         &.import,
         &.export,
         &.setting{
