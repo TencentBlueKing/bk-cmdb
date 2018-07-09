@@ -13,27 +13,28 @@
 package instdata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/eventdata"
-	"configcenter/src/source_controller/common/instdata"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	dcCommon "configcenter/src/scene_server/datacollection/common"
-
+	"encoding/json"
 	simplejson "github.com/bitly/go-simplejson"
-
 	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/util"
+	dcCommon "configcenter/src/scene_server/datacollection/common"
+	eventtypes "configcenter/src/scene_server/event_server/types"
+	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/source_controller/common/eventdata"
+	"configcenter/src/source_controller/common/instdata"
 )
 
 var host *hostAction = &hostAction{}
@@ -152,6 +153,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 
 //GetHostSnap get host snap
 func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response) {
+	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -159,14 +161,24 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
-		data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
-		var result interface{} = ""
-		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 
+		var result string
+		err := redisCli.Get(dcCommon.RedisSnapKeyPrefix + hostID).Scan(&result)
 		if err != nil {
+			statuscode := 0
+			err := redisCli.Get(dcCommon.RedisSnapKeyChannelStatus).Scan(&statuscode)
+			if err != nil {
+				blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
+			}
+
+			if statuscode != common.CCSuccess {
+				return http.StatusInternalServerError, nil, defErr.Error(statuscode)
+			}
 			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
 		}
+
 		return http.StatusOK, common.KvMap{"data": result}, nil
 	}, resp)
 }
