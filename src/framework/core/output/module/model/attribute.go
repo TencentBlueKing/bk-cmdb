@@ -52,7 +52,9 @@ func (cli *attribute) ToMapStr() types.MapStr {
 
 func (cli *attribute) search() ([]types.MapStr, error) {
 	// construct the search condition
-	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID).Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID)
+	cond.Field(ObjectID).Eq(cli.ObjectID)
+	cond.Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
 	dataItems, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)

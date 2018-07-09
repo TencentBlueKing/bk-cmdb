@@ -1,6 +1,7 @@
 {
     "common_property_bk_inst_name":"instance name",
-    
+    "common_property_bk_inst_id":"instance ID",
+
     "biz_property_bk_biz_name": "business name",
     "biz_property_life_cycle": "lifecycle",
     "biz_property_bk_biz_maintainer": "maintainer",
@@ -29,6 +30,7 @@
     "plat_property_bk_cloud_name": "cloud area",
     "plat_property_bk_supplier_account": "supplier",
 
+    "host_property_bk_host_id": "host ID",
     "host_property_bk_host_innerip": "inner ip",
     "host_property_bk_host_outerip": "outer ip",
     "host_property_operator": "main operator",

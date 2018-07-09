@@ -14,10 +14,10 @@
             <h3>{{$t('ModelManagement["模型停用"]')}}</h3>
             <p><span v-if="!item['bk_ispaused']">{{$t('ModelManagement["保留模型和相应实例，隐藏关联关系"]')}}</span></p>
             <div class="bottom-contain">
-                <bk-button type="primary":title="$t('ModelManagement[\'启用模型\']')" v-if="isReadOnly" class="bk-button main-btn mr10 button-on" @click="restartModelConfirm">
+                <bk-button type="primary" :loading="$loading('restartModel')" :disabled="$loading('restartModel')" :title="$t('ModelManagement[\'启用模型\']')" v-if="isReadOnly" class="bk-button main-btn mr10 button-on" @click="restartModelConfirm">
                     {{$t('ModelManagement["启用模型"]')}}
                 </bk-button>
-                <bk-button type="primary" v-else class="mr10" :title="$t('ModelManagement[\'停用模型\']')" @click="showConfirmDialog('stop')" :class="['bk-button bk-default', {'is-disabled': item['ispre'] || parentClassificationId === 'bk_biz_topo'}]" :disabled="item['ispre'] || parentClassificationId === 'bk_biz_topo'">
+                <bk-button type="primary" :loading="$loading('stopModel')" v-else class="mr10" :title="$t('ModelManagement[\'停用模型\']')" @click="showConfirmDialog('stop')" :class="['bk-button bk-default', {'is-disabled': item['ispre'] || parentClassificationId === 'bk_biz_topo'}]" :disabled="item['ispre'] || parentClassificationId === 'bk_biz_topo'">
                     {{$t('ModelManagement["停用模型"]')}}
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
@@ -34,7 +34,7 @@
             <h3>{{$t('ModelManagement["模型删除"]')}}</h3>
             <p>{{$t('ModelManagement["删除模型和其下所有实例，此动作不可逆，请谨慎操作"]')}}</p>
             <div class="bottom-contain">
-                <bk-button type="primary" class="mr10" :title="$t('ModelManagement[\'删除模型\']')" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre']">
+                <bk-button type="primary" :loading="$loading('deleteModel')" class="mr10" :title="$t('ModelManagement[\'删除模型\']')" @click="showConfirmDialog('delete')" :class="['bk-button bk-default', {'is-disabled':item['ispre']}]" :disabled="item['ispre']">
                     <span>{{$t('ModelManagement["删除模型"]')}}</span>
                 </bk-button>
                 <span class="btn-tip-content" v-show="isShowTipStop=item['ispre']">
@@ -103,7 +103,7 @@
                 let params = {
                     bk_ispaused: false
                 }
-                this.$axios.put(`object/${this.id}`, params).then(res => {
+                this.$axios.put(`object/${this.id}`, params, {id: 'restartModel'}).then(res => {
                     if (res.result) {
                         this.$emit('closeSideSlider')
                         this.$store.dispatch('navigation/getClassifications', true)
@@ -119,7 +119,7 @@
                 let params = {
                     bk_ispaused: true
                 }
-                this.$axios.put(`object/${this.id}`, params).then(res => {
+                this.$axios.put(`object/${this.id}`, params, {id: 'stopModel'}).then(res => {
                     if (res.result) {
                         this.$emit('stopModel')
                         this.$store.dispatch('navigation/getClassifications', true)
@@ -133,7 +133,7 @@
             */
             deleteModel () {
                 if (this.isMainLine) {
-                    this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`).then(res => {
+                    this.$axios.delete(`topo/model/mainline/owners/${this.bkSupplierAccount}/objectids/${this.item['bk_obj_id']}`, {id: 'deleteModel'}).then(res => {
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
                         } else {
@@ -141,7 +141,7 @@
                         }
                     })
                 } else {
-                    this.$axios.delete(`object/${this.id}`).then(res => {
+                    this.$axios.delete(`object/${this.id}`, {id: 'deleteModel'}).then(res => {
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
                             this.$store.dispatch('navigation/getClassifications', true)
