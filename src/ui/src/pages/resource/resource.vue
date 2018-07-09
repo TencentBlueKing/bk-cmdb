@@ -153,12 +153,14 @@
                 this.slider.tab.active = active
             },
             hasAssignedHosts () {
-                return !this.selectedList.find(host => host['biz']['bk_biz_id'] !== 1)
+                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['bk_biz_id'] !== 1))
             },
             confirmTransfer (selected, index) {
                 if (this.hasAssignedHosts()) {
                     this.$alertMsg(this.$t('Hosts["请勿选择已分配主机"]'))
-                    this.hosts.bkBizId = ''
+                    this.$nextTick(() => {
+                        this.hosts.bkBizId = ''
+                    })
                     return
                 }
                 let h = this.$createElement
