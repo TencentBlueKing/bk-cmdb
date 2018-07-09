@@ -13,14 +13,15 @@
 package upgrader
 
 import (
+	"sort"
+	"sync"
+
+	"gopkg.in/mgo.v2"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccversion "configcenter/src/common/version"
-	"gopkg.in/mgo.v2"
-
 	"configcenter/src/storage"
-	"sort"
-	"sync"
 )
 
 // Config config for upgrader
@@ -46,7 +47,7 @@ func RegistUpgrader(version string, handlerFunc func(storage.DI, *Config) error)
 	defer registlock.Unlock()
 	v := Upgrader{version: version, do: handlerFunc}
 	upgraderPool = append(upgraderPool, v)
-	blog.Infof("registed upgrader for version ", v.version)
+	// blog.Infof("registed upgrader for version %s", v.version)
 }
 
 // Upgrade uprade the db datas to newest verison
