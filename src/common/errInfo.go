@@ -280,10 +280,11 @@ const (
 	// CCErrObjectPropertyGroupUpdateFailed failed to update the filed
 	CCErrObjectPropertyGroupUpdateFailed = 1102003
 
-	CCErrObjectCreateInstFailed = 1102004
-	CCErrObjectUpdateInstFailed = 1102005
-	CCErrObjectDeleteInstFailed = 1102006
-	CCErrObjectSelectInstFailed = 1102007
+	CCErrObjectCreateInstFailed       = 1102004
+	CCErrObjectUpdateInstFailed       = 1102005
+	CCErrObjectDeleteInstFailed       = 1102006
+	CCErrObjectSelectInstFailed       = 1102007
+	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
 	CCErrObjectDBOpErrno = 1102004
