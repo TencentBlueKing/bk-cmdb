@@ -398,7 +398,11 @@
         "修改进程成功": "Modification process succeeded",
         "删除进程失败": "Failed to delete process",
         "确认要删除进程": "Are you sure you want to delete process {processName}?",
-        "删除进程成功": "The delete process succeeded"
+        "删除进程成功": "The delete process succeeded",
+        "批量编辑": "Batch Modify",
+        "在进程管理中绑定进程到模块，": "To bind a process to a module in process management,",
+        "点击此跳转": "click to jump",
+        "进程信息": "Process information"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",

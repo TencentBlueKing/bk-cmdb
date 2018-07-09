@@ -576,6 +576,7 @@
             resetData () {
                 this.displayType = 'list'
                 this.localValues = {}
+                this.multipleEditableFields = {}
                 this.$forceUpdate()
             },
             getValidateRules (property) {
