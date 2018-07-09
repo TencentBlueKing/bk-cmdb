@@ -185,6 +185,7 @@
         <v-host-transfer-pop
             :isShow.sync="transfer.isShow"
             :chooseId="table.chooseId"
+            :hosts="selectedList"
             @success="transferSuccess">
         </v-host-transfer-pop>
     </div>
