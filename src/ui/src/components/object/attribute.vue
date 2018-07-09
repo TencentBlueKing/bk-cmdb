@@ -134,18 +134,18 @@
         <template v-if="showBtnGroup">
             <div class="attribute-btn-group" v-if="displayType==='list' && type === 'update'">
                 <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">{{$t("Common['属性编辑']")}}</bk-button>
-                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
+                <bk-button type="default" :loading="$loading('instDelete')" v-if="type==='update' && showDelete && !isMultipleUpdate" class="del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
                     <template v-if="objId !== 'biz'">
                         {{$t("Common['删除']")}}
                     </template>
                     <template v-else>
                         {{$t("Inst['归档']")}}
                     </template>
-                </button>
+                </bk-button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('editAttr')" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('editAttr')" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>
         </template>
@@ -250,7 +250,13 @@
                 this.groupOrder.map(group => {
                     if (this.bkPropertyGroups.hasOwnProperty(group)) {
                         groupEditable[group] = this.bkPropertyGroups[group]['properties'].some(property => {
-                            return property['editable'] && !property['bk_isapi']
+                            if (this.isMultipleUpdate) {
+                                return property['editable'] && !property['bk_isapi'] && !property['isonly']
+                            } else if (this.type === 'create') {
+                                return !property['bk_isapi']
+                            } else {
+                                return property['editable'] && !property['bk_isapi']
+                            }
                         })
                     }
                 })
@@ -570,6 +576,7 @@
             resetData () {
                 this.displayType = 'list'
                 this.localValues = {}
+                this.multipleEditableFields = {}
                 this.$forceUpdate()
             },
             getValidateRules (property) {

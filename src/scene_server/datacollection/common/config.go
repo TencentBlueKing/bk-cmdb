@@ -20,11 +20,34 @@ import (
 // cache key define
 const (
 	RedisSnapKeyPrefix = common.BKCacheKeyV3Prefix + "snapshot:"
+	RedisDisKeyPrefix  = common.BKCacheKeyV3Prefix + "discover:"
 	MasterProcLockKey  = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
+	MasterDisLockKey   = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
+)
+
+// message process related define
+const (
+	MaxSnapSize     = 2000
+	MaxDiscoverSize = 1000
+)
+
+// channel name
+const (
+	DiscoverChan = "discover"
+	SnapShotChan = "snapshot"
+)
+
+// channel config key defined
+const (
+	DiscoverRedis = "discover-redis"
+	CcRedis       = "redis"
+	SnapShotRedis = "snap-redis"
 )
 
 // redis clients
 var (
 	Snapcli  *redis.Client
 	Rediscli *redis.Client
+	Discli   *redis.Client
 )

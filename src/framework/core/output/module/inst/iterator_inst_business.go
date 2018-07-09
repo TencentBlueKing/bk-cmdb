@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package inst
 
 import (
@@ -21,6 +21,12 @@ import (
 	"io"
 )
 
+// BusinessIterator the iterator interface for the business
+type BusinessIterator interface {
+	Next() (BusinessInterface, error)
+	ForEach(callbackItem func(item BusinessInterface) error) error
+}
+
 type iteratorInstBusiness struct {
 	targetModel model.Model
 	cond        common.Condition
@@ -28,7 +34,7 @@ type iteratorInstBusiness struct {
 	bufIdx      int
 }
 
-func newIteratorInstBusiness(target model.Model, cond common.Condition) (Iterator, error) {
+func newIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
 
 	iter := &iteratorInstBusiness{
 		targetModel: target,
@@ -50,7 +56,7 @@ func newIteratorInstBusiness(target model.Model, cond common.Condition) (Iterato
 
 }
 
-func (cli *iteratorInstBusiness) Next() (Inst, error) {
+func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -80,7 +86,7 @@ func (cli *iteratorInstBusiness) Next() (Inst, error) {
 	return returnItem, nil
 }
 
-func (cli *iteratorInstBusiness) ForEach(callbackItem func(item Inst) error) error {
+func (cli *iteratorInstBusiness) ForEach(callbackItem func(item BusinessInterface) error) error {
 	for {
 
 		item, err := cli.Next()
