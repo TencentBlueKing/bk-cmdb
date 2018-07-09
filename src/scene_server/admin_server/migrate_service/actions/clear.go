@@ -56,7 +56,6 @@ func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
 
 	cli.ResponseSuccess("migrate success", resp)
 	return
-
 }
 
 var (
