@@ -18,21 +18,20 @@ import (
 	"os"
 	"time"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/redisclient"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -61,7 +60,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_EVENTSERVER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
