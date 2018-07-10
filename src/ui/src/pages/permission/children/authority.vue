@@ -154,9 +154,6 @@
                             id: 'event',
                             name: 'Permission["事件推送配置"]'
                         }, {
-                            id: 'model',
-                            name: 'Permission["模型配置"]'
-                        }, {
                             id: 'audit',
                             name: 'OperationAudit["操作审计"]'
                         }],

@@ -13,9 +13,10 @@
 package operation
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"context"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
@@ -57,7 +58,7 @@ func (cli *classification) FindSingleClassification(params types.ContextParams, 
 
 	objs, err := cli.FindClassification(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), error info is %s", params.Header.OwnerID, classificationID, err.Error())
+		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), error info is %s", params.SupplierAccount, classificationID, err.Error())
 		return nil, err
 	}
 	for _, item := range objs {
@@ -87,7 +88,7 @@ func (cli *classification) CreateClassification(params types.ContextParams, data
 
 func (cli *classification) DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return err
@@ -103,7 +104,7 @@ func (cli *classification) DeleteClassification(params types.ContextParams, id i
 
 func (cli *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err

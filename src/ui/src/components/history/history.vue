@@ -27,17 +27,17 @@
                 <v-member-selector class="filter-field" :exclude="true" :selected.sync="filter.user" :active="active" :multiple="false"></v-member-selector>
             </div>
             <div class="filter-group btn fr">
-                <bk-button type="primary" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('auditHistory')" @click="setCurrentPage(1)">{{$t("Common['查询']")}}</bk-button>
             </div>
         </div>
         <div class="history-table">
             <v-table
-                :loading="table.isLoading" 
+                :loading="$loading('auditHistory')" 
                 :header="table.header" 
                 :list="table.list" 
-                :pagination="table.pagination" 
+                :pagination.sync="table.pagination" 
                 :defaultSort="table.defaultSort"
-                :wrapperMinusHeight="250"
+                :wrapperMinusHeight="270"
                 @handleSortChange="setTableSort"
                 @handlePageChange="setCurrentPage"
                 @handleSizeChange="setPageSize"
@@ -49,7 +49,12 @@
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
-            <v-history-details style="padding: 0 40px;" :details="details.data" slot="content" :height="300" :width="635"></v-history-details>
+            <v-history-details style="padding: 0 40px;" 
+                :details="details.data"
+                :isShow="this.details.isShow" 
+                slot="content" 
+                :height="342" 
+                :width="635"></v-history-details>
         </div>
     </div>
 </template>
@@ -100,8 +105,7 @@
                         size: 10
                     },
                     defaultSort: '-op_time',
-                    sort: '-op_time',
-                    isLoading: false
+                    sort: '-op_time'
                 }
             }
         },
@@ -149,6 +153,7 @@
                     $dateRangePicker.selectedDateRangeTmp = [this.initDate.start, this.initDate.end]
                     this.filter.date = [`${this.initDate.start} 00:00:00`, `${this.initDate.end} 23:59:59`]
                     this.filter.user = ''
+                    this.table.pagination.current = 1
                 }
             }
         },
@@ -168,8 +173,7 @@
                 }
             },
             getHistory () {
-                this.table.isLoading = true
-                this.$axios.post('audit/search', this.searchParams).then(res => {
+                this.$axios.post('audit/search', this.searchParams, {id: 'auditHistory'}).then(res => {
                     if (res.result) {
                         res.data.info.map(history => {
                             history['op_time'] = this.$formatTime(history['op_time'])
@@ -179,9 +183,6 @@
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
-                    this.table.isLoading = false
-                }).catch(() => {
-                    this.table.isLoading = false
                 })
             },
             setFilterDate (oldDate, newDate) {
@@ -251,7 +252,7 @@
         top:20px;
         left: 30px;
         width: 709px;
-        height: 524px;
+        height: 577px;
         background-color: #ffffff;
         box-shadow: 0px 2px 9px 0px rgba(0, 0, 0, 0.4);
         z-index: 1;

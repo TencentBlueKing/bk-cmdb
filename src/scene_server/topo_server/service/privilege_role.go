@@ -25,11 +25,11 @@ func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, qu
 		datas = append(datas, key)
 	})
 
-	err := s.core.PermissionOperation().Role(params).CreatePermission(params.Header.OwnerID, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
+	err := s.core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
 	return nil, err
 }
 
 // GetPrivilege search user goup
 func (s *topoService) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	return s.core.PermissionOperation().Role(params).GetPermission(params.Header.OwnerID, pathParams("bk_obj_id"), pathParams("bk_property_id"))
+	return s.core.PermissionOperation().Role(params).GetPermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }
