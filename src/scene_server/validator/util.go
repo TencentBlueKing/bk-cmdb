@@ -15,6 +15,7 @@ package validator
 import (
 	"encoding/json"
 
+	"github.com/tidwall/gjson"
 	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
@@ -137,10 +138,10 @@ func parseIntOption(val interface{}) IntOption {
 	}
 	switch option := val.(type) {
 	case string:
-		err := json.Unmarshal([]byte(option), &intOption)
-		if nil != err {
-			blog.Errorf("parseIntOption error : %s", err.Error())
-		}
+
+		intOption.Min = gjson.Get(option, "min").Raw
+		intOption.Max = gjson.Get(option, "max").Raw
+
 	case map[string]interface{}:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])

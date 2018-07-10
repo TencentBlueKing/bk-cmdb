@@ -1,14 +1,8 @@
 'use strict'
+require('./custom-env')
 require('./check-versions')()
-
 process.env.NODE_ENV = 'production'
-var argv = process.argv.slice(2)
-var output = argv.find(args => {
-  return args.split('=')[0] === 'BUILD_OUTPUT'
-})
-if (output) {
-  process.env.BUILD_OUTPUT = output.split('=')[1]
-}
+
 const ora = require('ora')
 const rm = require('rimraf')
 const path = require('path')
