@@ -427,7 +427,7 @@
                         text.push(value)
                     }
                 })
-                return text.join(',')
+                return text.join('\n')
             },
             setSelectedList (newId, oldId) {
                 let diffIdList = newId.concat(oldId).filter(id => !newId.includes(id) || !oldId.includes(id))
