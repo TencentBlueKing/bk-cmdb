@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/emicklei/go-restful"
 
@@ -54,7 +53,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 		param := new(SearchIdentifierParam)
 		err := json.NewDecoder(req.Request.Body).Decode(param)
 		if err != nil {
-			blog.Error("SearchIdentifier error:%s", err.Error())
+			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 		blog.Infof("SearchIdentifier %v", param)
@@ -92,7 +91,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 		hosts := []*metadata.HostIdentifier{}
 		err = instdata.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
 		if err != nil {
-			blog.Error("SearchIdentifier error:%s", err.Error())
+			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 		}
 		for _, host := range hosts {
@@ -103,7 +102,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			blog.Infof("SearchIdentifier relations condition %v ", condiction)
 			err = cli.CC.InstCli.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			if err != nil {
-				blog.Error("SearchIdentifier error:%s", err.Error())
+				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 			}
 			host.HostIdentModule = map[string]*metadata.HostIdentModule{}
@@ -126,7 +125,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			tmps := []metadata.SetInst{}
 			err = getCache(cli.CC.InstCli, common.BKTableNameBaseSet, common.BKSetIDField, setIDs, &tmps)
 			if err != nil {
-				blog.Error("SearchIdentifier error:%s", err.Error())
+				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 			}
 			for _, tmp := range tmps {
@@ -146,7 +145,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			tmps := []metadata.BizInst{}
 			err = getCache(cli.CC.InstCli, common.BKTableNameBaseApp, common.BKAppIDField, bizIDs, &tmps)
 			if err != nil {
-				blog.Error("SearchIdentifier error:%s", err.Error())
+				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 			}
 			for _, tmp := range tmps {
@@ -157,7 +156,7 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			tmps := []metadata.CloudInst{}
 			err = getCache(cli.CC.InstCli, common.BKTableNameBasePlat, common.BKCloudIDField, cloudIDs, &tmps)
 			if err != nil {
-				blog.Error("SearchIdentifier error:%s", err.Error())
+				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectIdentifierFailed)
 			}
 			for _, tmp := range tmps {
@@ -220,36 +219,4 @@ type SearchIdentifierParam struct {
 		Limit int    `json:"limit"`
 		Sort  string `json:"sort"`
 	} `json:"page"`
-}
-
-func NewHostIdentifier(m map[string]interface{}) *metadata.HostIdentifier {
-	var err error
-	ident := metadata.HostIdentifier{}
-	ident.HostName = fmt.Sprint(m["bk_host_name"])
-	ident.CloudID, err = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v", "bk_cloud_id", m)
-	}
-	ident.InnerIP = fmt.Sprint(m["bk_host_innerip"])
-	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
-	ident.OSType = fmt.Sprint(m["bk_os_type"])
-	ident.OSName = fmt.Sprint(m["bk_os_name"])
-	ident.HostID, err = util.GetIntByInterface(m[common.BKHostIDField])
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_host_id", m)
-	}
-	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)
-	}
-	ident.CPU, err = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_cpu", m)
-	}
-	ident.Disk, err = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_disk", m)
-	}
-	ident.HostIdentModule = map[string]*metadata.HostIdentModule{}
-	return &ident
 }
