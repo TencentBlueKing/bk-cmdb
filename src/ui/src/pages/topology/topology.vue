@@ -27,6 +27,7 @@
                         :outerLoading="tree.loading"
                         :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
                         :tableVisible="view.tab.active === 'host'"
+                        :wrapperMinusHeight="210"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
@@ -573,6 +574,9 @@
         }
         .bk-tab2-content{
             height: calc(100% - 80px);
+            section.active{
+                height: 100%;
+            }
         }
     }
     .topo-wrapper .hosts-wrapper{
