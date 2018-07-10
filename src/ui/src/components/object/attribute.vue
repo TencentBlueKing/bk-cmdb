@@ -586,7 +586,7 @@
                     option,
                     isrequired
                 } = property
-                if (isrequired) {
+                if (isrequired && !this.isMultipleUpdate) {
                     rules['required'] = true
                 }
                 if (property.hasOwnProperty('option') && option) {

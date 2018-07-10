@@ -85,7 +85,7 @@
                 :header="table.tableHeader"
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
