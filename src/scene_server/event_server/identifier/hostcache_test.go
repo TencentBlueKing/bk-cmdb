@@ -1,10 +1,11 @@
 package identifier
 
 import (
-	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"configcenter/src/scene_server/event_server/types"
 )
 
 func TestIdentifier(t *testing.T) {
