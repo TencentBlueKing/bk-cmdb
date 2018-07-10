@@ -13,8 +13,12 @@
 package operation
 
 import (
-	"configcenter/src/apimachinery"
+	"context"
 
+	"configcenter/src/common/blog"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -32,16 +36,7 @@ type AssociationOperationInterface interface {
 	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
-}
-
-type association struct {
-	clientSet    apimachinery.ClientSetInterface
-	cls          ClassificationOperationInterface
-	obj          ObjectOperationInterface
-	attr         AttributeOperationInterface
-	inst         InstOperationInterface
-	modelFactory model.Factory
-	instFactory  inst.Factory
+	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -57,23 +52,52 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface, cls Classif
 	}
 }
 
-func (cli *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
+type association struct {
+	clientSet    apimachinery.ClientSetInterface
+	cls          ClassificationOperationInterface
+	obj          ObjectOperationInterface
+	attr         AttributeOperationInterface
+	inst         InstOperationInterface
+	modelFactory model.Factory
+	instFactory  inst.Factory
+}
+
+func (a *association) SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.BKObjIDField).Eq(objID)
+	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to search the object(%s) association info , error info is %s", objID, rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data, nil
+}
+
+func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	//  check the association
 	//	cond := condition.CreateCondition()
 	//	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
 	//	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(data.ObjectAttID)
 
-	//asst := cli.modelFactory.(params)
+	//asst := a.modelFactory.(params)
 	//asst.Parse(data)
 
-	//cli.clientSet.ObjectController().Meta().SelectObjectAssociations()
+	//a.clientSet.ObjectController().Meta().SelectObjectAssociations()
 
 	return nil, nil
 }
-func (cli *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
+func (a *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
 	return nil
 }
-func (cli *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {
+func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {
 	return nil
 }

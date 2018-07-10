@@ -55,7 +55,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetInst := inst.New(client)
 
 	attribute := operation.NewAttributeOperation(client, targetModel, targetInst)
-	classification := operation.NewClassificationOperation(client, targetModel, targetInst)
+	classification := operation.NewClassificationOperation(client)
 	group := operation.NewGroupOperation(client, targetModel, targetInst)
 	object := operation.NewObjectOperation(client, targetModel, targetInst)
 
@@ -67,6 +67,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
 	permission := operation.NewPermissionOperation(client)
 	compatibleV2 := operation.NewCompatibleV2Operation(client)
+
+	classification.SetProxy(targetModel, targetInst, association, object)
 
 	return &core{
 		set:            set,
