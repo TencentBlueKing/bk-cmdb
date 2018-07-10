@@ -183,7 +183,7 @@
             },
             close () {
                 this.open = false
-
+                this.$emit('on-toggle', false)
                 if (this.filterable) {
                     setTimeout(() => {
                         this.filter = ''

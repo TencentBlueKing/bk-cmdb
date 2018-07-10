@@ -67,8 +67,8 @@
             </div>
         </div>
         <div class="base-info">
-            <button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" @click="confirm">{{$t('Common["确定"]')}}</button>
-            <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
+            <bk-button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" :loading="$loading('updatePropertyIndex')" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </div>
     </div>
 </template>
@@ -176,7 +176,7 @@
                     })
                 })
                 try {
-                    await this.$axios.put('/objectatt/group/property', params)
+                    await this.$axios.put('/objectatt/group/property', params, {id: 'updatePropertyIndex'})
                     this.$alertMsg(this.$t('Common["更新成功"]'), 'success')
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)

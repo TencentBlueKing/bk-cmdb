@@ -97,7 +97,7 @@ const getters = {
                         if (state.interceptStaticModel[classificationId].includes(id)) {
                             return sysConfig[classificationId].includes(id)
                         }
-                        return id !== 'permission' // 权限管理仅管理员拥有切后台接口不返回其配置
+                        return !['permission', 'model'].includes(id) // 权限管理、模型管理仅管理员拥有且后台接口不返回其配置
                     })
                 }
             }
@@ -139,29 +139,15 @@ const actions = {
             return Promise.resolve({result: true, data: state.classifications})
         }
         let classifications = []
-        await $axios.post('object/classifications', {}).then(res => {
+        await $axios.post(`object/classification/${rootState.common.bkSupplierAccount}/objects`, {
+        }).then(res => {
             if (res.result) {
                 classifications = res.data
+                commit('setClassifications', classifications)
             } else {
                 $alertMsg(res['bk_error_msg'])
             }
         })
-        await $Axios.all(classifications.map(classification => {
-            return $axios.post(`object/classification/${rootState.common.bkSupplierAccount}/objects`, {
-                'bk_classification_id': classification['bk_classification_id']
-            }).then(res => {
-                if (!res.result) {
-                    $alertMsg(res['bk_error_msg'])
-                }
-                return res.data || []
-            })
-        })).then($Axios.spread(function () {
-            let results = [...arguments]
-            classifications = results.map(classification => {
-                return {...classification[0]}
-            })
-            commit('setClassifications', classifications)
-        }))
         return Promise.resolve({result: state.result.classification, data: state.classifications})
     },
     getAuthority ({commit, state, rootState}) {
