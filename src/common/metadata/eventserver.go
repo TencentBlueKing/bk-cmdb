@@ -10,13 +10,47 @@
  * limitations under the License.
  */
 
-package types
+package metadata
 
 import (
-	"configcenter/src/common/types"
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"time"
+
+	"configcenter/src/common/types"
 )
+
+type RspSubscriptionCreate struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		SubscriptionID int64 `json:"subscription_id"`
+	} `json:"data"`
+}
+
+type ParamSubscriptionSearch struct {
+	Fields    []string               `json:"fields"`
+	Condition map[string]interface{} `json:"condition"`
+	Page      BasePage               `json:"page"`
+}
+
+type RspSubscriptionSearch struct {
+	Count int            `json:"count"`
+	Info  []Subscription `json:"info"`
+}
+
+type ParamSubscriptionTelnet struct {
+	CallbackUrl string `json:"callback_url"`
+}
+type ParamSubscriptionTestCallback struct {
+	ParamSubscriptionTelnet `json:",inline"`
+	Data                    string `json:"data"`
+}
+
+type RspSubscriptionTestCallback struct {
+	HttpStatus   int    `json:"http_status"`
+	ResponseBody string `json:"response_body"`
+}
 
 // Subscription define
 type Subscription struct {
@@ -41,7 +75,7 @@ type Statistics struct {
 }
 
 func (Subscription) TableName() string {
-	return TableNameSubscription
+	return "cc_Subscription"
 }
 
 func (s Subscription) GetCacheKey() string {
@@ -102,4 +136,50 @@ type DistInst struct {
 type DistInstCtx struct {
 	DistInst
 	Raw string
+}
+
+// TableNames
+const (
+	TableNameSubscription = "cc_Subscription"
+)
+
+// EventAction
+const (
+	EventActionCreate = "create"
+	EventActionUpdate = "update"
+	EventActionDelete = "delete"
+)
+
+// EventType define
+type EventType string
+
+// EventType enumeration
+const (
+	EventTypeInstData           = "instdata"
+	EventTypeRelation           = "relation"
+	EventTypeResourcePoolModule = "resource"
+)
+
+// ConfirmMode define
+type ConfirmMode string
+
+// ConfirmMode define
+var (
+	ConfirmmodeHttpstatus = "httpstatus"
+	ConfirmmodeRegular    = "regular"
+)
+
+// Scan implement sql driver's Scan interface
+func (n *ConfirmMode) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("invalid type convert")
+	}
+	*n = ConfirmMode(string(b))
+	return nil
+}
+
+// Value implement sql driver's Value interface
+func (n ConfirmMode) Value() (driver.Value, error) {
+	return string(n), nil
 }
