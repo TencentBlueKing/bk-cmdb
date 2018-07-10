@@ -164,7 +164,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 		} else {
 			hosts[index+1] = host
 		}
-		fmt.Println(host)
 	}
 	if nil != err {
 
