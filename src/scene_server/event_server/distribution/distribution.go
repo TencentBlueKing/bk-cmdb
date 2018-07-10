@@ -1,30 +1,17 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
- * limitations under the License.
- */
- 
 package distribution
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/event_server/types"
 	"encoding/json"
 	"fmt"
-	redis "gopkg.in/redis.v5"
 	"runtime/debug"
 	"time"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/event_server/types"
 )
 
-func StartDistribute() (err error) {
+func (dh *DistHandler) StartDistribute() (err error) {
 	defer func() {
 		if err == nil {
 			syserror := recover()
@@ -34,26 +21,25 @@ func StartDistribute() (err error) {
 		}
 		debug.PrintStack()
 	}()
-	// reconcil cache from persistent store
-	rccler := newReconciler()
+
+	rccler := newReconciler(dh.cache)
 	rccler.loadAll()
 	rccler.reconcile()
 	subscribers := rccler.persistedSubscribers
 
-	// start distribution goroutines
 	chErr := make(chan error)
 	routines := map[int64]chan struct{}{}
-	renewMaps := map[int64]chan types.Subscription{}
+	renewMaps := map[int64]chan metadata.Subscription{}
 	for _, str := range subscribers {
-		subscriber := types.Subscription{}
+		subscriber := metadata.Subscription{}
 		if err := json.Unmarshal([]byte(str), &subscriber); err != nil {
 			return err
 		}
 
 		done := make(chan struct{})
-		renewCh := make(chan types.Subscription)
+		renewCh := make(chan metadata.Subscription)
 		go func() {
-			err := distToSubscribe(subscriber, renewCh, done)
+			err := dh.distToSubscribe(subscriber, renewCh, done)
 			if err != nil {
 				chErr <- err
 			}
@@ -62,7 +48,6 @@ func StartDistribute() (err error) {
 		routines[subscriber.SubscriptionID] = done
 	}
 
-	// discovering subscriber change in order to stop or start distribution goroutine
 	go func() {
 		blog.Infof("discovering subscriber change")
 
@@ -70,7 +55,7 @@ func StartDistribute() (err error) {
 		for {
 			mesg := <-MsgChan
 			action := mesg[:6]
-			subscriber := types.Subscription{}
+			subscriber := metadata.Subscription{}
 			blog.Infof("mesg: action:%s ,body:%s", mesg[:6], mesg[6:])
 			if err := json.Unmarshal([]byte(mesg[6:]), &subscriber); err != nil {
 				chErr <- err
@@ -80,9 +65,9 @@ func StartDistribute() (err error) {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
 				done := make(chan struct{})
-				renewCh := make(chan types.Subscription)
+				renewCh := make(chan metadata.Subscription)
 				go func() {
-					err := distToSubscribe(subscriber, renewCh, done)
+					err := dh.distToSubscribe(subscriber, renewCh, done)
 					if err != nil {
 						chErr <- err
 					}
@@ -107,7 +92,7 @@ func StartDistribute() (err error) {
 
 }
 
-func distToSubscribe(param types.Subscription, chNew chan types.Subscription, done chan struct{}) (err error) {
+func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan metadata.Subscription, done chan struct{}) (err error) {
 	blog.Infof("start handle dist %v", param.SubscriptionID)
 	defer func() {
 		if err == nil {
@@ -135,23 +120,23 @@ func distToSubscribe(param types.Subscription, chNew chan types.Subscription, do
 		case <-done:
 			return
 		default:
-			dist := popDistInst(sub.SubscriptionID)
+			dist := dh.popDistInst(sub.SubscriptionID)
 			if dist == nil {
 				continue
 			}
-			if err = handleDist(&sub, dist); err != nil {
+			if err = dh.handleDist(&sub, dist); err != nil {
 				blog.Errorf("error handle dist: %v, %v", err, dist)
 			}
 		}
 	}
 }
 
-func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
+func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.DistInstCtx) (err error) {
 	blog.Infof("handling dist %s", dist.Raw)
 	distID := fmt.Sprint(dist.DstbID - 1)
 	subscriberID := fmt.Sprint(dist.SubscriptionID)
 	runningkey := types.EventCacheDistRunningPrefix + subscriberID + "_" + distID
-	if err = saveRunning(runningkey, timeout+sub.GetTimeout()); err != nil {
+	if err = saveRunning(dh.cache, runningkey, timeout+sub.GetTimeout()); err != nil {
 		if ERR_PROCESS_EXISTS == err {
 			blog.Infof("process exist, continue")
 			return nil
@@ -159,31 +144,30 @@ func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
 		return err
 	}
 
-	// check previous done
 	priviousID := fmt.Sprint(dist.DstbID - 1)
 	priviousRunningkey := types.EventCacheDistRunningPrefix + subscriberID + "_" + priviousID
-	done, err := checkFromDone(types.EventCacheDistDonePrefix+subscriberID, priviousID)
+	done, err := checkFromDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID)
 	if err != nil {
 		return err
 	}
 	if !done {
-		// check previous running
-		running, checkErr := checkFromRunning(priviousRunningkey)
+
+		running, checkErr := checkFromRunning(dh.cache, priviousRunningkey)
 		if checkErr != nil {
 			return checkErr
 		}
 		if !running {
-			// wait a second to ensure previous not in trouble
+
 			time.Sleep(time.Second * 5)
-			running, checkErr = checkFromRunning(priviousRunningkey)
+			running, checkErr = checkFromRunning(dh.cache, priviousRunningkey)
 			if checkErr != nil {
 				return checkErr
 			}
 		}
 		if running {
-			// if previous running, wait it
+
 			blog.Infof("waitting previous id: " + priviousID)
-			if checkErr = waitPreviousDone(types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ERR_WAIT_TIMEOUT {
+			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ERR_WAIT_TIMEOUT {
 				return checkErr
 			}
 			if checkErr == ERR_WAIT_TIMEOUT {
@@ -193,13 +177,13 @@ func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
 	}
 
 	defer func() {
-		if err = saveDistDone(dist); err != nil {
+		if err = dh.saveDistDone(dist); err != nil {
 			return
 		}
 		blog.Info("done event dist : %v", dist.DstbID)
 	}()
-	// if previous done then begin send callback
-	if err = SendCallback(sub, dist.Raw); err != nil {
+
+	if err = dh.SendCallback(sub, dist.Raw); err != nil {
 		blog.Errorf("send callback error: %v", err)
 		return
 	}
@@ -207,35 +191,28 @@ func handleDist(sub *types.Subscription, dist *types.DistInstCtx) (err error) {
 	return
 }
 
-func popDistInst(subID int64) *types.DistInstCtx {
-	eventseletor := common.KvMap{
-		"expire": time.Second * 60,
-		"key":    []string{types.EventCacheDistQueuePrefix + fmt.Sprint(subID)},
-	}
-	eventslice := []string{}
-	api.GetAPIResource().CacheCli.GetOneByCondition("blpop", nil, eventseletor, &eventslice)
+func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
+	eventslice := dh.cache.BLPop(time.Second*60, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
 
 	if len(eventslice) <= 0 {
 		return nil
 	}
 
-	// Unmarshal event
 	eventbytes := []byte(eventslice[1])
-	event := types.DistInst{}
+	event := metadata.DistInst{}
 	if err := json.Unmarshal(eventbytes, &event); err != nil {
 		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
 		return nil
 	}
 
-	return &types.DistInstCtx{DistInst: event, Raw: eventslice[1]}
+	return &metadata.DistInstCtx{DistInst: event, Raw: eventslice[1]}
 }
 
-func saveDistDone(dist *types.DistInstCtx) (err error) {
-	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	if err = redisCli.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
+func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
+	if err = dh.cache.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
 		return
 	}
-	if err = redisCli.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
+	if err = dh.cache.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
 		return
 	}
 	return
