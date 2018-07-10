@@ -10,11 +10,17 @@
  * limitations under the License.
  */
 
-package ccapi
+package api
 
 import (
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/identifier"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/instdata"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/privilege"
+	"fmt"
+
+	"configcenter/src/common"
 )
+
+func (cli *Client) ReForwardSearchIdentifier(callfunc func(url, method string) (string, error), objType string) func() (string, error) {
+
+	return func() (string, error) {
+		return callfunc(fmt.Sprintf("%s/topo/v1/identifier/%s/search", cli.address, objType), common.HTTPSelectPost)
+	}
+}
