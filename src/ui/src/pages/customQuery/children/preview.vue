@@ -16,7 +16,7 @@
                 :sortable="false"
                 :header="table.header"
                 :list="table.list"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="table.isLoading"
                 :maxHeight="325"
                 :width="515"
@@ -231,7 +231,7 @@
         top: 150px;
         left: 0;
         width: 100%;
-        z-index: 3;
+        z-index: 99;
     }
     .userapi-preview{
         width: 595px;

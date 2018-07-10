@@ -17,10 +17,10 @@
         :wrapperMinusHeight="150"
         :sortable="false">
         <template slot="is_bind" slot-scope="{ item }">
-            <button @click="changeBinding(item)" 
+            <bk-button :type="item['is_bind'] ? 'primary' : 'default'" :loading="$loading(`${item['bk_module_name']}Bind`)" @click="changeBinding(item)" 
                 :class="item['is_bind'] ? 'main-btn' : 'vice-btn'">
                 {{item['is_bind'] ? $t("ProcessManagement['已绑定']") : $t("ProcessManagement['未绑定']")}}
-            </button>
+            </bk-button>
         </template>
     </v-table>
 </template>
@@ -70,7 +70,7 @@
             changeBinding (item) {
                 let moduleName = item['bk_module_name'].replace(' ', '')
                 if (item['is_bind'] === 0) {
-                    this.$axios.put(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`).then((res) => {
+                    this.$axios.put(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {}, {id: `${item['bk_module_name']}Bind`}).then((res) => {
                         if (res.result) {
                             this.$alertMsg(this.$t("ProcessManagement['绑定进程到该模块成功']"), 'success')
                             item['is_bind'] = 1
@@ -79,7 +79,7 @@
                         }
                     })
                 } else {
-                    this.$axios.delete(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`).then(res => {
+                    this.$axios.delete(`proc/module/${this.bkSupplierAccount}/${this.bkBizId}/${this.bkProcessId}/${moduleName}`, {id: `${item['bk_module_name']}Bind`}).then(res => {
                         if (res.result) {
                             this.$alertMsg(this.$t("ProcessManagement['解绑进程模块成功']"), 'success')
                             item['is_bind'] = 0
@@ -128,10 +128,17 @@
 </script>
 <style lang="scss" scoped>
     .module-table{
+        height: calc(100% - 20px);
         margin: 20px 0 0 0;
         .btn{
             width: 52px;
             height: 25px;
+        }
+        .bk-button {
+            padding: 1px 7px 2px;
+            height: 22px;
+            line-height: 20px;
+            font-size: 12px;
         }
     }
 </style>
