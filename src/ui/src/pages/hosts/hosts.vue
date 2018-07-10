@@ -90,7 +90,7 @@
                 :pagination.sync="table.pagination"
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
-                :wrapperMinusHeight="150"
+                :wrapperMinusHeight="wrapperMinusHeight"
                 :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
@@ -249,6 +249,10 @@
             tableVisible: {
                 type: Boolean,
                 default: true
+            },
+            wrapperMinusHeight: {
+                type: Number,
+                default: 150
             }
         },
         data () {
