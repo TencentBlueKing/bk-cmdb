@@ -24,7 +24,7 @@ import (
 
 // CreateClassification create a new object classification
 func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("create classifications ")
+
 	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
@@ -34,7 +34,7 @@ func (s *topoService) CreateClassification(params types.ContextParams, pathParam
 
 // SearchClassificationWithObjects search the classification with objects
 func (s *topoService) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("serch classifications with objects ")
+
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 
@@ -57,7 +57,7 @@ func (s *topoService) SearchClassificationWithObjects(params types.ContextParams
 		return nil, err
 	}
 
-	return s.core.ClassificationOperation().FindClassification(params, cond)
+	return s.core.ClassificationOperation().FindClassificationWithObjects(params, cond)
 }
 
 // SearchClassification search the classifications

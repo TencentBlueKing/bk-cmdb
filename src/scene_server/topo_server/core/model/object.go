@@ -34,6 +34,8 @@ type Object interface {
 
 	Parse(data frtypes.MapStr) (*meta.Object, error)
 
+	Origin() meta.Object
+
 	IsCommon() bool
 
 	GetMainlineParentObject() (Object, error)
@@ -98,6 +100,10 @@ type object struct {
 	isNew     bool
 	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *object) Origin() meta.Object {
+	return cli.obj
 }
 
 func (cli *object) MarshalJSON() ([]byte, error) {
