@@ -69,7 +69,7 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 	fmt.Println("UpdateObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	val, exists := data.Get(metadata.ModelFieldObjectID)
 	if !exists {
 		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.ModelFieldObjectID)
@@ -97,7 +97,7 @@ func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pat
 	fmt.Println("DeleteObjectAttributeGroup")
 	cond := condition.CreateCondition()
 
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(pathParams("property_id"))
 	cond.Field(metadata.AttributeFieldPropertyGroup).Eq("group_id")

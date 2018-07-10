@@ -251,6 +251,10 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
+	ident.HostID, err = util.GetIntByInterface(m[common.BKHostIDField])
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_host_id", m)
+	}
 	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)

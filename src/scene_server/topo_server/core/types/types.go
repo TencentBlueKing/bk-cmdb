@@ -13,7 +13,8 @@
 package types
 
 import (
-	"configcenter/src/apimachinery/util"
+	"net/http"
+
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/core/supplementary"
@@ -21,8 +22,9 @@ import (
 
 // ContextParams the logic function params
 type ContextParams struct {
-	Support supplementary.Supplementary
-	Header  util.Headers
-	Err     errors.DefaultCCErrorIf
-	Lang    language.DefaultCCLanguageIf
+	Support         supplementary.Supplementary
+	Header          http.Header
+	SupplierAccount string
+	Err             errors.DefaultCCErrorIf
+	Lang            language.DefaultCCLanguageIf
 }

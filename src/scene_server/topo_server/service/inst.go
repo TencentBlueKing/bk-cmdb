@@ -13,8 +13,9 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"fmt"
+
+	"configcenter/src/common/metadata"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,7 +33,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -42,7 +43,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, params.Header.OwnerID)
+	data.Set(common.BKAppIDField, params.SupplierAccount)
 	data.Set(common.BKObjIDField, objID)
 
 	for _, item := range objItems {
@@ -63,7 +64,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(pathParams("obj_id"))
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -100,7 +101,7 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -138,7 +139,7 @@ func (s *topoService) SearchInst(params types.ContextParams, pathParams, queryPa
 
 	// query the objects
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -197,7 +198,7 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -240,7 +241,7 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -284,7 +285,7 @@ func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathPa
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -327,7 +328,7 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
@@ -371,7 +372,7 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -418,7 +419,7 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	return nil, nil

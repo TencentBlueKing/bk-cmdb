@@ -77,7 +77,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -109,7 +109,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 
 func (cli *classification) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header.ToHeader(), &cli.cls)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
 		return err
@@ -133,7 +133,7 @@ func (cli *classification) Update() error {
 
 	for _, item := range updateItems { // only one item
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header.ToHeader(), cli.cls.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, cli.cls.ToMapStr())
 		if nil != err {
 			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
 			return err
@@ -152,7 +152,7 @@ func (cli *classification) Update() error {
 
 func (cli *classification) Delete() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), cli.cls.ID, cli.params.Header.ToHeader(), cli.cls.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), cli.cls.ID, cli.params.Header, cli.cls.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return err
@@ -170,7 +170,7 @@ func (cli *classification) search() ([]metadata.Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, err
