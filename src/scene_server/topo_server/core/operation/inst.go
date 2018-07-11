@@ -32,6 +32,15 @@ type InstOperationInterface interface {
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
+
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+}
+
+// NewInstOperation create a new inst operation instance
+func NewInstOperation(client apimachinery.ClientSetInterface) InstOperationInterface {
+	return &commonInst{
+		clientSet: client,
+	}
 }
 
 type commonInst struct {
@@ -40,19 +49,15 @@ type commonInst struct {
 	instFactory  inst.Factory
 }
 
-// NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, modelFactory model.Factory, instFactory inst.Factory) InstOperationInterface {
-	return &commonInst{
-		clientSet:    client,
-		modelFactory: modelFactory,
-		instFactory:  instFactory,
-	}
+func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+	c.modelFactory = modelFactory
+	c.instFactory = instFactory
 }
 
-func (cli *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
+func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	blog.Infof("the data inst:%#v", data)
-	item := cli.instFactory.CreateInst(params, obj)
+	item := c.instFactory.CreateInst(params, obj)
 
 	item.SetValues(data)
 
@@ -65,9 +70,9 @@ func (cli *commonInst) CreateInst(params types.ContextParams, obj model.Object, 
 	return item, nil
 }
 
-func (cli *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
+func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
+	rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -82,9 +87,9 @@ func (cli *commonInst) DeleteInst(params types.ContextParams, obj model.Object, 
 	return nil
 }
 
-func (cli *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
+func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error) {
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
+	rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
@@ -96,16 +101,16 @@ func (cli *commonInst) FindInst(params types.ContextParams, obj model.Object, co
 		return 0, nil, params.Err.Error(rsp.Code)
 	}
 
-	return rsp.Data.Count, inst.CreateInst(params, cli.clientSet, obj, rsp.Data.Info), nil
+	return rsp.Data.Count, inst.CreateInst(params, c.clientSet, obj, rsp.Data.Info), nil
 }
 
-func (cli *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
+func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
 
 	inputParams := frtypes.New()
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
 	blog.Infof("data condition:%#v", inputParams)
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
+	rsp, err := c.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())

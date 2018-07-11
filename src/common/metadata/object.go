@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	ModelFieldID          = "id"
 	ModelFieldObjCls      = "bk_classification_id"
 	ModelFieldObjIcon     = "bk_obj_icon"
 	ModelFieldObjectID    = "bk_obj_id"

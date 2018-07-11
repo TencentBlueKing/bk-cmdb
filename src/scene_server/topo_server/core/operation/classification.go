@@ -181,7 +181,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data f
 	data.Set("id", id)
 	cls.Parse(data)
 
-	err := cls.Update()
+	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err

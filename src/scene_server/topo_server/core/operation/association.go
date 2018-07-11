@@ -37,18 +37,13 @@ type AssociationOperationInterface interface {
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
 
 // NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface, cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory) AssociationOperationInterface {
+func NewAssociationOperation(client apimachinery.ClientSetInterface) AssociationOperationInterface {
 	return &association{
-		clientSet:    client,
-		cls:          cls,
-		obj:          obj,
-		attr:         attr,
-		inst:         inst,
-		modelFactory: targetModel,
-		instFactory:  targetInst,
+		clientSet: client,
 	}
 }
 
@@ -60,6 +55,15 @@ type association struct {
 	inst         InstOperationInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
+}
+
+func (a *association) SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory) {
+	a.cls = cls
+	a.obj = obj
+	a.attr = attr
+	a.inst = inst
+	a.modelFactory = targetModel
+	a.instFactory = targetInst
 }
 
 func (a *association) SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error) {

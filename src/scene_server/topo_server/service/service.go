@@ -123,10 +123,12 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
-func (s *topoService) sendResponse(resp *restful.Response, dataMsg interface{}) {
+func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
-	if rsp, rspErr := s.createAPIRspStr(common.CCSuccess, dataMsg); nil == rspErr {
+	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		io.WriteString(resp, rsp)
+	} else {
+		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
 }
 
@@ -155,11 +157,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err != nil {
 					blog.Errorf("read http request body failed, error:%s", err.Error())
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-					respData, err := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
-					if nil != err {
-						blog.Errorf("failed to create response result, error info is %s", err.Error())
-					}
-					s.sendResponse(resp, respData)
+					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
 
@@ -167,11 +165,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err := json.Unmarshal(value, &mData); nil != err {
 					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					respData, err := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
-					if nil != err {
-						blog.Errorf("failed to create response result, error info is %s", err.Error())
-					}
-					s.sendResponse(resp, respData)
+					s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 					return
 				}
 
@@ -190,16 +184,14 @@ func (s *topoService) Actions() []*httpserver.Action {
 					blog.Errorf("%s", dataErr.Error())
 					switch e := dataErr.(type) {
 					default:
-						respData, _ := s.createAPIRspStr(common.CCSystemBusy, dataErr.Error())
-						s.sendResponse(resp, respData)
+						s.sendResponse(resp, common.CCSystemBusy, dataErr.Error())
 					case errors.CCErrorCoder:
-						respData, _ := s.createAPIRspStr(e.GetCode(), dataErr.Error())
-						s.sendResponse(resp, respData)
+						s.sendResponse(resp, e.GetCode(), dataErr.Error())
 					}
 					return
 				}
 
-				s.sendResponse(resp, data)
+				s.sendResponse(resp, common.CCSuccess, data)
 
 			}})
 		}(a)

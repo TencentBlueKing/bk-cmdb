@@ -87,7 +87,7 @@ func (cli *group) Create() error {
 	return nil
 }
 
-func (cli *group) Update() error {
+func (cli *group) Update(data frtypes.MapStr) error {
 
 	grps, err := cli.search()
 	if nil != err {
@@ -221,8 +221,8 @@ func (cli *group) Save() error {
 	} else if !exists {
 		return cli.Create()
 	}
-
-	return cli.Update()
+	data := metadata.SetValueToMapStrByTags(cli.grp)
+	return cli.Update(data)
 }
 
 func (cli *group) CreateAttribute() Attribute {
