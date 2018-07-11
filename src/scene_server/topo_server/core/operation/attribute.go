@@ -31,6 +31,15 @@ type AttributeOperationInterface interface {
 	DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
 	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
+
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+}
+
+// NewAttributeOperation create a new attribute operation instance
+func NewAttributeOperation(client apimachinery.ClientSetInterface) AttributeOperationInterface {
+	return &attribute{
+		clientSet: client,
+	}
 }
 
 type attribute struct {
@@ -39,17 +48,14 @@ type attribute struct {
 	instFactory  inst.Factory
 }
 
-// NewAttributeOperation create a new attribute operation instance
-func NewAttributeOperation(client apimachinery.ClientSetInterface, modelFactory model.Factory, instFactory inst.Factory) AttributeOperationInterface {
-	return &attribute{
-		clientSet:    client,
-		modelFactory: modelFactory,
-		instFactory:  instFactory,
-	}
+func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+	a.modelFactory = modelFactory
+	a.instFactory = instFactory
+
 }
 
-func (cli *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
-	att := cli.modelFactory.CreateAttribute(params)
+func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
+	att := a.modelFactory.CreateAttribute(params)
 
 	_, err := att.Parse(data)
 	if nil != err {
@@ -66,9 +72,9 @@ func (cli *attribute) CreateObjectAttribute(params types.ContextParams, data frt
 	return att, nil
 }
 
-func (cli *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
+func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header, cond.ToMapStr())
+	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
@@ -83,9 +89,9 @@ func (cli *attribute) DeleteObjectAttribute(params types.ContextParams, id int64
 	return nil
 }
 
-func (cli *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
+func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
@@ -97,12 +103,12 @@ func (cli *attribute) FindObjectAttribute(params types.ContextParams, cond condi
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return model.CreateAttribute(params, cli.clientSet, rsp.Data), nil
+	return model.CreateAttribute(params, a.clientSet, rsp.Data), nil
 }
 
-func (cli *attribute) UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
+func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header, data)
+	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header, data)
 
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())

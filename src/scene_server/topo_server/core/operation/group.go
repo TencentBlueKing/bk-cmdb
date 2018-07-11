@@ -34,6 +34,15 @@ type GroupOperationInterface interface {
 	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
 	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
 	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
+
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+}
+
+// NewGroupOperation create a new group operation instance
+func NewGroupOperation(client apimachinery.ClientSetInterface) GroupOperationInterface {
+	return &group{
+		clientSet: client,
+	}
 }
 
 type group struct {
@@ -42,18 +51,14 @@ type group struct {
 	instFactory  inst.Factory
 }
 
-// NewGroupOperation create a new group operation instance
-func NewGroupOperation(client apimachinery.ClientSetInterface, modelFactory model.Factory, instFactory inst.Factory) GroupOperationInterface {
-	return &group{
-		clientSet:    client,
-		modelFactory: modelFactory,
-		instFactory:  instFactory,
-	}
+func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+	g.modelFactory = modelFactory
+	g.instFactory = instFactory
 }
 
-func (cli *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error) {
+func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error) {
 
-	grp := cli.modelFactory.CreateGroup(params)
+	grp := g.modelFactory.CreateGroup(params)
 
 	_, err := grp.Parse(data)
 	if nil != err {
@@ -70,9 +75,9 @@ func (cli *group) CreateObjectGroup(params types.ContextParams, data frtypes.Map
 	return grp, nil
 }
 
-func (cli *group) DeleteObjectGroup(params types.ContextParams, groupID string) error {
+func (g *group) DeleteObjectGroup(params types.ContextParams, groupID string) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header)
+	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header)
 	if nil != err {
 		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -86,9 +91,9 @@ func (cli *group) DeleteObjectGroup(params types.ContextParams, groupID string) 
 	return nil
 }
 
-func (cli *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error) {
+func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
@@ -100,12 +105,12 @@ func (cli *group) FindObjectGroup(params types.ContextParams, cond condition.Con
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
+	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
 }
 
-func (cli *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error) {
+func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.SupplierAccount, objID, params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.SupplierAccount, objID, params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -116,11 +121,11 @@ func (cli *group) FindGroupByObject(params types.ContextParams, objID string, co
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return model.CreateGroup(params, cli.clientSet, rsp.Data), nil
+	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
 }
-func (cli *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
+func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
+	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
 
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s ", cond.Data, cond.Condition, err.Error())

@@ -32,30 +32,36 @@ type ObjectOperationInterface interface {
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface)
+}
+
+// NewObjectOperation create a new object operation instance
+func NewObjectOperation(client apimachinery.ClientSetInterface) ObjectOperationInterface {
+	return &object{
+		clientSet: client,
+	}
 }
 
 type object struct {
 	clientSet    apimachinery.ClientSetInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
+	cls          ClassificationOperationInterface
 }
 
-// NewObjectOperation create a new object operation instance
-func NewObjectOperation(client apimachinery.ClientSetInterface, modelFactory model.Factory, instFactory inst.Factory) ObjectOperationInterface {
-	return &object{
-		clientSet:    client,
-		modelFactory: modelFactory,
-		instFactory:  instFactory,
-	}
+func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface) {
+	o.modelFactory = modelFactory
+	o.instFactory = instFactory
 }
 
-func (cli *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
+func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objectID)
 
-	objs, err := cli.FindObject(params, cond)
+	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), error info is %s", params.SupplierAccount, objectID, err.Error())
 		return nil, err
@@ -65,13 +71,33 @@ func (cli *object) FindSingleObject(params types.ContextParams, objectID string)
 	}
 	return nil, params.Err.Error(common.CCErrTopoObjectSelectFailed)
 }
-func (cli *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
-	obj := cli.modelFactory.CreaetObject(params)
+func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
+	obj := o.modelFactory.CreaetObject(params)
 
 	_, err := obj.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	// check the classification
+	_, err = obj.GetClassification()
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to create the object, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
+	}
+
+	// check repeated
+
+	exists, err := obj.IsExists()
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to create the object(%#v), error info is %s", data, err.Error())
+		return nil, params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
+	}
+
+	if exists {
+		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
+		return nil, params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
 	err = obj.Create()
@@ -80,12 +106,40 @@ func (cli *object) CreateObject(params types.ContextParams, data frtypes.MapStr)
 		return nil, err
 	}
 
+	// create the default group
+	grp := obj.CreateGroup()
+	grp.SetDefault(true)
+	grp.SetIndex(-1)
+	grp.SetName("Default")
+	grp.SetID("default")
+
+	if err = grp.Create(); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+	}
+
+	// create the default inst name
+	attr := obj.CreateAttribute()
+	attr.SetIsOnly(true)
+	attr.SetIsPre(true)
+	attr.SetCreator("user")
+	attr.SetIsEditable(true)
+	attr.SetGroupIndex(-1)
+	attr.SetGroup(grp)
+	attr.SetIsRequired(true)
+	attr.SetType(common.FieldTypeSingleChar)
+	attr.SetID(obj.GetInstNameFieldName())
+	attr.SetName(obj.GetDefaultInstPropertyName())
+
+	if err = attr.Create(); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
+	}
+
 	return obj, nil
 }
 
-func (cli *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
+func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
@@ -100,9 +154,9 @@ func (cli *object) DeleteObject(params types.ContextParams, id int64, cond condi
 	return nil
 }
 
-func (cli *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
+func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -113,21 +167,22 @@ func (cli *object) FindObject(params types.ContextParams, cond condition.Conditi
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	return model.CreateObject(params, cli.clientSet, rsp.Data), nil
+	return model.CreateObject(params, o.clientSet, rsp.Data), nil
 }
 
-func (cli *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), id, params.Header, data)
-
+	obj := o.modelFactory.CreaetObject(params)
+	obj.SetRecordID(id)
+	_, err := obj.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
+		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-obj] failed to set the object to the new data(%#v) by the condition(%#v) or the  id (%d)", data, cond.ToMapStr(), id)
-		return params.Err.Error(rsp.Code)
+	if err = obj.Update(data); nil != err {
+		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), error info is %s", id, data, err.Error())
+		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
 	return nil

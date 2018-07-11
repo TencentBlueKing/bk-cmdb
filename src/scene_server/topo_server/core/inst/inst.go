@@ -86,7 +86,7 @@ func (cli *inst) Create() error {
 	return nil
 }
 
-func (cli *inst) Update() error {
+func (cli *inst) Update(data frtypes.MapStr) error {
 
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
@@ -245,7 +245,7 @@ func (cli *inst) Save() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
-		return cli.Update()
+		return cli.Update(cli.datas)
 	}
 
 	return cli.Create()

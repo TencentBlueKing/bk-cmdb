@@ -124,7 +124,7 @@ func (cli *classification) Create() error {
 	return nil
 }
 
-func (cli *classification) Update() error {
+func (cli *classification) Update(data frtypes.MapStr) error {
 
 	updateItems, err := cli.search()
 	if nil != err {
@@ -202,7 +202,7 @@ func (cli *classification) Save() error {
 		return cli.Create()
 	}
 
-	return cli.Update()
+	return cli.Update(nil)
 }
 
 func (cli *classification) SetID(classificationID string) {

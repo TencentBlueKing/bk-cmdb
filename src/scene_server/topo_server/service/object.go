@@ -14,7 +14,9 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -67,12 +69,10 @@ func (s *topoService) UpdateObject(params types.ContextParams, pathParams, query
 
 	cond := condition.CreateCondition()
 
-	paramPath := frtypes.MapStr{}
-	paramPath.Set("id", pathParams("id"))
-	id, err := paramPath.Int64("id")
+	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
-		return nil, err
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
 	}
 
 	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond)

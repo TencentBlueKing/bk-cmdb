@@ -18,16 +18,14 @@ type BusinessOperationInterface interface {
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
 	FindBusiness(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
+
+	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 }
 
 // NewBusinessOperation create a business instance
-func NewBusinessOperation(set SetOperationInterface, module ModuleOperationInterface, client apimachinery.ClientSetInterface, inst InstOperationInterface, obj ObjectOperationInterface) BusinessOperationInterface {
+func NewBusinessOperation(client apimachinery.ClientSetInterface) BusinessOperationInterface {
 	return &business{
 		clientSet: client,
-		set:       set,
-		module:    module,
-		inst:      inst,
-		obj:       obj,
 	}
 }
 
@@ -39,6 +37,12 @@ type business struct {
 	obj       ObjectOperationInterface
 }
 
+func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface) {
+	b.inst = inst
+	b.set = set
+	b.module = module
+	b.obj = obj
+}
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKDefaultField, 0)
