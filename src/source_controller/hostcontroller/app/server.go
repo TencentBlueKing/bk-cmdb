@@ -82,6 +82,10 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
+	err = hostCtrl.Instance.Open()
+	if err != nil {
+		return fmt.Errorf("new mongo client failed, err: %v", err)
+	}
 
 	rdsc := hostCtrl.Config.Redis
 	hostCtrl.Cache, err = redisclient.NewRedis(rdsc.Address, rdsc.Port, rdsc.User, rdsc.Password, rdsc.Database)
