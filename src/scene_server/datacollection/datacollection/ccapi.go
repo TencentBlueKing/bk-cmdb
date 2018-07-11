@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/metric"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	dccommon "configcenter/src/scene_server/datacollection/common"
 	confCenter "configcenter/src/scene_server/datacollection/datacollection/config"
@@ -26,7 +27,6 @@ import (
 	"configcenter/src/source_controller/common/instdata"
 	"github.com/emicklei/go-restful"
 	"time"
-	"configcenter/src/common/rdapi"
 )
 
 // CCAPIServer define data struct of bcs ccapi server
