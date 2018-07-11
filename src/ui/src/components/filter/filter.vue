@@ -65,12 +65,13 @@
                             <span class="acquiescence vm pl5">{{$t('Hosts[\'默认\']')}}</span>
                         </label>
                         <div class="btn-wrapper">
-                            <bk-button class="mr10 main-btn"
+                            <bk-button type="primary" class="mr10 main-btn"
+                                :loading="$loading('collect')"
                                 :disabled="!tab.screening.collectName"
                                 @click="makeSureCollect">
                                 {{$t('Hosts[\'确认\']')}}
                             </bk-button>
-                            <bk-button class="cancel-btn vice-btn" @click="hideCollectBox">
+                            <bk-button type="default" class="cancel-btn vice-btn" @click="hideCollectBox">
                                 {{$t('Common[\'取消\']')}}
                             </bk-button>
                         </div>
@@ -191,7 +192,7 @@
             makeSureCollect () {
                 this.$validator.validateAll().then(res => {
                     if (res) {
-                        this.$axios.post('hosts/favorites', this.getCollectParams()).then(res => {
+                        this.$axios.post('hosts/favorites', this.getCollectParams(), {id: 'collect'}).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('Common[\'收藏成功\']'), 'success')
                                 this.hideCollectBox()

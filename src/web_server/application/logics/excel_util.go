@@ -64,7 +64,7 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 	// valid excel three row is instance property fields,
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
-	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 {
+	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
 		//web_import_field_not_found
 		blog.Errorf(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
 		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))

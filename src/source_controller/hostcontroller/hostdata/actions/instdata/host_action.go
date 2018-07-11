@@ -37,7 +37,7 @@ import (
 	"configcenter/src/source_controller/common/instdata"
 )
 
-var host *hostAction = &hostAction{}
+var host = &hostAction{}
 
 type hostAction struct {
 	base.BaseAction
@@ -47,6 +47,7 @@ type hostAction struct {
 func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -58,6 +59,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		input, _ := js.Map()
 		blog.Info("create object type:%s,data:%v", objType, input)
 		input[common.CreateTimeField] = time.Now()
+		input = util.SetModOwner(input, ownerID)
 		var idName string
 		ID, err := instdata.CreateObject(objType, input, &idName)
 		if err != nil {
@@ -71,7 +73,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
@@ -88,6 +90,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -97,6 +100,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 		var result interface{}
 		condition := make(map[string]interface{})
 		condition[common.BKHostIDField] = hostID
+		condition = util.SetModOwner(condition, ownerID)
 		fields := make([]string, 0)
 		err := cli.CC.InstCli.GetOneByCondition("cc_HostBase", fields, condition, &result)
 		if err != nil {
@@ -112,6 +116,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -134,6 +139,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 		sort := dat.Sort
 		fieldArr := strings.Split(fields, ",")
 		result := make([]map[string]interface{}, 0)
+		condition = util.SetModOwner(condition, ownerID)
 		count, err := instdata.GetCntByCondition(objType, condition)
 		if err != nil {
 			blog.Error("get object type:%s,input:%s error:%v", objType, value, err)

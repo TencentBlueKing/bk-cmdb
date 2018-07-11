@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package rdapi
 
 import (
@@ -37,7 +37,7 @@ func GetRdAddrSrvHandle(typeSrv string, addrSrv api.AddrSrv) func() string {
 	srvNames[typeSrv] = 1
 	return func() string {
 		url, err := addrSrv.GetServer(typeSrv)
-		blog.Infof("GetRdAddrSrvHandle  get %s url:%s", typeSrv, url)
+		// blog.Infof("GetRdAddrSrvHandle  get %s url:%s", typeSrv, url)
 		if nil != err {
 			blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
 			return ""
@@ -147,7 +147,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
 	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	blog.Infof("rd http header %v", req.Request.Header)
+	// blog.Infof("rd http header %v", req.Request.Header)
 	if "" == ownerId {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
@@ -178,9 +178,9 @@ func AllGlobalFilter() func(req *restful.Request, resp *restful.Response, fchain
 			return
 		}
 
-		for typeSrv, _ := range srvNames {
+		for typeSrv := range srvNames {
 			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.Infof("AllGlobalFilter %s url:%s", typeSrv, url)
+			// blog.Infof("AllGlobalFilter %s url:%s", typeSrv, url)
 			if nil != err {
 				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
 				resp.WriteHeader(http.StatusBadGateway)

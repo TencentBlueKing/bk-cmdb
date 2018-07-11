@@ -13,6 +13,13 @@
 package identifier
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"time"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -21,11 +28,6 @@ import (
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/instdata"
-	"encoding/json"
-	"fmt"
-	redis "gopkg.in/redis.v5"
-	"strconv"
-	"time"
 )
 
 var hostIndentDiffFiels = map[string][]string{
@@ -280,6 +282,10 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
+	ident.HostID, err = util.GetIntByInterface(m[common.BKHostIDField])
+	if nil != err {
+		blog.Errorf("%s is not integer, %+v ", "bk_host_id", m)
+	}
 	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)

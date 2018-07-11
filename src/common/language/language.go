@@ -156,7 +156,7 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 	}
 
 	ms := replayHolderReg.FindAllString(key, -1)
-	blog.Infof("key %s match %v", key, ms)
+	// blog.Infof("key %s match %v", key, ms)
 	if len(ms) > 0 {
 		fmt.Printf("ms: %s\n", ms)
 		key = replayHolderReg.ReplaceAllString(key, "[]")

@@ -36,7 +36,7 @@
                 :header="table.header"
                 :list="table.list"
                 :defaultSort="table.defaultSort"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="table.isLoading"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setCurrentPage"

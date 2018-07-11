@@ -70,7 +70,7 @@
                         <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
                         <div class="back-contain">
                             <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入Agent安装APP']")}}</a>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
                         </div>
                     </div>
                 </bk-tabpanel>
@@ -268,7 +268,7 @@
                 let agentAppUrl = window.agentAppUrl
                 if (agentAppUrl) {
                     if (window.agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_agent_setup'}), '*')
+                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
                     } else {
                         window.open(agentAppUrl)
                     }

@@ -74,7 +74,7 @@
                         <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
                         </button>
-                        <bk-button type="primary" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
+                        <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
                     </div>
@@ -85,7 +85,7 @@
                 :header="table.tableHeader"
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
                 :wrapperMinusHeight="150"
@@ -745,7 +745,8 @@
                 updateParams['host_display_column'] = fields.map(({bk_property_id, bk_property_name, bk_obj_id}) => {
                     return {bk_property_id, bk_property_name, bk_obj_id}
                 })
-                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
+                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                    this.cancelSetField()
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -775,7 +776,8 @@
                 const customPrefix = this.$route.path === '/hosts' ? 'host' : 'resource'
                 let updateParams = {}
                 updateParams[`${customPrefix}_query_column`] = columns
-                this.$axios.post('usercustom', JSON.stringify(updateParams)).then(res => {
+                this.$axios.post('usercustom', JSON.stringify(updateParams), {id: 'userCustom'}).then(res => {
+                    this.cancelSetField()
                     if (!res.result) {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -786,7 +788,7 @@
             },
             getTableList () {
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.searchParams).then(res => {
+                this.$axios.post('hosts/search', this.searchParams, {id: 'hostSearch'}).then(res => {
                     this.table.isLoading = false
                     if (res.result) {
                         this.table.pagination.count = res.data.count
@@ -853,7 +855,7 @@
             },
             saveHostAttribute (formData, formValues) {
                 let { bk_host_id: bkHostID } = formValues
-                this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()})).then(res => {
+                this.$axios.put('hosts/batch', Object.assign(formData, {bk_host_id: bkHostID.toString()}), {id: 'editAttr'}).then(res => {
                     if (res.result) {
                         this.$alertMsg(this.$t('Common[\'保存成功\']'), 'success')
                         this.setTableCurrentPage(1)

@@ -74,7 +74,7 @@ func ImportInst(c *gin.Context) {
 
 	apiAddr, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := apiAddr
-	insts, err := logics.GetImportInsts(f, objID, url, c.Request.Header, 0, defLang)
+	insts, err := logics.GetImportInsts(f, objID, url, c.Request.Header, 0, true, defLang)
 	if 0 == len(insts) {
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
