@@ -2,6 +2,7 @@ import {$axios, $Axios, $alertMsg} from '@/api/axios'
 import STATIC_NAVIGATION from '@/common/json/static_navigation.json'
 const state = {
     fold: false,
+    historyCount: 0,
     classifications: [],
     invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
     notCustomClassifications: ['bk_index', 'bk_host_manage', 'bk_back_config'],
@@ -24,6 +25,7 @@ const state = {
 
 const getters = {
     fold: state => state.fold,
+    historyCount: state => state.historyCount,
     classifications: state => state.classifications,
     result: state => state.result,
     authority: state => state.authority,
@@ -79,6 +81,7 @@ const getters = {
                         'path': `/organization/${model['bk_obj_id']}`,
                         'id': model['bk_obj_id'],
                         'name': model['bk_obj_name'],
+                        'icon': model['bk_obj_icon'],
                         'classificationId': model['bk_classification_id']
                     }
                 })
@@ -183,6 +186,9 @@ const actions = {
 const mutations = {
     setFold (state, fold) {
         state.fold = fold
+    },
+    updateHistoryCount (state, step = 1) {
+        state.historyCount = state.historyCount + step
     },
     setClassifications (state, classifications) {
         state.result.classification = true

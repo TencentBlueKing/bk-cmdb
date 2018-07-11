@@ -16,30 +16,35 @@
             "i18n": "Hosts['主机']",
             "path": "/hosts",
             "id": "host",
+            "icon": "icon-cc-host",
             "name": "主机",
             "classificationId": "bk_host_manage"
         }, {
             "i18n": "BusinessTopology['业务拓扑']",
             "path": "/topology",
             "id": "topology",
+            "icon": "icon-cc-square",
             "name": "业务拓扑",
             "classificationId": "bk_host_manage"
         }, {
             "i18n": "ProcessManagement['进程管理']",
             "path": "/process",
             "id": "process",
+            "icon": "icon-cc-process",
             "name": "进程管理",
             "classificationId": "bk_host_manage"
         }, {
             "i18n": "CustomQuery['自定义查询']",
             "path": "/customQuery",
             "id": "custom_query",
+            "icon": "icon-cc-columnar",
             "name": "自定义查询",
             "classificationId": "bk_host_manage"
         }, {
             "i18n": "HostResourcePool['主机资源池']",
             "path": "/resource",
             "id": "resource",
+            "icon": "icon-cc-host-free-pool",
             "name": "主机资源池",
             "classificationId": "bk_host_manage"
         }]
