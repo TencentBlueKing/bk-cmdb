@@ -52,8 +52,10 @@ func init() {
 
 //delete object
 func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("delete insts")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -65,6 +67,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 		value, _ := ioutil.ReadAll(req.Request.Body)
 		js, _ := simplejson.NewJson([]byte(value))
 		input, _ := js.Map()
+		util.SetModOwner(input, ownerID)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
@@ -84,7 +87,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 		if len(originDatas) > 0 {
 			ec := eventdata.NewEventContextByReq(req)
 			for _, originData := range originDatas {
-				err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionDelete, nil, originData)
+				err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionDelete, nil, originData, ownerID)
 				if err != nil {
 					blog.Error("create event error:%v", err)
 				}
@@ -97,8 +100,10 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 
 //update object
 func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("update insts")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -113,6 +118,8 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 		data := input["data"].(map[string]interface{})
 		data[common.LastTimeField] = time.Now()
 		condition := input["condition"]
+		condition = util.SetModOwner(condition, ownerID)
+		data = util.SetModOwner(data, ownerID)
 
 		// retrieve original datas
 		originDatas := make([]map[string]interface{}, 0)
@@ -146,7 +153,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 					if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil {
 						blog.Error("create event error:%v", err)
 					} else {
-						err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionUpdate, newData, originData)
+						err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionUpdate, newData, originData, ownerID)
 						if err != nil {
 							blog.Error("create event error:%v", err)
 						}
@@ -160,8 +167,10 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 
 //search object
 func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Response) {
+	blog.Info("select insts")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -180,7 +189,7 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 		}
 		//dat.ConvTime()
 		fields := dat.Fields
-		condition := dat.Condition
+		condition := util.SetModOwner(dat.Condition, ownerID)
 
 		skip := dat.Start
 		limit := dat.Limit
@@ -207,8 +216,10 @@ func (cli *objectAction) SearchObjects(req *restful.Request, resp *restful.Respo
 
 //create object
 func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Response) {
+	blog.Info("create insts")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -221,6 +232,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 		input, _ := js.Map()
 		input[common.CreateTimeField] = time.Now()
 		input[common.LastTimeField] = time.Now()
+		util.SetModOwner(input, ownerID)
 		blog.Info("create object type:%s,data:%v", objType, input)
 		var idName string
 		id, err := instdata.CreateObject(objType, input, &idName)
@@ -235,7 +247,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionCreate, origindata, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionCreate, origindata, nil, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
