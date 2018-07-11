@@ -8,8 +8,12 @@
                     :title="model['bk_obj_name']">
                     <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                     <span class="model-name">{{model['bk_obj_name']}}</span>
+                    <i class="model-star bk-icon icon-star"
+                        v-if="!notCollectable.includes(classify['bk_classification_id'])"
+                        :class="{collected: true}"
+                        @click.prevent.stop>
+                    </i>
                 </router-link>
-                <i class="model-star bk-icon icon-star"></i>
             </li>
         </ul>
     </div>
@@ -25,6 +29,7 @@
         },
         data () {
             return {
+                notCollectable: ['bk_host_manage', 'bk_organization'],
                 notModelClassify: ['bk_host_manage', 'bk_back_config']
             }
         },
@@ -59,20 +64,12 @@
         .models-item{
             height: 36px;
             padding: 6px 0;
-            position: relative;
-            .model-star{
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                font-size: 16px;
-                cursor: pointer;
-            }
         }
     }
     .model-link{
         display: block;
-        width: calc(100% - 40px);
         font-size: 0;
+        position: relative;
         &:before{
             content: "";
             display: inline-block;
@@ -82,6 +79,9 @@
         &:hover .model-icon,
         &:hover .model-name{
             color: #0082ff;
+        }
+        &:hover .model-star{
+            display: block;
         }
         .model-icon,
         .model-name{
@@ -97,6 +97,17 @@
             font-size: 14px;
             line-height: 24px;
             color: $textColor;
+        }
+        .model-star{
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            &.collected{
+                display: block;
+            }
         }
     }
 </style>

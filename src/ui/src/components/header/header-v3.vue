@@ -1,5 +1,6 @@
 <template>
-    <div class="header-wrapper clearfix">
+    <div class="header-wrapper clearfix" 
+        :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
             <a class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
                 v-if="historyCount > 1"
@@ -31,7 +32,7 @@
             }
         },
         computed: {
-            ...mapGetters('navigation', ['fold', 'historyCount', 'authorizedNavigation']),
+            ...mapGetters('navigation', ['navStick', 'historyCount', 'authorizedNavigation']),
             ...mapGetters('usercustom', ['usercustom', 'recentlyKey']),
             currentPath () {
                 return this.$route.path
@@ -75,7 +76,7 @@
             updateRecently (path) {
                 if (!this.recently.includes(path)) {
                     const model = this.getRouteModel(path)
-                    if (model) {
+                    if (model && !['bk_host_manage', 'bk_back_config'].includes(model.classificationId)) {
                         this.$store.dispatch('usercustom/updateUserCustom', {
                             [this.recentlyKey]: [...this.recently, path]
                         })
@@ -97,6 +98,10 @@
         border-bottom: 1px solid $borderColor;
         z-index: 1200;
         background-color: #fff;
+        transition: padding .1s ease-in;
+        &.nav-sticked{
+            padding-left: 240px;
+        }
     }
     .breadcrumbs{
         line-height: 60px;

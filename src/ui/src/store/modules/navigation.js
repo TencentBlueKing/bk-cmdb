@@ -2,6 +2,7 @@ import {$axios, $Axios, $alertMsg} from '@/api/axios'
 import STATIC_NAVIGATION from '@/common/json/static_navigation.json'
 const state = {
     fold: false,
+    navStick: window.localStorage.getItem('navStick') || false,
     historyCount: 0,
     classifications: [],
     invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
@@ -25,6 +26,7 @@ const state = {
 
 const getters = {
     fold: state => state.fold,
+    navStick: state => state.navStick,
     historyCount: state => state.historyCount,
     classifications: state => state.classifications,
     result: state => state.result,
@@ -172,6 +174,10 @@ const actions = {
 const mutations = {
     setFold (state, fold) {
         state.fold = fold
+    },
+    updateNavStick (state, stick) {
+        state.navStick = !!stick
+        window.localStorage.setItem('navStick', !!stick)
     },
     updateHistoryCount (state, step = 1) {
         state.historyCount = state.historyCount + step
