@@ -69,7 +69,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	hostCtrl := new(HostController)
 	hostCtrl.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
+		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
 		hostCtrl.onHostConfigUpdate,
 		bonC)
