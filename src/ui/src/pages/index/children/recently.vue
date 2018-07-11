@@ -9,7 +9,7 @@
                     <i :class="['recently-icon', recentlyModels[index - 1].icon]"></i>
                     <div class="recently-info">
                         <strong class="recently-name">{{getRecentlyName(recentlyModels[index - 1])}}</strong>
-                        <span class="recently-inst">数量：21</span>
+                        <span class="recently-inst">数量：{{getRecentlyCount(recentlyModels[index - 1])}}</span>
                     </div>
                     <i class="recently-delete" @click.stop="deleteRecently(recentlyModels[index - 1])"></i>
                 </template>
@@ -23,9 +23,12 @@
     import { mapGetters } from 'vuex'
     export default {
         data () {
-            return {}
+            return {
+                modelInstCount: {}
+            }
         },
         computed: {
+            ...mapGetters(['bkSupplierAccount']),
             ...mapGetters('usercustom', ['usercustom', 'recentlyKey']),
             ...mapGetters('navigation', ['authorizedNavigation']),
             recently () {
@@ -44,9 +47,28 @@
             recentlyModelsPath () {
                 return this.recentlyModels.map(model => model.path)
             },
+            visibleRecentlyModels () {
+                return this.recentlyModels.slice(0, 8)
+            },
             recentlyCount () {
-                return this.recentlyModels.length > 4 ? 8 : 4
+                return this.visibleRecentlyModels.length > 4 ? 8 : 4
             }
+        },
+        watch: {
+            visibleRecentlyModels (models) {
+                models.forEach(model => {
+                    if (!this.modelInstCount.hasOwnProperty(model.id)) {
+                        this.loadInst(model.id)
+                    }
+                })
+            }
+        },
+        created () {
+            this.visibleRecentlyModels.forEach(model => {
+                if (!this.modelInstCount.hasOwnProperty(model.id)) {
+                    this.loadInst(model.id)
+                }
+            })
         },
         methods: {
             getRouteModel (path) {
@@ -61,6 +83,9 @@
             getRecentlyName (model) {
                 return model.i18n ? this.$t(model.i18n) : model.name
             },
+            getRecentlyCount (model) {
+                return this.modelInstCount.hasOwnProperty(model.id) ? this.modelInstCount[model.id] : '--'
+            },
             gotoRecently (model) {
                 this.$router.push(model.path)
             },
@@ -68,6 +93,42 @@
                 const deletedRecently = this.recentlyModelsPath.filter(path => path !== model.path)
                 this.$store.dispatch('usercustom/updateUserCustom', {
                     [this.recentlyKey]: deletedRecently
+                })
+            },
+            loadInst (id) {
+                const funcMaps = {
+                    'biz': this.loadBizInst,
+                    'default': this.loadCommonInst
+                }
+                let loadFunc = funcMaps.hasOwnProperty(id) ? funcMaps[id] : funcMaps['default']
+                loadFunc(id).then(res => {
+                    if (res.result) {
+                        this.$set(this.modelInstCount, id, res.data.count)
+                    }
+                })
+            },
+            loadBizInst () {
+                return this.$axios.post(`/biz/search/${this.bkSupplierAccount}`, {
+                    condition: {
+                        'bk_data_status': {
+                            '$ne': 'disabled'
+                        }
+                    },
+                    fields: [],
+                    page: {
+                        start: 0,
+                        limit: 1
+                    }
+                })
+            },
+            loadCommonInst (id) {
+                return this.$axios.post(`inst/association/search/owner/${this.bkSupplierAccount}/object/${id}`, {
+                    condition: {},
+                    fields: {},
+                    page: {
+                        start: 0,
+                        limit: 1
+                    }
                 })
             }
         }
