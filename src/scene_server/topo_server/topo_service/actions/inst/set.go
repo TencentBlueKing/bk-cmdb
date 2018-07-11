@@ -163,7 +163,7 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditSetLog(instID, auditContent, "create set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditSetLog(instID, auditContent, "create set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
 		}
 
 		return http.StatusOK, moduleRes, nil
@@ -300,7 +300,7 @@ func (cli *setAction) DeleteSet(req *restful.Request, resp *restful.Response) {
 					PreData: preData,
 					Headers: headers,
 				}
-				auditlog.NewClient(cli.CC.AuditCtrl()).AuditSetLog(instID, auditContent, "delete set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
+				auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditSetLog(instID, auditContent, "delete set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
 			}
 		} // delete the set
 		return http.StatusOK, nil, nil
@@ -412,7 +412,7 @@ func (cli *setAction) UpdateSet(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditSetLog(instID, auditContent, "update set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditSetLog(instID, auditContent, "update set", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 		}
 		return http.StatusOK, moduleRes, nil
 	}, resp)

@@ -40,7 +40,7 @@ const (
 	EventCacheDistCallBackCountPrefix = common.BKCacheKeyV3Prefix + "event:dist_callback_"
 
 	// EventCacheSubscribeformKey the key prefix in cache
-	EventCacheSubscribeformKey = common.BKCacheKeyV3Prefix + "event:subscribeform_"
+	EventCacheSubscribeformKey = common.BKCacheKeyV3Prefix + "event:subscribeform:"
 	EventCacheSubscribesKey    = common.BKCacheKeyV3Prefix + "event:subscribers"
 	EventCacheProcessChannel   = common.BKCacheKeyV3Prefix + "event_process_channel"
 

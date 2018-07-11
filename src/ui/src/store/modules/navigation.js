@@ -142,29 +142,15 @@ const actions = {
             return Promise.resolve({result: true, data: state.classifications})
         }
         let classifications = []
-        await $axios.post('object/classifications', {}).then(res => {
+        await $axios.post(`object/classification/${rootState.common.bkSupplierAccount}/objects`, {
+        }).then(res => {
             if (res.result) {
                 classifications = res.data
+                commit('setClassifications', classifications)
             } else {
                 $alertMsg(res['bk_error_msg'])
             }
         })
-        await $Axios.all(classifications.map(classification => {
-            return $axios.post(`object/classification/${rootState.common.bkSupplierAccount}/objects`, {
-                'bk_classification_id': classification['bk_classification_id']
-            }).then(res => {
-                if (!res.result) {
-                    $alertMsg(res['bk_error_msg'])
-                }
-                return res.data || []
-            })
-        })).then($Axios.spread(function () {
-            let results = [...arguments]
-            classifications = results.map(classification => {
-                return {...classification[0]}
-            })
-            commit('setClassifications', classifications)
-        }))
         return Promise.resolve({result: state.result.classification, data: state.classifications})
     },
     getAuthority ({commit, state, rootState}) {

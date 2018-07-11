@@ -92,9 +92,9 @@ func (cli *hostAction) CloneHostProperty(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	hostIDI, ok := hostMapData[common.BKHostIDField].(int64)
-	if false == ok {
-		blog.Error("host id not int : %v", hostMapData[common.BKHostIDField])
+	hostIDI, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
+	if nil != err {
+		blog.Error("host id not int : %v  err:%v ", hostMapData[common.BKHostIDField], err)
 		cli.ResponseFailed(common.CCErrHostDetailFail, "source ip not found", resp)
 		return
 	}

@@ -145,7 +145,7 @@ func (cli *procAction) UpdateProcess(req *restful.Request, resp *restful.Respons
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContent, "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(procID, auditContent, "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 		}
 
 		js, err := simplejson.NewJson([]byte(sProcRes))
@@ -328,7 +328,7 @@ func (cli *procAction) DeleteProcess(req *restful.Request, resp *restful.Respons
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContent, "delete process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(procID, auditContent, "delete process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
 		}
 
 		return http.StatusOK, nil, nil
@@ -404,7 +404,7 @@ func (cli *procAction) CreateProcess(req *restful.Request, resp *restful.Respons
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(instID, auditContent, "create process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(instID, auditContent, "create process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
 		}
 
 		result := make(map[string]interface{})
@@ -560,7 +560,7 @@ func (cli *procAction) BatchUpdateProcess(req *restful.Request, resp *restful.Re
 			// save proc info before modify
 			auditContentArr[index].CurData = curData
 
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditProcLog(procID, auditContentArr[index], "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditProcLog(procID, auditContentArr[index], "update process", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 
 			blog.Info("update process with: %s", auditContentArr[index])
 		}
