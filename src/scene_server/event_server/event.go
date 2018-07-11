@@ -13,25 +13,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	// "log"
-	// "net/http"
 	"os"
 	"runtime"
 
+	"github.com/spf13/pflag"
+
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/app"
 	"configcenter/src/scene_server/event_server/app/options"
-
-	"github.com/spf13/pflag"
-
-	_ "configcenter/src/scene_server/event_server/event_service/actions/subscription"
-	_ "configcenter/src/scene_server/event_server/event_service/distribution"
-	// _ "net/http/pprof"
-
-	"configcenter/src/common"
-	"configcenter/src/common/types"
 )
 
 func main() {
@@ -47,10 +41,7 @@ func main() {
 
 	util.InitFlags()
 
-	// go func() {
-	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
-	// }()
-	if err := app.Run(op); err != nil {
+	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
