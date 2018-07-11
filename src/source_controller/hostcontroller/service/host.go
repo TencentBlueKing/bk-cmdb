@@ -68,7 +68,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
+	lang := s.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 	objType := common.BKInnerObjIDHost
 	var dat commondata.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
@@ -81,7 +81,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	fieldArr := strings.Split(dat.Fields, ",")
 	result := make([]map[string]interface{}, 0)
 
-	err := s.Logics.GetObjectByCondition(pheader, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
+	err := s.Logics.GetObjectByCondition(lang, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
 		blog.Error("get object failed type:%s,input:%v error:%v", objType, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})

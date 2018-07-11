@@ -29,6 +29,8 @@ type Service struct {
 func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
 	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+    restful.DefaultRequestContentType(restful.MIME_JSON)
+    restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
