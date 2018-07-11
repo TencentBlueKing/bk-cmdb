@@ -86,7 +86,7 @@
                     activeNodeOptions: {},
                     activeParentNode: {},
                     initNode: {},
-                    loading: true
+                    loading: false
                 },
                 view: {
                     tab: {
