@@ -37,6 +37,7 @@ type AssociationOperationInterface interface {
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
 
@@ -88,18 +89,51 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	//  check the association
-	//	cond := condition.CreateCondition()
-	//	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
-	//	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(data.ObjectAttID)
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
+	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectAttID)
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
 
-	//asst := a.modelFactory.(params)
-	//asst.Parse(data)
+	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
 
-	//a.clientSet.ObjectController().Meta().SelectObjectAssociations()
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	// create a new
+
+	rspAsst, err := a.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, data)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rspAsst.Result {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspAsst.ErrMsg)
+		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
+	}
 
 	return nil, nil
 }
 func (a *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
+
+	// delete the object association
+	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAssociation(context.Background(), 0, params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
 	return nil
 }
 func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {

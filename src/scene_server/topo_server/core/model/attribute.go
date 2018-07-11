@@ -31,6 +31,8 @@ type Attribute interface {
 	Operation
 	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
 
+	Origin() metadata.Attribute
+
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
 
@@ -107,6 +109,9 @@ type attribute struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (a *attribute) Origin() metadata.Attribute {
+	return a.attr
+}
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).Field(common.BKObjIDField).Eq(objID)
@@ -320,7 +325,14 @@ func (a *attribute) MarshalJSON() ([]byte, error) {
 }
 
 func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
-	return a.attr.Parse(data)
+	attr, err := a.attr.Parse(data)
+	if nil != err {
+		return attr, err
+	}
+	if a.attr.IsOnly {
+		a.attr.IsRequired = true
+	}
+	return nil, err
 }
 
 func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
@@ -332,6 +344,40 @@ func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
 
 func (a *attribute) Create() error {
 
+	// check the property id repeated
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
+	attrItems, err := a.search(cond)
+	if nil != err {
+		blog.Errorf("[model-attr] failed to check the property id (%s), error info is %s", a.attr.PropertyID, err.Error())
+		return err
+	}
+
+	if 0 != len(attrItems) {
+		blog.Errorf("[model-attr] the property id(%s) is repeated", a.attr.PropertyID)
+		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	// check the property name repeated
+
+	cond = condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
+	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
+	attrItems, err = a.search(cond)
+	if nil != err {
+		blog.Errorf("[model-attr] failed to check the property name (%s), error info is %s", a.attr.PropertyName, err.Error())
+		return err
+	}
+
+	if 0 != len(attrItems) {
+		blog.Errorf("[model-attr] the property name(%s) is repeated", a.attr.PropertyName)
+		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	// create a new record
 	rsp, err := a.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), a.params.Header, &a.attr)
 
 	if nil != err {
@@ -364,12 +410,7 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 
 	return nil
 }
-func (a *attribute) search() ([]metadata.Attribute, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).
-		Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID).
-		Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyName)
+func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), a.params.Header, cond.ToMapStr())
 
@@ -387,7 +428,12 @@ func (a *attribute) search() ([]metadata.Attribute, error) {
 }
 func (a *attribute) IsExists() (bool, error) {
 
-	items, err := a.search()
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+
+	items, err := a.search(cond)
 	if nil != err {
 		return false, err
 	}
@@ -398,9 +444,9 @@ func (a *attribute) IsExists() (bool, error) {
 func (a *attribute) Delete() error {
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID).
-		Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount).
-		Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), a.attr.ID, a.params.Header, cond.ToMapStr())
 
