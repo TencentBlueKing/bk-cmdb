@@ -14,6 +14,9 @@ package operation
 
 import (
 	"context"
+	"fmt"
+
+	"configcenter/src/common/metadata"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -32,7 +35,7 @@ type AttributeOperationInterface interface {
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
 	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
 
 // NewAttributeOperation create a new attribute operation instance
@@ -46,15 +49,38 @@ type attribute struct {
 	clientSet    apimachinery.ClientSetInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
+	obj          ObjectOperationInterface
+	asst         AssociationOperationInterface
 }
 
-func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface) {
 	a.modelFactory = modelFactory
 	a.instFactory = instFactory
+	a.obj = obj
+	a.asst = asst
+}
 
+func (a *attribute) checkTheObject(params types.ContextParams, objID string) error {
+
+	checkObjCond := condition.CreateCondition()
+	checkObjCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
+	checkObjCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+
+	objItems, err := a.obj.FindObject(params, checkObjCond)
+	if nil != err {
+		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
+		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	}
+
+	if 0 == len(objItems) {
+		return params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("the object id  '%s' is invalid", objID))
+	}
+
+	return nil
 }
 
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
+
 	att := a.modelFactory.CreateAttribute(params)
 
 	_, err := att.Parse(data)
@@ -63,10 +89,39 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		return nil, err
 	}
 
+	// check the object id
+	err = a.checkTheObject(params, att.GetObjectID())
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	}
+
+	// create a new one
 	err = att.Create()
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	// create association
+	attrMeta := &metadata.Association{}
+	if err = data.MarshalJSONInto(attrMeta); nil != err {
+		blog.Errorf("[operation-attr] failed to parse the association data, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	}
+
+	if 0 != len(attrMeta.AsstObjID) {
+
+		// check the object id
+		err = a.checkTheObject(params, attrMeta.AsstObjID)
+		if nil != err {
+			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		}
+
+		attrMeta.ObjectAttID = att.GetID() // the structural difference
+		if _, err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
+			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
+			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		}
 	}
 
 	return att, nil
@@ -74,16 +129,38 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 
 func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), id, params.Header, cond.ToMapStr())
-
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	attrCond.Field(metadata.AttributeFieldID).Eq(id)
+	attrItems, err := a.FindObjectAttribute(params, attrCond)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[operation-attr] failed to find the attributes by the id(%d), error info is %s", id, err.Error())
+		return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-attr] failed to delete the attribute by the id(%d) or the condition(%#v), error info is %s", id, cond.ToMapStr(), rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+	for _, attrItem := range attrItems {
+		// delete the association
+		asstCond := condition.CreateCondition()
+		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
+		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
+		asstCond.Field(metadata.AssociationFieldObjectAttributeID).Eq(attrItem.GetID())
+		if err = a.asst.DeleteAssociation(params, asstCond); nil != err {
+			blog.Errorf("[operation-attr] failed to delete the attribute association(%v), error info is %s", asstCond.ToMapStr(), err.Error())
+			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
+		}
+
+		// delete the attribute
+		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Origin().ID, params.Header, cond.ToMapStr())
+
+		if nil != err {
+			blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[operation-attr] failed to delete the attribute by the id(%d) or the condition(%#v), error info is %s", id, cond.ToMapStr(), rsp.ErrMsg)
+			return params.Err.Error(rsp.Code)
+		}
 	}
 
 	return nil
