@@ -68,7 +68,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, 
 		url = fmt.Sprintf("http://%s", url)
 	}
 	blog.Info("get insts by url : %s", url)
-	rst, err := httpCli.POST(url, nil, []byte(info))
+	rst, err := httpCli.POST(url, valid.forward.Header, []byte(info))
 	blog.Info("get insts by return: %s", string(rst))
 	if nil != err {
 		blog.Error("request failed, error:%v", err)
@@ -129,7 +129,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID s
 	httpCli.SetHeader("Content-Type", "application/json")
 	httpCli.SetHeader("Accept", "application/json")
 	blog.Infof("get insts by cond: %s, instID %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
+	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), valid.forward.Header, []byte(info))
 	blog.Info("get insts by return: %s", string(rst))
 	if nil != err {
 		blog.Error("request failed, error:%v", err)
@@ -174,7 +174,7 @@ func (valid *ValidMap) getInstDataById(objID string, instID int) map[string]inte
 	httpCli.SetHeader("Content-Type", "application/json")
 	httpCli.SetHeader("Accept", "application/json")
 	blog.Infof("get insts by cond: %s instID: %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
+	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), valid.forward.Header, []byte(info))
 	blog.Info("get insts by return: %s", string(rst))
 	if nil != err {
 		blog.Error("request failed, error:%v", err)

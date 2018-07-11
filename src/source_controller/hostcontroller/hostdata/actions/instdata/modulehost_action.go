@@ -50,6 +50,7 @@ type moduleHostConfigAction struct {
 func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -73,7 +74,7 @@ func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, res
 		//add new relation ship
 		ec := eventdata.NewEventContextByReq(req)
 		for _, moduleID := range params.ModuleID {
-			_, err := logics.AddSingleHostModuleRelation(ec, cc, hostID, moduleID, params.ApplicationID)
+			_, err := logics.AddSingleHostModuleRelation(ec, cc, hostID, moduleID, params.ApplicationID, ownerID)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostTransferModule)
 			}
@@ -83,10 +84,11 @@ func (cli *moduleHostConfigAction) AddModuleHostConfig(req *restful.Request, res
 	}, resp)
 }
 
-//DelDefaultModuleHostConfig delete default module host config
+// DelDefaultModuleHostConfig delete default module host config
 func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -105,7 +107,7 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		defaultModuleIDs, err := logics.GetDefaultModuleIDs(cc, params.ApplicationID)
+		defaultModuleIDs, err := logics.GetDefaultModuleIDs(cc, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("defaultModuleIds appID:%d, error:%v", params.ApplicationID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
@@ -116,7 +118,7 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 		//delete default host module relation
 		ec := eventdata.NewEventContextByReq(req)
 		for _, defaultModuleID := range defaultModuleIDs {
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, defaultModuleID, params.ApplicationID)
+			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, defaultModuleID, params.ApplicationID, ownerID)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrDelDefaultModuleHostConfig)
 			}
@@ -130,6 +132,7 @@ func (cli *moduleHostConfigAction) DelDefaultModuleHostConfig(req *restful.Reque
 func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -151,6 +154,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 		getModuleParams := make(map[string]interface{}, 2)
 		getModuleParams[common.BKHostIDField] = params.HostID
 		getModuleParams[common.BKAppIDField] = params.ApplicationID
+		getModuleParams = util.SetModOwner(getModuleParams, ownerID)
 		moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetOriginHostModuelRelationship)
@@ -158,7 +162,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 
 		ec := eventdata.NewEventContextByReq(req)
 		for _, moduleID := range moduleIDs {
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID)
+			_, err := logics.DelSingleHostModuleRelation(ec, cc, params.HostID, moduleID, params.ApplicationID, ownerID)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrDelOriginHostModuelRelationship)
 			}
@@ -172,6 +176,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -189,7 +194,9 @@ func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp 
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		moduleIDs, err := logics.GetModuleIDsByHostID(cc, map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}) //params.HostID, params.ApplicationID)
+		condition := map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}
+		condition = util.SetModOwner(condition, ownerID)
+		moduleIDs, err := logics.GetModuleIDsByHostID(cc, condition) //params.HostID, params.ApplicationID)
 		if nil != err {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
 		}
@@ -201,6 +208,7 @@ func (cli *moduleHostConfigAction) GetHostModulesIDs(req *restful.Request, resp 
 func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -230,11 +238,12 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 		getModuleParams := make(map[string]interface{})
 		for _, hostID := range params.HostID {
 			//delete relation in default app module
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerApplicationID)
+			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTransferHostFromPool)
 			}
 			getModuleParams[common.BKHostIDField] = hostID
+			getModuleParams = util.SetModOwner(getModuleParams, ownerID)
 			moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams)
 			if nil != err {
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetModule)
@@ -245,7 +254,7 @@ func (cli *moduleHostConfigAction) AssignHostToApp(req *restful.Request, resp *r
 			}
 
 			//add new host
-			_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.ModuleID, params.ApplicationID)
+			_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.ModuleID, params.ApplicationID, ownerID)
 			if nil != err {
 			}
 		}
@@ -260,6 +269,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -282,6 +292,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 			conditon[common.BKDBIN] = val
 			query[key] = conditon
 		}
+		query = util.SetModOwner(query, ownerID)
 		fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
 		var result []interface{}
 		err = cc.InstCli.GetMutilByCondition("cc_ModuleHostConfig", fields, query, &result, common.BKHostIDField, 0, 100000)
@@ -297,6 +308,7 @@ func (cli *moduleHostConfigAction) GetModulesHostConfig(req *restful.Request, re
 func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -341,7 +353,7 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 
 			//host not belong to other biz, add new host
 			if !util.ContainsInt(faultHostIDs, hostID) {
-				_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
+				_, err = logics.AddSingleHostModuleRelation(ec, cc, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
 				if nil != err {
 					addErr = append(addErr, hostID)
 					continue
@@ -349,7 +361,7 @@ func (cli *moduleHostConfigAction) MoveHost2ResourcePool(req *restful.Request, r
 			}
 
 			//delete origin relation
-			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, idleModuleID, params.ApplicationID)
+			_, err := logics.DelSingleHostModuleRelation(ec, cc, hostID, idleModuleID, params.ApplicationID, ownerID)
 			if nil != err {
 				delErr = append(delErr, hostID)
 				continue

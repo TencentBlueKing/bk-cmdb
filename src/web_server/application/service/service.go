@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/redisclient"
 	confCenter "configcenter/src/web_server/application/config"
 	"configcenter/src/web_server/application/logics"
 	"configcenter/src/web_server/application/middleware"
@@ -62,6 +63,7 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	a.AddrSrv = s.rd
+	a.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
 
 	//	a.Lang = language.New()
 
@@ -174,6 +176,18 @@ func (ccWeb *CCWebServer) Start() error {
 	agentAppUrl := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
+
+	redisCli, err := redisclient.NewRedis(redisIp, redisPort, "", redisSecret, "0")
+	if nil != err {
+		blog.Errorf("connect redis error %s", err.Error())
+		return err
+	}
+	err = redisCli.Open()
+	if nil != err {
+		blog.Errorf("connect redis error %s", err.Error())
+		return err
+	}
+	a.CacheCli = redisCli
 	go func() {
 		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIp+":"+redisPort, redisSecret, []byte("secret"))
 		if rediserr != nil {

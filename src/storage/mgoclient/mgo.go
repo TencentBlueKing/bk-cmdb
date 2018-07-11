@@ -165,6 +165,7 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 		}
 	}
 
+	blog.InfoJSON("query %s by %s", cName, condiction)
 	fieldmap["_id"] = 0
 	query := c.Find(condiction)
 	if 0 < len(fieldmap) {
