@@ -13,7 +13,6 @@
 package httpclient
 
 import (
-	"configcenter/src/common/blog"
 	"io/ioutil"
 	"net/http/httputil"
 
@@ -25,7 +24,7 @@ import (
 
 //rest-api http请求代理
 func ReqForward(req *restful.Request, url, method string) (string, error) {
-	blog.Infof("forward %s with header %v", url, req.Request.Header)
+	// blog.Infof("forward %s with header %v", url, req.Request.Header)
 	body, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		return err.Error(), err
@@ -58,7 +57,7 @@ func ProxyRestHttp(req *restful.Request, resp *restful.Response, addr string) {
 
 //rest-api请求转发
 func ReqHttp(req *restful.Request, url, method string, body []byte) (string, error) {
-	blog.Infof("forward %s with header %v", url, req.Request.Header)
+	// blog.Infof("forward %s with header %v", url, req.Request.Header)
 	httpcli := NewHttpClient()
 	httpcli.SetHeader("Content-Type", "application/json")
 	httpcli.SetHeader("Accept", "application/json")

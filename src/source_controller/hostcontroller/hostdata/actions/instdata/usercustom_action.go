@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package instdata
 
 import (
@@ -46,6 +46,7 @@ type userCustomAction struct {
 func (cli *userCustomAction) AddUserCustom(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -66,6 +67,7 @@ func (cli *userCustomAction) AddUserCustom(req *restful.Request, resp *restful.R
 		ID := xid.New()
 		data["id"] = ID.String()
 		data["bk_user"] = req.PathParameter("bk_user") //libraries.GetOperateUser(req)
+		data = util.SetModOwner(data, ownerID)
 		_, err = cc.InstCli.Insert(userCustomTableName, data)
 		if nil != err {
 			blog.Error("Create  user custom fail, error information is %s, params:%v", err.Error(), data)
@@ -80,6 +82,7 @@ func (cli *userCustomAction) AddUserCustom(req *restful.Request, resp *restful.R
 func (cli *userCustomAction) UpdateUserCustomByID(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -90,6 +93,7 @@ func (cli *userCustomAction) UpdateUserCustomByID(req *restful.Request, resp *re
 		conditons := make(map[string]interface{})
 		conditons["id"] = req.PathParameter("id")
 		conditons["bk_user"] = req.PathParameter("bk_user") //libraries.GetOperateUser(req)
+		conditons = util.SetModOwner(conditons, ownerID)
 
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if err != nil {
@@ -116,6 +120,7 @@ func (cli *userCustomAction) UpdateUserCustomByID(req *restful.Request, resp *re
 func (cli *userCustomAction) GetUserCustomByUser(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -125,6 +130,7 @@ func (cli *userCustomAction) GetUserCustomByUser(req *restful.Request, resp *res
 		conds := make(map[string]interface{})
 		user := req.PathParameter("bk_user")
 		conds["bk_user"] = user
+		conds = util.SetModOwner(conds, ownerID)
 
 		result := make(map[string]interface{})
 		err := cc.InstCli.GetOneByCondition(userCustomTableName, nil, conds, &result)
@@ -141,6 +147,7 @@ func (cli *userCustomAction) GetUserCustomByUser(req *restful.Request, resp *res
 func (cli *userCustomAction) GetDefaultUserCustom(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -148,6 +155,7 @@ func (cli *userCustomAction) GetDefaultUserCustom(req *restful.Request, resp *re
 
 		conds := make(map[string]interface{})
 		conds["is_default"] = 1
+		conds = util.SetModOwner(conds, ownerID)
 
 		result := make(map[string]interface{})
 		err := cc.InstCli.GetOneByCondition(userCustomTableName, nil, conds, &result)
