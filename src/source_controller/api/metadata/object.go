@@ -91,11 +91,12 @@ func (ObjectDes) TableName() string {
 
 // ObjClassification 模型分类
 type ObjClassification struct {
-	ID                 int       `bson:"id"                   json:"id"`
+	ID                 int       `bson:"id"                      json:"id"`
 	ClassificationID   string    `bson:"bk_classification_id"    json:"bk_classification_id"`
 	ClassificationName string    `bson:"bk_classification_name"  json:"bk_classification_name"`
 	ClassificationType string    `bson:"bk_classification_type"  json:"bk_classification_type"`
 	ClassificationIcon string    `bson:"bk_classification_icon"  json:"bk_classification_icon"`
+	OwnerID            string    `bson:"bk_supplier_account"     json:"bk_supplier_account"`
 	Page               *BasePage `bson:"-"                       json:"page,omitempty"`
 }
 
