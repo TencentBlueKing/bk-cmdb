@@ -24,7 +24,6 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	dcCommon "configcenter/src/scene_server/datacollection/common"
-	eventtypes "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/eventdata"
 	"github.com/emicklei/go-restful"
@@ -131,7 +130,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventdata.NewEventContextByReq(req, s.Cache)
-		err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
+		err := ec.InsertEvent(meta.EventTypeInstData, "host", meta.EventActionCreate, originData, nil)
 		if err != nil {
 			blog.Error("add host, but create event error:%v", err)
 		}
