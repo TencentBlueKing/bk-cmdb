@@ -10,11 +10,7 @@
  * limitations under the License.
  */
 
-<<<<<<< db99806ecdd0f037435f3c3f6bed18500d736318:src/scene_server/admin_server/migrate_service/upgrader/v3.0.8/addPlatData.go
 package v3v0v8
-=======
-package models
->>>>>>> set update data to supplier_account:src/scene_server/admin_server/migrate_service/models/plat.go
 
 import (
 	"configcenter/src/common"
