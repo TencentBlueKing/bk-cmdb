@@ -66,7 +66,7 @@
     $borderColor: #e7e9ef; //边框色
     $primaryColor: #737987;
     .header-wrapper{
-        height: 43px;
+        height: 60px;
         background: #fbfbfb;
         border-bottom: 1px solid $borderColor;
         font-size: 14px;
@@ -74,6 +74,7 @@
         left: 0;
         top: 0;
         width: 100%;
+        padding: 0 0 0 60px;
         z-index: 1200;
         .logo{
             height: 27px;

@@ -25,9 +25,9 @@
     </div>
 </template>
 <script>
-    import vHeader from '@/components/header/header'
+    import vHeader from '@/components/header/header-v3'
     import vNavigation from '@/components/nav/nav'
-    import vNav from '@/components/nav/nav-v2'
+    import vNav from '@/components/nav/nav-v3'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
@@ -52,6 +52,7 @@
         },
         created () {
             this.isChromeShow = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
+            window.haha = this
         }
     }
 </script>
@@ -63,7 +64,7 @@
         position: relative;
         .main-wrapper{
             height: 100%;
-            padding-top: 43px;
+            padding-top: 61px;
             overflow: auto;
             position: relative;
             .content-wrapper{

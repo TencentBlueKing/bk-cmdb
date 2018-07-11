@@ -198,8 +198,6 @@
 </script>
 <style lang="scss" scoped>
     .search-box{
-        width: 900px;
-        margin: 0 auto;
         position: relative;
         .search-keyword{
             width: 100%;
