@@ -2,6 +2,7 @@
     "Common": {
         "logo": "en",
         "您没有当前业务的权限": "You do not have permission to the current business",
+        "您没有业务权限": "You do not have business permission",
         "页码": "{count} rows total　Page {current} / {total}",
         "每页显示": "{page} rows per page",
         "每页显示XXX行": "XXX rows per page",
