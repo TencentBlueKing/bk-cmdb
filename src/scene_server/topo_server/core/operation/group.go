@@ -35,7 +35,7 @@ type GroupOperationInterface interface {
 	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
 	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
 }
 
 // NewGroupOperation create a new group operation instance
@@ -49,9 +49,10 @@ type group struct {
 	clientSet    apimachinery.ClientSetInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
+	obj          ObjectOperationInterface
 }
 
-func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface) {
 	g.modelFactory = modelFactory
 	g.instFactory = instFactory
 }
@@ -66,6 +67,13 @@ func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapSt
 		return nil, err
 	}
 
+	//  check the object
+	if err = g.obj.IsValidObject(params, grp.Origin().ObjectID); nil != err {
+		blog.Errorf("[operation-grp] the group (%#v) is in valid", data)
+		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
+	}
+
+	// create a new group
 	err = grp.Create()
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to save the group data (%#v), error info is %s", data, err.Error())
