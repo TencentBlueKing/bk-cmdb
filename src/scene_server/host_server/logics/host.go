@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -472,15 +471,15 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	} else {
 		hostResult, retStrErr = lgc.GetInstDetailsSub(pheader, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, page)
 	}
-	if err != nil {
-		blog.Error("failed to replace association object, error code is %d", retStrErr)
-		return nil, err
+	if nil != retStrErr {
+		blog.Error("failed to replace association object, error code is %s, input:%v", retStrErr.Error(), data)
+		return nil, retStrErr
 	}
 
 	resHostIDArr := make([]int64, 0)
 	queryCond := make(map[string][]int64)
 	for _, j := range hostResult {
-		hostID, err := j[common.BKHostIDField].(json.Number).Int64()
+		hostID, err := util.GetInt64ByInterface(j[common.BKHostIDField])
 		if err != nil {
 			return nil, err
 		}
@@ -554,7 +553,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 	//com host info
 	for _, host := range hostResult {
-		hostID, err := host[common.BKHostIDField].(json.Number).Int64()
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return nil, fmt.Errorf("invalid hostid: %v", err)
 		}
