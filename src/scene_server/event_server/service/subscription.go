@@ -37,6 +37,7 @@ import (
 func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
@@ -53,9 +54,10 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		sub.ConfirmPattern = "200"
 	}
 	sub.LastTime = &now
+	sub.OwnerID = ownerID
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 
-	count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+	count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 	if err != nil || count > 0 {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 		return
@@ -139,6 +141,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	id, err := strconv.ParseInt(req.PathParameter("subscribeID"), 10, 64)
 	if nil != err {
@@ -162,7 +165,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	if oldsub.SubscriptionName != sub.SubscriptionName {
-		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 		if err != nil {
 			blog.Errorf("get subscription count error: %v", err)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
@@ -181,6 +184,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	}
 	now := commontypes.Now()
 	sub.LastTime = &now
+	sub.OwnerID = ownerID
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 	sub.Operator = util.GetUser(req.Request.Header)
 	if updateerr := instdata.UpdateSubscriptionByCondition(sub, util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()); nil != updateerr {

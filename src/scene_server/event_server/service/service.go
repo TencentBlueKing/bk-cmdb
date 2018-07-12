@@ -17,6 +17,7 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/storage"
 )
