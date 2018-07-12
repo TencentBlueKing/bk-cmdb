@@ -13,12 +13,13 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 )
 
 var _ ModuleInterface = (*module)(nil)
@@ -116,7 +117,7 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 
 	//log.Infof("the module search condition:%#v", cond.ToMapStr())
 	// search by condition
-	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().SearchModules(cond)
 
 	return attrs, existItems, err
 
@@ -141,7 +142,7 @@ func (cli *module) Create() error {
 		cli.datas.Set(BusinessID, cli.bizID)
 	}
 
-	moduleID, err := client.GetClient().CCV3().Module().CreateModule(cli.bizID, cli.setID, cli.datas)
+	moduleID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().CreateModule(cli.bizID, cli.setID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -182,7 +183,7 @@ func (cli *module) Update() error {
 
 		cli.datas.Remove(ModuleID)
 
-		err = client.GetClient().CCV3().Module().UpdateModule(cli.bizID, cli.setID, instID, cli.datas)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().UpdateModule(cli.bizID, cli.setID, instID, cli.datas)
 		if nil != err {
 			log.Infof("failed to  update the module (%#v), error info is %s", existItem, err.Error())
 			return err

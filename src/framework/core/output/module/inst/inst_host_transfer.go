@@ -57,7 +57,7 @@ func (t *transfer) MoveToModule(newModuleIDS []int64, isIncrement bool) error {
 		return err
 	}
 
-	return client.GetClient().CCV3().Host().TransferHostToBusinessModule(t.targetHost.bizID, []int64{hostID}, newModuleIDS, isIncrement)
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostToBusinessModule(t.targetHost.bizID, []int64{hostID}, newModuleIDS, isIncrement)
 }
 
 // MoveToFaultModule transfer host module to fault module
@@ -69,7 +69,7 @@ func (t *transfer) MoveToFaultModule() error {
 		return err
 	}
 
-	return client.GetClient().CCV3().Host().TransferHostToBusinessFaultModule(t.targetHost.bizID, []int64{hostID})
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostToBusinessFaultModule(t.targetHost.bizID, []int64{hostID})
 }
 
 // MoveToIdleModule transfer host module to idle module
@@ -80,7 +80,7 @@ func (t *transfer) MoveToIdleModule() error {
 		return err
 	}
 
-	return client.GetClient().CCV3().Host().TransferHostToBusinessIdleModule(t.targetHost.bizID, []int64{hostID})
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostToBusinessIdleModule(t.targetHost.bizID, []int64{hostID})
 }
 
 // MoveToResourcePools transfer host module to resource pools
@@ -91,7 +91,7 @@ func (t *transfer) MoveToResourcePools() error {
 		return err
 	}
 
-	return client.GetClient().CCV3().Host().TransferHostToResourcePools(t.targetHost.bizID, []int64{hostID})
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostToResourcePools(t.targetHost.bizID, []int64{hostID})
 }
 
 // MoveToBusinessIdleModuleFromResourcePools transfer host to business module
@@ -102,7 +102,7 @@ func (t *transfer) MoveToBusinessIdleModuleFromResourcePools(bizID int64) error 
 		return err
 	}
 
-	return client.GetClient().CCV3().Host().TransferHostFromResourcePoolsToBusinessIdleModule(bizID, []int64{hostID})
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostFromResourcePoolsToBusinessIdleModule(bizID, []int64{hostID})
 }
 
 // MoveToAnotherBusinessModules transfer host to another business modules
@@ -124,11 +124,11 @@ func (t *transfer) MoveToAnotherBusinessModules(bizID int64, moduleID int64) err
 	hostInfo.CloudID = cloudID
 	hostInfo.HostInnerIP = innerIP
 
-	return client.GetClient().CCV3().Host().TransferHostToAnotherBusinessModules(bizID, moduleID, []*v3.HostInfo{})
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().TransferHostToAnotherBusinessModules(bizID, moduleID, []*v3.HostInfo{})
 }
 
 // ResetBusinessHosts transfer the hosts in set or module to the idle module
 func (t *transfer) ResetBusinessHosts(setID, moduleID int64) error {
 
-	return client.GetClient().CCV3().Host().ResetBusinessHosts(t.targetHost.bizID, moduleID, setID)
+	return client.GetClient().CCV3(client.Params{SupplierAccount: t.targetHost.GetModel().GetSupplierAccount()}).Host().ResetBusinessHosts(t.targetHost.bizID, moduleID, setID)
 }
