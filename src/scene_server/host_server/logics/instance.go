@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -227,10 +226,7 @@ func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string,
 				if nil == keyItem {
 					continue
 				}
-				keyItemStr, ok := keyItem.(string)
-				if !ok {
-					return nil, errors.New("invalid parameter")
-				}
+				keyItemStr := fmt.Sprintf("%v", keyItem)
 				var retData []InstNameAsst
 				var err error
 				query := &meta.QueryInput{
