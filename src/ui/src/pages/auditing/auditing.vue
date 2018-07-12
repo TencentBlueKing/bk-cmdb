@@ -10,7 +10,6 @@
 
 <template>
     <div class="auditing-content">
-        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="right-content">
             <div class="record-content">
                 <div class="title-content clearfix">
@@ -112,13 +111,11 @@
     import vSideslider from '@/components/slider/sideslider'
     import vHistoryDetails from '@/components/history/details'
     import vTable from '@/components/table/table'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     export default {
         components: {
             vTable,
             vSideslider,
-            vHistoryDetails,
-            vBreadcrumb
+            vHistoryDetails
         },
         data () {
             return {
@@ -401,9 +398,6 @@
         height: 100%;
         font-size: 14px;
         color: $primaryColor;
-        .breadcrumbs{
-            padding: 8px 20px;
-        }
         .dn{
             display: none;
         }
@@ -473,6 +467,7 @@
                 .title-content{
                     width: 100%;
                     position: relative;
+                    padding-top: 20px;
                     z-index: 2;
                     .group-content{
                         float:left;

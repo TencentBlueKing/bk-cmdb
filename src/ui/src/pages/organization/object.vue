@@ -10,7 +10,6 @@
 
 <template lang="html">
    <div class="host-resource-wrapper clearfix">
-        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -177,7 +176,6 @@
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
     import vDeleteHistory from '@/components/history/delete'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     export default {
         mixins: [Authority],
         data () {
@@ -779,8 +777,7 @@
             vConfigField,
             vDeleteHistory,
             vAssociationList,
-            vNewAssociation,
-            vBreadcrumb
+            vNewAssociation
         }
     }
 </script>
@@ -791,9 +788,6 @@
     $primaryColor: #f9f9f9; //主要
     $fnMainColor: #bec6de; //文案主要颜色
     $primaryHoverColor: #6b7baa; //鼠标移上 主要颜色
-    .breadcrumbs{
-        padding: 8px 20px;
-    }
     .main-btn{  //主要按钮
         background: $primaryHoverColor;
         &:hover{
@@ -892,7 +886,7 @@
             margin: 0;
         }
         .bottom-contain{
-            padding:0 20px;
+            padding:20px 20px 0;
         }
     }
     .bk-button-componey{

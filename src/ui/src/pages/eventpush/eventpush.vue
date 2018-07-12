@@ -11,7 +11,6 @@
 <template>
     <div class="content-box">
         <div class="button-wrapper clearfix">
-            <v-breadcrumb class="breadcrumbs fl"></v-breadcrumb>
             <bk-button class="fr" type="primary" @click="addPush">{{$t('EventPush["新增推送"]')}}</bk-button>
         </div>
         <v-table
@@ -56,7 +55,6 @@
 <script>
     import vTable from '@/components/table/table'
     import vSideslider from '@/components/slider/sideslider'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     import vPushDetail from './children/pushDetail.vue'
     import {mapGetters} from 'vuex'
     export default {
@@ -250,8 +248,7 @@
         components: {
             vTable,
             vSideslider,
-            vPushDetail,
-            vBreadcrumb
+            vPushDetail
         }
     }
 </script>
