@@ -33,8 +33,8 @@ func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (p *procctrl) GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcModuleResult, err error) {
+	resp = new(metadata.ProcModuleResult)
 	subPath := "/module/search"
 
 	err = p.client.Post().

@@ -13,12 +13,104 @@
 package app
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
+    "os"
+    "fmt"
+    
 	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/proc_service"
+    "configcenter/src/common/types"
+    "configcenter/src/common/version"
+    "configcenter/src/common/blog"
+    "configcenter/src/apimachinery/util"
+    "configcenter/src/apimachinery"
+    "configcenter/src/scene_server/proc_server/proc_service/procserver"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/rdapi"
+    "context"
 )
 
+//Run ccapi server
+func Run(ctx context.Context, op *options.ServerOption) error {
+    
+    // clientset
+    apiMachConf := &util.APIMachineryConfig{
+        ZkAddr: op.ServConf.RegDiscover,
+        QPS: op.ServConf.Qps,
+        Burst: op.ServConf.Burst,
+        TLSConfig: nil,
+    }
+    
+    apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+    if err != nil {
+        return fmt.Errorf("create api machinery object failed. err: %v", err)
+    }
+    
+    svrInfo, err := newServerInfo(op)
+    if err != nil {
+        blog.Errorf("fail to new server information. err: %s", err.Error())
+        return fmt.Errorf("make server information failed, err:%v", err)
+    }
+    
+    procSvr := new(procserver.ProcServer)
+    bkbsvr := backbone.Server{
+        ListenAddr: svrInfo.IP,
+        ListenPort: svrInfo.Port,
+        Handler: procSvr.WebService(rdapi.AllGlobalFilter()),
+        TLS: backbone.TLSConfig{},
+    }
+    
+    regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROC, svrInfo.IP)
+    bkbCfg := &backbone.Config{
+        RegisterPath: regPath,
+        RegisterInfo: *svrInfo,
+        CoreAPI: apiMachinery,
+        Server: bkbsvr,
+    }
+    
+    engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+        types.CC_MODULE_PROC, 
+        op.ServConf.ExConfig,
+        procSvr.OnProcessConfigUpdate,
+        bkbCfg)
+    
+    procSvr.Engine = engine
+    
+    select {
+    case <- ctx.Done():
+        blog.Infof("process will exit!")
+    }
+    
+    return nil
+}
+
+func newServerInfo(op *options.ServerOption)(*types.ServerInfo, error) {
+    ip, err := op.ServConf.GetAddress()
+    if err != nil {
+        return nil, err
+    }
+    
+    port, err := op.ServConf.GetPort()
+    if err != nil {
+        return nil, err
+    }
+    
+    hostname, err := os.Hostname()
+    if err != nil {
+        return nil, err
+    }
+    
+    svrInfo := &types.ServerInfo{
+        IP: ip,
+        Port: port,
+        HostName: hostname,
+        Scheme: "http",
+        Version: version.GetVersion(),
+        Pid: os.Getpid(),
+    }
+    
+    return svrInfo, nil
+}
+
+/*
 //Run ccapi server
 func Run(op *options.ServerOption) error {
 
@@ -44,3 +136,4 @@ func setConfig(op *options.ServerOption) {
 	//server cert directory
 
 }
+*/

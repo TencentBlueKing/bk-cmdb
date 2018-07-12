@@ -23,6 +23,8 @@ type CCAPIConfig struct {
 	AddrPort    string
 	RegDiscover string
 	ExConfig    string
+	Qps int64
+	Burst int64
 }
 
 // NewCCAPIConfig create ccapi config object
@@ -30,6 +32,8 @@ func NewCCAPIConfig() *CCAPIConfig {
 	return &CCAPIConfig{
 		AddrPort:    "127.0.0.1:8081",
 		RegDiscover: "",
+		Qps: 1000,
+		Burst: 2000,
 	}
 }
 

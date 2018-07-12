@@ -349,6 +349,7 @@ const (
 	CCErrProcSearchProcessFaile      = 1108006
 	CCErrProcDeleteProcessFaile      = 1108007
 	CCErrProcCreateProcessFaile      = 1108008
+	CCErrProcFieldValidFaile         = 1108009
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

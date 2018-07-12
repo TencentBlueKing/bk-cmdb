@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/types"
 	"github.com/spf13/pflag"
+    "context"
 )
 
 func main() {
@@ -39,7 +40,11 @@ func main() {
 
 	util.InitFlags()
 
-	if err := app.Run(op); err != nil {
+	if err := common.SavePid(); err != nil {
+	    blog.Errorf("fail to save pid. err: %s", err.Error())
+    }
+	
+	if err := app.Run(context.Background() ,op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
