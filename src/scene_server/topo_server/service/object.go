@@ -22,19 +22,19 @@ import (
 )
 
 // CreateObjectBatch batch to create some objects
-func (s *topoService) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObjectBatch")
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
-func (s *topoService) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // CreateObject create a new object
-func (s *topoService) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	rsp, err := s.core.ObjectOperation().CreateObject(params, data)
 	if nil != err {
@@ -45,7 +45,7 @@ func (s *topoService) CreateObject(params types.LogicParams, pathParams, queryPa
 }
 
 // SearchObject search some objects by condition
-func (s *topoService) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObject")
 	cond := condition.CreateCondition()
 
@@ -57,13 +57,13 @@ func (s *topoService) SearchObject(params types.LogicParams, pathParams, queryPa
 }
 
 // SearchObjectTopo search the object topo
-func (s *topoService) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectTopo")
 	return nil, nil
 }
 
 // UpdateObject update the object
-func (s *topoService) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
@@ -80,7 +80,7 @@ func (s *topoService) UpdateObject(params types.LogicParams, pathParams, queryPa
 }
 
 // DeleteObject delete the object
-func (s *topoService) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 

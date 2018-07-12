@@ -14,6 +14,8 @@ package service
 
 import (
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage"
 	"github.com/emicklei/go-restful"
@@ -26,9 +28,14 @@ type Service struct {
 	Logics   logics.Logics
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.Core.CCErr
+	}
+	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	restful.DefaultRequestContentType(restful.MIME_JSON)
+	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/hosts/favorites/{user}").To(s.AddHostFavourite))
 	ws.Route(ws.PUT("/hosts/favorites/{user}/{id}").To(s.UpdateHostFavouriteByID))
@@ -57,4 +64,6 @@ func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService 
 	ws.Route(ws.PUT("/usercustom/{bk_user}/{id}").To(s.UpdateUserCustomByID))
 	ws.Route(ws.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
 	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
+
+	return ws
 }

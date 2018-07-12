@@ -13,11 +13,14 @@
 package service
 
 import (
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -26,9 +29,14 @@ type Service struct {
 	*logics.Logics
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	restful.DefaultRequestContentType(restful.MIME_JSON)
+	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))

@@ -18,8 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
 	metadataTable "configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/storage"
@@ -83,7 +83,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventdata.EventContext, hostI
 
 	// send events
 	for _, origindata := range origindatas {
-		err := ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionDelete, nil, origindata)
+		err := ec.InsertEvent(metadata.EventTypeRelation, "moduletransfer", metadata.EventActionDelete, nil, origindata)
 		if err != nil {
 			blog.Errorf("delete single host relation failed, but create event error:%v", err)
 		}
@@ -141,7 +141,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ec *eventdata.EventContext, hostI
 		return false, err
 	}
 
-	err = ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionCreate, moduleHostConfig, nil)
+	err = ec.InsertEvent(metadata.EventTypeRelation, "moduletransfer", metadata.EventActionCreate, moduleHostConfig, nil)
 	if err != nil {
 		blog.Errorf("add single host module relation, create event error:%v", err)
 	}

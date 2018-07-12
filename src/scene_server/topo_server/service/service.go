@@ -20,7 +20,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -28,9 +27,11 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -69,14 +70,17 @@ func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, la
 }
 
 // WebService the web service
-func (s *topoService) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *topoService) WebService() *restful.WebService {
 
 	// init service actions
 	s.initService()
 
 	ws := new(restful.WebService)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
 	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Path("/topo/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -137,7 +141,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				//user := util.GetActionUser(req)
 
 				// get the language
 				language := util.GetActionLanguage(req)
@@ -151,7 +155,10 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err != nil {
 					blog.Errorf("read http request body failed, error:%s", err.Error())
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-					respData, _ := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
+					respData, err := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
+					if nil != err {
+						blog.Errorf("failed to create response result, error info is %s", err.Error())
+					}
 					s.sendResponse(resp, respData)
 					return
 				}
@@ -160,19 +167,20 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err := json.Unmarshal(value, &mData); nil != err {
 					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					respData, _ := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
+					respData, err := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
+					if nil != err {
+						blog.Errorf("failed to create response result, error info is %s", err.Error())
+					}
 					s.sendResponse(resp, respData)
 					return
 				}
 
-				data, dataErr := act.HandlerFunc(types.LogicParams{
-					Err:  defErr,
-					Lang: defLang,
-					Header: apiutil.Headers{
-						Language: language,
-						User:     user,
-						OwnerID:  ownerID,
-					},
+				data, dataErr := act.HandlerFunc(types.ContextParams{
+					Support:         supplementary.New(),
+					Err:             defErr,
+					Lang:            defLang,
+					Header:          req.Request.Header,
+					SupplierAccount: ownerID,
 				},
 					req.PathParameter,
 					req.QueryParameter,

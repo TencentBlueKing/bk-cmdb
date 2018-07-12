@@ -13,8 +13,9 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"fmt"
+
+	"configcenter/src/common/metadata"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,14 +26,14 @@ import (
 )
 
 // CreateInst create a new inst
-func (s *topoService) CreateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/{owner_id}/{obj_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -42,7 +43,7 @@ func (s *topoService) CreateInst(params types.LogicParams, pathParams, queryPara
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, params.Header.OwnerID)
+	data.Set(common.BKAppIDField, params.SupplierAccount)
 	data.Set(common.BKObjIDField, objID)
 
 	for _, item := range objItems {
@@ -60,10 +61,10 @@ func (s *topoService) CreateInst(params types.LogicParams, pathParams, queryPara
 }
 
 // DeleteInst delete the inst
-func (s *topoService) DeleteInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(pathParams("obj_id"))
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -93,14 +94,14 @@ func (s *topoService) DeleteInst(params types.LogicParams, pathParams, queryPara
 }
 
 // UpdateInst update the inst
-func (s *topoService) UpdateInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -130,7 +131,7 @@ func (s *topoService) UpdateInst(params types.LogicParams, pathParams, queryPara
 }
 
 // SearchInst search the inst
-func (s *topoService) SearchInst(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInst")
 	// /inst/search/{owner_id}/{obj_id}
 
@@ -138,7 +139,7 @@ func (s *topoService) SearchInst(params types.LogicParams, pathParams, queryPara
 
 	// query the objects
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -190,14 +191,14 @@ func (s *topoService) SearchInst(params types.LogicParams, pathParams, queryPara
 }
 
 // SearchInstAndAssociationDetail search the inst with association details
-func (s *topoService) SearchInstAndAssociationDetail(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstAndAssociationDetail")
 	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -233,14 +234,14 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.LogicParams, p
 }
 
 // SearchInstByObject search the inst of the object
-func (s *topoService) SearchInstByObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -277,14 +278,14 @@ func (s *topoService) SearchInstByObject(params types.LogicParams, pathParams, q
 }
 
 // SearchInstByAssociation search inst by the association inst
-func (s *topoService) SearchInstByAssociation(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstByAssociation")
 	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -320,14 +321,14 @@ func (s *topoService) SearchInstByAssociation(params types.LogicParams, pathPara
 }
 
 // SearchInstByInstID search the inst by inst ID
-func (s *topoService) SearchInstByInstID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstByInstID")
 	// /inst/search/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
 
@@ -364,14 +365,14 @@ func (s *topoService) SearchInstByInstID(params types.LogicParams, pathParams, q
 }
 
 // SearchInstChildTopo search the child inst topo for a inst
-func (s *topoService) SearchInstChildTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstChildTopo")
 	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	objs, err := s.core.ObjectOperation().FindObject(params, cond)
@@ -411,14 +412,14 @@ func (s *topoService) SearchInstChildTopo(params types.LogicParams, pathParams, 
 }
 
 // SearchInstTopo search the inst topo
-func (s *topoService) SearchInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchInstTopo")
 	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
 	return nil, nil

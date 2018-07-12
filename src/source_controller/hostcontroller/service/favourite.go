@@ -127,7 +127,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	}
 	err = s.Instance.UpdateByCondition(FavouriteCollection, fav, query)
 	if nil != err {
-		blog.Error("update host favorites fail, err: %v, params:%v", err, params)
+		blog.Error("update host favorites fail, err: %v, params:%v", err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteUpdateFail)})
 		return
 	}

@@ -60,7 +60,7 @@ var _ Group = (*group)(nil)
 type group struct {
 	grp       metadata.Group
 	isNew     bool
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 
@@ -70,7 +70,7 @@ func (cli *group) MarshalJSON() ([]byte, error) {
 
 func (cli *group) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), &cli.grp)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header, &cli.grp)
 
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, error info is %s", err.Error())
@@ -101,7 +101,7 @@ func (cli *group) Update() error {
 		cond.Data.Index = cli.grp.GroupIndex
 		cond.Data.Name = cli.grp.GroupName
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header.ToHeader(), cond)
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header, cond)
 		if nil != err {
 			blog.Errorf("[model-grp]failed to request object controller, error info is %s", err.Error())
 			return err
@@ -120,7 +120,7 @@ func (cli *group) Update() error {
 
 func (cli *group) Delete() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header.ToHeader())
+	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header)
 	if nil != err {
 		blog.Error("[model-grp]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -139,7 +139,7 @@ func (cli *group) IsExists() (bool, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request object controller ,error info is %s", err.Error())
 		return false, err
@@ -168,9 +168,9 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldObjectID).Eq(cli.grp.ObjectID).
 		Field(metadata.AttributeFieldPropertyGroup).Eq(cli.grp.GroupID).
-		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -201,7 +201,7 @@ func (cli *group) search() ([]metadata.Group, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, err

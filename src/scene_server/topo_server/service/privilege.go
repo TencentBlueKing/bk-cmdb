@@ -23,7 +23,7 @@ import (
 )
 
 // UpdateUserGroupPrivi search user goup
-func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	priviData := &metadata.PrivilegeUserGroup{}
 
@@ -33,18 +33,18 @@ func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams,
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.Header.OwnerID, pathParams("group_id"), priviData)
+	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
 	return nil, err
 }
 
 // GetUserGroupPrivi search user goup
-func (s *topoService) GetUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // GetUserPrivi search user goup
-func (s *topoService) GetUserPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
