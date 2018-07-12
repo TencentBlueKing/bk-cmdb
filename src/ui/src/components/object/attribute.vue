@@ -618,8 +618,6 @@
                         if (Object.keys(this.formData).length) {
                             this.$emit('submit', this.formData, Object.assign({}, this.formValues))
                         }
-                    } else {
-                        this.$alertMsg(this.errors.first(Object.keys(this.errors.collect())[0]))
                     }
                 })
             },
