@@ -26,7 +26,6 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 )
@@ -54,7 +53,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService(rdapi.AllGlobalFilter())),
+		Handler:    restful.NewContainer().Add(service.WebService()),
 		TLS:        backbone.TLSConfig{},
 	}
 
