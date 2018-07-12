@@ -13,12 +13,13 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 	//"fmt"
 )
 
@@ -120,7 +121,7 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	//fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().Set().SearchSets(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().SearchSets(cond)
 
 	return attrs, existItems, err
 }
@@ -140,7 +141,7 @@ func (cli *set) IsExists() (bool, error) {
 
 func (cli *set) Create() error {
 
-	setID, err := client.GetClient().CCV3().Set().CreateSet(cli.bizID, cli.datas)
+	setID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().CreateSet(cli.bizID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -169,6 +170,7 @@ func (cli *set) Update() error {
 
 	cli.datas.Remove("create_time") //invalid check , need to delete
 
+	supplierAccount := cli.target.GetSupplierAccount()
 	for _, existItem := range existItems {
 
 		instID, err := existItem.Int64(SetID)
@@ -181,7 +183,7 @@ func (cli *set) Update() error {
 		updateCond := common.CreateCondition()
 		updateCond.Field(SetID).Eq(instID)
 
-		err = client.GetClient().CCV3().Set().UpdateSet(cli.bizID, cli.datas, updateCond)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Set().UpdateSet(cli.bizID, cli.datas, updateCond)
 		if nil != err {
 			return err
 		}
