@@ -129,14 +129,14 @@ type ModuleHostConfigParams struct {
 }
 
 type UserConfig struct {
-	Info       string    `json:"info"`
-	Name       string    `json:"name"`
-	ID         string    `json:"id"`
-	CreateTime time.Time `json:"create_time"`
-	UpdateTime time.Time `json:"last_time"`
-	AppID      int64     `json:"bk_biz_id"`
-	CreateUser string    `json:"create_user"`
-	ModifyUser string    `json:"modify_user"`
+	Info       string    `json:"info" bson:"info"`
+	Name       string    `json:"name" bson:"name"`
+	ID         string    `json:"id" bson:"id"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	UpdateTime time.Time `json:"last_time" bson:"last_time"`
+	AppID      int64     `json:"bk_biz_id" bson:"bk_biz_id"`
+	CreateUser string    `json:"create_user" bson:"create_user"`
+	ModifyUser string    `json:"modify_user" bson:"modify_user"`
 }
 
 type UserConfigResult struct {
