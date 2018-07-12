@@ -220,6 +220,11 @@
                         id: 'module',
                         name: this.$t("Hosts['模块']"),
                         properties: []
+                    },
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: []
                     }
                 },
                 selectedObjId: 'host',
@@ -424,11 +429,13 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
+                .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
                     this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
+                    console.log(bizRes)
+                    this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
