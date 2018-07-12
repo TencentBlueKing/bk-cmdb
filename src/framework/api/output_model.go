@@ -24,12 +24,22 @@ func CreateClassification(name string) model.Classification {
 
 // FindClassificationsLikeName find a array of the classification by the name
 func FindClassificationsLikeName(name string) (model.ClassificationIterator, error) {
-	return mgr.OutputerMgr.FindClassificationsLikeName(name)
+	return mgr.OutputerMgr.FindClassificationsLikeName("", name)
+}
+
+// FindClassificationsLikeNameWithOwner find a array of the classification by the name
+func FindClassificationsLikeNameWithOwner(supplierAccount, name string) (model.ClassificationIterator, error) {
+	return mgr.OutputerMgr.FindClassificationsLikeName(supplierAccount, name)
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func FindClassificationsByCondition(condition common.Condition) (model.ClassificationIterator, error) {
-	return mgr.OutputerMgr.FindClassificationsByCondition(condition)
+func FindClassificationsByCondition(cond common.Condition) (model.ClassificationIterator, error) {
+	return mgr.OutputerMgr.FindClassificationsByCondition("", cond)
+}
+
+// FindClassificationsByConditionWithOwner find a array of the classification by the condition
+func FindClassificationsByConditionWithOwner(supplierAccount string, cond common.Condition) (model.ClassificationIterator, error) {
+	return mgr.OutputerMgr.FindClassificationsByCondition(supplierAccount, cond)
 }
 
 // GetModel get the model
