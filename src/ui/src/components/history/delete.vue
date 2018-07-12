@@ -35,7 +35,7 @@
             </v-table>
         </div>
         <v-sideslider :isShow.sync="details.isShow" :title="{text: $t('OperationAudit[\'操作详情\']')}">
-            <v-history-details :details="details.data" slot="content"></v-history-details>
+            <v-history-details :details="details.data" :isShow="details.isShow" slot="content"></v-history-details>
         </v-sideslider>
     </div>
 </template>
