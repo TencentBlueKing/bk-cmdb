@@ -33,7 +33,7 @@ type InstOperationInterface interface {
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface)
 }
 
 // NewInstOperation create a new inst operation instance
@@ -47,15 +47,27 @@ type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
+	asst         AssociationOperationInterface
 }
 
-func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Factory) {
+func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface) {
 	c.modelFactory = modelFactory
 	c.instFactory = instFactory
+	c.asst = asst
 }
 
 func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
+	// extract internal data
+	batchInfo := &instBatchInfo{}
+	if err := data.MarshalJSONInto(batchInfo); nil != err {
+		blog.Errorf("[operation-inst] failed to unmarshal the data(%#v) into the inst batch info struct, error info is %s", data, err.Error())
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	// create association
+
+	// create new insts
 	blog.Infof("the data inst:%#v", data)
 	item := c.instFactory.CreateInst(params, obj)
 

@@ -67,12 +67,12 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetInst := inst.New(client)
 
 	objectOperation.SetProxy(targetModel, targetInst, classificationOperation)
-	groupOperation.SetProxy(targetModel, targetInst)
+	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
 	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
 	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
 	associationOperation.SetProxy(classificationOperation, objectOperation, attributeOperation, instOperation, targetModel, targetInst)
 
-	instOperation.SetProxy(targetModel, targetInst)
+	instOperation.SetProxy(targetModel, targetInst, associationOperation)
 	moduleOperation.SetProxy(instOperation)
 	setOperation.SetProxy(objectOperation, instOperation, moduleOperation)
 	businessOperation.SetProxy(setOperation, moduleOperation, instOperation, objectOperation)
