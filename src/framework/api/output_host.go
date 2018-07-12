@@ -12,9 +12,7 @@
 
 package api
 
-import (
-	"configcenter/src/framework/common"
-)
+import "configcenter/src/framework/common"
 
 // CreateHost create a new host object
 func CreateHost(supplierAccount string) (*HostWrapper, error) {
@@ -45,6 +43,7 @@ func FindHostByCondition(supplierAccount string, cond common.Condition) (*HostIt
 	if nil != err {
 		return nil, err
 	}
+	//fmt.Println("the host model:", targetModel)
 	iter, err := mgr.OutputerMgr.InstOperation().FindHostsByCondition(targetModel, cond)
 	return &HostIteratorWrapper{host: iter}, err
 }
