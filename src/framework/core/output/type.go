@@ -53,10 +53,10 @@ type ModelOutputer interface {
 	CreateClassification(name string) model.Classification
 
 	// FindClassificationsLikeName find a array of the classification by the name
-	FindClassificationsLikeName(name string) (model.ClassificationIterator, error)
+	FindClassificationsLikeName(supplierAccount, name string) (model.ClassificationIterator, error)
 
 	// FindClassificationsByCondition find a array of the classification by the condition
-	FindClassificationsByCondition(condition common.Condition) (model.ClassificationIterator, error)
+	FindClassificationsByCondition(supplierAccount string, cond common.Condition) (model.ClassificationIterator, error)
 }
 
 // CustomOutputer the interface which used to maintence the custom outputer

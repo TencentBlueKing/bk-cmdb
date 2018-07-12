@@ -15,10 +15,11 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	//"configcenter/src/framework/core/log"
+	"io"
+
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
 )
 
 // Iterator the iterator interface for the Inst
@@ -46,7 +47,7 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 	iter.cond.SetStart(iter.bufIdx)
 	iter.cond.Field(model.ObjectID).Eq(target.GetID())
 
-	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).CommonInst().SearchInst(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).CommonInst().SearchInst(cli.cond)
 		if nil != err {
 			return nil, err
 		}

@@ -46,7 +46,7 @@ func newHostIterator(target model.Model, cond common.Condition) (*hostIterator, 
 	grpIterator.cond.SetLimit(DefaultLimit)
 	grpIterator.cond.SetStart(grpIterator.bufIdx)
 
-	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Host().SearchHost(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (cli *hostIterator) Next() (HostInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Host().SearchHost(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Host().SearchHost(cli.cond)
 		if nil != err {
 			return nil, err
 		}
