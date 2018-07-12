@@ -76,8 +76,21 @@ func (g *group) Origin() metadata.Group {
 
 func (g *group) Create() error {
 
-	//cond := condition.CreateCondition()
-	//cond.Field()
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	cond.Field(metadata.GroupFieldGroupIndex).Eq(g.grp.GroupIndex)
+	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
+
+	grpItems, err := g.search(cond)
+	if nil != err {
+		blog.Errorf("[model-grp] failed to search the groups by the condition(%#v), error info is %s", cond, err.Error())
+		return err
+	}
+
+	if 0 != len(grpItems) {
+		blog.Errorf("[model-grp] the group(%#v) is repeated", g.grp)
+		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 
 	rsp, err := g.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), g.params.Header, &g.grp)
 

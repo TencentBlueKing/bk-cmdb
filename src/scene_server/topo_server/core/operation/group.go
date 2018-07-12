@@ -55,6 +55,7 @@ type group struct {
 func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface) {
 	g.modelFactory = modelFactory
 	g.instFactory = instFactory
+	g.obj = obj
 }
 
 func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error) {
@@ -77,7 +78,7 @@ func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapSt
 	err = grp.Create()
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to save the group data (%#v), error info is %s", data, err.Error())
-		return nil, err
+		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
 
 	return grp, nil

@@ -30,3 +30,9 @@ type OpCondition struct {
 	Delete deleteCondition   `json:"delete"`
 	Update []updateCondition `json:"update"`
 }
+
+type instBatchInfo struct {
+	// BatchInfo batch info
+	BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
+	InputType string                          `json:"input_type"`
+}
