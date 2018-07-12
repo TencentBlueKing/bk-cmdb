@@ -96,7 +96,7 @@ var _ Object = (*object)(nil)
 type object struct {
 	obj       meta.Object
 	isNew     bool
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 
@@ -184,10 +184,10 @@ func (cli *object) IsCommon() bool {
 }
 func (cli *object) search(objID string) ([]meta.Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(cli.params.Header.OwnerID)
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -205,11 +205,11 @@ func (cli *object) search(objID string) ([]meta.Object, error) {
 
 func (cli *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -236,11 +236,11 @@ func (cli *object) GetMainlineParentObject() (Object, error) {
 func (cli *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -266,10 +266,10 @@ func (cli *object) GetMainlineChildObject() (Object, error) {
 func (cli *object) GetParentObject() ([]Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -292,10 +292,10 @@ func (cli *object) GetParentObject() ([]Object, error) {
 }
 func (cli *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -321,11 +321,11 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -340,12 +340,12 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 	if 0 == len(rsp.Data) {
 
 		asst := &meta.Association{}
-		asst.OwnerID = cli.params.Header.OwnerID
+		asst.OwnerID = cli.params.SupplierAccount
 		asst.ObjectAttID = common.BKChildStr
 		asst.ObjectID = cli.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header.ToHeader(), asst)
+		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -366,7 +366,7 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 		asst.AsstObjID = objID
 		asst.ObjectAttID = common.BKChildStr
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), asst.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header, asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -384,11 +384,11 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return err
@@ -403,12 +403,12 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 	if 0 == len(rsp.Data) {
 
 		asst := &meta.Association{}
-		asst.OwnerID = cli.params.Header.OwnerID
+		asst.OwnerID = cli.params.SupplierAccount
 		asst.ObjectAttID = common.BKChildStr
 		asst.ObjectID = objID
 		asst.AsstObjID = cli.obj.ObjectID
 
-		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header.ToHeader(), asst)
+		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -429,7 +429,7 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 		asst.ObjectID = objID
 		asst.ObjectAttID = common.BKChildStr
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header.ToHeader(), asst.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header, asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -456,7 +456,7 @@ func (cli *object) IsExists() (bool, error) {
 
 func (cli *object) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header.ToHeader(), &cli.obj)
+	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header, &cli.obj)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -474,7 +474,7 @@ func (cli *object) Create() error {
 }
 
 func (cli *object) Delete() error {
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header.ToHeader(), nil)
+	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header, nil)
 
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
@@ -499,7 +499,7 @@ func (cli *object) Update() error {
 
 	for _, item := range items {
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, cli.params.Header.ToHeader(), data)
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, cli.params.Header, data)
 
 		if nil != err {
 			blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -572,8 +572,8 @@ func (cli *object) CreateAttribute() Attribute {
 func (cli *object) GetAttributes() ([]Attribute, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AttributeFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	cond.Field(meta.AttributeFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(cli.params.SupplierAccount)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -603,8 +603,8 @@ func (cli *object) GetGroups() ([]Group, error) {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.GroupFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(cli.params.Header.OwnerID)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	cond.Field(meta.GroupFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(cli.params.SupplierAccount)
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
@@ -638,7 +638,7 @@ func (cli *object) GetClassification() (Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(cli.obj.ObjCls)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

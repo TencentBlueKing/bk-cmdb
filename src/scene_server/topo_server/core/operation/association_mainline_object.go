@@ -13,16 +13,17 @@
 package operation
 
 import (
+	"io"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"io"
 )
 
-func (cli *association) DeleteMainlineAssociaton(params types.LogicParams, objID string) error {
+func (cli *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
 
 	targetObj, err := cli.obj.FindSingleObject(params, objID)
 	if nil != err {
@@ -50,7 +51,7 @@ func (cli *association) DeleteMainlineAssociaton(params types.LogicParams, objID
 	return childObj.SetMainlineParentObject(parentObj.GetID())
 }
 
-func (cli *association) SearchMainlineAssociationTopo(params types.LogicParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
+func (cli *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
 	results := make([]*metadata.MainlineObjectTopo, 0)
 
@@ -59,7 +60,7 @@ func (cli *association) SearchMainlineAssociationTopo(params types.LogicParams, 
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = targetObj.GetID()
 		tmpRst.ObjName = targetObj.GetName()
-		tmpRst.OwnerID = params.Header.OwnerID
+		tmpRst.OwnerID = params.SupplierAccount
 
 		parentObj, err := targetObj.GetMainlineParentObject()
 		if nil == err {
@@ -87,7 +88,7 @@ func (cli *association) SearchMainlineAssociationTopo(params types.LogicParams, 
 
 }
 
-func (cli *association) CreateMainlineAssociation(params types.LogicParams, data *metadata.Association) (model.Association, error) {
+func (cli *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	// check and fetch the association object's classification
 	objCls, err := cli.cls.FindSingleClassification(params, data.ClassificationID)

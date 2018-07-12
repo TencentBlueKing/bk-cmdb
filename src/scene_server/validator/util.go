@@ -13,12 +13,14 @@
 package validator
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
+	"encoding/json"
 
+	"github.com/tidwall/gjson"
 	"gopkg.in/mgo.v2/bson"
 
-	"encoding/json"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 )
 
 func getString(val interface{}) string {
@@ -99,8 +101,13 @@ func ParseEnumOption(val interface{}) EnumOption {
 		return enumOptions
 	}
 	switch options := val.(type) {
+	case []EnumVal:
+		return options
 	case string:
-		json.Unmarshal([]byte(options), &enumOptions)
+		err := json.Unmarshal([]byte(options), &enumOptions)
+		if nil != err {
+			blog.Errorf("ParseEnumOption error : %s", err.Error())
+		}
 	case []interface{}:
 		for _, optionVal := range options {
 			if option, ok := optionVal.(map[string]interface{}); ok {
@@ -131,7 +138,10 @@ func parseIntOption(val interface{}) IntOption {
 	}
 	switch option := val.(type) {
 	case string:
-		json.Unmarshal([]byte(option), &intOption)
+
+		intOption.Min = gjson.Get(option, "min").Raw
+		intOption.Max = gjson.Get(option, "max").Raw
+
 	case map[string]interface{}:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])

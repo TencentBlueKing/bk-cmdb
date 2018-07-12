@@ -1,6 +1,6 @@
 <template>
     <ul :class="['classify-list', $i18n.locale]">
-        <li ref="classifyItem" v-for="(classify, classifyIndex) in classifications"
+        <li ref="classifyItem" v-for="(classify, classifyIndex) in usefulClassifications"
             :class="['classify-item', {
                 'classify-item-backconfig': classify.id === 'bk_back_config',
                 'active': classify.id === activeClassify
@@ -42,6 +42,11 @@
         },
         data () {
             return {}
+        },
+        computed: {
+            usefulClassifications () {
+                return this.classifications.filter(classify => ['bk_index'].includes(classify.id) || !!classify.children.length)
+            }
         },
         created () {
             bus.$on('handlePinClassify', this.highlightClassify)

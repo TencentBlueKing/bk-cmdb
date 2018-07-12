@@ -23,7 +23,7 @@ import (
 )
 
 // CreateMainLineObject create a new object in the main line topo
-func (s *topoService) CreateMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	mainLineAssociation := &metadata.Association{}
 
@@ -36,7 +36,7 @@ func (s *topoService) CreateMainLineObject(params types.LogicParams, pathParams,
 }
 
 // DeleteMainLineObject delete a object int the main line topo
-func (s *topoService) DeleteMainLineObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("obj_id")
 	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
@@ -44,7 +44,7 @@ func (s *topoService) DeleteMainLineObject(params types.LogicParams, pathParams,
 }
 
 // SearchMainLineOBjectTopo search the main line topo
-func (s *topoService) SearchMainLineOBjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchMainLineOBjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("search mainl line object topo")
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
@@ -57,13 +57,13 @@ func (s *topoService) SearchMainLineOBjectTopo(params types.LogicParams, pathPar
 }
 
 // SearchObjectByClassificationID search the object by classification ID
-func (s *topoService) SearchObjectByClassificationID(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectByClassificationID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("search object by classification id")
 	return nil, nil
 }
 
 // SearchBusinessTopo search the business topo
-func (s *topoService) SearchBusinessTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	paramPath := frtypes.MapStr{}
 	paramPath.Set("id", pathParams("app_id"))
@@ -77,7 +77,7 @@ func (s *topoService) SearchBusinessTopo(params types.LogicParams, pathParams, q
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
-func (s *topoService) SearchMainLineChildInstTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("search main line child inst topo")
 	return nil, nil
 }
