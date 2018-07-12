@@ -212,6 +212,7 @@
             'filter.bkBizId' (bkBizId) {
                 this.$nextTick(() => {
                     this.setCurrentPage(1)
+                    this.table.chooseId = []
                 })
             }
         },
