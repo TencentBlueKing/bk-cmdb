@@ -91,7 +91,7 @@
         position: relative;
         border-bottom: 1px solid $borderColor;
         height: 58px;
-
+        color: #3c96ff;
         @extend %clearfix;
         &.is-fill {
             background: #fafbfd;
@@ -117,6 +117,7 @@
             }
         }
         .bk-tab2-nav {
+            height: 100%;
             float: left;
             list-style: none;
             margin: 0;
@@ -125,13 +126,20 @@
             > li {
                 position: relative;
                 float: left;
-                height: 57px;
-                line-height: 57px;
+                height: 100%;
+                line-height: normal;
                 padding: 0 34px;
                 color: $fnMainColor;
                 font-size: 14px;
                 cursor: pointer;
                 transition: background-color ease 0.3s, color ease 0.3s;
+                &::before {
+                  content: "";
+                  display: inline-block;
+                  vertical-align: middle;
+                  height: 100%;
+                  width: 0;
+                }
                 &::after {
                     content:'';
                     display:inline-block;
@@ -141,11 +149,11 @@
                     width: 100%;
                     opacity: 0;
                     height: 0;
-                    background: $primaryColor;
-                    transition: all 0.3s ease;
+                    background: currentColor;
+                    transition: opacity 0.3s ease;
                 }
                 &.active {
-                    color: $primaryColor;
+                    color: currentColor;
                     &::after {
                       opacity: 1;
                       height: 3px;
@@ -171,8 +179,8 @@
         height: 43px;
         .bk-tab2-nav {
           > li {
-            height: 42px;
-            line-height: 42px;
+            height: 100%;
+            line-height: normal;
             padding: 0 15px;
           }
         }

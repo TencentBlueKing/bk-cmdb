@@ -2,7 +2,7 @@ import { $axios, $alertMsg } from '@/api/axios'
 
 const state = {
     usercustom: {},
-    classifyNavigationKey: 'index_v2_classify_navigation',
+    classifyNavigationKey: 'index_v3_classify_navigation',
     classifyModelSequenceKey: 'index_v2_classify_model_sequence',
     recentlyKey: 'index_v3_recently',
     result: false,

@@ -970,6 +970,10 @@
                 })
             })
         },
+        beforeRouteLeave (to, from, next) {
+            this.$store.commit('resetHostSearch')
+            next()
+        },
         components: {
             vTable,
             vFilter,
