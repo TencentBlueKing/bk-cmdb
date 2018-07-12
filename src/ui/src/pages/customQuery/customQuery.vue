@@ -9,7 +9,6 @@
  */
 <template>
     <div id="userAPI" class="api-wrapper">
-        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="options clearfix">
             <div class="fl clearfix bizbox">
                 <div class="options-business fl">
@@ -75,15 +74,13 @@
     import vSideslider from '@/components/slider/sideslider'
     import vDefine from './children/define'
     import vApplicationSelector from '@/components/common/selector/application'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     import { mapGetters } from 'vuex'
     export default {
         components: {
             vTable,
             vSideslider,
             vDefine,
-            vApplicationSelector,
-            vBreadcrumb
+            vApplicationSelector
         },
         data () {
             return {
@@ -226,10 +223,7 @@
 <style lang="scss" scoped>
     .api-wrapper{
         height: 100%;
-        padding: 0 20px 20px;
-        .breadcrumbs{
-            padding: 8px 0;
-        }
+        padding: 20px;
     }
     .options{
         font-size: 14px;
