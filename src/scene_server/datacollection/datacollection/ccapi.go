@@ -13,6 +13,10 @@
 package ccapi
 
 import (
+	"time"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -25,8 +29,6 @@ import (
 	confCenter "configcenter/src/scene_server/datacollection/datacollection/config"
 	"configcenter/src/scene_server/datacollection/datacollection/rdiscover"
 	"configcenter/src/source_controller/common/instdata"
-	"github.com/emicklei/go-restful"
-	"time"
 )
 
 // CCAPIServer define data struct of bcs ccapi server
