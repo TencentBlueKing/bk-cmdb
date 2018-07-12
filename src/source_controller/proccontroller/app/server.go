@@ -13,34 +13,111 @@
 package app
 
 import (
-	"configcenter/src/common"
+    "context"
+    "os"
+    "fmt"
+    
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/proccontroller/app/options"
-	"configcenter/src/source_controller/proccontroller/procdata"
+    "configcenter/src/common/types"
+    "configcenter/src/common/version"
+    "configcenter/src/apimachinery/util"
+    "configcenter/src/apimachinery"
+    "configcenter/src/source_controller/proccontroller/proctrlserver"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/rdapi"
+    "configcenter/src/storage/mgoclient"
+    "configcenter/src/storage/redisclient"
 )
 
 //Run ccapi server
-func Run(op *options.ServerOption) error {
+func Run(ctx context.Context, op *options.ServerOption) error {
+    // clientset
+	apiMachConf := &util.APIMachineryConfig{
+	    ZkAddr: op.ServConf.RegDiscover,
+	    QPS: op.ServConf.Qps,
+	    Burst: op.ServConf.Burst,
+	    TLSConfig: nil,
+    }
+    
+    apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+    if err != nil {
+        return fmt.Errorf("create api machinery object failed. err: %v", err)
+    }
+    // server
+    svrInfo, err := newServerInfo(op)
+    if err != nil {
+        return fmt.Errorf("creae server info object failed. err: %v", err)
+    }
 
-	setConfig(op)
-
-	serv, err := ccapi.NewCCAPIServer(op.ServConf)
-	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
-	}
-
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
-	}
-
-	serv.Start()
+    proctrlSvr := new(proctrlserver.ProctrlServer)
+    bksvr := backbone.Server{
+        ListenAddr: svrInfo.IP,
+        ListenPort: svrInfo.Port,
+        Handler: proctrlSvr.WebService(rdapi.AllGlobalFilter()),
+        TLS: backbone.TLSConfig{},
+    }
+    
+    regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROCCONTROLLER, svrInfo.IP)
+    bkConf := &backbone.Config{
+        RegisterPath: regPath,
+        RegisterInfo: *svrInfo,
+        CoreAPI: apiMachinery,
+        Server: bksvr,
+    }
+    
+    proctrlSvr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+            types.CC_MODULE_PROCCONTROLLER,
+            op.ServConf.ExConfig, 
+            proctrlSvr.OnProcessConfUpdate, 
+            bkConf)
+    if err != nil {
+        return fmt.Errorf("new backbone failed, err: %v", err)
+    }
+    
+    proctrlSvr.DbInstance, err = mgoclient.NewMgoCli(proctrlSvr.MongoCfg.Address, proctrlSvr.MongoCfg.Port, proctrlSvr.MongoCfg.User, proctrlSvr.MongoCfg.Password, proctrlSvr.MongoCfg.Mechanism, proctrlSvr.MongoCfg.Database)
+    if err != nil {
+        return fmt.Errorf("new mongo client failed, err: %v", err)
+    }
+    
+    proctrlSvr.CacheDI, err = redisclient.NewRedis(proctrlSvr.RedisCfg.Address, proctrlSvr.RedisCfg.Port, proctrlSvr.RedisCfg.User, proctrlSvr.RedisCfg.Password, proctrlSvr.RedisCfg.Database)
+    if err != nil {
+        return fmt.Errorf("new redis client failed, err: %v", err)
+    }
+    
+	select {
+	case <-ctx.Done():
+	    blog.Errorf("processctroller will exit!")
+    }
 
 	return nil
 }
 
-func setConfig(op *options.ServerOption) {
-	//server cert directory
+func newServerInfo(op *options.ServerOption)(*types.ServerInfo, error) {
+    ip, err := op.ServConf.GetAddress()
+    if err != nil {
+        return nil, err
+    }
 
+    port, err := op.ServConf.GetPort()
+    if err != nil {
+        return nil, err
+    }
+
+    hostname, err := os.Hostname()
+    if err != nil {
+        return nil, err
+    }
+
+    info := &types.ServerInfo{
+        IP:       ip,
+        Port:     port,
+        HostName: hostname,
+        Scheme:   "http",
+        Version:  version.GetVersion(),
+        Pid:      os.Getpid(),
+    }
+    return info, nil
 }
+
+

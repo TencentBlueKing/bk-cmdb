@@ -17,9 +17,15 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+    "context"
+    "net/http"
+    "configcenter/src/common/metadata"
 )
 
 type ProcCtrlClientInterface interface {
+    CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcModuleResult, err error)
+    DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 }
 
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
