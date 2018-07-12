@@ -72,9 +72,6 @@ type Engine struct {
 	CCErr    errors.CCErrorIf
 }
 
-func (e *Engine) Start() {
-
-}
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {
 	e.Lock()
 	defer e.Unlock()
