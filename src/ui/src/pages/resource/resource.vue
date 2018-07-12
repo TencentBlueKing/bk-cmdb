@@ -288,6 +288,10 @@
                 this.getBkBizList()
             }
         },
+        beforeRouteLeave (to, from, next) {
+            this.$store.commit('resetHostSearch')
+            next()
+        },
         components: {
             vImport,
             vHosts,

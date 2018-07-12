@@ -37,6 +37,7 @@
             currentPath () {
                 return this.$route.path
             },
+            // 根据当前路由路径获取路由名称
             currentName () {
                 if (this.singleClassifies.includes(this.currentPath)) {
                     const classify = this.authorizedNavigation.find(navigation => navigation.path === this.currentPath)
@@ -46,6 +47,7 @@
                     return model ? model.i18n ? this.$t(model.i18n) : model.name : null
                 }
             },
+            // 最近浏览的通用模型
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             }
@@ -57,13 +59,16 @@
         },
         methods: {
             ...mapMutations('navigation', ['updateHistoryCount']),
+            // 回退路由
             back () {
                 this.$store.commit('navigation/updateHistoryCount', -2)
                 this.$router.back()
             },
+            // 退出登陆
             logOut () {
                 window.location.href = window.siteUrl + 'logout'
             },
+            // 获取当前路由对应的模型
             getRouteModel (path) {
                 let model
                 for (let i = 0; i < this.authorizedNavigation.length; i++) {
@@ -73,6 +78,7 @@
                 }
                 return model
             },
+            // 更新最近浏览记录
             updateRecently (path) {
                 if (!this.recently.includes(path)) {
                     const model = this.getRouteModel(path)

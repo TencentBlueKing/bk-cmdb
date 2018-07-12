@@ -11,9 +11,11 @@
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
-                    v-for="(classify, index) in [...staticClassify, ...customClassify]" @click="checkPath(classify)"
+                    v-for="(classify, index) in [...staticClassify, ...customClassify]"
                     :class="{active: activeClassifyId === classify.id}">
-                    <h3 class="classify-info clearfix" @click="toggleClassify(classify)">
+                    <h3 class="classify-info clearfix"
+                        :class="{'classify-link': classify.hasOwnProperty('path')}"
+                        @click="handleClassifyClick(classify)">
                         <i :class="['classify-icon', classify.icon]"></i>
                         <span class="classify-name">{{classify.i18n ? $t(classify.i18n) : classify.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
@@ -21,7 +23,8 @@
                             :class="{open: classify.id === openedClassify}">
                         </i>
                     </h3>
-                    <div :class="['classify-models', {'open': classify.id === openedClassify}]"
+                    <div v-if="classify.children && classify.children.length"
+                        :class="['classify-models', {'open': classify.id === openedClassify}]"
                         :style="{height: classify.id === openedClassify ? openedClassifyHeight + 'px' : 0}">
                         <router-link exact class="model-link"
                             v-for="(model, modelIndex) in classify.children"
@@ -34,7 +37,7 @@
                     <i class="classify-corner" v-if="classify.children && classify.children.length"></i>
                 </li>
             </ul>
-            <i class="nav-stick bk-icon icon-back"
+            <i class="nav-stick icon-cc-nav-stick"
                 :class="{'sticked': navStick}"
                 @click="toggleNavStick">
             </i>
@@ -48,48 +51,61 @@
         data () {
             return {
                 staticClassifyId: ['bk_index', 'bk_host_manage', 'bk_organization', 'bk_back_config'],
-                routerLinkHeight: 24,
+                routerLinkHeight: 36,
                 openedClassify: 'bk_index'
             }
         },
         computed: {
             ...mapGetters('navigation', ['navStick', 'authorizedNavigation']),
-            ...mapGetters('usercustom', ['usercustom', 'classifyNavigationKey', 'classifyModelSequenceKey']),
+            ...mapGetters('usercustom', ['usercustom', 'classifyNavigationKey']),
             customNavigation () {
                 return this.usercustom[this.classifyNavigationKey] || []
             },
-            classifyModelSequence () {
-                return this.usercustom[this.classifyModelSequenceKey] || {}
+            allModels () {
+                let models = []
+                this.authorizedNavigation.forEach(classify => {
+                    if (classify.children && classify.children.length) {
+                        classify.children.forEach(model => {
+                            models.push(model)
+                        })
+                    }
+                })
+                return models
             },
+            // 固定到前面的分类
             staticClassify () {
-                const classifies = this.$deepClone(this.authorizedNavigation.filter(classify => this.staticClassifyId.includes(classify.id)))
-                classifies.forEach((classify, index) => {
-                    if (this.classifyModelSequence.hasOwnProperty(classify.id) && !['bk_host_manage'].includes(classify.id)) {
-                        classify['children'].sort((modelA, modelB) => {
-                            return this.getModelSequence(classify, modelA) - this.getModelSequence(classify, modelB)
-                        })
-                    }
-                })
-                return classifies
+                return this.authorizedNavigation.filter(classify => this.staticClassifyId.includes(classify.id))
             },
+            // 用户自定义到导航的分类/模型
             customClassify () {
-                const classifies = this.$deepClone(this.authorizedNavigation.filter(classify => this.customNavigation.includes(classify.id)))
-                classifies.forEach((classify, index) => {
-                    if (this.classifyModelSequence.hasOwnProperty(classify.id)) {
-                        classify['children'].sort((modelA, modelB) => {
-                            return this.getModelSequence(classify, modelA) - this.getModelSequence(classify, modelB)
+                let customClassify = []
+                this.customNavigation.forEach(modelId => {
+                    const classifyModel = this.allModels.find(model => model.id === modelId)
+                    if (classifyModel) {
+                        customClassify.push({
+                            ...classifyModel,
+                            children: []
                         })
                     }
                 })
-                return classifies
+                return customClassify
             },
+            // 当前导航对应的分类
             activeClassify () {
                 const path = this.$route.fullPath
-                return this.authorizedNavigation.find(classify => classify.children.some(model => model.path === path))
+                return [...this.staticClassify, ...this.customClassify].find(classify => {
+                    if (classify.hasOwnProperty('path')) {
+                        return classify.path === path
+                    } else if (classify.children && classify.children.length) {
+                        return classify.children.some(model => model.path === path)
+                    }
+                })
             },
+            // 当前导航对应的分类ID
             activeClassifyId () {
                 return this.activeClassify ? this.activeClassify.id : this.$route.fullPath === '/index' ? 'bk_index' : null
             },
+            // 当前导航对应的模型
             activeModel () {
                 if (this.activeClassify) {
                     const path = this.$route.fullPath
@@ -97,6 +113,7 @@
                 }
                 return null
             },
+            // 展开的分类子菜单高度
             openedClassifyHeight () {
                 const openedClassify = this.authorizedNavigation.find(classify => classify.id === this.openedClassify)
                 if (openedClassify) {
@@ -112,24 +129,24 @@
             }
         },
         methods: {
-            getModelSequence (classify, model) {
-                if (this.classifyModelSequence.hasOwnProperty(classify.id)) {
-                    const sequence = this.classifyModelSequence[classify.id]
-                    const modelSequence = sequence.indexOf(model.id)
-                    return modelSequence === -1 ? classify.children.length : modelSequence
-                }
-                return classify.children.length
+            // 分类点击事件
+            handleClassifyClick (classify) {
+                this.checkPath(classify)
+                this.toggleClassify(classify)
             },
+            // 被点击的有对应的路由，则跳转
             checkPath (classify) {
                 if (classify.hasOwnProperty('path')) {
                     this.$router.push(classify.path)
                 }
             },
-            toggleNavStick () {
-                this.$store.commit('navigation/updateNavStick', !this.navStick)
-            },
+            // 切换展开的分类
             toggleClassify (classify) {
                 this.openedClassify = classify.id
+            },
+            // 切换导航展开固定
+            toggleNavStick () {
+                this.$store.commit('navigation/updateNavStick', !this.navStick)
             }
         }
     }
@@ -177,6 +194,12 @@
                 right: 21px;
                 opacity: 0;
                 transition: opacity .1s ease-in;
+                transform: scale(0.8333) rotate(180deg);
+                font-size: 12px;
+                cursor: pointer;
+                &.sticked{
+                    transform: scale(0.8333);
+                }
             }
         }
     }
@@ -225,6 +248,10 @@
                 font-weight: bold;
                 white-space: nowrap;
                 font-size: 0;
+                cursor: default;
+                &.classify-link{
+                    cursor: pointer;
+                }
             }
             .classify-icon{
                 display: inline-block;
@@ -257,7 +284,7 @@
         height: 0;
         padding: 0 0 0 63px;
         // padding: 4px 0 4px 63px;
-        line-height: 24px;
+        line-height: 36px;
         font-size: 12px;
         overflow: hidden;
         transition: height .1s ease-in;

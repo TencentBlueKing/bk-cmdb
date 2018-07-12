@@ -223,7 +223,7 @@
             }
         },
         computed: {
-            ...mapGetters(['quickSearchParams']),
+            ...mapGetters(['hostSearch']),
             ipFlag () {
                 let flag = []
                 if (this['ip']['bk_host_innerip']) {
@@ -248,9 +248,6 @@
             }
         },
         watch: {
-            'ip.text' (text) {
-                bus.$emit('setQuickSearchParams', {type: 'ip', text: text})
-            },
             queryColumns (queryColumns) {
                 let localQueryColumns = []
                 let localQueryColumnData = {}
@@ -304,9 +301,6 @@
                     })
                 }
             },
-            quickSearchParams (quickSearchParams) {
-                this.initQuickSearchParams()
-            },
             localQueryColumns () {
                 this.$nextTick(() => {
                     this.calcRefreshPosition()
@@ -314,10 +308,17 @@
             }
         },
         created () {
-            this.initQuickSearchParams()
+            this.setHostSearchParams()
             this.$emit('filterChange', this.$deepClone(this.filter))
         },
         methods: {
+            setHostSearchParams () {
+                this.ip.text = this.hostSearch.ip
+                this.ip.exact = this.hostSearch.exact
+                this.ip['bk_host_innerip'] = this.hostSearch.innerip
+                this.ip['bk_host_outerip'] = this.hostSearch.outerip
+                this.isShowAssigned = this.hostSearch.assigned
+            },
             calcSearchParams () {
                 let filter = {
                     bk_biz_id: this.bkBizId,
@@ -472,11 +473,6 @@
                     this.localQueryColumnData[bkPropertyId]['operator'] = this.operators[operatorType][0]['value']
                 })
             },
-            initQuickSearchParams () {
-                if (this.quickSearchParams.type === 'ip') {
-                    this.ip.text = this.quickSearchParams.text
-                }
-            },
             refresh () {
                 this.$emit('refresh')
             },
@@ -493,10 +489,6 @@
             }
         },
         beforeDestroy () {
-            this.$store.commit('setQuickSearchParams', {
-                text: '',
-                type: 'ip'
-            })
             this.resetQueryColumnData()
         },
         components: {

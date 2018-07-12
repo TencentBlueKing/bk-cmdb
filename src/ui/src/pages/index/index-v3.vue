@@ -24,6 +24,9 @@
             return {
                 year
             }
+        },
+        async created () {
+            await this.$store.dispatch('getBkBizList')
         }
     }
 </script>
@@ -32,6 +35,8 @@
     .index-wrapper{
         height: 100%;
         background-color: #f5f6fa;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     .index-search{
         width: 50%;
@@ -50,5 +55,6 @@
         font-size: 12px;
         color: rgba(116, 120, 131, 0.5);
         border-top: 1px solid rgba(116, 120, 131, 0.2);
+        background-color: #f5f6fa;
     }
 </style>

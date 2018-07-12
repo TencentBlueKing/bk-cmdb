@@ -12,16 +12,36 @@ const state = {
     quickSearchParams: {
         type: 'ip',
         text: ''
+    },
+    hostSearch: {
+        ip: '',
+        exact: 0,
+        innerip: true,
+        outerip: true,
+        assigned: false
     }
 }
 
 const getters = {
-    quickSearchParams: state => state.quickSearchParams
+    quickSearchParams: state => state.quickSearchParams,
+    hostSearch: state => state.hostSearch
 }
 
 const mutations = {
     setQuickSearchParams (state, quickSearchParams) {
         state.quickSearchParams = quickSearchParams
+    },
+    setHostSearch (state, params) {
+        Object.assign(state.hostSearch, params)
+    },
+    resetHostSearch (state) {
+        Object.assign(state.hostSearch, {
+            ip: '',
+            exact: 0,
+            innerip: true,
+            outerip: true,
+            assigned: false
+        })
     }
 }
 

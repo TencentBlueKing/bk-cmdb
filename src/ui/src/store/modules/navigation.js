@@ -2,7 +2,7 @@ import {$axios, $Axios, $alertMsg} from '@/api/axios'
 import STATIC_NAVIGATION from '@/common/json/static_navigation.json'
 const state = {
     fold: false,
-    navStick: window.localStorage.getItem('navStick') || false,
+    navStick: window.localStorage.getItem('navStick') === 'true' || false,
     historyCount: 0,
     classifications: [],
     invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],

@@ -4,6 +4,7 @@
             <div class="recently-browse fl"
                 v-for="index in recentlyCount"
                 :key="index"
+                :class="{'recently-browse-model': !!recentlyModels[index - 1]}"
                 @click="gotoRecently(recentlyModels[index - 1])">
                 <template v-if="recentlyModels[index - 1]">
                     <i :class="['recently-icon', recentlyModels[index - 1].icon]"></i>
@@ -34,6 +35,7 @@
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             },
+            // 最近浏览的所有通用模型
             recentlyModels () {
                 let models = []
                 this.recently.forEach(path => {
@@ -44,17 +46,21 @@
                 })
                 return models
             },
+            // 最近浏览的所有通用模型路由
             recentlyModelsPath () {
                 return this.recentlyModels.map(model => model.path)
             },
+            // 展示前8个最近浏览
             visibleRecentlyModels () {
                 return this.recentlyModels.slice(0, 8)
             },
+            // 最多展示的最近浏览的个数
             recentlyCount () {
                 return this.visibleRecentlyModels.length > 4 ? 8 : 4
             }
         },
         watch: {
+            // 最近浏览变更时，重新加载最近浏览模型的实例数量
             visibleRecentlyModels (models) {
                 models.forEach(model => {
                     if (!this.modelInstCount.hasOwnProperty(model.id)) {
@@ -64,6 +70,7 @@
             }
         },
         created () {
+            // 首次加载最近浏览模型实例数量
             this.visibleRecentlyModels.forEach(model => {
                 if (!this.modelInstCount.hasOwnProperty(model.id)) {
                     this.loadInst(model.id)
@@ -71,6 +78,7 @@
             })
         },
         methods: {
+            // 获取路由对应的模型
             getRouteModel (path) {
                 let model
                 for (let i = 0; i < this.authorizedNavigation.length; i++) {
@@ -80,21 +88,28 @@
                 }
                 return model
             },
+            // 最近浏览模型的名称
             getRecentlyName (model) {
                 return model.i18n ? this.$t(model.i18n) : model.name
             },
+            // 最近浏览模型的实例数量
             getRecentlyCount (model) {
                 return this.modelInstCount.hasOwnProperty(model.id) ? this.modelInstCount[model.id] : '--'
             },
+            // 导航至最近浏览的模型
             gotoRecently (model) {
-                this.$router.push(model.path)
+                if (model) {
+                    this.$router.push(model.path)
+                }
             },
+            // 删除最近浏览的模型
             deleteRecently (model) {
                 const deletedRecently = this.recentlyModelsPath.filter(path => path !== model.path)
                 this.$store.dispatch('usercustom/updateUserCustom', {
                     [this.recentlyKey]: deletedRecently
                 })
             },
+            // 加载最近浏览模型的实例数量
             loadInst (id) {
                 const funcMaps = {
                     'biz': this.loadBizInst,
@@ -107,6 +122,7 @@
                     }
                 })
             },
+            // 加载业务实例数量
             loadBizInst () {
                 return this.$axios.post(`/biz/search/${this.bkSupplierAccount}`, {
                     condition: {
@@ -121,6 +137,7 @@
                     }
                 })
             },
+            // 加载通用模型实例数量
             loadCommonInst (id) {
                 return this.$axios.post(`inst/association/search/owner/${this.bkSupplierAccount}/object/${id}`, {
                     condition: {},
@@ -149,6 +166,16 @@
         font-size: 0;
         background-color: #fff;
         border: 1px solid #ebf0f5;
+        &-model{
+            cursor: pointer;
+            &:hover{
+                border-color: #aaccff;
+                z-index: 1;
+                .recently-delete{
+                    display: block;
+                }
+            }
+        }
         &:nth-child(1),
         &:nth-child(5){
             margin-left: 0;
@@ -159,13 +186,6 @@
             width: 0;
             height: 100%;
             vertical-align: middle;
-        }
-        &:hover{
-            border-color: #aaccff;
-            z-index: 1;
-            .recently-delete{
-                display: block;
-            }
         }
         .recently-icon{
             display: inline-block;
