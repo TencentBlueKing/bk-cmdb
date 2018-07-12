@@ -14,12 +14,14 @@ package operation
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -34,6 +36,7 @@ type ObjectOperationInterface interface {
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface)
+	IsValidObject(params types.ContextParams, objID string) error
 }
 
 // NewObjectOperation create a new object operation instance
@@ -55,6 +58,24 @@ func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, 
 	o.instFactory = instFactory
 }
 
+func (o *object) IsValidObject(params types.ContextParams, objID string) error {
+
+	checkObjCond := condition.CreateCondition()
+	checkObjCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
+	checkObjCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+
+	objItems, err := o.FindObject(params, checkObjCond)
+	if nil != err {
+		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
+		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+	}
+
+	if 0 == len(objItems) {
+		return params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("the object id  '%s' is invalid", objID))
+	}
+
+	return nil
+}
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()

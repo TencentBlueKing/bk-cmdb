@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/common/metadata"
 
@@ -60,25 +59,6 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 	a.asst = asst
 }
 
-func (a *attribute) checkTheObject(params types.ContextParams, objID string) error {
-
-	checkObjCond := condition.CreateCondition()
-	checkObjCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
-	checkObjCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
-
-	objItems, err := a.obj.FindObject(params, checkObjCond)
-	if nil != err {
-		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
-		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-	}
-
-	if 0 == len(objItems) {
-		return params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("the object id  '%s' is invalid", objID))
-	}
-
-	return nil
-}
-
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
 
 	att := a.modelFactory.CreateAttribute(params)
@@ -90,7 +70,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	}
 
 	// check the object id
-	err = a.checkTheObject(params, att.GetObjectID())
+	err = a.obj.IsValidObject(params, att.GetObjectID())
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
@@ -112,7 +92,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	if 0 != len(attrMeta.AsstObjID) {
 
 		// check the object id
-		err = a.checkTheObject(params, attrMeta.AsstObjID)
+		err = a.obj.IsValidObject(params, attrMeta.AsstObjID)
 		if nil != err {
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 		}
