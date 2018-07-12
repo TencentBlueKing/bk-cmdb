@@ -84,7 +84,7 @@ func (cli *business) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// search by condition
-	items, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Business().SearchBusiness(cond)
 	return attrs, items, err
 }
 func (cli *business) IsExists() (bool, error) {
@@ -100,7 +100,7 @@ func (cli *business) IsExists() (bool, error) {
 
 func (cli *business) Create() error {
 
-	bizID, err := client.GetClient().CCV3().Business().CreateBusiness(cli.datas)
+	bizID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Business().CreateBusiness(cli.datas)
 	if err == nil {
 		cli.datas.Set(BusinessID, bizID)
 		return nil
@@ -128,6 +128,7 @@ func (cli *business) Update() error {
 
 	cli.datas.Remove("create_time") //invalid check , need to delete
 
+	supplierAccount := cli.target.GetSupplierAccount()
 	// update the exists
 	for _, existItem := range existItems {
 
@@ -139,7 +140,7 @@ func (cli *business) Update() error {
 		cli.datas.Remove(BusinessID)
 
 		//fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3().Business().UpdateBusiness(cli.datas, bizID)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Business().UpdateBusiness(cli.datas, bizID)
 		if nil != err {
 			return err
 		}

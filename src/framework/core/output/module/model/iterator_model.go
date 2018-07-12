@@ -1,22 +1,23 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package model
 
 import (
+	"io"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	"io"
 	//"fmt"
 )
 
@@ -28,22 +29,24 @@ type iterator struct {
 	bufIdx int
 }
 
-func newModelIterator(cond common.Condition) (Iterator, error) {
+func newModelIterator(supplierAccount string, cond common.Condition) (Iterator, error) {
 
 	objIterator := &iterator{
 		cond:   cond,
 		buffer: make([]types.MapStr, 0),
 	}
-
-	items, err := client.GetClient().CCV3().Model().SearchObjects(cond)
+	//cond.Field(SupplierAccount).Eq(supplierAccount)
+	//fmt.Println("owner:", supplierAccount)
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Model().SearchObjects(cond)
 	if nil != err {
 		return nil, err
 	}
+	//fmt.Println("the model:", items, "cond:", string(cond.ToMapStr().ToJSON()))
 
 	objIterator.buffer = items
 	objIterator.bufIdx = 0
 	if 0 == len(objIterator.buffer) {
-		return nil, nil
+		return nil, io.EOF
 	}
 
 	return objIterator, nil
@@ -55,7 +58,7 @@ func (cli *iterator) ForEach(itemCallback func(item Model) error) error {
 
 		item, err := cli.Next()
 		if nil != err {
-			if io.EOF == err{
+			if io.EOF == err {
 				return nil
 			}
 			return err
