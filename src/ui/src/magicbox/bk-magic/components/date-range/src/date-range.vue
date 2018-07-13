@@ -264,7 +264,6 @@
                 initEndDate: initEndDate,
                 bkDateStart: bkDateStart,
                 bkDateEnd: bkDateEnd,
-                isUpdateTime: false,
                 selectedDateRange: sdr, // 已选日期数据
                 selectedDateRangeTmp: sdrt, // selectedDateRange 的副本，用于 date-picker 中 shouldBeSelected 高亮判断仅需要判断日期而不需要判断时间
                 defaultRanges: [ // 默认快捷选择菜单栏
