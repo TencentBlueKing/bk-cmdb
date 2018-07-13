@@ -155,7 +155,7 @@ textarea {
     // border: 1px solid #6b7baa;
 }
 
-.bk-dialog-btn-cancel {
+.bk-dialog-btn.bk-dialog-btn-cancel {
     &:hover {
         border-color: $mainBtnColor;
         background: #fff;
