@@ -32,32 +32,19 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 
 	objID := pathParams("obj_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("failed to search the %s, %s", objID, err.Error())
+		blog.Errorf("failed to search the inst, %s", err.Error())
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, params.SupplierAccount)
-	data.Set(common.BKObjIDField, objID)
-
-	for _, item := range objItems {
-
-		setInst, err := s.core.InstOperation().CreateInst(params, item, data)
-		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
-			return nil, err
-		}
-
-		return setInst.ToMapStr(), nil // only one item
+	setInst, err := s.core.InstOperation().CreateInst(params, obj, data)
+	if nil != err {
+		blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+		return nil, err
 	}
 
-	return nil, nil
+	return setInst.ToMapStr(), nil
 }
 
 // DeleteInst delete the inst

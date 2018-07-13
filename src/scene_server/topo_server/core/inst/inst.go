@@ -61,9 +61,20 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 func (cli *inst) Create() error {
 
+	exists, err := cli.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
 	}
+
+	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
 
 	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, cli.datas)
 	if nil != err {

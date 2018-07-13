@@ -90,7 +90,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	for _, item := range objs {
 		return item, nil
 	}
-	return nil, params.Err.Error(common.CCErrTopoObjectSelectFailed)
+	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
 func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreaetObject(params)
