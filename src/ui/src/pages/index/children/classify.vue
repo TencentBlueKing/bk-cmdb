@@ -71,7 +71,7 @@
     .classify-layout{
         width: 90%;
         margin: 20px auto 0;
-        padding: 0 0 64px 0;
+        padding: 0 0 45px 0;
     }
     .classify-waterfall{
         width: calc((100% - 60px) / 4);
