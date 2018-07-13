@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
@@ -212,7 +213,7 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 
 				itemInstID, err := util.GetInt64ByInterface(dataVal)
 				if nil != err {
-					fmt.Errorf("not found assocte object ID %d from %v", instID, info)
+					blog.Errorf("not found assocte object ID %d from %v", instID, info)
 					return nil, 0, fmt.Errorf("not found assocte object ID %d from %v", instID, info)
 				}
 				if 0 != len(IDs) {
@@ -267,7 +268,7 @@ func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string,
 				if nil == keyItem {
 					continue
 				}
-				keyItemStr := fmt.Sprintf("%v", keyItem)
+				keyItemStr := util.GetStrByInterface(keyItem)
 				var retData []InstNameAsst
 				var err error
 				query := &meta.QueryInput{
