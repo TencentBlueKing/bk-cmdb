@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -29,7 +31,6 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/source_controller/api/metadata"
-	"github.com/emicklei/go-restful"
 )
 
 type AppResult struct {
@@ -250,7 +251,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	if appID == 0 {
 		// get default app id
 		var err error
-		appID, err = s.GetDefaultAppIDWithSupplier(hostList.SupplierID, pheader)
+		appID, err = s.GetDefaultAppIDWithSupplier(pheader)
 		if err != nil {
 			blog.Errorf("add host, but get default appid failed, err: %v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_QUERY_FAIL)})
@@ -258,10 +259,11 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	cond := hutil.NewOperation().WithSupplierID(int64(common.DefaultResSetFlag)).WithModuleName(common.DefaultResSetName).WithAppID(appID).Data()
+	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
+	cond[common.BKDefaultField] = common.DefaultResModuleFlag
 	moduleID, err := s.GetResoulePoolModuleID(pheader, cond)
 	if err != nil {
-		blog.Errorf("add host, but get module id failed, err: %v", err)
+		blog.Errorf("add host, but get module id failed, err: %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
@@ -278,6 +280,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))

@@ -110,22 +110,14 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 
 		}
 
+		intHostID, err := util.GetInt64ByInterface(iHostID)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("invalid host id: %v", iHostID)
+		}
 		// delete system fields
 		delete(host, common.BKHostIDField)
 
-		hostID, ok := iHostID.(string)
-		if !ok {
-			return nil, nil, nil, fmt.Errorf("invalid host id: %v", iHostID)
-		}
-		intHostID, err := strconv.ParseInt(hostID, 10, 64)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("invalid host id: %v", hostID)
-		}
-
-		preData, _, err := lgc.GetHostInstanceDetails(pheader, hostID, ownerID)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
-		}
+		preData, _, _ := lgc.GetHostInstanceDetails(pheader, ownerID, strconv.FormatInt(intHostID, 10))
 
 		if isOK {
 			// update host instance.
@@ -133,6 +125,7 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
+
 		} else {
 			var err error
 			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
@@ -140,12 +133,10 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 				errMsg = append(errMsg, err.Error())
 				continue
 			}
-
 		}
 
 		succMsg = append(succMsg, strconv.FormatInt(index, 10))
-
-		curData, _, err := lgc.GetHostInstanceDetails(pheader, hostID, ownerID)
+		curData, _, err := lgc.GetHostInstanceDetails(pheader, ownerID, strconv.FormatInt(intHostID, 10))
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
@@ -539,9 +530,11 @@ func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64
 	}
 
 	asstFieldVal := ExtractDataFromAssociationField(int64(instID), input, result.Data)
-	oResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, asstFieldVal)
-	if err != nil || (err == nil && !oResult.Result) {
-		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
+	if 0 < len(asstFieldVal) {
+		oResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, asstFieldVal)
+		if err != nil || (err == nil && !oResult.Result) {
+			return fmt.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
+		}
 	}
 
 	return nil

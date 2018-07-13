@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -74,10 +74,30 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 	var infos []map[string]interface{}
 	var count int
 	var instName, instID string
+	tmpIDs := []int{}
+	for _, ID := range IDs {
+		tmpID, err := strconv.Atoi(ID)
+		if nil != err {
+			return nil, 0, fmt.Errorf("assocate id not integer, ids:%v", strings.Join(IDs, ","))
+		}
+		tmpIDs = append(tmpIDs, tmpID)
+	}
+	condition := make(map[string]interface{})
+	if nil != query.Condition {
+		var ok bool
+		condition, ok = query.Condition.(map[string]interface{})
+		if false == ok {
+			return nil, 0, fmt.Errorf("assocate id not integer, ids:%v", strings.Join(IDs, ","))
+		}
+	}
 	switch objID {
 	case common.BKInnerObjIDHost:
 		instName = common.BKHostInnerIPField
 		instID = common.BKHostIDField
+		if 0 != len(tmpIDs) {
+			condition[common.BKHostIDField] = map[string]interface{}{"$in": tmpIDs}
+			query.Condition = condition
+		}
 		rtn, err := lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
@@ -88,6 +108,10 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 	case common.BKInnerObjIDApp:
 		instName = common.BKAppNameField
 		instID = common.BKAppIDField
+		if 0 != len(tmpIDs) {
+			condition[common.BKAppIDField] = map[string]interface{}{"$in": tmpIDs}
+			query.Condition = condition
+		}
 		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
@@ -101,6 +125,10 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 		instID = common.BKSetIDField
 		instName = common.BKSetNameField
 		query.Sort = common.BKSetIDField
+		if 0 != len(tmpIDs) {
+			condition[common.BKSetIDField] = map[string]interface{}{"$in": tmpIDs}
+			query.Condition = condition
+		}
 		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
@@ -114,6 +142,10 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 		instID = common.BKModuleIDField
 		instName = common.BKModuleNameField
 		query.Sort = common.BKModuleIDField
+		if 0 != len(tmpIDs) {
+			condition[common.BKModuleIDField] = map[string]interface{}{"$in": tmpIDs}
+			query.Condition = condition
+		}
 		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKObjIDField, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
@@ -127,19 +159,28 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 		instID = common.BKCloudIDField
 		instName = common.BKCloudNameField
 		query.Sort = common.BKCloudIDField
+		if 0 != len(tmpIDs) {
+			condition[common.BKCloudIDField] = map[string]interface{}{"$in": tmpIDs}
+			query.Condition = condition
+		}
 		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
-			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
+			return nil, 0, fmt.Errorf("get plat failed, err, %v, %v", err, rtn.ErrMsg)
 		}
+
 		for _, tmp := range rtn.Data.Info {
 			infos = append(infos, map[string]interface{}(tmp))
 		}
 		count = rtn.Data.Count
-
-	case common.BKINnerObjIDObject:
+	default:
 		instName = common.BKInstNameField
 		instID = common.BKInstIDField
 		query.Sort = common.BKInstIDField
+		condition[common.BKObjIDField] = objID
+		if 0 != len(tmpIDs) {
+			condition[common.BKInstIDField] = map[string]interface{}{"$in": tmpIDs}
+		}
+		query.Condition = condition
 		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKINnerObjIDObject, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
@@ -148,9 +189,6 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 			infos = append(infos, map[string]interface{}(tmp))
 		}
 		count = rtn.Data.Count
-
-	default:
-		return nil, 0, fmt.Errorf("unsupport obje type: %v", objID)
 	}
 
 	delarry := func(s []string, i int) []string {
@@ -171,25 +209,28 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 			}
 
 			if dataVal, exist := info[instID]; exist {
-				switch d := dataVal.(type) {
-				case json.Number:
-					if 0 != len(IDs) {
-						for idx, key := range IDs {
-							if val, err := d.Int64(); nil == err && key == strconv.Itoa(int(val)) {
-								inst.ID = IDs[idx]
-								inst.ObjectID, _ = strconv.Atoi(IDs[idx])
-								IDs = delarry(IDs, idx)
-								allInst = append(allInst, inst)
-								goto next
-							}
-						}
-					} else if val, err := d.Int64(); nil == err {
-						inst.ID = strconv.Itoa(int(val))
-						inst.ObjectID = int(val)
-						allInst = append(allInst, inst)
-					}
 
+				itemInstID, err := util.GetInt64ByInterface(dataVal)
+				if nil != err {
+					fmt.Errorf("not found assocte object ID %d from %v", instID, info)
+					return nil, 0, fmt.Errorf("not found assocte object ID %d from %v", instID, info)
 				}
+				if 0 != len(IDs) {
+					for idx, key := range IDs {
+						if key == strconv.FormatInt(itemInstID, 10) {
+							inst.ID = IDs[idx]
+							inst.ObjectID, _ = strconv.Atoi(IDs[idx])
+							IDs = delarry(IDs, idx)
+							allInst = append(allInst, inst)
+							goto next
+						}
+					}
+				} else {
+					inst.ID = strconv.FormatInt(itemInstID, 10)
+					inst.ObjectID = int(itemInstID)
+					allInst = append(allInst, inst)
+				}
+
 			next:
 			}
 		}
