@@ -45,6 +45,7 @@ type Object interface {
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
+	GetParentObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
@@ -290,12 +291,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (o *object) GetParentObject() ([]Object, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-
+func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -319,33 +315,29 @@ func (o *object) GetParentObject() ([]Object, error) {
 
 	return objItems, nil
 }
+func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
+	cond := condition.CreateCondition()
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
+
+	return o.searchObjects(cond)
+}
+func (o *object) GetParentObject() ([]Object, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+
+	return o.searchObjects(cond)
+}
+
 func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-		return nil, err
-	}
-
-	objItems := make([]Object, 0)
-	for _, asst := range rsp.Data {
-		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
-		rspRst, err := o.search(cond)
-		if nil != err {
-			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
-			return nil, err
-		}
-
-		objItems = append(objItems, CreateObject(o.params, o.clientSet, rspRst)...)
-
-	}
-
-	return objItems, nil
+	return o.searchObjects(cond)
 }
 
 func (o *object) SetMainlineParentObject(objID string) error {

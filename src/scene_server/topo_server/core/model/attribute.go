@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"io"
 
+	"configcenter/src/common/util"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,6 +34,8 @@ type Attribute interface {
 	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
 
 	Origin() metadata.Attribute
+
+	IsAssociationType() bool
 
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
@@ -112,6 +116,11 @@ type attribute struct {
 func (a *attribute) Origin() metadata.Attribute {
 	return a.attr
 }
+
+func (a *attribute) IsAssociationType() bool {
+	return util.IsAssocateProperty(a.attr.PropertyType)
+}
+
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).Field(common.BKObjIDField).Eq(objID)
