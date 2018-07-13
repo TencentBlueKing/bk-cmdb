@@ -69,38 +69,31 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	condition := make(map[string]interface{})
-	condition["condition"] = hutil.NewOperation().WithSupplierID(1).WithOwnerID(ownerID).Data()
+	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(ownerID).Data()
 	query := meta.QueryInput{Condition: condition}
+	query.Limit = 1
 	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
 	if err != nil || (err == nil && !result.Result) {
 		blog.Errorf("delete host in batch, but search instance failed, err: %v, result err: %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPReadBodyFailed)})
+		return
 	}
-
-	js, _ := json.Marshal(result)
-	appData := new(AppResult)
-	err = json.Unmarshal(js, appData)
-	if err != nil {
+	if err != nil || (err != nil && result.Result == false) {
 		blog.Errorf("delete host batch , but unmarshal result failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-	}
-
-	if len(appData.Data.Info) == 0 {
-		blog.Error("delete host batch, but can not found it's instance.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotFound)})
-	}
-
-	id, exist := appData.Data.Info[0][common.BKAppIDField]
-	if !exist {
-		blog.Errorf("search host result, but can not find app id.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_Field_VALID_FAIL)})
 		return
 	}
 
-	appID, err := util.GetInt64ByInterface(id)
+	if len(result.Data.Info) == 0 {
+		blog.Error("delete host batch, but can not found it's instance.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotFound)})
+		return
+	}
+
+	appID, err := result.Data.Info[0].Int64(common.BKAppIDField)
 	if err != nil {
-		blog.Error("delete host batch, but got invalid app id, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_Field_VALID_FAIL)})
+		blog.Error("delete host batch, but got invalid app id, err: %v, appinfo:%v", err, result.Data.Info[0])
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
@@ -159,7 +152,8 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	auditResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, req.Request.Header, logConents)
+	addHostLogs := common.KvMap{common.BKContentField: logConents, common.BKOpDescField: "delete host", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
+	auditResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, req.Request.Header, addHostLogs)
 	if err != nil || (err == nil && !auditResult.Result) {
 		blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v", err, auditResult.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrAuditSaveLogFaile)})

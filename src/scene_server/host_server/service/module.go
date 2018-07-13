@@ -389,15 +389,17 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	params["bk_owner_module_id"] = ownerModuleID
 	params["bk_owner_biz_id"] = appID
 
+	audit := s.Logics.NewHostModuleLog(pheader, conf.HostID)
+	audit.WithPrevious()
+
 	result, err := s.CoreAPI.HostController().Module().AssignHostToApp(context.Background(), pheader, params)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("assign host to app, but assign to app failed, err: %v", err)
+		blog.Errorf("assign host to app, but assign to app failed, err: %v, error message:%s", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostEditRelationPoolFail)})
 		return
 	}
 
 	user := util.GetUser(pheader)
-	audit := s.Logics.NewHostModuleLog(pheader, conf.HostID)
 	if err := audit.SaveAudit(strconv.FormatInt(conf.ApplicationID, 10), user, "assign host to app"); err != nil {
 		blog.Errorf("assign host to app, but save audit failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})

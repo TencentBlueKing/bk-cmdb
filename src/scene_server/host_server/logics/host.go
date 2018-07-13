@@ -402,7 +402,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		}
 		if len(appCond.Condition) > 0 {
 			moduleCond.Condition = append(moduleCond.Condition, metadata.ConditionItem{
-				Field:    common.BKSetIDField,
+				Field:    common.BKAppIDField,
 				Operator: common.BKDBIN,
 				Value:    appIDArr,
 			})
