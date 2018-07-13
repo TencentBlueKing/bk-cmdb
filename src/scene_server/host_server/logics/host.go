@@ -56,7 +56,7 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 	// get host details, pre data
 	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		return nil, "", fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
+		return nil, "", fmt.Errorf("get host  data failed, err, %v, %v", err, result.ErrMsg)
 	}
 
 	hostInfo := result.Data
@@ -71,10 +71,7 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 				continue
 			}
 
-			strItem, ok := item.(string)
-			if !ok {
-				return nil, "", errors.New("invalid parameter")
-			}
+			strItem := fmt.Sprintf("%v", item)
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
 				id, err := strconv.ParseInt(strID, 10, 64)
@@ -84,10 +81,10 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 				ids = append(ids, id)
 			}
 
-			cond := make(map[string]interface{})
-			cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
+			//cond := make(map[string]interface{})
+			//cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
 			q := &metadata.QueryInput{
-				Condition: cond,
+				Condition: nil, //cond,
 				Fields:    "",
 				Start:     0,
 				Limit:     common.BKNoLimit,
