@@ -71,7 +71,7 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 				continue
 			}
 
-			strItem := fmt.Sprintf("%v", item)
+			strItem := util.GetStrByInterface(item)
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
 				id, err := strconv.ParseInt(strID, 10, 64)
@@ -469,7 +469,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		hostResult, retStrErr = lgc.GetInstDetailsSub(pheader, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, page)
 	}
 	if nil != retStrErr {
-		blog.Error("failed to replace association object, error code is %s, input:%v", retStrErr.Error(), data)
+		blog.Errorf("failed to replace association object, error code is %s, input:%v", retStrErr.Error(), data)
 		return nil, retStrErr
 	}
 
