@@ -53,7 +53,6 @@
                             :timer="true"
                             :start-date="property.value.split(' - ')[0]"
                             :end-date="property.value.split(' - ')[1]"
-                            :init-date="property.value"
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
                     </span>
@@ -434,7 +433,6 @@
                     this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
-                    console.log(bizRes)
                     this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
