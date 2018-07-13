@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	parse "configcenter/src/common/paraparse"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -64,12 +65,15 @@ func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int6
 }
 
 func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
+	condc := make(map[string]interface{})
+	parse.ParseCommonParams(cond, condc)
+
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     common.BKNoLimit,
 		Sort:      common.BKModuleIDField,
 		Fields:    common.BKModuleIDField,
-		Condition: cond,
+		Condition: condc,
 	}
 
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, phader, query)
