@@ -1,24 +1,28 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package api
 
 import (
+	"fmt"
+
 	"configcenter/src/framework/core/output/module/inst"
+	"configcenter/src/framework/core/output/module/model"
+	"configcenter/src/framework/core/types"
 )
 
 // SetIteratorWrapper the set iterator wrapper
 type SetIteratorWrapper struct {
-	set inst.Iterator
+	set inst.SetIterator
 }
 
 // Next next the set
@@ -33,14 +37,19 @@ func (cli *SetIteratorWrapper) Next() (*SetWrapper, error) {
 // ForEach the foreach function
 func (cli *SetIteratorWrapper) ForEach(callback func(set *SetWrapper) error) error {
 
-	return cli.set.ForEach(func(item inst.Inst) error {
+	return cli.set.ForEach(func(item inst.SetInterface) error {
 		return callback(&SetWrapper{set: item})
 	})
 }
 
 // SetWrapper the set wrapper
 type SetWrapper struct {
-	set inst.Inst
+	set inst.SetInterface
+}
+
+// GetValues return the values
+func (cli *SetWrapper) GetValues() (types.MapStr, error) {
+	return cli.set.GetValues()
 }
 
 // SetValue set the key value
@@ -105,16 +114,18 @@ func (cli *SetWrapper) SetBusinessID(businessID int64) error {
 	if err := cli.SetParent(businessID); nil != err {
 		return err
 	}
-	return cli.set.SetValue(fieldBusinessID, businessID)
+	cli.set.SetBusinessID(businessID)
+	return nil
 }
 
 // GetBusinessID get the business id
-func (cli *SetWrapper) GetBusinessID() (int, error) {
+func (cli *SetWrapper) GetBusinessID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldBusinessID)
+	val, err := vals.Int(fieldBusinessID)
+	return int64(val), err
 }
 
 // SetSupplierAccount set the supplier account code of the set
@@ -132,12 +143,12 @@ func (cli *SetWrapper) GetSupplierAccount() (string, error) {
 }
 
 // GetID get the set id
-func (cli *SetWrapper) GetID() (int, error) {
+func (cli *SetWrapper) GetID() (int64, error) {
 	vals, err := cli.set.GetValues()
 	if nil != err {
 		return 0, err
 	}
-	return vals.Int(fieldSetID)
+	return vals.Int64(fieldSetID)
 }
 
 // SetParent set the parent id of the set
@@ -150,6 +161,19 @@ func (cli *SetWrapper) SetName(name string) error {
 	return cli.set.SetValue(fieldSetName, name)
 }
 
+// GetSetID get the id for the set
+func (cli *SetWrapper) GetSetID() (int64, error) {
+	vals, err := cli.set.GetValues()
+	if nil != err {
+		return 0, err
+	}
+	if !vals.Exists(fieldSetID) {
+		return 0, fmt.Errorf("the set id is not set")
+	}
+	val, err := vals.Int(fieldSetID)
+	return int64(val), err
+}
+
 // GetName get the set name
 func (cli *SetWrapper) GetName() (string, error) {
 	vals, err := cli.set.GetValues()
@@ -159,7 +183,27 @@ func (cli *SetWrapper) GetName() (string, error) {
 	return vals.String(fieldSetName), nil
 }
 
+// IsExists check the set
+func (cli *SetWrapper) IsExists() (bool, error) {
+	return cli.set.IsExists()
+}
+
+// Create only to create
+func (cli *SetWrapper) Create() error {
+	return cli.set.Create()
+}
+
+// Update only to update
+func (cli *SetWrapper) Update() error {
+	return cli.set.Update()
+}
+
 // Save save the data
 func (cli *SetWrapper) Save() error {
 	return cli.set.Save()
+}
+
+// GetModel get the model for the set
+func (cli *SetWrapper) GetModel() model.Model {
+	return cli.set.GetModel()
 }

@@ -91,7 +91,7 @@ func (cli *objectAttGroupAction) CreatePropertyGroup(req *restful.Request, resp 
 
 		_, err = cli.CC.InstCli.Insert(propertyGroup.TableName(), propertyGroup)
 		if nil == err {
-			return http.StatusOK, []*metadata.PropertyGroup{propertyGroup}, nil
+			return http.StatusOK, propertyGroup, nil
 		}
 
 		blog.Error("failed to insert the property group , error info is %s", err.Error())
@@ -121,7 +121,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroup(req *restful.Request, resp 
 			blog.Error("read http request body failed, error:%s", err.Error())
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 		}
-		propertyGroup := &propertyGroupCondition{}
+		propertyGroup := &PropertyGroupCondition{}
 		jsErr := json.Unmarshal(val, propertyGroup)
 		if nil != jsErr {
 			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
@@ -243,7 +243,7 @@ func (cli *objectAttGroupAction) UpdatePropertyGroupObjectAtt(req *restful.Reque
 		blog.Debug("property group is %s", string(val))
 
 		// decode the data struct
-		propertyGroupObjectAttArr := make([]propertyGroupObjectAtt, 0)
+		propertyGroupObjectAttArr := make([]PropertyGroupObjectAtt, 0)
 		jsErr := json.Unmarshal(val, &propertyGroupObjectAttArr)
 		if nil != jsErr {
 			blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())

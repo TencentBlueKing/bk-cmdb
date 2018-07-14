@@ -106,6 +106,8 @@ func main() {
 	}
 
 	metricManager := metric.NewManager(opt)
+
+	server.RegisterActions(api.Actions()...)
 	server.RegisterActions(metricManager.Actions()...)
 
 	httpChan := make(chan error)

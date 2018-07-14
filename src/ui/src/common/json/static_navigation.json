@@ -4,7 +4,7 @@
         "icon": "bk-icon icon-home-shape",
         "id": "bk_index",
         "name": "首页",
-        "path": "/",
+        "path": "/index",
         "children": []
     },
     "bk_host_manage": {

@@ -195,8 +195,9 @@ func (ccWeb *CCWebServer) Start() error {
 		}
 		metricActions := metric.NewMetricController(conf, ccWeb.HealthMetric)
 		for _, metricAction := range metricActions {
-			ccWeb.httpServ.GET(metricAction.Path, func(c *gin.Context) {
-				metricAction.HandlerFunc(c.Writer, c.Request)
+			newmetricAction := metricAction
+			ccWeb.httpServ.GET(newmetricAction.Path, func(c *gin.Context) {
+				newmetricAction.HandlerFunc(c.Writer, c.Request)
 			})
 		}
 		ccWeb.httpServ.GET("/", func(c *gin.Context) {
@@ -246,6 +247,14 @@ func (ccWeb *CCWebServer) Start() error {
 			session.Set("sysPrivi", string(strSysPrivi))
 			session.Set("mainLineObjID", string(mainLineObjIDStr))
 			session.Save()
+
+			//set cookie
+			appIDArr := make([]string, 0)
+			for key, _ := range userPriviApp {
+				appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+			}
+			appIDStr := strings.Join(appIDArr, "-")
+			c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
 
 			c.HTML(200, "index.html", gin.H{
 				"site":        site,

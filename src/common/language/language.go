@@ -51,7 +51,7 @@ func (cli *ccLanguageHelper) Languagef(language string, key string, args ...inte
 
 // load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
-	blog.InfoJSON("loaded language resource: %s", lang)
+	blog.V(3).Infof("loaded language resource: %#v", lang)
 	cli.lang = lang
 }
 

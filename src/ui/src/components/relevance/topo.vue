@@ -1,19 +1,27 @@
 <template>
-    <div class="relevance-topo-wrapper" v-bkloading="{isLoading: isLoading}">
-        <div id="topo" class="topo"></div>
-        <ul class="model-list" v-if="filterList.length">
-            <li class="model" :class="{'unselected': !filter.isShow}" v-for="(filter, index) in filterList" @click="changeModelDisplay(filter)" v-if="filter.count" :key="index">
-                <i class="icon" :class="filter['bk_obj_icon']"></i>
-                {{filter['bk_obj_name']}} {{filter.count}}
-            </li>
-        </ul>
-        <v-attribute 
-            :isShow.sync="attr.isShow"
-            :instId="attr.instId"
-            :objId="attr.objId"
-            :instName="attr.instName"
-            :objName="attr.objName"
-        ></v-attribute>
+    <div class="relevance-topo-wrapper" :class="{'full-screen': isFullScreen}">
+        <div class="loading-box" v-bkloading="{isLoading: isLoading}">
+            <div id="topo" class="topo" ref="topo"></div>
+            <ul class="model-list" v-if="filterList.length">
+                <li class="model" :class="{'unselected': !filter.isShow}" v-for="(filter, index) in filterList" @click="changeModelDisplay(filter)" v-if="filter.count" :key="index">
+                    <i class="icon" :class="filter['bk_obj_icon']"></i>
+                    {{filter['bk_obj_name']}} {{filter.count}}
+                </li>
+            </ul>
+            <span class="resize-btn" v-if="isFullScreen" @click="resizeCanvas(false)">
+                <i class="icon-cc-resize-small"></i><span>{{$t('Common["退出"]')}}</span>
+            </span>
+            <div class="mask" v-if="attr.isShow" @click="attr.isShow = false"></div>
+            <v-attribute
+                ref="attribute"
+                :isFullScreen="isFullScreen"
+                :isShow.sync="attr.isShow"
+                :instId="attr.instId"
+                :objId="attr.objId"
+                :instName="attr.instName"
+                :objName="attr.objName"
+            ></v-attribute>
+        </div>
     </div>
 </template>
 
@@ -36,7 +44,7 @@
             return {
                 topoStruct: {},
                 nodeId: 0,                  // 前端节点ID 递增
-
+                isFullScreen: false,        // 是否全屏显示
                 network: {},
                 attr: {
                     isShow: false,
@@ -81,6 +89,9 @@
                         scaling: {
                             min: 15,
                             max: 25
+                        },
+                        widthConstraint: {
+                            maximum: 100
                         }
                     },
                     layout: {
@@ -133,6 +144,13 @@
             }
         },
         methods: {
+            resizeCanvas (isFullScreen) {
+                this.isLoading = true
+                this.isFullScreen = isFullScreen
+                this.$nextTick(() => {
+                    this.$refs.attribute.resetAttributeBox()
+                })
+            },
             /**
              * 获取模型Id对应的key
              * @param objId {String} - 模型id
@@ -419,6 +437,9 @@
                 this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
+                    if (isRoot) {
+                        this.$emit('handleAssociationLoaded', res.data[0])
+                    }
                     await this.setTopoStruct(res.data[0], isRoot)
                 } catch (e) {
                     this.isLoading = false
@@ -445,7 +466,6 @@
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 this.network.focus(this.activeNode.id)
                 this.network.moveTo({scale: 0.8})
-
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
                 this.network.on('hoverNode', (params) => {
@@ -456,7 +476,14 @@
                 this.network.on('blurNode', () => {
                     networkCanvas.style.cursor = 'default'
                 })
+                this.network.on('dragStart', () => {
+                    this.removePop()
+                })
+                this.network.on('resize', () => {
+                    this.isLoading = false
+                })
                 this.network.on('click', (params) => {
+                    this.removePop()
                     // 点击了具体某个节点
                     if (params.nodes.length) {
                         let id = params.nodes[0]
@@ -487,6 +514,8 @@
                 let parentNode = this.getActiveNode(activeNode.parentId)
                 let toNode = activeNode.fromId === activeNode.id ? parentNode : activeNode
                 let fromNode = activeNode.fromId === activeNode.id ? activeNode : parentNode
+                this.removePop()
+                this.isLoading = true
                 try {
                     const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${toNode['bk_obj_id']}/inst/${toNode['bk_inst_id']}`)
                     for (let key in res.data[0]) {
@@ -504,7 +533,7 @@
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
 
-                await this.$store.dispatch('object/getAttribute', toNode['bk_obj_id'])
+                await this.$store.dispatch('object/getAttribute', {objId: toNode['bk_obj_id']})
                 let toNodeAttr = this.attribute[toNode['bk_obj_id']].find(({bk_asst_obj_id: bkAsstObjId}) => {
                     return fromNode['bk_obj_id'] === bkAsstObjId
                 })
@@ -519,7 +548,7 @@
                     params: {}
                 }
                 if (toNode['bk_obj_id'] === 'host') {
-                    params.params['bk_host_id'] = toNode['bk_inst_id']
+                    params.params['bk_host_id'] = toNode['bk_inst_id'].toString()
                 } else {
                     params[this.getInstanceIdKey(toNode['bk_obj_id'])] = toNode['bk_inst_id']
                 }
@@ -537,6 +566,8 @@
                     }
                 }
                 this.initTopo()
+                this.isLoading = false
+                this.$emit('handleUpdate')
             },
             /**
              * 显示详情
@@ -573,9 +604,9 @@
                 let div = document.createElement('div')
                 div.setAttribute('class', 'topo-pop-box')
                 div.setAttribute('id', this.popBox.rand)
-                div.style.top = `${Y - 40}px`
-                div.style.left = `${X}px`
-                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span> | <span class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</span>` : `<span class="detail" id="instDetail">${this.$t('Common["详情"]')}</span>`
+                div.style.top = `${Y + 12}px`
+                div.style.left = `${X + 60}px`
+                div.innerHTML = Math.abs(activeNode.level - LEVEL) === 1 ? `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div><div class="color-danger" id="deleteRelation">${this.$t('Common["删除关联"]')}</div>` : `<div class="detail" id="instDetail">${this.$t('Common["详情信息"]')}</div>`
                 document.body.appendChild(div)
 
                 // 监听事件
@@ -610,10 +641,10 @@
             }
         },
         mounted () {
-            this.container = document.getElementById('topo')
+            this.container = this.$refs.topo
         },
-        created () {
-            this.getRelationInfo(this.objId, this.instId, true)
+        async created () {
+            await this.getRelationInfo(this.objId, this.instId, true)
         },
         components: {
             vAttribute
@@ -626,6 +657,20 @@
         position: relative;
         height: calc(100% - 64px);
         background: #f9f9f9;
+        &.full-screen {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            height: 100%;
+            .model-list {
+                padding: 20px 0 0 20px;
+            }
+        }
+        .loading-box {
+            height: 100%;
+        }
         .topo {
             height: 100%;
         }
@@ -646,6 +691,31 @@
                 top: 1px;
                 vertical-align: bottom;
             }
+        }
+        .resize-btn {
+            position: absolute;
+            width: auto;
+            top: 20px;
+            right: 20px;
+            height: 24px;
+            line-height: 22px;
+            padding: 0 10px;
+            i {
+                margin-right: 5px;
+                font-size: 12px;
+            }
+            span {
+                font-size: 12px;
+                vertical-align: bottom;
+            }
+        }
+        .mask {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
         }
     }
 </style>

@@ -14,209 +14,248 @@ package validator
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	api "configcenter/src/source_controller/api/object"
-	"fmt"
-	"reflect"
+
+	"net/http"
 	"regexp"
 	"strconv"
 )
 
 // NewValidMap returns new NewValidMap
-func NewValidMap(ownerID, objID, objCtrl string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
-	return &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
+func NewValidMap(ownerID, objID string, pheader http.Header, engine *backbone.Engine) *ValidMap {
+	return &ValidMap{
+		Engine:  engine,
+		pheader: pheader,
+		ownerID: ownerID,
+		objID:   objID,
+
+		propertys:    map[string]metadata.Attribute{},
+		require:      map[string]bool{},
+		isOnly:       map[string]bool{},
+		shouldIgnore: map[string]bool{},
+	}
 }
 
 // NewValidMapWithKeyFields returns new NewValidMap
-func NewValidMapWithKeyFields(ownerID, objID, objCtrl string, keyFileds []string, forward *api.ForwardParam, err errors.DefaultCCErrorIf) *ValidMap {
-	tmp := &ValidMap{ownerID: ownerID, objID: objID, objCtrl: objCtrl, KeyFileds: make(map[string]interface{}, 0), ccError: err, forward: forward}
+func NewValidMapWithKeyFields(ownerID, objID string, ignoreFields []string, pheader http.Header, engine *backbone.Engine) *ValidMap {
+	tmp := NewValidMap(ownerID, objID, pheader, engine)
 
-	for _, item := range keyFileds {
-		tmp.KeyFileds[item] = item
+	for _, item := range ignoreFields {
+		tmp.shouldIgnore[item] = true
 	}
 	return tmp
 }
 
-// ValidMap basic valid
-func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int) (bool, error) {
-	valRule := NewValRule(valid.ownerID, valid.objCtrl)
-
-	valRule.GetObjAttrByID(valid.forward, valid.objID)
-	valid.IsRequireArr = valRule.IsRequireArr
-	valid.IsOnlyArr = valRule.IsOnlyArr
-	valid.PropertyKv = valRule.PropertyKv
-	keyDataArr := make([]string, 0)
-	var result bool
-	var err error
-	blog.Infof("valid rule:%v \nvalid data:%v", valRule, valData)
-
-	for key := range valid.KeyFileds {
-		// set the key field
-		keyDataArr = append(keyDataArr, key)
+// Init init
+func (valid *ValidMap) Init() error {
+	valid.errif = valid.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(valid.pheader))
+	m := map[string]interface{}{
+		common.BKObjIDField:   valid.objID,
+		common.BKOwnerIDField: valid.ownerID,
 	}
+	result, err := valid.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(valid.ctx, valid.pheader, m)
+	if nil != err {
+		return err
+	}
+	if !result.Result {
+		return valid.errif.Error(result.Code)
+	}
+	for _, attr := range result.Data {
+		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
+			continue
+		}
+		valid.propertys[attr.PropertyID] = attr
+		if attr.IsRequired {
+			valid.require[attr.PropertyID] = true
+		}
+		if attr.IsOnly {
+			valid.isOnly[attr.PropertyID] = true
+		}
+	}
+	return nil
+}
 
-	//set default value
-	setEnumDefault(valData, valRule)
+// ValidMap basic valid
+func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int64) error {
+	err := valid.Init()
+	if nil != err {
+		blog.Errorf("init validator faile %s", err.Error())
+		return err
+	}
 
 	//valid create request
 	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+		valid.fillLostedFieldValue(valData, valid.propertys)
 	}
 
 	for key, val := range valData {
 
-		if _, keyOk := valid.KeyFileds[key]; keyOk {
+		if valid.shouldIgnore[key] {
 			// ignore the key field
 			continue
 		}
 
-		keyDataArr = append(keyDataArr, key)
-
-		rule, ok := valRule.FieldRule[key]
+		property, ok := valid.propertys[key]
 		if !ok {
 			blog.Error("params is not valid, the key is %s", key)
-			return false, valid.ccError.Errorf(common.CCErrCommParamsIsInvalid, key)
+			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
-
-		fieldType := rule[common.BKPropertyTypeField].(string)
-		option := rule[common.BKOptionField]
+		fieldType := property.PropertyType
 		switch fieldType {
 		case common.FieldTypeSingleChar:
-			if nil == val {
-				blog.Error("params in need")
-				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-			}
-			result, err = valid.validChar(val, key)
-			if option != nil && result && "" != val {
-				//fmt.Println(option)
-				strReg := regexp.MustCompile(option.(string))
-				strVal := val.(string)
-				//fmt.Println(strVal)
-				result = strReg.MatchString(strVal)
-				if !result {
-					err = valid.ccError.Error(common.CCErrFieldRegValidFailed)
-				} else {
-					err = nil
-				}
-			}
+			err = valid.validChar(val, key)
 		case common.FieldTypeLongChar:
-			if nil == val {
-				blog.Error("params in need")
-				return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-			}
-			result, err = valid.validLongChar(val, key)
-			if option != nil && result && "" != val {
-				//fmt.Println(option)
-				strReg := regexp.MustCompile(option.(string))
-				strVal := val.(string)
-
-				result = strReg.MatchString(strVal)
-				if !result {
-					err = valid.ccError.Error(common.CCErrFieldRegValidFailed)
-				} else {
-					err = nil
-				}
-			}
+			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
-			result, err = valid.validInt(val, key, option)
+			err = valid.validInt(val, key)
 		case common.FieldTypeEnum:
-			result, err = valid.validEnum(val, key, option)
+			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:
-			result, err = valid.validDate(val, key)
+			err = valid.validDate(val, key)
 		case common.FieldTypeTime:
-			result, err = valid.validTime(val, key)
+			err = valid.validTime(val, key)
 		case common.FieldTypeTimeZone:
-			result, err = valid.validTimeZone(val, key)
+			err = valid.validTimeZone(val, key)
 		case common.FieldTypeBool:
-			result, err = valid.validBool(val, key)
+			err = valid.validBool(val, key)
 		default:
 			continue
 		}
-		if !result {
-			return result, err
+		if nil != err {
+			return err
 		}
 	}
 
-	//fmt.Printf("valdata:%+v\n", valData)
-	//valid unique
 	if validType == common.ValidCreate {
-		result, err = valid.validCreateUnique(valData)
-		return result, err
-	} else {
-		result, err = valid.validUpdateUnique(valData, valid.objID, instID)
-		return result, err
+		return valid.validCreateUnique(valData)
 	}
-
+	return valid.validUpdateUnique(valData, instID)
 }
 
 //valid char
-func (valid *ValidMap) validChar(val interface{}, key string) (bool, error) {
-	if reflect.TypeOf(val).Kind() != reflect.String {
+func (valid *ValidMap) validChar(val interface{}, key string) error {
+	if nil == val {
+		blog.Error("params in need")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+	}
+	switch value := val.(type) {
+	case string:
+		if len(value) > common.FieldTypeSingleLenChar {
+			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+		}
+		if 0 == len(value) {
+			if valid.require[key] {
+				blog.Error("params can not be empty")
+				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			}
+			return nil
+		}
+
+		if property, ok := valid.propertys[key]; ok && "" != val {
+			option, ok := property.Option.(string)
+			if !ok {
+				break
+			}
+			strReg, err := regexp.Compile(option)
+			if nil != err {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
+			if !strReg.MatchString(value) {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
+		}
+	default:
 		blog.Error("params should be  string")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedString, key)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
 	}
-	value := reflect.ValueOf(val).String()
-	if len(value) > common.FieldTypeSingleLenChar {
-		blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
-	}
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(value) {
-		blog.Error("params can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
-	return true, nil
+
+	return nil
 }
 
 //valid long char
-func (valid *ValidMap) validLongChar(val interface{}, key string) (bool, error) {
-	if reflect.TypeOf(val).Kind() != reflect.String {
-		blog.Error("params should be string")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedString, key)
+func (valid *ValidMap) validLongChar(val interface{}, key string) error {
+	if nil == val {
+		blog.Error("params in need")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
-	value := reflect.ValueOf(val).String()
-	if len(value) > 512 {
-		blog.Errorf("params over length %d", common.FieldTypeLongLenChar)
-		return false, valid.ccError.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeLongLenChar)
-	}
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(value) {
-		blog.Error("params can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+	switch value := val.(type) {
+	case string:
+		if len(value) > common.FieldTypeLongLenChar {
+			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+		}
+		if 0 == len(value) {
+			if valid.require[key] {
+				blog.Error("params can not be empty")
+				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			}
+			return nil
+		}
+
+		if property, ok := valid.propertys[key]; ok && "" != val {
+			option, ok := property.Option.(string)
+			if !ok {
+				break
+			}
+			strReg, err := regexp.Compile(option)
+			if nil != err {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
+			if !strReg.MatchString(value) {
+				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
+				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+			}
+		}
+	default:
+		blog.Error("params should be  string")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 
-	return true, nil
+	return nil
 }
 
 // validInt valid int
-func (valid *ValidMap) validInt(val interface{}, key string, option interface{}) (bool, error) {
-	var value int64
-	if nil == val || "" == val {
-		isIn := util.InArray(key, valid.IsRequireArr)
-		if true == isIn {
+func (valid *ValidMap) validInt(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
 			blog.Error("params can not be null")
-			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
 		}
-		return true, nil
+		return nil
 	}
 
-	// validate type
-	value, err := strconv.ParseInt(fmt.Sprint(val), 10, 64)
-	if err != nil {
-		blog.Error("params not int")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedInt, key)
+	var value int64
+	switch tmp := val.(type) {
+	case int:
+		value = int64(tmp)
+	case int32:
+		value = int64(tmp)
+	case int64:
+		value = int64(tmp)
+	case float64:
+		value = int64(tmp)
+	case float32:
+		value = int64(tmp)
+	default:
+		blog.Errorf("params %s:%#v not int", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
-	// validate by option
-	if nil == option || "" == option {
-		return true, nil
+	option, ok := valid.propertys[key]
+	if !ok {
+		return nil
 	}
 	intObjOption := parseIntOption(option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
-		return true, nil
+		return nil
 	}
 
 	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
@@ -228,72 +267,79 @@ func (valid *ValidMap) validInt(val interface{}, key string, option interface{})
 		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {
-		blog.Error("params  not valid")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+		blog.Errorf("params %s:%#v not valid", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	return true, nil
+	return nil
 }
 
 //valid char
-func (valid *ValidMap) validTimeZone(val interface{}, key string) (bool, error) {
-
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && nil == val {
-		blog.Error("params can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
+func (valid *ValidMap) validTimeZone(val interface{}, key string) error {
 	if nil == val {
-		return true, nil
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
 	}
-	if reflect.TypeOf(val).Kind() != reflect.String {
+
+	switch value := val.(type) {
+	case string:
+		isMatch := util.IsTimeZone(value)
+		if false == isMatch {
+			blog.Error("params should be  timezone")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
+		}
+	default:
 		blog.Error("params should be  timezone")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedTimeZone, key)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
 	}
-	value := reflect.ValueOf(val).String()
-	isMatch := util.IsTimeZone(value)
-	if false == isMatch {
-		blog.Error("params should be  timezone")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedTimeZone, key)
-	}
-	return true, nil
+	return nil
 }
 
 //validBool
-func (valid *ValidMap) validBool(val interface{}, key string) (bool, error) {
-
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if isIn && nil == val {
-		blog.Error("params can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
+func (valid *ValidMap) validBool(val interface{}, key string) error {
 	if nil == val {
-		return true, nil
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
 	}
 
-	if reflect.TypeOf(val).Kind() != reflect.Bool {
+	switch val.(type) {
+	case bool:
+	default:
 		blog.Error("params should be  bool")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedBool, key)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedBool, key)
 	}
-	return true, nil
+	return nil
 }
 
 // validEnum valid enum
-func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}) (bool, error) {
+func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	// validate require
-	if nil == val || "" == val {
-		if util.InArray(key, valid.IsRequireArr) {
-			blog.Error("params %s can not be empty", key)
-			return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
 		}
-		return true, nil
+		return nil
 	}
 
 	// validate type
 	valStr, ok := val.(string)
 	if !ok {
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 
+	option, ok := valid.propertys[key]
+	if !ok {
+		return nil
+	}
 	// validate within enum
 	enumOption := ParseEnumOption(option)
 	match := false
@@ -305,76 +351,56 @@ func (valid *ValidMap) validEnum(val interface{}, key string, option interface{}
 	}
 	if !match {
 		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	return true, nil
+	return nil
 }
 
 //valid date
-func (valid *ValidMap) validDate(val interface{}, key string) (bool, error) {
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if !isIn && nil == val {
-		return true, nil
-	}
-	if isIn && nil == val {
-		blog.Error("params in need")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+func (valid *ValidMap) validDate(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
 	}
 	valStr, ok := val.(string)
 	if false == ok {
 		blog.Error("date can shoule be string")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsShouldBeString, key)
+		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
 
-	}
-	if isIn && 0 == len(valStr) {
-		blog.Error("date params  can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
 	result := util.IsDate(valStr)
 	if !result {
 		blog.Error("params  is not valid")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	isIn = util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
-	return true, nil
+	return nil
 }
 
 //valid time
-func (valid *ValidMap) validTime(val interface{}, key string) (bool, error) {
-	isIn := util.InArray(key, valid.IsRequireArr)
-	if !isIn && nil == val {
-		return true, nil
-	}
+func (valid *ValidMap) validTime(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 
-	if isIn && nil == val {
-		blog.Error("params in need")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
 	}
 
 	valStr, ok := val.(string)
 	if false == ok {
 		blog.Error("date can shoule be string")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsShouldBeString, key)
+		return valid.errif.Errorf(common.CCErrCommParamsShouldBeString, key)
+	}
 
-	}
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
 	result := util.IsTime(valStr)
 	if !result {
 		blog.Error("params   not valid")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
-	isIn = util.InArray(key, valid.IsRequireArr)
-	if isIn && 0 == len(valStr) {
-		blog.Error("params  can not be empty")
-		return false, valid.ccError.Errorf(common.CCErrCommParamsNeedSet, key)
-	}
-	return true, nil
-
+	return nil
 }

@@ -107,7 +107,7 @@ func (cli *objectAttAction) CreateObjectAtt(req *restful.Request, resp *restful.
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectDBOpErrno)
 		}
 
-		return http.StatusOK, []*metadata.ObjectAttDes{obj}, nil
+		return http.StatusOK, obj, nil
 	}, resp)
 }
 

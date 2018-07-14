@@ -13,23 +13,26 @@
 package logics
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 
-	simplejson "github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	//	"configcenter/src/scene_server/topo_server/topo_service/manager"
 )
 
-func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID int64, conds common.KvMap) (map[string]interface{}, int) {
-	apps, errCode := getAppInfo(req, cc, appID)
+func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, conds mapstr.MapStr) (map[string]interface{}, int) {
+
+	apps, errCode := lgc.getAppInfo(user, pheader, appID)
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -56,7 +59,7 @@ func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID
 	}
 
 	moduleFields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
-	modules, errCode := getModulesByConds(req, cc, appID, conds, moduleFields, "")
+	modules, errCode := lgc.getModulesByConds(user, pheader, appID, conds, moduleFields, "")
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -65,7 +68,7 @@ func GetAppTopo(req *restful.Request, cc *api.APIResource, ownerID string, appID
 		return nil, 0
 	}
 
-	sets, errCode := getSets(req, cc, ownerID, appID)
+	sets, errCode := lgc.getSets(user, pheader, appID)
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -154,7 +157,7 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 	return modulesMap, 0
 }
 
-// GetDefaultTopo 获取空闲机池topo
+// GetDefaultTopo get resource topo
 func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[string]interface{}, error) {
 	defaultTopo := make(map[string]interface{})
 	url := fmt.Sprintf("%s/topo/v1/topo/internal/%s/%s", topoApi, common.BKDefaultOwnerID, appID)
@@ -225,7 +228,7 @@ func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]inter
 }
 
 // SetModuleHostCount get set host count
-func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc *api.APIResource) error {
+func (lgc *Logics) SetModuleHostCount(data []map[string]interface{}, user string, pheader http.Header) error {
 	blog.Debug("setModuleHostCount data: %v", data)
 	for _, itemMap := range data {
 		blog.Debug("ObjID: %s", itemMap)
@@ -244,7 +247,7 @@ func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc 
 				return getErr
 			}
 			blog.Debug("mouduleId: %v", mouduleId)
-			hostNum, getErr := GetModuleHostCount(appId, mouduleId, req, cc)
+			hostNum, getErr := lgc.GetModuleHostCount(appId, mouduleId, user, pheader)
 			if nil != getErr {
 				return getErr
 			}
@@ -257,7 +260,7 @@ func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc 
 			if false == ok {
 				children = make([]map[string]interface{}, 0)
 			}
-			SetModuleHostCount(children, req, cc)
+			lgc.SetModuleHostCount(children, user, pheader)
 		} else {
 			children := make([]interface{}, 0)
 			itemMap["Children"] = children
@@ -267,142 +270,127 @@ func SetModuleHostCount(data []map[string]interface{}, req *restful.Request, cc 
 }
 
 // GetModuleHostCount get module host count
-func GetModuleHostCount(appID, mouduleID interface{}, req *restful.Request, cc *api.APIResource) (int, error) {
+func (lgc *Logics) GetModuleHostCount(appID, mouduleID interface{}, user string, pheader http.Header) (int, error) {
 
-	param := map[string]interface{}{
+	param := mapstr.MapStr{
 		common.BKAppIDField:    appID,
 		common.BKModuleIDField: []interface{}{mouduleID},
 	}
-	paramJson, err := json.Marshal(param)
-	if err != nil {
-		blog.Error("getModuleHostCount Marshal json error:%v", err)
-		return 0, nil
-	}
 
-	url := fmt.Sprintf("%s/host/v1/getmodulehostlist", cc.HostAPI())
-	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(paramJson))
-	blog.Debug(rspV3, err)
+	result, err := lgc.CoreAPI.HostServer().HostSearchByModuleID(context.Background(), pheader, param)
 	if nil != err {
-		blog.Errorf("getModuleHostCount url:%s, params:%s, error:%s", url, string(paramJson), err.Error())
+		blog.Errorf("getModuleHostCount , error:%v", err)
 		return 0, err
 	}
-	rspV3Map := make(map[string]interface{})
-	err = json.Unmarshal([]byte(rspV3), &rspV3Map)
-	if nil != err {
-		blog.Error("getmodulehostlist Unmarshal json error:%v, rspV3:%s", err, rspV3)
-		return 0, nil
-	}
-	rspV3MapData, ok := rspV3Map["data"].([]interface{})
+	rspV3MapData, ok := result.Data.([]interface{})
 	if false == ok {
-		blog.Error("assign error rspV3Map.data is not []interface{}, rspV3Map:%v", rspV3Map)
+		blog.Error("assign error rspV3Map.data is not []interface{}, rspV3Map:%v", result.Data)
 		return 0, nil
 	}
 	return len(rspV3MapData), nil
 }
 
-func getSets(req *restful.Request, cc *api.APIResource, ownerID string, appID int64) ([]interface{}, int) {
-	url := cc.TopoAPI() + fmt.Sprintf("/topo/v1/set/search/%s/%d", ownerID, appID)
-	var js params.SearchParams
-	js.Page = common.KvMap{"start": 0, "limit": common.BKNoLimit}
+func (lgc *Logics) getSets(user string, pheader http.Header, appID int64) ([]interface{}, int) {
 
-	inputBody, err := json.Marshal(js)
-	if nil != err {
-		return nil, common.CCErrCommJSONMarshalFailed
-	}
+	page := mapstr.MapStr{"start": 0, "limit": common.BKNoLimit}
+	param := &params.SearchParams{Page: page}
+	appIDStr := strconv.FormatInt(appID, 10)
+	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), appIDStr, user, pheader, param)
 
-	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, inputBody)
 	if err != nil {
-		blog.Error("getSets  url:%s, params:%s error:%v", url, string(inputBody), err)
+		blog.Error("get sets   error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
-	blog.Infof("getSets url:%s, reply:%s ", url, rspV3)
-	return getRspV3DataInfo("getSets", rspV3)
+	return getRspV3DataInfo("getSets", result.Result, result.Code, result.Data)
 }
 
-func getModules(req *restful.Request, cc *api.APIResource, appID int64) ([]interface{}, int) {
+func (lgc *Logics) getModules(user string, pheader http.Header, appID int64) ([]interface{}, int) {
 
 	fields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
 
-	return getModulesByConds(req, cc, appID, nil, fields, "")
+	return lgc.getModulesByConds(user, pheader, appID, nil, fields, "")
 }
 
-func getModulesByConds(req *restful.Request, cc *api.APIResource, appID int64, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
-	url := cc.TopoAPI() + fmt.Sprintf("/topo/v1/openapi/module/searchByApp/%d", appID)
-	var js params.SearchParams
-	js.Fields = fields
-	js.Condition = conds
-	js.Page = common.KvMap{"start": 0, "limit": common.BKNoLimit, "sort": sort}
+func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appID int64, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
+	result, err := lgc.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), user, pheader, conds)
 
-	inputBody, err := json.Marshal(js)
-	if nil != err {
-		return nil, common.CCErrCommJSONMarshalFailed
-	}
-
-	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, inputBody)
 	if err != nil {
-		blog.Error("getModules  url:%s, params:%s error:%v", url, string(inputBody), err)
+		blog.Error("getModules   error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
-	blog.Infof("getModules url:%s, reply:%s ", url, rspV3)
-	return getRspV3DataInfo("getModules", rspV3)
+	return getRspV3DataInfo("getModules", result.Result, result.Code, result.Data)
 }
 
-func getAppInfo(req *restful.Request, cc *api.APIResource, appID int64) ([]interface{}, int) {
-	// build v3 parameters
+func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]interface{}, int) {
 
-	var js params.SearchParams
-	js.Page = common.KvMap{"start": 0, "limit": common.BKNoLimit}
+	page := mapstr.MapStr{"start": 0, "limit": 2}
+	condition := mapstr.MapStr{common.BKAppIDField: appID}
 
-	js.Condition = map[string]interface{}{
-		common.BKAppIDField: appID,
-	}
-	js.Page = common.KvMap{
-		"limit": 2,
-		"start": 0,
-	}
-	inputBody, err := json.Marshal(js)
+	param := &params.SearchParams{Condition: condition, Page: page}
+
+	result, err := lgc.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
+
 	if nil != err {
-		return nil, common.CCErrCommJSONMarshalFailed
-	}
-	url := fmt.Sprintf("%s/topo/v1/app/search/"+common.BKDefaultOwnerID, cc.TopoAPI())
-	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, inputBody)
-	blog.Infof("getAppInfo url:%s, input:%s ", url, rspV3)
-	if err != nil {
-		blog.Error("getAppInfo  url:%s, params:%s error:%v", url, string(inputBody), err)
+		blog.Errorf("get app info error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
-	return getRspV3DataInfo("getAppInfo", rspV3)
+	return getRspV3DataInfo("getAppInfo", result.Result, result.Code, result.Data)
 }
 
-func getRspV3DataInfo(logPrex, rspV3 string) ([]interface{}, int) {
-
-	js, err := simplejson.NewJson([]byte(rspV3))
-	if nil != err {
-		blog.Infof("%s rspV3 new json body:%s  error:%s", logPrex, rspV3, err.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
-
-	result, err := js.Get("result").Bool()
-
-	if nil != err {
-		blog.Infof("%s rspV3 json get result error, body:%s  error:%s", logPrex, rspV3, err.Error())
-		return nil, common.CCErrCommJSONUnmarshalFailed
-	}
+func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) ([]interface{}, int) {
 
 	if false == result {
-		errCode, err := js.Get(common.HTTPBKAPIErrorCode).Int()
-		if nil != err {
-			blog.Infof("%s rspV3 json get result errorcode error, body:%s  error:%s", logPrex, rspV3, err.Error())
-			return nil, common.CCErrCommJSONUnmarshalFailed
-		}
-
-		return nil, errCode
+		return nil, code
 	}
-	data, err := js.Get("data").Get("info").Array()
-	if nil != err {
-		blog.Infof("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, rspV3, err.Error())
+	dataMap, ok := data.([]interface{})
+	if false == ok {
+		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 
-	return data, 0
+	return dataMap, 0
 }
+
+//func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (bool, error) {
+//	type mainLineItem struct {
+//		Result bool                   `json:"result"`
+//		Code   int                    `json:"bk_error_code"`
+//		ErrMsg string                 `json:"bk_error_msg"`
+//		Data   []manager.TopoModelRsp `json:"data"`
+//	}
+//	url := fmt.Sprintf("%s/topo/v1/model/%s", cc.TopoAPI(), util.GetActionOnwerID(req))
+//	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
+//	blog.V(0).Infof("getAppInfo url:%s, input:%s ", url, rspV3)
+//	result, err := lgc.CoreAPI.TopoServer().Instance().CreateSet()
+//	if nil != err {
+//		blog.Errorf("CheckAppTopoIsThreeLevel url:%s, error:%s ", url, err.Error())
+//		return false, err
+//	}
+
+//	resMainLine := &mainLineItem{}
+//	err = json.Unmarshal([]byte(rspV3), resMainLine)
+//	if nil != err {
+//		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", rspV3, err.Error())
+//		return false, fmt.Errorf("check mainline topology reply:%s", rspV3)
+//	}
+//	if false == resMainLine.Result {
+//		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", rspV3, err.Error())
+//		return false, fmt.Errorf(resMainLine.ErrMsg)
+//	}
+
+//	for _, item := range resMainLine.Data {
+//		if common.BKInnerObjIDApp == item.ObjID {
+//			if common.BKInnerObjIDSet != item.NextObj {
+//				return false, nil
+//			}
+//		}
+
+//		if common.BKInnerObjIDSet == item.ObjID {
+//			if common.BKInnerObjIDModule != item.NextObj {
+//				return false, nil
+//			}
+//		}
+//	}
+
+//	return true, nil
+//}

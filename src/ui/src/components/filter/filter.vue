@@ -21,13 +21,14 @@
                     :queryColumnData="queryColumnData"
                     :attribute="attribute"
                     :isShowBiz="isShowBiz"
+                    :isShowScope="isShowScope"
                     @bkBizSelected="bkBizSelected"
                     @refresh="refresh"
                     @filterChange="filterChange">
                 </v-screening>
             </bk-tabpanel>
             <bk-tabpanel name="collect" :title="$t('Hosts[\'收藏\']')" :show="isShowCollect">
-                <v-collect :favoriteList="tab.favorite.list" @delete="getFavoriteList" @update="updateFavoriteList" @apply="applyCollect"></v-collect>
+                <v-collect :favoriteList="tab.favorite.list" :active="tab.active === 'collect'" @delete="getFavoriteList" @update="updateFavoriteList" @apply="applyCollect"></v-collect>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" :show="isShowHistory">
                 <v-history :isShow="tab.active === 'history'" @apply="applyHistory"></v-history>
@@ -64,12 +65,13 @@
                             <span class="acquiescence vm pl5">{{$t('Hosts[\'默认\']')}}</span>
                         </label>
                         <div class="btn-wrapper">
-                            <bk-button class="mr10 main-btn"
+                            <bk-button type="primary" class="mr10 main-btn"
+                                :loading="$loading('collect')"
                                 :disabled="!tab.screening.collectName"
                                 @click="makeSureCollect">
                                 {{$t('Hosts[\'确认\']')}}
                             </bk-button>
-                            <bk-button class="cancel-btn vice-btn" @click="hideCollectBox">
+                            <bk-button type="default" class="cancel-btn vice-btn" @click="hideCollectBox">
                                 {{$t('Common[\'取消\']')}}
                             </bk-button>
                         </div>
@@ -110,6 +112,10 @@
             isShowHistory: {
                 type: Boolean,
                 default: true
+            },
+            isShowScope: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -186,7 +192,7 @@
             makeSureCollect () {
                 this.$validator.validateAll().then(res => {
                     if (res) {
-                        this.$axios.post('hosts/favorites', this.getCollectParams()).then(res => {
+                        this.$axios.post('hosts/favorites', this.getCollectParams(), {id: 'collect'}).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('Common[\'收藏成功\']'), 'success')
                                 this.hideCollectBox()
@@ -219,7 +225,8 @@
             updateFavoriteList (updateItem) {
                 let originItem = this.tab.favorite.list.find(({id}) => id === updateItem.id)
                 if (originItem) {
-                    Object.assign(originItem, updateItem)
+                    const originItemIndex = this.tab.favorite.list.indexOf(originItem)
+                    this.tab.favorite.list.splice(originItemIndex, 1, Object.assign({}, originItem, updateItem))
                 }
             },
             getCollectParams () {

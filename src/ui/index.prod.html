@@ -15,6 +15,7 @@
         window.isAdmin = {{.role}}  // 为1的时候是管理员
         window.userName = {{.userName}}
         window.agentAppUrl = {{.agentAppUrl}}
+        window.buildVersion = '<%= htmlWebpackPlugin.options.cmdb.BUILD_VERSION %>'
     </script>
   </body>
 </html>

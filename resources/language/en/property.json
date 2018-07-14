@@ -1,6 +1,7 @@
 {
     "common_property_bk_inst_name":"instance name",
-    
+    "common_property_bk_inst_id":"instance ID",
+
     "biz_property_bk_biz_name": "business name",
     "biz_property_life_cycle": "lifecycle",
     "biz_property_bk_biz_maintainer": "maintainer",
@@ -29,6 +30,7 @@
     "plat_property_bk_cloud_name": "cloud area",
     "plat_property_bk_supplier_account": "supplier",
 
+    "host_property_bk_host_id": "host ID",
     "host_property_bk_host_innerip": "inner ip",
     "host_property_bk_host_outerip": "outer ip",
     "host_property_operator": "main operator",
@@ -57,6 +59,7 @@
     "host_property_bk_province_name": "province name",
     "host_property_bk_isp_name": "isp name",
 
+    "process_property_bk_biz_id": "business id",
     "process_property_bk_process_name": "process name",
     "process_property_description": "description",
     "process_property_bind_ip": "bind ip",

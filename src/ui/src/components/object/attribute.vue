@@ -134,18 +134,18 @@
         <template v-if="showBtnGroup">
             <div class="attribute-btn-group" v-if="displayType==='list' && type === 'update'">
                 <bk-button type="primary" class="bk-button main-btn" @click.prevent="changeDisplayType('form')" :disabled="unauthorized.update">{{$t("Common['属性编辑']")}}</bk-button>
-                <button v-if="type==='update' && showDelete && !isMultipleUpdate" class="bk-button del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
+                <bk-button type="default" :loading="$loading('instDelete')" v-if="type==='update' && showDelete && !isMultipleUpdate" class="del-btn" @click.prevent="deleteObject" :disabled="unauthorized.delete">
                     <template v-if="objId !== 'biz'">
                         {{$t("Common['删除']")}}
                     </template>
                     <template v-else>
                         {{$t("Inst['归档']")}}
                     </template>
-                </button>
+                </bk-button>
             </div>
             <div class="attribute-btn-group" v-else-if="!isMultipleUpdate || isMultipleUpdate && hasEditableProperties">
-                <bk-button type="primary" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="primary" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('editAttr')" v-if="type==='create'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="primary" :loading="$loading('editAttr')" v-if="type==='update'" class="main-btn" @click.prevent="submit" :disabled="errors.any() || !Object.keys(formData).length || unauthorized.update">{{$t("Common['保存']")}}</bk-button>
                 <bk-button type="default" v-if="type==='update'" class="vice-btn" @click.prevent="changeDisplayType('list')">{{$t("Common['取消']")}}</bk-button>
             </div>
         </template>
@@ -216,10 +216,17 @@
         },
         computed: {
             ...mapGetters(['bkSupplierAccount']),
+            localFormFields () {
+                let formFields = this.$deepClone(this.formFields)
+                formFields.sort((objA, objB) => {
+                    return objA['bk_property_index'] - objB['bk_property_index']
+                })
+                return formFields
+            },
             //  属性分组:根据formFields中各property.PropertyGroup 进行属性分组，为'隐藏分组(none)'时，放入更多属性中
             bkPropertyGroups () {
                 let bkPropertyGroups = {}
-                this.formFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
+                this.localFormFields.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type'])).map(property => {
                     let {
                         bk_property_group: bkPropertyGroup,
                         bk_property_group_name: bkPropertyGroupName
@@ -243,7 +250,13 @@
                 this.groupOrder.map(group => {
                     if (this.bkPropertyGroups.hasOwnProperty(group)) {
                         groupEditable[group] = this.bkPropertyGroups[group]['properties'].some(property => {
-                            return property['editable'] && !property['bk_isapi']
+                            if (this.isMultipleUpdate) {
+                                return property['editable'] && !property['bk_isapi'] && !property['isonly']
+                            } else if (this.type === 'create') {
+                                return !property['bk_isapi']
+                            } else {
+                                return property['editable'] && !property['bk_isapi']
+                            }
                         })
                     }
                 })
@@ -264,7 +277,7 @@
                     'enum': null,
                     'timezone': null
                 }
-                this.formFields.map(property => {
+                this.localFormFields.map(property => {
                     let {
                         bk_property_id: bkPropertyId,
                         bk_property_type: bkPropertyType,
@@ -343,7 +356,7 @@
             },
             isMultipleUpdate (isMultipleUpdate) {
                 if (isMultipleUpdate) {
-                    this.formFields.map(property => {
+                    this.localFormFields.map(property => {
                         let {
                             bk_property_type: bkPropertyType,
                             bk_property_id: bkPropertyId
@@ -377,7 +390,7 @@
                 }
                 if (this.type === 'create') {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         if (property['bk_property_type'] === 'enum') {
@@ -397,7 +410,7 @@
                     }
                 } else {
                     for (let key in this.formData) {
-                        let property = this.formFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
+                        let property = this.localFormFields.find(({bk_property_type: bkPropertyType, bk_property_id: bkPropertyId}) => {
                             return bkPropertyId === key
                         })
                         let value = this.formValues[key]
@@ -539,7 +552,7 @@
             filterValues () {
                 let filteredValues = {}
                 Object.keys(this.formValues).map(formPropertyId => {
-                    let fieldProperty = this.formFields.find(property => {
+                    let fieldProperty = this.localFormFields.find(property => {
                         return formPropertyId === property['bk_property_id']
                     })
                     if (fieldProperty) {
@@ -563,6 +576,7 @@
             resetData () {
                 this.displayType = 'list'
                 this.localValues = {}
+                this.multipleEditableFields = {}
                 this.$forceUpdate()
             },
             getValidateRules (property) {
@@ -572,7 +586,7 @@
                     option,
                     isrequired
                 } = property
-                if (isrequired) {
+                if (isrequired && !this.isMultipleUpdate) {
                     rules['required'] = true
                 }
                 if (property.hasOwnProperty('option') && option) {
@@ -587,8 +601,11 @@
                         rules['regex'] = option
                     }
                 }
-                if (bkPropertyType === 'singlechar' || bkPropertyType === 'longchar') {
-                    rules['char'] = true
+                if (bkPropertyType === 'singlechar') {
+                    rules['singlechar'] = true
+                }
+                if (bkPropertyType === 'longchar') {
+                    rules['longchar'] = true
                 }
                 if (bkPropertyType === 'int') {
                     rules['regex'] = '^(0|[1-9][0-9]*|-[1-9][0-9]*)$'
@@ -733,7 +750,6 @@
             }
             .attribute-item-field{
                 display: inline-block;
-                margin-left: 24px;
             }
         }
     }

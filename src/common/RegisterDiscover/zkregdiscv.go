@@ -13,15 +13,15 @@
 package RegisterDiscover
 
 import (
-	"configcenter/src/common/blog"
-	//"bcs/bcs-common/common/blog"
-	"configcenter/src/common/zkclient"
 	"context"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/common/zkclient"
 )
 
 //ZkRegDiscv do register and discover by zookeeper
@@ -42,8 +42,8 @@ func NewZkRegDiscv(serv string, timeOut time.Duration) *ZkRegDiscv {
 }
 
 // Ping to ping server
-func (cc *ZkRegDiscv) Ping() error {
-	return cc.zkcli.Ping()
+func (zkRD *ZkRegDiscv) Ping() error {
+	return zkRD.zkcli.Ping()
 }
 
 //Start used to run register and discover server
@@ -69,12 +69,6 @@ func (zkRD *ZkRegDiscv) Stop() error {
 	zkRD.cancel()
 
 	return nil
-}
-
-//Register create ephemeral node for the service
-func (zkRD *ZkRegDiscv) Register(path string, data []byte) error {
-	//blog.Info("register server. path(%s), data(%s)", path, string(data))
-	return zkRD.zkcli.CreateEphAndSeq(path, data)
 }
 
 //RegisterAndWatch create ephemeral node for the service and watch it. if it exit, register again
@@ -111,6 +105,11 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 
 	fmt.Printf("finish register server node(%s) and watch it\n", path)
 	return nil
+}
+
+// GetServNodes get server nodes by path
+func (zkRD *ZkRegDiscv) GetServNodes(path string) ([]string, error) {
+	return zkRD.zkcli.GetChildren(path)
 }
 
 //Discover watch the children

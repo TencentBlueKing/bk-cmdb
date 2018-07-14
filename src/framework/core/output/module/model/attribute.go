@@ -23,48 +23,67 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
-	OwnerID       string `field:"bk_supplier_account"`
-	ObjectID      string `field:"bk_obj_id"`
-	PropertyID    string `field:"bk_property_id"`
-	PropertyName  string `field:"bk_property_name"`
-	PropertyGroup string `field:"bk_property_group"`
-	PropertyIndex int    `field:"bk_property_index"`
-	Unit          string `field:"unit"`
-	Placeholder   string `field:"placeholder"`
-	IsEditable    bool   `field:"editable"`
-	IsPre         bool   `field:"ispre"`
-	IsRequired    bool   `field:"isrequired"`
-	IsReadOnly    bool   `field:"isreadonly"`
-	IsOnly        bool   `field:"isonly"`
-	IsSystem      bool   `field:"bk_issystem"`
-	IsAPI         bool   `field:"bk_isapi"`
-	PropertyType  string `field:"bk_property_type"`
+	OwnerID       string      `field:"bk_supplier_account"`
+	ObjectID      string      `field:"bk_obj_id"`
+	PropertyID    string      `field:"bk_property_id"`
+	PropertyName  string      `field:"bk_property_name"`
+	PropertyGroup string      `field:"bk_property_group"`
+	PropertyIndex int         `field:"bk_property_index"`
+	Unit          string      `field:"unit"`
+	Placeholder   string      `field:"placeholder"`
+	IsEditable    bool        `field:"editable"`
+	IsPre         bool        `field:"ispre"`
+	IsRequired    bool        `field:"isrequired"`
+	IsReadOnly    bool        `field:"isreadonly"`
+	IsOnly        bool        `field:"isonly"`
+	IsSystem      bool        `field:"bk_issystem"`
+	IsAPI         bool        `field:"bk_isapi"`
+	PropertyType  string      `field:"bk_property_type"`
 	Option        interface{} `field:"option"`
-	Description   string `field:"description"`
-	Creator       string `field:"creator"`
+	Description   string      `field:"description"`
+	Creator       string      `field:"creator"`
+
+	id int
 }
 
 func (cli *attribute) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
 
-func (cli *attribute) Save() error {
-
+func (cli *attribute) search() ([]types.MapStr, error) {
 	// construct the search condition
-	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID).Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID)
+	cond.Field(ObjectID).Eq(cli.ObjectID)
+	cond.Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
 	dataItems, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
+	return dataItems, err
+}
+
+func (cli *attribute) IsExists() (bool, error) {
+	items, err := cli.search()
+	if nil != err {
+		return false, err
+	}
+
+	return 0 != len(items), nil
+}
+func (cli *attribute) Create() error {
+
+	id, err := client.GetClient().CCV3().Attribute().CreateObjectAttribute(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
+	cli.id = id
+	return nil
+}
+func (cli *attribute) Update() error {
 
-	// create a new object
-	if 0 == len(dataItems) {
-		if _, err = client.GetClient().CCV3().Attribute().CreateObjectAttribute(cli.ToMapStr()); nil != err {
-			return err
-		}
-		return nil
+	dataItems, err := cli.search()
+
+	if nil != err {
+		return err
 	}
 
 	// update the exists one
@@ -96,8 +115,19 @@ func (cli *attribute) Save() error {
 		}
 	}
 
-	// success
 	return nil
+}
+
+func (cli *attribute) Save() error {
+
+	if exists, err := cli.IsExists(); nil != err {
+		return err
+	} else if exists {
+		return cli.Update()
+	}
+
+	return cli.Create()
+
 }
 
 func (cli *attribute) SetObjectID(objectID string) {
@@ -112,6 +142,9 @@ func (cli *attribute) SetID(id string) {
 	cli.PropertyID = id
 }
 
+func (cli *attribute) GetRecordID() int {
+	return cli.id
+}
 func (cli *attribute) GetID() string {
 	return cli.PropertyID
 }

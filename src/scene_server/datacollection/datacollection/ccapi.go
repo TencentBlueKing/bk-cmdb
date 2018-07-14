@@ -26,6 +26,7 @@ import (
 	"configcenter/src/source_controller/common/instdata"
 	"github.com/emicklei/go-restful"
 	"time"
+	"configcenter/src/common/rdapi"
 )
 
 // CCAPIServer define data struct of bcs ccapi server
@@ -106,7 +107,7 @@ func (ccAPI *CCAPIServer) Start() error {
 	err := a.GetDataCli(config, "mongodb")
 	if err != nil {
 		blog.Error("connect mongodb error exit! err:%s", err.Error())
-		chErr <- err
+		return err
 	}
 	instdata.DataH = a.InstCli
 
@@ -123,6 +124,14 @@ func (ccAPI *CCAPIServer) Start() error {
 			chErr <- err
 		}
 	}()
+
+	a.AddrSrv = ccAPI.rd
+	//check object controller server
+	a.ObjCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_OBJECTCONTROLLER, a.AddrSrv)
+	//check object topo server
+	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
+
+	blog.Infof("discover topo api url: %s\n", a.TopoAPI())
 
 	go func() {
 		err := ccAPI.rd.Start()
@@ -149,8 +158,9 @@ func (ccAPI *CCAPIServer) initHTTPServ() error {
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
 	for _, metricAction := range metricActions {
-		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		newmetricAction := metricAction
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: newmetricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			newmetricAction.HandlerFunc(resp.ResponseWriter, req.Request)
 		}})
 	}
 	ccAPI.httpServ.RegisterWebServer("/", nil, as)
