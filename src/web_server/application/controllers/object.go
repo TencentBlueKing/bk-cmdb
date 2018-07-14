@@ -41,6 +41,7 @@ var sortFields = []string{
 	"bk_property_id",
 	"bk_property_name",
 	"bk_property_type",
+	"bk_property_group_name",
 	"option",
 	"unit",
 	"description",
@@ -57,7 +58,7 @@ func ImportObject(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 
 	cc := api.NewAPIResource()
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -91,7 +92,7 @@ func ImportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
-	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, defLang)
+	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, false, defLang)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {
@@ -224,7 +225,7 @@ func ExportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
-	language := logics.GetLanugaeByHTTPRequest(c)
+	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
@@ -258,6 +259,13 @@ func ExportObject(c *gin.Context) {
 	setExcelTitle(sheet.AddRow(), defLang)
 	setExcelTitleType(sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
+
+	/*
+		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+		dd.SetDropList([]string{})
+		sheet.Col(2).SetDataValidationWithStart(dd, 3)
+		sheet.Cell(1,1).SetString()
+	*/
 
 	// add the value
 	for _, item := range arrItems {

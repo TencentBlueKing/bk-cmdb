@@ -29,6 +29,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type MongoConfig struct {
+	Address      string
+	User         string
+	Password     string
+	Database     string
+	Port         string
+	MaxOpenConns string
+	MaxIdleConns string
+	Mechanism    string
+}
+
 type MgoCli struct {
 	host      string
 	port      string
@@ -37,6 +48,10 @@ type MgoCli struct {
 	dbName    string
 	mechanism string
 	session   *mgo.Session
+}
+
+func NewFromConfig(cfg MongoConfig) (*MgoCli, error) {
+	return NewMgoCli(cfg.Address, cfg.Port, cfg.User, cfg.Password, cfg.Mechanism, cfg.Database)
 }
 
 func NewMgoCli(host, port, usr, pwd, mechanism, database string) (*MgoCli, error) {
@@ -52,11 +67,9 @@ func NewMgoCli(host, port, usr, pwd, mechanism, database string) (*MgoCli, error
 
 // Open open the connection
 func (m *MgoCli) Open() error {
-	// mgo.SetDebug(true)
-	// mgo.SetLogger(log.New(os.Stderr, "", log.LstdFlags))
 
 	dialInfo := &mgo.DialInfo{
-		Addrs:     []string{m.host + ":" + m.port},
+		Addrs:     strings.Split(m.host, ","),
 		Direct:    false,
 		Timeout:   time.Second * 5,
 		Database:  m.dbName,

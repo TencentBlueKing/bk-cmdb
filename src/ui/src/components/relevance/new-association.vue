@@ -36,8 +36,8 @@
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="default" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
-                <bk-button type="primary" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
+                <bk-button type="default" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-remove" v-if="selectedInstId.includes(item[instanceIdKey])" @click="updateAssociation(item[instanceIdKey], 'remove')">{{$t('Association["取消关联"]')}}</bk-button>
+                <bk-button type="primary" :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']" class="btn-option btn-option-new" v-else @click="updateAssociation(item[instanceIdKey], 'new')">{{$t('Association["添加关联"]')}}</bk-button>
             </template>
         </v-table>
     </div>
@@ -87,7 +87,14 @@
                     sort: '',
                     cancelSource: null
                 },
-                association: []
+                association: [],
+                specialObj: {
+                    'host': 'bk_host_innerip',
+                    'biz': 'bk_biz_name',
+                    'plat': 'bk_cloud_name',
+                    'module': 'bk_module_name',
+                    'set': 'bk_set_name'
+                }
             }
         },
         computed: {
@@ -95,10 +102,15 @@
             ...mapGetters('object', ['attribute']),
             ...mapGetters('navigation', ['classifications']),
             instanceIdKey () {
-                if (this.filter.objId === 'host') {
-                    return 'bk_host_id'
-                } else if (this.filter.objId === 'biz') {
-                    return 'bk_biz_id'
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.filter.objId)) {
+                    return specialObj[this.filter.objId]
                 }
                 return 'bk_inst_id'
             },
@@ -106,6 +118,9 @@
                 const nameKey = {
                     'bk_host_id': 'bk_host_innerip',
                     'bk_biz_id': 'bk_biz_name',
+                    'bk_cloud_id': 'bk_cloud_name',
+                    'bk_module_id': 'bk_module_name',
+                    'bk_set_id': 'bk_set_name',
                     'bk_inst_id': 'bk_inst_name'
                 }
                 return nameKey[this.instanceIdKey]
@@ -114,15 +129,23 @@
                 const name = {
                     'bk_host_innerip': this.$t('Common["内网IP"]'),
                     'bk_biz_name': this.$t('Association["业务名"]'),
+                    'bk_cloud_name': this.$t('Hosts["云区域"]'),
+                    'bk_module_name': this.$t('Hosts["模块名"]'),
+                    'bk_set_name': this.$t('Hosts["集群名"]'),
                     'bk_inst_name': this.$t('Association["实例名"]')
                 }
                 return name[this.instanceNameKey]
             },
             dataIdKey () {
-                if (this.objId === 'host') {
-                    return 'bk_host_id'
-                } else if (this.objId === 'biz') {
-                    return 'bk_biz_id'
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(this.objId)) {
+                    return specialObj[this.objId]
                 }
                 return 'bk_inst_id'
             },
@@ -159,6 +182,14 @@
                     limit: pagination.size,
                     sort: this.table.sort
                 }
+            },
+            searchValue () {
+                let value = this.filter.property.value
+                let property = this.getProperty(this.filter.property.id, this.filter.objId)
+                if (property && property['bk_property_type'] === 'bool') {
+                    value = ['true', 'false'].includes(this.filter.property.value) ? this.filter.property.value === 'true' : this.filter.property.value
+                }
+                return value
             }
         },
         watch: {
@@ -173,7 +204,7 @@
                     this.table.pagination.current = 1
                     this.table.pagination.count = 0
                     this.table.list = []
-                    await this.$store.dispatch('object/getAttribute', filterObjId)
+                    await this.$store.dispatch('object/getAttribute', {objId: filterObjId})
                     this.getInstance()
                 }
             },
@@ -182,7 +213,7 @@
             }
         },
         async created () {
-            await this.$store.dispatch('object/getAttribute', this.objId)
+            await this.$store.dispatch('object/getAttribute', {objId: this.objId})
             this.getAssociationTopo()
         },
         methods: {
@@ -280,7 +311,7 @@
                             await this.getObjInstance(cancelToken, filterObjId).then(res => this.setTableList(res, filterObjId))
                     }
                 } catch (e) {
-                    this.$alertMsg(e)
+                    this.$alertMsg(e.message)
                 } finally {
                     this.table.loading = false
                     this.cancelSource = null
@@ -308,16 +339,16 @@
                         condition.push({
                             'bk_obj_id': property['bk_asst_obj_id'],
                             'condition': [{
-                                'field': 'bk_inst_name',
+                                'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : 'bk_inst_name',
                                 'operator': this.filter.property.operator,
-                                'value': this.filter.property.value
+                                'value': this.searchValue
                             }]
                         })
                     } else {
                         condition[0]['condition'].push({
                             'field': this.filter.property.id,
                             'operator': this.filter.property.operator,
-                            'value': this.filter.property.value
+                            'value': this.searchValue
                         })
                     }
                 }
@@ -325,12 +356,14 @@
             },
             getBizInstance (cancelToken, filterObjId) {
                 const params = {
-                    condition: {},
+                    condition: {
+                        'bk_data_status': {'$ne': 'disabled'}
+                    },
                     fields: [],
                     page: this.page
                 }
                 if (this.filter.property.value !== '') {
-                    params.condition[this.filter.property.id] = this.filter.property.value
+                    params.condition[this.filter.property.id] = this.searchValue
                 }
                 return this.$axios.post(`biz/search/${this.bkSupplierAccount}`, params, {cancelToken})
             },
@@ -347,9 +380,9 @@
                 if (this.filter.property.value !== '' && property) {
                     const objId = ['singleasst', 'multiasst'].includes(property['bk_property_type']) ? property['bk_asst_obj_id'] : this.filter.objId
                     condition[objId] = [{
-                        'field': this.filter.property.id,
+                        'field': this.specialObj.hasOwnProperty(property['bk_asst_obj_id']) ? this.specialObj[property['bk_asst_obj_id']] : this.filter.property.id,
                         'operator': this.filter.property.operator,
-                        'value': this.filter.property.value
+                        'value': this.searchValue
                     }]
                 }
                 return condition
@@ -381,7 +414,7 @@
                             const option = property.option.find(({id}) => id === item[key])
                             item[key] = option ? option.name : ''
                         } else if (['date', 'time'].includes(type)) {
-                            item[key] = this.$formatTime(item['key'], type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+                            item[key] = this.$formatTime(item[key], type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
                         }
                     }
                 }
@@ -417,6 +450,7 @@
 <style lang="scss" scoped>
     .new-association{
         background-color: #fff;
+        font-size: 14px;
         .association-close-handle{
             display: block;
             height: 35px;

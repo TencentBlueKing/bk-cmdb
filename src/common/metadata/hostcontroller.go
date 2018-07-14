@@ -1,0 +1,199 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package metadata
+
+import (
+	"time"
+)
+
+type ID struct {
+	ID string `json:"id"`
+}
+
+type IDResult struct {
+	BaseResp `json:",inline"`
+	Data     ID `json:"data"`
+}
+
+type HostInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     map[string]interface{} `json:"data"`
+}
+
+type FavoriteResult struct {
+	Count int           `json:"count"`
+	Info  []interface{} `json:"info"`
+}
+
+type GetHostFavoriteResult struct {
+	BaseResp `json:",inline"`
+	Data     FavoriteResult `json:"data"`
+}
+
+type GetHostFavoriteWithIDResult struct {
+	BaseResp `json:",inline"`
+	Data     FavouriteMeta `json:"data"`
+}
+
+type HistoryContent struct {
+	Content string `json:"content"`
+}
+
+type AddHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     ID `json:"data"`
+}
+
+type HistoryMeta struct {
+	ID         string    `json:"id,omitempty" bson:"id,omitempty" `
+	User       string    `json:"user,omitempty" bson:"user,omitempty"`
+	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
+	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+}
+
+type HistoryResult struct {
+	Count int           `json:"count"`
+	Info  []HistoryMeta `json:"info"`
+}
+
+type GetHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     HistoryResult `json:"data"`
+}
+
+type HostInfo struct {
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
+}
+
+type GetHostsResult struct {
+	BaseResp `json:",inline"`
+	Data     HostInfo `json:"data"`
+}
+
+type HostSnap struct {
+	Data string `json:"data"`
+}
+
+type GetHostSnapResult struct {
+	BaseResp `json:",inline"`
+	Data     HostSnap `json:"data"`
+}
+
+type GetHostModuleIDsResult struct {
+	BaseResp `json:",inline"`
+	Data     []int64 `json:"data"`
+}
+
+type ParamData struct {
+	ApplicationID       int64   `json:"bk_biz_id"`
+	HostID              []int64 `json:"bk_host_id"`
+	OwnerModuleID       int64   `json:"bk_owner_module_id"`
+	OwnerAppplicationID int64   `json:"bk_owner_biz_id"`
+}
+
+type AssignHostToAppParams struct {
+	ApplicationID      int64   `json:"bk_biz_id"`
+	HostID             []int64 `json:"bk_host_id"`
+	ModuleID           int64   `json:"bk_module_id"`
+	OwnerApplicationID int64   `json:"bk_owner_biz_id"`
+	OwnerModuleID      int64   `json:"bk_owner_module_id"`
+}
+
+type ModuleHost struct {
+	AppID    int64 `json:"bk_biz_id"`
+	HostID   int64 `json:"bk_host_id"`
+	ModuleID int64 `json:"bk_module_id"`
+	SetID    int64 `json:"bk_set_id"`
+}
+
+type HostConfig struct {
+	BaseResp `json:",inline"`
+	Data     []ModuleHost `json:"data"`
+}
+
+type ModuleHostConfigParams struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        int64   `json:"bk_host_id"`
+	ModuleID      []int64 `json:"bk_module_id"`
+}
+
+type UserConfig struct {
+	Info       string    `json:"info"`
+	Name       string    `json:"name"`
+	ID         string    `json:"id"`
+	CreateTime time.Time `json:"create_time"`
+	UpdateTime time.Time `json:"last_time"`
+	AppID      int64     `json:"bk_biz_id"`
+	CreateUser string    `json:"create_user"`
+	ModifyUser string    `json:"modify_user"`
+}
+
+type UserConfigResult struct {
+	Count int           `json:"count"`
+	Info  []interface{} `json:"info"`
+}
+
+type GetUserConfigResult struct {
+	BaseResp `json:",inline"`
+	Data     UserConfigResult `json:"data"`
+}
+
+type GetUserCustomResult struct {
+	BaseResp `json:",inline"`
+	Data     map[string]interface{} `json:"data"`
+}
+
+type FavouriteParms struct {
+	ID          string `json:"id,omitempty"`
+	Info        string `json:"info,omitempty"`
+	QueryParams string `json:"query_params,omitempty"`
+	Name        string `json:"name,omitempty"`
+	IsDefault   int    `json:"is_default,omitempty"`
+	Count       int    `json:"count,omitempty"`
+}
+
+type FavouriteMeta struct {
+	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
+	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
+	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
+	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
+	User        string    `json:"user,omitempty" bson:"user,omitempty"`
+	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
+	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
+	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+}
+
+type GetUserConfigDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     UserConfigMeta `json:"data"`
+}
+
+type UserConfigMeta struct {
+	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
+	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
+	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
+	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	CreateUser string    `json:"create_user,omitempty" bson:"create_user,omitempty"`
+	ModifyUser string    `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
+	UpdateTime time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+}
+
+type AddConfigQuery struct {
+	AppID      int64  `json:"bk_biz_id,omitempty"`
+	Info       string `json:"info,omitempty"`
+	Name       string `json:"name,omitempty"`
+	CreateUser string `json:"create_user,omitempty"`
+}

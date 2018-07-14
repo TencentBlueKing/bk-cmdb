@@ -14,6 +14,7 @@
                 :sortable="false"
                 :width="width? width : 700"
                 :wrapperMinusHeight="300"
+                :emptyHeight="230"
                 :header="tableHeader"
                 :list="tableList"
                 :rowBorder="true"
@@ -26,6 +27,9 @@
                     <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
+            <p class="field-btn" @click="toggleFields" v-if="this.details.op_type !== 1">
+                {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
+            </p>
         </template>
     </div>
 </template>
@@ -40,10 +44,12 @@
         props: {
             details: Object,
             height: Number,
-            width: Number
+            width: Number,
+            isShow: Boolean
         },
         data () {
             return {
+                isShowAllFields: false,
                 loadingAttribute: true,
                 informations: [{
                     label: 'OperationAudit[\'操作账号\']',
@@ -123,11 +129,23 @@
                 const attribute = (this.attribute[this.objId] || []).filter(({bk_isapi: bkIsapi}) => !bkIsapi)
                 if (this.details['op_type'] !== 100) {
                     attribute.forEach(property => {
-                        list.push({
-                            'bk_property_name': property['bk_property_name'],
-                            'pre_data': this.getCellValue(property, 'pre_data'),
-                            'cur_data': this.getCellValue(property, 'cur_data')
-                        })
+                        let preData = this.getCellValue(property, 'pre_data')
+                        let curData = this.getCellValue(property, 'cur_data')
+                        if (!this.isShowAllFields) {
+                            if (preData !== curData) {
+                                list.push({
+                                    'bk_property_name': property['bk_property_name'],
+                                    'pre_data': preData,
+                                    'cur_data': curData
+                                })
+                            }
+                        } else {
+                            list.push({
+                                'bk_property_name': property['bk_property_name'],
+                                'pre_data': preData,
+                                'cur_data': curData
+                            })
+                        }
                     })
                 } else {
                     const content = this.details.content
@@ -143,11 +161,23 @@
                     curModule.forEach(module => {
                         cur.push(`${this.options.biz[curBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
                     })
-                    list.push({
-                        'bk_property_name': this.$t('Hosts["关联关系"]'),
-                        'pre_data': pre.join('<br>'),
-                        'cur_data': cur.join('<br>')
-                    })
+                    let preData = pre.join('<br>')
+                    let curData = cur.join('<br>')
+                    if (!this.isShowAllFields) {
+                        if (preData !== curData) {
+                            list.push({
+                                'bk_property_name': this.$t('Hosts["关联关系"]'),
+                                'pre_data': preData,
+                                'cur_data': curData
+                            })
+                        }
+                    } else {
+                        list.push({
+                            'bk_property_name': this.$t('Hosts["关联关系"]'),
+                            'pre_data': preData,
+                            'cur_data': curData
+                        })
+                    }
                 }
                 return list
             }
@@ -156,14 +186,22 @@
             async objId (objId) {
                 if (objId && !this.attribute.hasOwnProperty(objId)) {
                     this.loadingAttribute = true
-                    await this.$store.dispatch('object/getAttribute', objId)
+                    await this.$store.dispatch('object/getAttribute', {objId})
                     this.loadingAttribute = false
                 } else {
                     this.loadingAttribute = false
                 }
+            },
+            isShow (isShow) {
+                if (!isShow) {
+                    this.isShowAllFields = false
+                }
             }
         },
         methods: {
+            toggleFields () {
+                this.isShowAllFields = !this.isShowAllFields
+            },
             getCellValue (property, type) {
                 const data = this.details.content[type]
                 if (data) {
@@ -206,6 +244,15 @@
     .history-details-wrapper{
         padding: 32px 50px;
         height: calc(100% - 60px);
+    }
+    .field-btn{
+        margin: 10px 0;
+        text-align: right;
+        color: #3c96ff;
+        cursor: pointer;
+        &:hover{
+            color: #0082ff;
+        }
     }
     .info-group{
         width: 50%;

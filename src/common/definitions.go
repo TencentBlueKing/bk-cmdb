@@ -65,6 +65,12 @@ const (
 
 	// BKTimeTypeParseFlag the time flag
 	BKTimeTypeParseFlag = "cc_time_type"
+
+	// BKTopoBusinessLevelLimit the mainline topo level limit
+	BKTopoBusinessLevelLimit = "level.businessTopoMax"
+
+	// BKTopoBusinessLevelDefault the mainline topo level default level
+	BKTopoBusinessLevelDefault = 6
 )
 
 const (
@@ -154,7 +160,6 @@ const (
 )
 
 const (
-
 	// BKFIeldID the id definition
 	BKFieldID = "id"
 
@@ -414,6 +419,9 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+
+	// BKInstKeyField the inst key field for metric discover
+	BKInstKeyField = "bk_inst_key"
 )
 
 // DefaultResSetName the inner module set
@@ -466,7 +474,6 @@ const BKAppName string = "蓝鲸"
 const BKMainLine = "mainline"
 
 const (
-
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
 
@@ -474,7 +481,6 @@ const (
 	DefaultFaultModuleFlag int = 2
 )
 const (
-
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
 
@@ -516,7 +522,6 @@ const (
 )
 
 const (
-
 	// HostAddMethodExcel add a host method
 	HostAddMethodExcel = "1"
 
@@ -567,6 +572,12 @@ const (
 const (
 	// InputTypeExcel  data from excel
 	InputTypeExcel = "excel"
+
+	// InputTypeApiHostSync data from api for synchronize new host
+	InputTypeApiNewHostSync = "api_sync_host"
+
+	// BatchHostAddMaxRow batch sync add host max row
+	BatchHostAddMaxRow = 128
 )
 
 // table names
@@ -621,9 +632,9 @@ const (
 type KvMap map[string]interface{}
 
 const (
-
 	// CCSystemOperatorUserName the system user
-	CCSystemOperatorUserName = "cc_system"
+	CCSystemOperatorUserName  = "cc_system"
+	CCSystemCollectorUserName = "cc_collector"
 )
 
 // APIRsp the result the http requst
@@ -640,8 +651,13 @@ const (
 	BKCacheKeyV3Prefix = "cc:v3:"
 )
 
+// event cache keys
 const (
+	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
+)
 
+const (
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 
@@ -650,7 +666,7 @@ const (
 )
 
 const (
-	// BKHTTPHeaderUser current request  lhttp request header fields name for login user
+	// BKHTTPHeaderUser current request http request header fields name for login user
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
@@ -693,3 +709,7 @@ const (
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
 const SystemTableName = "cc_System"
+
+const (
+	BKHTTPMIMEJSON = "application/json"
+)

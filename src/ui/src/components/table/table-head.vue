@@ -28,10 +28,10 @@
                     @click="handleSort(column)">
                     <div :class="['head-label', 'fl', {'has-sort': column.sortable}]" :title="column.name">{{column.name}}</div>
                     <div class="head-sort fl" v-if="column.sortable">
-                        <i :class="['head-sort-angle', 'ascing', {'active': column.id === sortStore.sort && sortStore.order === 'asc'}]"
+                        <i :class="['head-sort-angle', 'ascing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'asc'}]"
                             @click.stop="handleSort(column, 'asc')">
                         </i>
-                        <i :class="['head-sort-angle', 'descing', {'active': column.id === sortStore.sort && sortStore.order === 'desc'}]"
+                        <i :class="['head-sort-angle', 'descing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'desc'}]"
                             @click.stop="handleSort(column, 'desc')">
                         </i>
                     </div>
@@ -79,7 +79,7 @@
         },
         watch: {
             crossPageAllChecked (checked) {
-                if (this.$refs.crossPageCheckbox) {
+                if (this.$refs.crossPageCheckbox && this.$refs.crossPageCheckbox.length) {
                     this.$refs.crossPageCheckbox[0].checked = checked
                 }
             }
@@ -111,7 +111,7 @@
                 this.table.$emit('handleCheckAll', isChecked, column.head)
             },
             handleSort (column, order) {
-                if (column.dragging) return
+                if (!column.sortable) return
                 if (!order) {
                     order = this.getSortOrder(column)
                 }
@@ -223,6 +223,7 @@
                 padding: 0 16px;
                 border: 1px solid $tableBorderColor;
                 border-left: none;
+                line-height: normal;
                 &:last-child{
                     border-right: none;
                 }

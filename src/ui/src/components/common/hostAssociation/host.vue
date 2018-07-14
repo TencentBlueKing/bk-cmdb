@@ -1,6 +1,6 @@
 <template>
     <div>
-        <input class="bk-form-input selected-host" type="text" readonly :value="localSelected.join(',')" @click="isSelectBoxShow = !isSelectBoxShow">
+        <input class="bk-form-input selected-host" type="text" readonly :value="localSelected.join(',')" @click="showSelectBox">
         <i class="bk-icon icon-close bk-selector-icon clear-icon" @click.stop="clear" v-show="localSelected.length"></i>
         <div class="selectbox-wrapper" v-show="isSelectBoxShow" @click.self="handleCancel">
             <div class="selectbox-box">
@@ -29,11 +29,12 @@
                                     :header="table.header"
                                     :list="table.list"
                                     :defaultSort="table.defaultSort"
-                                    :pagination="table.pagination"
+                                    :pagination.sync="table.pagination"
                                     :checked.sync="table.chooseId"
                                     :loading="table.isLoading"
                                     :multipleCheck="multiple"
-                                    :maxHeight="200"
+                                    :emptyHeight="160"
+                                    :maxHeight="202"
                                     @handlePageChange="setCurrentPage"
                                     @handleSizeChange="setCurrentSize"
                                     @handleSortChange="setCurrentSort"
@@ -74,13 +75,13 @@
                     return Array.isArray(selected) || typeof selected === 'string' || typeof selected === 'undefined' || selected === null
                 }
             },
-            multiple: Boolean
+            multiple: Boolean,
+            isSelectBoxShow: Boolean
         },
         data () {
             return {
                 ready: false,
                 localSelected: [],
-                isSelectBoxShow: false,
                 table: {
                     header: [],
                     list: [],
@@ -154,12 +155,13 @@
             },
             isSelectBoxShow (isSelectBoxShow) {
                 if (isSelectBoxShow) {
+                    this.resetFilterParams()
                     this.initChoosed()
                 } else {
                     this.table.chooseId = []
                 }
             },
-            selected () {
+            selected (selected) {
                 this.initLocalSelected()
             }
         },
@@ -167,10 +169,15 @@
             this.initLocalSelected()
         },
         methods: {
+            showSelectBox () {
+                this.$emit('update:isSelectBoxShow', true)
+            },
             initLocalSelected () {
                 if (Array.isArray(this.selected)) {
                     let availableSelected = this.selected.filter(({id}) => id !== '')
                     this.localSelected = availableSelected.map(({bk_inst_name: bkInstName}) => bkInstName)
+                    let hostId = availableSelected.map(({id}) => id)
+                    this.$emit('update:selected', hostId.join(','))
                 }
             },
             initChoosed () {
@@ -371,7 +378,7 @@
                 })
             },
             handleConfirm () {
-                this.isSelectBoxShow = false
+                this.$emit('update:isSelectBoxShow', false)
                 this.setLocalSelected()
                 let availableId = this.table.chooseId.filter(id => {
                     return !!this.table.allHost.find(({bk_host_id: bkHostId}) => bkHostId === id)
@@ -383,7 +390,7 @@
                 this.localSelected = selectedHost.map(({bk_host_innerip: bkHostInnerip}) => bkHostInnerip)
             },
             handleCancel () {
-                this.isSelectBoxShow = false
+                this.$emit('update:isSelectBoxShow', false)
                 this.initLocalSelected()
             },
             clear () {
@@ -418,11 +425,12 @@
         z-index: 999;
         .selectbox-box{
             position: absolute;
-            right: 32px;
+            left: 50%;
             top: 50%;
-            width: 735px;
+            width: 736px;
             height: 526px;
-            transform: translate(0, -50%);
+            line-height: normal;
+            transform: translate3d(-50%, -50%, 0);
             box-shadow: 0 2px 9.6px 0.4px rgba(0, 0, 0, .4);
             background: $white;
         }

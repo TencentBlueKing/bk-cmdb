@@ -20,7 +20,7 @@ import (
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
 
-	inputObj := inputer.Run(nil)
+	inputObj := inputer.Run(cli.ctx)
 
 	if nil == inputObj {
 		return nil

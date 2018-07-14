@@ -33,7 +33,7 @@
                         <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                     </bk-button>
                     <form :action="exportUrl" method="POST" class="form">
-                        <bk-button type="default" :title="$t('ModelManagement[\'导出\']')" class="btn">
+                        <bk-button type="default" btnType="submit" :title="$t('ModelManagement[\'导出\']')" class="btn">
                             {{$t('ModelManagement["导出"]')}}
                         </bk-button>
                     </form>
@@ -56,7 +56,7 @@
                                 <li><i class=" fb bk-icon icon-check-1" v-show="item['isonly']"></i></li>
                                 <li><i class=" fb bk-icon icon-check-1" v-show="item['isrequired']"></i></li>
                                 <li>{{formatFieldType(item['bk_property_type'])}}</li>
-                                <li>{{item['bk_property_name']}}({{item['bk_property_id']}})</li>
+                                <li :title="`${item['bk_property_name']}(${item['bk_property_id']})`">{{item['bk_property_name']}}({{item['bk_property_id']}})</li>
                                 <li>
                                     <div class="btn-contain" v-if="item['bk_property_id']==='InstName'" v-bktooltips="{
                                             isShow: tips.innerField.isShow,
@@ -485,12 +485,12 @@
                                         </div>
                                     </div>
                                     <div class="submit-btn" v-if="!isReadOnly">
-                                        <a class="save-btn main-btn mr10" @click="saveFieldChange(item, index)">
+                                        <bk-button type="primary" :loading="$loading('saveChange')" class="save-btn main-btn mr10" :class="{'loading': $loading('saveChange')}" @click="saveFieldChange(item, index)">
                                             {{$t('Common["保存"]')}}
-                                        </a>
-                                        <a class="cancel-btn vice-btn" @click="cancelFieldChange(item, index)">
+                                        </bk-button>
+                                        <bk-button type="default" class="cancel-btn vice-btn" @click="cancelFieldChange(item, index)">
                                             {{$t('Common["取消"]')}}
-                                        </a>
+                                        </bk-button>
                                     </div>
                                 </form>
                             </div>
@@ -1046,12 +1046,12 @@
                             </form>
                             <!-- 保存取消按钮 -->
                             <div class="button-wraper">
-                                <a class="save-btn main-btn mr10" @click="saveNewField">
+                                <bk-button type="primary" class="save-btn main-btn mr10" :loading="$loading('saveNew')" @click="saveNewField">
                                     {{$t('Common["保存"]')}}
-                                </a>
-                                <a class="cancel-btn vice-btn" @click="closeAddFieldBox">
+                                </bk-button>
+                                <bk-button type="default" class="cancel-btn vice-btn" @click="closeAddFieldBox">
                                     {{$t('Common["取消"]')}}
-                                </a>
+                                </bk-button>
                             </div>
                         </div>
                     </div>
@@ -1504,7 +1504,7 @@
                 }
                 this.isAddFieldShow = false
                 this.isLoading = true
-                this.$axios.post('object/attr/search', params).then(res => {
+                this.$store.dispatch('object/getAttribute', {objId: this.objId, force: true}).then(res => {
                     if (res.result) {
                         this.formatAttrOption(res.data)
                         for (var i = 0; i < this.fieldList.length; i++) {
@@ -1752,7 +1752,7 @@
                     unit: this.newFieldInfo.unit,
                     bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
-                this.$axios.post('object/attr', params).then(res => {
+                this.$axios.post('object/attr', params, {id: 'saveNew'}).then(res => {
                     if (res.result) {
                         this.getModelField()
                         this.closeAddFieldBox()
@@ -1835,7 +1835,7 @@
                     params['bk_obj_id'] = this.objId
                     params['bk_supplier_account'] = this.bkSupplierAccount
                 }
-                this.$axios.put(`object/attr/${item['id']}`, params).then(res => {
+                this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'}).then(res => {
                     if (res.result) {
                         this.getModelField()
                         this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
@@ -2223,29 +2223,31 @@
                     padding:0;
                     margin:0;
                     >li{
-                      float:left;
-                      height:40px;
-                      line-height:40px;
-                      background:#ffffff;
-                      text-align:center;
-                      border-bottom:1px solid $borderColor;
-                      &:nth-child(1){
-                        width:80px;
-                        border-left:1px solid $borderColor;
-                    }
-                    &:nth-child(2){
-                        width:80px;
-                    }
-                    &:nth-child(3){
-                        width:148px;
-                    }
-                    &:nth-child(4){
-                        width:287px;
-                    }
-                    &:nth-child(5){
-                        width:105px;
-                        border-right:1px solid $borderColor;
-                    }
+                        float:left;
+                        height:40px;
+                        line-height:40px;
+                        background:#ffffff;
+                        text-align:center;
+                        border-bottom:1px solid $borderColor;
+                        text-overflow: ellipsis;
+                        overflow: hidden;
+                        &:nth-child(1){
+                            width:80px;
+                            border-left:1px solid $borderColor;
+                        }
+                        &:nth-child(2){
+                            width:80px;
+                        }
+                        &:nth-child(3){
+                            width:148px;
+                        }
+                        &:nth-child(4){
+                            width:287px;
+                        }
+                        &:nth-child(5){
+                            width:105px;
+                            border-right:1px solid $borderColor;
+                        }
                     }
                 }
                 .list-content-hidden{
@@ -2391,7 +2393,7 @@
             }
             .button-wraper{
                 margin-left: 70px;
-                a{
+                .bk-button{
                     height: 30px;
                     line-height: 28px;
                     border-radius: 2px;
@@ -2492,7 +2494,7 @@
         }
         .submit-btn{
             margin-left: 70px;
-            a{
+            .bk-button{
                 height: 30px;
                 line-height: 28px;
                 border-radius: 2px;

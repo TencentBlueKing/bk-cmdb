@@ -2,12 +2,16 @@ import { $axios, $alertMsg } from '@/api/axios'
 
 const state = {
     usercustom: {},
+    classifyNavigationKey: 'index_v2_classify_navigation',
+    classifyModelSequenceKey: 'index_v2_classify_model_sequence',
     result: false,
     promise: null
 }
 
 const getters = {
     usercustom: state => state.usercustom,
+    classifyNavigationKey: state => state.classifyNavigationKey,
+    classifyModelSequenceKey: state => state.classifyModelSequenceKey,
     result: state => state.result
 }
 

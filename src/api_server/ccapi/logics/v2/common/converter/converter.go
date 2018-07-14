@@ -13,38 +13,36 @@
 package converter
 
 import (
-	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/language"
-	"configcenter/src/common/util"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	//"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/bitly/go-simplejson"
 	"github.com/coccyx/timeparser"
 	"github.com/emicklei/go-restful"
+
+	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // RespCommonResV2 turn the result without data into version V2
-func RespCommonResV2(resV3 []byte, resp *restful.Response) {
+func RespCommonResV2(result bool, code int, message string, resp *restful.Response) {
 
-	resV2 := make(map[string]interface{})
+	resV2 := make(mapstr.MapStr)
 
-	resMapV3 := make(map[string]interface{})
-	json.Unmarshal(resV3, &resMapV3)
-	if resMapV3["result"].(bool) {
+	if result {
 		resV2["code"] = 0
 		resV2["data"] = "success"
 	} else {
-		resV2["code"] = resMapV3[common.HTTPBKAPIErrorCode]
-		resV2["msg"] = resMapV3[common.HTTPBKAPIErrorMessage]
+		resV2["code"] = code
+		resV2["msg"] = message
 		resV2["extmsg"] = nil
 	}
 	s, _ := json.Marshal(resV2)
@@ -81,15 +79,10 @@ func DecorateUserName(originUserName string) string {
 	return originUserName + ""
 }
 
-//ResToV2ForAppList  convert cc v3 json data to cc v2 for application list
-func ResToV2ForAppList(respV3 string) (interface{}, error) {
+// ResToV2ForAppList  convert cc v3 json data to cc v2 for application list
+func ResToV2ForAppList(resDataV3 interface{}) (interface{}, error) {
 
 	resDataV2 := make([]map[string]interface{}, 0)
-	resDataV3, err := getResDataV3(respV3)
-	if nil != err {
-		blog.Errorf("get app list error:%s, reply:%s", err.Error(), respV3)
-		return nil, err
-	}
 
 	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
 
@@ -97,7 +90,7 @@ func ResToV2ForAppList(respV3 string) (interface{}, error) {
 		itemMap := item.(map[string]interface{})
 		mapV2, err := convertOneApp(itemMap)
 		if nil != err {
-			blog.Errorf("get app list error:%s, reply:%s", err.Error(), respV3)
+			blog.Errorf("get app list error:%s, reply:%v", err.Error(), resDataV3)
 			return nil, err
 		}
 
@@ -108,13 +101,12 @@ func ResToV2ForAppList(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForAppList: convert cc v3 json data to cc v2 for application list
-func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error) {
+func ResToV2ForRoleApp(resDataV3 interface{}, uin string, roleArr []string) (interface{}, error) {
 
 	resDataV2 := make(map[string][]interface{})
-	resDataV3, err := getResDataV3(respV3)
-	if nil != err {
-		blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
-		return nil, err
+
+	for _, role := range roleArr {
+		resDataV2[role] = make([]interface{}, 0)
 	}
 
 	resMapDataInfoV3, ok := resDataV3.(map[string]interface{})
@@ -129,7 +121,7 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 
 		mapV2, err := convertOneApp(itemMap)
 		if nil != err {
-			blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, respV3)
+			blog.Errorf("ResToV2ForRoleApp error:%v, reply:%s", err, resDataV3)
 			return nil, err
 		}
 		for _, roleStr := range roleArr {
@@ -164,11 +156,11 @@ func ResToV2ForRoleApp(respV3, uin string, roleArr []string) (interface{}, error
 }
 
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module
-func ResToV2ForModuleList(respV3 string) (interface{}, error) {
+func ResToV2ForModuleList(result bool, message string, data interface{}) (interface{}, error) {
 
-	blog.Debug("respV3:%v", respV3)
+	blog.Debug("respV3:%v", data)
 	resDataV2 := make([]string, 0)
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -184,9 +176,9 @@ func ResToV2ForModuleList(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module map list
-func ResToV2ForModuleMapList(respV3 string) (interface{}, error) {
+func ResToV2ForModuleMapList(result bool, message string, data interface{}) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -229,22 +221,22 @@ func ResToV2ForModuleMapList(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForSetList: convert cc v3 json data to cc v2 for set
-func ResToV2ForSetList(respV3 string) (interface{}, error) {
+func ResToV2ForSetList(result bool, message string, data interface{}) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
 
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
 	mapData, ok := resDataV3.(map[string]interface{})
 	if false == ok {
-		blog.Errorf("get data info error：%s ", respV3)
+		blog.Errorf("get data info error：%s ", data)
 		return nil, errors.New("get set info error")
 	}
 
 	resDataInfoV3, ok := mapData["info"].([]interface{})
 	if false == ok {
-		blog.Errorf("get data info error：%s ", respV3)
+		blog.Errorf("get data info error：%s ", data)
 		return nil, errors.New("get set info error")
 	}
 	for _, item := range resDataInfoV3 {
@@ -273,12 +265,12 @@ func ResToV2ForSetList(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForPlatList: convert cc v3 json data to cc v2 for plat
-func ResToV2ForPlatList(respV3 string) (interface{}, error) {
-	blog.Debug("ResToV2ForPlatList, input: %s", respV3)
+func ResToV2ForPlatList(result bool, message string, data interface{}) (interface{}, error) {
+	blog.Debug("ResToV2ForPlatList, input: %s", data)
 
 	resDataV2 := make([]map[string]interface{}, 0)
 
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -302,11 +294,11 @@ func ResToV2ForPlatList(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForHostList: convert cc v3 json data to cc v2 for host
-func ResToV2ForHostList(respV3 string) (interface{}, error) {
+func ResToV2ForHostList(result bool, message string, data interface{}) (interface{}, error) {
 
-	resDataInfoV3, err := getResDataV3(respV3)
+	resDataInfoV3, err := getResDataV3(result, message, data)
 	if nil != err {
-		blog.Errorf("ResToV2ForHostList reply:%s, error:%s", respV3, err.Error())
+		blog.Errorf("ResToV2ForHostList reply:%v, error:%s", data, err.Error())
 		return nil, err
 	}
 
@@ -368,12 +360,14 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			//"Status": "",
 			"CreateTime": convertToV2Time(itemMap[common.CreateTimeField]),
 			//"HardMemo": "",
-			"Region": "",
-			"OSName": itemMap[common.BKOSNameField],
+			"Region":    "",
+			"CompanyID": itemMap[common.BKOwnerIDField],
+			"OSName":    itemMap[common.BKOSNameField],
 			//"IDcName": "",
 			"ApplicationName": itemMap[common.BKAppNameField],
 			"SetName":         setName,
 			"ModuleName":      itemMap[common.BKModuleNameField],
+			"ModuleType":      itemMap[common.BKModuleTypeField],
 			"Source":          convMap[common.BKCloudIDField],
 		})
 	}
@@ -381,11 +375,11 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 }
 
 //ResToV2ForHostGroup: convert cc v3 json data to cc v2 for host group
-func ResToV2ForHostGroup(respV3 string) (interface{}, error) {
+func ResToV2ForHostGroup(result bool, message string, data interface{}) (interface{}, error) {
 	resDataV2 := make(map[string]interface{}, 0)
-	resDataInfoV3, err := getResDataV3(respV3)
+	resDataInfoV3, err := getResDataV3(result, message, data)
 	if nil != err {
-		blog.Errorf("ResToV2ForHostList reply:%s, error:%s", respV3, err.Error())
+		blog.Errorf("ResToV2ForHostList reply:%v, error:%s", data, err.Error())
 		return nil, err
 	}
 
@@ -397,10 +391,10 @@ func ResToV2ForHostGroup(respV3 string) (interface{}, error) {
 }
 
 //ResToV2ForCpyHost: convert cc v3 json data to cc v2 for getCompanyIDByIps
-func ResToV2ForCpyHost(respV3 string) (interface{}, error) {
+func ResToV2ForCpyHost(result bool, message string, data interface{}) (interface{}, error) {
 	resDataV2 := make(map[string]interface{})
 
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -424,12 +418,12 @@ func ResToV2ForCpyHost(respV3 string) (interface{}, error) {
 	return resDataV2, nil
 }
 
-func ResToV2ForPropertyList(respV3, idName, idDisplayName string) (interface{}, error) {
+func ResToV2ForPropertyList(result bool, message string, data interface{}, idName, idDisplayName string) (interface{}, error) {
 	resDataV2 := map[string]interface{}{}
 	standardMap := make(map[string]interface{})
 	customerMap := make(map[string]interface{})
 
-	resDataV3, err := getResDataV3(respV3)
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -452,8 +446,8 @@ func ResToV2ForPropertyList(respV3, idName, idDisplayName string) (interface{}, 
 }
 
 // ResToV2ForAppTree: convert cc v3 json data to cc v2 for topo tree
-func ResToV2ForAppTree(respV3 string) (interface{}, error) {
-	resDataV3, err := getResDataV3(respV3)
+func ResToV2ForAppTree(result bool, message string, data interface{}) (interface{}, error) {
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -466,9 +460,9 @@ func ResToV2ForAppTree(respV3 string) (interface{}, error) {
 	}
 }
 
-//ResToV2ForCustomerGroup 将用户userApi转换成2.0的动态分组
-func ResToV2ForCustomerGroup(respV3 string, appID string) ([]common.KvMap, error) {
-	resDataV3, err := getResDataV3(respV3)
+//ResToV2ForCustomerGroup
+func ResToV2ForCustomerGroup(result bool, message string, data interface{}, appID string) ([]common.KvMap, error) {
+	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
@@ -496,8 +490,8 @@ func ResToV2ForCustomerGroup(respV3 string, appID string) ([]common.KvMap, error
 }
 
 //ResToV2ForCustomerGroupResult return list, total, error
-func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
-	resDataV3, err := getResDataV3(respV3)
+func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interface{}) ([]common.KvMap, int, error) {
+	resDataV3, err := getResDataV3(result, message, dataInfo)
 	if nil != err {
 		return nil, 0, err
 	}
@@ -507,7 +501,7 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 
 	data, ok := resDataV3.(map[string]interface{})
 	if !ok {
-		blog.Errorf("ResToV2ForCustomerGroupResult data item not found, %s", respV3)
+		blog.Errorf("ResToV2ForCustomerGroupResult data item not found, %v", data)
 		return nil, 0, errors.New("data format errors")
 	}
 	iCount, ok := data["count"]
@@ -530,12 +524,12 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
-		module, ok := itemMap[common.BKInnerObjIDModule].(map[string]interface{})
+		modules, ok := itemMap[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
-		set, ok := itemMap[common.BKInnerObjIDSet].(map[string]interface{})
+		sets, ok := itemMap[common.BKInnerObjIDSet].([]interface{})
 		if !ok {
 			blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
@@ -546,8 +540,32 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 			return nil, 0, errors.New("data format errors")
 		}
 		hostName, _ := host[common.BKHostNameField]
-		moduleName, _ := module[common.BKModuleNameField]
-		setName, _ := set[common.BKSetNameField]
+		moduleName := "" // module[common.BKModuleNameField]
+		setName := ""    //set[common.BKSetNameField]
+		if 0 < len(modules) {
+			for _, module := range modules {
+				moduleMap, ok := module.(map[string]interface{})
+				if false == ok {
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+					return nil, 0, errors.New("data format errors")
+				}
+				moduleName, _ = moduleMap[common.BKModuleNameField].(string)
+				break
+
+			}
+		}
+		if 0 < len(sets) {
+			for _, set := range sets {
+				setMap, ok := set.(map[string]interface{})
+				if false == ok {
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+					return nil, 0, errors.New("data format errors")
+				}
+				setName, _ = setMap[common.BKSetNameField].(string)
+				break
+
+			}
+		}
 		subArea, _ := host[common.BKSubAreaField].([]interface{}) //host["SubArea"].([]interface{})
 		var source int64 = -1
 		if nil != subArea && len(subArea) > 0 {
@@ -570,8 +588,8 @@ func ResToV2ForCustomerGroupResult(respV3 string) ([]common.KvMap, int, error) {
 	return ret, total, nil
 }
 
-func ResToV2ForHostDataList(respV3 string) (common.KvMap, error) {
-	resDataV3, err := getResDataV3(respV3)
+func ResToV2ForHostDataList(result bool, message string, data interface{}) (common.KvMap, error) {
+	resDataV3, err := getResDataV3(result, message, data)
 	blog.Debug("resDataV3:%v", resDataV3)
 	if nil != err {
 		return nil, err
@@ -606,8 +624,8 @@ func ResToV2ForHostDataList(respV3 string) (common.KvMap, error) {
 }
 
 // ResToV2ForEnterIP get enterip result  for v2
-func ResToV2ForEnterIP(respV3 string) error {
-	_, err := getResDataV3(respV3)
+func ResToV2ForEnterIP(result bool, message string, data interface{}) error {
+	_, err := getResDataV3(result, message, data)
 	return err
 }
 
@@ -861,21 +879,11 @@ func convertFieldsNilToString(itemMap map[string]interface{}, fields []string) m
 }
 
 // getResDataV3 get res data v3
-func getResDataV3(respV3 string) (interface{}, error) {
-	js, err := simplejson.NewJson([]byte(respV3))
-	if nil != err {
-		return nil, err
-	}
-
-	resV3, err := js.Map()
-	if nil != err {
-		return nil, err
-	}
-
-	if resV3["result"].(bool) {
-		return resV3["data"], nil
+func getResDataV3(result bool, message string, data interface{}) (interface{}, error) {
+	if result {
+		return data, nil
 	} else {
-		return nil, errors.New(resV3[common.HTTPBKAPIErrorMessage].(string))
+		return nil, errors.New(message)
 	}
 }
 

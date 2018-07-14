@@ -2,7 +2,7 @@
     <div class="topo-wrapper clearfix">
         <div class="topo-tree-ctn fl">
             <div class="biz-selector-ctn">
-                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected"></v-application-selector>
+                <v-application-selector :selected.sync="tree.bkBizId" @on-selected="handleBizSelected" :filterable="true"></v-application-selector>
             </div>
             <div class="topo-options-ctn" hidden>
                 <i class="topo-option-del icon-cc-del fr" v-if="isShowOptionDel && Object.keys(tree.treeData).length" @click="deleteNode"></i>
@@ -46,6 +46,14 @@
                         @delete="deleteNode"
                         @cancel="cancelCreate"></v-attribute>
                 </bk-tabpanel>
+                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')" :show="attributeBkObjId === 'module'">
+                    <v-process
+                        :isShow="view.tab.active === 'process'"
+                        :bizId="tree.bkBizId"
+                        :moduleName="attributeBkObjId === 'module' ? tree.activeNode['bk_inst_name'] : ''"
+                    >
+                    </v-process>
+                </bk-tabpanel>
             </bk-tab>
         </div>
         <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="700" :padding="0">
@@ -63,6 +71,7 @@
     import vTree from '@/components/tree/tree.v2'
     import vHosts from '@/pages/hosts/hosts'
     import vAttribute from './children/attribute'
+    import vProcess from './children/process'
     import vCrossImport from './children/crossImport'
     import { mapGetters } from 'vuex'
     export default {
@@ -150,7 +159,7 @@
             },
             /* 当前节点发生变化且属性修改面板激活时，加载当前节点的具体属性 */
             'tree.activeNode' () {
-                if (!this.isShowAttribute) {
+                if (!this.isShowAttribute || (this.attributeBkObjId !== 'module' && this.view.tab.active === 'process')) {
                     this.tabChanged('host')
                 }
                 if (this.view.tab.active === 'attribute') {
@@ -322,7 +331,8 @@
                 this.$axios({
                     url: url,
                     method: method,
-                    data: formData
+                    data: formData,
+                    id: 'editAttr'
                 }).then(res => {
                     if (res.result) {
                         this.updateTopoTree(this.view.attribute.type, res.data, formData)
@@ -372,7 +382,9 @@
             deleteNode () {
                 this.$bkInfo({
                     title: `${this.$t('Common[\'确定删除\']')} ${this.tree.activeNode['bk_inst_name']}?`,
-                    content: `${this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']')}`,
+                    content: this.tree.activeNode['bk_obj_id'] === 'module'
+                        ? this.$t('Common["请先转移其下所有的主机"]')
+                        : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
                     confirmFn: () => {
                         let url
                         let {
@@ -386,7 +398,7 @@
                         } else {
                             url = `inst/${this.bkSupplierAccount}/${bkObjId}/${bkInstId}`
                         }
-                        this.$axios.delete(url).then(res => {
+                        this.$axios.delete(url, {id: 'deleteAttr'}).then(res => {
                             if (res.result) {
                                 this.view.tab.active = 'host'
                                 this.tree.activeParentNode.child.splice(this.tree.activeNodeOptions.index, 1)
@@ -476,51 +488,14 @@
                 this.view.crossImport.isShow = true
             },
             tabChanged (active) {
-                if (active === this.view.tab.active) {
-                    return
-                }
+                this.view.tab.active = active
+                this.view.attribute.formValues = {}
                 if (active === 'host') {
-                    let isConfirmShow = this.$refs.topoAttribute.isCloseConfirmShow()
-                    if (isConfirmShow) {
-                        this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                            confirmFn: () => {
-                                this.view.tab.active = active
-                                this.view.attribute.formValues = {}
-                                if (active === 'host') {
-                                    this.view.attribute.type = 'update'
-                                }
-                            }
-                        })
-                    } else {
-                        this.view.tab.active = active
-                        this.view.attribute.formValues = {}
-                        if (active === 'host') {
-                            this.view.attribute.type = 'update'
-                        }
-                    }
-                } else {
-                    this.view.tab.active = active
-                    this.view.attribute.formValues = {}
-                    if (active === 'host') {
-                        this.view.attribute.type = 'update'
-                    }
+                    this.view.attribute.type = 'update'
                 }
             },
             cancelCreate () {
                 this.tabChanged('host')
-            }
-        },
-        beforeRouteLeave (to, from, next) {
-            if (this.$refs.topoAttribute.isCloseConfirmShow()) {
-                this.$bkInfo({
-                    title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                    confirmFn: () => {
-                        next(true)
-                    }
-                })
-            } else {
-                next(true)
             }
         },
         created () {
@@ -531,7 +506,8 @@
             vTree,
             vCrossImport,
             vHosts,
-            vAttribute
+            vAttribute,
+            vProcess
         }
     }
 </script>
@@ -552,7 +528,6 @@
     }
     .biz-selector-ctn{
         padding: 20px;
-        background: #606e8e;
     }
     .topo-options-ctn{
         height: 44px;
@@ -581,7 +556,7 @@
         border: none;
     }
     .tree-list-ctn{
-        padding: 20px 0 0 20px;
+        padding: 0 0 0 20px;
         max-height: calc(100% - 120px);
         overflow: auto;
         @include scrollbar;
@@ -598,6 +573,14 @@
         }
         .bk-tab2-content{
             height: calc(100% - 80px);
+        }
+    }
+    .topo-wrapper .hosts-wrapper{
+        .table-container{
+            padding: 20px 0;
+        }
+        .breadcrumbs{
+            display: none;
         }
     }
 </style>

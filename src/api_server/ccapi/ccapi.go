@@ -187,7 +187,10 @@ func (ccAPI *CCAPIServer) Start() error {
 
 func (ccAPI *CCAPIServer) initHttpServ() error {
 	a := api.NewAPIResource()
-	ccAPI.httpServ.RegisterWebServer("/api", rdapi.AllGlobalFilter(), a.Actions)
+	getErrFun := func() errors.CCErrorIf {
+		return a.Error
+	}
+	ccAPI.httpServ.RegisterWebServer("/api", rdapi.AllGlobalFilter(getErrFun), a.Actions)
 	// MetricServer
 	conf := metric.Config{
 		ModuleName:    types.CC_MODULE_APISERVER,
@@ -196,8 +199,9 @@ func (ccAPI *CCAPIServer) initHttpServ() error {
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
 	for _, metricAction := range metricActions {
-		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		newmetricAction := metricAction
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: newmetricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			newmetricAction.HandlerFunc(resp.ResponseWriter, req.Request)
 		}})
 	}
 	ccAPI.httpServ.RegisterWebServer("/", nil, as)

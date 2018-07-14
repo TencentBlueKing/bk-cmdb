@@ -13,6 +13,11 @@
 package ccapi
 
 import (
+	"fmt"
+	"time"
+
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -23,13 +28,10 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"github.com/emicklei/go-restful"
-
 	myCommon "configcenter/src/scene_server/host_server/common"
 	confCenter "configcenter/src/scene_server/host_server/host_service/config"
 	"configcenter/src/scene_server/host_server/host_service/rdiscover"
-
-	"time"
+	"github.com/emicklei/go-restful"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -51,9 +53,21 @@ func NewCCAPIServer(conf *config.CCAPIConfig) (*CCAPIServer, error) {
 	//http server
 	s.httpServ = httpserver.NewHttpServer(port, addr, "")
 
+	c := &util.APIMachineryConfig{
+		ZkAddr:    s.conf.RegDiscover,
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: nil,
+	}
+
+	machinery, err := apimachinery.NewApiMachinery(c)
+	if err != nil {
+		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
+	}
 	a := api.NewAPIResource()
 	a.SetConfig(s.conf)
 	a.InitAction()
+	a.APIMachinery = machinery
 
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
@@ -193,7 +207,10 @@ func (ccAPI *CCAPIServer) Start() error {
 
 func (ccAPI *CCAPIServer) InitHttpServ() error {
 	a := api.NewAPIResource()
-	ccAPI.httpServ.RegisterWebServer("/host/{version}", rdapi.AllGlobalFilter(), a.Actions)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ccAPI.httpServ.RegisterWebServer("/host/{version}", rdapi.AllGlobalFilter(getErrFun), a.Actions)
 	// MetricServer
 	conf := metric.Config{
 		ModuleName:    types.CC_MODULE_HOST,
@@ -202,8 +219,9 @@ func (ccAPI *CCAPIServer) InitHttpServ() error {
 	metricActions := metric.NewMetricController(conf, ccAPI.HealthMetric)
 	as := []*httpserver.Action{}
 	for _, metricAction := range metricActions {
-		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: metricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-			metricAction.HandlerFunc(resp.ResponseWriter, req.Request)
+		newmetricAction := metricAction
+		as = append(as, &httpserver.Action{Verb: common.HTTPSelectGet, Path: newmetricAction.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			newmetricAction.HandlerFunc(resp.ResponseWriter, req.Request)
 		}})
 	}
 	ccAPI.httpServ.RegisterWebServer("/", nil, as)

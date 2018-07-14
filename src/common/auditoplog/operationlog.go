@@ -64,7 +64,7 @@ type AuditLogHosts struct {
 }
 
 type AuditLogExt struct {
-	ID      int //操作实例id
+	ID      int64 //操作实例id
 	Content interface{}
 	ExtKey  string
 }

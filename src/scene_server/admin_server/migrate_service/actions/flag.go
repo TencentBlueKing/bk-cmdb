@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/migrate_service/logics/system"
 
 	"github.com/emicklei/go-restful"
 )
@@ -54,10 +53,16 @@ func (cli *flagAction) Set(req *restful.Request, resp *restful.Response) {
 	}
 
 	a := api.GetAPIResource()
-	m := &system.MigrateSystem{TableName: "cc_System"}
-	err := m.ModifyData(ownerID, a.InstCli)
+
+	blog.Errorf("modify data for  %s table ", "cc_System")
+	cond := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue}
+	data := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue + ownerID}
+
+	err := a.InstCli.UpdateByCondition("cc_System", data, cond)
 	if nil != err {
-		blog.Errorf("add default app error: %s", err.Error())
+		blog.Errorf("modify data for  %s table error  %s", "cc_System", err)
 		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
 		return
 	}

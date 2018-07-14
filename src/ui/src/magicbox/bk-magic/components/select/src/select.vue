@@ -162,6 +162,11 @@
 
                     this.setSelected(value)
                 })
+            },
+            localOptions (localOptions) {
+                this.$nextTick(() => {
+                    this.setSelected(this.selected)
+                })
             }
         },
         computed: {
@@ -178,7 +183,7 @@
             },
             close () {
                 this.open = false
-
+                this.$emit('on-toggle', false)
                 if (this.filterable) {
                     setTimeout(() => {
                         this.filter = ''
@@ -357,7 +362,7 @@
                     }
                 }
 
-                this.model = this.curLabel || this.curValue
+                this.model = this.curLabel
             },
             clear () {
                 this.$emit('update:selected', '')

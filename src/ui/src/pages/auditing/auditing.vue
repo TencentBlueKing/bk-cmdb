@@ -10,6 +10,7 @@
 
 <template>
     <div class="auditing-content">
+        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="right-content">
             <div class="record-content">
                 <div class="title-content clearfix">
@@ -36,7 +37,7 @@
                                 :showClear="true"
                                 :selected.sync="filter.classify"
                                 :filterable="true">   
-                                <template v-for="(classifyGroup, groupIndex) in activeClassifications">
+                                <template v-for="(classifyGroup, groupIndex) in filterClassifications">
                                     <bk-option-group v-if="classifyGroup['bk_objects'].length"
                                             :label="classifyGroup['bk_classification_name']"
                                             :key="groupIndex">
@@ -79,15 +80,16 @@
                         </div>
                     </div>
                     <div class="group-content group-content-btn fr">
-                        <bk-button type="primary" class="" @click="setCurrentPage(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('auditSearch')" class="" @click="setCurrentPage(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
                     </div>
                 </div>
                 <div class="table-content">
                     <v-table ref="table"
                         :header="tableHeader"
                         :list="tableList"
+                        :pagination.sync="pagination"
                         :pagination="pagination"
-                        :loading="isLoading"
+                        :loading="$loading('auditSearch')"
                         :defaultSort="defaultSort"
                         :wrapperMinusHeight="150"
                         @handlePageChange="setCurrentPage"
@@ -110,15 +112,16 @@
     import vSideslider from '@/components/slider/sideslider'
     import vHistoryDetails from '@/components/history/details'
     import vTable from '@/components/table/table'
+    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     export default {
         components: {
             vTable,
             vSideslider,
-            vHistoryDetails
+            vHistoryDetails,
+            vBreadcrumb
         },
         data () {
             return {
-                isLoading: false,
                 isShowClearIcon: {
                     'classify': false,
                     'biz': false
@@ -209,6 +212,19 @@
                 'language'
             ]),
             ...mapGetters('navigation', ['activeClassifications']),
+            filterClassifications () {
+                return [{
+                    'bk_classification_id': 'bk_biz_topo',
+                    'bk_classification_name': this.$t('BusinessTopology["业务拓扑"]'),
+                    'bk_objects': [{
+                        'bk_obj_id': 'set',
+                        'bk_obj_name': this.$t('Hosts["集群"]')
+                    }, {
+                        'bk_obj_id': 'module',
+                        'bk_obj_name': this.$t('Hosts["模块"]')
+                    }]
+                }, ...this.activeClassifications]
+            },
             /* 开始时间 */
             startDate () {
                 return this.$formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD')
@@ -313,17 +329,13 @@
             ...mapActions(['getBkBizList']),
             /* 获取表格数据 */
             getTableList () {
-                this.isLoading = true
-                this.$axios.post('audit/search/', this.searchParams).then((res) => {
+                this.$axios.post('audit/search/', this.searchParams, {id: 'auditSearch'}).then((res) => {
                     if (res.result) {
                         this.initTableList(res.data.info)
                         this.pagination.count = res.data.count
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
-                    this.isLoading = false
-                }).catch(() => {
-                    this.isLoading = false
                 })
             },
             /* 根据返回的结果设置一些表格显示内容 */
@@ -389,6 +401,9 @@
         height: 100%;
         font-size: 14px;
         color: $primaryColor;
+        .breadcrumbs{
+            padding: 8px 20px;
+        }
         .dn{
             display: none;
         }
@@ -447,8 +462,8 @@
         }
         .right-content{
             float: right;
-            padding: 20px;
-            height: 100%;
+            padding: 0 20px;
+            height: calc(100% - 52px);
             width: 100%;
             .pd-conrtol{
                 padding: 30px 50px 50px 50px;

@@ -29,6 +29,10 @@ func InStrArr(arr []string, key string) bool {
 	return false
 }
 
+func GetLanguage(header http.Header) string {
+	return header.Get(common.BKHTTPLanguage)
+}
+
 // GetActionLanguage returns language form hender
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)
@@ -49,6 +53,18 @@ func GetActionUser(req *restful.Request) string {
 func GetActionOnwerID(req *restful.Request) string {
 	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
 	return ownerID
+}
+
+func GetUser(header http.Header) string {
+	return header.Get(common.BKHTTPHeaderUser)
+}
+
+func GetOwnerID(header http.Header) string {
+	return header.Get(common.BKHTTPOwnerID)
+}
+
+func GetOwnerIDAndUser(header http.Header) (string, string) {
+	return header.Get(common.BKHTTPOwnerID), header.Get(common.BKHTTPHeaderUser)
 }
 
 // GetActionOnwerIDAndUser returns owner_uin and user form hender

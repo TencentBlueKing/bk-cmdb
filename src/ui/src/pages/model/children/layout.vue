@@ -9,81 +9,72 @@
  */
 
 <template>
-    <div class="tab-content" @click="blur" v-bkloading="{isLoading: isGroupLoading}">
-        <div class="table-content">
+    <div class="tab-content">
+        <div class="table-content" v-bkloading="{isLoading: isLoading}">
             <div class="hidden-list">
                 <div class="hidden-list-title">
                     <i class="bk-icon icon-eye-slash-shape"></i>
                     {{$t('ModelManagement["隐藏字段"]')}}
                 </div>
                 <ul>
-                    <draggable ref="draggableHideField" index="0" class="content-left" v-model="hideField" :options="{animation: 150, group:'field'}" :move="checkMove" @end="checkEnd">
-                        <li v-for="item in hideField">
+                    <draggable ref="draggableHideField" v-model="hideAttr" index="0" class="content-left" :options="{animation: 150, group:'field'}" :move="checkMove" @end="moveEnd">
+                        <li v-for="(attr, index) in hideAttr" :key="index">
                             <span class="hidden-list-icon">
                                 <i></i><i></i><i></i>
                             </span>
                             <span class="hidden-list-text">
-                                <span class="text-name">{{item['bk_property_name']}}</span>
-                                <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                                <span class="text-name">{{attr['bk_property_name']}}</span>
+                                <i v-if="attr['isrequired'] && !attr['isonly']" class="icon-cc-required"></i><i v-if="attr['isonly']" class="icon-cc-key"></i>
                             </span>
                         </li>
                     </draggable>
                 </ul>
             </div>
             <div class="layout-list">
-                <div class="layout-list-ul" v-for="(vitems, vindex) in fieldClassification">
+                <div class="layout-list-ul" v-for="(group, groupIndex) in groupAttrList" :key="groupIndex">
                     <div class="layout-list-title">
-                        <span class="layout-title-text" v-show="!isEditTitle || vindex !== curFieldIndex">
-                            {{vitems.label}}
-                        </span>
-                        <input type="text" class="layout-title-text border" 
-                            v-focus="labelShow" 
-                            v-model="labelList[vindex]" 
-                            v-show="isEditTitle && vindex === curFieldIndex" 
-                            maxlength="20"
-                            @click.stop.prevent="focus()"
-                            @keyup.enter="renameFieldGroup(vitems, vindex)" 
-                            @blur="renameFieldGroup(vitems, vindex)"
+                        <span class="layout-title-text" v-if="!group.isEditTitle">{{group['bk_group_name']}}</span>
+                        <input v-else v-focus maxlength="20" @blur="changeGroupName(group)" type="text" class="layout-title-text border" v-model="group['bk_group_name']"
                         >
-                        <i class="icon-cc-edit" @click.stop.prevent="editTitle(vitems, vindex)" v-show="!isEditTitle"></i>
+                        <i class="icon-cc-edit" @click.stop.prevent="editGroupName(group)"></i>
                         <span class="layout-title-icon">
-                            <i class="bk-icon icon-arrows-up" @click="sortByGroupIndex(vitems, vindex - 1)" v-if="vindex !== 0"></i>
-                            <i class="bk-icon icon-arrows-down" @click="sortByGroupIndex(vitems, vindex + 1)" v-if="vindex < fieldClassification.length - 1"></i>
-                            <i class="icon-cc-del f14 vm" @click="deleteFieldGroup(vitems)"></i>
+                            <i class="bk-icon icon-arrows-up" v-if="groupIndex" @click="groupMove(groupAttrList, groupIndex, groupIndex - 1)"></i>
+                            <i class="bk-icon icon-arrows-down" v-if="groupIndex !== groupAttrList.length - 1" @click="groupMove(groupAttrList, groupIndex, groupIndex + 1)"></i>
+                            <i class="icon-cc-del f14 vm" @click="deleteGroup(group, groupIndex)"></i>
                         </span>
                     </div>
                     <ul>
-                        <draggable class="content-right" :index="vindex" v-model="vitems.modelField" :options="{animation: 150, group:'field'}" :move="checkMove" @end="checkEnd">
-                            <li v-for="item in vitems.modelField">
+                        <draggable class="content-right" :index="groupIndex" v-model="group.properties" :options="{animation: 150, group:'field'}" :move="checkMove" @end="moveEnd">
+                            <li v-for="(property, propertyIndex) in group.properties" :key="propertyIndex">
                                 <span class="layout-list-icon">
                                     <i></i><i></i><i></i>
                                 </span>
                                 <span class="layout-list-text">
-                                    <span class="text-name">{{item['bk_property_name']}}</span>
-                                    <i v-if="item['isrequired'] && !item['isonly']" class="icon-cc-required"></i><i v-if="item['isonly']" class="icon-cc-key"></i>
+                                    <span class="text-name">{{property['bk_property_name']}}</span>
+                                    <i v-if="property['isrequired'] && !property['isonly']" class="icon-cc-required"></i><i v-if="property['isonly']" class="icon-cc-key"></i>
                                 </span>
-                                <i class="bk-icon icon-eye-slash-shape" @click="deleteModelField(item)"></i>
+                                <i class="bk-icon icon-eye-slash-shape" v-if="!property['isonly'] && !property['isrequired']" @click="deleteAttr(property, propertyIndex, groupIndex)"></i>
                             </li>
                         </draggable>
                     </ul>
                 </div>
                 <div class="layout-list-add">
-                    <span @click="addFieldGroup">
+                    <span @click="addGroup">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('ModelManagement["新增字段分组"]')}}</span>
                     </span>
                 </div>
             </div>
         </div>
-        <!-- <div class="base-info">
-            <button class="btn main-btn" type="primary" title="确认">确认</button>
-            <button class="btn vice-btn cancel-btn-sider" type="default" title="取消">取消</button>
-        </div> -->
+        <div class="base-info">
+            <bk-button class="btn main-btn" type="primary" :title="$t('Common[\'确认\']')" :loading="$loading('updatePropertyIndex')" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+        </div>
     </div>
 </template>
 
 <script>
-    import {mapGetters} from 'vuex'
+    import { mapGetters } from 'vuex'
     import draggable from 'vuedraggable'
     export default {
         props: {
@@ -91,434 +82,376 @@
             isShow: {
                 default: false
             },
-            id: {               // 模型ID
-                default: 0
-            },
-            objId: {
-                default: ''
-            },
-            isNewField: {
-                default: false
+            activeModel: {
+                type: Object
             }
         },
         data () {
             return {
-                isGroupLoading: false,     // loading
-                attrList: [],              // 属性列表
-                groupNameId: -1,
-                groupFieldList: [],        // 分组
-                curMoveFieldId: -1,        // 当前移动的字段的id
-                evtToIndex: -1,            // 移动至分组
-                isEditTitle: false,        // 是否处于编辑标题状态
-                curFieldIndex: -1,         // 当前编辑的字段 索引
-                fieldClassification: [],   // 显示字段
-                hideField: [],             // 隐藏字段
-                isLoading: false,          // 是否处于加载列表状态
-                lastGroupIndex: 0,         // 分组groupIndex的最大值
-                labelShow: false,          // 是否focus到输入框
-                labelList: []
+                isLoading: false,
+                activeGroupName: '',    // 当前编辑的分组名
+                attrGroup: [],          // 属性分组
+                attrList: [],           // 全部属性
+                groupAttrList: [],      // 按分组排好序的属性
+                groupAttrListCopy: [],  // 保存时做比对
+                hideAttr: [],           // 隐藏字段
+                hideAttrCopy: [],       // 隐藏字段 保存时做比对
+                activeAttr: {}          // 当前移动的属性
             }
         },
         computed: {
             ...mapGetters([
                 'bkSupplierAccount'
-            ])
+            ]),
+            isEditTitle () {
+                let isEdit = this.groupAttrList.find(({isEditTitle}) => {
+                    return isEditTitle
+                })
+                return !!isEdit
+            }
         },
         watch: {
-            isShow (val) {
-                if (val) {
-                    this.isGroupLoading = true
-                    this.hideField = []
-                    this.fieldClassification = []
-                    this.labelList = []
-                    this.getFieldGroup().then(res => {
-                        if (res.result) {
-                            this.getAttr()
-                        }
-                    })
+            isShow (isShow) {
+                if (isShow) {
+                    this.getAttrData()
                 }
-            },
-            /*
-                新增字段更新字段分栏
-            */
-            isNewField () {
-                this.getAttr()
             }
         },
         methods: {
-            /*
-                点击空白区域取消编辑状态
-            */
-            blur () {
-                this.isEditTitle = false
+            deleteAttr (property, propertyIndex, groupIndex) {
+                this.groupAttrList[groupIndex].properties.splice(propertyIndex, 1)
+                this.hideAttr.push(property)
             },
-            /*
-                点击输入框保持编辑状态
-            */
-            focus () {
-                this.isEditTitle = true
-            },
-            /*
-                查询全部字段
-            */
-            getAttr () {
-                let params = {
-                    bk_obj_id: this.objId,
-                    bk_supplier_account: this.bkSupplierAccount
-                }
-                this.$axios.post('/object/attr/search', params).then((res) => {
-                    this.hideField = []
-                    if (res.result) {
-                        this.attrList = this.$deepClone(res.data)
-                        let list = res.data
-                        this.fieldClassification = []
-                        this.labelList = []
-
-                        list.map((item) => {
-                            // 隐藏字段
-                            if (item['bk_property_group'] === 'none') {
-                                this.hideField.push(item)
-                            }
-                        })
-                        
-                        for (let t = 0; t < this.groupFieldList.length; t++) {
-                            let modelFieldList = []
-                            for (let item of list) {
-                                // 根据不同的 PropertyGroup 划分分组
-                                if (item['bk_property_group'] === this.groupFieldList[t]['bk_group_id']) {
-                                    modelFieldList.push(item)
-                                }
-                            }
-                            // 重新组合结构（分组id，分组名，分组排序值，分组下的所有字段）
-                            let jsonGroup = {
-                                id: this.groupFieldList[t]['id'],
-                                groupID: this.groupFieldList[t]['bk_group_id'],
-                                label: this.groupFieldList[t]['bk_group_name'],
-                                propertyIndex: this.groupFieldList[t]['bk_group_index'],
-                                modelField: this.$deepClone(modelFieldList),
-                                isPre: this.groupFieldList[t]['ispre']
-                            }
-                            this.fieldClassification.push(jsonGroup)
-                        }
-                        // 根据 propertyIndex 对 fieldClassification 排序
-                        this.fieldClassification = this.orderByPropertyIndex(this.fieldClassification)
-                        for (const key in this.fieldClassification) {
-                            this.labelList[key] = this.fieldClassification[key].label
-                        }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                    this.isGroupLoading = false
-                })
-            },
-            /*
-                根据 propertyIndex 对 fieldClassification 重新排序
-            */
-            orderByPropertyIndex (item) {
-                for (var i = 0; i < item.length; i++) {
-                    for (let j = 0; j < item.length - 1 - i; j++) {
-                        if (item[j].propertyIndex > item[j + 1].propertyIndex) {
-                            let temp = item[j + 1]
-                            item[j + 1] = item[j]
-                            item[j] = temp
-                        }
-                    }
-                }
-                return item
-            },
-            /*
-                向上向下排序
-            */
-            sortByGroupIndex (item, index) {
-                let params = {}
-                if (!this.isEditTitle) {
-                    for (let i = 0; i < 2; i++) {
-                        // 交换前后两个分组的 groupIndex 值
-                        if (i === 0) {
-                            params = {
-                                condition: {
-                                    id: item['id']
-                                },
-                                data: {
-                                    bk_group_index: this.fieldClassification[index].propertyIndex
-                                }
-                            }
-                        } else {
-                            params = {
-                                condition: {
-                                    id: this.fieldClassification[index].id
-                                },
-                                data: {
-                                    bk_group_index: item.propertyIndex
-                                }
-                            }
-                        }
-                        // 更新前后两个分组的信息
-                        this.$axios.put(`/objectatt/group/update`, params).then((res) => {
-                            if (res.result) {
-                                this.getFieldGroup().then(res => {
-                                    if (res.result) {
-                                        this.getAttr()
-                                    }
-                                })
-                            } else {
-                                this.$alertMsg(res['bk_error_msg'])
-                            }
-                        })
-                    }
-                }
-            },
-            /*
-                编辑标题
-            */
-            editTitle (item, index) {
-                this.isEditTitle = true
-                this.curFieldIndex = index
-                this.labelShow = true
-            },
-            /*
-                拖动过程获取目标字段信息
-            */
+            /**
+             * 检查是否可移动到指定区域
+             * @param evt {Object} - 拖拽对象的相关属性
+             * @return - 返回false会取消移动操作
+             */
             checkMove (evt) {
-                this.curMoveFieldId = evt.draggedContext.element['id']   // 目标字段的id
-                this.evtToIndex = evt.to.attributes[1].value          // 目标字段移除到分组索引
+                this.activeAttr = evt.draggedContext.element
+                // 唯一字段、必填字段不能够被隐藏
+                return !(evt.to.attributes[2].value === 'content-left' && (evt.draggedContext.element.isonly || evt.draggedContext.element.isrequired))
             },
-            /*
-                拖动停止
-            */
-            checkEnd (evt) {
-                let params = {}
-                // 往'隐藏字段'里移动
-                if (evt.to.attributes[2].value === 'content-left') {
-                    params = {
-                        bk_property_group: 'none'
-                    }
-                } else {
-                    params = {
-                        bk_property_group: this.fieldClassification[this.evtToIndex].groupID.toString()
-                    }
-                }
-                // 移动区域发生变化
-                if (evt.from !== evt.to) {
-                    this.$axios.put(`/object/attr/${this.curMoveFieldId}`, params).then((res) => {
-                        if (!res.result) {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
+            /**
+             * 移动结束回调
+             */
+            moveEnd (evt) {
+                this.$forceUpdate()
+            },
+            /**
+             * 确认
+             * @param isSaveAll {Boolean} - 是否保存全部属性 只在点击确认按钮时需要保存全部
+             */
+            async confirm (isSaveAll = true) {
+                this.isLoading = true
+                let params = []
+                if (isSaveAll) {
+                    this.groupAttrList.map(group => {
+                        group.properties.map((property, index) => {
+                            params.push({
+                                condition: {
+                                    bk_obj_id: property['bk_obj_id'],
+                                    bk_property_id: property['bk_property_id'],
+                                    bk_supplier_account: this.bkSupplierAccount
+                                },
+                                data: {
+                                    bk_property_group: group['bk_group_id'],
+                                    bk_property_index: index
+                                }
+                            })
+                        })
                     })
                 }
-            },
-            /*
-                查询分组信息
-            */
-            getFieldGroup () {
-                return this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.objId}`, {}).then((res) => {
-                    if (res.result) {
-                        this.groupFieldList = res.data
-                        // 对当前 groupFieldList 中所有的 groupIndex 值进行排序，获取最大的 groupIndex 值
-                        let arr = []
-                        this.groupFieldList.map((item) => {
-                            arr.push(item['bk_group_index'])
-                        })
-                        arr.sort()
-                        if (arr.length !== 0) {
-                            // 后台默认字段的 groupIndex 为 -1，不支持增加分组时的 groupIndex 为 0 ，所以要手动调整
-                            if (arr[arr.length - 1] === -1) {
-                                arr[arr.length - 1] = 0
-                            }
-                            this.lastGroupIndex = arr[arr.length - 1] + 1
+                this.hideAttr.map((property, index) => {
+                    params.push({
+                        condition: {
+                            bk_obj_id: property['bk_obj_id'],
+                            bk_property_id: property['bk_property_id'],
+                            bk_supplier_account: this.bkSupplierAccount
+                        },
+                        data: {
+                            bk_property_group: 'none',
+                            bk_property_index: index
                         }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                    return res
+                    })
                 })
+                try {
+                    await this.$axios.put('/objectatt/group/property', params, {id: 'updatePropertyIndex'})
+                    this.$alertMsg(this.$t('Common["更新成功"]'), 'success')
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
+                }
             },
-            /*
-                检查是否存在未命名分组
-            */
-            checkGroupName () {
-                for (let i = 0; i < this.groupFieldList.length; i++) {
-                    if (this.groupFieldList[i]['bk_group_name'] === this.$t('ModelManagement["未命名"]')) {
+            /**
+             * 取消
+             */
+            cancel () {
+                this.$emit('cancel')
+            },
+            /**
+             * 调整分组位置
+             * @param groupAttrList {Array} - 分组列表
+             * @param from {Number} - 当前项的index
+             * @param to {Number} - 要移动到的项的index
+             */
+            async groupMove (groupAttrList, from, to) {
+                await this.updateGroupIndex(groupAttrList[from], groupAttrList[to]);
+                [groupAttrList[from], groupAttrList[to]] = [groupAttrList[to], groupAttrList[from]]
+                this.$forceUpdate()
+            },
+            /**
+             * 更新属性分组信息
+             */
+            async updateGroupIndex (fromGroup, toGroup) {
+                this.isLoading = true
+                let groupList = [fromGroup, toGroup]
+                await this.$Axios.all(groupList.map((group, index) => {
+                    let params = {
+                        condition: {
+                            id: group.id
+                        },
+                        data: {
+                            bk_group_index: index ? fromGroup['bk_group_index'] : toGroup['bk_group_index']
+                        }
+                    }
+                    return this.$axios.put('/objectatt/group/update', params)
+                }))
+                this.isLoading = false
+            },
+            /**
+             * 添加分组
+             */
+            async addGroup () {
+                if (this.isEditTitle || !this.checkGroupParams()) {
+                    return
+                }
+                this.isLoading = true
+                // 取 groupId groupIndex
+                let reg = /^[0-9]+$/
+                let groupId = 0
+                let groupIndex = 0
+                this.groupAttrList.map(({bk_group_id: bkGroupId, bk_group_index: bkGroupIndex}) => {
+                    if (reg.test(bkGroupId)) {
+                        groupId = parseInt(bkGroupId) > groupId ? parseInt(bkGroupId) : groupId
+                    }
+                    groupIndex = bkGroupIndex > groupIndex ? bkGroupIndex : groupIndex
+                })
+                groupId++
+                groupIndex++
+
+                let params = {
+                    bk_group_id: groupId.toString(),  // groupID唯一，前端不展示
+                    bk_group_name: this.$t('ModelManagement["未命名"]'),
+                    bk_group_index: groupIndex,
+                    bk_obj_id: this.activeModel['bk_obj_id'],
+                    bk_supplier_account: this.bkSupplierAccount
+                }
+                try {
+                    let res = await this.$axios.post('/objectatt/group/new', params)
+                    this.groupAttrList.push({
+                        bk_group_id: groupId.toString(),
+                        bk_group_index: groupIndex,
+                        bk_group_name: this.$t('ModelManagement["未命名"]'),
+                        isEditTitle: false,
+                        id: res.data.id,
+                        properties: []
+                    })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
+                }
+            },
+            /**
+             * 将分组名切换为编辑态
+             * @param group {Object} - 分组信息
+             */
+            editGroupName (group) {
+                if (!this.isEditTitle) {
+                    group.isEditTitle = true
+                    this.activeGroupName = group['bk_group_name']
+                }
+            },
+            /**
+             * 修改分组名
+             * @param group {Object} - 分组信息
+             */
+            async changeGroupName (group) {
+                if (!this.checkGroupParams(group)) {
+                    return
+                }
+                this.isLoading = true
+                let params = {
+                    condition: {
+                        id: group.id
+                    },
+                    data: {
+                        bk_group_name: group['bk_group_name']
+                    }
+                }
+                try {
+                    await this.$axios.put('/objectatt/group/update', params)
+                    let activeGroup = this.groupAttrList.find(({id}) => {
+                        return id === group.id
+                    })
+                    activeGroup['bk_group_name'] = group['bk_group_name']
+                    group.isEditTitle = false
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
+                    this.isLoading = false
+                }
+            },
+            /**
+             * 删除分组
+             */
+            async deleteGroup (group, groupIndex) {
+                if (group['ispre']) {
+                    this.$alertMsg(this.$t('ModelManagement["系统内置分组不可删除"]'))
+                    return
+                }
+                if (group['bk_group_id'] === 'default') {
+                    this.$alertMsg(this.$t('ModelManagement["默认字段分组不可删除"]'))
+                    return
+                }
+                let property = group.properties.find(property => {
+                    return property['isrequired']
+                })
+                if (property) {
+                    this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
+                    return
+                }
+                try {
+                    await this.$axios.delete(`/objectatt/group/groupid/${group['id']}`)
+                    // 该分组下有属性时更新属性分组为none
+                    if (group.properties.length) {
+                        this.confirm(false)
+                        group.properties.map(property => {
+                            property['bk_property_group'] = 'none'
+                            this.hideAttr.push(property)
+                        })
+                    } else {
+                        this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
+                    }
+                    this.groupAttrList.splice(groupIndex, 1)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
+            /**
+             * 获取字段相关信息
+             */
+            async getAttrData () {
+                this.isLoading = true
+                await this.getAttrGroup()
+                await this.getAttr()
+                this.setGroupAttrList()
+                this.isLoading = false
+            },
+            /**
+             * 获取属性分组
+             */
+            async getAttrGroup () {
+                try {
+                    let res = await this.$axios.post(`/objectatt/group/property/owner/${this.bkSupplierAccount}/object/${this.activeModel['bk_obj_id']}`, {})
+                    this.attrGroup = res.data
+                    this.attrGroup.sort((groupA, groupB) => {
+                        return groupA['bk_group_index'] - groupB['bk_group_index']
+                    })
+                } catch (e) {
+                    this.isLoading = false
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
+            /**
+             * 获取属性
+             */
+            async getAttr () {
+                try {
+                    let params = {
+                        bk_obj_id: this.activeModel['bk_obj_id'],
+                        bk_supplier_account: this.bkSupplierAccount
+                    }
+                    let res = await this.$store.dispatch('object/getAttribute', {objId: this.activeModel['bk_obj_id'], force: true})
+                    this.attrList = res.data
+                } catch (e) {
+                    this.isLoading = false
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
+            /**
+             * 将属性分组
+             */
+            setGroupAttrList () {
+                let groupAttrList = this.$deepClone(this.attrGroup)
+                groupAttrList.map(group => {
+                    this.$set(group, 'isEditTitle', false)
+                    if (!group.hasOwnProperty('properties')) {
+                        group['properties'] = []
+                    }
+                })
+                let hideAttr = []
+                this.attrList.map(attr => {
+                    let group = groupAttrList.find(({bk_group_id: bkGroupId}) => {
+                        return bkGroupId === attr['bk_property_group']
+                    })
+                    if (group) {
+                        group.properties.push(attr)
+                    } else {
+                        hideAttr.push(attr)
+                    }
+                })
+
+                // 排序
+                groupAttrList.map(group => {
+                    group.properties.sort((propertyA, propertyB) => {
+                        return propertyA['bk_property_index'] - propertyB['bk_property_index']
+                    })
+                })
+                hideAttr.sort((propertyA, propertyB) => {
+                    return propertyA['bk_property_index'] - propertyB['bk_property_index']
+                })
+
+                this.groupAttrList = groupAttrList
+                this.hideAttr = hideAttr
+                this.groupAttrListCopy = this.$deepClone(this.groupAttrList)
+                this.hideAttrCopy = this.$deepClone(this.hideAttr)
+            },
+            /**
+             * 检查分组名参数
+             * @param group {Object} - 分组信息
+             */
+            checkGroupParams (group) {
+                if (group) {
+                    if (this.activeGroupName === group['bk_group_name']) {
+                        group.isEditTitle = false
+                        return false
+                    }
+                    let isExist = this.groupAttrList.findIndex(({bk_group_name: bkGroupName, bk_group_id: bkGroupId}) => {
+                        return bkGroupName === group['bk_group_name'] && bkGroupId !== group['bk_group_id']
+                    }) > -1
+                    if (isExist) {
+                        this.$alertMsg(this.$t('ModelManagement["该名字已经存在"]'))
+                        return false
+                    }
+                } else {
+                    let isExist = this.groupAttrList.findIndex(({bk_group_name: bkGroupName}) => {
+                        return bkGroupName === this.$t('ModelManagement["未命名"]')
+                    }) > -1
+                    if (isExist) {
+                        this.$alertMsg(this.$t('ModelManagement["已经存在未命名分组"]'))
                         return false
                     }
                 }
                 return true
-            },
-            /*
-                新增分组
-            */
-            addFieldGroup () {
-                if (!this.checkGroupName()) {
-                    this.$alertMsg(this.$t('ModelManagement["已经存在未命名分组"]'))
-                    return
-                }
-                let rand = Math.random().toString(36).substr(2)
-                let params = {
-                    bk_group_id: rand,  // groupID唯一，前端不展示
-                    bk_group_name: this.$t('ModelManagement["未命名"]'),
-                    bk_group_index: this.lastGroupIndex,
-                    bk_obj_id: this.objId,
-                    bk_supplier_account: this.bkSupplierAccount
-                }
-                this.$axios.post('/objectatt/group/new', params).then((res) => {
-                    if (res.result) {
-                        this.getFieldGroup().then(res => {
-                            if (res.result) {
-                                this.getAttr()
-                            }
-                        })
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-            },
-            /*
-                对分组重命名
-            */
-            renameFieldGroup (item, index) {
-                this.isEditTitle = false    // 不可编辑
-                let status = true
-                let rename = true   // 是否可以重命名
-                // 已存在其他相同名称
-                this.groupFieldList.forEach(element => {
-                    if (this.labelList[index] === element['bk_group_name'] && item.label !== this.labelList[index]) {
-                        status = false
-                        this.$alertMsg(this.$t('ModelManagement["该名字已经存在"]'))
-                        this.isEditTitle = true     // 编辑状态
-                    }
-                })
-                if (this.labelList[index].length > 20) {
-                    this.$alertMsg(this.$t('ModelManagement["分组长度超出限制"]'))
-                    this.isEditTitle = true
-                }
-                if (this.isEditTitle) {
-                    return
-                }
-                // 编辑前后保持一致
-                if (item.label === this.labelList[index]) {
-                    status = true
-                    rename = false
-                }
-                // 没重名可以保存 || 前后名字相同
-                if (status && rename) {
-                    let params = {
-                        condition: {
-                            id: item['id']
-                            // bk_group_id: item['bk_group_id']
-                        },
-                        data: {
-                            bk_group_name: this.labelList[index]
-                        }
-                    }
-                    this.$axios.put('/objectatt/group/update', params).then((res) => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
-                            this.getFieldGroup().then(res => {
-                                if (res.result) {
-                                    this.getAttr()
-                                    for (let iterator of this.fieldClassification[index].modelField) {
-                                        // 更新分组下面所有字段的PropertyGroup
-                                        let iteratorParams = {
-                                            bk_property_group: item['bk_group_id'].toString()
-                                        }
-                                        this.$axios.put(`/object/attr/${iterator['id']}`, iteratorParams).then((res) => {
-                                            if (res.result) {
-                                                this.getAttr()
-                                            } else {
-                                                this.$alertMsg(res['bk_error_msg'])
-                                            }
-                                        })
-                                    }
-                                }
-                            })
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
-                }
-                this.labelShow = false
-            },
-            /*
-                删除分组
-            */
-            deleteFieldGroup (item) {
-                let status = true
-                // 系统内置字段不可删除
-                if (item['isPre']) {
-                    status = false
-                    this.$alertMsg(this.$t('ModelManagement["系统内置分组不可删除"]'))
-                    return
-                }
-                // "默认字段"分组不可删除
-                if (item['groupID'] === 'default') {
-                    status = false
-                    this.$alertMsg(this.$t('ModelManagement["默认字段分组不可删除"]'))
-                } else {
-                    if (item.modelField) {
-                        item.modelField.forEach(ele => {
-                            // modelField 存在必填字段
-                            if (ele['isrequired']) {
-                                status = false
-                                this.$alertMsg(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
-                            }
-                        })
-                    }
-                }
-                
-                if (status) {
-                    if (item.modelField) {
-                        item.modelField.forEach(ele => {
-                            let params = {
-                                bk_property_group: 'none'
-                            }
-                            this.$axios.put(`/object/attr/${ele['id']}`, params).then((res) => {
-                                if (res.result) {
-                                    this.$alertMsg(this.$t('Common["删除成功"]'), 'success')
-                                    this.getAttr()
-                                } else {
-                                    this.$alertMsg(res['bk_error_msg'])
-                                }
-                            })
-                        })
-                    }
-                    this.$axios.delete(`/objectatt/group/groupid/${item['id']}`).then((res) => {
-                        if (res.result) {
-                            this.$alertMsg(this.$t('ModelManagement["删除分组成功"]'), 'success')
-                            this.getFieldGroup().then(res => {
-                                if (res.result) {
-                                    this.getAttr()
-                                }
-                            })
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
-                }
-            },
-            /*
-                删除某个模型属性
-            */
-            deleteModelField (item) {
-                // 必填字段不可删
-                let params = {
-                    bk_property_group: 'none'
-                }
-                this.$axios.put(`/object/attr/${item['id']}`, params).then((res) => {
-                    if (res.result) {
-                        this.$alertMsg(this.$t('ModelManagement["隐藏成功"]'), 'success')
-                        this.getAttr()
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
             }
         },
         directives: {
             focus: {
-                update: function (el, {value}) {
-                    if (value) {
-                        el.focus()
-                    }
+                inserted: function (el) {
+                    el.focus()
                 }
             }
         },
