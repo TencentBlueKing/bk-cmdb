@@ -13,16 +13,19 @@
 package v3
 
 import (
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/common"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
-	"configcenter/src/framework/core/errors"
-	"github.com/emicklei/go-restful"
-	"io"
-	"net/http"
-	"strings"
+    "io"
+    "net/http"
+    "strings"
+    "errors"
+    
+    "configcenter/src/apimachinery/discovery"
+    "configcenter/src/common"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/metadata"
+    cErr "configcenter/src/common/errors"
+    "github.com/emicklei/go-restful"
+    "configcenter/src/common/rdapi"
 )
 
 type HttpClient interface {
@@ -39,10 +42,13 @@ const (
 	rootPath = "/api/v3"
 )
 
-func (s *Service) V3WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) V3WebService() *restful.WebService {
 	ws := new(restful.WebService)
+    getErrFun := func() cErr.CCErrorIf {
+        return s.Engine.CCErr
+    }
 	ws.Path(rootPath).
-		Filter(filter).
+		Filter(rdapi.AllGlobalFilter(getErrFun)).
 		Produces(restful.MIME_JSON).
 		Consumes(restful.MIME_JSON)
 

@@ -18,8 +18,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/scene_server/topo_server/core/supplementary"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -29,9 +27,11 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -70,14 +70,17 @@ func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, la
 }
 
 // WebService the web service
-func (s *topoService) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *topoService) WebService() *restful.WebService {
 
 	// init service actions
 	s.initService()
 
 	ws := new(restful.WebService)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
 	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Path("/topo/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
