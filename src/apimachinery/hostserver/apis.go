@@ -23,7 +23,7 @@ import (
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/host/batch"
+	subPath := "/hosts/batch"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID str
 }
 
 func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error) {
-	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
+	subPath := fmt.Sprintf("/hosts/snapshot/%s", hostID)
 
 	err = hs.client.Get().
 		WithContext(ctx).
@@ -63,7 +63,7 @@ func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h http.He
 
 func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/addhost"
+	subPath := "/hosts/add"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -161,7 +161,7 @@ func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h 
 
 func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/history"
+	subPath := "/hosts/history"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -175,7 +175,7 @@ func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[str
 
 func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/history/%s/%s", start, limit)
+	subPath := fmt.Sprintf("/hosts/history/%s/%s", start, limit)
 
 	err = hs.client.Get().
 		WithContext(ctx).
@@ -217,7 +217,7 @@ func (hs *hostServer) HostModuleRelation(ctx context.Context, h http.Header, par
 
 func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/emptymodule"
+	subPath := "/hosts/modules/idle"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -231,7 +231,7 @@ func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, d
 
 func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/faultmodule"
+	subPath := "/hosts/modules/fault"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -245,7 +245,7 @@ func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, d
 
 func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/resource"
+	subPath := "/hosts/modules/resource"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -259,7 +259,7 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 
 func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/assgin"
+	subPath := "/modules/resource/idle"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -581,7 +581,7 @@ func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h http.Header
 
 func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
-	subPath := "/search"
+	subPath := "/hosts/search"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -595,7 +595,7 @@ func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params
 
 func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
-	subPath := "/search/asstdetail"
+	subPath := "/hosts/search/asstdetail"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -609,7 +609,7 @@ func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Heade
 
 func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/host/batch"
+	subPath := "/hosts/batch"
 
 	err = hs.client.Put().
 		WithContext(ctx).

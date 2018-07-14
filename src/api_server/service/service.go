@@ -24,9 +24,9 @@ type Service struct {
 	*logics.Logics
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) V2WebService(filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/api/v2").Filter(filter).Produces(restful.MIME_JSON)
+	ws.Path("/api/v2").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
 	ws.Route(ws.POST("app/getapplist").To(s.getAppList))

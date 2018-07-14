@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/%s", supplierAcct)
+	subPath := fmt.Sprintf("/topo/privilege/group/%s", supplierAcct)
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -36,7 +36,7 @@ func (t *privilege) CreateUserGroup(ctx context.Context, supplierAcct string, h 
 
 func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
+	subPath := fmt.Sprintf("/topo/privilege/group/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -50,7 +50,7 @@ func (t *privilege) DeleteUserGroup(ctx context.Context, supplierAcct string, gr
 
 func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/%s/%s", supplierAcct, groupID)
+	subPath := fmt.Sprintf("/topo/privilege/group/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Put().
 		WithContext(ctx).
@@ -64,7 +64,7 @@ func (t *privilege) UpdateUserGroup(ctx context.Context, supplierAcct string, gr
 
 func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/%s/search", supplierAcct)
+	subPath := fmt.Sprintf("/topo/privilege/group/%s/search", supplierAcct)
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -79,7 +79,7 @@ func (t *privilege) SearchUserGroup(ctx context.Context, supplierAcct string, h 
 // TODO: confirm body
 func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
+	subPath := fmt.Sprintf("/topo/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -93,7 +93,7 @@ func (t *privilege) UpdateUserGroupPrivi(ctx context.Context, supplierAcct strin
 
 func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/group/detail/%s/%s", supplierAcct, groupID)
+	subPath := fmt.Sprintf("/topo/privilege/group/detail/%s/%s", supplierAcct, groupID)
 
 	err = t.client.Get().
 		WithContext(ctx).
@@ -107,7 +107,7 @@ func (t *privilege) GetUserGroupPrivi(ctx context.Context, supplierAcct string, 
 
 func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userName string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/user/detail/%s/%s", supplierAcct, userName)
+	subPath := fmt.Sprintf("/topo/privilege/user/detail/%s/%s", supplierAcct, userName)
 
 	err = t.client.Get().
 		WithContext(ctx).
@@ -121,7 +121,7 @@ func (t *privilege) GetUserPrivi(ctx context.Context, supplierAcct string, userN
 
 func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
+	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -135,7 +135,7 @@ func (t *privilege) CreatePrivilege(ctx context.Context, supplierAcct string, ob
 
 func (t *privilege) GetPrivilege(ctx context.Context, supplierAcct string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
+	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", supplierAcct, objID, propertyID)
 
 	err = t.client.Get().
 		WithContext(ctx).
