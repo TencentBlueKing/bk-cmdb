@@ -60,8 +60,13 @@ func (s *topoService) SearchObject(params types.ContextParams, pathParams, query
 
 // SearchObjectTopo search the object topo
 func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectTopo")
-	return nil, nil
+	cond := condition.CreateCondition()
+	err := cond.Parse(data)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
+	}
+
+	return s.core.ObjectOperation().FindObjectTopo(params, cond)
 }
 
 // UpdateObject update the object

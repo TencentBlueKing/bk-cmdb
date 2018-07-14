@@ -26,6 +26,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+var _ Inst = (*inst)(nil)
+
 type inst struct {
 	clientSet apimachinery.ClientSetInterface
 	params    types.ContextParams

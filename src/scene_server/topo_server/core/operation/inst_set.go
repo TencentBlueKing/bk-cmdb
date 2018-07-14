@@ -113,7 +113,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 }
 
 func (s *set) FindSet(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return s.inst.FindInst(params, obj, cond)
+	return s.inst.FindInst(params, obj, cond, false)
 }
 
 func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID int64) error {

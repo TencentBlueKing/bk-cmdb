@@ -37,6 +37,8 @@ type AssociationOperationInterface interface {
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+	SearchInstAssociation(params types.ContextParams, objID, asstObjID string, query *metadata.QueryInput) ([]metadata.InstAsst, error)
+	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
@@ -86,6 +88,31 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 	return rsp.Data, nil
 }
 
+func (a *association) SearchInstAssociation(params types.ContextParams, objID, asstObjID string, query *metadata.QueryInput) ([]metadata.InstAsst, error) {
+
+	rsp, err := a.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, params.Header, query)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to search the object(%s) association info , error info is %s", objID, rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	var instAsst []metadata.InstAsst
+	for _, info := range rsp.Data.Info {
+		asst := metadata.InstAsst{}
+		if err := info.MarshalJSONInto(&asst); nil != err {
+			return nil, err
+		}
+		instAsst = append(instAsst, asst)
+	}
+
+	return instAsst, nil
+}
+
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	//  check the association
@@ -120,6 +147,23 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 
 	return nil, nil
 }
+
+func (a *association) DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error {
+
+	rsp, err := a.clientSet.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to delete the inst association info , error info is %s", rsp.ErrMsg)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return nil
+}
+
 func (a *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
 
 	// delete the object association

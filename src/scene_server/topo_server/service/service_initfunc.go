@@ -13,8 +13,9 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"net/http"
+
+	"configcenter/src/common"
 )
 
 func (s *topoService) initAssociation() {
@@ -54,6 +55,7 @@ func (s *topoService) initBusiness() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/search/{owner_id}", HandlerFunc: s.SearchBusiness})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/default/{owner_id}/search", HandlerFunc: s.SearchDefaultBusiness})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/default/{owner_id}", HandlerFunc: s.CreateDefaultBusiness})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/internal/{owner_id}/{app_id}", HandlerFunc: s.GetInternalModule})
 }
 
 func (s *topoService) initModule() {
@@ -76,7 +78,7 @@ func (s *topoService) initInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/{owner_id}/{obj_id}", HandlerFunc: s.CreateInst})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.DeleteInst})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.UpdateInst})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}", HandlerFunc: s.SearchInst})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}", HandlerFunc: s.SearchInsts})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}/detail", HandlerFunc: s.SearchInstAndAssociationDetail})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByObject})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})

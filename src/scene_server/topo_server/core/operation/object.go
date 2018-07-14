@@ -32,10 +32,11 @@ type ObjectOperationInterface interface {
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
+	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 }
 
@@ -51,11 +52,15 @@ type object struct {
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
+	asst         AssociationOperationInterface
+	inst         InstOperationInterface
 }
 
-func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface) {
+func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface) {
 	o.modelFactory = modelFactory
 	o.instFactory = instFactory
+	o.asst = asst
+	o.inst = inst
 }
 
 func (o *object) IsValidObject(params types.ContextParams, objID string) error {
@@ -173,6 +178,97 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	}
 
 	return nil
+}
+
+func (o *object) isFrom(params types.ContextParams, fromObjID, toObjID string) (bool, error) {
+
+	asstItems, err := o.asst.SearchObjectAssociation(params, fromObjID)
+	if nil != err {
+		return false, err
+	}
+
+	for _, asst := range asstItems {
+		if asst.AsstObjID == toObjID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error) {
+
+	objs, err := o.FindObject(params, cond)
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
+		return nil, err
+	}
+
+	results := []metadata.ObjectTopo{}
+	for _, obj := range objs {
+
+		asstItems, err := o.asst.SearchObjectAssociation(params, obj.GetID())
+		if nil != err {
+			return nil, err
+		}
+
+		for _, asst := range asstItems {
+
+			if asst.ObjectAttID == common.BKChildStr {
+				continue
+			}
+
+			cond = condition.CreateCondition()
+			cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
+			cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+
+			asstObjs, err := o.FindObject(params, cond)
+			if nil != err {
+				blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
+				return nil, err
+			}
+
+			for _, asstObj := range asstObjs {
+				tmp := metadata.ObjectTopo{}
+				tmp.Label = asst.ObjectAttID
+				tmp.LabelName = asst.AsstName
+				tmp.From.ObjID = obj.GetID()
+				cls, err := obj.GetClassification()
+				if nil != err {
+					return nil, err
+				}
+				tmp.From.ClassificationID = cls.GetID()
+				tmp.From.Position = obj.GetPosition()
+				tmp.From.OwnerID = obj.GetSupplierAccount()
+				tmp.From.ObjName = obj.GetName()
+				tmp.To.OwnerID = asstObj.GetSupplierAccount()
+				tmp.To.ObjID = asstObj.GetID()
+
+				cls, err = asstObj.GetClassification()
+				if nil != err {
+					return nil, err
+				}
+				tmp.To.ClassificationID = cls.GetID()
+				tmp.To.Position = asstObj.GetPosition()
+				tmp.To.ObjName = asstObj.GetName()
+				ok, err := o.isFrom(params, obj.GetID(), asstObj.GetID())
+				if nil != err {
+					return nil, err
+				}
+
+				if ok {
+					tmp.Arrows = "to,from"
+				} else {
+					tmp.Arrows = "to"
+				}
+
+				results = append(results, tmp)
+			}
+		}
+
+	}
+
+	return results, nil
 }
 
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
