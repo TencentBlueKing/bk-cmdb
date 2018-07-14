@@ -76,7 +76,7 @@ func (s *topoService) WebService() *restful.WebService {
 
 	ws := new(restful.WebService)
 	getErrFun := func() errors.CCErrorIf {
-		return s.CCErr
+		return s.err
 	}
 	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
@@ -162,7 +162,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 				}
 
 				mData := frtypes.MapStr{}
-				if err := json.Unmarshal(value, &mData); nil != err {
+				if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
 					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 					s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)

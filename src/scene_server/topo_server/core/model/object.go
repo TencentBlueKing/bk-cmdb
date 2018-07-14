@@ -535,6 +535,8 @@ func (o *object) Update(data frtypes.MapStr) error {
 	}
 
 	if 0 != len(tmpItems) {
+		//str, _ := cond.ToMapStr().ToJSON()
+		//fmt.Println("objects:", tmpItems, string(str))
 		return o.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 

@@ -98,7 +98,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return m.inst.FindInst(params, obj, cond)
+	return m.inst.FindInst(params, obj, cond, false)
 }
 
 func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error {
