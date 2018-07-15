@@ -31,8 +31,8 @@ type HostInstanceResult struct {
 }
 
 type FavoriteResult struct {
-	Count int           `json:"count"`
-	Info  []interface{} `json:"info"`
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 type GetHostFavoriteResult struct {
@@ -181,14 +181,14 @@ type GetUserConfigDetailResult struct {
 }
 
 type UserConfigMeta struct {
-	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
-	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
-	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	CreateUser string    `json:"create_user,omitempty" bson:"create_user,omitempty"`
-	ModifyUser string    `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
-	UpdateTime time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	AppID      int64       `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	Info       string      `json:"info,omitempty" bson:"info,omitempty"`
+	Name       string      `json:"name,omitempty" bson:"name,omitempty"`
+	ID         string      `json:"id,omitempty" bson:"id,omitempty"`
+	CreateTime time.Time   `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	CreateUser string      `json:"create_user,omitempty" bson:"create_user,omitempty"`
+	ModifyUser string      `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
+	UpdateTime interface{} `json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
 type AddConfigQuery struct {
