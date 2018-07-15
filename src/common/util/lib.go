@@ -89,3 +89,9 @@ func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 	ownerID := header.Get(common.BKHTTPOwnerID)
 	return ownerID
 }
+
+// GetHTTPCCRequestID return configcenter request id from http header
+func GetHTTPCCRequestID(header http.Header) string {
+	rid := header.Get(common.BKHTTPCCRequestID)
+	return rid
+}
