@@ -339,6 +339,10 @@ const (
 	CCErrProcDeleteProc2Module = 1107001
 	CCErrProcCreateProc2Module = 1107002
 	CCErrProcSelectProc2Module = 1107003
+	CCErrProcCreateProcConf    = 1107004
+	CCErrProcDeleteProcConf    = 1107005
+	CCErrProcGetProcConf       = 1107006
+	CCErrProcUpdateProcConf    = 1107007
 
 	// procserver 1108XXX
 	CCErrProcSearchDetailFaile       = 1108001
@@ -350,6 +354,8 @@ const (
 	CCErrProcDeleteProcessFaile      = 1108007
 	CCErrProcCreateProcessFaile      = 1108008
 	CCErrProcFieldValidFaile         = 1108009
+	CCErrProcGetByApplicationIDFail  = 1108010
+    CCErrProcGetByIP                 = 1108011
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

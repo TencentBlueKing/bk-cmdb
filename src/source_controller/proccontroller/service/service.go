@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package proctrlserver
+package service
 
 import (
     "configcenter/src/common/backbone"
@@ -40,6 +40,11 @@ func (ps *ProctrlServer) WebService(filter restful.FilterFunction) http.Handler 
     v3WS.Route(v3WS.DELETE("/module").To(ps.DeleteProc2Module))
     v3WS.Route(v3WS.POST("/module").To(ps.CreateProc2Module))
     v3WS.Route(v3WS.POST("/module/search").To(ps.GetProc2Module))
+    
+    v3WS.Route(v3WS.POST("/conftemp").To(ps.CreateConfigTemp))
+    v3WS.Route(v3WS.PUT("/conftemp").To(ps.UpdateConfigTemp))
+    v3WS.Route(v3WS.DELETE("/conftemp").To(ps.DeleteConfigTemp))
+    v3WS.Route(v3WS.POST("/conftemp/search").To(ps.QueryConfigTemp))
     
     container.Add(v3WS)
     
