@@ -16,6 +16,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
@@ -29,7 +33,6 @@ import (
 	"configcenter/src/storage"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -88,7 +91,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	rdsc := hostCtrl.Config.Redis
-	hostCtrl.Cache, err = redisclient.NewRedis(rdsc.Address, rdsc.Port, rdsc.User, rdsc.Password, rdsc.Database)
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		fmt.Println("redis config db not integer", rdsc.Database)
+	}
+	hostCtrl.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address + ":" + rdsc.Port,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = hostCtrl.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
@@ -105,7 +120,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 type HostController struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    storage.DI
+	Cache    *redis.Client
 	Config   options.Config
 }
 
