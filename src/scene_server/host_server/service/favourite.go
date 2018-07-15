@@ -145,18 +145,15 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	query := &metadata.QueryInput{
-		Start: 0,
-		Limit: common.BKNoLimit,
-	}
-	result, err := s.CoreAPI.HostController().Favorite().GetHostFavourites(context.Background(), user, pheader, query)
+	result, err := s.CoreAPI.HostController().Favorite().GetHostFavouriteByID(context.Background(), user, ID, pheader)
 	if err != nil || (err == nil && !result.Result) {
 		blog.Errorf("increase host favorite count failed, ID: %v, err: %v, %v", ID, err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrHostFavGetFail)})
 		return
 	}
 
-	data := map[string]interface{}{"count": result.Data.Count + 1}
+	count := result.Data.Count + 1
+	data := map[string]interface{}{"count": count}
 	uResult, err := s.CoreAPI.HostController().Favorite().UpdateHostFavouriteByID(context.Background(), user, ID, pheader, data)
 	if err != nil || (err == nil && !uResult.Result) {
 		blog.Errorf("increase host favorite count failed, ID: %v, err: %v, %v", ID, err, result.ErrMsg)
@@ -166,6 +163,6 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 
 	info := make(map[string]interface{})
 	info["id"] = ID
-	info["count"] = result.Data.Count + 1
+	info["count"] = count
 	resp.WriteEntity(metadata.NewSuccessResp(info))
 }
