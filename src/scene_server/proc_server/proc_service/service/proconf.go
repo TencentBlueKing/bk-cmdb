@@ -9,21 +9,5 @@
  * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package metadata
+package service
 
-type ProcModuleConfig struct {
-    ApplicationID int    `json:"bk_biz_id"`
-    ModuleName    string `json:"bk_module_name"`
-    ProcessID     int    `json:"bk_process_id"`
-}
-
-type ProcModuleResult struct {
-    BaseResp `json:",inline"`
-    Data    []ProcModuleConfig `json:"data"`
-}
-
-type GseProcRespone struct {
-    Code   int    `json:"bk_error_code"`
-    ErrMsg string `json:"bk_error_msg"`
-    Data interface{} `json:"data"`
-}

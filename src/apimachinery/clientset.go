@@ -25,6 +25,7 @@ import (
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
+    "configcenter/src/apimachinery/gseprocserver"
 )
 
 type ClientSetInterface interface {
@@ -46,7 +47,7 @@ func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
 		return nil, err
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
+	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr, c.GseProcServ)
 	if err != nil {
 		return nil, err
 	}
@@ -150,4 +151,13 @@ func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
 		Throttle: cs.throttle,
 	}
 	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) GseProcServer() gseprocserver.GseProcClientInterface {
+    c := &util.Capability{
+        Client: cs.client,
+        Discover: cs.discover.GseProcServ(),
+        Throttle: cs.throttle,
+    }
+    return gseprocserver.NewGseProcClientInterface(c, "v1")
 }

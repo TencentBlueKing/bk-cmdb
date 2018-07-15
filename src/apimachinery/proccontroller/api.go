@@ -60,3 +60,59 @@ func (p *procctrl) DeleteProc2Module(ctx context.Context, h http.Header, dat int
 		Into(resp)
 	return
 }
+
+func (p *procctrl) CreateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *procctrl) UpdateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *procctrl) DeleteConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Delete().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *procctrl) QueryConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp/search"
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}

@@ -31,13 +31,14 @@ type DiscoveryInterface interface {
 	HostCtrl() Interface
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
+    GseProcServ() Interface
 }
 
 type Interface interface {
 	GetServers() ([]string, error)
 }
 
-func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
+func NewDiscoveryInterface(zkAddr, gseprocserv string) (DiscoveryInterface, error) {
 	disc := regd.NewRegDiscoverEx(zkAddr, 10*time.Second)
 	if err := disc.Start(); nil != err {
 		return nil, err
@@ -58,6 +59,10 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 
 		d.servers[component] = svr
 	}
+	
+	// gseprocserver
+	d.servers[types.GSE_MODULE_PROCSERVER] = NewGseProcServ(gseprocserv)
+	
 	return d, nil
 }
 
@@ -103,4 +108,8 @@ func (d *discover) ObjectCtrl() Interface {
 
 func (d *discover) ProcCtrl() Interface {
 	return d.servers[types.CC_MODULE_PROCCONTROLLER]
+}
+
+func (d *discover) GseProcServ() Interface {
+    return d.servers[types.GSE_MODULE_PROCSERVER]
 }

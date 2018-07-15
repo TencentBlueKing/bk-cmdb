@@ -23,7 +23,7 @@ import (
     "configcenter/src/common/version"
     "configcenter/src/apimachinery/util"
     "configcenter/src/apimachinery"
-    "configcenter/src/source_controller/proccontroller/proctrlserver"
+    "configcenter/src/source_controller/proccontroller/service"
     "configcenter/src/common/backbone"
     "configcenter/src/common/rdapi"
     "configcenter/src/storage/mgoclient"
@@ -50,7 +50,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
         return fmt.Errorf("creae server info object failed. err: %v", err)
     }
 
-    proctrlSvr := new(proctrlserver.ProctrlServer)
+    proctrlSvr := new(service.ProctrlServer)
     bksvr := backbone.Server{
         ListenAddr: svrInfo.IP,
         ListenPort: svrInfo.Port,

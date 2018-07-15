@@ -22,7 +22,7 @@ import (
     "configcenter/src/common/blog"
     "configcenter/src/apimachinery/util"
     "configcenter/src/apimachinery"
-    "configcenter/src/scene_server/proc_server/proc_service/procserver"
+    "configcenter/src/scene_server/proc_server/proc_service/service"
     "configcenter/src/common/backbone"
     "configcenter/src/common/rdapi"
     "context"
@@ -37,6 +37,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
         QPS: op.ServConf.Qps,
         Burst: op.ServConf.Burst,
         TLSConfig: nil,
+        GseProcServ: "",
     }
     
     apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
@@ -50,7 +51,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
         return fmt.Errorf("make server information failed, err:%v", err)
     }
     
-    procSvr := new(procserver.ProcServer)
+    procSvr := new(service.ProcServer)
     bkbsvr := backbone.Server{
         ListenAddr: svrInfo.IP,
         ListenPort: svrInfo.Port,
