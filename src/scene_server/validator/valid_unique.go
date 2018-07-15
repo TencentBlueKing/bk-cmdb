@@ -134,6 +134,9 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	if !result.Result {
 		return nil, valid.errif.Error(result.Code)
 	}
+	if len(result.Data.Info) == 0 {
+		return nil, nil
+	}
 
 	if len(result.Data.Info[0]) > 0 {
 		return result.Data.Info[0], nil
