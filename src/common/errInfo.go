@@ -133,6 +133,9 @@ const (
 	// CCErrCommXXExceedLimit  xx exceed limit number
 	CCErrCommXXExceedLimit = 1199035
 
+	CCErrProxyRequestFailed      = 1199036
+	CCErrRewriteRequestUriFailed = 1199037
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX

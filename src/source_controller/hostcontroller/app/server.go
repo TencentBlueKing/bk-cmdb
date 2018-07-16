@@ -94,7 +94,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	dbNum, err := strconv.Atoi(rdsc.Database)
 	//not set use default db num 0
 	if nil != err {
-		fmt.Println("redis config db not integer", rdsc.Database)
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
 	}
 	hostCtrl.Cache = redis.NewClient(
 		&redis.Options{
