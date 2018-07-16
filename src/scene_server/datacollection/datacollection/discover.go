@@ -20,6 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"configcenter/src/common/backbone"
+
 	"github.com/rs/xid"
 	"gopkg.in/redis.v5"
 
@@ -58,7 +60,7 @@ type Discover struct {
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client) *Discover {
+func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, backbone backbone.Engine) *Discover {
 
 	if 0 == maxSize {
 		maxSize = 100
