@@ -37,7 +37,7 @@ import (
 // TopoServiceInterface the topo service methods used to init
 type TopoServiceInterface interface {
 	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
-	WebService(filter restful.FilterFunction) *restful.WebService
+	WebService() *restful.WebService
 	SetConfig(cfg options.Config)
 }
 
@@ -75,11 +75,13 @@ func (s *topoService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.err
-	}
-	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	/*
+		    now ignore
+			getErrFun := func() errors.CCErrorIf {
+				return s.err
+			}
+			//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	*/
 	ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()

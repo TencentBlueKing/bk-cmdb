@@ -14,13 +14,13 @@ package service
 
 import (
 	"strconv"
-
-	"configcenter/src/common/condition"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -120,17 +120,17 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	innerCond := condition.CreateCondition()
-	if err := innerCond.Parse(data); nil != err {
-		blog.Errorf("[api-set] failed to parse the input condition, error info is %s", err.Error())
+	paramsCond := &gparams.SearchParams{}
+	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
 
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	paramsCond.Condition[common.BKAppIDField] = bizID
+	paramsCond.Condition[common.BKOwnerIDField] = params.SupplierAccount
 
 	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
+	queryCond.Condition = paramsCond.Condition
+	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
 
 	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {

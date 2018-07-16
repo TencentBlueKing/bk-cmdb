@@ -487,7 +487,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 		instIDS = append(instIDS, ids...)
 	}
 
-	return instIDS, true, nil
+	return instIDS, false, nil
 }
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error {

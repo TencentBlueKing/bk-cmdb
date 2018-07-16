@@ -26,6 +26,36 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+// Inst the inst interface
+type Inst interface {
+	model.Operation
+	GetObject() model.Object
+
+	GetMainlineParentInst() (Inst, error)
+	GetMainlineChildInst() ([]Inst, error)
+
+	GetParentInst() ([]Inst, error)
+	GetChildInst() ([]Inst, error)
+
+	SetParentInst(targetInst Inst) error
+	SetChildInst(targetInst Inst) error
+
+	SetMainlineParentInst(targetInst Inst) error
+	SetMainlineChildInst(targetInst Inst) error
+
+	GetInstID() (int64, error)
+	GetParentID() (int64, error)
+	GetInstName() (string, error)
+
+	SetValue(key string, value interface{}) error
+
+	SetValues(values frtypes.MapStr)
+
+	GetValues() frtypes.MapStr
+
+	ToMapStr() frtypes.MapStr
+}
+
 var _ Inst = (*inst)(nil)
 
 type inst struct {
@@ -238,7 +268,7 @@ func (cli *inst) IsExists() (bool, error) {
 
 	queryCond := metatype.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
-
+	//fmt.Println("cond:", cond.ToMapStr())
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetObjectType(), cli.params.Header, &queryCond)
 
 	if nil != err {
