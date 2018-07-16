@@ -22,11 +22,12 @@ import (
 	"configcenter/src/api_server/app/options"
 	"configcenter/src/api_server/ccapi/logics/v2"
 	apisvc "configcenter/src/api_server/service"
+	"configcenter/src/api_server/service/v3"
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 )
@@ -49,16 +50,29 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(apisvc.Service)
+	v2Service := new(apisvc.Service)
+	v3Service := new(v3.Service)
+	v3Service.Client, err = util.NewClient(&util.TLSClientConfig{})
+	if err != nil {
+		return fmt.Errorf("new proxy client failed, err: %v", err)
+	}
 
+	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
+	}
+
+	ctnr := restful.NewContainer()
+	ctnr.Add(v2Service.V2WebService())
+	ctnr.Add(v3Service.V3WebService())
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService(rdapi.AllGlobalFilter())),
+		Handler:    ctnr,
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_APISERVER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -77,11 +91,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	service.Engine = engine
-	service.Logics = &logics.Logics{Engine: engine}
+	v2Service.Engine = engine
+	v2Service.Logics = &logics.Logics{Engine: engine}
+	v3Service.Engine = engine
 	apiSvr.Core = engine
-	apiSvr.Service = service
-	apiSvr.Logic = service.Logics
+	apiSvr.Service = v2Service
+	apiSvr.Logic = v2Service.Logics
 	select {}
 	return nil
 }

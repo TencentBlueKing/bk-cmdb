@@ -13,10 +13,12 @@
 package service
 
 import (
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/ccapi/logics/v2"
 	"configcenter/src/common/backbone"
-
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 )
 
 type Service struct {
@@ -24,9 +26,12 @@ type Service struct {
 	*logics.Logics
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) V2WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/api/v2").Filter(filter).Produces(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
 	ws.Route(ws.POST("app/getapplist").To(s.getAppList))

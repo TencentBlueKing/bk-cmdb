@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/model/mainline"
+	subPath := "/topo/model/mainline"
 
 	err = t.client.Post().
 		WithContext(ctx).
@@ -36,7 +36,7 @@ func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata
 
 func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/model/mainline/owners/%s/objectids/%s", ownerID, objID)
+	subPath := fmt.Sprintf("/topo/model/mainline/owners/%s/objectids/%s", ownerID, objID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -50,7 +50,7 @@ func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, 
 
 func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/model/%s", ownerID)
+	subPath := fmt.Sprintf("/topo/model/%s", ownerID)
 
 	err = t.client.Get().
 		WithContext(ctx).
@@ -64,7 +64,7 @@ func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header)
 
 func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/model/%s/%s/%s", ownerID, clsID, objID)
+	subPath := fmt.Sprintf("/topo/model/%s/%s/%s", ownerID, clsID, objID)
 
 	err = t.client.Get().
 		WithContext(ctx).
@@ -78,7 +78,7 @@ func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID s
 
 func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/inst/%s/%s", ownerID, appID)
+	subPath := fmt.Sprintf("/topo/inst/%s/%s", ownerID, appID)
 
 	err = t.client.Get().
 		WithContext(ctx).
@@ -92,7 +92,7 @@ func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h
 
 func (t *object) SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/inst/child/%s/%s/%s/%s", ownerID, objID, appID, instID)
+	subPath := fmt.Sprintf("/topo/inst/child/%s/%s/%s/%s", ownerID, objID, appID, instID)
 
 	err = t.client.Get().
 		WithContext(ctx).

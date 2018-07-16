@@ -13,22 +13,29 @@
 package service
 
 import (
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage"
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    storage.DI
+	Cache    *redis.Client
 	Logics   logics.Logics
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.Core.CCErr
+	}
+	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 

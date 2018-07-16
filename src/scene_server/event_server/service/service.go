@@ -17,6 +17,7 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/storage"
 )
 
@@ -34,9 +35,12 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Path("/host/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
 	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))

@@ -18,8 +18,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/scene_server/topo_server/core/supplementary"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -32,6 +30,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -70,14 +69,18 @@ func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, la
 }
 
 // WebService the web service
-func (s *topoService) WebService(filter restful.FilterFunction) *restful.WebService {
+func (s *topoService) WebService() *restful.WebService {
 
 	// init service actions
 	s.initService()
 
 	ws := new(restful.WebService)
+	getErrFun := func() errors.CCErrorIf {
+		return s.err
+	}
 	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Path("/topo/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()
 
@@ -120,10 +123,12 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
-func (s *topoService) sendResponse(resp *restful.Response, dataMsg interface{}) {
+func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
-	if rsp, rspErr := s.createAPIRspStr(common.CCSuccess, dataMsg); nil == rspErr {
+	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		io.WriteString(resp, rsp)
+	} else {
+		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
 }
 
@@ -152,23 +157,15 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if err != nil {
 					blog.Errorf("read http request body failed, error:%s", err.Error())
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-					respData, err := s.createAPIRspStr(common.CCErrCommHTTPReadBodyFailed, errStr)
-					if nil != err {
-						blog.Errorf("failed to create response result, error info is %s", err.Error())
-					}
-					s.sendResponse(resp, respData)
+					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
 
 				mData := frtypes.MapStr{}
-				if err := json.Unmarshal(value, &mData); nil != err {
+				if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
 					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					respData, err := s.createAPIRspStr(common.CCErrCommJSONUnmarshalFailed, errStr)
-					if nil != err {
-						blog.Errorf("failed to create response result, error info is %s", err.Error())
-					}
-					s.sendResponse(resp, respData)
+					s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 					return
 				}
 
@@ -187,16 +184,14 @@ func (s *topoService) Actions() []*httpserver.Action {
 					blog.Errorf("%s", dataErr.Error())
 					switch e := dataErr.(type) {
 					default:
-						respData, _ := s.createAPIRspStr(common.CCSystemBusy, dataErr.Error())
-						s.sendResponse(resp, respData)
+						s.sendResponse(resp, common.CCSystemBusy, dataErr.Error())
 					case errors.CCErrorCoder:
-						respData, _ := s.createAPIRspStr(e.GetCode(), dataErr.Error())
-						s.sendResponse(resp, respData)
+						s.sendResponse(resp, e.GetCode(), dataErr.Error())
 					}
 					return
 				}
 
-				s.sendResponse(resp, data)
+				s.sendResponse(resp, common.CCSuccess, data)
 
 			}})
 		}(a)

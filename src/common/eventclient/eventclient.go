@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package eventdata
+package eventclient
 
 import (
 	"encoding/json"

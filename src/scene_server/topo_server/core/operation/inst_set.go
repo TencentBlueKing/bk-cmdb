@@ -21,14 +21,14 @@ type SetOperationInterface interface {
 	DeleteSet(params types.ContextParams, obj model.Object, bizID int64, setIDS []int64) error
 	FindSet(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateSet(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID int64) error
+
+	SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface)
 }
 
 // NewSetOperation create a set instance
-func NewSetOperation(client apimachinery.ClientSetInterface, obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface) SetOperationInterface {
+func NewSetOperation(client apimachinery.ClientSetInterface) SetOperationInterface {
 	return &set{
 		clientSet: client,
-		inst:      inst,
-		module:    module,
 	}
 }
 
@@ -37,6 +37,12 @@ type set struct {
 	inst      InstOperationInterface
 	obj       ObjectOperationInterface
 	module    ModuleOperationInterface
+}
+
+func (s *set) SetProxy(obj ObjectOperationInterface, inst InstOperationInterface, module ModuleOperationInterface) {
+	s.inst = inst
+	s.obj = obj
+	s.module = module
 }
 
 func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (bool, error) {
@@ -107,7 +113,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 }
 
 func (s *set) FindSet(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return s.inst.FindInst(params, obj, cond)
+	return s.inst.FindInst(params, obj, cond, false)
 }
 
 func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID int64) error {

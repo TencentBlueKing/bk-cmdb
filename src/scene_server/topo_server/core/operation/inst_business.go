@@ -17,17 +17,16 @@ type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
 	FindBusiness(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
+	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
+
+	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
 }
 
 // NewBusinessOperation create a business instance
-func NewBusinessOperation(set SetOperationInterface, module ModuleOperationInterface, client apimachinery.ClientSetInterface, inst InstOperationInterface, obj ObjectOperationInterface) BusinessOperationInterface {
+func NewBusinessOperation(client apimachinery.ClientSetInterface) BusinessOperationInterface {
 	return &business{
 		clientSet: client,
-		set:       set,
-		module:    module,
-		inst:      inst,
-		obj:       obj,
 	}
 }
 
@@ -39,6 +38,12 @@ type business struct {
 	obj       ObjectOperationInterface
 }
 
+func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface) {
+	b.inst = inst
+	b.set = set
+	b.module = module
+	b.obj = obj
+}
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKDefaultField, 0)
@@ -141,7 +146,80 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return 0, nil, nil
+
+	return b.inst.FindInst(params, obj, cond, false)
+}
+
+func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
+
+	// search the sets
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
+	setObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
+	if nil != err {
+		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	querySet := &metadata.QueryInput{}
+	querySet.Condition = cond.ToMapStr()
+	_, sets, err := b.set.FindSet(params, setObj, querySet)
+	if nil != err {
+		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	// search modules
+	cond.Field(common.BKDefaultField).In([]int{
+		common.DefaultResModuleFlag,
+		common.DefaultFaultModuleFlag,
+	})
+
+	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
+	if nil != err {
+		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	queryModule := &metadata.QueryInput{}
+	queryModule.Condition = cond.ToMapStr()
+	_, modules, err := b.module.FindModule(params, moduleObj, queryModule)
+	if nil != err {
+		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	// construct result
+	result = &metadata.InnterAppTopo{}
+	for _, set := range sets {
+		id, err := set.GetInstID()
+		if nil != err {
+			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+		name, err := set.GetInstName()
+		if nil != err {
+			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+
+		result.SetID = id
+		result.SetName = name
+		break // should be only one set
+	}
+
+	for _, module := range modules {
+		id, err := module.GetInstID()
+		if nil != err {
+			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+		name, err := module.GetInstName()
+		if nil != err {
+			return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+
+		result.Module = append(result.Module, metadata.InnerModule{
+			ModuleID:   id,
+			ModuleName: name,
+		})
+	}
+
+	return 0, result, nil
 }
 
 func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error {
