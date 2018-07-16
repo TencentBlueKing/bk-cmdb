@@ -50,7 +50,7 @@
             <bk-button class="btn apply" type="primary" @click="apply">
                 {{$t("Inst['应用']")}}
             </bk-button>
-            <bk-button class="btn reinstate cancel" type="default" @click="cancel">
+            <bk-button class="btn reinstate vice-btn" type="default" @click="cancel">
                 {{$t("Common['取消']")}}
             </bk-button>
         </div>
@@ -482,22 +482,8 @@
                 line-height: 34px;
                 border-radius: 0;
                 margin-right: 10px;
-                border: 0;
+                // border: 0;
                 border-radius: 2px;
-                &.apply{
-                    &:hover{
-                        background: #4d597d;
-                    }
-                }
-                &.cancel{
-                    border: 1px solid #e6e9f2;
-                    &:hover{
-                        color: #6b7baa;
-                        border-color: #6b7baa;
-    
-                    }
-                }
-    
             }
             .info{
                 float: right;
