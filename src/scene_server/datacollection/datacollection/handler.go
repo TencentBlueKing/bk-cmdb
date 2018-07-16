@@ -782,8 +782,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				// relation exist continue
 				relateObj, ok := relateList[0].(map[string]interface{})
 
-				if ok && relateObj["id"] != "" {
-					blog.Infof("skip update exist single relation attr: %s->%s", attrId, attrValue)
+				if ok && (relateObj["id"] != "" && relateObj["id"] != "0" && relateObj["id"] != nil) {
+					blog.Infof("skip update exist single relation attr: %s->%v", attrId, attrValue)
 				} else {
 					// update single relation if relation empty
 					if attrValue != "" {
