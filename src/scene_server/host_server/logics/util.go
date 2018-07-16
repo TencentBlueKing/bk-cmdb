@@ -47,7 +47,7 @@ func ExtractDataFromAssociationField(instID int64, input map[string]interface{},
 					asstFieldVal = append(asstFieldVal, asstInst)
 				}
 
-			case int64, int:
+			case int64, int, float64:
 				asstInst := &metadata.InstAsst{}
 				asstInst.InstID = int64(instID)
 				asstInst.AsstInstID, _ = util.GetInt64ByInterface(t)

@@ -675,6 +675,8 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+
+	BKHTTPCCRequestID = "rid"
 )
 
 const (
