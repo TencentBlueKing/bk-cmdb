@@ -25,7 +25,7 @@ type Inst interface {
 	GetObject() model.Object
 
 	GetMainlineParentInst() (Inst, error)
-	GetMainlineChildInst() (Inst, error)
+	GetMainlineChildInst() ([]Inst, error)
 
 	GetParentInst() ([]Inst, error)
 	GetChildInst() ([]Inst, error)

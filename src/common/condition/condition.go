@@ -78,7 +78,12 @@ func (cli *condition) Parse(data types.MapStr) error {
 			tmpField.fieldValue = val
 
 		case reflect.Map:
-			tmpMap := val.(types.MapStr)
+
+			tmpMap, err := types.NewFromInterface(val)
+			if nil != err {
+				panic(err) // very  serious
+			}
+
 			tmpMap.ForEach(func(key string, subVal interface{}) {
 				switch key {
 

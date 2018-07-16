@@ -224,7 +224,8 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 
 	return nil, io.EOF
 }
-func (cli *inst) GetMainlineChildInst() (Inst, error) {
+func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
+
 	childObj, err := cli.target.GetMainlineChildObject()
 	if nil != err {
 		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, error info is %s", cli.target.GetID(), err.Error())
@@ -244,17 +245,7 @@ func (cli *inst) GetMainlineChildInst() (Inst, error) {
 	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
 
-	rspItems, err := cli.searchInsts(childObj, cond)
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	for _, item := range rspItems {
-		return item, nil // only one mainline child
-	}
-	blog.Warnf("[inst-asst] found nothing, the condition(%#v) the object(%s)", cond.ToMapStr(), childObj.GetID())
-	return nil, io.EOF
+	return cli.searchInsts(childObj, cond)
 }
 
 func (cli *inst) GetParentInst() ([]Inst, error) {
@@ -382,17 +373,17 @@ func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
 }
 func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 
-	childInst, err := cli.GetMainlineChildInst()
+	childInsts, err := cli.GetMainlineChildInst()
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the child inst, error info is  %s", err.Error())
 		return err
 	}
-
-	if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
-		blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
-		return err
+	for _, childInst := range childInsts {
+		if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
+			blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
+			return err
+		}
 	}
-
 	if err = cli.updateMainlineAssociation(targetInst, cli); nil != err {
 		blog.Errorf("[inst-inst] failed to update the mainline association, error info is %s", err.Error())
 		return err
