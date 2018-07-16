@@ -17,7 +17,7 @@
         <v-nav class="fl"></v-nav>
         <div class="main-container">
             <div class="main-wrapper">
-                <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
+                <div class="content-wrapper" v-bkloading="{isLoading: globalLoading}">
                     <router-view/>
                 </div>
             </div>
@@ -42,8 +42,7 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading']),
-            ...mapGetters('navigation', ['fold'])
+            ...mapGetters(['globalLoading'])
         },
         methods: {
             closeInfo () {
@@ -52,7 +51,6 @@
         },
         created () {
             this.isChromeShow = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
-            window.haha = this
         }
     }
 </script>
@@ -70,9 +68,6 @@
             .content-wrapper{
                 height: 100%;
                 min-width: 1060px;
-                &.fold{
-                    min-width: 1220px;
-                }
             }
         }
     }

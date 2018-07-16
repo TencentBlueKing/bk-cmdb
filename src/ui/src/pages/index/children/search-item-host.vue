@@ -1,7 +1,7 @@
 <template>
-    <div class="search-item-host clearfix" @click="handleHostClick">
-        <div class="host-ip fl" :title="host['host']['bk_host_innerip']">{{host['host']['bk_host_innerip']}}</div>
-        <div class="host-biz fr" :title="host['biz'][0]['bk_biz_name']">{{host['biz'][0]['bk_biz_name']}}</div>
+    <div class="search-item-host clearfix" @click="handleHostClick" :title="getHostTitle(host)">
+        <div class="host-ip fl">{{host['host']['bk_host_innerip']}}</div>
+        <div class="host-biz fr">{{host['biz'][0]['bk_biz_name']}}</div>
     </div>
 </template>
 
@@ -46,6 +46,9 @@
             },
             checkoutBizAuth (bizId) {
                 return this.bkPrivBizList.some(biz => biz['bk_biz_id'] === bizId)
+            },
+            getHostTitle (host) {
+                return `${host['host']['bk_host_innerip']}—${host['biz'][0]['bk_biz_name']}`
             }
         }
     }

@@ -2,22 +2,26 @@
     <div class="header-wrapper clearfix" 
         :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
-            <a class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
+            <a class="breadcrumbs-back icon-cc-goback" href="javascript:void(0)"
                 v-if="historyCount > 1"
                 @click="back"></a>
             <h2 class="breadcrumbs-current">{{currentName}}</h2>
         </div>
         <div class="user fr">
-            <p class="user-name">
+            <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
                 {{userName}}
-                <i class="user-name-angle bk-icon icon-angle-down"></i>
+                <i class="user-name-angle bk-icon icon-angle-down"
+                    :class="{dropped: isShowUserDropdown}">
+                </i>
             </p>
-            <ul class="user-dropdown">
-                <li class="user-dropdown-item" @click="logOut">
-                    <i class="icon-cc-logout"></i>
-                    {{$t("Common['注销']")}}
-                </li>
-            </ul>
+            <transition name="toggle-slide">
+                <ul class="user-dropdown" v-show="isShowUserDropdown">
+                    <li class="user-dropdown-item" @click="logOut">
+                        <i class="icon-cc-logout"></i>
+                        {{$t("Common['注销']")}}
+                    </li>
+                </ul>
+            </transition>
         </div>
     </div>
 </template>
@@ -28,7 +32,8 @@
         data () {
             return {
                 userName: window.userName,
-                singleClassifies: ['/index']
+                singleClassifies: ['/index'],
+                isShowUserDropdown: false
             }
         },
         computed: {
@@ -116,7 +121,7 @@
         &-back{
             font-size: 12px;
             &:hover{
-                color: #3c96ff;
+                color: rgb(60, 150, 255);
             }
         }
         &-current{
@@ -138,17 +143,18 @@
             font-weight: bold;
             color: rgba(115,121,135,1);
             cursor: pointer;
-            &:hover ~ .user-dropdown{
-                display: block;
-            }
             &-angle{
+                display: inline-block;
                 font-size: 12px;
                 margin: 0 2px;
                 color: $textColor;
+                transition: transform .2s linear;
+                &.dropped{
+                    transform: rotate(-180deg);
+                }
             }
         }
         &-dropdown{
-            display: none;
             position: absolute;
             width: 100px;
             top: 100%;
@@ -159,9 +165,6 @@
             background-color: #fff;
             box-shadow: 0 1px 5px 0 rgba(12,34,59, .1);
             z-index: 1;
-            &:hover{
-                display: block;
-            }
             &-item{
                 padding: 0 0 0 12px;
                 cursor: pointer;

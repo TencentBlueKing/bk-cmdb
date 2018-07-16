@@ -172,7 +172,7 @@ const actions = {
 }
 
 const mutations = {
-    setFold (state, fold) {
+    updateNavFold (state, fold) {
         state.fold = fold
     },
     updateNavStick (state, stick) {

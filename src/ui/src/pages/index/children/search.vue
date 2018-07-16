@@ -224,7 +224,7 @@
             border-radius: 2px;
             border: solid 1px #c3cdd7;
             padding: 0 56px 0 16px;
-            font-size: 16px;
+            font-size: 14px;
         }
         .icon-search{
             position: absolute;

@@ -1,6 +1,9 @@
 <template>
-    <div class="nav-wrapper" :class="{'sticked': navStick}">
-        <div class="nav-layout">
+    <div class="nav-wrapper"
+        :class="{'sticked': navStick}"
+        @mouseenter="handleMouseEnter"
+        @mouseleave="handleMouseLeave">
+        <div class="nav-layout" :class="{unfold: unfold}">
             <div class="logo">
                 <img src="@/common/svg/logo-cn.svg" alt="蓝鲸配置平台"
                     v-if="$i18n.locale === 'zh_CN'"
@@ -23,9 +26,9 @@
                             :class="{open: classify.id === openedClassify}">
                         </i>
                     </h3>
-                    <div v-if="classify.children && classify.children.length"
-                        :class="['classify-models', {'open': classify.id === openedClassify}]"
-                        :style="{height: classify.id === openedClassify ? openedClassifyHeight + 'px' : 0}">
+                    <div class="classify-models"
+                        v-if="classify.children && classify.children.length"
+                        :style="getClassifyModelsStyle(classify)">
                         <router-link exact class="model-link"
                             v-for="(model, modelIndex) in classify.children"
                             :key="modelIndex"
@@ -34,11 +37,16 @@
                             {{model.i18n ? $t(model.i18n) : model.name}}
                         </router-link>
                     </div>
-                    <i class="classify-corner" v-if="classify.children && classify.children.length"></i>
+                    <i class="classify-corner"
+                        v-show="!unfold"
+                        v-if="classify.children && classify.children.length">
+                    </i>
                 </li>
             </ul>
             <i class="nav-stick icon-cc-nav-stick"
+                v-show="unfold"
                 :class="{'sticked': navStick}"
+                :title="navStick ? $t('Index[\'收起导航\']') : $t('Index[\'固定导航\']')"
                 @click="toggleNavStick">
             </i>
         </div>
@@ -56,8 +64,11 @@
             }
         },
         computed: {
-            ...mapGetters('navigation', ['navStick', 'authorizedNavigation']),
+            ...mapGetters('navigation', ['fold', 'navStick', 'authorizedNavigation']),
             ...mapGetters('usercustom', ['usercustom', 'classifyNavigationKey']),
+            unfold () {
+                return this.navStick || !this.fold
+            },
             customNavigation () {
                 return this.usercustom[this.classifyNavigationKey] || []
             },
@@ -129,10 +140,21 @@
             }
         },
         methods: {
+            handleMouseEnter () {
+                this.$store.commit('navigation/updateNavFold', false)
+            },
+            handleMouseLeave () {
+                this.$store.commit('navigation/updateNavFold', true)
+            },
             // 分类点击事件
             handleClassifyClick (classify) {
                 this.checkPath(classify)
                 this.toggleClassify(classify)
+            },
+            getClassifyModelsStyle (classify) {
+                return {
+                    height: (this.unfold && classify.id === this.openedClassify) ? this.openedClassifyHeight + 'px' : 0
+                }
             },
             // 被点击的有对应的路由，则跳转
             checkPath (classify) {
@@ -142,7 +164,7 @@
             },
             // 切换展开的分类
             toggleClassify (classify) {
-                this.openedClassify = classify.id
+                this.openedClassify = classify.id === this.openedClassify ? null : classify.id
             },
             // 切换导航展开固定
             toggleNavStick () {
@@ -153,52 +175,43 @@
 </script>
 
 <style lang="scss" scoped>
+    $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);
+    $duration: 0.2s;
     .nav-wrapper{
         position: relative;
         width: 60px;
         height: 100%;
-        transition: width .1s ease-in;
+        transition: width $duration $cubicBezier;
         z-index: 1201;
         &.sticked{
             width: 240px;
-            .classify-corner{
-                display: none;
-            }
-            .classify-models{
-                display: block;
-            }
-        }
-        &:hover{
-            .nav-layout{
-                width: 240px;
-                .nav-stick{
-                    opacity: 1;
-                }
-            }
-            .classify-corner{
-                display: none;
-            }
-            .classify-models{
-                display: block;
-            }
         }
         .nav-layout{
             position: relative;
             width: 100%;
             height: 100%;
             background:rgba(46,50,59,1);
-            transition: width .1s ease-in;
+            transition: width $duration $cubicBezier;
+            &.unfold{
+                width: 240px;
+            }
             .nav-stick{
                 position: absolute;
                 bottom: 17px;
                 right: 21px;
-                opacity: 0;
-                transition: opacity .1s ease-in;
+                width: 24px;
+                height: 24px;
+                padding: 6px 5px;
+                border-radius: 50%;
+                transition: transform $duration $cubicBezier;
                 transform: scale(0.8333) rotate(180deg);
                 font-size: 12px;
                 cursor: pointer;
                 &.sticked{
                     transform: scale(0.8333);
+                }
+                &:hover{
+                    background-color: #3a4156;
                 }
             }
         }
@@ -232,13 +245,13 @@
         .classify-item{
             position: relative;
             &.active{
-                .classify-info{
-                    color: #fff;
-                    background-color: #3a4156;
-                }
+                background-color: #3a4156;
                 .classify-icon{
                     color: #fff;
                 }
+            }
+            &:hover{
+                background-color: rgba(58, 65, 86, .75);
             }
             .classify-info{
                 margin: 0;
@@ -272,7 +285,7 @@
                 vertical-align: top;
                 margin: 18px;
                 font-size: 12px;
-                transition: all .1s ease-in;
+                transition: all $duration $cubicBezier;
                 &.open{
                     transform: rotate(90deg);
                 }
@@ -280,14 +293,13 @@
         }
     }
     .classify-models{
-        display: none;
         height: 0;
         padding: 0 0 0 63px;
         // padding: 4px 0 4px 63px;
         line-height: 36px;
         font-size: 12px;
         overflow: hidden;
-        transition: height .1s ease-in;
+        transition: height $duration $cubicBezier;
         .model-link{
             display: block;
             color: #c3cdd7;
@@ -298,6 +310,10 @@
             }
             &:hover{
                 color: #fff;
+            }
+            &:before{
+                content: "·";
+                font-weight: bold;
             }
         }
     }
