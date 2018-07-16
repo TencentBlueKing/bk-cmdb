@@ -14,7 +14,8 @@
             ref="hosts"
             :isShowBiz="false" 
             :isShowCollect="false" 
-            :isShowHistory="false" 
+            :isShowHistory="false"
+            :isShowTransfer="false"
             :isShowScope="true"
             :outerParams="hosts.searchParams"
             @choose="setSelectedHost" 
@@ -153,7 +154,7 @@
                 this.slider.tab.active = active
             },
             hasAssignedHosts () {
-                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['bk_biz_id'] !== 1))
+                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['default'] !== 1))
             },
             confirmTransfer (selected, index) {
                 if (this.hasAssignedHosts()) {
