@@ -223,7 +223,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
             return
         }
         
-        if err := valid.ValidMap(procData, common.ValidUpdate, procID); err != nil {
+        if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
             blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
             resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg:defErr.Error(common.CCErrCommFieldNotValid)})
             return
@@ -333,7 +333,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
     page := srchparam.Page
     searchParams := new(meta.QueryInput)
     searchParams.Condition = condition
-    searchParams.Fields = strings.Join(js.Fields, ",")
+    searchParams.Fields = strings.Join(srchparam.Fields, ",")
     searchParams.Start = page["start"].(int)
     searchParams.Limit = page["limit"].(int)
     searchParams.Sort = page["sort"].(string)

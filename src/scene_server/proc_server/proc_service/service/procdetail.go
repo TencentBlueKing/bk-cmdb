@@ -292,7 +292,7 @@ func (ps *ProcServer) getInstAsst(forward *sourceAPI.ForwardParam, ownerID, objI
                 for idx, key := range ids {
                     if val, err := d.Int64(); nil == err && key == strconv.Itoa(int(val)) {
                         inst.ID = ids[idx]
-                        inst.InstID, _ := strconv.Atoi(ids[idx])
+                        inst.InstID, _ = strconv.Atoi(ids[idx])
                         ids = delArrayFunc(ids, idx)
                         rstName = append(rstName, inst)
                     }

@@ -165,7 +165,7 @@ func (ps *ProcServer) GetProcessPortByIP (req *restful.Request, resp *restful.Re
         return
     }
     // 获取appId
-    configCondition := map[string]interface{}{
+    configCondition := map[string][]int64{
         common.BKHostIDField: hostIdArr,
     }
     confArr, err := ps.getConfigByCond(forward, configCondition)
@@ -274,7 +274,7 @@ func (ps *ProcServer) getModuleHostConfigsByAppID(appID int, forward *sourceAPI.
     })
 }
 
-func (ps *ProcServer) getConfigByCond(forward *sourceAPI.ForwardParam, cond interface{}) ([]map[string]int, error) {
+func (ps *ProcServer) getConfigByCond(forward *sourceAPI.ForwardParam, cond map[string][]int64) ([]map[string]int, error) {
     configArr := make([]map[string]int, 0)
     ret, err := ps.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), forward.Header, cond)
     if err != nil || (err == nil && !ret.Result) {
