@@ -14,14 +14,15 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 
-	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/operation"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/topo_server/core/inst"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -32,64 +33,50 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 
 	objID := pathParams("obj_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("failed to search the %s, %s", objID, err.Error())
+		blog.Errorf("failed to search the inst, %s", err.Error())
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, params.SupplierAccount)
-	data.Set(common.BKObjIDField, objID)
-
-	for _, item := range objItems {
-
-		setInst, err := s.core.InstOperation().CreateInst(params, item, data)
-		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
-			return nil, err
-		}
-
-		return setInst.ToMapStr(), nil // only one item
+	setInst, err := s.core.InstOperation().CreateInst(params, obj, data)
+	if nil != err {
+		blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+		return nil, err
 	}
 
-	return nil, nil
+	return setInst.ToMapStr(), nil
 }
 
 // DeleteInst delete the inst
 func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(pathParams("obj_id"))
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
+	}
 
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	innerCond := condition.CreateCondition()
-	paramPath := frtypes.MapStr{}
-	paramPath.Set("inst_id", pathParams("inst_id"))
-	id, err := paramPath.Int64("inst_id")
-	if nil != err {
-		blog.Errorf("[api-inst] failed to parse the path params id(%s), error info is %s ", pathParams("inst_id"), err.Error())
-		return nil, err
-	}
-	innerCond.Field(common.BKInstIDField).Eq(id)
-	for _, objItem := range objs {
-		err = s.core.InstOperation().DeleteInst(params, objItem, innerCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to delete the object(%s) inst (%s), error info is %s", objItem.GetID(), pathParams("inst_id"), err.Error())
+	instIDS := []int64{}
+	if instID < 0 {
+		deleteCondition := &operation.OpCondition{}
+		if err := data.MarshalJSONInto(deleteCondition); nil != err {
 			return nil, err
 		}
+
+		instIDS = append(instIDS, deleteCondition.Delete.InstID...)
+
+	} else {
+		instIDS = append(instIDS, instID)
 	}
 
+	err = s.core.InstOperation().DeleteInstByInstID(params, obj, instIDS)
 	return nil, err
 }
 
@@ -131,26 +118,17 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 }
 
 // SearchInst search the inst
-func (s *topoService) SearchInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInst")
-	// /inst/search/{owner_id}/{obj_id}
+func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("obj_id")
 
-	// query the objects
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
 	// construct the query inst condition
-	count := 0
-	instRst := make([]inst.Inst, 0)
 	queryCond := &metadata.QueryInput{}
 
 	if err := data.MarshalJSONInto(queryCond); nil != err {
@@ -158,35 +136,15 @@ func (s *topoService) SearchInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	innerQueryCond, err := frtypes.NewFromInterface(queryCond.Condition)
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to parse the condition, %s", err.Error())
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
-	}
-
-	if err := cond.Parse(innerQueryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the condition(%#v)", innerQueryCond)
-		return nil, err
-	}
-	queryCond.Condition = cond.ToMapStr()
-
-	fmt.Println("the query condition:", queryCond)
-
-	// query insts
-	for _, objItem := range objs {
-
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
 	}
 
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 	return result, nil
 }
 
@@ -197,39 +155,29 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 
 	objID := pathParams("obj_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	count := 0
-	instRst := make([]inst.Inst, 0)
+	// construct the query inst condition
 	queryCond := &metadata.QueryInput{}
+
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
-	for _, objItem := range objs {
-
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, true)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
-
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 	return result, nil
 }
 
@@ -239,39 +187,27 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	count := 0
-	instRst := make([]inst.Inst, 0)
 	queryCond := &metadata.QueryInput{}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
-	for _, objItem := range objs {
-
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 
 	return result, nil
 
@@ -279,87 +215,60 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 
 // SearchInstByAssociation search inst by the association inst
 func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstByAssociation")
+	// fmt.Println("SearchInstByAssociation")
 	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	count := 0
-	instRst := make([]inst.Inst, 0)
-	queryCond := &metadata.QueryInput{}
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+	cnt, instItems, err := s.core.InstOperation().FindInstByAssociationInst(params, obj, data)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	for _, objItem := range objs {
-
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
-	}
-
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
-
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 	return result, nil
 }
 
 // SearchInstByInstID search the inst by inst ID
 func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstByInstID")
+
 	// /inst/search/{owner_id}/{obj_id}/{inst_id}
 
 	objID := pathParams("obj_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field(common.BKInstIDField).Eq(pathParams("inst_id"))
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoInstSelectFailed, err.Error())
+	}
 
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	count := 0
-	instRst := make([]inst.Inst, 0)
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	queryCond := &metadata.QueryInput{}
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+	queryCond.Condition = cond
+
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	for _, objItem := range objs {
-
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
-	}
-
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 
 	return result, nil
 }
@@ -371,41 +280,41 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 
 	objID := pathParams("object_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
 
-	data.Set(common.BKInstIDField, pathParams("inst_id"))
-
-	count := 0
-	instRst := make([]inst.Inst, 0)
-	queryCond := &metadata.QueryInput{}
-
-	if err := data.MarshalJSONInto(queryCond); nil != err {
-		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
 		return nil, err
 	}
 
-	for _, objItem := range objs {
+	/*unused
+	inputCond := &gparam.SearchParams{}
+	if err := data.MarshalJSONInto(&inputCond); nil != err{
+		return nil, err
+	}
+	*/
+	query := &metadata.QueryInput{}
 
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+
+	query.Condition = cond
+	query.Limit = common.BKNoLimit
+
+	cnt, instItems, err := s.core.InstOperation().FindInstChildTopo(params, obj, instID, query)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 
 	return result, nil
 
@@ -418,9 +327,35 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 
 	objID := pathParams("object_id")
 
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, err
+	}
+
+	query := &metadata.QueryInput{}
+
 	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
+
+	query.Condition = cond
+	query.Limit = common.BKNoLimit
+
+	cnt, instItems, err := s.core.InstOperation().FindInstTopo(params, obj, instID, query)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	result := frtypes.MapStr{}
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 
 	return nil, nil
 }

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -29,7 +30,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	defaultCond := &metadata.QueryInput{}
 
 	// fetch all parent inst
-	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond)
+	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find current object(%s) inst, error info is %s", current.GetID(), err.Error())
 		return err
@@ -51,17 +52,19 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		}
 
 		// reset the child's parent
-		child, err := currentInst.GetMainlineChildInst()
+		childs, err := currentInst.GetMainlineChildInst()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", current.GetID(), err.Error())
 			return err
 		}
-		blog.Infof("the child: %s", child.GetObject().GetID())
+		for _, child := range childs {
+			blog.Infof("the child: %s", child.GetObject().GetID())
 
-		// set the child's parent
-		if err = child.SetMainlineParentInst(parent); nil != err {
-			blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
-			return err
+			// set the child's parent
+			if err = child.SetMainlineParentInst(parent); nil != err {
+				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
+				return err
+			}
 		}
 
 		// delete the current inst
@@ -81,7 +84,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	defaultCond := &metadata.QueryInput{}
 
 	// fetch all parent inst
-	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond)
+	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, error info is %s", parent.GetID(), err.Error())
 		return err
@@ -103,7 +106,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		}
 
 		// reset the child's parent
-		child, err := parent.GetMainlineChildInst()
+		childs, err := parent.GetMainlineChildInst()
 		if nil != err {
 			if io.EOF == err {
 				continue
@@ -111,19 +114,65 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", parent.GetObject().GetID(), err.Error())
 			return err
 		}
-		blog.Infof("the child: %s", child.GetObject().GetID())
+		for _, child := range childs {
+			blog.Infof("the child: %s", child.GetObject().GetID())
 
-		// set the child's parent
-		if err = child.SetMainlineParentInst(defaultInst); nil != err {
-			blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
-			return err
+			// set the child's parent
+			if err = child.SetMainlineParentInst(defaultInst); nil != err {
+				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
+				return err
+			}
 		}
 
 	}
 
 	return nil
 }
+func (cli *association) constructTopo(params types.ContextParams, targetInst inst.Inst) ([]metadata.TopoInstRst, error) {
 
+	childs, err := targetInst.GetMainlineChildInst()
+	if nil != err {
+		return nil, err
+	}
+
+	results := []metadata.TopoInstRst{}
+
+	if 0 == len(childs) {
+		return []metadata.TopoInstRst{}, nil
+	}
+
+	for _, child := range childs {
+
+		rst := metadata.TopoInstRst{
+			Child: []metadata.TopoInstRst{},
+		}
+
+		id, err := child.GetInstID()
+		if nil != err {
+			return nil, err
+		}
+
+		name, err := child.GetInstName()
+		if nil != err {
+			return nil, err
+		}
+
+		rst.InstID = id
+		rst.InstName = name
+		rst.ObjID = child.GetObject().GetID()
+		rst.ObjName = child.GetObject().GetName()
+
+		childRst, err := cli.constructTopo(params, child)
+		if nil != err {
+			return nil, err
+		}
+
+		rst.Child = append(rst.Child, childRst...)
+		results = append(results, rst)
+	}
+
+	return results, nil
+}
 func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error) {
 
 	bizObj, err := cli.obj.FindSingleObject(params, common.BKInnerObjIDApp)
@@ -135,8 +184,8 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 	cond.Condition = frtypes.MapStr{
 		bizObj.GetInstIDFieldName(): bizID,
 	}
-	_, bizInsts, err := cli.inst.FindInst(params, bizObj, cond)
 
+	_, bizInsts, err := cli.inst.FindInst(params, bizObj, cond, false)
 	if nil != err {
 		return nil, err
 	}
@@ -145,41 +194,28 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 
 	for _, biz := range bizInsts {
 
-		var lastRst *metadata.TopoInstRst
-	exist_for:
-		for {
-			instID, err := biz.GetInstID()
-			if nil != err {
-				return nil, err
-			}
-			instName, err := biz.GetInstName()
-			if nil != err {
-				return nil, err
-			}
-
-			tmp := metadata.TopoInstRst{}
-			tmp.InstID = instID
-			tmp.InstName = instName
-			tmp.ObjID = biz.GetObject().GetID()
-			tmp.ObjName = biz.GetObject().GetName()
-
-			tmpChild, err := biz.GetMainlineChildInst()
-			if nil != err {
-				if io.EOF == err {
-					break exist_for
-				}
-				return nil, err
-			}
-			biz = tmpChild
-			if nil != lastRst {
-				lastRst.Child = append(lastRst.Child, tmp)
-			} else {
-				lastRst = &tmp
-			}
-
+		instID, err := biz.GetInstID()
+		if nil != err {
+			return nil, err
+		}
+		instName, err := biz.GetInstName()
+		if nil != err {
+			return nil, err
 		}
 
-		results = append(results, lastRst)
+		tmp := &metadata.TopoInstRst{}
+		tmp.InstID = instID
+		tmp.InstName = instName
+		tmp.ObjID = biz.GetObject().GetID()
+		tmp.ObjName = biz.GetObject().GetName()
+
+		rst, err := cli.constructTopo(params, biz)
+		if nil != err {
+			return nil, err
+		}
+
+		tmp.Child = append(tmp.Child, rst...)
+		results = append(results, tmp)
 
 	}
 	return results, nil

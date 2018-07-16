@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	ModelFieldID          = "id"
 	ModelFieldObjCls      = "bk_classification_id"
 	ModelFieldObjIcon     = "bk_obj_icon"
 	ModelFieldObjectID    = "bk_obj_id"
@@ -106,4 +107,33 @@ type ObjAttDes struct {
 	AsstForward       string `json:"bk_asst_forward"`
 	AssociationID     string `json:"bk_asst_obj_id"`
 	PropertyGroupName string `json:"bk_property_group_name"`
+}
+
+type InnerModule struct {
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
+}
+type InnterAppTopo struct {
+	SetID   int64         `json:"bk_set_id"`
+	SetName string        `json:"bk_set_name"`
+	Module  []InnerModule `json:"module"`
+}
+
+// TopoItem define topo item
+type TopoItem struct {
+	ClassificationID string `json:"bk_classification_id"`
+	Position         string `json:"position"`
+	ObjID            string `json:"bk_obj_id"`
+	OwnerID          string `json:"bk_supplier_account"`
+	ObjName          string `json:"bk_obj_name"`
+}
+
+// ObjectTopo define the common object topo
+type ObjectTopo struct {
+	LabelType string   `json:"label_type"`
+	LabelName string   `json:"label_name"`
+	Label     string   `json:"label"`
+	From      TopoItem `json:"from"`
+	To        TopoItem `json:"to"`
+	Arrows    string   `json:"arrows"`
 }
