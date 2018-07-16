@@ -127,40 +127,6 @@ func (d *DataCollection) getSnapChanName() ([]string, error) {
 	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}, nil
 }
 
-// func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
-// 	mastername := config[dType+".mastername"]
-// 	host := config[dType+".host"]
-// 	auth := config[dType+".pwd"]
-// 	db := config[dType+".database"]
-// 	dbNum, _ := strconv.Atoi(db)
-// 	var client *redis.Client
-// 	hosts := strings.Split(host, ",")
-// 	if mastername == "" {
-// 		option := &redis.Options{
-// 			Addr:     hosts[0],
-// 			Password: auth,
-// 			DB:       dbNum,
-// 			PoolSize: 100,
-// 		}
-// 		client = redis.NewClient(option)
-// 	} else {
-// 		option := &redis.FailoverOptions{
-// 			MasterName:    mastername,
-// 			SentinelAddrs: hosts,
-// 			Password:      auth,
-// 			DB:            dbNum,
-// 			PoolSize:      100,
-// 		}
-// 		client = redis.NewFailoverClient(option)
-// 	}
-
-// 	err := client.Ping().Err()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return client, nil
-// }
-
 func (d *DataCollection) mock(config map[string]string, channel string) {
 	blog.Infof("start mocking ")
 
