@@ -490,7 +490,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logPreConents[hostID] = *audit.AuditLog(hostID)
 	}
 
-	opt := common.KvMap{"condition": common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}}
+	opt := common.KvMap{"condition": common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}, "data": data}
 	result, err := s.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, pheader, opt)
 	if err != nil || (err == nil && !result.Result) {
 		blog.Errorf("update host batch failed, ids[%v], err: %v, %v", hostIDs, err, result.ErrMsg)
@@ -529,8 +529,10 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logContent.CurData = logContent.PreData
 		preLogContent, ok := logPreConents[hostID]
 		if ok {
-			content, _ := preLogContent.Content.(*metadata.Content)
-			logContent.PreData = content.PreData
+			content, ok := preLogContent.Content.(*metadata.Content)
+			if ok {
+				logContent.PreData = content.PreData
+			}
 		}
 
 		logLastConents = append(logLastConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: preLogContent.ExtKey})
