@@ -53,6 +53,9 @@
             <bk-button class="btn reinstate vice-btn" type="default" @click="cancel">
                 {{$t("Common['取消']")}}
             </bk-button>
+            <bk-button class="fr vice-btn" type="default" @click="resetConfirm">
+                {{$t("Common['还原默认']")}}
+            </bk-button>
         </div>
     </div>
 </template>
@@ -116,6 +119,24 @@
             }
         },
         methods: {
+            resetConfirm () {
+                this.$bkInfo({
+                    title: this.$t("Common['是否要还原回系统默认显示属性？']"),
+                    confirmFn: () => {
+                        this.resetFields()
+                    }
+                })
+            },
+            async resetFields () {
+                try {
+                    let params = {}
+                    params[`${this.objId}DisplayColumn`] = []
+                    await this.$axios.post('usercustom', params)
+                    this.$emit('resetFields')
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
             addItem (index) {
                 this.localHasSelectionList = this.localHasSelectionList.concat(this.localForSelectionList.splice(index, 1))
             },
@@ -169,6 +190,7 @@
                         }
                     })
                 }
+                console.log(this.usercustom[`${this.objId}DisplayColumn`], `${this.objId}DisplayColumn`)
                 if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
                     let selectedList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
                     selectedList.map(list => {
@@ -180,9 +202,12 @@
                         }
                     })
                     this.localHasSelectionList = selectedList
+                } else if (!this.usercustom[`${this.objId}DisplayColumn`].length) {
+                    console.log(1)
                 } else {
                     this.localHasSelectionList = []
                 }
+                console.log(this.localHasSelectionList)
                 this.hasSelectionList = this.$deepClone(this.localHasSelectionList)
                 this.setForSelectionList()
             },

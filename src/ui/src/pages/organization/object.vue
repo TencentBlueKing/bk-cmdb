@@ -147,11 +147,13 @@
         </v-sideslider>
         <v-sideslider :isShow.sync="settingSlider.isShow" :hasQuickClose="true" :width="600" :title="settingSlider.title">
             <v-config-field 
+                ref="configField"
                 slot="content"
                 :isShow="settingSlider.isShow"
                 :attrList="attr.formFields"
                 @apply="settingApply"
                 @cancel="settingSlider.isShow = false"
+                @resetFields="resetFields"
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
@@ -365,6 +367,10 @@
             }
         },
         methods: {
+            async resetFields () {
+                await this.getTableHeader()
+                this.$refs.configField.getUserAttr()
+            },
             multipleUpdate () {
                 this.tab.activeName = 'attr'
                 this.slider.isShow = true
