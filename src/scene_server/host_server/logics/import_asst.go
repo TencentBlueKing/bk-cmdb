@@ -45,6 +45,7 @@ func NewAsstObjectInst(pheader http.Header, engine *backbone.Engine, ownerID str
 		Engine:  engine,
 		ownerID: ownerID,
 		fields:  fields,
+		pheader: pheader,
 	}
 }
 

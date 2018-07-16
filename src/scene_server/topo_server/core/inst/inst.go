@@ -26,6 +26,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+var _ Inst = (*inst)(nil)
+
 type inst struct {
 	clientSet apimachinery.ClientSetInterface
 	params    types.ContextParams
@@ -61,9 +63,20 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 
 func (cli *inst) Create() error {
 
+	exists, err := cli.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
 	}
+
+	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
 
 	rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, cli.datas)
 	if nil != err {
@@ -86,7 +99,7 @@ func (cli *inst) Create() error {
 	return nil
 }
 
-func (cli *inst) Update() error {
+func (cli *inst) Update(data frtypes.MapStr) error {
 
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
@@ -245,7 +258,7 @@ func (cli *inst) Save() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
-		return cli.Update()
+		return cli.Update(cli.datas)
 	}
 
 	return cli.Create()

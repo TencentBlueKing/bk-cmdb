@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -94,6 +95,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 // SearchBusiness search the business by condition
 func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
+	fmt.Println("search business")
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -159,4 +161,23 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 	}
 
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
+}
+
+func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	_, result, err := s.core.BusinessOperation().GetInternalModule(params, obj, bizID)
+	if nil != err {
+		return nil, err
+	}
+
+	return result, nil
 }
