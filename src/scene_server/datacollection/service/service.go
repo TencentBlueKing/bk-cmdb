@@ -41,14 +41,7 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-
-	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
-	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
-	ws.Route(ws.POST("/subscribe/telnet").To(s.Telnet))
-	ws.Route(ws.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
-	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
-	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
+	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	return ws
 }

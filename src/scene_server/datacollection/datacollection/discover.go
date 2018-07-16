@@ -1,31 +1,33 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
-package logics
+
+package datacollection
 
 import (
-	"time"
-	"sync"
-	"sync/atomic"
-	"gopkg.in/redis.v5"
-	"github.com/rs/xid"
 	"io"
 	"runtime"
-	"configcenter/src/scene_server/datacollection/common"
-	"configcenter/src/common/blog"
+	"runtime/debug"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/rs/xid"
+	"gopkg.in/redis.v5"
+
 	bkc "configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
-	"runtime/debug"
+	"configcenter/src/scene_server/datacollection/common"
 )
 
 type Discover struct {
@@ -56,7 +58,7 @@ type Discover struct {
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, cc *api.APIResource) *Discover {
+func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client) *Discover {
 
 	if 0 == maxSize {
 		maxSize = 100
@@ -153,7 +155,7 @@ func (d *Discover) Run() {
 			d.ts = time.Now()
 
 		RLoop:
-		// 持续读取1s通道内的消息，最多读取d.maxSize个
+			// 持续读取1s通道内的消息，最多读取d.maxSize个
 			for {
 				select {
 				case <-time.After(time.Second):
