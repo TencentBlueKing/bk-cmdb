@@ -341,7 +341,7 @@ func (valid *ValidMap) validEnum(val interface{}, key string) error {
 		return nil
 	}
 	// validate within enum
-	enumOption := ParseEnumOption(option)
+	enumOption := ParseEnumOption(option.Option)
 	match := false
 	for _, k := range enumOption {
 		if k.ID == valStr {
@@ -350,7 +350,8 @@ func (valid *ValidMap) validEnum(val interface{}, key string) error {
 		}
 	}
 	if !match {
-		blog.Error("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
+		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
+		blog.Errorf("params %s not valid , enum value: %#v", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
