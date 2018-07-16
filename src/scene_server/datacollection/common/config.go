@@ -13,16 +13,17 @@
 package common
 
 import (
-	"configcenter/src/common"
 	"gopkg.in/redis.v5"
+
+	"configcenter/src/common"
 )
 
 // cache key define
 const (
-	RedisSnapKeyPrefix = common.BKCacheKeyV3Prefix + "snapshot:"
-	RedisDisKeyPrefix  = common.BKCacheKeyV3Prefix + "discover:"
-	MasterProcLockKey  = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-	MasterDisLockKey   = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	RedisSnapKeyPrefix        = common.BKCacheKeyV3Prefix + "snapshot:"
+	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
+	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
+	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
 	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
 )
 
@@ -36,13 +37,6 @@ const (
 const (
 	DiscoverChan = "discover"
 	SnapShotChan = "snapshot"
-)
-
-// channel config key defined
-const (
-	DiscoverRedis = "discover-redis"
-	CcRedis       = "redis"
-	SnapShotRedis = "snap-redis"
 )
 
 // redis clients

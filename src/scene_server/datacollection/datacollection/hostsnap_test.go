@@ -10,12 +10,13 @@
  * limitations under the License.
  */
 
-package logics
+package datacollection
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"
-	"testing"
 )
 
 func TestNeedToUpdate(t *testing.T) {

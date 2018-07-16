@@ -10,16 +10,10 @@
  * limitations under the License.
  */
 
-package logics
+package datacollection
 
 import (
-	bkcommon "configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/datacollection/common"
-	"configcenter/src/source_controller/common/instdata"
 	"fmt"
-	"github.com/rs/xid"
-	"github.com/tidwall/gjson"
 	"io"
 	"runtime"
 	"runtime/debug"
@@ -27,6 +21,14 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/rs/xid"
+	"github.com/tidwall/gjson"
+
+	bkcommon "configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/datacollection/common"
+	"configcenter/src/source_controller/common/instdata"
 
 	"time"
 

@@ -10,58 +10,49 @@
  * limitations under the License.
  */
 
-package actions
+package datacollection
 
 import (
 	"fmt"
-	"gopkg.in/redis.v5"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
+	"configcenter/src/storage/redisclient"
+
 	"configcenter/src/common"
-	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/scene_server/datacollection/app/options"
 	dccommon "configcenter/src/scene_server/datacollection/common"
-	"configcenter/src/scene_server/datacollection/datacollection/logics"
 	"configcenter/src/source_controller/common/instdata"
 )
 
-var dataCollection = &dataCollectionAction{}
+var dataCollection = &DataCollection{}
 
 // ObjectAction
-type dataCollectionAction struct {
-	base.BaseAction
+type DataCollection struct {
+	options.Config
 }
 
-func init() {
-	dataCollection.CreateAction()
-
-	// register actions
-	actions.RegisterNewAutoAction(actions.AutoAction{Name: "HostSnapshot", Run: dataCollection.AutoExectueAction})
-}
-
-func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error {
+func (d *DataCollection) Run(config map[string]string) error {
 
 	blog.Infof("AutoExectueAction start...")
 
 	var err error
 
-	discli, err := getSnapClient(config, dccommon.DiscoverRedis)
+	discli, err := redisclient.NewFromConfig(d.Config.DiscoverRedis)
 	if nil != err {
 		return err
 	}
 	dccommon.Discli = discli
 
-	snapcli, err := getSnapClient(config, dccommon.SnapShotRedis)
+	snapcli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		return err
 	}
 	dccommon.Snapcli = snapcli
 
-	rediscli, err := getSnapClient(config, dccommon.CcRedis)
+	rediscli, err := redisclient.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
 		return err
 	}
@@ -69,7 +60,7 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 
 	chanName := []string{}
 	for {
-		chanName, err = getChanName(config)
+		chanName, err = d.getSnapChanName()
 		if nil == err {
 			break
 		}
@@ -77,19 +68,19 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := logics.NewHostSnap(chanName, dccommon.MaxSnapSize, rediscli, snapcli)
+	hostSnap := NewHostSnap(chanName, dccommon.MaxSnapSize, rediscli, snapcli)
 	hostSnap.Start()
 
 	discoverChan := ""
 	for {
-		discoverChan, err = getDiscoverChanName()
+		discoverChan, err = d.getDiscoverChanName()
 		if nil == err {
 			break
 		}
 		blog.Errorf("get discover channel fail: %v, please init database first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
-	discover := logics.NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli, d.CC)
+	discover := NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli)
 	discover.Start()
 
 	// go mock(config, chanName)
@@ -97,12 +88,19 @@ func (d *dataCollectionAction) AutoExectueAction(config map[string]string) error
 	return nil
 }
 
-func getDiscoverChanName() (string, error) {
+func (d *DataCollection) getDiscoverChanName() (string, error) {
+	defaultAppID, err := d.getDefaultAppID()
+	if nil != err {
+		return "", err
+	}
+	return "discover" + defaultAppID, nil
+}
 
+func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
 
-	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
+	if err = instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
 		return "", err
 	}
 
@@ -110,7 +108,6 @@ func getDiscoverChanName() (string, error) {
 		return "", fmt.Errorf("default app not found")
 	}
 
-	var defaultAppID string
 	switch id := results[0][common.BKAppIDField].(type) {
 	case int:
 		defaultAppID = strconv.Itoa(id)
@@ -119,82 +116,61 @@ func getDiscoverChanName() (string, error) {
 	default:
 		return "", fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
-
-	return "discover" + defaultAppID, nil
-
+	return
 }
 
-func getChanName(config map[string]string) ([]string, error) {
-	if config["snap-redis.snapchan"] != "" {
-		return []string{config["snap-redis.snapchan"]}, nil
-	}
-
-	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
-	results := []map[string]interface{}{}
-
-	if err := instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
-		return nil, err
-	}
-
-	if len(results) <= 0 {
-		return nil, fmt.Errorf("default app not found")
-	}
-
-	var defaultAppID string
-	switch id := results[0][common.BKAppIDField].(type) {
-	case int:
-		defaultAppID = strconv.Itoa(id)
-	case int64:
-		defaultAppID = strconv.FormatInt(id, 10)
-	default:
-		return nil, fmt.Errorf("default defaultAppID type %v not support", reflect.TypeOf(results[0][common.BKAppIDField]))
+func (d *DataCollection) getSnapChanName() ([]string, error) {
+	defaultAppID, err := d.getDefaultAppID()
+	if nil != err {
+		return []string{}, err
 	}
 	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}, nil
 }
 
-func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
-	mastername := config[dType+".mastername"]
-	host := config[dType+".host"]
-	auth := config[dType+".pwd"]
-	db := config[dType+".database"]
-	dbNum, _ := strconv.Atoi(db)
-	var client *redis.Client
-	hosts := strings.Split(host, ",")
-	if mastername == "" {
-		option := &redis.Options{
-			Addr:     hosts[0],
-			Password: auth,
-			DB:       dbNum,
-			PoolSize: 100,
-		}
-		client = redis.NewClient(option)
-	} else {
-		option := &redis.FailoverOptions{
-			MasterName:    mastername,
-			SentinelAddrs: hosts,
-			Password:      auth,
-			DB:            dbNum,
-			PoolSize:      100,
-		}
-		client = redis.NewFailoverClient(option)
-	}
+// func getSnapClient(config map[string]string, dType string) (*redis.Client, error) {
+// 	mastername := config[dType+".mastername"]
+// 	host := config[dType+".host"]
+// 	auth := config[dType+".pwd"]
+// 	db := config[dType+".database"]
+// 	dbNum, _ := strconv.Atoi(db)
+// 	var client *redis.Client
+// 	hosts := strings.Split(host, ",")
+// 	if mastername == "" {
+// 		option := &redis.Options{
+// 			Addr:     hosts[0],
+// 			Password: auth,
+// 			DB:       dbNum,
+// 			PoolSize: 100,
+// 		}
+// 		client = redis.NewClient(option)
+// 	} else {
+// 		option := &redis.FailoverOptions{
+// 			MasterName:    mastername,
+// 			SentinelAddrs: hosts,
+// 			Password:      auth,
+// 			DB:            dbNum,
+// 			PoolSize:      100,
+// 		}
+// 		client = redis.NewFailoverClient(option)
+// 	}
 
-	err := client.Ping().Err()
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
+// 	err := client.Ping().Err()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return client, nil
+// }
 
-func mock(config map[string]string, channel string) {
+func (d *DataCollection) mock(config map[string]string, channel string) {
 	blog.Infof("start mocking ")
-	mockCli, err := getSnapClient(config, "snap-redis")
+
+	mockCli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		blog.Error("start mock error")
 		return
 	}
 
-	d := time.Second * 5
+	delta := time.Second * 5
 	var ts = time.Now()
 	var cnt int64
 	for {
@@ -209,7 +185,7 @@ func mock(config map[string]string, channel string) {
 			cnt = 0
 			ts = time.Now()
 		}
-		time.Sleep(d)
+		time.Sleep(delta)
 	}
 
 }
