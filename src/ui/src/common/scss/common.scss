@@ -159,6 +159,7 @@ textarea {
     &:hover {
         border-color: $mainBtnColor;
         background: #fff;
+        color: $mainBtnColor;
     }
 }
 
@@ -200,46 +201,6 @@ textarea {
     background: #f5f5f5;
 }
 
-.main-btn {
-    /*主要按钮*/
-    background: #3c96ff;
-    color: #fff;
-    cursor: pointer;
-    border: 1px solid #3c96ff;
-    outline: none;
-    border-radius: 2px;
-    &:hover {
-        background: #0082ff;
-        border: 1px solid #0082ff;
-        color: #fff;
-    }
-    &:active {
-        background: #0978e2;
-        border: 1px solid #0978e2;
-        color: #fff;
-    }
-}
-
-.vice-btn {
-    /*次要按钮 如取消按钮*/
-    // border: 1px solid rgba(73, 143, 224, 0.5);
-    border: 1px solid #c3cdd7;
-    color: $textColor;
-    background: #fff !important;
-    cursor: pointer;
-    outline: none;
-    border-radius: 2px;
-    &:hover {
-        background: #fff;
-        border-color: $mainBtnColor!important;
-        color: $mainBtnColor;
-    }
-    &:active {
-        background: #fff;
-        border-color: #0978e2;
-        color: #0978e2;
-    }
-}
 
 .icon-btn {
     /* 单纯图标的按钮*/
@@ -968,5 +929,48 @@ input.parsley-error {
         &:hover {
             background: #fafafa;
         }
+    }
+}
+
+
+.main-btn {
+    /*主要按钮*/
+    background: #3c96ff;
+    color: #fff;
+    cursor: pointer;
+    border: 1px solid #3c96ff;
+    outline: none;
+    border-radius: 2px;
+    &:hover {
+        background: #0082ff;
+        border: 1px solid #0082ff;
+        color: #fff;
+    }
+    &:active {
+        background: #0978e2;
+        border: 1px solid #0978e2;
+        color: #fff;
+    }
+}
+
+.vice-btn,
+.bk-button.vice-btn {
+    /*次要按钮 如取消按钮*/
+    // border: 1px solid rgba(73, 143, 224, 0.5);
+    border: 1px solid #c3cdd7;
+    color: $textColor;
+    background: #fff !important;
+    cursor: pointer;
+    outline: none;
+    border-radius: 2px;
+    &:hover:not(:disabled) {
+        background: #fff;
+        border-color: $mainBtnColor!important;
+        color: $mainBtnColor;
+    }
+    &:active {
+        background: #fff;
+        border-color: #0978e2;
+        color: #0978e2;
     }
 }
