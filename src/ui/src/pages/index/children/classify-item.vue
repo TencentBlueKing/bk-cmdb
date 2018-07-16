@@ -74,14 +74,13 @@
 <style lang="scss" scoped>
     .classify{
         margin: 0 0 20px 0;
-        padding: 0 20px;
         background-color: #fff;
         border: 1px solid #ebf0f5;
         box-shadow:0px 3px 6px 0px rgba(51,60,72,0.05);
     }
     .classify-name{
-        padding: 13px 0;
-        margin: 0;
+        padding: 13px 5px;
+        margin: 0 20px;
         line-height: 20px;
         font-size: 14px;
         color: $textColor;
@@ -91,13 +90,16 @@
         padding: 8px 0;
         .models-item{
             height: 36px;
-            padding: 6px 0;
+            &:hover{
+                background-color: #ecf3ff;
+            }
         }
     }
     .model-link{
         display: block;
         font-size: 0;
         position: relative;
+        padding: 6px 25px;
         &:before{
             content: "";
             display: inline-block;
@@ -131,9 +133,9 @@
         .model-star{
             display: none;
             position: absolute;
-            right: 10px;
-            top: 5px;
-            color: #dfe5ec;
+            right: 25px;
+            top: 11px;
+            color: #c3cdd7;
             font-size: 14px;
             cursor: pointer;
             &.icon-star-shape{

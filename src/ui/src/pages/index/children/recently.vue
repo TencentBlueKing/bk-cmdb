@@ -12,7 +12,7 @@
                         <strong class="recently-name">{{getRecentlyName(recentlyModels[index - 1])}}</strong>
                         <span class="recently-inst">数量：{{getRecentlyCount(recentlyModels[index - 1])}}</span>
                     </div>
-                    <i class="recently-delete" @click.stop="deleteRecently(recentlyModels[index - 1])"></i>
+                    <i class="recently-delete bk-icon icon-close" @click.stop="deleteRecently(recentlyModels[index - 1])"></i>
                 </template>
             </div>
         </template>
@@ -218,27 +218,16 @@
             position: absolute;
             right: 5px;
             top: 5px;
-            width: 10px;
-            height: 10px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #c3cdd7;
             cursor: pointer;
-            &:hover:before,
-            &:hover:after{
-                border-color: #aaccff;
-            }
-            &:before,
-            &:after{
-                content: "";
-                position: absolute;
-                left: -2px;
-                top: 5px;
-                width: 14px;
-                border-top: 1px solid #c3cdd7;
-            }
-            &:before{
-                transform: rotate(-45deg);
-            }
-            &:after{
-                transform: rotate(45deg);
+            transform: scale(0.8);
+            &:hover{
+                color: #4c84ff;
             }
         }
     }
