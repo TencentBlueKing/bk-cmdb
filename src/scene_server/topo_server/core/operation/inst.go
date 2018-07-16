@@ -426,6 +426,8 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		return nil, err
 	}
 
+	NewSupplementary().Audit(c.clientSet, c).CommitCreateLog(nil, nil)
+
 	return item, nil
 }
 
@@ -1032,7 +1034,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	inputParams := frtypes.New()
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
-	blog.Infof("data condition:%#v", inputParams)
+
 	rsp, err := c.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
 
 	if nil != err {

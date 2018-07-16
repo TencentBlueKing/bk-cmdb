@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -172,7 +171,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 				}
 
 				data, dataErr := act.HandlerFunc(types.ContextParams{
-					Support:         supplementary.New(),
 					Err:             defErr,
 					Lang:            defLang,
 					Header:          req.Request.Header,
