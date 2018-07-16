@@ -210,7 +210,7 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 	if parentObj.IsCommon() {
 		cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
 	}
-	cond.Field(common.BKInstParentStr).Eq(parentID)
+	cond.Field(parentObj.GetInstIDFieldName()).Eq(parentID)
 
 	rspItems, err := cli.searchInsts(parentObj, cond)
 	if nil != err {
@@ -242,6 +242,8 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if childObj.IsCommon() {
 		cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+	} else if childObj.GetID() == common.BKInnerObjIDSet {
+		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
 	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
 

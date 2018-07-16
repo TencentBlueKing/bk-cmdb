@@ -130,7 +130,6 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 
 	// construct the query inst condition
 	queryCond := &metadata.QueryInput{}
-
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err

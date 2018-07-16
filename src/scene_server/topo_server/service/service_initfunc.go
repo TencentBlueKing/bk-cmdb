@@ -145,6 +145,7 @@ func (s *topoService) initService() {
 	s.initBusiness()
 	s.initInst()
 	s.initModule()
+	s.initSet()
 	s.initObject()
 	s.initObjectAttribute()
 	s.initObjectClassification()

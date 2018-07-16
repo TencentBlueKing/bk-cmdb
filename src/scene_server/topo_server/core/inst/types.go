@@ -13,41 +13,9 @@
 package inst
 
 import (
-	frtypes "configcenter/src/common/mapstr"
-
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
-
-// Inst the inst interface
-type Inst interface {
-	model.Operation
-	GetObject() model.Object
-
-	GetMainlineParentInst() (Inst, error)
-	GetMainlineChildInst() ([]Inst, error)
-
-	GetParentInst() ([]Inst, error)
-	GetChildInst() ([]Inst, error)
-
-	SetParentInst(targetInst Inst) error
-	SetChildInst(targetInst Inst) error
-
-	SetMainlineParentInst(targetInst Inst) error
-	SetMainlineChildInst(targetInst Inst) error
-
-	GetInstID() (int64, error)
-	GetParentID() (int64, error)
-	GetInstName() (string, error)
-
-	SetValue(key string, value interface{}) error
-
-	SetValues(values frtypes.MapStr)
-
-	GetValues() frtypes.MapStr
-
-	ToMapStr() frtypes.MapStr
-}
 
 // Factory used to all inst
 type Factory interface {
