@@ -439,7 +439,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	user := util.GetUser(pheader)
 	data := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("update host batch failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
