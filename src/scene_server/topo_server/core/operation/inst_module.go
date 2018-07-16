@@ -21,19 +21,24 @@ type ModuleOperationInterface interface {
 	DeleteModule(params types.ContextParams, obj model.Object, bizID int64, setID, moduleIDS []int64) error
 	FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error)
 	UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error
+
+	SetProxy(inst InstOperationInterface)
 }
 
 // NewModuleOperation create a new module
-func NewModuleOperation(client apimachinery.ClientSetInterface, inst InstOperationInterface) ModuleOperationInterface {
+func NewModuleOperation(client apimachinery.ClientSetInterface) ModuleOperationInterface {
 	return &module{
 		clientSet: client,
-		inst:      inst,
 	}
 }
 
 type module struct {
 	clientSet apimachinery.ClientSetInterface
 	inst      InstOperationInterface
+}
+
+func (m *module) SetProxy(inst InstOperationInterface) {
+	m.inst = inst
 }
 
 func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []int64) (bool, error) {
@@ -93,7 +98,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {
-	return m.inst.FindInst(params, obj, cond)
+	return m.inst.FindInst(params, obj, cond, false)
 }
 
 func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID, setID, moduleID int64) error {

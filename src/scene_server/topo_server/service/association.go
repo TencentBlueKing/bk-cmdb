@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -78,6 +79,21 @@ func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams,
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
 func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("search main line child inst topo")
+
+	//{obj_id}/{app_id}/{inst_id}
+	objID := pathParams("obj_id")
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "app_id")
+	}
+
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "inst_id")
+	}
+	_ = bizID
+	_ = instID
+	_ = objID
+	//s.core.AssociationOperation().SearchMainlineAssociationInstTopo()
 	return nil, nil
 }

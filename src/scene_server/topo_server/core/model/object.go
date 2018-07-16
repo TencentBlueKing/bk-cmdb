@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 
+	"configcenter/src/common/metadata"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -34,11 +36,16 @@ type Object interface {
 
 	Parse(data frtypes.MapStr) (*meta.Object, error)
 
+	Origin() meta.Object
+
 	IsCommon() bool
 
+	SetRecordID(id int64)
+	GetRecordID() int64
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
+	GetParentObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
@@ -88,6 +95,7 @@ type Object interface {
 
 	GetInstIDFieldName() string
 	GetInstNameFieldName() string
+	GetDefaultInstPropertyName() string
 	GetObjectType() string
 }
 
@@ -100,13 +108,29 @@ type object struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *object) MarshalJSON() ([]byte, error) {
-	return json.Marshal(cli.obj)
+func (o *object) Origin() meta.Object {
+	return o.obj
 }
 
-func (cli *object) GetInstIDFieldName() string {
+func (o *object) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.obj)
+}
 
-	switch cli.obj.ObjectID {
+func (o *object) GetDefaultInstPropertyName() string {
+	switch o.obj.ObjectID {
+	case common.BKInnerObjIDApp:
+		return "业务名"
+	case common.BKInnerObjIDModule:
+		return "模块名"
+	case common.BKInnerObjIDSet:
+		return "集群名"
+	default:
+		return "实例名"
+	}
+}
+func (o *object) GetInstIDFieldName() string {
+
+	switch o.obj.ObjectID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppIDField
 	case common.BKInnerObjIDSet:
@@ -127,8 +151,8 @@ func (cli *object) GetInstIDFieldName() string {
 
 }
 
-func (cli *object) GetInstNameFieldName() string {
-	switch cli.obj.ObjectID {
+func (o *object) GetInstNameFieldName() string {
+	switch o.obj.ObjectID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppNameField
 	case common.BKInnerObjIDSet:
@@ -146,26 +170,26 @@ func (cli *object) GetInstNameFieldName() string {
 	}
 }
 
-func (cli *object) GetObjectType() string {
-	switch cli.obj.ObjectID {
+func (o *object) GetObjectType() string {
+	switch o.obj.ObjectID {
 	case common.BKInnerObjIDApp:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	case common.BKInnerObjIDSet:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	case common.BKInnerObjIDModule:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	case common.BKInnerObjIDHost:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	case common.BKInnerObjIDProc:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	case common.BKInnerObjIDPlat:
-		return cli.obj.ObjectID
+		return o.obj.ObjectID
 	default:
 		return common.BKINnerObjIDObject
 	}
 }
-func (cli *object) IsCommon() bool {
-	switch cli.obj.ObjectID {
+func (o *object) IsCommon() bool {
+	switch o.obj.ObjectID {
 	case common.BKInnerObjIDApp:
 		return false
 	case common.BKInnerObjIDSet:
@@ -182,34 +206,32 @@ func (cli *object) IsCommon() bool {
 		return true
 	}
 }
-func (cli *object) search(objID string) ([]meta.Object, error) {
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
+func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
+
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), o.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", objID, rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
 	}
 
 	return rsp.Data, nil
 
 }
 
-func (cli *object) GetMainlineParentObject() (Object, error) {
+func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -217,13 +239,17 @@ func (cli *object) GetMainlineParentObject() (Object, error) {
 
 	for _, asst := range rsp.Data {
 
-		rspRst, err := cli.search(asst.ObjectID)
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+
+		rspRst, err := o.search(cond)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
 			return nil, err
 		}
 
-		objItems := CreateObject(cli.params, cli.clientSet, rspRst)
+		objItems := CreateObject(o.params, o.clientSet, rspRst)
 		for _, item := range objItems { // only one parent in the main-line
 			return item, nil
 		}
@@ -233,28 +259,30 @@ func (cli *object) GetMainlineParentObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (cli *object) GetMainlineChildObject() (Object, error) {
+func (o *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
 	for _, asst := range rsp.Data {
-
-		rspRst, err := cli.search(asst.ObjectID)
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		rspRst, err := o.search(cond)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s", asst.ObjectID, err.Error())
 			return nil, err
 		}
 
-		objItems := CreateObject(cli.params, cli.clientSet, rspRst)
+		objItems := CreateObject(o.params, o.clientSet, rspRst)
 		for _, item := range objItems { // only one child in the main-line
 			return item, nil
 		}
@@ -263,13 +291,8 @@ func (cli *object) GetMainlineChildObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (cli *object) GetParentObject() ([]Object, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
-
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -277,84 +300,84 @@ func (cli *object) GetParentObject() ([]Object, error) {
 
 	objItems := make([]Object, 0)
 	for _, asst := range rsp.Data {
-
-		rspRst, err := cli.search(asst.ObjectID)
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		rspRst, err := o.search(cond)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
 			return nil, err
 		}
 
-		objItems = append(objItems, CreateObject(cli.params, cli.clientSet, rspRst)...)
+		objItems = append(objItems, CreateObject(o.params, o.clientSet, rspRst)...)
 
 	}
 
 	return objItems, nil
 }
-func (cli *object) GetChildObject() ([]Object, error) {
+func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-		return nil, err
-	}
+	return o.searchObjects(cond)
+}
+func (o *object) GetParentObject() ([]Object, error) {
 
-	objItems := make([]Object, 0)
-	for _, asst := range rsp.Data {
+	cond := condition.CreateCondition()
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 
-		rspRst, err := cli.search(asst.ObjectID)
-		if nil != err {
-			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
-			return nil, err
-		}
-
-		objItems = append(objItems, CreateObject(cli.params, cli.clientSet, rspRst)...)
-
-	}
-
-	return objItems, nil
+	return o.searchObjects(cond)
 }
 
-func (cli *object) SetMainlineParentObject(objID string) error {
+func (o *object) GetChildObject() ([]Object, error) {
+	cond := condition.CreateCondition()
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+
+	return o.searchObjects(cond)
+}
+
+func (o *object) SetMainlineParentObject(objID string) error {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(cli.obj.ObjectID)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("[model-obj] failed to search the main line association, error info is %s", rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		return o.params.Err.Error(rsp.Code)
 	}
 
 	// create
 	if 0 == len(rsp.Data) {
 
 		asst := &meta.Association{}
-		asst.OwnerID = cli.params.SupplierAccount
+		asst.OwnerID = o.params.SupplierAccount
 		asst.ObjectAttID = common.BKChildStr
-		asst.ObjectID = cli.obj.ObjectID
+		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header, asst)
+		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
+			return o.params.Err.Error(rsp.Code)
 		}
 
 		return nil
@@ -366,7 +389,7 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 		asst.AsstObjID = objID
 		asst.ObjectAttID = common.BKChildStr
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header, asst.ToMapStr())
+		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -374,21 +397,21 @@ func (cli *object) SetMainlineParentObject(objID string) error {
 
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[model-obj] failed to update the parent association, error info is %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
+			return o.params.Err.Error(rsp.Code)
 		}
 	}
 
 	return nil
 }
-func (cli *object) SetMainlineChildObject(objID string) error {
+func (o *object) SetMainlineChildObject(objID string) error {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.AssociationFieldSupplierAccount).Eq(cli.params.SupplierAccount)
+	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(cli.obj.ObjectID)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return err
@@ -396,28 +419,28 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("[model-obj] failed to set the main line association, error info is %s", rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		return o.params.Err.Error(rsp.Code)
 	}
 
 	// create
 	if 0 == len(rsp.Data) {
 
 		asst := &meta.Association{}
-		asst.OwnerID = cli.params.SupplierAccount
+		asst.OwnerID = o.params.SupplierAccount
 		asst.ObjectAttID = common.BKChildStr
 		asst.ObjectID = objID
-		asst.AsstObjID = cli.obj.ObjectID
+		asst.AsstObjID = o.obj.ObjectID
 
-		rsp, err := cli.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), cli.params.Header, asst)
+		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
+			return o.params.Err.Error(rsp.Code)
 		}
 
 		return nil
@@ -429,7 +452,7 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 		asst.ObjectID = objID
 		asst.ObjectAttID = common.BKChildStr
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, cli.params.Header, asst.ToMapStr())
+		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -437,16 +460,24 @@ func (cli *object) SetMainlineChildObject(objID string) error {
 
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[model-obj] failed to update the child association, error info is %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
+			return o.params.Err.Error(rsp.Code)
 		}
 	}
 
 	return nil
 }
 
-func (cli *object) IsExists() (bool, error) {
+func (o *object) IsExists() (bool, error) {
 
-	items, err := cli.search(cli.obj.ObjectID)
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+	if 0 != len(o.obj.ObjectID) {
+		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	} else {
+		cond.Field(metadata.ModelFieldID).Eq(o.obj.ID)
+	}
+
+	items, err := o.search(cond)
 	if nil != err {
 		return false, err
 	}
@@ -454,134 +485,166 @@ func (cli *object) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 
-func (cli *object) Create() error {
+func (o *object) Create() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreateObject(context.Background(), cli.params.Header, &cli.obj)
+	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return o.params.Err.Error(rsp.Code)
 	}
 
-	cli.obj.ID = rsp.Data.ID
+	o.obj.ID = rsp.Data.ID
 
 	return nil
 }
 
-func (cli *object) Delete() error {
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteObject(context.Background(), cli.obj.ID, cli.params.Header, nil)
+func (o *object) Delete() error {
+	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), o.obj.ID, o.params.Header, nil)
 
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[opration-obj] failed to delete the object by the id(%d)", cli.obj.ID)
-		return cli.params.Err.Error(rsp.Code)
+		blog.Errorf("[opration-obj] failed to delete the object by the id(%d)", o.obj.ID)
+		return o.params.Err.Error(rsp.Code)
 	}
 	return nil
 }
 
-func (cli *object) Update() error {
+func (o *object) Update(data frtypes.MapStr) error {
 
-	data := meta.SetValueToMapStrByTags(cli.obj)
+	// check the name repeated
 
-	items, err := cli.search(cli.obj.ObjectID)
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ModelFieldOwnerID).Eq(o.params.SupplierAccount)
+	cond.Field(metadata.ModelFieldObjectName).Eq(o.obj.ObjectName)
+	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
+
+	tmpItems, err := o.search(cond)
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to check the repeated, error info is %s", err.Error())
+		return err
+	}
+
+	if 0 != len(tmpItems) {
+		//str, _ := cond.ToMapStr().ToJSON()
+		//fmt.Println("objects:", tmpItems, string(str))
+		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	// update action
+
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+	if 0 != len(o.obj.ObjectID) {
+		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	} else {
+		cond.Field(metadata.ModelFieldID).Eq(o.obj.ID)
+	}
+
+	items, err := o.search(cond)
 	if nil != err {
 		return err
 	}
 
 	for _, item := range items {
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, cli.params.Header, data)
+		rsp, err := o.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, o.params.Header, data)
 
 		if nil != err {
 			blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if common.CCSuccess != rsp.Code {
-			blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
+			blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+			return o.params.Err.Error(rsp.Code)
 		}
 	}
 	return nil
 }
 
-func (cli *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
+func (o *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
 
-	err := meta.SetValueToStructByTags(&cli.obj, data)
+	err := meta.SetValueToStructByTags(&o.obj, data)
 	if nil != err {
 		return nil, err
 	}
 
-	if 0 == len(cli.obj.ObjectID) {
-		return nil, cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjectID)
-	}
+	/*
+		if 0 == len(o.obj.ObjectID) {
+			return nil, o.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjectID)
+		}
 
-	if 0 == len(cli.obj.ObjCls) {
-		return nil, cli.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjCls)
-	}
-
+		if 0 == len(o.obj.ObjCls) {
+			return nil, o.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjCls)
+		}
+	*/
 	return nil, err
 }
 
-func (cli *object) ToMapStr() (frtypes.MapStr, error) {
-	rst := meta.SetValueToMapStrByTags(&cli.obj)
+func (o *object) ToMapStr() (frtypes.MapStr, error) {
+	rst := meta.SetValueToMapStrByTags(&o.obj)
 	return rst, nil
 }
 
-func (cli *object) Save() error {
+func (o *object) Save() error {
 
-	if exists, err := cli.IsExists(); nil != err {
+	if exists, err := o.IsExists(); nil != err {
 		return err
 	} else if exists {
-		return cli.Update()
+		data := meta.SetValueToMapStrByTags(o.obj)
+		return o.Update(data)
 	}
 
-	return cli.Create()
+	return o.Create()
 
 }
 
-func (cli *object) CreateGroup() Group {
+func (o *object) CreateGroup() Group {
 	return &group{
+		params:    o.params,
+		clientSet: o.clientSet,
 		grp: meta.Group{
-			OwnerID:  cli.obj.OwnerID,
-			ObjectID: cli.obj.ObjectID,
+
+			OwnerID:  o.obj.OwnerID,
+			ObjectID: o.obj.ObjectID,
 		},
 	}
 }
 
-func (cli *object) CreateAttribute() Attribute {
+func (o *object) CreateAttribute() Attribute {
 	return &attribute{
-		params:    cli.params,
-		clientSet: cli.clientSet,
+		params:    o.params,
+		clientSet: o.clientSet,
 		attr: meta.Attribute{
-			OwnerID:  cli.obj.OwnerID,
-			ObjectID: cli.obj.ObjectID,
+			OwnerID:  o.obj.OwnerID,
+			ObjectID: o.obj.ObjectID,
 		},
 	}
 }
 
-func (cli *object) GetAttributes() ([]Attribute, error) {
+func (o *object) GetAttributes() ([]Attribute, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.AttributeFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
 	}
 
 	rstItems := make([]Attribute, 0)
@@ -589,8 +652,8 @@ func (cli *object) GetAttributes() ([]Attribute, error) {
 
 		attr := &attribute{
 			attr:      item,
-			params:    cli.params,
-			clientSet: cli.clientSet,
+			params:    o.params,
+			clientSet: o.clientSet,
 		}
 
 		rstItems = append(rstItems, attr)
@@ -599,29 +662,29 @@ func (cli *object) GetAttributes() ([]Attribute, error) {
 	return rstItems, nil
 }
 
-func (cli *object) GetGroups() ([]Group, error) {
+func (o *object) GetGroups() ([]Group, error) {
 
 	cond := condition.CreateCondition()
 
-	cond.Field(meta.GroupFieldObjectID).Eq(cli.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(cli.params.SupplierAccount)
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	rsp, err := o.clientSet.ObjectController().Meta().SelectGroup(context.Background(), o.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
 	}
 
 	rstItems := make([]Group, 0)
 	for _, item := range rsp.Data {
 		grp := &group{
 			grp:       item,
-			params:    cli.params,
-			clientSet: cli.clientSet,
+			params:    o.params,
+			clientSet: o.clientSet,
 		}
 		rstItems = append(rstItems, grp)
 	}
@@ -629,114 +692,120 @@ func (cli *object) GetGroups() ([]Group, error) {
 	return rstItems, nil
 }
 
-func (cli *object) SetClassification(class Classification) {
-	cli.obj.ObjCls = class.GetID()
+func (o *object) SetClassification(class Classification) {
+	o.obj.ObjCls = class.GetID()
 }
 
-func (cli *object) GetClassification() (Classification, error) {
+func (o *object) GetClassification() (Classification, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(meta.ClassFieldClassificationID).Eq(cli.obj.ObjCls)
+	cond.Field(meta.ClassFieldClassificationID).Eq(o.obj.ObjCls)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.obj.ObjectID, rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
 	}
 
 	for _, item := range rsp.Data {
 
 		return &classification{
 			cls:       item,
-			params:    cli.params,
-			clientSet: cli.clientSet,
+			params:    o.params,
+			clientSet: o.clientSet,
 		}, nil // only one classification
 	}
 
-	return nil, fmt.Errorf("invalid classification(%s) for the object(%s)", cli.obj.ObjCls, cli.obj.ObjectID)
+	return nil, fmt.Errorf("invalid classification(%s) for the object(%s)", o.obj.ObjCls, o.obj.ObjectID)
+}
+func (o *object) SetRecordID(id int64) {
+	o.obj.ID = id
+}
+func (o *object) GetRecordID() int64 {
+	return o.obj.ID
 }
 
-func (cli *object) SetIcon(objectIcon string) {
-	cli.obj.ObjIcon = objectIcon
+func (o *object) SetIcon(objectIcon string) {
+	o.obj.ObjIcon = objectIcon
 }
 
-func (cli *object) GetIcon() string {
-	return cli.obj.ObjIcon
+func (o *object) GetIcon() string {
+	return o.obj.ObjIcon
 }
 
-func (cli *object) SetID(objectID string) {
-	cli.obj.ObjectID = objectID
+func (o *object) SetID(objectID string) {
+	o.obj.ObjectID = objectID
 }
 
-func (cli *object) GetID() string {
-	return cli.obj.ObjectID
+func (o *object) GetID() string {
+	return o.obj.ObjectID
 }
 
-func (cli *object) SetName(objectName string) {
-	cli.obj.ObjectName = objectName
+func (o *object) SetName(objectName string) {
+	o.obj.ObjectName = objectName
 }
 
-func (cli *object) GetName() string {
-	return cli.obj.ObjectName
+func (o *object) GetName() string {
+	return o.obj.ObjectName
 }
 
-func (cli *object) SetIsPre(isPre bool) {
-	cli.obj.IsPre = isPre
+func (o *object) SetIsPre(isPre bool) {
+	o.obj.IsPre = isPre
 }
 
-func (cli *object) GetIsPre() bool {
-	return cli.obj.IsPre
+func (o *object) GetIsPre() bool {
+	return o.obj.IsPre
 }
 
-func (cli *object) SetIsPaused(isPaused bool) {
-	cli.obj.IsPaused = isPaused
+func (o *object) SetIsPaused(isPaused bool) {
+	o.obj.IsPaused = isPaused
 }
 
-func (cli *object) GetIsPaused() bool {
-	return cli.obj.IsPaused
+func (o *object) GetIsPaused() bool {
+	return o.obj.IsPaused
 }
 
-func (cli *object) SetPosition(position string) {
-	cli.obj.Position = position
+func (o *object) SetPosition(position string) {
+	o.obj.Position = position
 }
 
-func (cli *object) GetPosition() string {
-	return cli.obj.Position
+func (o *object) GetPosition() string {
+	return o.obj.Position
 }
 
-func (cli *object) SetSupplierAccount(supplierAccount string) {
-	cli.obj.OwnerID = supplierAccount
+func (o *object) SetSupplierAccount(supplierAccount string) {
+	o.obj.OwnerID = supplierAccount
 }
 
-func (cli *object) GetSupplierAccount() string {
-	return cli.obj.OwnerID
+func (o *object) GetSupplierAccount() string {
+	return o.obj.OwnerID
 }
 
-func (cli *object) SetDescription(description string) {
-	cli.obj.Description = description
+func (o *object) SetDescription(description string) {
+	o.obj.Description = description
 }
 
-func (cli *object) GetDescription() string {
-	return cli.obj.Description
+func (o *object) GetDescription() string {
+	return o.obj.Description
 }
 
-func (cli *object) SetCreator(creator string) {
-	cli.obj.Creator = creator
+func (o *object) SetCreator(creator string) {
+	o.obj.Creator = creator
 }
 
-func (cli *object) GetCreator() string {
-	return cli.obj.Creator
+func (o *object) GetCreator() string {
+	return o.obj.Creator
 }
 
-func (cli *object) SetModifier(modifier string) {
-	cli.obj.Modifier = modifier
+func (o *object) SetModifier(modifier string) {
+	o.obj.Modifier = modifier
 }
 
-func (cli *object) GetModifier() string {
-	return cli.obj.Modifier
+func (o *object) GetModifier() string {
+	return o.obj.Modifier
 }

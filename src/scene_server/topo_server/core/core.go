@@ -51,35 +51,44 @@ type core struct {
 // New create a core manager
 func New(client apimachinery.ClientSetInterface) Core {
 
+	attributeOperation := operation.NewAttributeOperation(client)
+	classificationOperation := operation.NewClassificationOperation(client)
+	groupOperation := operation.NewGroupOperation(client)
+	objectOperation := operation.NewObjectOperation(client)
+	instOperation := operation.NewInstOperation(client)
+	moduleOperation := operation.NewModuleOperation(client)
+	setOperation := operation.NewSetOperation(client)
+	businessOperation := operation.NewBusinessOperation(client)
+	associationOperation := operation.NewAssociationOperation(client)
+	permissionOperation := operation.NewPermissionOperation(client)
+	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
+
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
-	attribute := operation.NewAttributeOperation(client, targetModel, targetInst)
-	classification := operation.NewClassificationOperation(client, targetModel, targetInst)
-	group := operation.NewGroupOperation(client, targetModel, targetInst)
-	object := operation.NewObjectOperation(client, targetModel, targetInst)
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation)
+	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
+	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
+	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
+	associationOperation.SetProxy(classificationOperation, objectOperation, attributeOperation, instOperation, targetModel, targetInst)
 
-	inst := operation.NewInstOperation(client, targetModel, targetInst)
-	module := operation.NewModuleOperation(client, inst)
-	set := operation.NewSetOperation(client, object, inst, module)
-	business := operation.NewBusinessOperation(set, module, client, inst, object)
-
-	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
-	permission := operation.NewPermissionOperation(client)
-	compatibleV2 := operation.NewCompatibleV2Operation(client)
+	instOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
+	moduleOperation.SetProxy(instOperation)
+	setOperation.SetProxy(objectOperation, instOperation, moduleOperation)
+	businessOperation.SetProxy(setOperation, moduleOperation, instOperation, objectOperation)
 
 	return &core{
-		set:            set,
-		module:         module,
-		business:       business,
-		inst:           inst,
-		association:    association,
-		attribute:      attribute,
-		classification: classification,
-		group:          group,
-		object:         object,
-		permission:     permission,
-		compatibleV2:   compatibleV2,
+		set:            setOperation,
+		module:         moduleOperation,
+		business:       businessOperation,
+		inst:           instOperation,
+		association:    associationOperation,
+		attribute:      attributeOperation,
+		classification: classificationOperation,
+		group:          groupOperation,
+		object:         objectOperation,
+		permission:     permissionOperation,
+		compatibleV2:   compatibleV2Operation,
 	}
 }
 

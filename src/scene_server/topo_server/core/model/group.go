@@ -34,6 +34,8 @@ type Group interface {
 
 	GetAttributes() ([]Attribute, error)
 
+	Origin() metadata.Group
+
 	SetID(groupID string)
 	GetID() string
 
@@ -64,32 +66,54 @@ type group struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *group) MarshalJSON() ([]byte, error) {
-	return json.Marshal(cli.grp)
+func (g *group) MarshalJSON() ([]byte, error) {
+	return json.Marshal(g.grp)
 }
 
-func (cli *group) Create() error {
+func (g *group) Origin() metadata.Group {
+	return g.grp
+}
 
-	rsp, err := cli.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), cli.params.Header, &cli.grp)
+func (g *group) Create() error {
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	cond.Field(metadata.GroupFieldGroupIndex).Eq(g.grp.GroupIndex)
+	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
+
+	grpItems, err := g.search(cond)
+	if nil != err {
+		blog.Errorf("[model-grp] failed to search the groups by the condition(%#v), error info is %s", cond, err.Error())
+		return err
+	}
+
+	if 0 != len(grpItems) {
+		blog.Errorf("[model-grp] the group(%#v) is repeated", g.grp)
+		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	rsp, err := g.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), g.params.Header, &g.grp)
 
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, error info is %s", err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp] failed to create the group(%s), error info is is %s", cli.grp.GroupID, rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
+		blog.Errorf("[model-grp] failed to create the group(%s), error info is is %s", g.grp.GroupID, rsp.ErrMsg)
+		return g.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
-	cli.grp.ID = rsp.Data.ID
+	g.grp.ID = rsp.Data.ID
 
 	return nil
 }
 
-func (cli *group) Update() error {
+func (g *group) Update(data frtypes.MapStr) error {
 
-	grps, err := cli.search()
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	grps, err := g.search(cond)
 	if nil != err {
 		return err
 	}
@@ -98,10 +122,10 @@ func (cli *group) Update() error {
 
 		cond := &metadata.UpdateGroupCondition{}
 		cond.Condition.GroupID = grpItem.GroupID
-		cond.Data.Index = cli.grp.GroupIndex
-		cond.Data.Name = cli.grp.GroupName
+		cond.Data.Index = g.grp.GroupIndex
+		cond.Data.Name = g.grp.GroupName
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), cli.params.Header, cond)
+		rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), g.params.Header, cond)
 		if nil != err {
 			blog.Errorf("[model-grp]failed to request object controller, error info is %s", err.Error())
 			return err
@@ -109,37 +133,37 @@ func (cli *group) Update() error {
 
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[model-grp]failed to update the group(%s), error info is %s", grpItem.GroupID, err.Error())
-			return cli.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+			return g.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 		}
 
-		cli.grp.ID = grpItem.ID
+		g.grp.ID = grpItem.ID
 
 	}
 	return nil
 }
 
-func (cli *group) Delete() error {
+func (g *group) Delete() error {
 
-	rsp, err := cli.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), cli.grp.GroupID, cli.params.Header)
+	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), g.grp.GroupID, g.params.Header)
 	if nil != err {
 		blog.Error("[model-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp]failed to delte the group(%s), error info is %s", cli.grp.GroupID, rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
+		blog.Errorf("[model-grp]failed to delte the group(%s), error info is %s", g.grp.GroupID, rsp.ErrMsg)
+		return g.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 
 	return nil
 }
 
-func (cli *group) IsExists() (bool, error) {
+func (g *group) IsExists() (bool, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
+	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request object controller ,error info is %s", err.Error())
 		return false, err
@@ -147,38 +171,38 @@ func (cli *group) IsExists() (bool, error) {
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("failed to query group, error info is  %s", rsp.ErrMsg)
-		return false, cli.params.Err.Error(common.CCErrTopoObjectGroupSelectFailed)
+		return false, g.params.Err.Error(common.CCErrTopoObjectGroupSelectFailed)
 	}
 
 	return 0 != len(rsp.Data), nil
 }
 
-func (cli *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
+func (g *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
 
-	err := metadata.SetValueToStructByTags(&cli.grp, data)
-	return &cli.grp, err
+	err := metadata.SetValueToStructByTags(&g.grp, data)
+	return &g.grp, err
 }
-func (cli *group) ToMapStr() (frtypes.MapStr, error) {
+func (g *group) ToMapStr() (frtypes.MapStr, error) {
 
-	rst := metadata.SetValueToMapStrByTags(&cli.grp)
+	rst := metadata.SetValueToMapStrByTags(&g.grp)
 	return rst, nil
 }
 
-func (cli *group) GetAttributes() ([]Attribute, error) {
+func (g *group) GetAttributes() ([]Attribute, error) {
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldObjectID).Eq(cli.grp.ObjectID).
-		Field(metadata.AttributeFieldPropertyGroup).Eq(cli.grp.GroupID).
-		Field(metadata.AttributeFieldSupplierAccount).Eq(cli.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(g.grp.ObjectID).
+		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID).
+		Field(metadata.AttributeFieldSupplierAccount).Eq(g.params.SupplierAccount)
 
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), g.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", cli.grp.ObjectID, rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		blog.Errorf("failed to search the object(%s), error info is %s", g.grp.ObjectID, rsp.ErrMsg)
+		return nil, g.params.Err.Error(rsp.Code)
 	}
 
 	rstItems := make([]Attribute, 0)
@@ -186,8 +210,8 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 
 		attr := &attribute{
 			attr:      item,
-			params:    cli.params,
-			clientSet: cli.clientSet,
+			params:    g.params,
+			clientSet: g.clientSet,
 		}
 
 		rstItems = append(rstItems, attr)
@@ -196,12 +220,9 @@ func (cli *group) GetAttributes() ([]Attribute, error) {
 	return rstItems, nil
 }
 
-func (cli *group) search() ([]metadata.Group, error) {
+func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 
-	cond := condition.CreateCondition()
-	cond.Field(metadata.GroupFieldGroupID).Eq(cli.grp.GroupID)
-
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectGroup(context.Background(), cli.params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -209,77 +230,77 @@ func (cli *group) search() ([]metadata.Group, error) {
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		return nil, g.params.Err.Error(rsp.Code)
 	}
 
 	return rsp.Data, nil
 }
-func (cli *group) Save() error {
+func (g *group) Save() error {
 
-	if exists, err := cli.IsExists(); nil != err {
+	if exists, err := g.IsExists(); nil != err {
 		return err
 	} else if !exists {
-		return cli.Create()
+		return g.Create()
 	}
-
-	return cli.Update()
+	data := metadata.SetValueToMapStrByTags(g.grp)
+	return g.Update(data)
 }
 
-func (cli *group) CreateAttribute() Attribute {
+func (g *group) CreateAttribute() Attribute {
 	return &attribute{
-		params:    cli.params,
-		clientSet: cli.clientSet,
+		params:    g.params,
+		clientSet: g.clientSet,
 		attr: metadata.Attribute{
-			OwnerID:  cli.grp.OwnerID,
-			ObjectID: cli.grp.ObjectID,
+			OwnerID:  g.grp.OwnerID,
+			ObjectID: g.grp.ObjectID,
 		},
 	}
 }
 
-func (cli *group) SetID(groupID string) {
-	cli.grp.GroupID = groupID
+func (g *group) SetID(groupID string) {
+	g.grp.GroupID = groupID
 }
 
-func (cli *group) GetID() string {
-	return cli.grp.GroupID
+func (g *group) GetID() string {
+	return g.grp.GroupID
 }
 
-func (cli *group) SetName(groupName string) {
-	cli.grp.GroupName = groupName
+func (g *group) SetName(groupName string) {
+	g.grp.GroupName = groupName
 }
 
-func (cli *group) GetName() string {
-	return cli.grp.GroupName
+func (g *group) GetName() string {
+	return g.grp.GroupName
 }
 
-func (cli *group) SetIndex(groupIndex int64) {
-	cli.grp.GroupIndex = groupIndex
+func (g *group) SetIndex(groupIndex int64) {
+	g.grp.GroupIndex = groupIndex
 }
 
-func (cli *group) GetIndex() int64 {
-	return int64(cli.grp.GroupIndex)
+func (g *group) GetIndex() int64 {
+	return int64(g.grp.GroupIndex)
 }
 
-func (cli *group) SetSupplierAccount(supplierAccount string) {
-	cli.grp.OwnerID = supplierAccount
+func (g *group) SetSupplierAccount(supplierAccount string) {
+	g.grp.OwnerID = supplierAccount
 }
 
-func (cli *group) GetSupplierAccount() string {
-	return cli.grp.OwnerID
+func (g *group) GetSupplierAccount() string {
+	return g.grp.OwnerID
 }
 
-func (cli *group) SetDefault(isDefault bool) {
-	cli.grp.IsDefault = isDefault
+func (g *group) SetDefault(isDefault bool) {
+	g.grp.IsDefault = isDefault
 }
 
-func (cli *group) GetDefault() bool {
-	return cli.grp.IsDefault
+func (g *group) GetDefault() bool {
+	return g.grp.IsDefault
 }
 
-func (cli *group) SetIsPre(isPre bool) {
-	cli.grp.IsPre = isPre
+func (g *group) SetIsPre(isPre bool) {
+	g.grp.IsPre = isPre
 }
 
-func (cli *group) GetIsPre() bool {
-	return cli.grp.IsPre
+func (g *group) GetIsPre() bool {
+	return g.grp.IsPre
 }
