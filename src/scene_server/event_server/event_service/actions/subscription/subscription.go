@@ -78,7 +78,7 @@ func (cli *subscriptionAction) Subscribe(req *restful.Request, resp *restful.Res
 		sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 		sub.OwnerID = ownerID
 
-		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 		if err != nil || count > 0 {
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDuplicateItem)
 		}
@@ -199,7 +199,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrEventSubscribeUpdateFailed)
 		}
 		if oldsub.SubscriptionName != sub.SubscriptionName {
-			count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+			count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 			if err != nil {
 				blog.Errorf("get subscription count error: %v", err)
 				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribeUpdateFailed)
@@ -218,6 +218,7 @@ func (cli *subscriptionAction) Rebook(req *restful.Request, resp *restful.Respon
 		sub.LastTime = &now
 		sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 		sub.Operator = sencecommon.GetUserFromHeader(req)
+		sub.OwnerID = ownerID
 		if updateerr := instdata.UpdateSubscriptionByCondition(sub, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()); nil != updateerr {
 			blog.Error("fail update subscription by condition, error information is %s", updateerr.Error())
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrEventSubscribeUpdateFailed)
