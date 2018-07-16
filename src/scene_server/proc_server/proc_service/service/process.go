@@ -26,6 +26,7 @@ import (
     "configcenter/src/source_controller/api/metadata"
     "configcenter/src/common/auditoplog"
     "configcenter/src/common/paraparse"
+    sourceAPI "configcenter/src/source_controller/api/object"
     
     "github.com/gin-gonic/gin/json"
     "github.com/emicklei/go-restful"
@@ -408,4 +409,23 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 
     log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField:"create process", common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": instanceID}
     ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appID, user, header, log)
+}
+
+func (ps *ProcServer) getProcessbyProcID(procID string, forward *sourceAPI.ForwardParam) (map[string]interface{}, error) {
+    condition := map[string]interface{}{
+        common.BKProcIDField: procID,
+    }
+    
+    reqParam := new(meta.QueryInput)
+    reqParam.Condition = condition
+    ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward.Header, reqParam)
+    if err != nil || (err == nil && !ret.Result) {
+        return nil, fmt.Errorf("get process by procID(%s) failed. err: %v, errcode: %d, errmsg: %s", procID, err, ret.Code, ret.ErrMsg)
+    }
+    
+    if len(ret.Data.Info) < 1 {
+        return nil, fmt.Errorf("there is no process with procID(%s)", procID)
+    }
+    
+    return ret.Data.Info[0], nil
 }

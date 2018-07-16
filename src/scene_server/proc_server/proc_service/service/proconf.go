@@ -11,3 +11,102 @@
  */
 package service
 
+import (
+    "github.com/emicklei/go-restful"
+    "github.com/gin-gonic/gin/json"
+    "configcenter/src/common/util"
+    "configcenter/src/common/blog"
+    meta "configcenter/src/common/metadata"
+    "net/http"
+    "configcenter/src/common"
+    "context"
+)
+
+func (ps *ProcServer) CreateConfigTemp (req *restful.Request, resp *restful.Response) {
+    language := util.GetActionLanguage(req)
+    defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+
+    reqParam := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
+        blog.Errorf("create config template failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+    reqParam[common.BKConfTempIdField] = "0" //use unified id generation method, uri will provide
+    
+    ret, err := ps.CoreAPI.ProcController().CreateConfTemp(context.Background(), req.Request.Header, reqParam)
+    if err != nil || (err == nil && !ret.Result) {
+        blog.Errorf("create config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProcConf)})
+        return
+    }
+
+    resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (ps *ProcServer) DeleteConfigTemp(req *restful.Request, resp *restful.Response) {
+    language := util.GetActionLanguage(req)
+    defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+
+    reqParam := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
+        blog.Errorf("delete config template failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+
+    //logic here
+    
+    ret, err := ps.CoreAPI.ProcController().DeleteConfTemp(context.Background(), req.Request.Header, reqParam)
+    if err != nil || (err == nil && !ret.Result) {
+        blog.Errorf("delete config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProcConf)})
+        return
+    }
+
+    resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (ps *ProcServer) UpdateConfigTemp(req *restful.Request, resp *restful.Response) {
+    language := util.GetActionLanguage(req)
+    defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+
+    reqParam := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
+        blog.Errorf("update config template failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+
+    //logic here
+
+    ret, err := ps.CoreAPI.ProcController().UpdateConfTemp(context.Background(), req.Request.Header, reqParam)
+    if err != nil || (err == nil && !ret.Result) {
+        blog.Errorf("update config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUpdateProcConf)})
+        return
+    }
+
+    resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (ps *ProcServer) QueryConfigTemp (req *restful.Request, resp *restful.Response) {
+    language := util.GetActionLanguage(req)
+    defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+
+    reqParam := make(map[string]interface{})
+    if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
+        blog.Errorf("query config template failed! decode request body err: %v", err)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+
+    ret, err := ps.CoreAPI.ProcController().QueryConfTemp(context.Background(), req.Request.Header, reqParam)
+    if err != nil || (err == nil && !ret.Result) {
+        blog.Errorf("query config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+        resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+
+    resp.WriteEntity(meta.NewSuccessResp(ret.Data))
+}

@@ -61,3 +61,33 @@ func (p *gseproc) QueryProcStatus(ctx context.Context, h http.Header, namespace 
     
     return
 }
+
+func (p *gseproc) RegisterProcInfo(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error) {
+    resp = new(metadata.GseProcRespone)
+    subPath := "/proc/" + namespace + "/procinfo"
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(data).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+
+    return
+}
+
+func (p *gseproc) UnRegisterProcInfo(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error) {
+    resp = new(metadata.GseProcRespone)
+    subPath := "/proc/" + namespace + "/procinfo"
+
+    err = p.client.Delete().
+        WithContext(ctx).
+        Body(data).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+
+    return
+}

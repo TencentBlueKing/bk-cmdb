@@ -20,6 +20,7 @@ import (
     "configcenter/src/common/blog"
     "net/http"
     meta "configcenter/src/common/metadata"
+    sourceAPI "configcenter/src/source_controller/api/object"
     "configcenter/src/common/auditoplog"
     "fmt"
 )
@@ -42,6 +43,12 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
     cell[common.BKProcIDField] = procID
     cell[common.BKModuleNameField] = moduleName
     params = append(params, cell)
+
+    if err := ps.createProcInstanceModel(appIDStr, procIDStr, moduleName, ownerID, &sourceAPI.ForwardParam{Header:req.Request.Header}); err != nil {
+        blog.Errorf("fail to create process instance model. err: %v", err)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg:defErr.Error(common.CCErrProcBindToMoudleFaile)})
+        return
+    }
     
     ret, err := ps.CoreAPI.ProcController().CreateProc2Module(context.Background(), req.Request.Header, params)
     if err != nil || (err == nil && !ret.Result) {
@@ -73,6 +80,12 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
     cell[common.BKAppIDField] = appID
     cell[common.BKProcIDField] = procID
     cell[common.BKModuleNameField] = moduleName
+    
+    if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, &sourceAPI.ForwardParam{Header:req.Request.Header}); err != nil {
+        blog.Errorf("%v", err)
+        resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg:defErr.Error(common.CCErrProcUnBindToMoudleFaile)})
+        return
+    }
     
     ret, err := ps.CoreAPI.ProcController().DeleteProc2Module(context.Background(), req.Request.Header, cell)
     if err != nil || (err == nil && !ret.Result) {

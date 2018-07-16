@@ -46,6 +46,14 @@ func (ps *ProcServer) WebService(filter restful.FilterFunction) http.Handler {
     v3WS.Route(v3WS.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
     v3WS.Route(v3WS.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
     
+    v3WS.Route(v3WS.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
+    v3WS.Route(v3WS.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
+
+    v3WS.Route(v3WS.POST("/conftemp").To(ps.CreateConfigTemp))
+    v3WS.Route(v3WS.PUT("/conftemp").To(ps.UpdateConfigTemp))
+    v3WS.Route(v3WS.DELETE("/conftemp").To(ps.DeleteConfigTemp))
+    v3WS.Route(v3WS.POST("/conftemp/search").To(ps.QueryConfigTemp))
+    
     container.Add(v3WS)
     
     return container

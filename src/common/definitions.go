@@ -426,6 +426,17 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+    // BKGseTaskIdField the gse taskid
+	BKGseTaskIdField = "task_id"
+	// BKProcPidFile the process pid file
+	BKProcPidFile = "pid_file"
+	BKProcStartCmd = "start_cmd"
+	BKProcStopCmd = "stop_cmd"
+	BKProcReloadCmd = "reload_cmd"
+	BKProcRestartCmd = "restart_cmd"
+	BKProcTimeOut = "timeout"
+	BKProcWorkPath = "work_path"
+	BKProcInstNum = "proc_num"
 )
 
 // DefaultResSetName the inner module set
@@ -594,6 +605,9 @@ const (
 
 	// BKTableNameProcConf the table name of the process config
 	BKTableNameProcConf = "cc_ProcConf"
+
+	// BKTableNameProcInstanceModel the table name of the process instance
+    BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
 	
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"

@@ -46,6 +46,10 @@ func (ps *ProctrlServer) WebService(filter restful.FilterFunction) http.Handler 
     v3WS.Route(v3WS.DELETE("/conftemp").To(ps.DeleteConfigTemp))
     v3WS.Route(v3WS.POST("/conftemp/search").To(ps.QueryConfigTemp))
     
+    v3WS.Route(v3WS.POST("/instance/model").To(ps.CreateProcInstanceModel))
+    v3WS.Route(v3WS.POST("/instance/model/search").To(ps.GetProcInstanceModel))
+    v3WS.Route(v3WS.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
+    
     container.Add(v3WS)
     
     return container
