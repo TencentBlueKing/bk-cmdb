@@ -39,6 +39,8 @@ type ClientSetInterface interface {
 	AuditController() auditcontroller.AuditCtrlInterface
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
+	
+	GseProcServer() gseprocserver.GseProcClientInterface
 }
 
 func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {

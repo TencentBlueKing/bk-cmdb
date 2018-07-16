@@ -343,6 +343,9 @@ const (
 	CCErrProcDeleteProcConf    = 1107005
 	CCErrProcGetProcConf       = 1107006
 	CCErrProcUpdateProcConf    = 1107007
+    CCErrProcCreateInstanceModel = 1107008
+    CCErrProcGetInstanceModel  = 1107009
+    CCErrProcDeleteInstanceModel = 1107010
 
 	// procserver 1108XXX
 	CCErrProcSearchDetailFaile       = 1108001
@@ -356,6 +359,7 @@ const (
 	CCErrProcFieldValidFaile         = 1108009
 	CCErrProcGetByApplicationIDFail  = 1108010
     CCErrProcGetByIP                 = 1108011
+    CCErrProcOperateFaile            = 1108012
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

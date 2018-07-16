@@ -24,6 +24,8 @@ type GseProcClientInterface interface {
     OperateProcess(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error)
     QueryProcOperateResult(ctx context.Context, h http.Header, namespace, taskid string) (resp *metadata.GseProcRespone, err error)
     QueryProcStatus(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error)
+    RegisterProcInfo(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error)
+    UnRegisterProcInfo(ctx context.Context, h http.Header, namespace string, data interface{}) (resp *metadata.GseProcRespone, err error)
 }
 
 func NewGseProcClientInterface(c *util.Capability, version string) GseProcClientInterface {
