@@ -287,7 +287,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
+	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
 	moduleID, err := s.Logics.GetResoulePoolModuleID(pheader, conds.Data())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v", err)

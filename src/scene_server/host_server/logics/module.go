@@ -106,6 +106,7 @@ func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond i
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
 	}
+
 	moduleMap := make(map[int64]types.MapStr)
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKModuleIDField)
