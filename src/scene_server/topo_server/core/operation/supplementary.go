@@ -10,24 +10,29 @@
  * limitations under the License.
  */
 
-package supplementary
+package operation
+
+import "configcenter/src/apimachinery"
 
 // Supplementary supplementary methods
 type Supplementary interface {
-	Audit() AuditInterface
+	Audit(client apimachinery.ClientSetInterface, inst InstOperationInterface) AuditInterface
 	Validator() ValidatorInterface
 }
 
-// New create a supplementary instance
-func New() Supplementary {
+// NewSupplementary create a supplementary instance
+func NewSupplementary() Supplementary {
 	return &supplementary{}
 }
 
 type supplementary struct {
 }
 
-func (s *supplementary) Audit() AuditInterface {
-	return &auditLog{}
+func (s *supplementary) Audit(client apimachinery.ClientSetInterface, inst InstOperationInterface) AuditInterface {
+	return &auditLog{
+		client: client,
+		inst:   inst,
+	}
 }
 
 func (s *supplementary) Validator() ValidatorInterface {

@@ -17,12 +17,10 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
 )
 
 // ContextParams the logic function params
 type ContextParams struct {
-	Support         supplementary.Supplementary
 	Header          http.Header
 	SupplierAccount string
 	Err             errors.DefaultCCErrorIf
