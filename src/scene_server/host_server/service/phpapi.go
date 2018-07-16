@@ -39,7 +39,7 @@ func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("updateHost , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -69,7 +69,7 @@ func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response
 	}
 
 	input := new(meta.UpdateHostParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("updateHostByAppID , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -93,7 +93,7 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := new(meta.HostSearchByIPParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchByIP , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -152,7 +152,7 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchByConds , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -193,7 +193,7 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := new(meta.HostSearchByModuleIDParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchByModuleID , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -239,7 +239,7 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := new(meta.HostSearchBySetIDParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchBySetID , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -282,7 +282,7 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := new(meta.HostSearchByAppIDParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchByAppID , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -323,7 +323,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("HostSearchByProperty , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -403,7 +403,7 @@ func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := new(meta.GetIPAndProxyByCompanyParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("GetIPAndProxyByCompany , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -445,7 +445,7 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("UpdateCustomProperty , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -495,7 +495,7 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	input := &meta.CloneHostPropertyParams{}
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("CloneHostProperty , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -536,7 +536,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	input := &meta.GetHostAppByCompanyIDParams{}
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("GetHostAppByCompanyId , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -623,7 +623,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 
 	input := &meta.DelHostInAppParams
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("DelHostInApp , but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -705,7 +705,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	input := new(meta.GitServerIpParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("GetGitServerIp , but decode body failed, err: %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -834,7 +834,7 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	input := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(input); nil != err {
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
 		blog.Errorf("CreatePlat , but decode body failed, err: %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -842,8 +842,6 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	ownerId := util.GetOwnerID(req.Request.Header)
 	input[common.BKOwnerIDField] = ownerId
-
-	s.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDPlat, req.Request.Header, input)
 
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, req.Request.Header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)
