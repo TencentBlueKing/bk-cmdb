@@ -47,7 +47,7 @@ func (cli *association) Create() error {
 func (cli *association) Delete() error {
 	return nil
 }
-func (cli *association) Update() error {
+func (cli *association) Update(data frtypes.MapStr) error {
 	return nil
 }
 func (cli *association) Save() error {

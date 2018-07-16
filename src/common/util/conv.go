@@ -15,8 +15,16 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 )
+
+func GetStrByInterface(a interface{}) string {
+	if nil == a {
+		return ""
+	}
+	return fmt.Sprintf("%v", a)
+}
 
 func GetIntByInterface(a interface{}) (int, error) {
 	id := 0

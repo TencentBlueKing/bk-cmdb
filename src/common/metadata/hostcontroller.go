@@ -31,8 +31,8 @@ type HostInstanceResult struct {
 }
 
 type FavoriteResult struct {
-	Count int           `json:"count"`
-	Info  []interface{} `json:"info"`
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 type GetHostFavoriteResult struct {
@@ -111,10 +111,10 @@ type AssignHostToAppParams struct {
 }
 
 type ModuleHost struct {
-	AppID    int64 `json:"bk_biz_id"`
-	HostID   int64 `json:"bk_host_id"`
-	ModuleID int64 `json:"bk_module_id"`
-	SetID    int64 `json:"bk_set_id"`
+	AppID    int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostID   int64 `json:"bk_host_id" bson:"bk_host_id"`
+	ModuleID int64 `json:"bk_module_id" bson:"bk_module_id"`
+	SetID    int64 `json:"bk_set_id" bson:"bk_set_id"`
 }
 
 type HostConfig struct {
@@ -129,14 +129,14 @@ type ModuleHostConfigParams struct {
 }
 
 type UserConfig struct {
-	Info       string    `json:"info"`
-	Name       string    `json:"name"`
-	ID         string    `json:"id"`
-	CreateTime time.Time `json:"create_time"`
-	UpdateTime time.Time `json:"last_time"`
-	AppID      int64     `json:"bk_biz_id"`
-	CreateUser string    `json:"create_user"`
-	ModifyUser string    `json:"modify_user"`
+	Info       string    `json:"info" bson:"info"`
+	Name       string    `json:"name" bson:"name"`
+	ID         string    `json:"id" bson:"id"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	UpdateTime time.Time `json:"last_time" bson:"last_time"`
+	AppID      int64     `json:"bk_biz_id" bson:"bk_biz_id"`
+	CreateUser string    `json:"create_user" bson:"create_user"`
+	ModifyUser string    `json:"modify_user" bson:"modify_user"`
 }
 
 type UserConfigResult struct {
@@ -181,14 +181,14 @@ type GetUserConfigDetailResult struct {
 }
 
 type UserConfigMeta struct {
-	AppID      int64     `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
-	Info       string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name       string    `json:"name,omitempty" bson:"name,omitempty"`
-	ID         string    `json:"id,omitempty" bson:"id,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	CreateUser string    `json:"create_user,omitempty" bson:"create_user,omitempty"`
-	ModifyUser string    `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
-	UpdateTime time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	AppID      int64       `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	Info       string      `json:"info,omitempty" bson:"info,omitempty"`
+	Name       string      `json:"name,omitempty" bson:"name,omitempty"`
+	ID         string      `json:"id,omitempty" bson:"id,omitempty"`
+	CreateTime time.Time   `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	CreateUser string      `json:"create_user,omitempty" bson:"create_user,omitempty"`
+	ModifyUser string      `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
+	UpdateTime interface{} `json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
 type AddConfigQuery struct {
