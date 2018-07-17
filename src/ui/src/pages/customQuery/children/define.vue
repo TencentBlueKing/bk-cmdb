@@ -231,7 +231,8 @@
                 operatorMap: {
                     'time': '$in',
                     'enum': '$eq'
-                }
+                },
+                saveSuccess: false
             }
         },
         computed: {
@@ -388,15 +389,17 @@
                 this.attribute.isShow = isShow
             },
             isCloseConfirmShow () {
-                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
-                    return true
-                }
-                for (let i = 0; i < this.userProperties.length; i++) {
-                    let property = this.userProperties[i]
-                    let propertyCopy = this.dataCopy.userProperties[i]
-                    for (let key in property) {
-                        if (property[key] !== propertyCopy[key]) {
-                            return true
+                if (!this.saveSuccess) {
+                    if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                        return true
+                    }
+                    for (let i = 0; i < this.userProperties.length; i++) {
+                        let property = this.userProperties[i]
+                        let propertyCopy = this.dataCopy.userProperties[i]
+                        for (let key in property) {
+                            if (property[key] !== propertyCopy[key]) {
+                                return true
+                            }
                         }
                     }
                 }
@@ -608,6 +611,7 @@
             resetDefine () {
                 this.isPropertiesShow = false
                 this.isPreviewShow = false
+                this.saveSuccess = false
                 this.name = ''
                 this.userProperties = []
                 this.attribute.selected = this.attribute.default.map(({bk_property_id: bkPropertyId}) => bkPropertyId).join(',')
