@@ -13,6 +13,7 @@
 package datacollection
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -80,7 +81,7 @@ func (d *DataCollection) Run(config map[string]string) error {
 		blog.Errorf("get discover channel fail: %v, please init database first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
-	discover := NewDiscover(discoverChan, dccommon.MaxDiscoverSize, rediscli, discli)
+	discover := NewDiscover(context.BackGroud(), discoverChan, dccommon.MaxDiscoverSize, rediscli, discli)
 	discover.Start()
 
 	// go mock(config, chanName)

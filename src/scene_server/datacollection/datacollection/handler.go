@@ -22,6 +22,9 @@ import (
 
 	bkc "configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	sencapi "configcenter/src/scene_server/api"
+	objtypes "configcenter/src/source_controller/api/object"
 )
 
 const (
@@ -209,7 +212,7 @@ func (d *Discover) parseHost(msg string) (data M, err error) {
 }
 
 // parseAttrs 解析属性列表
-func (d *Discover) parseAttrs(msg string) (fields map[string]Attr, err error) {
+func (d *Discover) parseAttrs(msg string) (fields map[string]objtypes.ObjAttDes, err error) {
 
 	fieldsStr := gjson.Get(msg, "data.meta.fields").String()
 	//blog.Debug("create model attr fieldsStr: %s", fieldsStr)
@@ -237,50 +240,27 @@ func (d *Discover) parseOwnerId(msg string) string {
 }
 
 // GetAttrs 查询模型属性
-func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[string]Attr) (ListResult, error) {
-
-	var nilR = ListResult{}
-
-	filterAttrs := make([]string, 0)
-	for attr := range attrs {
-		filterAttrs = append(filterAttrs, attr)
-	}
+func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[string]objtypes.ObjAttDes) ([]metadata.Attribute, error) {
 
 	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
 	// 差异比较
-	if err == nil && len(cachedAttrs) == len(filterAttrs) {
+	if err == nil && len(cachedAttrs) == len(attrs) {
 		blog.Infof("attr exist in redis: %s", modelAttrKey)
 
-		var attrMap = make([]MapData, len(cachedAttrs))
-		var tmpHash = make(map[string]bool, len(cachedAttrs))
-
-		for i, attr := range cachedAttrs {
-			tmpHash[attr] = true
-			attrMap[i] = MapData{bkc.BKPropertyIDField: attr}
-		}
-
+		var attrMap = make([]metadata.Attribute, len(cachedAttrs))
 		totalEqual := true
-		for _, filterAttr := range filterAttrs {
-			if _, ok := tmpHash[filterAttr]; !ok {
+		for i, cachedAttr := range cachedAttrs {
+			attrMap[i] = metadata.Attribute{PropertyID: cachedAttr}
+			if _, ok := attrs[cachedAttr]; !ok {
 				totalEqual = false
-				break
 			}
 		}
 
 		if totalEqual {
 			blog.Infof("attr exist in redis, and equal: %s", modelAttrKey)
-			return ListResult{
-				ResultBase{
-					Result:  true,
-					Code:    0,
-					Message: "success",
-				},
-				attrMap,
-			}, nil
+			return attrMap, nil
 		}
-
 		blog.Infof("attr exist in redis, but not equal: %s", modelAttrKey)
-
 	}
 
 	// construct the condition
@@ -289,33 +269,18 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		bkc.BKOwnerIDField: ownerID,
 	}
 
-	// marshal the condition
-	condJs, err := cond.toJson()
-	if err != nil {
-		return nilR, fmt.Errorf("marshal condition error: %s", err)
-	}
-
 	// search attr by condition
-	url := fmt.Sprintf("%s/topo/v1/objectattr/search", d.cc.TopoAPI())
-	blog.Infof("get model attr url=%s, body=%s", url, condJs)
-
-	res, err := d.requests.POST(url, nil, condJs)
-	if nil != err {
-		blog.Errorf("search model err: %s", err)
-		return nilR, err
-	}
-
-	//blog.Infof("search attr result: %s", res)
-
-	// parse inst data
-	dR, err := parseListResult(res)
+	resp, err := d.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(d.ctx, d.pheader, cond)
 	if err != nil {
-		blog.Errorf("parse result error: %s", err)
-		return nilR, err
+		blog.Errorf("SelectObjectAttWithParams error %s", err.Error())
+		return nil, err
+	}
+	if !resp.Result {
+		blog.Errorf("SelectObjectAttWithParams error %s", resp.ErrMsg)
+		return nil, err
 	}
 
-	return dR, nil
-
+	return resp.Data, nil
 }
 
 // UpdateOrAppendAttrs 创建或新增模型属性
@@ -342,18 +307,14 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	modelAttrKey := d.CreateModelAttrKey(*model, ownerID)
 
 	// get exist attr
-	dR, err := d.GetAttrs(ownerID, objID, modelAttrKey, attrs)
+	existAttrs, err := d.GetAttrs(ownerID, objID, modelAttrKey, attrs)
 	if nil != err {
 		return fmt.Errorf("get attr error: %s", err)
 	}
 
-	existAttrHash := make(map[string]int, len(dR.Data))
-	if dR.Result && len(dR.Data) > 0 {
-		for i, propertyMap := range dR.Data {
-			if idStr, ok := propertyMap[bkc.BKPropertyIDField].(string); ok {
-				existAttrHash[idStr] = i
-			}
-		}
+	existAttrHash := make(map[string]bool, len(existAttrs))
+	for _, existAttr := range existAttrs {
+		existAttrHash[existAttr.PropertyID] = true
 	}
 
 	// collect final attrs of model
@@ -366,7 +327,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		finalAttrs = append(finalAttrs, propertyId)
 
 		// skip exist attr
-		if _, ok := existAttrHash[propertyId]; ok {
+		if existAttrHash[propertyId] {
 			continue
 		}
 
@@ -378,30 +339,20 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
 		blog.Infof("attr: %s -> %v", propertyId, property)
 
-		property.ObjID = objID
+		property.ObjectID = objID
 		property.OwnerID = ownerID
 		property.PropertyID = propertyId
 		property.PropertyGroup = bkc.BKDefaultField
 		property.Creator = bkc.CCSystemCollectorUserName
 
-		attrBodyJs, err := json.Marshal(property)
+		resp, err := d.CoreAPI.TopoServer().Object().CreateObjectAtt(d.ctx, d.pheader, &property)
 		if err != nil {
-			return fmt.Errorf("marshal condition error: %s", err)
+			blog.Errorf("create model attr failed %s", err.Error())
+			return fmt.Errorf("create model attr failed: %s", err.Error())
 		}
-
-		url := fmt.Sprintf("%s/topo/v1/objectattr", d.cc.TopoAPI())
-
-		blog.Infof("create model attr url=%s, body=%s", url, attrBodyJs)
-		res, err := d.requests.POST(url, nil, []byte(attrBodyJs))
-		if nil != err {
-			return fmt.Errorf("create model attr error: %s", err.Error())
-		}
-
-		blog.Infof("create model attr result: %s", res)
-
-		resMap, err := parseResult(res)
-		if !resMap.Result {
-			return fmt.Errorf("create model attr failed: %s", resMap.Message)
+		if !resp.Result {
+			blog.Errorf("create model attr failed %s", resp.ErrMsg)
+			return fmt.Errorf("create model attr failed: %s", resp.ErrMsg)
 		}
 
 		// updated
@@ -410,7 +361,7 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	}
 
 	// flush to redis, ignore fail
-	if dR.Result && len(dR.Data) > 0 && hasDiff {
+	if hasDiff {
 		attrJs, err := json.Marshal(finalAttrs)
 		if err != nil {
 			blog.Warnf("%s: flush to redis marshal failed: %s", modelAttrKey, err)
@@ -621,20 +572,22 @@ func (d *Discover) TryCreateModel(msg string) error {
 		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
-	bodyJs, _ := body.toJson()
-	url := fmt.Sprintf("%s/topo/v1/object", d.cc.TopoAPI())
-	blog.Infof("create model url=%s, body=%s", bodyJs)
+	newObj := sencapi.ObjectDes{}
+	newObj.ClassificationID = model.BkClassificationID
+	newObj.ObjID = model.BkObjID
+	newObj.ObjName = model.BkObjName
+	newObj.OwnerID = ownerID
+	newObj. = defaultModelIcon
+	newObj.CreatorField = bkc.CCSystemCollectorUserName
 
-	res, err := d.requests.POST(url, nil, bodyJs)
-	if nil != err {
-		return fmt.Errorf("create model error: %s", err.Error())
+	resp, err := d.CoreAPI.TopoServer().Object().CreateObject(ctx, h, obj)
+	if err != nil {
+		blog.Errorf("create model failed %s", err.Error())
+		return fmt.Errorf("create model failed: %s", err.Error())
 	}
-
-	blog.Debug("create model result: %s", res)
-
-	resMap, err := parseResult(res)
-	if !resMap.Result {
-		return fmt.Errorf("create model failed: %s", resMap.Message)
+	if !resp.Result {
+		blog.Errorf("create model failed %s", resp.ErrMsg)
+		return fmt.Errorf("create model failed: %s", resp.ErrMsg)
 	}
 
 	return nil
