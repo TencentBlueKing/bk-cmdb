@@ -13,13 +13,15 @@
 package service
 
 import (
-    "configcenter/src/common/backbone"
-    "github.com/emicklei/go-restful"
     "net/http"
+    
     "configcenter/src/storage"
     "configcenter/src/storage/mgoclient"
     "configcenter/src/storage/redisclient"
     cfnc "configcenter/src/common/backbone/configcenter"
+    "configcenter/src/common/backbone"
+    
+    "github.com/emicklei/go-restful"
 )
 
 type ProctrlServer struct {

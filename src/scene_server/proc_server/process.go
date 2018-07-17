@@ -16,16 +16,16 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+    "context"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app"
 	"configcenter/src/scene_server/proc_server/app/options"
-
 	"configcenter/src/common"
 	"configcenter/src/common/types"
+	
 	"github.com/spf13/pflag"
-    "context"
 )
 
 func main() {
