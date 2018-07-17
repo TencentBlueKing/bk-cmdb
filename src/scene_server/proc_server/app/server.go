@@ -26,6 +26,7 @@ import (
     "configcenter/src/common/backbone"
     "configcenter/src/common/rdapi"
     "context"
+    "configcenter/src/common/errors"
 )
 
 //Run ccapi server
@@ -52,10 +53,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
     }
     
     procSvr := new(service.ProcServer)
+    getErrFun := func() errors.CCErrorIf {
+        return procSvr.Engine.CCErr
+    }
     bkbsvr := backbone.Server{
         ListenAddr: svrInfo.IP,
         ListenPort: svrInfo.Port,
-        Handler: procSvr.WebService(rdapi.AllGlobalFilter()),
+        Handler: procSvr.WebService(rdapi.AllGlobalFilter(getErrFun)),
         TLS: backbone.TLSConfig{},
     }
     

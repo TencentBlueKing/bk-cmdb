@@ -18,7 +18,6 @@ import (
     "configcenter/src/common/blog"
     meta "configcenter/src/common/metadata"
     "configcenter/src/common"
-    eventtypes "configcenter/src/scene_server/event_server/types"
     "configcenter/src/source_controller/common/eventdata"
     
     "github.com/emicklei/go-restful"
@@ -47,7 +46,7 @@ func (ps *ProctrlServer) CreateConfigTemp(req *restful.Request, resp *restful.Re
     }
     
     // recode events
-    if err := ec.InsertEvent(eventtypes.EventTypeRelation, "procconf", eventtypes.EventActionCreate, input, nil); err != nil {
+    if err := ec.InsertEvent(meta.EventTypeRelation, "procconf", meta.EventActionCreate, input, nil); err != nil {
         blog.Warnf("insert config template create event failed. err: %v", err)
     }
 
@@ -83,7 +82,7 @@ func (ps *ProctrlServer) DeleteConfigTemp(req *restful.Request, resp *restful.Re
     
     // record events
     ec := eventdata.NewEventContextByReq(req, ps.CacheDI)
-    if err := ec.InsertEvent(eventtypes.EventTypeRelation, "procconf", eventtypes.EventActionDelete, oriData, nil); err != nil {
+    if err := ec.InsertEvent(meta.EventTypeRelation, "procconf", meta.EventActionDelete, oriData, nil); err != nil {
         blog.Warnf("intert config template delete event failed. err: %v", err)
     }
     
@@ -121,7 +120,7 @@ func (ps *ProctrlServer) UpdateConfigTemp(req *restful.Request, resp *restful.Re
     
     // record events
     ec := eventdata.NewEventContextByReq(req, ps.CacheDI)
-    if err := ec.InsertEvent(eventtypes.EventTypeRelation, "procconf", eventtypes.EventActionDelete, oriData, input); err != nil {
+    if err := ec.InsertEvent(meta.EventTypeRelation, "procconf", meta.EventActionDelete, oriData, input); err != nil {
         blog.Warnf("intert config template delete event failed. err: %v", err)
     }
 
