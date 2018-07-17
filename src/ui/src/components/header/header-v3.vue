@@ -2,9 +2,9 @@
     <div class="header-wrapper clearfix" 
         :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
-            <a class="breadcrumbs-back icon-cc-goback" href="javascript:void(0)"
+            <i class="breadcrumbs-back icon-cc-goback" href="javascript:void(0)"
                 v-if="historyCount > 1"
-                @click="back"></a>
+                @click="back"></i>
             <h2 class="breadcrumbs-current">{{currentName}}</h2>
         </div>
         <div class="user fr">
@@ -118,16 +118,25 @@
         line-height: 60px;
         position: relative;
         margin: 0 0 0 25px;
+        font-size: 0;
         &-back{
+            display: inline-block;
+            vertical-align: middle;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
             font-size: 12px;
+            cursor: pointer;
             &:hover{
-                color: rgb(60, 150, 255);
+                color: #3c96ff;
             }
         }
         &-current{
             margin: 0;
             padding: 0;
             display: inline-block;
+            vertical-align: middle;
             font-size: 16px;
             font-weight: normal;
         }
