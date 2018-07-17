@@ -12,12 +12,13 @@
 package gseprocserver
 
 import (
-    "configcenter/src/apimachinery/rest"
     "context"
     "net/http"
+    "fmt"
+    
+    "configcenter/src/apimachinery/rest"
     "configcenter/src/common/metadata"
     "configcenter/src/apimachinery/util"
-    "fmt"
 )
 
 type GseProcClientInterface interface {
