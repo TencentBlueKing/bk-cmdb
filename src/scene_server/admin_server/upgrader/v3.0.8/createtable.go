@@ -15,7 +15,7 @@ package v3v0v8
 import (
 	"gopkg.in/mgo.v2"
 
-	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
 

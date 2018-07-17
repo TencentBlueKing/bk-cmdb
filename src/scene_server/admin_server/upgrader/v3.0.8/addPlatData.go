@@ -13,11 +13,12 @@
 package v3v0v8
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
-	"time"
 )
 
 func addPlatData(db storage.DI, conf *upgrader.Config) error {
