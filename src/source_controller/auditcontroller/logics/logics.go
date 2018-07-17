@@ -10,37 +10,13 @@
  * limitations under the License.
  */
 
-package main
+package logics
 
 import (
-	"fmt"
-	"os"
-	"runtime"
-
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-	"configcenter/src/source_controller/auditcontroller/app"
-	"configcenter/src/source_controller/auditcontroller/app/options"
-
-	"configcenter/src/common"
-	"configcenter/src/common/types"
-	"github.com/spf13/pflag"
+	"configcenter/src/common/backbone"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_AUDITCONTROLLER)
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+// Logics framwork need
+type Logics struct {
+	*backbone.Engine
 }
