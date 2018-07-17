@@ -28,6 +28,7 @@ import (
     "configcenter/src/common/rdapi"
     "configcenter/src/storage/mgoclient"
     "configcenter/src/storage/redisclient"
+    "configcenter/src/common/errors"
 )
 
 //Run ccapi server
@@ -49,12 +50,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
     if err != nil {
         return fmt.Errorf("creae server info object failed. err: %v", err)
     }
-
+    
     proctrlSvr := new(service.ProctrlServer)
+    getErrFun := func() errors.CCErrorIf {
+        return proctrlSvr.Core.CCErr
+    }
     bksvr := backbone.Server{
         ListenAddr: svrInfo.IP,
         ListenPort: svrInfo.Port,
-        Handler: proctrlSvr.WebService(rdapi.AllGlobalFilter()),
+        Handler: proctrlSvr.WebService(rdapi.AllGlobalFilter(getErrFun)),
         TLS: backbone.TLSConfig{},
     }
     

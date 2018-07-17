@@ -18,7 +18,6 @@ import (
     "configcenter/src/common/blog"
     "configcenter/src/common"
     meta "configcenter/src/common/metadata"
-    eventtypes "configcenter/src/scene_server/event_server/types"
     "configcenter/src/source_controller/common/eventdata"
     
     "github.com/emicklei/go-restful"
@@ -55,7 +54,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
     if len(originals) > 0 {
         ec := eventdata.NewEventContextByReq(req, ps.CacheDI)
         for _, i := range originals {
-            if err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionDelete, nil, i); err != nil {
+            if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionDelete, nil, i); err != nil {
                 blog.Warnf("create event error:%s", err.Error())
             }
         }
@@ -86,7 +85,7 @@ func (ps *ProctrlServer) CreateProc2Module (req *restful.Request, resp *restful.
             return
         }
         //  record events
-        if err := ec.InsertEvent(eventtypes.EventTypeRelation, "processmodule", eventtypes.EventActionCreate, i, nil); err != nil {
+        if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionCreate, i, nil); err != nil {
             blog.Errorf("create event error: %v", err)
         }
     }
