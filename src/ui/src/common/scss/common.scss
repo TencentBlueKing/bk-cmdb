@@ -196,6 +196,10 @@ textarea {
     background-position: -33px -62px;
 }
 
+.data-content .bk-form-checkbox {
+    line-height: 25px;
+}
+
 .bk-select-list .bk-select-list-item:hover,
 .bk-select-list .bk-select-list-item.selected {
     background: #f5f5f5;
@@ -659,7 +663,9 @@ body .bk-message.primary .bk-message-icon {
         }
     }
 }
-
+.btn-tooltip-wrapper {
+    display: inline-block;
+}
 .tooltip {
     display: block !important;
     z-index: 10000;

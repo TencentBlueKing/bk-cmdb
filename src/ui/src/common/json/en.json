@@ -96,7 +96,8 @@
         "全屏": "Full Screen",
         "关键业务不能够修改": "Key Business cannot be modified",
         "还原默认": "Restore Default",
-        "是否要还原回系统默认显示属性？": "Do you want to restore the default display properties back to the system?"
+        "是否要还原回系统默认显示属性？": "Do you want to restore the default display properties back to the system?",
+        "隐藏": "Hide"
     },
     "Index": {
         "首页": "Index",
@@ -330,7 +331,7 @@
         "外网": "Extranet IP",
         "精确": "Accurate",
         "刷新查询": "Refresh",
-        "清空": "Empty",
+        "清空查询条件": "Clear query conditions",
         "设置筛选项": "Set up filter items",
         "主机筛选项设置": "Host filter item settings",
         "主机属性": "Host Properties",

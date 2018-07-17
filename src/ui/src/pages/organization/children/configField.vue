@@ -29,17 +29,17 @@
                     </li>
                 </ul>
             </div>
-            <div class="right-list pr20">
+            <div class="right-list">
                 <div class="title">
                     <div class="search-wrapper">
                         {{$t("Inst['已显示属性']")}}
                     </div>
                 </div>
-                <div :class="['model-content', {'content-left-hidden' : isShow}]" >
+                <div :class="['model-content pr20', {'content-left-hidden' : isShow}]" >
                     <div slot="contentRight">
                         <draggable class="content-right" v-model="localHasSelectionList" :options="{animation: 150}">
                             <div v-for="(item, index) in localHasSelectionList" :key="index" class="item">
-                                <i class="icon-triple-dot"></i><span>{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)"></i>
+                                <i class="icon-triple-dot"></i><span>{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
                             </div>
                         </draggable>
                     </div>
@@ -63,6 +63,7 @@
 <script>
     import draggable from 'vuedraggable'
     import {mapGetters} from 'vuex'
+    import { sortArray } from '@/utils/util'
     export default {
         data () {
             return {
@@ -106,7 +107,7 @@
                         list.push(val)
                     }
                 })
-                return list
+                return sortArray(list, 'bk_property_name')
             }
         },
         watch: {
@@ -190,7 +191,6 @@
                         }
                     })
                 }
-                console.log(this.usercustom[`${this.objId}DisplayColumn`], `${this.objId}DisplayColumn`)
                 if (this.usercustom.hasOwnProperty(`${this.objId}DisplayColumn`) && this.usercustom[`${this.objId}DisplayColumn`].length) {
                     let selectedList = this.$deepClone(this.usercustom[`${this.objId}DisplayColumn`])
                     selectedList.map(list => {
@@ -202,12 +202,9 @@
                         }
                     })
                     this.localHasSelectionList = selectedList
-                } else if (!this.usercustom[`${this.objId}DisplayColumn`].length) {
-                    console.log(1)
                 } else {
                     this.localHasSelectionList = []
                 }
-                console.log(this.localHasSelectionList)
                 this.hasSelectionList = this.$deepClone(this.localHasSelectionList)
                 this.setForSelectionList()
             },
