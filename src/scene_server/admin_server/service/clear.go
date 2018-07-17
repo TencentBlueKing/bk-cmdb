@@ -10,52 +10,38 @@
  * limitations under the License.
  */
 
-package host
+package service
 
 import (
+	"net/http"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
-	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/storage"
 )
 
-var clear *clearAction = &clearAction{}
-
-type clearAction struct {
-	base.BaseAction
-}
-
-func init() {
-	clear.CreateAction()
-
-	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/clear", Params: nil, Handler: clear.clear})
-	// create CC object
-}
-
-func (cli *clearAction) clear(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+func (s *Service) clear(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if version.CCRunMode == version.CCRunModeProduct {
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
 		return
 	}
 
-	err := clearDatabase(cli.CC.InstCli)
+	err := clearDatabase(s.db)
 	if nil != err {
 		blog.Errorf("clear error: %v", err)
-		cli.ResponseFailed(common.CCErrCommMigrateFailed, defErr.Error(common.CCErrCommMigrateFailed), resp)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
 		return
 	}
 
-	cli.ResponseSuccess("migrate success", resp)
-	return
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 var (

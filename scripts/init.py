@@ -285,11 +285,11 @@ def update_start_script(rd_server, server_ports):
                         # Replace the target string
                         filedata = filedata.replace('cmdb-name-placeholder', d)
                         filedata = filedata.replace('cmdb-port-placeholder', str(server_ports[d]))
+                        filedata = filedata.replace('rd_server_placeholer', rd_server)
                         if d != "cmdb_adminserver":
-                            filedata = filedata.replace('rd_server_placeholer', rd_server)
+                            filedata = filedata.replace('config_opt_placehole', "") 
                         else:
-                            filedata = filedata.replace('rd_server_placeholer', "configures/migrate.conf")
-                            filedata = filedata.replace('regdiscv', "config")
+                            filedata = filedata.replace('config_opt_placehole', "--config configures/migrate.conf") 
                         # Write the file out again
                         with open(target_file, 'w') as new_file:
                             new_file.write(filedata)
