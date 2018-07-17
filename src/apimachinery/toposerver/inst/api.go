@@ -46,7 +46,7 @@ type InstanceInterface interface {
 	DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *metadata.Response, err error)
 	UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
-	CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
 	DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error)
 	UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
