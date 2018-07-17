@@ -29,7 +29,7 @@ type RolePermission interface {
 }
 
 // NewRole create a new role instance
-func NewRole(params types.LogicParams, client apimachinery.ClientSetInterface) RolePermission {
+func NewRole(params types.ContextParams, client apimachinery.ClientSetInterface) RolePermission {
 	return &rolePermission{
 		params: params,
 		client: client,
@@ -37,13 +37,13 @@ func NewRole(params types.LogicParams, client apimachinery.ClientSetInterface) R
 }
 
 type rolePermission struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 
 func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID string, data []string) error {
 
-	rsp, err := r.client.ObjectController().Privilege().GetRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header.ToHeader())
+	rsp, err := r.client.ObjectController().Privilege().GetRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header)
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return r.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -51,7 +51,7 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 
 	if rsp.Result {
 
-		rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header.ToHeader(), data)
+		rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 		if nil != err {
 			blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 			return r.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -65,7 +65,7 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 		return nil
 	}
 
-	rsp, err = r.client.ObjectController().Privilege().CreateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header.ToHeader(), data)
+	rsp, err = r.client.ObjectController().Privilege().CreateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
@@ -82,7 +82,7 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 
 func (r *rolePermission) GetPermission(supplierAccount, objID, propertyID string) (interface{}, error) {
 
-	rsp, err := r.client.ObjectController().Privilege().GetRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header.ToHeader())
+	rsp, err := r.client.ObjectController().Privilege().GetRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header)
 	if nil != err {
 		blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
 		return nil, r.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

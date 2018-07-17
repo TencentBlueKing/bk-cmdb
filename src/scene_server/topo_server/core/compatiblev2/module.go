@@ -34,7 +34,7 @@ type ModuleInterface interface {
 }
 
 // NewModule create a module instance
-func NewModule(params types.LogicParams, client apimachinery.ClientSetInterface) ModuleInterface {
+func NewModule(params types.ContextParams, client apimachinery.ClientSetInterface) ModuleInterface {
 	return &module{
 		params: params,
 		client: client,
@@ -42,7 +42,7 @@ func NewModule(params types.LogicParams, client apimachinery.ClientSetInterface)
 }
 
 type module struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 
@@ -52,7 +52,7 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 		"ModuleID":      moduleIDS,
 	}
 
-	rsp, err := m.client.HostController().Module().GetModulesHostConfig(context.Background(), m.params.Header.ToHeader(), cond)
+	rsp, err := m.client.HostController().Module().GetModulesHostConfig(context.Background(), m.params.Header, cond)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request the object controller, error info is %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -74,7 +74,7 @@ func (m *module) isValidSet(bizID, setID int64) (bool, error) {
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header.ToHeader(), query)
+	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module]failed to request object controller, error info is %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -97,7 +97,7 @@ func (m *module) isRepeated(moduleName string, excludeModuleIDS interface{}) (bo
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
+	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -138,7 +138,7 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 	updateData := mapstr.New()
 	updateData.Set("condition", cond.ToMapStr())
 	updateData.Set("data", innerData)
-	rsp, err := m.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), updateData)
+	rsp, err := m.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, updateData)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -153,7 +153,7 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 }
 func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error) {
 
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
+	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -172,7 +172,7 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 	query.Condition = cond.ToMapStr()
 
 	// search sets
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header.ToHeader(), query)
+	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -201,7 +201,7 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 	cond.Field(common.BKSetIDField).In(setIDS)
 	query.Condition = cond.ToMapStr()
 
-	rspModule, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), query)
+	rspModule, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -251,7 +251,7 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 		data.Set(common.BKOwnerIDField, common.BKDefaultOwnerID)
 	}
 
-	rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), data)
+	rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -281,7 +281,7 @@ func (m *module) DeleteMultiModule(bizID int64, moduleIDS []int64) error {
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
 
-	rsp, err := m.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, m.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := m.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

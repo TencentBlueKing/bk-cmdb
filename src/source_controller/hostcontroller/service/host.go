@@ -19,15 +19,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	dcCommon "configcenter/src/scene_server/datacollection/common"
-	eventtypes "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/eventdata"
-	"github.com/emicklei/go-restful"
 )
 
 const (
@@ -68,7 +69,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
+	lang := s.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 	objType := common.BKInnerObjIDHost
 	var dat commondata.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
@@ -81,7 +82,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	fieldArr := strings.Split(dat.Fields, ",")
 	result := make([]map[string]interface{}, 0)
 
-	err := s.Logics.GetObjectByCondition(pheader, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
+	err := s.Logics.GetObjectByCondition(lang, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
 		blog.Error("get object failed type:%s,input:%v error:%v", objType, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
@@ -130,8 +131,8 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	if err := s.Logics.GetObjectByID(objType, nil, id, originData, ""); err != nil {
 		blog.Error("create event error:%v", err)
 	} else {
-		ec := eventdata.NewEventContextByReq(req, s.Cache)
-		err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
+		ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
+		err := ec.InsertEvent(meta.EventTypeInstData, "host", meta.EventActionCreate, originData, nil)
 		if err != nil {
 			blog.Error("add host, but create event error:%v", err)
 		}
@@ -148,11 +149,9 @@ func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	hostID := req.PathParameter("bk_host_id")
-	data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
-	result := ""
-	err := s.Cache.GetOneByCondition("Get", nil, data, &result)
-
-	if err != nil {
+	key := dcCommon.RedisSnapKeyPrefix + hostID
+	result, err := s.Cache.Get(key).Result()
+	if nil != err && err != redis.Nil {
 		blog.Error("get host snapshot failed, hostid: %v, err: %v ", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
 		return
@@ -201,7 +200,7 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	ec := eventdata.NewEventContextByReq(req, s.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range params.ModuleID {
 		_, err := s.Logics.AddSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID)
 		if nil != err {
@@ -234,7 +233,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	ec := eventdata.NewEventContextByReq(req, s.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range moduleIDs {
 		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID)
 		if nil != err {
@@ -266,7 +265,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 	}
 
 	//delete default host module relation
-	ec := eventdata.NewEventContextByReq(req, s.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, defaultModuleID := range defaultModuleIDs {
 		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, defaultModuleID, params.ApplicationID)
 		if nil != err {
@@ -283,7 +282,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	ec := eventdata.NewEventContextByReq(req, s.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.ParamData)
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("move host to resourece pool failed, err: %v", err)
@@ -345,7 +344,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	ec := eventdata.NewEventContextByReq(req, s.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.AssignHostToAppParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("assign host to app failed, err: %v", err)

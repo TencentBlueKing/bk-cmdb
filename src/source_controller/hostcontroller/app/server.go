@@ -16,12 +16,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/hostcontroller/app/options"
@@ -30,7 +33,6 @@ import (
 	"configcenter/src/storage"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -56,11 +58,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService(rdapi.AllGlobalFilter())),
+		Handler:    restful.NewContainer().Add(coreService.WebService()),
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOSTCONTROLLER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -70,7 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	hostCtrl := new(HostController)
 	hostCtrl.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
+		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
 		hostCtrl.onHostConfigUpdate,
 		bonC)
@@ -83,9 +85,25 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
+	err = hostCtrl.Instance.Open()
+	if err != nil {
+		return fmt.Errorf("new mongo client failed, err: %v", err)
+	}
 
 	rdsc := hostCtrl.Config.Redis
-	hostCtrl.Cache, err = redisclient.NewRedis(rdsc.Address, rdsc.Port, rdsc.User, rdsc.Password, rdsc.Database)
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
+	}
+	hostCtrl.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address + ":" + rdsc.Port,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = hostCtrl.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
@@ -102,7 +120,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 type HostController struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    storage.DI
+	Cache    *redis.Client
 	Config   options.Config
 }
 

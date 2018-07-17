@@ -28,11 +28,11 @@ import (
 )
 
 //GetImportInsts get insts from excel file
-func GetImportInsts(f *xlsx.File, objID, url string, header http.Header, headerRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
+func GetImportInsts(f *xlsx.File, objID, url string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
 
 	fields, err := GetObjFieldIDs(objID, url, nil, header)
 	if nil != err {
-		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
+		return nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
 	if 0 == len(f.Sheets) {
 		blog.Error("the excel file sheets is empty")
@@ -43,8 +43,11 @@ func GetImportInsts(f *xlsx.File, objID, url string, header http.Header, headerR
 		blog.Error("the excel fiel sheet is nil")
 		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
-
-	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, false, headerRow, defLang)
+	if isInst {
+		return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow, defLang)
+	} else {
+		return GetRawExcelData(sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
+	}
 }
 
 //GetInstData get inst data

@@ -55,7 +55,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return valid.errif.Error(result.Code)
 	}
 
-	if 0 >= result.Data.Count {
+	if 0 < result.Data.Count {
 		blog.Error("duplicate data ")
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
@@ -133,6 +133,9 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	}
 	if !result.Result {
 		return nil, valid.errif.Error(result.Code)
+	}
+	if len(result.Data.Info) == 0 {
+		return nil, nil
 	}
 
 	if len(result.Data.Info[0]) > 0 {

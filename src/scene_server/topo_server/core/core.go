@@ -21,6 +21,9 @@ import (
 
 // Core Provides management interfaces for models and instances
 type Core interface {
+	SetOperation() operation.SetOperationInterface
+	ModuleOperation() operation.ModuleOperationInterface
+	BusinessOperation() operation.BusinessOperationInterface
 	AssociationOperation() operation.AssociationOperationInterface
 	AttributeOperation() operation.AttributeOperationInterface
 	ClassificationOperation() operation.ClassificationOperationInterface
@@ -32,6 +35,9 @@ type Core interface {
 }
 
 type core struct {
+	business       operation.BusinessOperationInterface
+	set            operation.SetOperationInterface
+	module         operation.ModuleOperationInterface
 	association    operation.AssociationOperationInterface
 	attribute      operation.AttributeOperationInterface
 	classification operation.ClassificationOperationInterface
@@ -44,52 +50,81 @@ type core struct {
 
 // New create a core manager
 func New(client apimachinery.ClientSetInterface) Core {
+
+	attributeOperation := operation.NewAttributeOperation(client)
+	classificationOperation := operation.NewClassificationOperation(client)
+	groupOperation := operation.NewGroupOperation(client)
+	objectOperation := operation.NewObjectOperation(client)
+	instOperation := operation.NewInstOperation(client)
+	moduleOperation := operation.NewModuleOperation(client)
+	setOperation := operation.NewSetOperation(client)
+	businessOperation := operation.NewBusinessOperation(client)
+	associationOperation := operation.NewAssociationOperation(client)
+	permissionOperation := operation.NewPermissionOperation(client)
+	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
+
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
-	inst := operation.NewInstOperation(client, targetModel, targetInst)
-	attribute := operation.NewAttributeOperation(client, targetModel, targetInst)
-	classification := operation.NewClassificationOperation(client, targetModel, targetInst)
-	group := operation.NewGroupOperation(client, targetModel, targetInst)
-	object := operation.NewObjectOperation(client, targetModel, targetInst)
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation)
+	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
+	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
+	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
+	associationOperation.SetProxy(classificationOperation, objectOperation, attributeOperation, instOperation, targetModel, targetInst)
 
-	association := operation.NewAssociationOperation(client, classification, object, attribute, inst, targetModel, targetInst)
-	permission := operation.NewPermissionOperation(client)
-	compatibleV2 := operation.NewCompatibleV2Operation(client)
+	instOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
+	moduleOperation.SetProxy(instOperation)
+	setOperation.SetProxy(objectOperation, instOperation, moduleOperation)
+	businessOperation.SetProxy(setOperation, moduleOperation, instOperation, objectOperation)
 
 	return &core{
-		inst:           inst,
-		association:    association,
-		attribute:      attribute,
-		classification: classification,
-		group:          group,
-		object:         object,
-		permission:     permission,
-		compatibleV2:   compatibleV2,
+		set:            setOperation,
+		module:         moduleOperation,
+		business:       businessOperation,
+		inst:           instOperation,
+		association:    associationOperation,
+		attribute:      attributeOperation,
+		classification: classificationOperation,
+		group:          groupOperation,
+		object:         objectOperation,
+		permission:     permissionOperation,
+		compatibleV2:   compatibleV2Operation,
 	}
 }
 
-func (cli *core) AssociationOperation() operation.AssociationOperationInterface {
-	return cli.association
+func (c *core) SetOperation() operation.SetOperationInterface {
+	return c.set
 }
-func (cli *core) AttributeOperation() operation.AttributeOperationInterface {
-	return cli.attribute
+
+func (c *core) ModuleOperation() operation.ModuleOperationInterface {
+	return c.module
 }
-func (cli *core) ClassificationOperation() operation.ClassificationOperationInterface {
-	return cli.classification
+
+func (c *core) BusinessOperation() operation.BusinessOperationInterface {
+	return c.business
 }
-func (cli *core) GroupOperation() operation.GroupOperationInterface {
-	return cli.group
+
+func (c *core) AssociationOperation() operation.AssociationOperationInterface {
+	return c.association
 }
-func (cli *core) InstOperation() operation.InstOperationInterface {
-	return cli.inst
+func (c *core) AttributeOperation() operation.AttributeOperationInterface {
+	return c.attribute
 }
-func (cli *core) ObjectOperation() operation.ObjectOperationInterface {
-	return cli.object
+func (c *core) ClassificationOperation() operation.ClassificationOperationInterface {
+	return c.classification
 }
-func (cli *core) PermissionOperation() operation.PermissionOperationInterface {
-	return cli.permission
+func (c *core) GroupOperation() operation.GroupOperationInterface {
+	return c.group
 }
-func (cli *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
-	return cli.compatibleV2
+func (c *core) InstOperation() operation.InstOperationInterface {
+	return c.inst
+}
+func (c *core) ObjectOperation() operation.ObjectOperationInterface {
+	return c.object
+}
+func (c *core) PermissionOperation() operation.PermissionOperationInterface {
+	return c.permission
+}
+func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
+	return c.compatibleV2
 }

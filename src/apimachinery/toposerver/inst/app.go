@@ -18,17 +18,17 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/app/%s", ownerID)
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

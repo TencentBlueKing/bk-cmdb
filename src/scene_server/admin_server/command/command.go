@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
 	"configcenter/src/common/core/cc/api"
-
-	"github.com/spf13/pflag"
 )
 
 const bkbizCmdName = "bkbiz"
@@ -23,16 +23,20 @@ func Parse(args []string) error {
 	var (
 		exportflag     bool
 		importflag     bool
-		dryrun         bool
+		miniflag       bool
+		dryrunflag     bool
 		filepath       string
 		configposition string
+		scope          string
 	)
 
 	// set flags
 	bkbizfs := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
-	bkbizfs.BoolVar(&dryrun, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
+	bkbizfs.BoolVar(&dryrunflag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
+	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
+	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
 	bkbizfs.StringVar(&filepath, "file", "", "export or import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	err := bkbizfs.Parse(args[1:])
@@ -52,19 +56,37 @@ func Parse(args []string) error {
 		return err
 	}
 
+	opt := &option{
+		position: filepath,
+		OwnerID:  common.BKDefaultOwnerID,
+		dryrun:   dryrunflag,
+		mini:     miniflag,
+		scope:    scope,
+	}
+
 	if exportflag {
-		if err := export(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID}); err != nil {
+		mode := ""
+		if miniflag {
+			mode = "mini"
+		} else {
+			mode = "verbose"
+
+		}
+		fmt.Printf("exporting blueking business to %s in \033[34m%s\033[0m mode\n", filepath, mode)
+		if err := export(a.InstCli, opt); err != nil {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
 		}
 		fmt.Printf("blueking business has been export to %s\n", filepath)
 	} else if importflag {
 		fmt.Printf("importing blueking business from %s\n", filepath)
-		if err := importBKBiz(a.InstCli, &option{position: filepath, OwnerID: common.BKDefaultOwnerID, dryrun: dryrun}); err != nil {
+		opt.mini = false
+		opt.scope = "all"
+		if err := importBKBiz(a.InstCli, opt); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}
-		if !dryrun {
+		if !dryrunflag {
 			fmt.Printf("blueking business has been import from %s\n", filepath)
 		}
 	} else {

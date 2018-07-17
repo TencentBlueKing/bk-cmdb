@@ -15,6 +15,7 @@
             :isShowBiz="false" 
             :isShowCollect="false" 
             :isShowHistory="false" 
+            :isShowScope="true"
             :outerParams="hosts.searchParams"
             @choose="setSelectedHost" 
             @attrLoaded="search">
@@ -69,7 +70,7 @@
                         <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
                         <div class="back-contain">
                             <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入Agent安装APP']")}}</a>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
                         </div>
                     </div>
                 </bk-tabpanel>
@@ -102,28 +103,7 @@
                     bkBizId: '',
                     selectedHost: [],
                     searchParams: {
-                        'bk_biz_id': -1,
-                        condition: [{
-                            'bk_obj_id': 'biz',
-                            fields: [],
-                            condition: [{
-                                field: 'default',
-                                operator: '$eq',
-                                value: 1
-                            }]
-                        }, {
-                            'bk_obj_id': 'host',
-                            fields: [],
-                            condition: []
-                        }, {
-                            'bk_obj_id': 'module',
-                            fields: [],
-                            condition: []
-                        }, {
-                            'bk_obj_id': 'set',
-                            fields: [],
-                            condition: []
-                        }]
+                        'bk_biz_id': -1
                     },
                     table: {
                         header: [],
@@ -172,7 +152,17 @@
             tabChanged (active) {
                 this.slider.tab.active = active
             },
+            hasAssignedHosts () {
+                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['bk_biz_id'] !== 1))
+            },
             confirmTransfer (selected, index) {
+                if (this.hasAssignedHosts()) {
+                    this.$alertMsg(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.$nextTick(() => {
+                        this.hosts.bkBizId = ''
+                    })
+                    return
+                }
                 let h = this.$createElement
                 let content = ''
                 if (this.language === 'en') {
@@ -212,6 +202,9 @@
                     content,
                     confirmFn: () => {
                         this.transferHost()
+                    },
+                    cancelFn: () => {
+                        this.hosts.bkBizId = ''
                     }
                 })
             },
@@ -275,7 +268,7 @@
                 let agentAppUrl = window.agentAppUrl
                 if (agentAppUrl) {
                     if (window.agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_agent_setup'}), '*')
+                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
                     } else {
                         window.open(agentAppUrl)
                     }

@@ -116,7 +116,8 @@ type QueryObjectClassificationResult struct {
 // ClassificationWithObject classification with object
 type ClassificationWithObject struct {
 	Classification `json:",inline"`
-	Objects        []Object `json:"bk_objects"`
+	Objects        []Object            `json:"bk_objects"`
+	AsstObjects    map[string][]Object `json:"bk_asst_objects"`
 }
 
 // QueryObjectClassificationWithObjectsResult query the object classification with objects result

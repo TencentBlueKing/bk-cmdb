@@ -28,15 +28,15 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetDefaultAppIDWithSupplier(supplierID int64, pheader http.Header) (int64, error) {
-	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithSupplierID(supplierID).Data()
+func (lgc *Logics) GetDefaultAppIDWithSupplier(pheader http.Header) (int64, error) {
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(pheader)).Data()
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {
 		return -1, err
 	}
 
-	id, exist := appDetails[common.BKAppIDField].(int64)
-	if !exist {
+	id, err := util.GetInt64ByInterface(appDetails[common.BKAppIDField])
+	if nil != err {
 		return -1, errors.New("can not find bk biz field")
 	}
 	return id, nil
@@ -49,14 +49,14 @@ func (lgc *Logics) GetDefaultAppID(ownerID string, pheader http.Header) (int64, 
 		return -1, err
 	}
 
-	id, exist := appDetails[common.BKAppIDField].(int64)
-	if !exist {
+	id, err := appDetails.Int64(common.BKAppIDField) //[common.BKAppIDField]
+	if nil != err {
 		return -1, errors.New("can not find bk biz field")
 	}
 	return id, nil
 }
 
-func (lgc *Logics) GetAppDetails(fields string, condition map[string]interface{}, pheader http.Header) (map[string]interface{}, error) {
+func (lgc *Logics) GetAppDetails(fields string, condition map[string]interface{}, pheader http.Header) (types.MapStr, error) {
 	query := metadata.QueryInput{
 		Condition: condition,
 		Start:     0,
@@ -65,7 +65,7 @@ func (lgc *Logics) GetAppDetails(fields string, condition map[string]interface{}
 		Sort:      common.BKAppIDField,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKAppIDField, pheader, &query)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, pheader, &query)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("get default appid failed, err: %v, %v", err, result.ErrMsg)
 	}

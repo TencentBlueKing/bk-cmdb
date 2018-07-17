@@ -207,7 +207,10 @@ func (ccAPI *CCAPIServer) Start() error {
 
 func (ccAPI *CCAPIServer) InitHttpServ() error {
 	a := api.NewAPIResource()
-	ccAPI.httpServ.RegisterWebServer("/host/{version}", rdapi.AllGlobalFilter(), a.Actions)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ccAPI.httpServ.RegisterWebServer("/host/{version}", rdapi.AllGlobalFilter(getErrFun), a.Actions)
 	// MetricServer
 	conf := metric.Config{
 		ModuleName:    types.CC_MODULE_HOST,

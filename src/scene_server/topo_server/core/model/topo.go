@@ -23,7 +23,7 @@ import (
 var _ Topo = (*topo)(nil)
 
 type topo struct {
-	params    types.LogicParams
+	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
 }
 

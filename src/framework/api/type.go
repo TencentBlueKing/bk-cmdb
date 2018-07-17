@@ -105,3 +105,10 @@ const (
 	SetServiceOpen           = "1"
 	SetServiceClose          = "2"
 )
+
+type HostModuleActionType string
+
+const (
+	HostAppendModule  HostModuleActionType = "append"
+	HostReplaceModule HostModuleActionType = "replace"
+)
