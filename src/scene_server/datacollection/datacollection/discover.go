@@ -13,21 +13,22 @@
 package datacollection
 
 import (
+	"context"
 	"io"
+	"net/http"
 	"runtime"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 
 	"github.com/rs/xid"
 	"gopkg.in/redis.v5"
 
-	bkc "configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/scene_server/datacollection/common"
 )
@@ -54,25 +55,23 @@ type Discover struct {
 	masterProcLockLiveTime time.Duration
 
 	requests *httpcli.HttpClient
-	cc       *api.APIResource
-	wg       *sync.WaitGroup
+	*backbone.Engine
+	ctx     context.Context
+	pheader http.Header
 }
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, backbone backbone.Engine) *Discover {
+func NewDiscover(ctx context.Context, chanName string, maxSize int, redisCli, subCli *redis.Client, backbone *backbone.Engine) *Discover {
 
 	if 0 == maxSize {
 		maxSize = 100
 	}
+	pheader := http.Header{}
+	pheader.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
+	pheader.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
 
-	httpClient := httpcli.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-	httpClient.SetHeader(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
-	httpClient.SetHeader(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
-
-	return &Discover{
+	discover := &Discover{
 		chanName:               chanName,
 		msgChan:                make(chan string, maxSize*4),
 		interrupt:              make(chan error),
@@ -86,10 +85,11 @@ func NewDiscover(chanName string, maxSize int, redisCli, subCli *redis.Client, b
 		maxConcurrent:          runtime.NumCPU(),
 		getMasterInterval:      time.Second * 11,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
-		//wg:                     wg,
-		cc:       cc,
-		requests: httpClient,
+		ctx:     ctx,
+		pheader: pheader,
 	}
+	discover.Engine = backbone
+	return discover
 }
 
 // Start start main handle routines
@@ -102,7 +102,7 @@ func (d *Discover) Start() {
 		// restart discover after panic recover
 		for {
 			time.Sleep(10 * time.Second)
-			NewDiscover(d.chanName, d.maxSize, d.redisCli, d.subCli, d.cc).Run()
+			NewDiscover(d.ctx, d.chanName, d.maxSize, d.redisCli, d.subCli, d.Engine).Run()
 		}
 	}()
 }

@@ -18,6 +18,8 @@ import (
 	"os"
 	"time"
 
+	"configcenter/src/scene_server/datacollection/datacollection"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -102,6 +104,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		dcSvr.Service.SetCache(cache)
 	}
+
+	datacollection.Run()
 	select {}
 	return nil
 }
