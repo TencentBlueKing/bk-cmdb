@@ -14,16 +14,12 @@ package service
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
-	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -31,23 +27,23 @@ import (
 //主机操作日志
 func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddHostLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
-	input := new(metadata.AuditHostLogParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(input); nil != err {
-		blog.Errorf("AddHostLog json unmarshal failed:%v error:%v", string(value), err)
+	params := new(metadata.AuditHostLogParams)
+	if err := json.NewDecoder(req.Request.Body).Decode(params); nil != err {
+		blog.Errorf("AddHostLog json unmarshal  error:%v", err)
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -67,23 +63,23 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 //插入多行主机操作日志型操作
 func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddHostLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditHostsLogParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddHostLogs json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Error("AddHostLogs json unmarshal failed, error:%v", err)
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
