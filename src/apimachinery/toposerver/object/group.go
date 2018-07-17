@@ -17,11 +17,10 @@ import (
 	"fmt"
 	"net/http"
 
-	objapi "configcenter/src/source_controller/api/object"
 	"configcenter/src/common/metadata"
 )
 
-func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat objapi.ObjAttGroupDes) (resp *metadata.Response, err error) {
+func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/objectatt/group/new"
 

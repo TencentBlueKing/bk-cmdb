@@ -117,94 +117,22 @@ func (o *object) MarshalJSON() ([]byte, error) {
 }
 
 func (o *object) GetDefaultInstPropertyName() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return "业务名"
-	case common.BKInnerObjIDModule:
-		return "模块名"
-	case common.BKInnerObjIDSet:
-		return "集群名"
-	default:
-		return "实例名"
-	}
+	return o.obj.GetDefaultInstPropertyName()
 }
 func (o *object) GetInstIDFieldName() string {
-
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return common.BKAppIDField
-	case common.BKInnerObjIDSet:
-		return common.BKSetIDField
-	case common.BKInnerObjIDModule:
-		return common.BKModuleIDField
-	case common.BKINnerObjIDObject:
-		return common.BKInstIDField
-	case common.BKInnerObjIDHost:
-		return common.BKHostIDField
-	case common.BKInnerObjIDProc:
-		return common.BKProcIDField
-	case common.BKInnerObjIDPlat:
-		return common.BKCloudIDField
-	default:
-		return common.BKInstIDField
-	}
-
+	return o.obj.GetInstIDFieldName()
 }
 
 func (o *object) GetInstNameFieldName() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return common.BKAppNameField
-	case common.BKInnerObjIDSet:
-		return common.BKSetNameField
-	case common.BKInnerObjIDModule:
-		return common.BKModuleNameField
-	case common.BKInnerObjIDHost:
-		return common.BKHostInnerIPField
-	case common.BKInnerObjIDProc:
-		return common.BKProcNameField
-	case common.BKInnerObjIDPlat:
-		return common.BKCloudNameField
-	default:
-		return common.BKInstNameField
-	}
+	return o.obj.GetInstNameFieldName()
 }
 
 func (o *object) GetObjectType() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDSet:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDModule:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDHost:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDProc:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDPlat:
-		return o.obj.ObjectID
-	default:
-		return common.BKINnerObjIDObject
-	}
+	return o.obj.GetObjectType()
+
 }
 func (o *object) IsCommon() bool {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return false
-	case common.BKInnerObjIDSet:
-		return false
-	case common.BKInnerObjIDModule:
-		return false
-	case common.BKInnerObjIDHost:
-		return false
-	case common.BKInnerObjIDProc:
-		return false
-	case common.BKInnerObjIDPlat:
-		return false
-	default:
-		return true
-	}
+	return o.obj.IsCommon()
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
@@ -241,7 +169,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
 		if nil != err {

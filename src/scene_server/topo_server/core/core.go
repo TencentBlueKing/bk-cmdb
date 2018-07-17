@@ -51,6 +51,7 @@ type core struct {
 // New create a core manager
 func New(client apimachinery.ClientSetInterface) Core {
 
+	// create insts
 	attributeOperation := operation.NewAttributeOperation(client)
 	classificationOperation := operation.NewClassificationOperation(client)
 	groupOperation := operation.NewGroupOperation(client)
@@ -66,7 +67,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
-	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation)
+	// set the operation
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation)
 	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
 	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
 	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)

@@ -36,7 +36,7 @@ type ObjectOperationInterface interface {
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 }
 
@@ -54,13 +54,15 @@ type object struct {
 	cls          ClassificationOperationInterface
 	asst         AssociationOperationInterface
 	inst         InstOperationInterface
+	attr         AttributeOperationInterface
 }
 
-func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface) {
+func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface) {
 	o.modelFactory = modelFactory
 	o.instFactory = instFactory
 	o.asst = asst
 	o.inst = inst
+	o.attr = attr
 }
 
 func (o *object) IsValidObject(params types.ContextParams, objID string) error {
@@ -165,18 +167,40 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 
 func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header, cond.ToMapStr())
+	if 0 < id {
+		cond = condition.CreateCondition()
+		cond.Field(metadata.ModelFieldID).Eq(id)
+	}
 
+	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) error info is %s", cond, err.Error())
+		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
-		return params.Err.Error(rsp.Code)
-	}
+	for _, obj := range objs {
 
+		attrCond := condition.CreateCondition()
+		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
+
+		if err := o.attr.DeleteObjectAttribute(params, -1, attrCond); nil != err {
+			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
+			return err
+		}
+
+		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
+
+		if nil != err {
+			blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
+			return params.Err.Error(rsp.Code)
+		}
+	}
 	return nil
 }
 
