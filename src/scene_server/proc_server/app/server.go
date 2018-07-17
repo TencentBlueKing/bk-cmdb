@@ -38,7 +38,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
         QPS: op.ServConf.Qps,
         Burst: op.ServConf.Burst,
         TLSConfig: nil,
-        GseProcServ: "",
+        GseProcServ: "", // TODO, get gseprocserver from configure
     }
     
     apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
