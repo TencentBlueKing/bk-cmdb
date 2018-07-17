@@ -16,14 +16,15 @@ import (
 	"errors"
 	"fmt"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
 	metadataTable "configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/storage"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Logics struct {
@@ -37,7 +38,7 @@ const (
 )
 
 //DelSingleHostModuleRelation delete single host module relation
-func (lgc *Logics) DelSingleHostModuleRelation(ec *eventdata.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
 
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{}, 0)
@@ -83,7 +84,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventdata.EventContext, hostI
 
 	// send events
 	for _, origindata := range origindatas {
-		err := ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionDelete, nil, origindata)
+		err := ec.InsertEvent(metadata.EventTypeRelation, "moduletransfer", metadata.EventActionDelete, nil, origindata)
 		if err != nil {
 			blog.Errorf("delete single host relation failed, but create event error:%v", err)
 		}
@@ -93,7 +94,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventdata.EventContext, hostI
 }
 
 //AddSingleHostModuleRelation add single host module relation
-func (lgc *Logics) AddSingleHostModuleRelation(ec *eventdata.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{})
 	errHost := lgc.GetObjectByID(common.BKInnerObjIDHost, hostFieldArr, hostID, &hostResult, common.BKHostIDField)
@@ -141,7 +142,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ec *eventdata.EventContext, hostI
 		return false, err
 	}
 
-	err = ec.InsertEvent(eventtypes.EventTypeRelation, "moduletransfer", eventtypes.EventActionCreate, moduleHostConfig, nil)
+	err = ec.InsertEvent(metadata.EventTypeRelation, "moduletransfer", metadata.EventActionCreate, moduleHostConfig, nil)
 	if err != nil {
 		blog.Errorf("add single host module relation, create event error:%v", err)
 	}

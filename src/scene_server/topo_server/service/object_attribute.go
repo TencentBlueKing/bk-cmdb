@@ -21,7 +21,7 @@ import (
 )
 
 // CreateObjectAttribute create a new object attribute
-func (s *topoService) CreateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	attr, err := s.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
@@ -32,7 +32,7 @@ func (s *topoService) CreateObjectAttribute(params types.LogicParams, pathParams
 }
 
 // SearchObjectAttribute search the object attributes
-func (s *topoService) SearchObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
@@ -45,7 +45,7 @@ func (s *topoService) SearchObjectAttribute(params types.LogicParams, pathParams
 }
 
 // UpdateObjectAttribute update the object attribute
-func (s *topoService) UpdateObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := frtypes.MapStr{}
@@ -62,7 +62,7 @@ func (s *topoService) UpdateObjectAttribute(params types.LogicParams, pathParams
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (s *topoService) DeleteObjectAttribute(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 

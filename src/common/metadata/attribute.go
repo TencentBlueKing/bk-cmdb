@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	AttributeFieldID              = "id"
 	AttributeFieldSupplierAccount = "bk_supplier_account"
 	AttributeFieldObjectID        = "bk_obj_id"
 	AttributeFieldPropertyID      = "bk_property_id"

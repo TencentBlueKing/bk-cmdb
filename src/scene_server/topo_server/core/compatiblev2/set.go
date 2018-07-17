@@ -31,7 +31,7 @@ type SetInterface interface {
 }
 
 // NewSet ceate a new set instance
-func NewSet(params types.LogicParams, client apimachinery.ClientSetInterface) SetInterface {
+func NewSet(params types.ContextParams, client apimachinery.ClientSetInterface) SetInterface {
 	return &set{
 		params: params,
 		client: client,
@@ -39,7 +39,7 @@ func NewSet(params types.LogicParams, client apimachinery.ClientSetInterface) Se
 }
 
 type set struct {
-	params types.LogicParams
+	params types.ContextParams
 	client apimachinery.ClientSetInterface
 }
 
@@ -49,7 +49,7 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 		"SetID":         setIDS,
 	}
 
-	rsp, err := s.client.HostController().Module().GetModulesHostConfig(context.Background(), s.params.Header.ToHeader(), cond)
+	rsp, err := s.client.HostController().Module().GetModulesHostConfig(context.Background(), s.params.Header, cond)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -69,7 +69,7 @@ func (s *set) deleteModules(bizID int64, setIDS []int64) error {
 	cond.Field(common.BKSetIDField).In(setIDS)
 	cond.Field(common.BKAppIDField).Eq(bizID)
 
-	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, s.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, s.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
@@ -90,7 +90,7 @@ func (s *set) UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Con
 	input.Set("data", data)
 	input.Set("condition", cond.ToMapStr())
 
-	rsp, err := s.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDSet, s.params.Header.ToHeader(), input)
+	rsp, err := s.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, input)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -128,7 +128,7 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKSetIDField).In(setIDS)
 
-	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDSet, s.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] faield to check host, error info is %s", err.Error())
 		return err
@@ -143,7 +143,7 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 }
 func (s *set) DeleteSetHost(bizID int64, cond condition.Condition) error {
 
-	rsp, err := s.client.ObjectController().OpenAPI().DeleteSetHost(context.Background(), s.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := s.client.ObjectController().OpenAPI().DeleteSetHost(context.Background(), s.params.Header, cond.ToMapStr())
 
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, error info is %s", err.Error())

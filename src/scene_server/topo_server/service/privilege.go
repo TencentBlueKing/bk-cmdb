@@ -13,8 +13,6 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
@@ -23,7 +21,7 @@ import (
 )
 
 // UpdateUserGroupPrivi search user goup
-func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	priviData := &metadata.PrivilegeUserGroup{}
 
@@ -33,18 +31,18 @@ func (s *topoService) UpdateUserGroupPrivi(params types.LogicParams, pathParams,
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.Header.OwnerID, pathParams("group_id"), priviData)
+	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
 	return nil, err
 }
 
 // GetUserGroupPrivi search user goup
-func (s *topoService) GetUserGroupPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+func (s *topoService) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	return s.core.PermissionOperation().Permission(params).GetUserGroupPermission(params.SupplierAccount, pathParams("group_id"))
 }
 
 // GetUserPrivi search user goup
-func (s *topoService) GetUserPrivi(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+func (s *topoService) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	return s.core.PermissionOperation().Permission(params).GetUserPermission(params.SupplierAccount, pathParams("user_name"))
 }

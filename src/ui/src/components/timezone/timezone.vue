@@ -47,8 +47,8 @@
             ])
         },
         watch: {
-            selected (val) {
-                this.timezoneSelected = val
+            selected (selected) {
+                this.timezoneSelected = selected
             },
             timezoneSelected (val) {
                 this.$emit('update:selected', val)
@@ -58,7 +58,7 @@
             if (!this.timezoneList.length) {
                 this.$store.commit('setTimezoneList', timezoneData)
             }
-            this.timezoneSelected = this.selected || ''
+            this.timezoneSelected = this.selected || 'Asia/Shanghai'
             this.timezoneData = timezoneData
         }
     }

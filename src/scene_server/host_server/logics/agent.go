@@ -22,7 +22,9 @@ import (
 )
 
 func ParseHostSnap(data string) (map[string]interface{}, error) {
-
+	if "" == data {
+		return nil, nil
+	}
 	js, err := simplejson.NewJson([]byte(data))
 	if nil != err {
 		return nil, err

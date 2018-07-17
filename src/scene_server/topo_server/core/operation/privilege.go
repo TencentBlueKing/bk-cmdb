@@ -20,9 +20,9 @@ import (
 
 // PermissionOperationInterface the permission interface
 type PermissionOperationInterface interface {
-	Permission(params types.LogicParams) privilege.PermissionInterface
-	UserGroup(params types.LogicParams) privilege.UserGroupInterface
-	Role(params types.LogicParams) privilege.RolePermission
+	Permission(params types.ContextParams) privilege.PermissionInterface
+	UserGroup(params types.ContextParams) privilege.UserGroupInterface
+	Role(params types.ContextParams) privilege.RolePermission
 }
 
 // NewPermissionOperation create the permission operation
@@ -36,14 +36,14 @@ type permissionOperation struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (p *permissionOperation) Permission(params types.LogicParams) privilege.PermissionInterface {
+func (p *permissionOperation) Permission(params types.ContextParams) privilege.PermissionInterface {
 	return privilege.NewPermission(params, p.client)
 }
 
-func (p *permissionOperation) UserGroup(params types.LogicParams) privilege.UserGroupInterface {
+func (p *permissionOperation) UserGroup(params types.ContextParams) privilege.UserGroupInterface {
 	return privilege.NewUserGroup(params, p.client)
 }
 
-func (p *permissionOperation) Role(params types.LogicParams) privilege.RolePermission {
+func (p *permissionOperation) Role(params types.ContextParams) privilege.RolePermission {
 	return privilege.NewRole(params, p.client)
 }

@@ -71,7 +71,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	params := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(params); nil != err {
+	if err := json.NewDecoder(req.Request.Body).Decode(&params); nil != err {
 		blog.Errorf("update user custom query failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -103,19 +103,12 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 	ID := req.PathParameter("id")
 	appID := req.PathParameter("bk_biz_id")
 
-	params := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(params); nil != err {
-		blog.Errorf("update user custom query failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
 	result, err := s.CoreAPI.HostController().User().DeleteUserConfig(context.Background(), appID, ID, req.Request.Header)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {
 			err = fmt.Errorf(result.ErrMsg)
 		}
-		blog.Errorf("delete user custom query failed,  err: %s, input:%v", err.Error(), params)
+		blog.Errorf("delete user custom query failed,  err: %s, input:%v", err.Error(), req.PathParameters())
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Errorf(common.CCErrDeleteUserCustomQueryFaild, err.Error())})
 		return
 	}

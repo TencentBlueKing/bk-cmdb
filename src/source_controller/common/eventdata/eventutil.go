@@ -14,6 +14,7 @@ package eventdata
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	commontypes "configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
 	"configcenter/src/scene_server/event_server/types"
@@ -60,13 +61,13 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 	if err != nil {
 		return err
 	}
-	ei := &types.EventInst{
+	ei := &metadata.EventInst{
 		ID:         int64(eventID),
 		EventType:  eventType,
 		Action:     action,
 		ActionTime: commontypes.Now(),
 		ObjType:    objType,
-		Data: []types.EventData{
+		Data: []metadata.EventData{
 			{
 				CurData: curData,
 				PreData: preData,

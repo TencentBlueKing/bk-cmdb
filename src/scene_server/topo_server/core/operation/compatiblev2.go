@@ -21,9 +21,9 @@ import (
 
 // CompatibleV2OperationInterface compatibleV2 methods
 type CompatibleV2OperationInterface interface {
-	Business(params types.LogicParams) compatiblev2.BusinessInterface
-	Module(params types.LogicParams) compatiblev2.ModuleInterface
-	Set(params types.LogicParams) compatiblev2.SetInterface
+	Business(params types.ContextParams) compatiblev2.BusinessInterface
+	Module(params types.ContextParams) compatiblev2.ModuleInterface
+	Set(params types.ContextParams) compatiblev2.SetInterface
 }
 
 // NewCompatibleV2Operation create a new compatiblev2 operation instance
@@ -37,13 +37,13 @@ type compatiblev2Operation struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (c *compatiblev2Operation) Business(params types.LogicParams) compatiblev2.BusinessInterface {
+func (c *compatiblev2Operation) Business(params types.ContextParams) compatiblev2.BusinessInterface {
 	return compatiblev2.NewBusiness(params, c.client)
 }
-func (c *compatiblev2Operation) Module(params types.LogicParams) compatiblev2.ModuleInterface {
+func (c *compatiblev2Operation) Module(params types.ContextParams) compatiblev2.ModuleInterface {
 	return compatiblev2.NewModule(params, c.client)
 }
 
-func (c *compatiblev2Operation) Set(params types.LogicParams) compatiblev2.SetInterface {
+func (c *compatiblev2Operation) Set(params types.ContextParams) compatiblev2.SetInterface {
 	return compatiblev2.NewSet(params, c.client)
 }

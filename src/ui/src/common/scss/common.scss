@@ -88,8 +88,8 @@ input[type=radio] {
 }
 
 textarea {
-    border-color: #c3cdd7!important;
-    color: $primaryHoverColor!important;
+    border-color: #c3cdd7;
+    color: $primaryHoverColor;
     &:focus {
         // border-color: #6b7baa!important;
     }

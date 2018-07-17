@@ -13,13 +13,13 @@
         :disabled="disabled"
         :filterFn="filterFn"
         :filterable="filterable"
-        :list="bkBizList"
+        :list="bkPrivBizList"
         :multiple="multiple"
         :placeholder="placeholder"
         :selected.sync="curSelected"
         :valueKey="valueKey"
         @on-selected="setSelectedData">
-        <bk-select-option v-for="(biz, index) in bkBizList"
+        <bk-select-option v-for="(biz, index) in bkPrivBizList"
             :key="biz['bk_biz_id']"
             :value="biz['bk_biz_id']"
             :label="biz['bk_biz_name']">
@@ -65,7 +65,7 @@
             }
         },
         computed: {
-            ...mapGetters(['bkBizList', 'bkBizId']),
+            ...mapGetters(['bkPrivBizList', 'bkBizId']),
             curSelected: {
                 get () {
                     return this.bkBizId
@@ -85,7 +85,7 @@
             }
         },
         watch: {
-            bkBizList () {
+            bkPrivBizList () {
                 this.setSelectedData()
                 this.setHeader()
                 this.$nextTick(() => {
@@ -110,9 +110,9 @@
                 } else {
                     /* 用于默认选择时向父组件派发on-selected事件 */
                     let label = ''
-                    for (var i = 0; i < this.bkBizList.length; i++) {
-                        if (this.bkBizList[i]['bk_biz_id'] === this.curSelected) {
-                            label = this.bkBizList[i]['bk_biz_name']
+                    for (var i = 0; i < this.bkPrivBizList.length; i++) {
+                        if (this.bkPrivBizList[i]['bk_biz_id'] === this.curSelected) {
+                            label = this.bkPrivBizList[i]['bk_biz_name']
                             index = i
                             break
                         }
