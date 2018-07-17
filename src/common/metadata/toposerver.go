@@ -10,14 +10,23 @@
  * limitations under the License.
  */
 
-package inst
+package metadata
 
-import (
-	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
-)
+type SearchInstResult struct {
+	BaseResp `json",inline"`
+	Data     InstResult `json:"data"`
+}
 
-// Factory used to all inst
-type Factory interface {
-	CreateInst(params types.ContextParams, obj model.Object) Inst
+type CreateModelResult struct {
+	BaseResp `json:",inline"`
+	Data     Object `json:"data"`
+}
+type SearchModelResult struct {
+	BaseResp `json:",inline"`
+	Data     []Object `json:"data"`
+}
+
+type SearchInnterAppTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     InnterAppTopo
 }
