@@ -10,22 +10,23 @@
  * limitations under the License.
  */
 
-package types
+package metadata
 
-import (
-	"net/http"
+type SearchInstResult struct {
+	BaseResp `json",inline"`
+	Data     InstResult `json:"data"`
+}
 
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-)
+type CreateModelResult struct {
+	BaseResp `json:",inline"`
+	Data     Object `json:"data"`
+}
+type SearchModelResult struct {
+	BaseResp `json:",inline"`
+	Data     []Object `json:"data"`
+}
 
-// ContextParams the logic function params
-type ContextParams struct {
-	Engin           *backbone.Engine
-	Header          http.Header
-	SupplierAccount string
-	User            string
-	Err             errors.DefaultCCErrorIf
-	Lang            language.DefaultCCLanguageIf
+type SearchInnterAppTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     InnterAppTopo
 }
