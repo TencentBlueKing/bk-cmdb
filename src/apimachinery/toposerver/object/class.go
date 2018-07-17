@@ -17,11 +17,10 @@ import (
 	"fmt"
 	"net/http"
 
-	sencapi "configcenter/src/scene_server/api"
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *sencapi.ObjectClsDes) (resp *metadata.Response, err error) {
+func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *metadata.Classification) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/object/classification"
 

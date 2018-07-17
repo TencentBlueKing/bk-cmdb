@@ -110,8 +110,12 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
 
 	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
-	attrCond.Field(metadata.AttributeFieldID).Eq(id)
+	if id < 0 {
+		attrCond = cond
+	} else {
+		attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+		attrCond.Field(metadata.AttributeFieldID).Eq(id)
+	}
 	attrItems, err := a.FindObjectAttribute(params, attrCond)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to find the attributes by the id(%d), error info is %s", id, err.Error())
@@ -148,6 +152,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
+	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {

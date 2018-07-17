@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.QueryInput) (resp *metadata.Response, err error) {
@@ -34,8 +34,8 @@ func (t *instanceClient) QueryAudit(ctx context.Context, ownerID string, h http.
 	return
 }
 
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
+	resp = new(metadata.SearchInnterAppTopoResult)
 	subPath := fmt.Sprintf("/topo/internal/%s/%s", ownerID, appID)
 
 	err = t.client.Get().

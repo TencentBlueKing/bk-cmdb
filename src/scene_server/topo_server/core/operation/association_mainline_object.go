@@ -13,19 +13,21 @@
 package operation
 
 import (
+	"fmt"
 	"io"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (cli *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
+func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
 
-	targetObj, err := cli.obj.FindSingleObject(params, objID)
+	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[opeartion-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
 		return err
@@ -37,21 +39,50 @@ func (cli *association) DeleteMainlineAssociaton(params types.ContextParams, obj
 		return err
 	}
 
+	// update associations
 	childObj, err := targetObj.GetMainlineChildObject()
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find the object(%s)'s child, error info is %s", objID, err.Error())
 		return err
 	}
 
-	if err = cli.ResetMainlineInstAssociatoin(params, targetObj); nil != err {
+	if err = a.ResetMainlineInstAssociatoin(params, targetObj); nil != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s", objID, err.Error())
-		return nil
+		return err
+	}
+	fmt.Println("current:", targetObj.GetID(), "parent:", parentObj.GetID(), "child:", childObj.GetID())
+	if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err {
+		blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
+		return err
 	}
 
-	return childObj.SetMainlineParentObject(parentObj.GetID())
+	// delete objects
+	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", targetObj.GetID(), err.Error())
+		return err
+	}
+
+	// delete the object associations
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldObjectID).Eq(targetObj.GetID())
+	cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
+	if err = a.DeleteAssociation(params, cond); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
+		return err
+	}
+
+	cond = condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(targetObj.GetID())
+	cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
+	if err = a.DeleteAssociation(params, cond); nil != err {
+		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
-func (cli *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
+func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
 	results := make([]*metadata.MainlineObjectTopo, 0)
 
@@ -88,17 +119,17 @@ func (cli *association) SearchMainlineAssociationTopo(params types.ContextParams
 
 }
 
-func (cli *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
+func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
 
 	// check and fetch the association object's classification
-	objCls, err := cli.cls.FindSingleClassification(params, data.ClassificationID)
+	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
 	if nil != err {
 		blog.Errorf("[opration-asst] failed to find the single classification, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, data.ClassificationID)
 	}
 
 	// find the mainline parent object
-	parentObj, err := cli.obj.FindSingleObject(params, data.AsstObjID)
+	parentObj, err := a.obj.FindSingleObject(params, data.AsstObjID)
 	switch t := err.(type) {
 	case nil:
 	default:
@@ -119,7 +150,7 @@ func (cli *association) CreateMainlineAssociation(params types.ContextParams, da
 	}
 
 	// check and create the association mainline object
-	currentObj, err := cli.obj.FindSingleObject(params, data.ObjectID)
+	currentObj, err := a.obj.FindSingleObject(params, data.ObjectID)
 	switch t := err.(type) {
 	case nil:
 	default:
@@ -128,7 +159,7 @@ func (cli *association) CreateMainlineAssociation(params types.ContextParams, da
 	case errors.CCErrorCoder:
 		if t.GetCode() == common.CCErrTopoObjectSelectFailed {
 
-			currentObj = cli.modelFactory.CreaetObject(params)
+			currentObj = a.modelFactory.CreaetObject(params)
 			currentObj.SetID(data.ObjectID)
 			currentObj.SetName(data.ObjectName)
 			currentObj.SetIcon(data.ObjectIcon)
@@ -140,6 +171,7 @@ func (cli *association) CreateMainlineAssociation(params types.ContextParams, da
 			}
 
 			attr := currentObj.CreateAttribute()
+			attr.SetIsSystem(true)
 			attr.SetID(common.BKChildStr)
 			if err = attr.Save(); nil != err {
 				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, common.BKChildStr, err.Error())
@@ -149,7 +181,7 @@ func (cli *association) CreateMainlineAssociation(params types.ContextParams, da
 	}
 
 	// update the mainline topo inst association
-	if err = cli.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
+	if err = a.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
 		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s", err.Error())
 		return nil, err
 	}
