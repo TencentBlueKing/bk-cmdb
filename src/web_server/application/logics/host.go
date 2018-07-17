@@ -117,7 +117,7 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 	}
 	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, nil, header)
 	if nil != err {
-		return nil, errors.New(defLang.Languagef("web_get_object_fiel_failure", err.Error()))
+		return nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
 
 	sheet := f.Sheets[0]
@@ -128,7 +128,7 @@ func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.D
 		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, false, 0, defLang)
+	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
 }
 
 //httpRequest do http request

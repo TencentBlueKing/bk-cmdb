@@ -13,130 +13,146 @@
 package service
 
 import (
-	"fmt"
+	"strconv"
+
+	"configcenter/src/common/condition"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateModule create a new module
-func (s *topoService) CreateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("CreateModule")
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID).Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, pathParams("app_id"))
-	data.Set(common.BKSetIDField, pathParams("set_id"))
-
-	for _, item := range objItems {
-		return s.core.InstOperation().CreateInst(params, item, data) // should only one item
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return nil, nil
+	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
+	}
+
+	return s.core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
+
 }
 
 // DeleteModule delete the module
-func (s *topoService) DeleteModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("DeleteModule")
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
-	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
-	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))
-	cond.Field(common.BKModuleIDField).Eq(pathParams("module_id"))
+func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
-	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
-		return nil, err
-	}
-
-	for _, item := range objItems {
-		if err = s.core.InstOperation().DeleteInst(params, item, cond); nil != err {
-			return nil, err
-		}
-	}
-
-	return nil, err
-}
-
-// UpdateModule update the module
-func (s *topoService) UpdateModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("UpdateModule")
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
-	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
-	cond.Field(common.BKModuleIDField).Eq(pathParams("module_id"))
-
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s", err.Error())
 		return nil, err
 	}
 
-	data.Set(common.BKAppIDField, pathParams("app_id"))
-	data.Set(common.BKSetIDField, pathParams("set_id"))
-	data.Set(common.BKModuleIDField, pathParams("module_id"))
-
-	for _, item := range objItems {
-		if err = s.core.InstOperation().UpdateInst(params, data, item, cond); nil != err {
-			return nil, err
-		}
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return nil, err
+	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
+	}
+
+	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the module id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
+	}
+
+	return nil, s.core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
+
 }
 
-// SearchModule search the modules
-func (s *topoService) SearchModule(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchModule")
-	// {owner_id}/{app_id}/{set_id}
+// UpdateModule update the module
+func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.Header.OwnerID)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
-	cond.Field(common.BKAppIDField).Eq(pathParams("app_id"))
-	cond.Field(common.BKSetIDField).Eq(pathParams("set_id"))
-
-	objItems, err := s.core.ObjectOperation().FindObject(params, cond)
-
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the business, %s", err.Error())
+		blog.Errorf("failed to search the module, %s", err.Error())
 		return nil, err
 	}
 
-	count := 0
-	instRst := make([]inst.Inst, 0)
-	queryCond := &metadata.QueryInput{}
-	for _, objItem := range objItems {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
 
-		cnt, instItems, err := s.core.InstOperation().FindInst(params, objItem, queryCond)
-		if nil != err {
-			blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-			return nil, err
-		}
-		count = count + cnt
-		instRst = append(instRst, instItems...)
+	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
+	}
+
+	moduleID, err := strconv.ParseInt(pathParams("module_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the module id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
+	}
+
+	return nil, s.core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
+}
+
+// SearchModule search the modules
+func (s *topoService) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
+	if nil != err {
+		blog.Errorf("failed to search the module, %s", err.Error())
+		return nil, err
+	}
+
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+
+	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
+	}
+
+	innerCond := condition.CreateCondition()
+
+	if err = innerCond.Parse(data); nil != err {
+		blog.Errorf("[api-module]failed to parse the condition, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	innerCond.Field(common.BKAppIDField).Eq(bizID)
+	innerCond.Field(common.BKSetIDField).Eq(setID)
+
+	queryCond := &metadata.QueryInput{}
+	queryCond.Condition = innerCond
+
+	cnt, instItems, err := s.core.ModuleOperation().FindModule(params, obj, queryCond)
+	if nil != err {
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
 	}
 
 	result := frtypes.MapStr{}
-	result.Set("count", count)
-	result.Set("info", instRst)
+	result.Set("count", cnt)
+	result.Set("info", instItems)
 
 	return result, nil
 }

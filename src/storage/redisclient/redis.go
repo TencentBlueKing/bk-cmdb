@@ -33,6 +33,23 @@ type RedisConfig struct {
 	Port     string
 }
 
+func NewFromConfig(cfg RedisConfig) (*redis.Client, error) {
+	dbNum, _ := strconv.Atoi(cfg.Database)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfg.Address + ":" + cfg.Port,
+		PoolSize: 100,
+		Password: cfg.Password,
+		DB:       dbNum,
+	})
+
+	err := redisClient.Ping().Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return redisClient, err
+}
+
 type Redis struct {
 	host    string
 	port    string

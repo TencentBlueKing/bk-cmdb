@@ -24,7 +24,7 @@ import (
 )
 
 // CreateUserGroup create user goup
-func (s *topoService) CreateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 
 	userGroup := &metadata.UserGroup{}
@@ -34,25 +34,25 @@ func (s *topoService) CreateUserGroup(params types.LogicParams, pathParams, quer
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.Header.OwnerID, userGroup)
+	err = s.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
 	return nil, err
 }
 
 // DeleteUserGroup delete user goup
-func (s *topoService) DeleteUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	err := s.core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
 	return nil, err
 }
 
 // UpdateUserGroup update user goup
-func (s *topoService) UpdateUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	err := s.core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
 	return nil, err
 }
 
 // SearchUserGroup search user goup
-func (s *topoService) SearchUserGroup(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 

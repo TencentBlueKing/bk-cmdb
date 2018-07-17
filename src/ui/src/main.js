@@ -26,6 +26,7 @@ import vClickOutside from 'v-click-outside'
 import Cookies from 'js-cookie'
 import moment from 'moment'
 import vDrag from './directive/drag'
+import axiosQueue from './mixins/axios-queue'
 import '@/api/axios'
 
 const languageTranslate = {
@@ -55,6 +56,8 @@ Vue.directive('focus', {
     }
 })
 
+Vue.mixin(axiosQueue)
+
 Vue.config.productionTip = false
 
 Vue.prototype.$alertMsg = (msg, theme = 'error') => {
@@ -82,7 +85,7 @@ Vue.prototype.$deepClone = (data) => {
 }
 
 /* eslint-disable no-new */
-let vm = new Vue({
+window.CMDB_APP = new Vue({
     el: '#app',
     router,
     template: '<App/>',
@@ -91,7 +94,7 @@ let vm = new Vue({
         messages: i18nConfig,
         fallbackLocale: 'zh_CN',
         missing: function (locale, path) {
-            let parsedPath = vm.$i18n._path.parsePath(path)
+            let parsedPath = window.CMDB_APP.$i18n._path.parsePath(path)
             return parsedPath[parsedPath.length - 1]
         }
     }),

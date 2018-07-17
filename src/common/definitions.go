@@ -160,7 +160,6 @@ const (
 )
 
 const (
-
 	// BKFIeldID the id definition
 	BKFieldID = "id"
 	
@@ -437,6 +436,9 @@ const (
 	BKProcTimeOut = "timeout"
 	BKProcWorkPath = "work_path"
 	BKProcInstNum = "proc_num"
+
+	// BKInstKeyField the inst key field for metric discover
+	BKInstKeyField = "bk_inst_key"
 )
 
 // DefaultResSetName the inner module set
@@ -489,7 +491,6 @@ const BKAppName string = "蓝鲸"
 const BKMainLine = "mainline"
 
 const (
-
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
 
@@ -497,7 +498,6 @@ const (
 	DefaultFaultModuleFlag int = 2
 )
 const (
-
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
 
@@ -539,7 +539,6 @@ const (
 )
 
 const (
-
 	// HostAddMethodExcel add a host method
 	HostAddMethodExcel = "1"
 
@@ -656,9 +655,9 @@ const (
 type KvMap map[string]interface{}
 
 const (
-
 	// CCSystemOperatorUserName the system user
-	CCSystemOperatorUserName = "cc_system"
+	CCSystemOperatorUserName  = "cc_system"
+	CCSystemCollectorUserName = "cc_collector"
 )
 
 // APIRsp the result the http requst
@@ -675,8 +674,13 @@ const (
 	BKCacheKeyV3Prefix = "cc:v3:"
 )
 
+// event cache keys
 const (
+	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
+)
 
+const (
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 
@@ -694,6 +698,8 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+
+	BKHTTPCCRequestID = "rid"
 )
 
 const (

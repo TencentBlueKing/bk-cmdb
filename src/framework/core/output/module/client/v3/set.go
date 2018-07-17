@@ -56,6 +56,7 @@ func (cli *Set) CreateSet(bizID int64, data types.MapStr) (int, error) {
 		return 0, err
 	}
 
+	fmt.Println("the set id:", string(rst))
 	gs := gjson.ParseBytes(rst)
 
 	// check result
@@ -64,7 +65,7 @@ func (cli *Set) CreateSet(bizID int64, data types.MapStr) (int, error) {
 	}
 
 	// parse id
-	id := gs.Get("data.id").Int()
+	id := gs.Get("data.bk_set_id").Int()
 
 	return int(id), nil
 }

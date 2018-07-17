@@ -21,7 +21,7 @@
             <v-table
                 :header="tableHeader"
                 :list="tableList"
-                :pagination="pagination"
+                :pagination.sync="pagination"
                 :loading="isLoading"
                 :sortable="false"
                 :wrapperMinusHeight="150"

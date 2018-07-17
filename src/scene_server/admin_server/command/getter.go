@@ -4,37 +4,74 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/storage"
 )
 
 func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
-	assts, err := getAsst(db, opt)
-	if nil != err {
-		return nil, err
-	}
-	topo, err := getMainline(common.BKInnerObjIDApp, assts)
-	if nil != err {
-		return nil, err
-	}
-	root, err := getBKAppNode(db, opt)
-	if nil != err {
-		return nil, err
-	}
-	pcmap := getPCmap(assts)
-	// blog.InfoJSON("%s", pcmap)
-	err = getTree(db, root, pcmap)
-	if nil != err {
-		return nil, err
+	result := &Topo{}
+	objIds := []string{}
+	if opt.scope == "all" || opt.scope == common.BKInnerObjIDApp {
+		assts, err := getAsst(db, opt)
+		if nil != err {
+			return nil, err
+		}
+		topo, err := getMainline(common.BKInnerObjIDApp, assts)
+		if nil != err {
+			return nil, err
+		}
+		objIds = append(objIds, topo...)
+		root, err := getBKAppNode(db, opt)
+		if nil != err {
+			return nil, err
+		}
+		pcmap := getPCmap(assts)
+		// blog.InfoJSON("%s", pcmap)
+		err = getTree(db, root, pcmap)
+		if nil != err {
+			return nil, err
+		}
+		result.Mainline = topo
+		result.BizTopo = root
 	}
 
-	proctopo, err := getProcessTopo(db, opt)
-	if nil != err {
-		return nil, err
+	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
+		objIds = append(objIds, common.BKInnerObjIDProc)
+		procmodules, err := getProcessTopo(db, opt)
+		if nil != err {
+			return nil, err
+		}
+		proctopo := &ProcessTopo{
+			BizName: common.BKAppName,
+			Procs:   procmodules,
+		}
+		result.ProcTopos = proctopo
 	}
 
-	return &Topo{Mainline: topo, BizTopo: root, ProcTopos: proctopo}, nil
+	if opt.mini {
+
+		_, keys, err := getModelAttributes(db, opt, objIds)
+		if nil != err {
+			return nil, err
+		}
+
+		if result.BizTopo != nil {
+			result.BizTopo.walk(func(node *Node) error {
+				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{"bk_parent_id"})
+				return nil
+			})
+		}
+
+		if result.ProcTopos != nil {
+			for _, proc := range result.ProcTopos.Procs {
+				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id", "bk_supplier_account"})
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func getBKAppNode(db storage.DI, opt *option) (*Node, error) {
@@ -148,7 +185,7 @@ func getAsst(db storage.DI, opt *option) ([]*metadata.ObjectAsst, error) {
 	return assts, nil
 }
 
-func getProcessTopo(db storage.DI, opt *option) ([]*ProcessTopo, error) {
+func getProcessTopo(db storage.DI, opt *option) ([]*Process, error) {
 	// fetch all process
 	procs := []map[string]interface{}{}
 	err := db.GetMutilByCondition(common.BKTableNameBaseProcess, nil, map[string]interface{}{}, &procs, "", 0, 0)
@@ -168,9 +205,9 @@ func getProcessTopo(db storage.DI, opt *option) ([]*ProcessTopo, error) {
 		procmodMap[pm.ProcessID] = append(procmodMap[pm.ProcessID], pm.ModuleName)
 	}
 
-	topos := []*ProcessTopo{}
+	topos := []*Process{}
 	for _, proc := range procs {
-		topo := ProcessTopo{
+		topo := Process{
 			Data: proc,
 		}
 		procID, err := getInt64(proc["bk_process_id"])

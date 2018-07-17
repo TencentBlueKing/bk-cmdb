@@ -27,7 +27,7 @@ func New(clientSet apimachinery.ClientSetInterface) Factory {
 }
 
 // CreateInst convert the inst into the Inst interface
-func CreateInst(params types.LogicParams, clientSet apimachinery.ClientSetInterface, obj model.Object, instItems []mapstr.MapStr) []Inst {
+func CreateInst(params types.ContextParams, clientSet apimachinery.ClientSetInterface, obj model.Object, instItems []mapstr.MapStr) []Inst {
 	results := make([]Inst, 0)
 	for _, item := range instItems {
 		tmpInst := &inst{
@@ -46,7 +46,7 @@ type factory struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *factory) CreateInst(params types.LogicParams, obj model.Object) Inst {
+func (cli *factory) CreateInst(params types.ContextParams, obj model.Object) Inst {
 	return &inst{
 		datas:     mapstr.New(),
 		params:    params,
