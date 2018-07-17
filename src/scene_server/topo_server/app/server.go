@@ -112,7 +112,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	topoSvr.Core = engine
 
 	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
-	topoService.SetConfig(topoSvr.Config)
+	topoService.SetConfig(topoSvr.Config, engine)
 
 	select {
 	case <-ctx.Done():

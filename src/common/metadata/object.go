@@ -200,14 +200,6 @@ type ObjectClsDes struct {
 	ClsIcon string `json:"bk_classification_icon"`
 }
 
-type ObjAttDes struct {
-	Attribute         `json:",inline"`
-	AssoType          int    `json:"bk_asst_type"`
-	AsstForward       string `json:"bk_asst_forward"`
-	AssociationID     string `json:"bk_asst_obj_id"`
-	PropertyGroupName string `json:"bk_property_group_name"`
-}
-
 type InnerModule struct {
 	ModuleID   int64  `json:"bk_module_id"`
 	ModuleName string `json:"bk_module_name"`

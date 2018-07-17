@@ -22,8 +22,8 @@ import (
 	"configcenter/src/common/paraparse"
 )
 
-func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/app/%s", ownerID)
 
 	err = t.client.Post().
@@ -76,8 +76,8 @@ func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string
 	return
 }
 
-func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/app/search/%s", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).
@@ -89,8 +89,8 @@ func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.H
 	return
 }
 
-func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/app/default/%s/search", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).
@@ -102,8 +102,8 @@ func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h ht
 	return
 }
 
-func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/app/default/%s", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).

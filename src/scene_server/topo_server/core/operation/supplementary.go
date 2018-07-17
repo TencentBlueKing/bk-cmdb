@@ -12,12 +12,16 @@
 
 package operation
 
-import "configcenter/src/apimachinery"
+import (
+	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
 
 // Supplementary supplementary methods
 type Supplementary interface {
-	Audit(client apimachinery.ClientSetInterface, inst InstOperationInterface) AuditInterface
-	Validator() ValidatorInterface
+	Audit(params types.ContextParams, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface
+	Validator(inst InstOperationInterface) ValidatorInterface
 }
 
 // NewSupplementary create a supplementary instance
@@ -28,13 +32,17 @@ func NewSupplementary() Supplementary {
 type supplementary struct {
 }
 
-func (s *supplementary) Audit(client apimachinery.ClientSetInterface, inst InstOperationInterface) AuditInterface {
+func (s *supplementary) Audit(params types.ContextParams, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface {
 	return &auditLog{
+		params: params,
 		client: client,
 		inst:   inst,
+		obj:    obj,
 	}
 }
 
-func (s *supplementary) Validator() ValidatorInterface {
-	return &validator{}
+func (s *supplementary) Validator(inst InstOperationInterface) ValidatorInterface {
+	return &valid{
+		inst: inst,
+	}
 }

@@ -18,6 +18,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/common/backbone"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -37,7 +39,7 @@ import (
 type TopoServiceInterface interface {
 	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
 	WebService() *restful.WebService
-	SetConfig(cfg options.Config)
+	SetConfig(cfg options.Config, engin *backbone.Engine)
 }
 
 // New ceate topo servcie instance
@@ -47,6 +49,7 @@ func New() TopoServiceInterface {
 
 // topoService topo service
 type topoService struct {
+	engin    *backbone.Engine
 	language language.CCLanguageIf
 	err      errors.CCErrorIf
 	actions  []action
@@ -54,8 +57,9 @@ type topoService struct {
 	cfg      options.Config
 }
 
-func (s *topoService) SetConfig(cfg options.Config) {
+func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
+	s.engin = engin
 }
 
 // SetOperation set the operation
@@ -144,7 +148,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 				ownerID := util.GetActionOnwerID(req)
-				//user := util.GetActionUser(req)
+				user := util.GetActionUser(req)
 
 				// get the language
 				language := util.GetActionLanguage(req)
@@ -175,6 +179,8 @@ func (s *topoService) Actions() []*httpserver.Action {
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
+					User:            user,
+					Engin:           s.engin,
 				},
 					req.PathParameter,
 					req.QueryParameter,

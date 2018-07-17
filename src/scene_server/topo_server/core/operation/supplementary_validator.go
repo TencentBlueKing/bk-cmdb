@@ -13,24 +13,51 @@
 package operation
 
 import (
-	"net/http"
-
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/validator"
 )
 
 // ValidatorInterface the validator methods
 type ValidatorInterface interface {
-	ValidatorCreate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr) (bool, error)
-	ValidatorUpdate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error)
+	ValidatorCreate(params types.ContextParams, obj model.Object, datas mapstr.MapStr) error
+	ValidatorUpdate(params types.ContextParams, obj model.Object, datas mapstr.MapStr, instID int64, cond condition.Condition) error
 }
 
-type validator struct {
+type valid struct {
+	inst InstOperationInterface
 }
 
-func (v *validator) ValidatorCreate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr) (bool, error) {
-	return false, nil
+func (v *valid) ValidatorCreate(params types.ContextParams, obj model.Object, datas mapstr.MapStr) error {
+	validObj := validator.NewValidMap(params.SupplierAccount, obj.GetID(), params.Header, params.Engin)
+	return validObj.ValidMap(datas, common.ValidCreate, -1)
 }
-func (v *validator) ValidatorUpdate(header http.Header, obj *metadata.Object, attr *metadata.Attribute, data mapstr.MapStr, instID int64) (bool, error) {
-	return true, nil
+func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, datas mapstr.MapStr, instID int64, cond condition.Condition) error {
+
+	validObj := validator.NewValidMap(params.SupplierAccount, obj.GetID(), params.Header, params.Engin)
+	query := &metadata.QueryInput{}
+	if instID < 0 {
+		query.Condition = cond.ToMapStr()
+		_, insts, err := v.inst.FindInst(params, obj, query, false)
+		if nil != err {
+			return err
+		}
+
+		for _, inst := range insts {
+			id, err := inst.GetInstID()
+			if nil != err {
+				return err
+			}
+			if err = validObj.ValidMap(datas, common.ValidUpdate, id); nil != err {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return validObj.ValidMap(datas, common.ValidUpdate, instID)
 }

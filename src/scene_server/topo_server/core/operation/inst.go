@@ -404,12 +404,15 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 			item := c.instFactory.CreateInst(params, obj)
 
 			item.SetValues(colInput)
+			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+				return nil, err
+			}
 			err = item.Create()
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 				return nil, err
 			}
-
+			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 			return item, nil
 		} // end foreach batchinfo
 	}
@@ -417,16 +420,18 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	// create new insts
 	blog.Infof("the data inst:%#v", data)
 	item := c.instFactory.CreateInst(params, obj)
-
 	item.SetValues(data)
-
+	if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  error info is %s", item.ToMapStr(), err.Error())
+		return nil, err
+	}
 	err = item.Create()
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 		return nil, err
 	}
 
-	NewSupplementary().Audit(c.clientSet, c).CommitCreateLog(nil, nil)
+	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 
 	return item, nil
 }
@@ -542,15 +547,19 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		cond = condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		cond.Field(obj.GetInstIDFieldName()).Eq(delInst.instID)
+
 		if err = c.DeleteInst(params, delInst.obj, cond); nil != err {
 			return err
 		}
+
 	}
 
 	return nil
 
 }
 func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
+
+	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 
 	rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
 
@@ -563,6 +572,8 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.Error(rsp.Code)
 	}
+
+	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
 
 	return nil
 }
@@ -1031,10 +1042,14 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
 
+	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, -1, cond); nil != err {
+		return err
+	}
+
 	inputParams := frtypes.New()
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
-
+	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 	rsp, err := c.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
 
 	if nil != err {
@@ -1046,5 +1061,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.Error(rsp.Code)
 	}
+	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
+	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
 	return nil
 }
