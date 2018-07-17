@@ -363,6 +363,7 @@
     "CustomQuery": {
         "自定义查询": "Custom Query",
         "新增查询": "Add Query",
+        "编辑查询": "Update Query",
         "名称": "Name",
         "查询内容": "Query Content",
         "新增查询条件": "Add Filters",
