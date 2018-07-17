@@ -53,7 +53,6 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
-	return
 }
 
 //操作日志
