@@ -14,27 +14,23 @@ package service
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
-	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
-	defErr := q.CC.Error.CreateDefaultCCErrorIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	dat := new(commondata.ObjQueryInput)
-	if json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
-		blog.Error("Get json unmarshal failed,input:%v error:%v", string(value), err)
+	dat := new(metadata.ObjQueryInput)
+	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
+		blog.Error("Get json unmarshal failed,  error:%v", err)
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -47,5 +43,5 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	data := new(metadata.AuditQueryResult) //common.KvMap{"info": rows, "count": cnt}
 	data.Data.Info = rows
 	data.Data.Count = cnt
-	queryAudit.ResponseSuccess(data, resp)
+	resp.WriteEntity(data)
 }

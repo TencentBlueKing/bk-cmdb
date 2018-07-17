@@ -15,25 +15,25 @@ package service
 import (
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/rdapi"
+	//"configcenter/src/common/errors"
+	//"configcenter/src/common/rdapi"
 	"configcenter/src/source_controller/auditcontroller/logics"
+	"configcenter/src/storage"
 )
 
 type Service struct {
-	*options.Config
 	*backbone.Engine
 	*logics.Logics
+	Instance storage.DI
 }
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.CCErr
-	}
-	ws.Path("/audit/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	// getErrFun := func() errors.CCErrorIf {
+	// 	return s.CCErr
+	// }
+	ws.Path("/audit/{version}"). /*.Filter(rdapi.AllGlobalFilter(getErrFun))*/ Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -49,12 +49,5 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
 	ws.Route(ws.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
 	ws.Route(ws.POST("/search").To(s.Get))
-
 	return ws
-}
-
-type Service struct {
-	*options.Config
-	*backbone.Engine
-	*logics.Logics
 }

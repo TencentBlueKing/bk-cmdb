@@ -14,45 +14,35 @@ package service
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
-	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 // AddAppLog app操作日志
 func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
-	type paramsStruct struct {
-		Content string                 `json:"content"`
-		OpDesc  string                 `json:"op_desc"`
-		OpType  auditoplog.AuditOpType `json:"op_type"`
-	}
-
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
-		blog.Errorf("AddAppLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("AddAppLog json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditAppParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddAppLog json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Errorf("AddAppLog json unmarshal failed error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -70,30 +60,30 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 
 //操作日志
 func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
-		blog.Errorf("AddSetLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("AddSetLog json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditSetParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddSetLog json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Errorf("AddSetLog json unmarshal failed,error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogWithStr(appID, params.SetID, params.OpType, common.BKInnerObjIDSet, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
-		blog.Error("AddSetLog json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Errorf("AddSetLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	} else {
@@ -105,31 +95,30 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 
 //插入多行主机操作日志型操作
 func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
-		blog.Errorf("AddSetLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("AddSetLogs json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditSetsParams)
-	err = json.Unmarshal([]byte(value), &params)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddSetLogs json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Error("AddSetLogs json unmarshal failed,error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDSet, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
-		blog.Error("AddSetLogs json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Errorf("AddSetLogs add set log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	} else {
@@ -141,23 +130,23 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 
 // AddModuleLog 操作日志
 func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
-		blog.Errorf("AddModuleLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("AddModuleLog json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditModuleParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddModuleLog json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Error("AddModuleLog json unmarshal failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -176,28 +165,23 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 
 // AddModuleLogs 插入多行主机操作日志型操作
 func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
-	type paramsStruct struct {
-		Content []auditoplog.AuditLogContext `json:"content"`
-		OpDesc  string                       `json:"op_desc"`
-		OpType  auditoplog.AuditOpType       `json:"op_type"`
-	}
-	language := util.GetActionLanguage(req)
-	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter("owner_id")
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
-	appID, err := strconv.Atoi(strAppID)
+	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
-		blog.Errorf("AddModuleLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.ErrorF(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("AddModuleLogs json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditModulesParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddModuleLogs json unmarshal failed,input:%v error:%v", string(value), err)
+		blog.Errorf("AddModuleLogs json unmarshal failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}

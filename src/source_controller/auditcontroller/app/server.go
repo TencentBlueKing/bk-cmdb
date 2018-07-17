@@ -13,11 +13,10 @@
 package app
 
 import (
-	"time"
 	"context"
 	"fmt"
 	"os"
-	"strconv"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -39,7 +38,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
+		return fmt.Errorf("wrap server info failed, err: %s", err.Error())
 	}
 
 	c := &util.APIMachineryConfig{
@@ -51,7 +50,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	machinery, err := apimachinery.NewApiMachinery(c)
 	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
+		return fmt.Errorf("new api machinery failed, err: %s", err.Error())
 	}
 
 	coreService := new(service.Service)
@@ -62,7 +61,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOSTCONTROLLER, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_AUDITCONTROLLER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -79,14 +78,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-	int sleepCnt = 0;
+	sleepCnt := 0
 	for ; sleepCnt < 15; sleepCnt++ {
-		 if nil == audit.Config.Mongo {
-			 time.Sleep(time.Second)
-			 continue
-		 } else {
-			 break 
-		 }
+		if nil == audit.Config.Mongo {
+			time.Sleep(time.Second)
+			continue
+		} else {
+			break
+		}
 	}
 	if sleepCnt >= 15 {
 		return fmt.Errorf("Failed to get configuration")
@@ -94,25 +93,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	mgc := audit.Config.Mongo
 	audit.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
 	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
+		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
 	err = audit.Instance.Open()
 	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
+		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
 
-	coreService.Core = audit.Core
+	coreService.Engine = audit.Core
 	coreService.Instance = audit.Instance
-	coreService.Cache = audit.Cache
-	coreService.Logics = logics.Logics{Instance: audit.Instance}
+	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Core}
 
 	select {}
 	return nil
-}
-
-func setConfig(op *options.ServerOption) {
-	//server cert directory
-
 }
 
 // AuditController  audit controller config
