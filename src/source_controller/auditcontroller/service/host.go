@@ -53,11 +53,8 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddHostLog add host log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 //插入多行主机操作日志型操作
@@ -89,9 +86,6 @@ func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddHostLogs add host log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

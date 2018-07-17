@@ -16,8 +16,8 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common/backbone"
-	//"configcenter/src/common/errors"
-	//"configcenter/src/common/rdapi"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/storage"
 )
@@ -30,10 +30,10 @@ type Service struct {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	// getErrFun := func() errors.CCErrorIf {
-	// 	return s.CCErr
-	// }
-	ws.Path("/audit/{version}"). /*.Filter(rdapi.AllGlobalFilter(getErrFun))*/ Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ws.Path("/audit/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
