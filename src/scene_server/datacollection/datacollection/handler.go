@@ -577,7 +577,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 	newObj.ObjID = model.BkObjID
 	newObj.ObjName = model.BkObjName
 	newObj.OwnerID = ownerID
-	newObj. = defaultModelIcon
+	newObj.Icon = defaultModelIcon
 	newObj.CreatorField = bkc.CCSystemCollectorUserName
 
 	resp, err := d.CoreAPI.TopoServer().Object().CreateObject(ctx, h, obj)
