@@ -47,7 +47,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 
 		parent, err := currentInst.GetMainlineParentInst()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, error info is %s", current.GetID(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, the current inst(%v), error info is %s", current.GetID(), currentInst.GetValues(), err.Error())
 			return err
 		}
 
@@ -93,11 +93,18 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	// reset the parent's inst
 	for _, parent := range parentInsts {
 
+		id, err := parent.GetInstID()
+		if nil != err {
+			blog.Errorf("[operation-asst] failed to find the inst id, error info is %s", err.Error())
+			return err
+		}
+
 		// create the default inst
 		defaultInst := cli.instFactory.CreateInst(params, current)
 		defaultInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
 		defaultInst.SetValue(current.GetInstNameFieldName(), current.GetName())
 		defaultInst.SetValue(common.BKDefaultField, 0)
+		defaultInst.SetValue(common.BKInstParentStr, id)
 
 		// create the inst
 		if err = defaultInst.Create(); nil != err {
