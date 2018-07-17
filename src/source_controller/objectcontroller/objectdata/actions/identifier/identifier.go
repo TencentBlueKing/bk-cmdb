@@ -77,14 +77,18 @@ func (cli *identifierAction) SearchIdentifier(req *restful.Request, resp *restfu
 			common.BKDBOR: []map[string]interface{}{
 				{
 					common.BKHostInnerIPField: map[string]interface{}{
-						common.BKDBIN: param.IP,
+						common.BKDBIN: param.IP.Data,
 					},
 				}, {
 					common.BKHostOuterIPField: map[string]interface{}{
-						common.BKDBIN: param.IP,
+						common.BKDBIN: param.IP.Data,
 					},
 				},
 			},
+		}
+
+		if param.IP.CloudID != nil {
+			condition[common.BKCloudIDField] = *param.IP.CloudID
 		}
 
 		// fetch hosts
@@ -213,10 +217,15 @@ func getCache(db storage.DI, tablename string, idfield string, ids []int, result
 
 // SearchIdentifierParam defines the param
 type SearchIdentifierParam struct {
-	IP   []string `json:"ip"`
+	IP   IPParam `json:"ip"`
 	Page struct {
 		Start int    `json:"start"`
 		Limit int    `json:"limit"`
 		Sort  string `json:"sort"`
 	} `json:"page"`
+}
+
+type IPParam struct {
+	Data    []string `json:"data"`
+	CloudID *int64   `json:"bk_cloud_id"`
 }
