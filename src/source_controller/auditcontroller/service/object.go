@@ -120,11 +120,8 @@ func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddProcLog json unmarshal failed,input:%v error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 // AddProcLogs  插入多行主机操作日志型操作
@@ -155,9 +152,6 @@ func (s *Service) AddProcLogs(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddProcLogs json unmarshal failed,  error:%v", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

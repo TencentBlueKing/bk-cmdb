@@ -51,11 +51,9 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddAppLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
 }
 
 //操作日志
@@ -86,11 +84,8 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddSetLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 //插入多行主机操作日志型操作
@@ -121,11 +116,8 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddSetLogs add set log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 // AddModuleLog 操作日志
@@ -156,11 +148,8 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("AddModuleLog add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
 // AddModuleLogs 插入多行主机操作日志型操作
@@ -191,9 +180,6 @@ func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
-	} else {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
 	}
-
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

@@ -13,11 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/util"
 	"time"
 
 	"github.com/coccyx/timeparser"
+
+	"configcenter/src/common"
+	"configcenter/src/common/util"
 )
 
 const (
