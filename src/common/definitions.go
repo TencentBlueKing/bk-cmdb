@@ -715,3 +715,7 @@ const SystemTableName = "cc_System"
 const (
 	BKHTTPMIMEJSON = "application/json"
 )
+
+const (
+	APPConfigWaitTime = 15
+)

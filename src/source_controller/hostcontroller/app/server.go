@@ -17,12 +17,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
@@ -79,6 +81,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil == hostCtrl.Config {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
 
 	mgc := hostCtrl.Config.Mongo
 	hostCtrl.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
@@ -121,12 +135,12 @@ type HostController struct {
 	Core     *backbone.Engine
 	Instance storage.DI
 	Cache    *redis.Client
-	Config   options.Config
+	Config   *options.Config
 }
 
 func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	prefix := storage.DI_MONGO
-	h.Config.Mongo = mgoclient.MongoConfig{
+	mongo := mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
 		User:         current.ConfigMap[prefix+".user"],
 		Password:     current.ConfigMap[prefix+".pwd"],
@@ -138,12 +152,17 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 
 	prefix = storage.DI_REDIS
-	h.Config.Redis = redisclient.RedisConfig{
+	redis := redisclient.RedisConfig{
 		Address:  current.ConfigMap[prefix+".host"],
 		User:     current.ConfigMap[prefix+".user"],
 		Password: current.ConfigMap[prefix+".pwd"],
 		Database: current.ConfigMap[prefix+".database"],
 		Port:     current.ConfigMap[prefix+".port"],
+	}
+
+	h.Config = &options.Config{
+		Mongo: mongo,
+		Redis: redis,
 	}
 }
 
