@@ -18,15 +18,15 @@ type ProcModuleConfig struct {
 }
 
 type ProcInstanceModel struct {
-    ApplicationID uint64 `json: "bk_biz_id"`
-    SetID uint64 `json: "bk_set_id"`
-    SetName string `json: "bk_set_name"`
-    ModuleID uint64 `json: "bk_module_id"`
-    ModuleName string `json: "bk_module_name"`
-    ProcID uint64 `json: "bk_process_id"`
-    FuncID uint64 `json: "bk_func_id"`
-    InstanceID uint64 `json: "bk_instance_id"`
-    HostId uint64 `json: "bk_host_id"`
+    ApplicationID uint64 `json: "bk_biz_id" bson:"bk_biz_id"`
+    SetID uint64 `json: "bk_set_id" bson:"bk_set_id,omitempty"`
+    SetName string `json: "bk_set_name" bson:"bk_set_name"`
+    ModuleID uint64 `json: "bk_module_id" bson:"bk_module_id,omitempty"`
+    ModuleName string `json: "bk_module_name" bson:"bk_module_name"`
+    ProcID uint64 `json: "bk_process_id" bson:"bk_process_id"`
+    FuncID uint64 `json: "bk_func_id" bson:"bk_func_id"`
+    InstanceID uint64 `json: "bk_instance_id" bson:"bk_instance_id"`
+    HostId uint64 `json: "bk_host_id" bson:"bk_host_id"`
 }
 
 type ProcessOperate struct {
