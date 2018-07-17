@@ -22,7 +22,7 @@ type AuditHostLogParams struct {
 	OpDesc  string                 `json:"op_desc"`
 	InnerIP string                 `json:"bk_host_innerip"`
 	OpType  auditoplog.AuditOpType `json:"op_type"`
-	HostID  int                    `json:"inst_id"`
+	HostID  int64                  `json:"inst_id"`
 }
 
 // AuditHostsLogParams add multiple host log parameter
@@ -38,7 +38,7 @@ type AuditObjParams struct {
 	OpDesc   string                 `json:"op_desc"`
 	OpType   auditoplog.AuditOpType `json:"op_type"`
 	OpTarget string                 `json:"op_target"`
-	InstID   int                    `json:"inst_id"`
+	InstID   int64                  `json:"inst_id"`
 }
 
 // AuditObjsParams add object multiple log parameter
@@ -54,7 +54,7 @@ type AuditProcParams struct {
 	Content interface{}            `json:"content"`
 	OpDesc  string                 `json:"op_desc"`
 	OpType  auditoplog.AuditOpType `json:"op_type"`
-	ProcID  int                    `json:"inst_id"`
+	ProcID  int64                  `json:"inst_id"`
 }
 
 // AuditProcsParams add process multiple log parameter
@@ -69,7 +69,7 @@ type AuditModuleParams struct {
 	Content  interface{}            `json:"content"`
 	OpDesc   string                 `json:"op_desc"`
 	OpType   auditoplog.AuditOpType `json:"op_type"`
-	ModuleID int                    `json:"inst_id"`
+	ModuleID int64                  `json:"inst_id"`
 }
 
 // AuditModuleParams add module multiple log parammete
@@ -84,7 +84,7 @@ type AuditAppParams struct {
 	Content string                 `json:"content"`
 	OpDesc  string                 `json:"op_desc"`
 	OpType  auditoplog.AuditOpType `json:"op_type"`
-	AppID   int                    `json:"inst_id"`
+	AppID   int64                  `json:"inst_id"`
 }
 
 // AuditSetParams add set single log parameter
@@ -92,7 +92,7 @@ type AuditSetParams struct {
 	Content interface{}            `json:"content"`
 	OpDesc  string                 `json:"op_desc"`
 	OpType  auditoplog.AuditOpType `json:"op_type"`
-	SetID   int                    `json:"inst_id"`
+	SetID   int64                  `json:"inst_id"`
 }
 
 // AuditSetParams add set multiple log parameter
@@ -105,7 +105,7 @@ type AuditSetsParams struct {
 type AuditQueryResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
-		Count int                      `json:"count"`
-		Info  []map[string]interface{} `json:"info"`
+		Count int            `json:"count"`
+		Info  []OperationLog `json:"info"`
 	} `json:"data"`
 }
