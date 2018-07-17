@@ -23,8 +23,8 @@ import (
 )
 
 // CreateClassification create a new object classification
-func (s *topoService) CreateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("create classifications ")
+func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
@@ -33,8 +33,8 @@ func (s *topoService) CreateClassification(params types.LogicParams, pathParams,
 }
 
 // SearchClassificationWithObjects search the classification with objects
-func (s *topoService) SearchClassificationWithObjects(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("serch classifications with objects ")
+func (s *topoService) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 
@@ -57,11 +57,11 @@ func (s *topoService) SearchClassificationWithObjects(params types.LogicParams, 
 		return nil, err
 	}
 
-	return s.core.ClassificationOperation().FindClassification(params, cond)
+	return s.core.ClassificationOperation().FindClassificationWithObjects(params, cond)
 }
 
 // SearchClassification search the classifications
-func (s *topoService) SearchClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	fmt.Println("serch classifications ")
 	cond := condition.CreateCondition()
@@ -86,7 +86,7 @@ func (s *topoService) SearchClassification(params types.LogicParams, pathParams,
 }
 
 // UpdateClassification update the object classification
-func (s *topoService) UpdateClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := frtypes.MapStr{}
@@ -102,7 +102,7 @@ func (s *topoService) UpdateClassification(params types.LogicParams, pathParams,
 }
 
 // DeleteClassification delete the object classification
-func (s *topoService) DeleteClassification(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := frtypes.MapStr{}

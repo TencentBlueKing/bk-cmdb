@@ -110,14 +110,14 @@
                         <ul v-if="!classify.isHidden" :height="classify.children.length*32" :style="eventHeight(classify.children.length)">
                             <li v-for="(item, idx) in classify.children" :key="idx" class="event-item" >
                                 <template v-if="classify.isDefault">
-                                    <template v-if="item.id==='host'">
+                                    <template v-if="item.id==='resource'">
                                         <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                         <div class="options">
-                                            <label for="hostall" class="bk-form-checkbox bk-checkbox-small">
+                                            <label for="resourceall" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
-                                                value="hostall"
+                                                value="resourceall"
                                                 :checked="tempEventData['subscription_form'][item.id].length == 2"
-                                                id="hostall" @change="checkAll('host')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
+                                                id="resourceall" @change="checkAll('resource')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                             </label>
                                             <label for="hostcreate" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
@@ -133,14 +133,14 @@
                                             </label>
                                         </div>
                                     </template>
-                                    <template v-if="item.id==='module'">
+                                    <template v-if="item.id==='host'">
                                         <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                         <div class="options">
-                                            <label :for="'moduleall'" class="bk-form-checkbox bk-checkbox-small">
+                                            <label :for="'hostall'" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
-                                                :value="'moduleall'"
+                                                :value="'hostall'"
                                                 :checked="tempEventData['subscription_form'][item.id].length == 3"
-                                                :id="'moduleall'" @change="checkAll('module')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
+                                                :id="'hostall'" @change="checkAll('host')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                             </label>
                                             <label :for="item.id+'update'" class="bk-form-checkbox bk-checkbox-small">
                                                 <input type="checkbox"
@@ -200,7 +200,7 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
             <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
         <div class="pop-master" v-show="isPopShow">
@@ -292,28 +292,42 @@
                         let arr = this.curEvent['subscription_form']
                         let subscriptionForm = {}
                         arr.map(val => {
-                            if (val === 'hostupdate') {
-                                val = 'moduleupdate'
-                            }
-                            if (val === 'moduletransfer') {
-                                if (subscriptionForm.hasOwnProperty('module')) {
-                                    subscriptionForm['module'].push('moduletransfer')
-                                } else {
-                                    subscriptionForm['module'] = ['moduletransfer']
-                                }
-                            } else if (val === 'hostidentifier') {
-                                if (subscriptionForm.hasOwnProperty('module')) {
-                                    subscriptionForm['module'].push(val)
-                                } else {
-                                    subscriptionForm['module'] = [val]
-                                }
-                            } else {
-                                let key = val.substr(0, val.length - 6)
-                                if (subscriptionForm.hasOwnProperty(key)) {
-                                    subscriptionForm[key].push(val)
-                                } else {
-                                    subscriptionForm[key] = [val]
-                                }
+                            switch (val) {
+                                case 'hostcreate':
+                                    if (subscriptionForm.hasOwnProperty('resource')) {
+                                        subscriptionForm['resource'].push('hostcreate')
+                                    } else {
+                                        subscriptionForm['resource'] = ['hostcreate']
+                                    }
+                                    break
+                                case 'hostdelete':
+                                    if (subscriptionForm.hasOwnProperty('resource')) {
+                                        subscriptionForm['resource'].push('hostdelete')
+                                    } else {
+                                        subscriptionForm['resource'] = ['hostdelete']
+                                    }
+                                    break
+                                case 'hostidentifier':
+                                    if (subscriptionForm.hasOwnProperty('host')) {
+                                        subscriptionForm['host'].push('hostidentifier')
+                                    } else {
+                                        subscriptionForm['host'] = ['hostidentifier']
+                                    }
+                                    break
+                                case 'moduletransfer':
+                                    if (subscriptionForm.hasOwnProperty('host')) {
+                                        subscriptionForm['host'].push('moduletransfer')
+                                    } else {
+                                        subscriptionForm['host'] = ['moduletransfer']
+                                    }
+                                    break
+                                default:
+                                    const key = val.substr(0, val.length - 6)
+                                    if (subscriptionForm.hasOwnProperty(key)) {
+                                        subscriptionForm[key].push(val)
+                                    } else {
+                                        subscriptionForm[key] = [val]
+                                    }
                             }
                         })
                         
@@ -369,10 +383,10 @@
             */
             checkAll (objId) {
                 if (event.target.checked) {
-                    if (objId === 'host') {
+                    if (objId === 'resource') {
                         this.tempEventData['subscription_form'][objId] = ['hostcreate', 'hostdelete']
-                    } else if (objId === 'module') {
-                        this.tempEventData['subscription_form'][objId] = ['moduletransfer', 'moduleupdate', 'hostidentifier']
+                    } else if (objId === 'host') {
+                        this.tempEventData['subscription_form'][objId] = ['moduletransfer', 'hostupdate', 'hostidentifier']
                     } else {
                         this.tempEventData['subscription_form'][objId] = [`${objId}create`, `${objId}update`, `${objId}delete`]
                     }
@@ -414,13 +428,6 @@
                         let subscriptionForm = ''
                         for (let key in params['subscription_form']) {
                             if (params['subscription_form'][key].length) {
-                                if (key === 'module') {
-                                    for (let i = 0; i < params['subscription_form'][key].length; i++) {
-                                        if (params['subscription_form'][key][i] === 'moduleupdate') {
-                                            params['subscription_form'][key][i] = 'hostupdate'
-                                        }
-                                    }
-                                }
                                 subscriptionForm += params['subscription_form'][key].join(',')
                                 subscriptionForm += ','
                             }
@@ -431,7 +438,8 @@
                         this.$axios({
                             url: url,
                             method: method,
-                            data: params
+                            data: params,
+                            id: 'savePush'
                         }).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')
@@ -468,20 +476,32 @@
                         })
                         subscriptionForm[val['bk_obj_id']] = []
                     })
+                    if (classify['bk_classification_id'] === 'bk_organization') {
+                        event.children.push({
+                            id: 'set',
+                            name: this.$t("Hosts['集群']")
+                        })
+                        subscriptionForm['set'] = []
+                        event.children.push({
+                            id: 'module',
+                            name: this.$t("Hosts['模块']")
+                        })
+                        subscriptionForm['module'] = []
+                    }
                     eventPushList.push(event)
                 })
+                subscriptionForm['resource'] = []
                 subscriptionForm['host'] = []
-                subscriptionForm['module'] = []
                 this.$set(this.tempEventData, 'subscription_form', subscriptionForm)
                 eventPushList.unshift({
                     isDefault: true,
                     isHidden: false,
                     name: this.$t('EventPush["主机业务"]'),
                     children: [{
-                        id: 'host',   // 该名字只是为了做区分
+                        id: 'resource',
                         name: this.$t('EventPush["资源池"]')
                     }, {
-                        id: 'module',     // 该名字只是为了做区分
+                        id: 'host',
                         name: this.$t('EventPush["主机"]')
                     }]
                 })

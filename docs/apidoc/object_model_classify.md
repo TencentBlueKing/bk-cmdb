@@ -211,7 +211,7 @@ data 字段说明：
 
 # 查询模型分类及附属模型信息
 
-- API: POST /api/{version}/object/classification/{bk_owner_id}/objects
+- API: POST /api/{version}/object/classification/{bk_supplier_account}/objects
 - API 名称：search_classifications_objects
 - 功能说明：
 	- 中文： 查询所有模型分类下的模型集合

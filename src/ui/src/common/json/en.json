@@ -314,7 +314,8 @@
         "单击选择对应图标": "Click to select the corresponding icon",
         "设置为默认值": "Set as default",
         "请输入ID": "Enter ID",
-        "全局视图": "Global View"
+        "全局视图": "Global View",
+        "请输入关键词": "Enter key word"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -347,7 +348,7 @@
         "变更内容": "Change Content",
         "操作时间": "Operation Time",
         "agent安装说明": "Note: After the Blue Whale Agent is installed on the host, it will be automatically entered in the \"Host Resource Pool\".",
-        "点此进入Agent安装APP": "Click here to enter the Agent installation APP",
+        "点此进入节点管理": "Click here to enter the Node Manager",
         "批量导入": "Batch Import",
         "自动导入": "Auto Import",
         "说明：内网IP为必填列": "Note: Intranet IP is required",
@@ -363,7 +364,7 @@
         "新增查询": "Add Query",
         "名称": "Name",
         "查询内容": "Query Content",
-        "新增条件": "Add Filters",
+        "新增查询条件": "Add Filters",
         "预览": "Preview",
         "保存": "Save",
         "测试": "Test",
@@ -397,7 +398,11 @@
         "修改进程成功": "Modification process succeeded",
         "删除进程失败": "Failed to delete process",
         "确认要删除进程": "Are you sure you want to delete process {processName}?",
-        "删除进程成功": "The delete process succeeded"
+        "删除进程成功": "The delete process succeeded",
+        "批量编辑": "Batch Modify",
+        "在进程管理中绑定进程到模块，": "To bind a process to a module in process management,",
+        "点击此跳转": "click to jump",
+        "进程信息": "Process information"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
@@ -440,7 +445,14 @@
         "清空": "Refresh",
         "主机名称": "Hosts Name",
         "操作系统类型": "Operating System Type",
-        "关联关系": "Association Relationship"
+        "关联关系": "Association Relationship",
+        "已选中模块": "Selected Modules",
+        "增量更新": "Increment update, keep exist modules",
+        "完全替换": "Replacement update，do not keep exist modules",
+        "搜索范围": "Search Scope",
+        "已分配主机": "Assigned Hosts",
+        "未分配主机": "Unassigned Hosts",
+        "请勿选择已分配主机": "Please do not select assigned host"
     },
     "Inst": {
         "立即创建": "Add",
@@ -466,7 +478,9 @@
         "恢复业务": "Recovery",
         "是否确认恢复业务？": "Are you sure you want to recovery business?",
         "恢复业务提示": "Business recovery will be renamed to “{bizName}(recovery)”",
-        "归档": "Archive"
+        "归档": "Archive",
+        "确定删除选中的实例": "Sure you want to delete the selected instance",
+        "批量更新": "Batch Update"
     },
     "Association": {
         "实例名": "Instance Name",

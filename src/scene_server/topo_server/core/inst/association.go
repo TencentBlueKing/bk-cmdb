@@ -47,7 +47,7 @@ func (cli *inst) updateMainlineAssociation(child Inst, parent Inst) error {
 	})
 	data.Set("condition", cond.ToMapStr())
 
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), child.GetObject().GetObjectType(), cli.params.Header.ToHeader(), data)
+	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), child.GetObject().GetObjectType(), cli.params.Header, data)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request object controller, error info %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -88,7 +88,7 @@ func (cli *inst) setCommonInstAssociation(child Inst, parent Inst) error {
 	// create a new association
 	if 0 != len(asstItems) {
 
-		rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header.ToHeader(), asst.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header, asst.ToMapStr())
 		if nil != err {
 			blog.Errorf("[inst-asst] failed to request the object controller,error info is %s", err.Error())
 			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -118,7 +118,7 @@ func (cli *inst) setCommonInstAssociation(child Inst, parent Inst) error {
 		data.Set("data", asst.ToMapStr())
 		data.Set("condition", cond.ToMapStr())
 
-		rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header.ToHeader(), data)
+		rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header, data)
 		if nil != err {
 			blog.Errorf("[inst-asst] failed to request object controller, error info %s", err.Error())
 			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -153,7 +153,7 @@ func (cli *inst) searchInstAssociation(instID, asstInstID int64, objID, asstObjI
 	queryInput := &metatype.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, cli.params.Header.ToHeader(), queryInput)
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -177,7 +177,7 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKAsstObjIDField).Eq(asstObjID)
 
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header.ToHeader(), cond.ToMapStr())
+	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -206,7 +206,7 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if parentObj.IsCommon() {
 		cond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
 	}
@@ -224,7 +224,8 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 
 	return nil, io.EOF
 }
-func (cli *inst) GetMainlineChildInst() (Inst, error) {
+func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
+
 	childObj, err := cli.target.GetMainlineChildObject()
 	if nil != err {
 		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, error info is %s", cli.target.GetID(), err.Error())
@@ -238,23 +239,13 @@ func (cli *inst) GetMainlineChildInst() (Inst, error) {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+	cond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if childObj.IsCommon() {
 		cond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
 	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
 
-	rspItems, err := cli.searchInsts(childObj, cond)
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	for _, item := range rspItems {
-		return item, nil // only one mainline child
-	}
-	blog.Warnf("[inst-asst] found nothing, the condition(%#v) the object(%s)", cond.ToMapStr(), childObj.GetID())
-	return nil, io.EOF
+	return cli.searchInsts(childObj, cond)
 }
 
 func (cli *inst) GetParentInst() ([]Inst, error) {
@@ -291,7 +282,7 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 
 			innerCond := condition.CreateCondition()
 
-			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 			innerCond.Field(parentObj.GetInstIDFieldName()).Eq(parentInstID)
 			innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
 
@@ -342,7 +333,7 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 
 			innerCond := condition.CreateCondition()
 
-			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.Header.OwnerID)
+			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 			innerCond.Field(childObj.GetInstIDFieldName()).Eq(childInstID)
 			innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
 
@@ -382,17 +373,17 @@ func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
 }
 func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 
-	childInst, err := cli.GetMainlineChildInst()
+	childInsts, err := cli.GetMainlineChildInst()
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the child inst, error info is  %s", err.Error())
 		return err
 	}
-
-	if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
-		blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
-		return err
+	for _, childInst := range childInsts {
+		if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
+			blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
+			return err
+		}
 	}
-
 	if err = cli.updateMainlineAssociation(targetInst, cli); nil != err {
 		blog.Errorf("[inst-inst] failed to update the mainline association, error info is %s", err.Error())
 		return err

@@ -26,7 +26,7 @@ class TableLayout {
         let columns = this.columns
         let bodyMinWidth = 0
         let bodyWidth = wrapperWidth ? wrapperWidth - 2 : this.table.$refs.bodyLayout.offsetWidth
-        let flexColumns = columns.filter(({flex, dragging}) => flex && !dragging)
+        let flexColumns = columns.filter(({flex, dragged}) => flex && !dragged)
         if (flexColumns.length) { // 存在不固定宽度的列
             columns.forEach(column => {
                 bodyMinWidth += column.width || column.minWidth
@@ -83,10 +83,15 @@ class TableLayout {
     }
 
     updateColumnWidth (column, width) {
+        const sortable = column.sortable
         column.width = width
         column.realWidth = width
-        column.dragging = true
+        column.dragged = true
+        column.sortable = false
         this.update()
+        setTimeout(() => {
+            column.sortable = sortable
+        }, 0)
     }
 
     updateColumns () {
@@ -108,7 +113,7 @@ class TableLayout {
                     flex: typeof head.width !== 'number',
                     sortable: table.sortable && (head.hasOwnProperty('sortable') ? head.sortable : true),
                     sortKey: head.hasOwnProperty('sortKey') ? head.sortKey : head[table.valueKey],
-                    dragging: false
+                    dragged: false
                 }
             }
         })

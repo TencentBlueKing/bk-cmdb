@@ -31,6 +31,9 @@ ui:
 
 .PHONY:debug
 debug:
+	@echo ""
+	@echo -e "\033[34mbuilding debug... \033[0m"
+	@rm -rf "./ui/node_modules"
 	@cd $(SCRIPT_DIR) && bash ./build.sh debug
 	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 

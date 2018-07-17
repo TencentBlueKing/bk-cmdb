@@ -567,6 +567,7 @@
                 }
                 this.initTopo()
                 this.isLoading = false
+                this.$emit('handleUpdate')
             },
             /**
              * 显示详情

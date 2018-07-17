@@ -403,7 +403,7 @@
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    this.$axios.put(`object/classification/${this.curClassify['id']}`, params).then(res => {
+                    this.$axios.put(`object/classification/${this.curClassify['id']}`, params, {id: 'saveClassify'}).then(res => {
                         if (res.result) { // 保存时显示当前项
                             for (var i = 0; i < this.classifyList.length; i++) {
                                 if (this.classifyList[i]['bk_classification_id'] === this.curClassify['bk_classification_id']) {
@@ -431,7 +431,7 @@
                         bk_classification_name: classification['bk_classification_name'],
                         bk_classification_icon: classification['bk_classification_icon']
                     }
-                    this.$axios.post('object/classification', createParams).then((res) => {
+                    this.$axios.post('object/classification', createParams, {id: 'saveClassify'}).then((res) => {
                         if (res.result) {
                             this.getClassifyList(this.classifyList.length)
                             this.isEditClassify = false
@@ -638,7 +638,7 @@
                 })
             },
             deletes () {
-                this.$axios.delete(`object/classification/${this.curTempClassify['id']}`).then(res => {
+                this.$axios.delete(`object/classification/${this.curClassify['id']}`).then(res => {
                     if (res.result) {
                         this.getClassifyList()
                     } else {
@@ -716,7 +716,7 @@
                         if (!index) {
                             index = 0
                         }
-                        // this.curClassify = this.classifyList[index]
+                        this.curClassify = this.classifyList[index]
                         this.curTempClassify = {
                             id: this.classifyList[index]['id'],
                             bk_classification_type: this.classifyList[index]['bk_classification_type'],

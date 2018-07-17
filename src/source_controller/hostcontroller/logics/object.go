@@ -14,14 +14,14 @@ package logics
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
-	"fmt"
-	"net/http"
-	"reflect"
 )
 
 func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, result interface{}, sort string) error {
@@ -78,8 +78,7 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 	},
 }
 
-func (lgc *Logics) GetObjectByCondition(pheader http.Header, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
-	defLang := lgc.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+func (lgc *Logics) GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := commondata.ObjTableMap[objType]
 	if err := lgc.Instance.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())

@@ -127,7 +127,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	}
 	err = s.Instance.UpdateByCondition(FavouriteCollection, fav, query)
 	if nil != err {
-		blog.Error("update host favorites fail, err: %v, params:%v", err, params)
+		blog.Error("update host favorites fail, err: %v, params:%v", err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteUpdateFail)})
 		return
 	}
@@ -196,7 +196,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 	}
 
 	condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-	result := make([]interface{}, 0)
+	result := make([]map[string]interface{}, 0)
 	count, err := s.Instance.GetCntByCondition(FavouriteCollection, condition)
 	if err != nil {
 		blog.Errorf("get host favorites failed,input:%+v error:%v", dat, err)

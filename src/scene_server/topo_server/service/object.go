@@ -14,7 +14,9 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -22,19 +24,19 @@ import (
 )
 
 // CreateObjectBatch batch to create some objects
-func (s *topoService) CreateObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("CreateObjectBatch")
 	return nil, nil
 }
 
 // SearchObjectBatch batch to search some objects
-func (s *topoService) SearchObjectBatch(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObjectBatch")
 	return nil, nil
 }
 
 // CreateObject create a new object
-func (s *topoService) CreateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	rsp, err := s.core.ObjectOperation().CreateObject(params, data)
 	if nil != err {
@@ -45,7 +47,7 @@ func (s *topoService) CreateObject(params types.LogicParams, pathParams, queryPa
 }
 
 // SearchObject search some objects by condition
-func (s *topoService) SearchObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	fmt.Println("SearchObject")
 	cond := condition.CreateCondition()
 
@@ -57,22 +59,25 @@ func (s *topoService) SearchObject(params types.LogicParams, pathParams, queryPa
 }
 
 // SearchObjectTopo search the object topo
-func (s *topoService) SearchObjectTopo(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectTopo")
-	return nil, nil
+func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	cond := condition.CreateCondition()
+	err := cond.Parse(data)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
+	}
+
+	return s.core.ObjectOperation().FindObjectTopo(params, cond)
 }
 
 // UpdateObject update the object
-func (s *topoService) UpdateObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	paramPath := frtypes.MapStr{}
-	paramPath.Set("id", pathParams("id"))
-	id, err := paramPath.Int64("id")
+	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
-		return nil, err
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
 	}
 
 	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond)
@@ -80,7 +85,7 @@ func (s *topoService) UpdateObject(params types.LogicParams, pathParams, queryPa
 }
 
 // DeleteObject delete the object
-func (s *topoService) DeleteObject(params types.LogicParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
