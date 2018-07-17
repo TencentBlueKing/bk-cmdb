@@ -176,7 +176,7 @@ func (p *process) QueryProcessOperateResult(ctx context.Context, namespace strin
 
 func (p *process) CreateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
     resp = new(metadata.Response)
-    subPath := fmt.Sprintf("/conftemp")
+    subPath := "/conftemp"
 
     err = p.client.Post().
         WithContext(ctx).
@@ -190,7 +190,7 @@ func (p *process) CreateConfigTemp(ctx context.Context, h http.Header, dat inter
 
 func (p *process) UpdateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
     resp = new(metadata.Response)
-    subPath := fmt.Sprintf("/conftemp")
+    subPath := "/conftemp"
 
     err = p.client.Put().
         WithContext(ctx).
@@ -204,7 +204,7 @@ func (p *process) UpdateConfigTemp(ctx context.Context, h http.Header, dat inter
 
 func (p *process) DeleteConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
     resp = new(metadata.Response)
-    subPath := fmt.Sprintf("/conftemp")
+    subPath := "/conftemp"
 
     err = p.client.Delete().
         WithContext(ctx).
@@ -218,7 +218,7 @@ func (p *process) DeleteConfigTemp(ctx context.Context, h http.Header, dat inter
 
 func (p *process) QueryConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
     resp = new(metadata.Response)
-    subPath := fmt.Sprintf("/conftemp/search")
+    subPath := "/conftemp/search"
 
     err = p.client.Post().
         WithContext(ctx).
