@@ -12,17 +12,19 @@
 package service
 
 import (
-    "github.com/emicklei/go-restful"
-    "configcenter/src/common/util"
-    "configcenter/src/common"
     "strconv"
     "context"
-    "configcenter/src/common/blog"
     "net/http"
+    "fmt"
+    
+    "configcenter/src/common/util"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
     meta "configcenter/src/common/metadata"
     sourceAPI "configcenter/src/source_controller/api/object"
     "configcenter/src/common/auditoplog"
-    "fmt"
+
+    "github.com/emicklei/go-restful"
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {

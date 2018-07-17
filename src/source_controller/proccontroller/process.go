@@ -16,17 +16,16 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+    "context"
 
-	"configcenter/src/common/blog"
+    "configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/proccontroller/app"
 	"configcenter/src/source_controller/proccontroller/app/options"
-
+    "configcenter/src/common"
+    "configcenter/src/common/types"
+	
 	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
-	"configcenter/src/common/types"
-    "context"
 )
 
 func main() {
