@@ -321,7 +321,7 @@
     "HostResourcePool": {
         "资源池": "Resource Pool",
         "主机资源池": "Host Resource Pool",
-        "分配到业务空闲机池": "Assigned to business idle pool",
+        "分配到业务空闲机池": "Assigned to idle pool",
         "导出选中": "Export",
         "导入主机": "Import Host",
         "筛选": "Filter",
