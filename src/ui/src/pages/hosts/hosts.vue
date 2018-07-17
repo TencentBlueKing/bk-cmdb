@@ -48,30 +48,33 @@
                 </bk-dropdown-menu>
                 <slot name="btnGroup">
                     <div class="bk-group btn-group bk-button-group clearfix">
-                        <button class="bk-button bk-default"
-                            v-tooltip="$t('BusinessTopology[\'修改\']')"
-                            :disabled="!table.chooseId.length" 
-                            @click="multipleUpdate">
-                            <i class="icon-cc-edit"></i>
-                        </button>
-                        <bk-button type="default"
-                            :disabled="!table.chooseId.length"
-                            v-tooltip="$t('BusinessTopology[\'转移\']')"
-                            @click="transferHost">
-                            <i class="icon-cc-shift"></i>
-                        </bk-button>
-                        <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
-                            <input type="hidden" name="bk_host_id" :value="table.chooseId">
-                            <input type="hidden" name="bk_biz_id" value="-1">
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                            <button class="bk-button bk-default"
+                                :disabled="!table.chooseId.length" 
+                                @click="multipleUpdate">
+                                <i class="icon-cc-edit"></i>
+                            </button>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'转移\']')">
                             <bk-button type="default"
-                                class="center"
-                                btnType="submit"
                                 :disabled="!table.chooseId.length"
-                                v-tooltip="$t('HostResourcePool[\'导出选中\']')"
-                                @click.prevent="exportChoose">
-                                <i class="icon-cc-derivation"></i>
+                                @click="transferHost">
+                                <i class="icon-cc-shift"></i>
                             </bk-button>
-                        </form>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
+                            <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
+                                <input type="hidden" name="bk_host_id" :value="table.chooseId">
+                                <input type="hidden" name="bk_biz_id" value="-1">
+                                <bk-button type="default"
+                                    class="center"
+                                    btnType="submit"
+                                    :disabled="!table.chooseId.length"
+                                    @click.prevent="exportChoose">
+                                    <i class="icon-cc-derivation"></i>
+                                </bk-button>
+                            </form>
+                        </div>
                         <bk-button type="default" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</bk-button>
                         <bk-button type="default" class="button-setting last" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>

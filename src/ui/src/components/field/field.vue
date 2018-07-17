@@ -42,7 +42,7 @@
                 </div>
                 <draggable class="content-right" v-model="shownList" :options="{animation: 150}">
                     <div v-for="(property, index) in shownList" :key="index" class="item">
-                        <i class="icon-triple-dot"></i><span>{{property['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)"></i>
+                        <i class="icon-triple-dot"></i><span>{{property['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
                     </div>
                 </draggable>
             </div>
@@ -60,6 +60,8 @@
 
 <script type="text/javascript">
     import draggable from 'vuedraggable'
+    import sortUnicode from '@/common/js/sortUnicode'
+    import { sortArray } from '@/utils/util'
     export default {
         props: {
             shownFields: {
@@ -127,7 +129,7 @@
                         }
                     }
                 })
-                return hideList
+                return sortArray(hideList, 'bk_property_name')
             }
         },
         watch: {
@@ -158,6 +160,21 @@
             }
         },
         methods: {
+            setSortKey (data) {
+                data.map(item => {
+                    let str = item['bk_property_name']
+                    let sortKey = ''
+                    for (let i = 0; i < str.length; i++) {
+                        let code = str.charCodeAt(i)
+                        if (code < 40869 && code >= 19968) {
+                            sortKey += sortUnicode.strChineseFirstPY.charAt(code - 19968)
+                        } else {
+                            sortKey += str[i]
+                        }
+                    }
+                    item.sortKey = sortKey
+                })
+            },
             addItem (property) {
                 this.shownList.push(property)
             },

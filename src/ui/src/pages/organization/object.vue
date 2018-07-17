@@ -15,23 +15,29 @@
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
                     <div class="bk-group bk-button-group mr10">
-                        <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
-                            <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
-                            <bk-button btnType="submit" v-tooltip="$t('ModelManagement[\'导出\']')"class="bk-button vice-btn first" :disabled="!table.chooseId.length">
-                                <i class="icon-cc-derivation"></i>
-                            </bk-button>
-                        </form>
                         <bk-button v-tooltip="$t('ModelManagement[\'导入\']')" type="default" class="bk-button vice-btn" @click="importSlider.isShow = true" :disabled="unauthorized.update">
                             <i class="icon-cc-import"></i>
                         </bk-button>
-                        <bk-button v-tooltip="$t('BusinessTopology[\'修改\']')" type="default" class="vice-btn"
-                            :disabled="!table.chooseId.length" 
-                            @click="multipleUpdate">
-                            <i class="icon-cc-edit"></i>
-                        </bk-button>
-                        <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
-                            <i class="icon-cc-del"></i>
-                        </bk-button>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('ModelManagement[\'导出\']')">
+                            <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
+                                <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
+                                <bk-button btnType="submit" class="bk-button vice-btn first" :disabled="!table.chooseId.length" title="test">
+                                    <i class="icon-cc-derivation"></i>
+                                </bk-button>
+                            </form>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                            <bk-button type="default" class="vice-btn"
+                                :disabled="!table.chooseId.length" 
+                                @click="multipleUpdate">
+                                <i class="icon-cc-edit"></i>
+                            </bk-button>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('Common[\'删除\']')">
+                            <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" @click="confirmBatchDel">
+                                <i class="icon-cc-del"></i>
+                            </bk-button>
+                        </div>
                     </div>
                 </template>
                 <button class="bk-button bk-primary bk-button-componey create-btn mr10" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
