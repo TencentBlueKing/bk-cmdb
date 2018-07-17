@@ -196,7 +196,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 	}
 
 	condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
-	result := make([]interface{}, 0)
+	result := make([]map[string]interface{}, 0)
 	count, err := s.Instance.GetCntByCondition(FavouriteCollection, condition)
 	if err != nil {
 		blog.Errorf("get host favorites failed,input:%+v error:%v", dat, err)
