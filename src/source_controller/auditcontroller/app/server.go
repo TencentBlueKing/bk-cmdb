@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
@@ -78,16 +79,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-	sleepCnt := 0
-	for ; sleepCnt < 15; sleepCnt++ {
+
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
 		if nil == audit.Config.Mongo {
 			time.Sleep(time.Second)
 			continue
 		} else {
+			configReady = true
 			break
 		}
 	}
-	if sleepCnt >= 15 {
+	if false == configReady {
 		return fmt.Errorf("Failed to get configuration")
 	}
 	mgc := audit.Config.Mongo
