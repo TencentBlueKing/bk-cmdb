@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"strings"
@@ -95,7 +96,7 @@ func (lgc *Logics) UpdateHost(input map[string]interface{}, appID int64, header 
 
 	if nil != err {
 		blog.Errorf("updateHostMain error:%v", err)
-		return nil, 0, defErr.Error(common.CCErrHostModifyFail)
+		return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostModifyFail)
 	}
 
 	return res, 0, nil
@@ -153,8 +154,8 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 					return nil, http.StatusBadGateway, defErr.Error(common.CCErrTopoCloudNotFound)
 				}
 			}
-			blog.V(3).Infof("procMap:%v", proMap)
 			proMap["import_from"] = common.HostAddMethodAgent
+			blog.V(3).Infof("procMap:%v", proMap)
 			hostIDNew, err := phpapi.AddHost(proMap)
 			if nil != err {
 				blog.Errorf("addHost error:%v", err)
@@ -174,8 +175,11 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
-			blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, input:%v, innerip:%v, platID:%v error:%v", input, innerIP, input.CloudID, err)
-			return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostGetFail)
+			if nil != err {
+				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%v", hostData[0], input, innerIP, input.CloudID, err)
+				return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostGetFail)
+			}
+
 		}
 
 		if outerIP != "" {
@@ -217,7 +221,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ipArr []string, cloudID, appID int64, 
 	}
 
 	hostIDArr := make([]int64, 0)
-	hostMap := make(map[string]interface{})
+	hostMap := make(map[string]mapstr.MapStr)
 
 	for _, host := range hosts {
 		hostID, err := host.Int64(common.BKHostIDField)
@@ -253,7 +257,10 @@ func (lgc *Logics) GetIPAndProxyByCompany(ipArr []string, cloudID, appID int64, 
 		appIDTemp := fmt.Sprintf("%v", config[common.BKAppIDField])
 		appIDIntTemp := config[common.BKAppIDField]
 		hostID := config[common.BKHostIDField]
-		ip := hostMap[fmt.Sprintf("%v", hostID)].(map[string]interface{})[common.BKHostInnerIPField]
+		ip, err := hostMap[fmt.Sprintf("%v", hostID)].String(common.BKHostInnerIPField)
+		if nil != err {
+			blog.Warnf("getHostByIPArrAndSource get host error, error:%s, appinfo:%v, ip:%v, cloudID:%d, appID:%d", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID)
+		}
 
 		appName, err := appMap[appIDIntTemp].String(common.BKAppNameField)
 		if nil != err {
@@ -269,7 +276,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ipArr []string, cloudID, appID int64, 
 				invalidIpMap[appIDTemp]["ips"] = make([]string, 0)
 			}
 
-			invalidIpMap[appIDTemp]["ips"] = append(invalidIpMap[appIDTemp]["ips"].([]string), ip.(string))
+			invalidIpMap[appIDTemp]["ips"] = append(invalidIpMap[appIDTemp]["ips"].([]string), ip)
 
 		} else {
 			validIpArr = append(validIpArr, ip)
@@ -466,6 +473,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 			blog.V(3).Infof("clone update")
 			hostCondition := map[string]interface{}{
 				common.BKHostInnerIPField: dstIpV,
+				common.BKHostIDField:      hostID,
 			}
 
 			updateHostData[common.BKHostInnerIPField] = dstIpV
