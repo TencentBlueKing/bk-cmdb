@@ -13,18 +13,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
+
+	"configcenter/src/common"
+	"configcenter/src/common/types"
+	"github.com/spf13/pflag"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/auditcontroller/app"
 	"configcenter/src/source_controller/auditcontroller/app/options"
-
-	"configcenter/src/common"
-	"configcenter/src/common/types"
-	"github.com/spf13/pflag"
 )
 
 func main() {
