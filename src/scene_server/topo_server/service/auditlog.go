@@ -13,14 +13,12 @@
 package service
 
 import (
-	"fmt"
-
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// SearchAuditLog search audit logs
-func (s *topoService) SearchAuditLog(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchAuditLog")
-	return nil, nil
+// AuditQuery search audit logs
+func (s *topoService) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	return s.core.AuditOperation().Query(params, data)
 }

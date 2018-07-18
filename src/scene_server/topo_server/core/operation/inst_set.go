@@ -122,5 +122,5 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 	innerCond.Field(common.BKSetIDField).Eq(setID)
 
-	return s.inst.UpdateInst(params, data, obj, innerCond)
+	return s.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

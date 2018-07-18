@@ -73,7 +73,9 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
+	if 0 != len(objID) {
+		cond.Field(common.BKObjIDField).Eq(objID)
+	}
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
