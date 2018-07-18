@@ -33,8 +33,8 @@ import (
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
-	user := util.GetActionUser(req)
-	language := util.GetActionLanguage(req)
+	user := util.GetUser(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
@@ -88,8 +88,8 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 }
 
 func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response) {
-	user := util.GetActionUser(req)
-	language := util.GetActionLanguage(req)
+	user := util.GetUser(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
@@ -155,8 +155,8 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 }
 
 func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Response) {
-	//user := util.GetActionUser(req)
-	language := util.GetActionLanguage(req)
+	//user := util.GetUser(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	user := util.GetUser(req.Request.Header)
 
@@ -297,8 +297,8 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 }
 
 func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response) {
-	user := util.GetActionUser(req)
-	language := util.GetActionLanguage(req)
+	user := util.GetUser(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
@@ -341,7 +341,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 }
 
 func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
@@ -430,7 +430,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.NewSuccessResp(ret.Data))
 }
 
-func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, instanceID int, header http.Header) {
+func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, instanceID int, header http.Header) error {
 	headers := []metadata.Header{}
 	curData := map[string]interface{}{}
 	preData := map[string]interface{}{}
@@ -461,7 +461,8 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 	}
 
 	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: "create process", common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": instanceID}
-	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appID, user, header, log)
+	_, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appID, user, header, log)
+	return err
 }
 
 func (ps *ProcServer) getProcessbyProcID(procID string, forward *sourceAPI.ForwardParam) (map[string]interface{}, error) {

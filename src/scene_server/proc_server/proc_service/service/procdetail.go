@@ -29,7 +29,7 @@ import (
 )
 
 func (ps *ProcServer) GetProcessDetailByID(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
@@ -108,7 +108,7 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 		// key is the association object filed，val is association object id
 		if val, ok := rstmap[propertyID]; ok {
 			keyItemStr := fmt.Sprintf("%v", proc[propertyID])
-			blog.Debug("keyitemstr:%s", keyItemStr)
+			blog.V(3).Infof("keyitemstr:%s", keyItemStr)
 			retData, _, retErr := ps.getInstAsst(forward, ownerID, val, strings.Split(keyItemStr, ","), nil)
 			if common.CCSuccess != retErr {
 				blog.Error("failed to get inst details")
