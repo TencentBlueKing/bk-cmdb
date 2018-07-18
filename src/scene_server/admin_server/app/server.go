@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	"configcenter/src/scene_server/admin_server/configures"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -30,6 +28,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/mgoclient"
 )
