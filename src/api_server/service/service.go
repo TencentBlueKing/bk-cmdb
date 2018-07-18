@@ -31,6 +31,7 @@ func (s *Service) V2WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
+	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
 	ws.Route(ws.POST("app/getapplist").To(s.getAppList))
