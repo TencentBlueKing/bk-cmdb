@@ -334,7 +334,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
-	rspDataV3Map, _ := result.Data.(map[string]interface{})
+	rspDataV3Map := result.Data
 	blog.Infof("rsp_v3:%v", result.Data)
 	converter.RespSuccessV2(rspDataV3Map, resp)
 }
