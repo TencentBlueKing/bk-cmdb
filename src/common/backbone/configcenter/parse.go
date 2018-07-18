@@ -52,9 +52,6 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 		return fmt.Errorf("load config from file[%s], but load error code failed, err: %v", confPath, err)
 	}
 
-	delete(fileConf.ConfigMap, "language.res")
-	delete(fileConf.ConfigMap, "errors.res")
-
 	if len(fileConf.ConfigMap) == 0 {
 		return fmt.Errorf("load config from file[%s], but can not found process config", confPath)
 	}

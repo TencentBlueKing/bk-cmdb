@@ -31,10 +31,10 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				err = fmt.Errorf("system error: %v", syserror)
 			}
 		}
-		debug.PrintStack()
+		blog.Errorf("%s", debug.Stack())
 	}()
 
-	rccler := newReconciler(dh.cache)
+	rccler := newReconciler(dh.cache, dh.db)
 	rccler.loadAll()
 	rccler.reconcile()
 	subscribers := rccler.persistedSubscribers
@@ -149,7 +149,7 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 	subscriberID := fmt.Sprint(dist.SubscriptionID)
 	runningkey := types.EventCacheDistRunningPrefix + subscriberID + "_" + distID
 	if err = saveRunning(dh.cache, runningkey, timeout+sub.GetTimeout()); err != nil {
-		if ERR_PROCESS_EXISTS == err {
+		if ErrProcessExists == err {
 			blog.Infof("process exist, continue")
 			return nil
 		}
@@ -179,10 +179,10 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 		if running {
 
 			blog.Infof("waitting previous id: " + priviousID)
-			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ERR_WAIT_TIMEOUT {
+			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ErrWaitTimeout {
 				return checkErr
 			}
-			if checkErr == ERR_WAIT_TIMEOUT {
+			if checkErr == ErrWaitTimeout {
 				blog.Infof("wait timeout previous id: %v, begin send callback", priviousID)
 			}
 		}

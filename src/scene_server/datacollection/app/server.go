@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -108,7 +109,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	datacollection.NewDataCollection(process.Config, process.Core)
 
-	select {}
+	<-ctx.Done()
+	blog.V(0).Info("process stoped")
 	return nil
 }
 
@@ -118,7 +120,11 @@ type DCServer struct {
 	Service *svc.Service
 }
 
+var configLock sync.Mutex
+
 func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	configLock.Lock()
+	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
 		h.Config = new(options.Config)
 		dbprefix := "mongodb"

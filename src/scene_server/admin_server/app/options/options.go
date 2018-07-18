@@ -44,6 +44,7 @@ type Config struct {
 	Errors     ErrorConfig
 	Language   LanguageConfig
 	Configures ConfConfig
+	Register   RegisterConfig
 }
 
 type LanguageConfig struct {
@@ -56,4 +57,8 @@ type ErrorConfig struct {
 
 type ConfConfig struct {
 	Dir string
+}
+
+type RegisterConfig struct {
+	Address string
 }

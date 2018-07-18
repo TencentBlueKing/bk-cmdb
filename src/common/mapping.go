@@ -35,3 +35,34 @@ func GetInstNameField(objID string) string {
 		return BKInstNameField
 	}
 }
+
+func GetInstFieldByType(objType string) string {
+	switch objType {
+	case BKInnerObjIDApp:
+		return BKAppIDField
+	case BKInnerObjIDSet:
+		return BKSetIDField
+	case BKInnerObjIDModule:
+		return BKModuleIDField
+	case BKINnerObjIDObject:
+		return BKInstIDField
+	case BKInnerObjIDProc:
+		return BKProcIDField
+	case BKInnerObjIDHost:
+		return BKHostIDField
+	case BKInnerObjIDPlat:
+		return BKCloudIDField
+	}
+	return BKInstIDField
+}
+
+func GetObjByType(objType string) string {
+	switch objType {
+	case BKInnerObjIDApp, BKInnerObjIDSet,
+		BKInnerObjIDModule, BKInnerObjIDProc,
+		BKInnerObjIDHost, BKInnerObjIDPlat:
+		return objType
+	default:
+		return BKINnerObjIDObject
+	}
+}
