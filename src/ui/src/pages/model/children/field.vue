@@ -562,7 +562,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -617,7 +617,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -664,7 +664,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -711,7 +711,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -784,7 +784,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -819,7 +819,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -854,7 +854,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -905,7 +905,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -956,7 +956,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -991,7 +991,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -1026,7 +1026,7 @@
                                                     @on-selected="fieldTypeChange">
                                                     <bk-select-option
                                                         v-for="(option, index) of fieldTypeList"
-                                                        :key="index"
+                                                        :key="option.value"
                                                         :value="option.value"
                                                         :label="option.label">
                                                     </bk-select-option>
@@ -1179,52 +1179,6 @@
                     }
                 },
                 isLoading: false,           // 是否处于加载列表状态
-                fieldTypeList: [
-                    {
-                        value: 'singlechar',
-                        label: this.$t('ModelManagement["短字符"]')
-                    },
-                    {
-                        value: 'int',
-                        label: this.$t('ModelManagement["数字"]')
-                    },
-                    {
-                        value: 'enum',
-                        label: this.$t('ModelManagement["枚举"]')
-                    },
-                    {
-                        value: 'date',
-                        label: this.$t('ModelManagement["日期"]')
-                    },
-                    {
-                        value: 'time',
-                        label: this.$t('ModelManagement["时间"]')
-                    },
-                    {
-                        value: 'longchar',
-                        label: this.$t('ModelManagement["长字符"]')
-                    },
-                    {
-                        value: 'singleasst',
-                        label: this.$t('ModelManagement["单关联"]')
-                    },
-                    {
-                        value: 'multiasst',
-                        label: this.$t('ModelManagement["多关联"]')
-                    },
-                    {
-                        value: 'objuser',
-                        label: this.$t('ModelManagement["用户"]')
-                    },
-                    {
-                        value: 'timezone',
-                        label: this.$t('ModelManagement["时区"]')
-                    },
-                    {
-                        value: 'bool',
-                        label: 'bool'
-                    }
-                ],
                 fieldList: [],          // 字段配置列表
                 defaultModel: '',
                 curFieldInfo: {         // 当前改动项
@@ -1278,6 +1232,58 @@
                 'bkSupplierAccount',
                 'language'
             ]),
+            fieldTypeList () {
+                let list = [
+                    {
+                        value: 'singlechar',
+                        label: this.$t('ModelManagement["短字符"]')
+                    },
+                    {
+                        value: 'int',
+                        label: this.$t('ModelManagement["数字"]')
+                    },
+                    {
+                        value: 'enum',
+                        label: this.$t('ModelManagement["枚举"]')
+                    },
+                    {
+                        value: 'date',
+                        label: this.$t('ModelManagement["日期"]')
+                    },
+                    {
+                        value: 'time',
+                        label: this.$t('ModelManagement["时间"]')
+                    },
+                    {
+                        value: 'longchar',
+                        label: this.$t('ModelManagement["长字符"]')
+                    },
+                    {
+                        value: 'singleasst',
+                        label: this.$t('ModelManagement["单关联"]')
+                    },
+                    {
+                        value: 'multiasst',
+                        label: this.$t('ModelManagement["多关联"]')
+                    },
+                    {
+                        value: 'objuser',
+                        label: this.$t('ModelManagement["用户"]')
+                    },
+                    {
+                        value: 'timezone',
+                        label: this.$t('ModelManagement["时区"]')
+                    },
+                    {
+                        value: 'bool',
+                        label: 'bool'
+                    }
+                ]
+                if (this.isMainLine) {
+                    list.splice(6, 2)
+                }
+                return list
+            },
             exportUrl () {
                 return `${window.siteUrl}object/owner/${this.bkSupplierAccount}/object/${this.objId}/export`
             },

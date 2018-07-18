@@ -130,7 +130,7 @@
                         :id="curModel['id']"
                         :isShow="slider.isBusinessShow"
                         :objId="curModel['bk_obj_id']"
-                        :isMainLine="isMainLine"
+                        :isMainLine="curClassify['bk_classification_id']==='bk_biz_topo'"
                         :classificationId="curClassify['bk_classification_id']"
                         :associationId="curInsertInfo.preObj"
                         :isReadOnly="isModelDetailReadOnly"
@@ -218,7 +218,6 @@
                 iconValue: 'icon-cc-business',               // 选择icon的值
                 list: [],                      // icon 的值
                 isChangeClassify: false,    // 是否点击的切换分组类型  true: 点击的切换分组 false: 点击的已启用/未启用
-                isMainLine: false,          // 是否操作主线模型
                 curTopoStructure: [],       // 当前分类模型拓扑结构
                 insertType: '',             // 插入模型  prev 向上 next 向下 mid 中间
                 insertParams: {},           // 插入时相关参数
@@ -283,8 +282,6 @@
                 type: prev向上添加 next向下添加
             */
             addModel (item, type) {
-                this.isMainLine = true
-                // this.curInsertInfo = item
                 this.curTopoStructure.map(({bk_obj_id: objId, bk_pre_obj_id: preObj}) => {
                     if (objId === item['bk_obj_id']) {
                         this.curInsertInfo.preObj = preObj
@@ -325,7 +322,6 @@
                 // 插入类型置空
                 this.insertType = ''
                 this.isModelDetailReadOnly = false
-                this.isMainLine = false
                 this.showAddModel()
             },
             showAddModel () {
