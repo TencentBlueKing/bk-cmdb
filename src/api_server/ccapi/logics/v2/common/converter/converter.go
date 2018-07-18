@@ -403,7 +403,21 @@ func ResToV2ForCpyHost(result bool, message string, data interface{}) (interface
 
 	for _, item := range resDataArrV3 {
 		itemMap := item.(map[string]interface{})
-		buildStr := fmt.Sprintf("%s%s%s", itemMap[common.BKCloudIDField], itemMap[common.BKOwnerIDField], itemMap[common.BKAppIDField].(json.Number).String())
+
+		appID, err := util.GetIntByInterface(itemMap[common.BKAppIDField])
+
+		if nil != err {
+			return resDataV2, nil
+		}
+		bkCloudID, err := util.GetIntByInterface(itemMap[common.BKCloudIDField])
+		if nil != err {
+			return resDataV2, nil
+		}
+		ownerID, err := util.GetIntByInterface(itemMap[common.BKOwnerIDField])
+		if nil != err {
+			return resDataV2, nil
+		}
+		buildStr := fmt.Sprintf("%d%d%d", bkCloudID, ownerID, appID)
 		itemMap = convertFieldsNilToString(itemMap, []string{common.BKCloudIDField, common.BKOwnerIDField, common.BKAppIDField})
 
 		resDataV2[itemMap[common.BKHostInnerIPField].(string)] = map[string]interface{}{
