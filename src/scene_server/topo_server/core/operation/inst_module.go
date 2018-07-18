@@ -107,5 +107,5 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 	innerCond.Field(common.BKSetIDField).Eq(setID)
 	innerCond.Field(common.BKModuleIDField).Eq(moduleID)
 
-	return m.inst.UpdateInst(params, data, obj, innerCond)
+	return m.inst.UpdateInst(params, data, obj, innerCond, -1)
 }
