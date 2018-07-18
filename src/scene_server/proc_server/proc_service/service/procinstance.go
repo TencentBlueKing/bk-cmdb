@@ -18,18 +18,18 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
-
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	namespace := req.PathParameter("namespace")
 
