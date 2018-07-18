@@ -38,7 +38,7 @@ func (s *Service) WebService() *restful.WebService {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/hosts/batch").To(s.DeleteHostBatch))
+	ws.Route(ws.DELETE("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	ws.Route(ws.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	ws.Route(ws.POST("/hosts/addhost").To(s.AddHost))
@@ -60,6 +60,16 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/usercustom").To(s.SaveUserCustom))
 	ws.Route(ws.POST("/usercustom/user/search").To(s.GetUserCustom))
 	ws.Route(ws.POST("/usercustom/default/search").To(s.GetDefaultCustom))
+	ws.Route(ws.POST("/hosts/search").To(s.SearchHost))
+	ws.Route(ws.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
+	ws.Route(ws.PUT("/hosts/batch").To(s.UpdateHostBatch))
+	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
+	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
+	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
+	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.GetUserCustomQuery))
+	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
+	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
+
 	ws.Route(ws.GET("getAgentStatus/{appid}").To(s.GetAgentStatus))
 	ws.Route(ws.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
 	ws.Route(ws.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
@@ -78,15 +88,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.GET("/plat").To(s.GetPlat))
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
-	ws.Route(ws.POST("/hosts/search").To(s.SearchHost))
-	ws.Route(ws.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
-	ws.Route(ws.PUT("/hosts/batch").To(s.UpdateHostBatch))
-	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
-	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
-	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
-	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.GetUserCustomQuery))
-	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
-	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
 
 	return ws
 }

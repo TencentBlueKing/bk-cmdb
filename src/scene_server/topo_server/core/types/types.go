@@ -15,16 +15,17 @@ package types
 import (
 	"net/http"
 
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
 )
 
 // ContextParams the logic function params
 type ContextParams struct {
-	Support         supplementary.Supplementary
+	Engin           *backbone.Engine
 	Header          http.Header
 	SupplierAccount string
+	User            string
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 }

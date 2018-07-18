@@ -17,7 +17,7 @@ import "time"
 // OperationLog opeartion log item definition
 type OperationLog struct {
 	OwnerID       string      `bson:"bk_supplier_account"    json:"bk_supplier_account"`
-	ApplicationID int         `bson:"bk_biz_id"              json:"bk_biz_id"`
+	ApplicationID int64       `bson:"bk_biz_id"              json:"bk_biz_id"`
 	ExtKey        string      `bson:"ext_key"             json:"ext_key"`
 	OpDesc        string      `bson:"op_desc"             json:"op_desc"`
 	OpType        int         `bson:"op_type"             json:"op_type"`
@@ -27,7 +27,7 @@ type OperationLog struct {
 	OpFrom        string      `bson:"op_from"             json:"op_from"`
 	ExtInfo       string      `bson:"ext_info"            json:"ext_info"`
 	CreateTime    time.Time   `bson:"op_time"         json:"op_time"`
-	InstID        int         `bson:"inst_id"             json:"inst_id"`
+	InstID        int64       `bson:"inst_id"             json:"inst_id"`
 }
 
 // TableName return the table name

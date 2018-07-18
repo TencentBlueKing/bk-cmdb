@@ -13,8 +13,6 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
@@ -39,12 +37,12 @@ func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParam
 
 // GetUserGroupPrivi search user goup
 func (s *topoService) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	return s.core.PermissionOperation().Permission(params).GetUserGroupPermission(params.SupplierAccount, pathParams("group_id"))
 }
 
 // GetUserPrivi search user goup
 func (s *topoService) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	return s.core.PermissionOperation().Permission(params).GetUserPermission(params.SupplierAccount, pathParams("user_name"))
 }

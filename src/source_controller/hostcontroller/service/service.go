@@ -13,18 +13,20 @@
 package service
 
 import (
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage"
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    storage.DI
+	Cache    *redis.Client
 	Logics   logics.Logics
 }
 

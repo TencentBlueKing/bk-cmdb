@@ -131,3 +131,101 @@ func (p *process) UpdateProcess(ctx context.Context, ownerID string, businessID 
 		Into(resp)
 	return
 }
+
+func (p *process) BatchUpdateProcess(ctx context.Context, ownerID, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := fmt.Sprintf("/%s/%s", ownerID, businessID)
+
+    err = p.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) OperateProcessInstance(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := fmt.Sprintf("/operate/%s/process", namespace)
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) QueryProcessOperateResult(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := fmt.Sprintf("/operate/%s/process/taskresult", namespace)
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) CreateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) UpdateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Put().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) DeleteConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp"
+
+    err = p.client.Delete().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}
+
+func (p *process) QueryConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+    resp = new(metadata.Response)
+    subPath := "/conftemp/search"
+
+    err = p.client.Post().
+        WithContext(ctx).
+        Body(dat).
+        SubResource(subPath).
+        WithHeaders(h).
+        Do().
+        Into(resp)
+    return
+}

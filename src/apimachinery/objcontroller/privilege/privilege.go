@@ -13,10 +13,11 @@
 package privilege
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
 func (t *privilege) CreateUserGroup(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
@@ -67,7 +68,7 @@ func (t *privilege) SearchUserGroup(ctx context.Context, ownerID string, h http.
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(dat).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
