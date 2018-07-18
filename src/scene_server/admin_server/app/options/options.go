@@ -37,7 +37,6 @@ func NewServerOption() *ServerOption {
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60005", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
-	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 }
 
 type Config struct {
@@ -45,6 +44,7 @@ type Config struct {
 	Errors     ErrorConfig
 	Language   LanguageConfig
 	Configures ConfConfig
+	Register   RegisterConfig
 }
 
 type LanguageConfig struct {
@@ -57,4 +57,8 @@ type ErrorConfig struct {
 
 type ConfConfig struct {
 	Dir string
+}
+
+type RegisterConfig struct {
+	Address string
 }
