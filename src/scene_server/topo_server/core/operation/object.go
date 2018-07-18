@@ -30,7 +30,7 @@ import (
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
 	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) error
-	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) error
+	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (map[string]interface{}, error)
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
@@ -121,49 +121,54 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 	return nil
 }
-func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) error {
-	/**
-	input:
-		{
-	    "objid": {
-	        "meta": {
-	            "key": "val"
-	        },
-	        "attr": {
-	            "key": "val"
-	        }
-	    },
-	    "failed":[
-	        {
-	           "objids":"error info"
-	        }
-			]
-
+func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	/*
+		conditions, conErr := data.MapStrArray("condition")
+		if nil != conErr {
+			blog.Error("failed to get the conditions, error info is %s", conErr.Error())
+			return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-	*/
+		result := map[string]interface{}{}
+		// parse the conditons
+		for objID, item := range conditions {
 
-	/*
-		   result:
-			{
-		    "objid": {
-		        "meta": {
-		            "key": "val"
-		        },
-		        "attr": [{
-		            "key": "val"
-		        }]
-		    },
-		    "failed":[
-		        {
-		           "objids":"error info"
-		        }
-		    ]
+			conditionAttr := condition.CreateCondition()
+			conditionAttr.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+			conditionAttr.Field(common.BKObjIDField).Eq(objID)
 
+			attrs, attrErr := o.attr.FindObjectAttribute(params, conditionAttr)
+			if nil != attrErr {
+				blog.Error("failed to search the attribute of the object(%s) ownerID(%s), error info is %s", objID, ownerID, attrErr.Error())
+				if failed, ok := result["failed"]; ok {
+					failedArr := failed.([]map[string]string)
+					failedArr = append(failedArr, map[string]string{
+						objID: attrErr.Error(),
+					})
+				} else {
+					result["failed"] = []map[string]string{
+						map[string]string{
+							objID: attrErr.Error(),
+						},
+					}
+				}
+
+				continue
 			}
 
+			if 0 != len(attrItems) {
+				result[objID] = map[string]interface{}{
+					"attr": attrItems,
+				}
+			} else {
+				// not found the attribute, set the default(empty one)
+				result[objID] = api.ObjAttDes{}
+			}
+
+		}
 	*/
-	return nil
+	return result, nil
 }
 
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
