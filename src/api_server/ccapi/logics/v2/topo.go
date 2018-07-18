@@ -59,7 +59,7 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 	}
 
 	moduleFields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
-	modules, errCode := lgc.getModulesByConds(user, pheader, appID, conds, moduleFields, "")
+	modules, errCode := lgc.getModulesByConds(user, pheader, fmt.Sprintf("%d", appID), conds, moduleFields, "")
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -295,8 +295,7 @@ func (lgc *Logics) getSets(user string, pheader http.Header, appID int64) ([]int
 	page := mapstr.MapStr{"start": 0, "limit": common.BKNoLimit}
 	param := &params.SearchParams{Page: page}
 	appIDStr := strconv.FormatInt(appID, 10)
-	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), appIDStr, user, pheader, param)
-
+	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), user, appIDStr, pheader, param)
 	if err != nil {
 		blog.Error("get sets   error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
@@ -308,12 +307,16 @@ func (lgc *Logics) getModules(user string, pheader http.Header, appID int64) ([]
 
 	fields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
 
-	return lgc.getModulesByConds(user, pheader, appID, nil, fields, "")
+	return lgc.getModulesByConds(user, pheader, fmt.Sprintf("%d", appID), nil, fields, "")
 }
 
-func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appID int64, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
-	result, err := lgc.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), user, pheader, conds)
+func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appIDStr string, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
 
+	searchParams := mapstr.MapStr{}
+	searchParams["fields"] = fields
+	searchParams["condition"] = conds
+	searchParams["page"] = mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": sort}
+	result, err := lgc.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appIDStr, pheader, searchParams)
 	if err != nil {
 		blog.Error("getModules   error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
@@ -325,7 +328,6 @@ func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]
 
 	page := mapstr.MapStr{"start": 0, "limit": 2}
 	condition := mapstr.MapStr{common.BKAppIDField: appID}
-
 	param := &params.SearchParams{Condition: condition, Page: page}
 
 	result, err := lgc.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
@@ -334,6 +336,7 @@ func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]
 		blog.Errorf("get app info error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
+
 	return getRspV3DataInfo("getAppInfo", result.Result, result.Code, result.Data)
 }
 
@@ -342,13 +345,17 @@ func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) (
 	if false == result {
 		return nil, code
 	}
-	dataMap, ok := data.([]interface{})
+	dataMap, ok := data.(map[string]interface{})
 	if false == ok {
 		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
-
-	return dataMap, 0
+	dataInfo, ok := dataMap["info"].([]interface{})
+	if false == ok {
+		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
+		return nil, common.CCErrCommJSONUnmarshalFailed
+	}
+	return dataInfo, 0
 }
 
 //func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (bool, error) {
