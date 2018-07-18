@@ -56,7 +56,7 @@ const (
 	BKTableNameBaseProcess = "cc_Process"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
-	SystemTableName             = "cc_System"
+	BKTableNameSystem           = "cc_System"
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
 	BKTableNameOperationLog     = "cc_OperationLog"
@@ -89,7 +89,7 @@ var AllTables = []string{
 	BKTableNameBaseSet,
 	BKTableNameBaseProcess,
 	BKTableNameModuleHostConfig,
-	SystemTableName,
+	BKTableNameSystem,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
 	BKTableNameOperationLog,
