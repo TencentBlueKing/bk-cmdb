@@ -13,19 +13,20 @@
 package v3
 
 import (
-    "io"
-    "net/http"
-    "strings"
-    "errors"
-    
-    "configcenter/src/apimachinery/discovery"
-    "configcenter/src/common"
-    "configcenter/src/common/backbone"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/metadata"
-    cErr "configcenter/src/common/errors"
-    "github.com/emicklei/go-restful"
-    "configcenter/src/common/rdapi"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+	cErr "configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/rdapi"
+	"github.com/emicklei/go-restful"
 )
 
 type HttpClient interface {
@@ -44,9 +45,9 @@ const (
 
 func (s *Service) V3WebService() *restful.WebService {
 	ws := new(restful.WebService)
-    getErrFun := func() cErr.CCErrorIf {
-        return s.Engine.CCErr
-    }
+	getErrFun := func() cErr.CCErrorIf {
+		return s.Engine.CCErr
+	}
 	ws.Path(rootPath).
 		Filter(rdapi.AllGlobalFilter(getErrFun)).
 		Produces(restful.MIME_JSON).
@@ -77,7 +78,27 @@ func (s *Service) Delete(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) Do(req *restful.Request, resp *restful.Response) {
-	response, err := s.Client.Do(req.Request)
+	url := fmt.Sprintf("%s://%s%s", req.Request.URL.Scheme, req.Request.URL.Host, req.Request.RequestURI)
+	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
+	if err != nil {
+		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
+		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
+			Msg:     errors.New("proxy request failed"),
+			ErrCode: common.CCErrProxyRequestFailed,
+			Data:    nil,
+		}); err != nil {
+			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+		}
+		return
+	}
+
+	for k, v := range req.Request.Header {
+		if len(v) > 0 {
+			proxyReq.Header.Set(k, v[0])
+		}
+	}
+
+	response, err := s.Client.Do(proxyReq)
 	if err != nil {
 		blog.Errorf("do request[url: %s] failed, err: %v", req.Request.RequestURI, err)
 
