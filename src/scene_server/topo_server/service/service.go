@@ -167,11 +167,21 @@ func (s *topoService) Actions() []*httpserver.Action {
 				}
 
 				mData := frtypes.MapStr{}
-				if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
-					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
-					return
+				if nil == act.HandlerParseOriginDataFunc {
+					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
+						return
+					}
+				} else {
+					mData, err = act.HandlerParseOriginDataFunc(value)
+					if nil != err {
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
+						return
+					}
 				}
 
 				data, dataErr := act.HandlerFunc(types.ContextParams{
