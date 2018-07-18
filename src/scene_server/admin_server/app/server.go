@@ -13,7 +13,6 @@
 package app
 
 import (
-	"configcenter/src/common/backbone/configcenter"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common/backbone/configcenter"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"

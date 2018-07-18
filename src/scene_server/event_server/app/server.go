@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/scene_server/event_server/distribution"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -32,6 +30,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
+	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
