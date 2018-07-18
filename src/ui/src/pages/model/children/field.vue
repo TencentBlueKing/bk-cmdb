@@ -2298,7 +2298,7 @@
                             }
                             .from-common-label{
                                 display: inline-block;
-                                width:63px;
+                                width:75px;
                                 vertical-align: top;
                                 line-height: 30px;
                                 text-align:right;
@@ -2388,7 +2388,7 @@
                 margin-top: 20px;
                 .from-common-item{
                     .from-common-label{
-                        width: 63px;
+                        width: 75px;
                         display: inline-block;
                         text-align: right;
                         vertical-align: top;
@@ -2438,7 +2438,7 @@
             &.block{
                 width: 100%;
                 .from-common-content{
-                    width: calc(100% - 70px);
+                    width: calc(100% - 83px);
                     input{
                         width: 100% !important;
                     }
