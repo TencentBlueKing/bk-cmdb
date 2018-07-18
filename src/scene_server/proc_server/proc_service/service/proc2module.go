@@ -17,20 +17,20 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
-	user := util.GetActionUser(req)
-	ownerID := util.GetActionOnwerID(req)
-	language := util.GetActionLanguage(req)
+	user := util.GetUser(req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
@@ -44,6 +44,7 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	cell[common.BKAppIDField] = appID
 	cell[common.BKProcIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
+	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
 	params = append(params, cell)
 
 	// TODO use change use chan, process model trigger point
@@ -68,9 +69,9 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 }
 
 func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restful.Response) {
-	user := util.GetActionUser(req)
-	ownerID := util.GetActionOnwerID(req)
-	language := util.GetActionLanguage(req)
+	user := util.GetUser(req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
@@ -105,7 +106,7 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 }
 
 func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
