@@ -88,8 +88,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		out, _ := json.MarshalIndent(process.Config, "", "  ") //ignore err, cause ConfigMap is map[string]string
-		blog.Infof("config updated: \n%s", out)
 		db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())

@@ -65,6 +65,7 @@ const (
 	BKTableNameUserCustom       = "cc_UserCustom"
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
+	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 )
 
 // AllTables alltables
@@ -97,4 +98,5 @@ var AllTables = []string{
 	BKTableNameUserCustom,
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
+	BKTableNameTopoGraphics,
 }
