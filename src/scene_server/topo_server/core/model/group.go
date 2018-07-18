@@ -45,6 +45,9 @@ type Group interface {
 	SetIndex(groupIndex int64)
 	GetIndex() int64
 
+	SetObjectID(objID string)
+	GetObjectID() string
+
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
 
@@ -72,6 +75,13 @@ func (g *group) MarshalJSON() ([]byte, error) {
 
 func (g *group) Origin() metadata.Group {
 	return g.grp
+}
+
+func (g *group) SetObjectID(objID string) {
+	g.grp.ObjectID = objID
+}
+func (g *group) GetObjectID() string {
+	return g.grp.ObjectID
 }
 
 func (g *group) Create() error {
@@ -162,6 +172,7 @@ func (g *group) IsExists() (bool, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
 
 	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
 	if nil != err {
