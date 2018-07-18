@@ -1,15 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package datacollection
 
 import (
@@ -18,19 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/src/common/util"
-
-	"configcenter/src/common"
-
 	"github.com/tidwall/gjson"
 
+	"configcenter/src/common"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 const (
-	// 缓存时间5min
 	cacheTime = time.Minute * 5
 )
 
@@ -39,7 +24,6 @@ const (
 	defaultModelIcon  = "icon-cc-middleware"
 )
 
-// Model 模型元数据结构
 type Model struct {
 	BkClassificationID string `json:"bk_classification_id"`
 	BkObjID            string `json:"bk_obj_id"`
@@ -47,7 +31,6 @@ type Model struct {
 	Keys               string `json:"bk_obj_keys"`
 }
 
-// Attr 属性元数据结构
 type Attr struct {
 	ID            int    `json:"id"`
 	OwnerID       string `json:"bk_supplier_account"`
@@ -58,7 +41,7 @@ type Attr struct {
 	PropertyName  string `json:"bk_property_name"`
 	PropertyType  string `json:"bk_property_type"`
 	AssociationID string `json:"bk_asst_obj_id"`
-	//AssociationID string      `json:"bk_association_id"`
+
 	Option  interface{} `json:"option"`
 	Creator string      `json:"creator"`
 
@@ -69,7 +52,6 @@ type Attr struct {
 	Description string `json:"description"`
 }
 
-// Related 关联数据
 type Related struct {
 	BkInstId   int    `json:"bk_inst_id"`
 	BkInstName string `json:"bk_inst_name"`
@@ -79,7 +61,6 @@ type Related struct {
 	Id         string `json:"id"`
 }
 
-// SingleRelated 单关联数据
 type SingleRelated []Related
 
 type M map[string]interface{}
@@ -105,7 +86,6 @@ type ListResult struct {
 	Data []MapData `json:"data"`
 }
 
-// Result 接口返回信息结构
 type Result struct {
 	ResultBase
 	Data interface{} `json:"data"`
@@ -138,7 +118,6 @@ func (r *Result) mapData() (MapData, error) {
 	return nil, fmt.Errorf("parse map data error: %v", r)
 }
 
-// parseListResult 接口返回数据解析
 func parseListResult(res []byte) (ListResult, error) {
 
 	var lR ListResult
@@ -151,7 +130,6 @@ func parseListResult(res []byte) (ListResult, error) {
 	return lR, nil
 }
 
-// parseDetailResult 接口返回数据解析
 func parseDetailResult(res []byte) (DetailResult, error) {
 
 	var dR DetailResult
@@ -164,7 +142,6 @@ func parseDetailResult(res []byte) (DetailResult, error) {
 	return dR, nil
 }
 
-// parseResult 接口返回数据解析
 func parseResult(res []byte) (Result, error) {
 
 	var r Result
@@ -177,7 +154,6 @@ func parseResult(res []byte) (Result, error) {
 	return r, nil
 }
 
-// parseModel 解析模型元数据
 func (d *Discover) parseModel(msg string) (model *Model, err error) {
 
 	model = &Model{}
@@ -191,7 +167,6 @@ func (d *Discover) parseModel(msg string) (model *Model, err error) {
 	return
 }
 
-// parseData 解析模型数据
 func (d *Discover) parseData(msg string) (data M, err error) {
 
 	dataStr := gjson.Get(msg, "data.data").String()
@@ -202,7 +177,6 @@ func (d *Discover) parseData(msg string) (data M, err error) {
 	return
 }
 
-// parseHost 解析主机身份数据
 func (d *Discover) parseHost(msg string) (data M, err error) {
 
 	dataStr := gjson.Get(msg, "data.host").String()
@@ -213,11 +187,10 @@ func (d *Discover) parseHost(msg string) (data M, err error) {
 	return
 }
 
-// parseAttrs 解析属性列表
 func (d *Discover) parseAttrs(msg string) (fields map[string]metadata.ObjAttDes, err error) {
 
 	fieldsStr := gjson.Get(msg, "data.meta.fields").String()
-	//blog.Debug("create model attr fieldsStr: %s", fieldsStr)
+
 	if err = json.Unmarshal([]byte(fieldsStr), &fields); err != nil {
 		blog.Errorf("create model attr unmarshal error: %s", err)
 		return
@@ -225,27 +198,23 @@ func (d *Discover) parseAttrs(msg string) (fields map[string]metadata.ObjAttDes,
 	return
 }
 
-// parseObjID 解析模型ID
 func (d *Discover) parseObjID(msg string) string {
 	return gjson.Get(msg, "data.meta.model.bk_obj_id").String()
 }
 
-// parseObjID 解析开发商id
 func (d *Discover) parseOwnerId(msg string) string {
 	ownerId := gjson.Get(msg, "data.host.bk_supplier_account").String()
 
-	// 使用默认开发商ID
 	if ownerId == "" {
 		ownerId = bkc.BKDefaultOwnerID
 	}
 	return ownerId
 }
 
-// GetAttrs 查询模型属性
 func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[string]metadata.ObjAttDes) ([]metadata.Attribute, error) {
 
 	cachedAttrs, err := d.GetModelAttrsFromRedis(modelAttrKey)
-	// 差异比较
+
 	if err == nil && len(cachedAttrs) == len(attrs) {
 		blog.Infof("attr exist in redis: %s", modelAttrKey)
 
@@ -265,13 +234,11 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		blog.Infof("attr exist in redis, but not equal: %s", modelAttrKey)
 	}
 
-	// construct the condition
 	cond := M{
 		bkc.BKObjIDField:   objID,
 		bkc.BKOwnerIDField: ownerID,
 	}
 
-	// search attr by condition
 	resp, err := d.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(d.ctx, d.pheader, cond)
 	if err != nil {
 		blog.Errorf("SelectObjectAttWithParams error %s", err.Error())
@@ -285,13 +252,10 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 	return resp.Data, nil
 }
 
-// UpdateOrAppendAttrs 创建或新增模型属性
 func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
-	// parse owner id
 	ownerID := d.parseOwnerId(msg)
 
-	// parse object_id
 	objID := d.parseObjID(msg)
 
 	model, err := d.parseModel(msg)
@@ -299,7 +263,6 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		return fmt.Errorf("parse model error: %s", err)
 	}
 
-	// create model attr
 	attrs, err := d.parseAttrs(msg)
 	if err != nil {
 		blog.Errorf("create model attr unmarshal error: %s", err)
@@ -308,7 +271,6 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 
 	modelAttrKey := d.CreateModelAttrKey(*model, ownerID)
 
-	// get exist attr
 	existAttrs, err := d.GetAttrs(ownerID, objID, modelAttrKey, attrs)
 	if nil != err {
 		return fmt.Errorf("get attr error: %s", err)
@@ -319,21 +281,17 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 		existAttrHash[existAttr.PropertyID] = true
 	}
 
-	// collect final attrs of model
 	finalAttrs := make([]string, 0)
 
-	// batch create model attrs
 	hasDiff := false
 	for propertyId, property := range attrs {
 
 		finalAttrs = append(finalAttrs, propertyId)
 
-		// skip exist attr
 		if existAttrHash[propertyId] {
 			continue
 		}
 
-		// skip default field
 		if propertyId == bkc.BKInstNameField {
 			blog.Infof("skip default field: %s", propertyId)
 			continue
@@ -357,12 +315,10 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 			return fmt.Errorf("create model attr failed: %s", resp.ErrMsg)
 		}
 
-		// updated
 		hasDiff = true
 
 	}
 
-	// flush to redis, ignore fail
 	if hasDiff {
 		attrJs, err := json.Marshal(finalAttrs)
 		if err != nil {
@@ -375,7 +331,6 @@ func (d *Discover) UpdateOrAppendAttrs(msg string) error {
 	return nil
 }
 
-// GetModelFromRedis 从redis中获取模型元数据
 func (d *Discover) GetModelFromRedis(modelKey string) (MapData, error) {
 
 	var nilR = MapData{}
@@ -395,7 +350,6 @@ func (d *Discover) GetModelFromRedis(modelKey string) (MapData, error) {
 
 }
 
-// GetModelFromRedis 从redis中获取模型元数据
 func (d *Discover) GetModelAttrsFromRedis(modelAttrKey string) ([]string, error) {
 
 	var cacheData = make([]string, 0)
@@ -414,7 +368,6 @@ func (d *Discover) GetModelAttrsFromRedis(modelAttrKey string) ([]string, error)
 
 }
 
-// GetInstFromRedis 从redis中获取实例数据
 func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, error) {
 
 	val, err := d.redisCli.Get(instKey).Result()
@@ -432,7 +385,6 @@ func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, err
 
 }
 
-// CreateModelKey 根据model生成key
 func (d *Discover) CreateModelKey(model Model, ownerID string) string {
 	return fmt.Sprintf("cc:v3:model[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
@@ -441,7 +393,6 @@ func (d *Discover) CreateModelKey(model Model, ownerID string) string {
 	)
 }
 
-// CreateModelAttrKey 根据model生成mode-attr的key
 func (d *Discover) CreateModelAttrKey(model Model, ownerID string) string {
 	return fmt.Sprintf("cc:v3:attr[%s:%s:%s]",
 		bkc.CCSystemCollectorUserName,
@@ -450,7 +401,6 @@ func (d *Discover) CreateModelAttrKey(model Model, ownerID string) string {
 	)
 }
 
-// TrySetRedis 尝试写入redis，忽略失败情况
 func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration) {
 	_, err := d.redisCli.Set(key, value, duration).Result()
 	if err != nil {
@@ -461,7 +411,6 @@ func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration)
 	}
 }
 
-// TryUnSetRedis 尝试移除redis缓存，忽略失败情况
 func (d *Discover) TryUnsetRedis(key string) {
 	_, err := d.redisCli.Del(key).Result()
 	if err != nil {
@@ -472,13 +421,10 @@ func (d *Discover) TryUnsetRedis(key string) {
 	}
 }
 
-// GetModel 查询模型元数据
 func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 	modelKey := d.CreateModelKey(model, ownerID)
-	var nilR = ListResult{}
 
-	// try fetch redis cache
-	modelData, err := d.GetModelFromRedis(modelKey)
+	_, err := d.GetModelFromRedis(modelKey)
 	if err == nil {
 		blog.Infof("model exist in redis: %s", modelKey)
 		return true, nil
@@ -486,7 +432,6 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 
 	blog.Infof("%s: get model from redis error: %s", modelKey, err)
 
-	// construct the condition
 	cond := M{
 		bkc.BKObjIDField:   model.BkObjID,
 		bkc.BKOwnerIDField: ownerID,
@@ -515,12 +460,10 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 
 }
 
-// TryCreateModel 创建模型元数据
 func (d *Discover) TryCreateModel(msg string) error {
-	// parse ownerID
+
 	ownerID := d.parseOwnerId(msg)
 
-	// parse model
 	model, err := d.parseModel(msg)
 	if err != nil {
 		return fmt.Errorf("parse model error: %s", err)
@@ -531,20 +474,9 @@ func (d *Discover) TryCreateModel(msg string) error {
 		return fmt.Errorf("get inst error: %s", err)
 	}
 
-	// model exist
 	if exists {
 		blog.Infof("model exist, give up create operation")
 		return nil
-	}
-
-	//create model
-	body := M{
-		bkc.BKClassificationIDField: model.BkClassificationID,
-		bkc.BKObjIDField:            model.BkObjID,
-		bkc.BKObjNameField:          model.BkObjName,
-		bkc.BKOwnerIDField:          ownerID,
-		bkc.BKObjIconField:          defaultModelIcon,
-		bkc.CreatorField:            bkc.CCSystemCollectorUserName,
 	}
 
 	newObj := metadata.Object{}
@@ -568,12 +500,8 @@ func (d *Discover) TryCreateModel(msg string) error {
 	return nil
 }
 
-// GetInst 获取模型实例信息
 func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string) (map[string]interface{}, error) {
 
-	var nilR = DetailResult{}
-
-	// try fetch inst cache from redis
 	instData, err := d.GetInstFromRedis(instKey)
 	if err == nil {
 		blog.Infof("inst exist in redis: %s", instKey)
@@ -582,7 +510,6 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 		blog.Errorf("get inst from redis error: %s", err)
 	}
 
-	// search from db
 	searchCond := &metadata.SearchParams{
 		Condition: M{
 			bkc.BKInstKeyField: instKey,
@@ -612,13 +539,10 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 
 }
 
-// UpdateOrCreateInst 更新或新增模型实例信息
 func (d *Discover) UpdateOrCreateInst(msg string) error {
 
-	// parse ownerID
 	ownerID := d.parseOwnerId(msg)
 
-	// parse object_id
 	objID := d.parseObjID(msg)
 
 	model, err := d.parseModel(msg)
@@ -631,14 +555,12 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return fmt.Errorf("parse data error: %s", err)
 	}
 
-	// try fetch inst cache from redis
 	instKey := bodyData[bkc.BKInstKeyField]
 	instKeyStr, ok := instKey.(string)
 	if !ok || instKeyStr == "" {
 		return fmt.Errorf("skip inst because of empty collect_key: %s", instKeyStr)
 	}
 
-	// fetch key's values
 	keys := strings.Split(model.Keys, ",")
 	inst, err := d.GetInst(ownerID, objID, keys, instKeyStr)
 	if nil != err {
@@ -647,7 +569,6 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	blog.Infof("get inst result: %v", inst)
 
-	// create inst
 	if len(inst) <= 0 {
 		resp, err := d.CoreAPI.TopoServer().Instance().CreateInst(d.ctx, common.BKDefaultOwnerID, objID, d.pheader, gjson.Get(msg, "data.data").Value())
 		if err != nil {
@@ -662,26 +583,23 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return nil
 	}
 
-	// update exist inst
 	instID, err := util.GetInt64ByInterface(inst[bkc.BKInstIDField])
 	if nil != err {
 		return fmt.Errorf("get bk_inst_id failed: %s %s", inst[bkc.BKInstIDField], err.Error())
 	}
 
-	// update info by sample data
 	hasDiff := false
 	for attrId, attrValue := range bodyData {
 
-		// default single relation attr: host
 		if attrId == defaultRelateAttr {
 			if relateList, ok := inst[defaultRelateAttr].([]interface{}); ok && len(relateList) == 1 {
-				// relation exist continue
+
 				relateObj, ok := relateList[0].(map[string]interface{})
 
 				if ok && (relateObj["id"] != "" && relateObj["id"] != "0" && relateObj["id"] != nil) {
 					blog.Infof("skip update exist single relation attr: %s->%v", attrId, attrValue)
 				} else {
-					// update single relation if relation empty
+
 					if attrValue != "" {
 						blog.Debug("[relation changed]  %s: %v ---> %v", attrId, attrValue)
 						inst[attrId] = attrValue
@@ -710,7 +628,6 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return nil
 	}
 
-	// remove some keys from query result
 	delete(inst, bkc.BKObjIDField)
 	delete(inst, bkc.BKOwnerIDField)
 	delete(inst, bkc.BKDefaultField)
@@ -718,22 +635,17 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	delete(inst, bkc.LastTimeField)
 	delete(inst, bkc.CreateTimeField)
 
-	updateJs, err := json.Marshal(info)
+	resp, err := d.CoreAPI.TopoServer().Instance().UpdateInst(d.ctx, ownerID, objID, instID, d.pheader, inst)
 	if err != nil {
-		return fmt.Errorf("marshal inst data error: %s", err)
+		blog.Errorf("search model failed %s", err.Error())
+		return fmt.Errorf("search model failed: %s", err.Error())
 	}
-
-	url := fmt.Sprintf("%s/topo/v1/inst/%s/%s/%d", d.cc.TopoAPI(), ownerID, objID, int(instID))
-	blog.Infof("update inst url=%s, body=%s", url, updateJs)
-
-	res, err := d.requests.PUT(url, nil, updateJs)
-	if nil != err {
-		return fmt.Errorf("update inst error: %s", err)
+	if !resp.Result {
+		blog.Errorf("search model failed %s", resp.ErrMsg)
+		return fmt.Errorf("search model failed: %s", resp.ErrMsg)
 	}
+	blog.Infof("update inst result: %v", resp)
 
-	blog.Infof("update inst result: %s", res)
-
-	// remove bad cache
 	d.TryUnsetRedis(instKeyStr)
 
 	return nil

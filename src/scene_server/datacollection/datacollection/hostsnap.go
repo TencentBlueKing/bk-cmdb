@@ -1,15 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package datacollection
 
 import (
@@ -21,26 +9,20 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/rs/xid"
 	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
 
 	bkcommon "configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/datacollection/common"
-	"configcenter/src/source_controller/common/instdata"
-
-	"time"
-
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage"
 )
 
-// const
 var (
-	// check master lifetime interval
 	getMasterProcIntervalTime = time.Second * 10
 
-	// locker expire duration in redis
 	masterProcLockLiveTime       = getMasterProcIntervalTime + time.Second*10
 	clearMsgChanTime       int64 = 120
 	masterProcLockContent  string
@@ -49,13 +31,12 @@ var (
 	maxconcurrent   = runtime.NumCPU()
 )
 
-// HostSnap define HostSnap
 type HostSnap struct {
 	id           string
 	hostChanName []string
 	msgChan      chan string
 	maxSize      int
-	ts           time.Time // life cycle timestamp
+	ts           time.Time
 	lastMesgTs   time.Time
 	isMaster     bool
 	sync.Mutex
@@ -72,6 +53,7 @@ type HostSnap struct {
 	subscribing bool
 
 	cache *Cache
+	db    storage.DI
 
 	wg *sync.WaitGroup
 }
@@ -81,9 +63,6 @@ type Cache struct {
 	flag  bool
 }
 
-// NewHostSnap  returns new hostsnap object
-//
-// chanName: redis channel name，maxSize: max buffer cache, redisCli: CC redis cli, snapCli: snap redis cli
 func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
@@ -109,9 +88,8 @@ func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client
 	return hostSnapInstance
 }
 
-// Start start main handle routines
 func (h *HostSnap) Start() {
-	//defer h.wg.Done()
+
 	go func() {
 		h.Run()
 		for {
@@ -121,7 +99,6 @@ func (h *HostSnap) Start() {
 	}()
 }
 
-// Run hostsnap main functionality
 func (h *HostSnap) Run() {
 	defer func() {
 		syserr := recover()
@@ -156,7 +133,7 @@ func (h *HostSnap) Run() {
 				}
 			}
 		case msg = <-h.msgChan:
-			// read all from msgChan and lock to prevent clear operation
+
 			h.Lock()
 			h.ts = time.Now()
 			msgs = make([]string, 0, h.maxSize*2)
@@ -178,7 +155,6 @@ func (h *HostSnap) Run() {
 			}
 			h.Unlock()
 
-			// handle them
 			waitCnt = 0
 			for {
 				if waitCnt > h.maxconcurrent*2 {
@@ -247,12 +223,10 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				continue
 			}
 
-			// set snap cache
-			if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-				blog.Errorf("save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+			if err := h.redisCli.Set(RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
+				blog.Errorf("save snapshot %s to redis faile: %s", RedisSnapKeyPrefix+hostid, err.Error())
 			}
 
-			// update host fields value
 			condition := map[string]interface{}{bkcommon.BKHostIDField: host.get(bkcommon.BKHostIDField)}
 			innerip, ok := host.get(bkcommon.BKHostInnerIPField).(string)
 			if !ok {
@@ -266,7 +240,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
 				blog.Infof("update by %v, to %v", condition, setter)
-				if err := instdata.UpdateHostByCondition(setter, condition); err != nil {
+				if err := h.db.UpdateByCondition(bkcommon.BKTableNameBaseHost, setter, condition); err != nil {
 					blog.Error("update host error:", err.Error())
 					continue
 				}
@@ -314,12 +288,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = bkcommon.HostOSTypeEnumLinux //"Linux"
+		ostype = bkcommon.HostOSTypeEnumLinux
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = bkcommon.HostOSTypeEnumWindows // "Windows"
+		ostype = bkcommon.HostOSTypeEnumWindows
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -340,9 +314,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	setter := map[string]interface{}{
 		"bk_cpu":        cupnum,
 		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,                    //Mhz
-		"bk_disk":       disk / 1024 / 1024 / 1024, //GB
-		"bk_mem":        mem / 1024 / 1024,         //MB
+		"bk_cpu_mhz":    CPUMhz,
+		"bk_disk":       disk / 1024 / 1024 / 1024,
+		"bk_mem":        mem / 1024 / 1024,
 		"bk_os_type":    ostype,
 		"bk_os_name":    osname,
 		"bk_os_version": version,
@@ -407,9 +381,7 @@ func getIPS(val *gjson.Result) (ips []string) {
 
 func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 	cloudid := val.Get("cloudid").String()
-	/*if cloudid == "0" || cloudid == "" {
-		cloudid := common.BKCloudIDField
-	}*/
+
 	ips := getIPS(val)
 	if len(ips) > 0 {
 		blog.Infof("handle clouid: %s ips: %v", cloudid, ips)
@@ -432,7 +404,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 			},
 		}
 		result := []map[string]interface{}{}
-		err = instdata.GetHostByCondition(nil, condition, &result, "", 0, 0)
+		err = h.db.GetMutilByCondition(bkcommon.BKTableNameBaseHost, nil, condition, &result, "", 0, 0)
 		if err != nil {
 			blog.Errorf("fetch db error %v", err)
 		}
@@ -450,29 +422,27 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 	return nil
 }
 
-// concede concede when buffer fulled
 func (h *HostSnap) concede() {
 	blog.Info("concede")
 	h.isMaster = false
 	h.subscribing = false
-	val := h.redisCli.Get(common.MasterProcLockKey).Val()
+	val := h.redisCli.Get(MasterProcLockKey).Val()
 	if val != h.id {
-		h.redisCli.Del(common.MasterProcLockKey)
+		h.redisCli.Del(MasterProcLockKey)
 	}
 }
 
-// saveRunning lock master process
 func (h *HostSnap) saveRunning() (ok bool) {
 	var err error
 	if h.isMaster {
 		var val string
-		val, err = h.redisCli.Get(common.MasterProcLockKey).Result()
+		val, err = h.redisCli.Get(MasterProcLockKey).Result()
 		if err != nil {
 			blog.Errorf("master: saveRunning err %v", err)
 			h.isMaster = false
 		} else if val == h.id {
 			blog.Infof("master check : i am still master")
-			h.redisCli.Set(common.MasterProcLockKey, h.id, masterProcLockLiveTime)
+			h.redisCli.Set(MasterProcLockKey, h.id, masterProcLockLiveTime)
 			ok = true
 			h.isMaster = true
 		} else {
@@ -481,7 +451,7 @@ func (h *HostSnap) saveRunning() (ok bool) {
 			ok = false
 		}
 	} else {
-		ok, err = h.redisCli.SetNX(common.MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
+		ok, err = h.redisCli.SetNX(MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("slave: saveRunning err %v", err)
 			h.isMaster = false
@@ -497,7 +467,6 @@ func (h *HostSnap) saveRunning() (ok bool) {
 	return ok
 }
 
-// subChan subscribe message from redis channel
 func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	defer func() {
 		syserr := recover()
@@ -527,7 +496,7 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	blog.Infof("subcribing channel %v", chanName)
 	for {
 		if false == h.isMaster {
-			// not master again, close subscribe to prevent unnecessary subscript
+
 			blog.Info("This is not master process, subChan Close")
 			return
 		}
@@ -551,7 +520,7 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 
 		chanlen = len(h.msgChan)
 		if h.maxSize*2 <= chanlen {
-			//  if msgChan fulled, clear old msgs
+
 			blog.Infof("msgChan full, maxsize %d, len %d", h.maxSize, chanlen)
 			h.clearMsgChan()
 		}
@@ -569,7 +538,6 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	}
 }
 
-//clearMsgChan clear msgchan when msgchan is twice length of maxsize
 func (h *HostSnap) clearMsgChan() {
 	ts := h.ts
 	msgCnt := len(h.msgChan) - h.maxSize
@@ -610,14 +578,14 @@ func (h *HostSnap) setCache(key string, val *HostInst) {
 
 func (h *HostSnap) fetchDB() {
 	cachelock.Lock()
-	h.cache.cache[h.cache.flag] = fetch()
+	h.cache.cache[h.cache.flag] = h.fetch()
 	cachelock.Unlock()
 	go func() {
 		ticker := time.NewTicker(fetchDBInterval)
 		for {
 			select {
 			case <-ticker.C:
-				cache := fetch()
+				cache := h.fetch()
 				cachelock.Lock()
 				h.cache.cache[!h.cache.flag] = cache
 				h.cache.flag = !h.cache.flag
@@ -630,9 +598,9 @@ func (h *HostSnap) fetchDB() {
 	}()
 }
 
-func fetch() *HostCache {
+func (h *HostSnap) fetch() *HostCache {
 	result := []map[string]interface{}{}
-	err := instdata.GetHostByCondition(nil, nil, &result, "", 0, 0)
+	err := h.db.GetMutilByCondition(bkcommon.BKTableNameBaseHost, nil, nil, &result, "", 0, 0)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
@@ -646,7 +614,6 @@ func fetch() *HostCache {
 	return hostcache
 }
 
-// HostInst host inst cache
 type HostInst struct {
 	sync.RWMutex
 	data map[string]interface{}
@@ -704,7 +671,7 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 			} else {
 				channelstatus = bkcommon.CCSuccess
 			}
-			h.redisCli.Set(common.RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
+			h.redisCli.Set(RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
 		}
 	}
 }

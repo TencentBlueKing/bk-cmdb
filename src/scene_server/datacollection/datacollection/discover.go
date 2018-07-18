@@ -1,15 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package datacollection
 
 import (
@@ -22,15 +10,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	bkc "configcenter/src/common"
-	"configcenter/src/common/backbone"
-
 	"github.com/rs/xid"
 	"gopkg.in/redis.v5"
 
+	bkc "configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
-	"configcenter/src/scene_server/datacollection/common"
 )
 
 type Discover struct {
@@ -41,7 +27,7 @@ type Discover struct {
 
 	id          string
 	chanName    string
-	ts          time.Time // life cycle timestamp
+	ts          time.Time
 	msgChan     chan string
 	interrupt   chan error
 	doneCh      chan struct{}
@@ -92,14 +78,11 @@ func NewDiscover(ctx context.Context, chanName string, maxSize int, redisCli, su
 	return discover
 }
 
-// Start start main handle routines
 func (d *Discover) Start() {
 
-	// run discover in another goroutine
 	go func() {
 		d.Run()
 
-		// restart discover after panic recover
 		for {
 			time.Sleep(10 * time.Second)
 			NewDiscover(d.ctx, d.chanName, d.maxSize, d.redisCli, d.subCli, d.Engine).Run()
@@ -107,7 +90,6 @@ func (d *Discover) Start() {
 	}()
 }
 
-// Run discover main functionality
 func (d *Discover) Run() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -136,7 +118,6 @@ func (d *Discover) Run() {
 		blog.Infof("master process exists, recheck after %v ", d.getMasterInterval)
 	}
 
-	// 尝试成为master/订阅消息并处理
 	for {
 		select {
 		case <-ticker.C:
@@ -147,7 +128,7 @@ func (d *Discover) Run() {
 				}
 			}
 		case msg = <-d.msgChan:
-			// read all from msgChan and lock to prevent clear operation
+
 			d.Lock()
 
 			msgs = make([]string, 0, d.maxSize*2)
@@ -157,7 +138,7 @@ func (d *Discover) Run() {
 			d.ts = time.Now()
 
 		RLoop:
-			// 持续读取1s通道内的消息，最多读取d.maxSize个
+
 			for {
 				select {
 				case <-time.After(time.Second):
@@ -173,17 +154,14 @@ func (d *Discover) Run() {
 			}
 			d.Unlock()
 
-			// 消息处理逻辑？
 			delayHandleCnt = 0
 			for {
 
-				// 延迟处理的次数超过一定程度？
 				if delayHandleCnt > d.maxConcurrent*2 {
 					blog.Warnf("msg process delay %d times, reset handlers", delayHandleCnt)
 					close(d.resetHandle)
 					d.resetHandle = make(chan struct{})
 
-					// 延迟处理计数清零
 					delayHandleCnt = 0
 				}
 
@@ -197,7 +175,6 @@ func (d *Discover) Run() {
 					break
 				}
 
-				// 消息处理进程数超限，延迟处理
 				delayHandleCnt++
 				blog.Warnf("msg process delay again(%d times)", delayHandleCnt)
 
@@ -211,7 +188,6 @@ func (d *Discover) Run() {
 	}
 }
 
-// subChan subscribe message from redis channel
 func (d *Discover) subChan() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -241,13 +217,13 @@ func (d *Discover) subChan() {
 	for {
 
 		if !d.isMaster {
-			// not master again, close subscribe to prevent unnecessary subscribe
+
 			blog.Infof("i am not master, stop subscribe")
 			return
 		}
 
 		received, err := subChan.Receive()
-		//blog.Debug("start receive message: %v", received)
+
 		if nil != err {
 
 			if err == redis.Nil || err == io.EOF {
@@ -265,10 +241,9 @@ func (d *Discover) subChan() {
 			continue
 		}
 
-		// 生产者生产消息速度大于消费者，自动清理超出的历史消息
 		chanLen := len(d.msgChan)
 		if d.maxSize*2 <= chanLen {
-			//  if msgChan fulled, clear old msgs
+
 			blog.Infof("msgChan full, maxsize: %d, current: %d", d.maxSize, chanLen)
 			d.clearOldMsg()
 		}
@@ -286,7 +261,6 @@ func (d *Discover) subChan() {
 	}
 }
 
-//clearOldMsg clear old message when msgChan is twice length of maxsize
 func (d *Discover) clearOldMsg() {
 
 	ts := d.ts
@@ -300,7 +274,6 @@ func (d *Discover) clearOldMsg() {
 		d.Lock()
 		cnt++
 
-		// 清理时，若发生新的消息写入，则重新获取消息数量？
 		if ts != d.ts {
 			msgCnt = len(d.msgChan) - d.maxSize
 		} else {
@@ -313,7 +286,6 @@ func (d *Discover) clearOldMsg() {
 		d.Unlock()
 	}
 
-	// 确认最终清理完毕？（清理时间等于最后一次的消息写入时间）
 	if ts == d.ts {
 		close(d.resetHandle)
 	}
@@ -321,30 +293,28 @@ func (d *Discover) clearOldMsg() {
 	blog.Warnf("msgChan cleared: %d", cnt)
 }
 
-// releaseMaster releaseMaster when buffer fulled
 func (d *Discover) releaseMaster() {
 
-	val := d.redisCli.Get(common.MasterDisLockKey).Val()
+	val := d.redisCli.Get(MasterDisLockKey).Val()
 	if val != d.id {
-		d.redisCli.Del(common.MasterDisLockKey)
+		d.redisCli.Del(MasterDisLockKey)
 	}
 
 	d.isMaster, d.isSubing = false, false
 }
 
-// lockMaster lock master process
 func (d *Discover) lockMaster() (ok bool) {
 	var err error
 
 	if d.isMaster {
 		var val string
-		val, err = d.redisCli.Get(common.MasterDisLockKey).Result()
+		val, err = d.redisCli.Get(MasterDisLockKey).Result()
 		if err != nil {
 			d.isMaster = false
 			blog.Errorf("discover-master: lock master err %v", err)
 		} else if val == d.id {
 			blog.Infof("discover-master check : i am still master")
-			d.redisCli.Set(common.MasterDisLockKey, d.id, d.masterProcLockLiveTime)
+			d.redisCli.Set(MasterDisLockKey, d.id, d.masterProcLockLiveTime)
 			ok = true
 			d.isMaster = true
 		} else {
@@ -353,7 +323,7 @@ func (d *Discover) lockMaster() (ok bool) {
 			ok = false
 		}
 	} else {
-		ok, err = d.redisCli.SetNX(common.MasterDisLockKey, d.id, d.masterProcLockLiveTime).Result()
+		ok, err = d.redisCli.SetNX(MasterDisLockKey, d.id, d.masterProcLockLiveTime).Result()
 		if err != nil {
 			d.isMaster = false
 			blog.Errorf("discover-slave: lock master err %v", err)
@@ -390,7 +360,6 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			return nil
 		default:
 
-			// 1- try create model
 			err := d.TryCreateModel(msg)
 			if err != nil {
 				blog.Errorf("create model err: %s"+
@@ -398,7 +367,6 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				continue
 			}
 
-			// 2- try create model attr
 			err = d.UpdateOrAppendAttrs(msg)
 			if err != nil {
 				blog.Errorf("create attr err: %s"+
@@ -406,7 +374,6 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				continue
 			}
 
-			// 3- create inst
 			err = d.UpdateOrCreateInst(msg)
 			if err != nil {
 				blog.Errorf("create inst err: %s"+
@@ -418,6 +385,5 @@ func (d *Discover) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		}
 
 	}
-
 	return nil
 }
