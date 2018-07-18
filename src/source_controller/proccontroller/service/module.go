@@ -26,7 +26,7 @@ import (
 
 // DeleteProc2Module delete proc module config
 func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	input := make(map[string]interface{})
@@ -65,7 +65,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 
 func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	// get the error factory by the language
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -95,7 +95,7 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 
 func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	// get the error factory by the language
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
