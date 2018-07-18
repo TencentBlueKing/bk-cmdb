@@ -10,35 +10,26 @@
  * limitations under the License.
  */
 
-package distribution
+package datacollection
 
 import (
-	redis "gopkg.in/redis.v5"
-
-	"configcenter/src/scene_server/event_server/identifier"
-	"configcenter/src/storage"
+	"configcenter/src/common"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
-	chErr := make(chan error)
+const (
+	RedisSnapKeyPrefix        = common.BKCacheKeyV3Prefix + "snapshot:"
+	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
+	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
+	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
+)
 
-	eh := &EventHandler{cache: cache}
-	go func() {
-		chErr <- eh.StartHandleInsts()
-	}()
+const (
+	MaxSnapSize     = 2000
+	MaxDiscoverSize = 1000
+)
 
-	dh := &DistHandler{cache: cache}
-	go func() {
-		chErr <- dh.StartDistribute()
-	}()
-
-	ih := identifier.NewIdentifierHandler(cache, db)
-	go func() {
-		chErr <- ih.StartHandleInsts()
-	}()
-
-	return <-chErr
-}
-
-type EventHandler struct{ cache *redis.Client }
-type DistHandler struct{ cache *redis.Client }
+const (
+	DiscoverChan = "discover"
+	SnapShotChan = "snapshot"
+)

@@ -17,6 +17,7 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/storage"
 )
@@ -40,7 +41,7 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
 	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
