@@ -70,10 +70,10 @@ func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 		// Attention:
 		// do not change the check sequences.
-	case string(*u) == rootPath+"object":
+	case string(*u) == rootPath+"/object":
 		from, to, isHit = rootPath, topoRoot, true
 
-	case string(*u) == rootPath+"objects":
+	case string(*u) == rootPath+"/objects":
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/object/"):
