@@ -26,7 +26,7 @@ import (
 
 func (ps *ProctrlServer) CreateConfigTemp(req *restful.Request, resp *restful.Response) {
     // get the language
-    language := util.GetActionLanguage(req)
+    language := util.GetLanguage(req.Request.Header)
     // get the error factory by the language
     defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
     
@@ -55,7 +55,7 @@ func (ps *ProctrlServer) CreateConfigTemp(req *restful.Request, resp *restful.Re
 
 func (ps *ProctrlServer) DeleteConfigTemp(req *restful.Request, resp *restful.Response) {
     // get the language
-    language := util.GetActionLanguage(req)
+    language := util.GetLanguage(req.Request.Header)
     // get the error factory by the language
     defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -91,7 +91,7 @@ func (ps *ProctrlServer) DeleteConfigTemp(req *restful.Request, resp *restful.Re
 
 func (ps *ProctrlServer) UpdateConfigTemp(req *restful.Request, resp *restful.Response) {
     // get the language
-    language := util.GetActionLanguage(req)
+    language := util.GetLanguage(req.Request.Header)
     // get the error factory by the language
     defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -129,7 +129,7 @@ func (ps *ProctrlServer) UpdateConfigTemp(req *restful.Request, resp *restful.Re
 
 func (ps *ProctrlServer) QueryConfigTemp (req *restful.Request, resp *restful.Response) {
     // get the language
-    language := util.GetActionLanguage(req)
+    language := util.GetLanguage(req.Request.Header)
     // get the error factory by the language
     defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 

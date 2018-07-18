@@ -383,7 +383,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	rspDataV3Map := result.Data.(map[string]interface{})
+	rspDataV3Map := result.Data
 	resData := make(map[string]interface{})
 	resData["appId"] = rspDataV3Map[common.BKAppIDField]
 	resData["success"] = true
