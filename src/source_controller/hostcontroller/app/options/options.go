@@ -13,11 +13,11 @@
 package options
 
 import (
-	"configcenter/src/common/core/cc/config"
+	"github.com/spf13/pflag"
 
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
-	"github.com/spf13/pflag"
 )
 
 //ServerOption define option of server in flags

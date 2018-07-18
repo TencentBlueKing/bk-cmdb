@@ -40,7 +40,7 @@ type InstOperationInterface interface {
 	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
 	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
-	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
+	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error)
 	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
@@ -507,7 +507,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	query := &metatype.QueryInput{}
-	query.Condition = cond
+	query.Condition = cond.ToMapStr()
 
 	_, insts, err := c.FindInst(params, obj, query, false)
 	if nil != err {
@@ -677,12 +677,13 @@ func (c *commonInst) searchAssociationInst(params types.ContextParams, objID str
 }
 
 func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
-
-	if nil != query {
+	results = []interface{}{}
+	if nil == query {
+		query = &metatype.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		query.Condition = cond
+		query.Condition = cond.ToMapStr()
 	}
 
 	_, insts, err := c.FindInst(params, obj, query, false)
@@ -740,11 +741,13 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 
 func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
 
-	if nil != query {
+	results = []interface{}{}
+	if nil == query {
+		query = &metatype.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		query.Condition = cond
+		query.Condition = cond.ToMapStr()
 	}
 
 	_, insts, err := c.FindInst(params, obj, query, false)
@@ -800,33 +803,38 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 	return 0, results, nil
 }
 
-func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
+func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error) {
 
-	if nil != query {
+	if nil == query {
+		query = &metatype.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		query.Condition = cond
+		query.Condition = cond.ToMapStr()
 	}
 
 	_, insts, err := c.FindInst(params, obj, query, false)
 	if nil != err {
+		blog.Errorf("[operation-inst] failed to find the inst, error info is %s", err.Error())
 		return 0, nil, err
 	}
 
 	for _, inst := range insts {
 
+		//fmt.Println("the insts:", inst.GetValues(), query)
 		id, err := inst.GetInstID()
 		if nil != err {
+			blog.Errorf("[operation-inst] failed to find the inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
 
 		name, err := inst.GetInstName()
 		if nil != err {
+			blog.Errorf("[operation-inst] failed to find the inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
 
-		commonInst := commonInstTopo{}
+		commonInst := commonInstTopo{Children: []instNameAsst{}}
 		commonInst.ObjectName = inst.GetObject().GetName()
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
@@ -835,11 +843,13 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 
 		_, parentInsts, err := c.FindInstParentTopo(params, inst.GetObject(), id, nil)
 		if nil != err {
+			blog.Errorf("[operation-inst] failed to find the inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
 
 		_, childInsts, err := c.FindInstChildTopo(params, inst.GetObject(), id, nil)
 		if nil != err {
+			blog.Errorf("[operation-inst] failed to find the inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
 
@@ -1002,6 +1012,7 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 	}
 
 	if common.CCSuccess != rsp.Code {
+
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond, rsp.ErrMsg)
 		return 0, nil, params.Err.Error(rsp.Code)
 	}
@@ -1030,7 +1041,7 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 			}
 			instVals, err := c.convertInstIDIntoStruct(params, attrAsst, strings.Split(asstFieldValue, ","), needAsstDetail)
 			if nil != err {
-				blog.Errorf("[operation-inst] failed to convert association asst(%#v) value(%s), error info is %s", attrAsst, asstFieldValue, err.Error())
+				blog.Errorf("[operation-inst] failed to convert association asst(%#v) origin value(%#v) value(%s), error info is %s", attrAsst, instInfo, asstFieldValue, err.Error())
 				return 0, nil, err
 			}
 			rsp.Data.Info[idx].Set(attrAsst.ObjectAttID, instVals)
