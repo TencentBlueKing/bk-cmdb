@@ -74,12 +74,12 @@
                                 </li>
                             </ul>
                             <div class="list-content-hidden" v-show="item.isShow">
-                                <form class="from-common clearfix">
+                                <form class="form-common clearfix">
                                     <div class="clearfix mb30">
                                         <h3>{{$t('ModelManagement["字段配置"]')}}</h3>
-                                        <div class="from-common-item" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["中文名"]')}}<span class=""> * </span></label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["中文名"]')}}<span class=""> * </span></label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" :disabled="isReadOnly" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入字段名称\']')" v-model.trim="curFieldInfo['bk_property_name']"
                                                 maxlength="15"
                                                 data-parsley-required="true"
@@ -91,23 +91,23 @@
                                                 >
                                             </div>
                                         </div>
-                                        <div class="from-common-item disabled tr">
-                                            <label class="from-common-label">{{$t('ModelManagement["英文名"]')}}<span class=""> * </span></label>
-                                            <div class="from-common-content interior-width-control tl">
+                                        <div class="form-common-item disabled tr">
+                                            <label class="form-common-label">{{$t('ModelManagement["英文名"]')}}<span class=""> * </span></label>
+                                            <div class="form-common-content interior-width-control tl">
                                                 <input type="text" disabled class="from-input" name="" value="" :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')" v-model.trim="item['bk_property_id']">
                                             </div>
                                         </div>
-                                        <div class="from-common-item tr" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["单位"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item tr" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["单位"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入单位\']')"
                                                 :disabled="isReadOnly"
                                                 v-model.trim="curFieldInfo['unit']">
                                             </div>
                                         </div>
-                                        <div class="from-common-item block mt20" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["提示语"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item block mt20" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["提示语"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" :disabled="isReadOnly" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入提示语\']')" v-model.trim="curFieldInfo['placeholder']">
                                             </div>
                                         </div>
@@ -115,13 +115,13 @@
                                     <!-- 数字 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'int'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -141,16 +141,16 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item mt20" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["最小值"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.trim="item.option.min" v-if="item.option" :disabled="isReadOnly">
                                                 <span class="error-msg" v-show="isIntErrorShow.min">{{$t('Common["内容不合法"]')}}</span>
                                             </div>
                                         </div>
-                                        <div class="from-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item mt20 ml10" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["最大值"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.trim="item.option.max" v-if="item.option" :disabled="isReadOnly">
                                                 <span class="error-msg" v-show="isIntErrorShow.max">{{$t('Common["内容不合法"]')}}</span>
                                             </div>
@@ -159,13 +159,13 @@
                                     <!-- 长字符 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'longchar'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -185,9 +185,9 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('Common["正则验证"]')}}</label>
-                                            <div class="from-common-content reg-verification ">
+                                        <div class="form-common-item mt20" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('Common["正则验证"]')}}</label>
+                                            <div class="form-common-content reg-verification ">
                                                 <input type="text" class="from-input" name="" placeholder="" v-model.trim="item.option" :disabled="isReadOnly">
                                             </div>
                                         </div>
@@ -195,13 +195,13 @@
                                     <!-- 短字符 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'singlechar'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -221,9 +221,9 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="from-common-item mt20" :class="{'disabled': isReadOnly}">
-                                            <label class="from-common-label">{{$t('Common["正则验证"]')}}</label>
-                                            <div class="from-common-content reg-verification ">
+                                        <div class="form-common-item mt20" :class="{'disabled': isReadOnly}">
+                                            <label class="form-common-label">{{$t('Common["正则验证"]')}}</label>
+                                            <div class="form-common-content reg-verification ">
                                                 <input type="text" class="from-input" name="" placeholder="" v-model.trim="item.option" :disabled="isReadOnly">
                                             </div>
                                         </div>
@@ -231,13 +231,13 @@
                                     <!-- 枚举 -->
                                     <div class="mt20 clearfix" v-if="item['bk_property_type'] === 'enum'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -295,13 +295,13 @@
                                     <!-- 日期 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'date'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -319,13 +319,13 @@
                                     <!-- 时间 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'time'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -343,13 +343,13 @@
                                     <!-- 单关联 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'singleasst'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -357,9 +357,9 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="from-common-item selcet-width-control mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
-                                            <div class="from-common-content">
+                                        <div class="form-common-item selcet-width-control mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
+                                            <div class="form-common-content">
                                                 <bk-select
                                                     disabled
                                                     :selected="curModelType"
@@ -382,13 +382,13 @@
                                     <!-- 多关联 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'multiasst'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30 correlate-single-control">
+                                        <div class="form-common-item form-common-item2 pl30 correlate-single-control">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -396,9 +396,9 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="from-common-item mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
-                                            <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
-                                            <div class="from-common-content selcet-width-control">
+                                        <div class="form-common-item mt20" :class="{'disabled':item['ispre'] || isReadOnly}">
+                                            <label class="form-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
+                                            <div class="form-common-content selcet-width-control">
                                                 <bk-select
                                                     disabled
                                                     :selected="curModelType"
@@ -421,13 +421,13 @@
                                     <!-- 用户 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'objuser'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -445,13 +445,13 @@
                                     <!-- 时区 -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'timezone'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -469,13 +469,13 @@
                                     <!-- bool -->
                                     <div class="mt20 clearfix" v-show="item['bk_property_type'] === 'bool'">
                                         <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                        <div class="from-common-item disabled">
-                                            <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                            <div class="from-common-content interior-width-control">
+                                        <div class="form-common-item disabled">
+                                            <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                            <div class="form-common-content interior-width-control">
                                                 <input type="text" disabled class="from-input" name="" placeholder="" :value="formatFieldType(item['bk_property_type'])">
                                             </div>
                                         </div>
-                                        <div class="from-common-item from-common-item2 pl30">
+                                        <div class="form-common-item form-common-item2 pl30">
                                             <div class="from-selcet-wrapper mr30">
                                                 <label class="bk-form-checkbox bk-checkbox-small">
                                                     <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -505,12 +505,12 @@
                     <div class="add-field-detail">
                         <div class="bg-titel" @click="closeAddFieldBox"><img src="../../../common/images/down_icon.png" alt="" ></div>
                         <div class="border-control">
-                            <form class="from-common clearfix">
+                            <form class="form-common clearfix">
                                 <div class="clearfix mb30">
                                     <h3>{{$t('ModelManagement["字段配置"]')}}</h3>
-                                    <div class="from-common-item tl">
-                                        <label class="from-common-label">{{$t('ModelManagement["中文名"]')}}<span class=""> * </span></label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item tl">
+                                        <label class="form-common-label">{{$t('ModelManagement["中文名"]')}}<span class=""> * </span></label>
+                                        <div class="form-common-content interior-width-control">
                                             <input type="text" class="from-input" name="" placeholder="" v-model.trim="newFieldInfo.propertyName"
                                             maxlength="15"
                                             data-parsley-required="true"
@@ -522,10 +522,10 @@
                                             >
                                         </div>
                                     </div>
-                                    <div class="from-common-item tr">
-                                        <label class="from-common-label">{{$t('ModelManagement["英文名"]')}}<span class=""> * </span></label>
-                                        <div class="from-common-content interior-width-control tl">
-                                            <input type="text" class="from-input" name="" value="" :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')" v-model.trim="newFieldInfo.propertyId"
+                                    <div class="form-common-item tr">
+                                        <label class="form-common-label">{{$t('ModelManagement["英文名"]')}}<span class=""> * </span></label>
+                                        <div class="form-common-content interior-width-control tl">
+                                            <input type="text" class="from-input" name="" value="" v-model.trim="newFieldInfo.propertyId"
                                             maxlength="20"
                                             data-parsley-required="true"
                                             :data-parsley-required-message="$t('ModelManagement[\'该字段是必填项\']')"
@@ -535,16 +535,17 @@
                                             data-parsley-trigger="input blur"
                                             >
                                         </div>
+                                        <i class="icon-info-png" v-tooltip="$t('ModelManagement[\'下划线/数字/字母\']')"></i>
                                     </div>
-                                    <div class="from-common-item tr">
-                                        <label class="from-common-label">{{$t('ModelManagement["单位"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item tr">
+                                        <label class="form-common-label">{{$t('ModelManagement["单位"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <input type="text" class="from-input" name="" value="" :placeholder="$t('ModelManagement[\'请输入单位\']')" v-model.trim="newFieldInfo.unit">
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20 block">
-                                        <label class="from-common-label">{{$t('ModelManagement["提示语"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mt20 block">
+                                        <label class="form-common-label">{{$t('ModelManagement["提示语"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <input type="text" class="from-input" name="" value="" :placeholder="$t('ModelManagement[\'请输入提示语\']')" v-model.trim="newFieldInfo.placeholder">
                                         </div>
                                     </div>
@@ -553,9 +554,9 @@
                                 <!-- 数字 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'int'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -570,7 +571,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -590,16 +591,16 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20">
-                                        <label class="from-common-label">{{$t('ModelManagement["最小值"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mt20">
+                                        <label class="form-common-label">{{$t('ModelManagement["最小值"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最小值\']')" v-model.trim="newFieldInfo.option.min">
                                             <span class="error-msg" v-show="isIntErrorShow.min">{{$t('Common["内容不合法"]')}}</span>
                                         </div>
                                     </div>
-                                    <div class="from-common-item  mt20 tr">
-                                        <label class="from-common-label">{{$t('ModelManagement["最大值"]')}}</label>
-                                        <div class="from-common-content interior-width-control tl">
+                                    <div class="form-common-item  mt20 tr">
+                                        <label class="form-common-label">{{$t('ModelManagement["最大值"]')}}</label>
+                                        <div class="form-common-content interior-width-control tl">
                                             <input type="text" maxlength="11" class="from-input" name="" :placeholder="$t('ModelManagement[\'请输入最大值\']')" v-model.trim="newFieldInfo.option.max">
                                             <span class="error-msg" v-show="isIntErrorShow.max">{{$t('Common["内容不合法"]')}}</span>
                                         </div>
@@ -608,9 +609,9 @@
                                 <!-- 长字符 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'longchar'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -625,7 +626,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -645,9 +646,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20">
-                                        <label class="from-common-label">{{$t('Common["正则验证"]')}}</label>
-                                        <div class="from-common-content reg-verification ">
+                                    <div class="form-common-item mt20">
+                                        <label class="form-common-label">{{$t('Common["正则验证"]')}}</label>
+                                        <div class="form-common-content reg-verification ">
                                             <input type="text" class="from-input" name="" placeholder="" v-model.trim="newFieldInfo.option">
                                         </div>
                                     </div>
@@ -655,9 +656,9 @@
                                 <!-- 短字符 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'singlechar'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -672,7 +673,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -692,9 +693,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20">
-                                        <label class="from-common-label">{{$t('Common["正则验证"]')}}</label>
-                                        <div class="from-common-content reg-verification ">
+                                    <div class="form-common-item mt20">
+                                        <label class="form-common-label">{{$t('Common["正则验证"]')}}</label>
+                                        <div class="form-common-content reg-verification ">
                                             <input type="text" class="from-input" name="" placeholder="" v-model.trim="newFieldInfo.option">
                                         </div>
                                     </div>
@@ -702,9 +703,9 @@
                                 <!-- 枚举 -->
                                 <div class="mt20 clearfix" v-if="newFieldInfo.propertyType === 'enum'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -719,7 +720,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -775,9 +776,9 @@
                                 <!-- 日期 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'date'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -792,7 +793,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -810,9 +811,9 @@
                                 <!-- 时间 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'time'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -827,7 +828,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -845,9 +846,9 @@
                                 <!-- 单关联 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'singleasst'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -862,7 +863,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -870,9 +871,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20">
-                                        <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
-                                        <div class="from-common-content selcet-width-control">
+                                    <div class="form-common-item mt20">
+                                        <label class="form-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
+                                        <div class="form-common-content selcet-width-control">
                                             <bk-select
                                                 ref="singleasstSelect"
                                                 :selected="''"
@@ -896,9 +897,9 @@
                                 <!-- 多关联 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'multiasst'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -913,7 +914,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -921,9 +922,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="from-common-item mt20">
-                                        <label class="from-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
-                                        <div class="from-common-content selcet-width-control tc">
+                                    <div class="form-common-item mt20">
+                                        <label class="form-common-label">{{$t('ModelManagement["关联模型"]')}}</label>
+                                        <div class="form-common-content selcet-width-control tc">
                                             <bk-select
                                                 ref="multiasstSelect"
                                                 :selected="''"
@@ -947,9 +948,9 @@
                                 <!-- 用户 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'objuser'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -964,7 +965,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -982,9 +983,9 @@
                                 <!-- 时区 -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'timezone'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -999,7 +1000,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -1017,9 +1018,9 @@
                                 <!-- bool -->
                                 <div class="mt20 clearfix" v-show="newFieldInfo.propertyType === 'bool'">
                                     <h3>{{$t('ModelManagement["选项"]')}}</h3>
-                                    <div class="from-common-item mr0">
-                                        <label class="from-common-label">{{$t('ModelManagement["类型"]')}}</label>
-                                        <div class="from-common-content interior-width-control">
+                                    <div class="form-common-item mr0">
+                                        <label class="form-common-label">{{$t('ModelManagement["类型"]')}}</label>
+                                        <div class="form-common-content interior-width-control">
                                             <div class="select-content tc">
                                                 <bk-select
                                                     :selected.sync="newFieldInfo.propertyType"
@@ -1034,7 +1035,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="from-common-item from-common-item2 pl30">
+                                    <div class="form-common-item form-common-item2 pl30">
                                         <div class="from-selcet-wrapper mr30">
                                             <label class="bk-form-checkbox bk-checkbox-small">
                                                 <i class="bk-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</i>
@@ -2271,7 +2272,7 @@
                             bottom: 0;
                         }
                     }
-                    .from-common{
+                    .form-common{
                         width: 700px;
                         /*background: #f9f9f9;*/
                         padding: 30px 19px 30px 17px;
@@ -2284,26 +2285,26 @@
                             margin:0;
                             margin-bottom:10px;
                         }
-                        .from-common-item{
+                        .form-common-item{
                             width:213px;
                             margin-right:0;
-                            &.from-common-item2{
+                            &.form-common-item2{
                                 width: 66.7%;
                             }
                             &.block{
                                 width: 100%;
-                                .from-common-content{
+                                .form-common-content{
                                     width: calc(100% - 92px);
                                 }
                             }
-                            .from-common-label{
+                            .form-common-label{
                                 display: inline-block;
                                 width:75px;
                                 vertical-align: top;
                                 line-height: 30px;
                                 text-align:right;
                             }
-                            .from-common-content{
+                            .form-common-content{
                                 // margin-left:5px;
                                 width:128px;
                                 input{
@@ -2383,11 +2384,11 @@
                     line-height:1;
                 }
             }
-            .from-common{
+            .form-common{
                 width: 661px;
                 margin-top: 20px;
-                .from-common-item{
-                    .from-common-label{
+                .form-common-item{
+                    .form-common-label{
                         width: 75px;
                         display: inline-block;
                         text-align: right;
@@ -2414,7 +2415,7 @@
             }
         }
     }
-    .from-common{
+    .form-common{
         color: $primaryHoverColor;
         h3{
             font-size:14px;
@@ -2429,15 +2430,24 @@
         .bk-form-radio{
             margin-right: 10px;
         }
-        .from-common-item{
+        .form-common-item{
             width: 33.3%;
             float:left;
-            &.from-common-item2{
+            .icon-info-png{
+                position: absolute;
+                display: inline-block;
+                top: 7px;
+                right: -20px;
+                width: 16px;
+                height: 16px;
+                background: url(../../../common/images/icon/icon-info.png);
+            }
+            &.form-common-item2{
                 width: 66.7%;
             }
             &.block{
                 width: 100%;
-                .from-common-content{
+                .form-common-content{
                     width: calc(100% - 83px);
                     input{
                         width: 100% !important;
@@ -2459,12 +2469,12 @@
                     font-style: normal;
                 }
             }
-            .from-common-label{
+            .form-common-label{
                 span{
                     color:#f05d5d;
                 }
             }
-            .from-common-content{
+            .form-common-content{
                 display:inline-block;
                 margin-left:2px;
                 width: 130px;
