@@ -15,6 +15,8 @@ package operation
 import (
 	"time"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -115,4 +117,13 @@ type Header struct {
 type Ref struct {
 	RefID   int    `json:"ref_id"`
 	RefName string `json:"ref_name"`
+}
+
+type ExportObjectCondition struct {
+	ObjIDS []string `json:"condition"`
+}
+
+type ImportObjectData struct {
+	Meta mapstr.MapStr           `json:"meta"`
+	Attr map[int64]mapstr.MapStr `json:"attr"`
 }
