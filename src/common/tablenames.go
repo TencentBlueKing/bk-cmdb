@@ -100,3 +100,27 @@ var AllTables = []string{
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
 }
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKTableNameBaseApp
+	case BKInnerObjIDSet:
+		return BKTableNameBaseSet
+	case BKInnerObjIDModule:
+		return BKTableNameBaseModule
+	case BKINnerObjIDObject:
+		return BKTableNameBaseInst
+	case BKInnerObjIDHost:
+		return BKTableNameBaseHost
+	case BKInnerObjIDProc:
+		return BKTableNameBaseProcess
+	case BKInnerObjIDPlat:
+		return BKTableNameBasePlat
+	case BKTableNameInstAsst:
+		return BKTableNameInstAsst
+	default:
+		return BKTableNameBaseInst
+	}
+}

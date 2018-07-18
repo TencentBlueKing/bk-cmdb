@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -108,7 +109,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		break
 	}
 	<-ctx.Done()
-	blog.V(3).Info("process stoped")
+	blog.V(0).Info("process stoped")
 	return nil
 }
 
@@ -119,14 +120,18 @@ type MigrateServer struct {
 	ConfigCenter *configures.ConfCenter
 }
 
+var configLock sync.Mutex
+
 func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	configLock.Lock()
+	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
 
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
-		blog.Infof("config updated: \n%s", out)
+		blog.V(3).Infof("config updated: \n%s", out)
 		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]

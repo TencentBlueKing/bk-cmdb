@@ -42,7 +42,7 @@ func NewFromConfig(cfg RedisConfig) (*redis.Client, error) {
 	}
 	var client *redis.Client
 	if cfg.MasterName == "" {
-		if strings.Contains(cfg.Address, ":") {
+		if !strings.Contains(cfg.Address, ":") {
 			cfg.Address = cfg.Address + ":" + cfg.Port
 		}
 		option := &redis.Options{
