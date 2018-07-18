@@ -57,7 +57,7 @@
                         </template>
                         <template v-else>
                             <div class="model-content" v-if="topoList.length != 0">
-                                <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
+                                <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')" :title="$t('Common[\'编辑\']')">
                                     <i class="icon icon-cc-edit"></i>
                                 </bk-button>
                                 <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -79,7 +79,7 @@
                         </template>
                     </div>
                     <div class="no-model-prompting tc" v-show="topoList.length == 0 || isCreateShow">
-                        <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')">
+                        <bk-button v-if="curTempClassify['bk_classification_id'] !== 'bk_biz_topo' && curTempClassify['bk_classification_id'] !== 'bk_host_manage'" type="primary" class="topo-btn edit" @click="popShow('edit')" :title="$t('Common[\'编辑\']')">
                             <i class="icon icon-cc-edit"></i>
                         </bk-button>
                         <bk-button type="danger" class="topo-btn del" v-if="curTempClassify['bk_classification_type']!=='inner'" @click="deleteClassify">
@@ -92,7 +92,7 @@
                         <transition name="topo-disable-list">
                             <div class="topo-disable tl" v-show="isShowDisableList">
                                 <label class="disable-title">
-                                    <span>{{$t('ModelManagement["已禁用模型"]')}}</span>
+                                    <span>{{$t('ModelManagement["已停用模型"]')}}</span>
                                     <i class="bk-icon icon-arrows-right" @click="isShowDisableList = false"></i>
                                 </label>
                                 <ul class="disable-list" ref="disableList">
