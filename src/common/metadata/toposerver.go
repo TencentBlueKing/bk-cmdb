@@ -10,8 +10,23 @@
  * limitations under the License.
  */
 
-package plugins
+package metadata
 
-import (
-	_ "configcenter/src/framework/plugins/example" // load example
-)
+type SearchInstResult struct {
+	BaseResp `json",inline"`
+	Data     InstResult `json:"data"`
+}
+
+type CreateModelResult struct {
+	BaseResp `json:",inline"`
+	Data     Object `json:"data"`
+}
+type SearchModelResult struct {
+	BaseResp `json:",inline"`
+	Data     []Object `json:"data"`
+}
+
+type SearchInnterAppTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     InnterAppTopo
+}

@@ -98,6 +98,7 @@ func (lgc *Logics) NewHostModuleLog(header http.Header, instID []int64) *HostMod
 		instID: instID,
 		pre:    make([]metadata.ModuleHost, 0),
 		cur:    make([]metadata.ModuleHost, 0),
+		header: header,
 	}
 }
 
@@ -143,7 +144,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 		moduleIDs = append(moduleIDs, val.ModuleID)
 	}
 
-	for _, val := range h.pre {
+	for _, val := range h.cur {
 		if _, ok := curMap[val.HostID]; false == ok {
 			curMap[val.HostID] = make(map[int64]interface{})
 		}
@@ -261,7 +262,6 @@ func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
 	}
-
 	return result.Data, nil
 }
 

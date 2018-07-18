@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -106,9 +105,8 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, queryCond)
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -136,10 +134,7 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
-
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, queryCond)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -159,4 +154,23 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 	}
 
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
+}
+
+func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+	}
+
+	_, result, err := s.core.BusinessOperation().GetInternalModule(params, obj, bizID)
+	if nil != err {
+		return nil, err
+	}
+
+	return result, nil
 }

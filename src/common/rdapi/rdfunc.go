@@ -14,6 +14,7 @@ package rdapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
+	"github.com/rs/xid"
 )
 
 var (
@@ -162,6 +164,7 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		generateHttpHeaderRID(req, resp)
 		cli := api.NewAPIResource()
 		language := util.GetActionLanguage(req)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
@@ -298,4 +301,21 @@ func createAPIRspStr(errcode int, info interface{}) (string, error) {
 	s, err := json.Marshal(rsp)
 
 	return string(s), err
+}
+
+func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
+	unused := "0000"
+	cid := util.GetHTTPCCRequestID(req.Request.Header)
+	if "" == cid {
+		cid = generateRID(unused)
+		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
+	}
+	// todo support esb request id
+
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+}
+
+func generateRID(unused string) string {
+	id := xid.New()
+	return fmt.Sprintf("cc%s%s", unused, id.String())
 }

@@ -13,13 +13,15 @@
 package service
 
 import (
+	"fmt"
+
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreatePrivilege search user goup
 func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
+	fmt.Println("supplieraccount:", pathParams("bk_supplier_account"))
 	datas := make([]string, 0)
 	data.ForEach(func(key string, val interface{}) {
 		datas = append(datas, key)

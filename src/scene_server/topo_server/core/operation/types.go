@@ -12,6 +12,13 @@
 
 package operation
 
+import (
+	"time"
+
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
+)
+
 type opcondition struct {
 	InstID []int64 `json:"inst_ids"`
 }
@@ -29,4 +36,83 @@ type updateCondition struct {
 type OpCondition struct {
 	Delete deleteCondition   `json:"delete"`
 	Update []updateCondition `json:"update"`
+}
+
+type instBatchInfo struct {
+	// BatchInfo batch info
+	BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
+	InputType string                          `json:"input_type"`
+}
+type instNameAsst struct {
+	ID         string                 `json:"id"`
+	ObjID      string                 `json:"bk_obj_id"`
+	ObjIcon    string                 `json:"bk_obj_icon"`
+	InstID     int64                  `json:"bk_inst_id"`
+	ObjectName string                 `json:"bk_obj_name"`
+	InstName   string                 `json:"bk_inst_name"`
+	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
+}
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
+}
+
+// AssociationParams  association params
+type AssociationParams struct {
+	Page      metadata.BasePage          `json:"page,omitempty"`
+	Fields    map[string][]string        `json:"fields,omitempty"`
+	Condition map[string][]ConditionItem `json:"condition,omitempty"`
+}
+
+// commonInstTopo common inst topo
+type commonInstTopo struct {
+	instNameAsst
+	Count    int            `json:"count"`
+	Children []instNameAsst `json:"children"`
+}
+
+type commonInstTopoV2 struct {
+	Prev interface{} `json:"prev"`
+	Next interface{} `json:"next"`
+	Curr interface{} `json:"curr"`
+}
+
+type deletedInst struct {
+	instID int64
+	obj    model.Object
+}
+
+// OperationLog opeartion log item definition
+type OperationLog struct {
+	OwnerID       string      `bson:"bk_supplier_account"    json:"bk_supplier_account"`
+	ApplicationID int         `bson:"bk_biz_id"              json:"bk_biz_id"`
+	ExtKey        string      `bson:"ext_key"             json:"ext_key"`
+	OpDesc        string      `bson:"op_desc"             json:"op_desc"`
+	OpType        int         `bson:"op_type"             json:"op_type"`
+	OpTarget      string      `bson:"op_target"           json:"op_target"`
+	Content       interface{} `bson:"content"             json:"content"`
+	User          string      `bson:"operator"                json:"operator"`
+	OpFrom        string      `bson:"op_from"             json:"op_from"`
+	ExtInfo       string      `bson:"ext_info"            json:"ext_info"`
+	CreateTime    time.Time   `bson:"op_time"         json:"op_time"`
+	InstID        int         `bson:"inst_id"             json:"inst_id"`
+}
+
+type Content struct {
+	PreData interface{} `json:"pre_data"`
+	CurData interface{} `json:"cur_data"`
+	Headers []Header    `json:"header"`
+}
+
+type Header struct {
+	PropertyID   string `json:"bk_property_id"`
+	PropertyName string `json:"bk_property_name"`
+}
+
+type Ref struct {
+	RefID   int    `json:"ref_id"`
+	RefName string `json:"ref_name"`
 }

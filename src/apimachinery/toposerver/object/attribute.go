@@ -17,11 +17,10 @@ import (
 	"fmt"
 	"net/http"
 
-	obj "configcenter/src/source_controller/api/object"
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *obj.ObjAttDes) (resp *metadata.Response, err error) {
+func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/objectattr"
 

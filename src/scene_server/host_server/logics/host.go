@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -57,7 +56,7 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 	// get host details, pre data
 	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostID, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		return nil, "", fmt.Errorf("get host pre data failed, err, %v, %v", err, result.ErrMsg)
+		return nil, "", fmt.Errorf("get host  data failed, err, %v, %v", err, result.ErrMsg)
 	}
 
 	hostInfo := result.Data
@@ -72,10 +71,7 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 				continue
 			}
 
-			strItem, ok := item.(string)
-			if !ok {
-				return nil, "", errors.New("invalid parameter")
-			}
+			strItem := util.GetStrByInterface(item)
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
 				id, err := strconv.ParseInt(strID, 10, 64)
@@ -85,10 +81,10 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 				ids = append(ids, id)
 			}
 
-			cond := make(map[string]interface{})
-			cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
+			//cond := make(map[string]interface{})
+			//cond[common.BKHostIDField] = map[string]interface{}{"$in": ids}
 			q := &metadata.QueryInput{
-				Condition: cond,
+				Condition: nil, //cond,
 				Fields:    "",
 				Start:     0,
 				Limit:     common.BKNoLimit,
@@ -406,7 +402,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		}
 		if len(appCond.Condition) > 0 {
 			moduleCond.Condition = append(moduleCond.Condition, metadata.ConditionItem{
-				Field:    common.BKSetIDField,
+				Field:    common.BKAppIDField,
 				Operator: common.BKDBIN,
 				Value:    appIDArr,
 			})
@@ -472,15 +468,15 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 	} else {
 		hostResult, retStrErr = lgc.GetInstDetailsSub(pheader, common.BKInnerObjIDHost, common.BKDefaultOwnerID, hostResult, page)
 	}
-	if err != nil {
-		blog.Error("failed to replace association object, error code is %d", retStrErr)
-		return nil, err
+	if nil != retStrErr {
+		blog.Errorf("failed to replace association object, error code is %s, input:%v", retStrErr.Error(), data)
+		return nil, retStrErr
 	}
 
 	resHostIDArr := make([]int64, 0)
 	queryCond := make(map[string][]int64)
 	for _, j := range hostResult {
-		hostID, err := j[common.BKHostIDField].(json.Number).Int64()
+		hostID, err := util.GetInt64ByInterface(j[common.BKHostIDField])
 		if err != nil {
 			return nil, err
 		}
@@ -554,7 +550,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 	//com host info
 	for _, host := range hostResult {
-		hostID, err := host[common.BKHostIDField].(json.Number).Int64()
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return nil, fmt.Errorf("invalid hostid: %v", err)
 		}

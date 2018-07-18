@@ -16,9 +16,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
@@ -29,7 +35,6 @@ import (
 	"configcenter/src/storage"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -76,6 +81,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil == hostCtrl.Config {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
 
 	mgc := hostCtrl.Config.Mongo
 	hostCtrl.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
@@ -88,7 +105,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	rdsc := hostCtrl.Config.Redis
-	hostCtrl.Cache, err = redisclient.NewRedis(rdsc.Address, rdsc.Port, rdsc.User, rdsc.Password, rdsc.Database)
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
+	}
+	hostCtrl.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address + ":" + rdsc.Port,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = hostCtrl.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
@@ -105,13 +134,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 type HostController struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    storage.DI
-	Config   options.Config
+	Cache    *redis.Client
+	Config   *options.Config
 }
 
 func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	prefix := storage.DI_MONGO
-	h.Config.Mongo = mgoclient.MongoConfig{
+	mongo := mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
 		User:         current.ConfigMap[prefix+".user"],
 		Password:     current.ConfigMap[prefix+".pwd"],
@@ -123,12 +152,17 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 
 	prefix = storage.DI_REDIS
-	h.Config.Redis = redisclient.RedisConfig{
+	redis := redisclient.RedisConfig{
 		Address:  current.ConfigMap[prefix+".host"],
 		User:     current.ConfigMap[prefix+".user"],
 		Password: current.ConfigMap[prefix+".pwd"],
 		Database: current.ConfigMap[prefix+".database"],
 		Port:     current.ConfigMap[prefix+".port"],
+	}
+
+	h.Config = &options.Config{
+		Mongo: mongo,
+		Redis: redis,
 	}
 }
 
