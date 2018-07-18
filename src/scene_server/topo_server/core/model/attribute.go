@@ -405,7 +405,7 @@ func (a *attribute) Create() error {
 
 func (a *attribute) Update(data frtypes.MapStr) error {
 
-	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, a.attr.ToMapStr())
+	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
 
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
@@ -474,12 +474,15 @@ func (a *attribute) Delete() error {
 
 func (a *attribute) Save() error {
 
+	//fmt.Println("attr:", a.attr)
 	if exists, err := a.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return a.Create()
 	}
+
 	data := metadata.SetValueToMapStrByTags(a.attr)
+	//fmt.Println("data:", data)
 	return a.Update(data)
 }
 
