@@ -33,9 +33,11 @@ const (
 	Drop       RollBackType = "Drop"
 )
 
+type TxnIDType string
+
 type TxnMeta struct {
 	// TxnID is the transaction id of this transaction
-	TxnID string `json:"txnID"`
+	TxnID TxnIDType `json:"txnID"`
 
 	// when did the transaction launched, which is a unix nano time value
 	CreatedAt int64 `json:"createdAt"`
@@ -47,7 +49,7 @@ type TxnMeta struct {
 type SubTxnStatus struct {
 	// SubTxnID is the sub transaction ID of this transaction.
 	// which is a sub operation of a transaction.
-	SubTxnID string `json:"subTxnID"`
+	SubTxnID TxnIDType `json:"subTxnID"`
 
 	// sub transaction's fingerprints for locking the resources.
 	Fingerprints FingerprintsType `json:"fingerprints"`

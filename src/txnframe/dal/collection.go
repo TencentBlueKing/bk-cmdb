@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/client"
-	"configcenter/src/txnframe/client/lock"
 	"configcenter/src/txnframe/client/types"
 	flt "configcenter/src/txnframe/dal/filter"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
@@ -47,7 +46,6 @@ const lockTimeOut = 1 * time.Second
 type Collection struct {
 	mgoClient   MongoCollectionClient
 	preLockPath string
-	lock        lock.LockInterface
 	txnClient   client.TxnClient
 }
 
@@ -55,7 +53,7 @@ func (coll *Collection) Count(ctx context.Context, filter *flt.Filter) (int64, e
 	return coll.mgoClient.Count(ctx, filter.ToDoc())
 }
 
-func (coll *Collection) DeleteMany(ctx context.Context, txnID string, filter *flt.Filter) (*mongo.DeleteResult, error) {
+func (coll *Collection) DeleteMany(ctx context.Context, txnID types.TxnIDType, filter *flt.Filter) (*mongo.DeleteResult, error) {
 	if len(txnID) == 0 {
 		return nil, errors.New("empty transaction id")
 	}
