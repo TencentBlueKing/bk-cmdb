@@ -34,8 +34,8 @@ type DataCollection struct {
 	*backbone.Engine
 }
 
-func NewDataCollection(config *options.Config, backbone *backbone.Engine) DataCollection {
-	return DataCollection{Config: config, Engine: backbone}
+func NewDataCollection(config *options.Config, backbone *backbone.Engine) *DataCollection {
+	return &DataCollection{Config: config, Engine: backbone}
 }
 
 func (d *DataCollection) Run(config map[string]string) error {
