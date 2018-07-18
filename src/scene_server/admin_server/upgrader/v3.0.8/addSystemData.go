@@ -10,35 +10,33 @@
  * limitations under the License.
  */
 
-package distribution
+package v3v0v8
 
 import (
-	redis "gopkg.in/redis.v5"
-
-	"configcenter/src/scene_server/event_server/identifier"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
-	chErr := make(chan error)
+func addSystemData(db storage.DI, conf *upgrader.Config) error {
+	tablename := "cc_System"
+	blog.V(3).Infof("add data for  %s table ", tablename)
+	data := map[string]interface{}{
+		common.HostCrossBizField: common.HostCrossBizValue}
+	isExist, err := db.GetCntByCondition(tablename, data)
+	if nil != err {
+		blog.Errorf("add data for  %s table error  %s", tablename, err)
+		return err
+	}
+	if isExist > 0 {
+		return nil
+	}
+	_, err = db.Insert(tablename, data)
+	if nil != err {
+		blog.Errorf("add data for  %s table error  %s", tablename, err)
+		return err
+	}
 
-	eh := &EventHandler{cache: cache}
-	go func() {
-		chErr <- eh.StartHandleInsts()
-	}()
-
-	dh := &DistHandler{cache: cache}
-	go func() {
-		chErr <- dh.StartDistribute()
-	}()
-
-	ih := identifier.NewIdentifierHandler(cache, db)
-	go func() {
-		chErr <- ih.StartHandleInsts()
-	}()
-
-	return <-chErr
+	return nil
 }
-
-type EventHandler struct{ cache *redis.Client }
-type DistHandler struct{ cache *redis.Client }

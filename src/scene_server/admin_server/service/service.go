@@ -10,35 +10,36 @@
  * limitations under the License.
  */
 
-package distribution
+package service
 
 import (
-	redis "gopkg.in/redis.v5"
+	"github.com/emicklei/go-restful"
 
-	"configcenter/src/scene_server/event_server/identifier"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/storage"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
-	chErr := make(chan error)
-
-	eh := &EventHandler{cache: cache}
-	go func() {
-		chErr <- eh.StartHandleInsts()
-	}()
-
-	dh := &DistHandler{cache: cache}
-	go func() {
-		chErr <- dh.StartDistribute()
-	}()
-
-	ih := identifier.NewIdentifierHandler(cache, db)
-	go func() {
-		chErr <- ih.StartHandleInsts()
-	}()
-
-	return <-chErr
+type Service struct {
+	*backbone.Engine
+	db storage.DI
 }
 
-type EventHandler struct{ cache *redis.Client }
-type DistHandler struct{ cache *redis.Client }
+func (s *Service) SetDB(db storage.DI) {
+	s.db = db
+}
+
+func (s *Service) WebService() *restful.WebService {
+	ws := new(restful.WebService)
+	getErrFun := func() errors.CCErrorIf {
+		return s.CCErr
+	}
+	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+
+	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
+	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.Set))
+	ws.Route(ws.POST("/clear").To(s.clear))
+
+	return ws
+}
