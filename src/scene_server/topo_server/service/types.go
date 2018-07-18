@@ -25,11 +25,15 @@ type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsG
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string
 
+// ParseOriginDataFunc parse the origin data
+type ParseOriginDataFunc func(data []byte) (frtypes.MapStr, error)
+
 // Action the http action
 type action struct {
-	Method      string
-	Path        string
-	HandlerFunc LogicFunc
+	Method                     string
+	Path                       string
+	HandlerFunc                LogicFunc
+	HandlerParseOriginDataFunc ParseOriginDataFunc
 }
 
 // API the API interface

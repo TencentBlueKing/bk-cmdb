@@ -15,6 +15,7 @@ package privilege
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -63,7 +64,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 	if 0 != len(groupID) {
 		cond.Field("group_id").Eq(groupID)
 	}
-	cond.Field("goup_name").Eq(groupName)
+	cond.Field("group_name").Eq(groupName)
 
 	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -80,7 +81,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 		blog.Warnf("[permission] the group name (%s) repeated", groupName)
 		return u.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
-
+	fmt.Println("the resp:", rsp.Data)
 	return nil
 }
 
