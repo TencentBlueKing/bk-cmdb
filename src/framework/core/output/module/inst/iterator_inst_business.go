@@ -15,10 +15,11 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	//"configcenter/src/framework/core/log"
+	"io"
+
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
 )
 
 // BusinessIterator the iterator interface for the business
@@ -45,7 +46,7 @@ func newIteratorInstBusiness(target model.Model, cond common.Condition) (Busines
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
 
-	existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Business().SearchBusiness(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Business().SearchBusiness(cli.cond)
 		if nil != err {
 			return nil, err
 		}

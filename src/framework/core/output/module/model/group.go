@@ -42,7 +42,7 @@ func (cli *group) search() ([]types.MapStr, error) {
 	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID)
 
 	// search all group by condition
-	return client.GetClient().CCV3().Group().SearchGroups(cond)
+	return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().SearchGroups(cond)
 
 }
 
@@ -54,7 +54,7 @@ func (cli *group) IsExists() (bool, error) {
 
 func (cli *group) Create() error {
 
-	id, err := client.GetClient().CCV3().Group().CreateGroup(cli.ToMapStr())
+	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().CreateGroup(cli.ToMapStr())
 	cli.id = id
 	return err
 }
@@ -104,7 +104,7 @@ func (cli *group) Update() error {
 		} else {
 			cond = cond.Field(GroupName).Eq(cli.GroupName)
 		}
-		return client.GetClient().CCV3().Group().UpdateGroup(updateitem, cond)
+		return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().UpdateGroup(updateitem, cond)
 	}
 	return nil
 }
@@ -174,11 +174,11 @@ func (cli *group) CreateAttribute() Attribute {
 	return attr
 }
 
-func (cli *group) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
+func (cli *group) FindAttributesLikeName(supplierAccount string, attributeName string) (AttributeIterator, error) {
 	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
-	return newAttributeIterator(cond)
+	return newAttributeIterator(supplierAccount, cond)
 }
 
-func (cli *group) FindAttributesByCondition(cond common.Condition) (AttributeIterator, error) {
-	return newAttributeIterator(cond)
+func (cli *group) FindAttributesByCondition(supplierAccount string, cond common.Condition) (AttributeIterator, error) {
+	return newAttributeIterator(supplierAccount, cond)
 }

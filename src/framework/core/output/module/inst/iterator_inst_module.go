@@ -15,10 +15,11 @@ package inst
 import (
 	"configcenter/src/framework/common"
 	//"configcenter/src/framework/core/log"
+	"io"
+
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
 )
 
 // ModuleIterator the iterator interface for the module
@@ -45,7 +46,7 @@ func newIteratorInstModule(target model.Model, cond common.Condition) (ModuleIte
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
 
-	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Module().SearchModules(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func (cli *iteratorInstModule) Next() (ModuleInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Module().SearchModules(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Module().SearchModules(cli.cond)
 		if nil != err {
 			return nil, err
 		}

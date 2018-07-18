@@ -10,9 +10,22 @@
  * limitations under the License.
  */
  
-package main
+package v3v0v9beta1
 
 import (
-	_ "configcenter/src/scene_server/admin_server/migrate_service/upgrader/v3.0.8"
-	_ "configcenter/src/scene_server/admin_server/migrate_service/upgrader/v3.0.9-beta.1"
+	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
+	"configcenter/src/storage"
 )
+
+func init() {
+	upgrader.RegistUpgrader("v3.0.9-beta.1", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = fixesSupplierAccount(db, conf)
+	if err != nil {
+		return err
+	}
+
+	return
+}
