@@ -47,6 +47,21 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 
 	return setInst.ToMapStr(), nil
 }
+func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	deleteCondition := &operation.OpCondition{}
+	if err := data.MarshalJSONInto(deleteCondition); nil != err {
+		return nil, err
+	}
+
+	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID)
+}
 
 // DeleteInst delete the inst
 func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -63,21 +78,37 @@ func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	instIDS := []int64{}
-	if instID < 0 {
-		deleteCondition := &operation.OpCondition{}
-		if err := data.MarshalJSONInto(deleteCondition); nil != err {
-			return nil, err
-		}
+	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID})
+	return nil, err
+}
+func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-		instIDS = append(instIDS, deleteCondition.Delete.InstID...)
+	objID := pathParams("obj_id")
 
-	} else {
-		instIDS = append(instIDS, instID)
+	updateCondition := &operation.OpCondition{}
+	if err := data.MarshalJSONInto(updateCondition); nil != err {
+		blog.Errorf("[api-inst] failed to parse the input data(%v), error info is %s", data, err.Error())
+		return nil, err
 	}
 
-	err = s.core.InstOperation().DeleteInstByInstID(params, obj, instIDS)
-	return nil, err
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	for _, item := range updateCondition.Update {
+
+		cond := condition.CreateCondition()
+		cond.Field(obj.GetInstIDFieldName()).In(item.InstID)
+		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
+		if nil != err {
+			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
 // UpdateInst update the inst
@@ -87,31 +118,23 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 
 	objID := pathParams("obj_id")
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
-
-	objs, err := s.core.ObjectOperation().FindObject(params, cond)
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
-
-	innerCond := condition.CreateCondition()
-	paramPath := frtypes.MapStr{}
-	paramPath.Set("inst_id", pathParams("inst_id"))
-	id, err := paramPath.Int64("inst_id")
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to parse the path params id(%s), error info is %s ", pathParams("inst_id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
 	}
-	innerCond.Field(common.BKInstIDField).Eq(id)
-	for _, objItem := range objs {
-		err = s.core.InstOperation().UpdateInst(params, data, objItem, innerCond)
-		if nil != err {
-			blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", objItem.GetID(), pathParams("inst_id"), data, err.Error())
-			return nil, err
-		}
+
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	err = s.core.InstOperation().UpdateInst(params, data, obj, cond, instID)
+	if nil != err {
+		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.GetID(), pathParams("inst_id"), data, err.Error())
+		return nil, err
 	}
 
 	return nil, err
