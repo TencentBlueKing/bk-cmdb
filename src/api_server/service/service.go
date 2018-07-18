@@ -31,7 +31,7 @@ func (s *Service) V2WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
 	ws.Route(ws.POST("app/getapplist").To(s.getAppList))
@@ -54,7 +54,7 @@ func (s *Service) V2WebService() *restful.WebService {
 	ws.Route(ws.POST("module/delModule").To(s.deleteModule))
 
 	ws.Route(ws.POST("Set/getsetsbyproperty").To(s.getSets))
-	ws.Route(ws.POST("Set/getsetproperty").To(s.getSets))
+	ws.Route(ws.POST("Set/getsetproperty").To(s.getsetproperty))
 	ws.Route(ws.POST("Set/getmodulesbyproperty").To(s.getModulesByProperty))
 	ws.Route(ws.POST("set/getmodulesbyproperty").To(s.getModulesByProperty))
 	ws.Route(ws.POST("set/addset").To(s.addSet))

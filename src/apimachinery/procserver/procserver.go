@@ -27,7 +27,7 @@ type ProcServerClientInterface interface {
 }
 
 func NewProcServerClientInterface(c *util.Capability, version string) ProcServerClientInterface {
-	base := fmt.Sprintf("/proc/%s", version)
+	base := fmt.Sprintf("/process/%s", version)
 	return &procServer{client: rest.NewRESTClient(c, base)}
 }
 
