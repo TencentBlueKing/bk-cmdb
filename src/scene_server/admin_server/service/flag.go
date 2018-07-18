@@ -15,12 +15,12 @@ package service
 import (
 	"net/http"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) Set(req *restful.Request, resp *restful.Response) {

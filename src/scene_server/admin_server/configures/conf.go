@@ -16,8 +16,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"configcenter/src/common/language"
-
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -26,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 )
 

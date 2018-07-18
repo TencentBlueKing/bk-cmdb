@@ -15,13 +15,13 @@ package service
 import (
 	"net/http"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
@@ -42,5 +42,4 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp("migrate success"))
-
 }

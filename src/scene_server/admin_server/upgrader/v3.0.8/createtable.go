@@ -140,5 +140,4 @@ var tables = map[string][]storage.Index{
 	"cc_UserGroup":          []storage.Index{},
 	"cc_UserGroupPrivilege": []storage.Index{},
 	"cc_idgenerator":        []storage.Index{},
-	"cc_System":             []storage.Index{},
-}
+	"cc_System":             []storage.Index{}}
