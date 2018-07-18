@@ -29,7 +29,7 @@ func (s *topoService) initAssociation() {
 
 func (s *topoService) initAuditLog() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: s.SearchAuditLog})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: s.AuditQuery})
 }
 
 func (s *topoService) initCompatiblev2() {

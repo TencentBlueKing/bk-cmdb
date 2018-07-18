@@ -33,6 +33,7 @@ type Core interface {
 	PermissionOperation() operation.PermissionOperationInterface
 	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
+	AuditOperation() operation.AuditOperationInterface
 }
 
 type core struct {
@@ -48,6 +49,7 @@ type core struct {
 	permission     operation.PermissionOperationInterface
 	compatibleV2   operation.CompatibleV2OperationInterface
 	graphics       operation.GraphicsOperationInterface
+	audit          operation.AuditOperationInterface
 }
 
 // New create a core manager
@@ -66,6 +68,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	permissionOperation := operation.NewPermissionOperation(client)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
 	graphics := operation.NewGraphics(client)
+	audit := operation.NewAuditOperation(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
@@ -97,6 +100,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 		permission:     permissionOperation,
 		compatibleV2:   compatibleV2Operation,
 		graphics:       graphics,
+		audit:          audit,
 	}
 }
 
@@ -138,4 +142,7 @@ func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface 
 }
 func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
 	return c.graphics
+}
+func (c *core) AuditOperation() operation.AuditOperationInterface {
+	return c.audit
 }
