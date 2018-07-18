@@ -16,7 +16,7 @@ import "time"
 
 type PreLockMeta struct {
 	// transaction id of this transaction
-	TxnID string `json:"txnID"`
+	TxnID TxnIDType `json:"txnID"`
 
 	// lock name is used to define the resources that this lock should be locked
 	LockName string `json:"lockName"`
@@ -27,7 +27,7 @@ type PreLockMeta struct {
 
 type PreUnlockMeta struct {
 	// transaction id of this transaction
-	TxnID string `json:"txnID"`
+	TxnID TxnIDType `json:"txnID"`
 
 	// lock name is used to define the resources that this lock should be locked.
 	// same with PreLockMeta's LockName
@@ -36,7 +36,7 @@ type PreUnlockMeta struct {
 
 type LockMeta struct {
 	// transaction id of this transaction
-	TxnID string `json:"txnID"`
+	TxnID TxnIDType `json:"txnID"`
 
 	// fingerprints is used to define the resources that this lock should be locked
 	// lock server will uses these fingerprints to lock the resources that it describes.
@@ -48,7 +48,7 @@ type LockMeta struct {
 
 type LockResult struct {
 	// the sub txn ID of the txn.
-	SubTxnID string `json:"subTxnID"`
+	SubTxnID TxnIDType `json:"subTxnID"`
 
 	// whether the resources has been locked or not
 	Locked bool `json:"locked"`
@@ -61,8 +61,8 @@ type LockResult struct {
 
 type UnlockMeta struct {
 	// transaction id of this transaction
-	TxnID string `json:"txnID"`
+	TxnID TxnIDType `json:"txnID"`
 
 	// the sub txn ID of the txn.
-	SubTxnID string `json:"subTxnID"`
+	SubTxnID TxnIDType `json:"subTxnID"`
 }

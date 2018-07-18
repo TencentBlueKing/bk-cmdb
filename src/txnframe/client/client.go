@@ -20,5 +20,5 @@ import (
 type TxnClient interface {
 	lock.LockInterface
 	Snapshot(subTxn *types.SubTxnStatus) error
-	SubTxnSuccess(txnID, subTxnID string) error
+	SubTxnSuccess(txnID, subTxnID types.TxnIDType) error
 }
