@@ -13,7 +13,7 @@
 package service
 
 import (
-	"fmt"
+	"encoding/json"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -35,8 +35,6 @@ func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, 
 
 // UpdateObjectGroup update the object group information
 func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	fmt.Println("UpdateObjectGroup")
 
 	cond := &metadata.UpdateGroupCondition{}
 
@@ -64,27 +62,30 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 	return nil, nil
 }
 
+func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (frtypes.MapStr, error) {
+
+	datas := []metadata.PropertyGroupObjectAtt{}
+	err := json.Unmarshal(data, &datas)
+	if nil != err {
+		return nil, err
+	}
+	result := frtypes.MapStr{}
+	result.Set("origin", datas)
+	return result, nil
+}
+
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
 func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("UpdateObjectAttributeGroup")
-	cond := condition.CreateCondition()
 
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	val, exists := data.Get(metadata.ModelFieldObjectID)
+	datas := make([]metadata.PropertyGroupObjectAtt, 0)
+	val, exists := data.Get("origin")
 	if !exists {
-		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.ModelFieldObjectID)
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
-	cond.Field(metadata.ModelFieldObjectID).Eq(val)
-	data.Remove(metadata.ModelFieldObjectID)
 
-	val, exists = data.Get(metadata.AttributeFieldPropertyID)
-	if !exists {
-		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, metadata.AttributeFieldPropertyID)
-	}
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(val)
-	data.Remove(metadata.AttributeFieldPropertyID)
+	datas, _ = val.([]metadata.PropertyGroupObjectAtt)
 
-	err := s.core.AttributeOperation().UpdateObjectAttribute(params, data, -1, cond)
+	err := s.core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
 	if nil != err {
 		return nil, err
 	}
@@ -94,19 +95,8 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("DeleteObjectAttributeGroup")
-	cond := condition.CreateCondition()
 
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(metadata.ModelFieldObjectID).Eq(pathParams("object_id"))
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(pathParams("property_id"))
-	cond.Field(metadata.AttributeFieldPropertyGroup).Eq("group_id")
-
-	innerData := frtypes.MapStr{}
-	innerData.Set(metadata.AttributeFieldPropertyGroup, "none")
-	innerData.Set(metadata.AttributeFieldPropertyIndex, -1)
-
-	err := s.core.AttributeOperation().UpdateObjectAttribute(params, innerData, -1, cond)
+	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}

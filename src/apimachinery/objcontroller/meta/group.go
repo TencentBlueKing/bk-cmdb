@@ -75,7 +75,7 @@ func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, 
 func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID, propertyID, groupID string, h http.Header) (resp *metatype.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", ownerID, objID, propertyID, groupID)
 	resp = new(metatype.DeleteResult)
-	err = t.client.Put().
+	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).

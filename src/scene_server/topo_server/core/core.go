@@ -32,6 +32,8 @@ type Core interface {
 	ObjectOperation() operation.ObjectOperationInterface
 	PermissionOperation() operation.PermissionOperationInterface
 	CompatibleV2Operation() operation.CompatibleV2OperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
+	AuditOperation() operation.AuditOperationInterface
 }
 
 type core struct {
@@ -46,6 +48,8 @@ type core struct {
 	object         operation.ObjectOperationInterface
 	permission     operation.PermissionOperationInterface
 	compatibleV2   operation.CompatibleV2OperationInterface
+	graphics       operation.GraphicsOperationInterface
+	audit          operation.AuditOperationInterface
 }
 
 // New create a core manager
@@ -63,6 +67,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	associationOperation := operation.NewAssociationOperation(client)
 	permissionOperation := operation.NewPermissionOperation(client)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
+	graphics := operation.NewGraphics(client)
+	audit := operation.NewAuditOperation(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
@@ -79,6 +85,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	setOperation.SetProxy(objectOperation, instOperation, moduleOperation)
 	businessOperation.SetProxy(setOperation, moduleOperation, instOperation, objectOperation)
 
+	graphics.SetProxy(objectOperation, associationOperation)
+
 	return &core{
 		set:            setOperation,
 		module:         moduleOperation,
@@ -91,6 +99,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 		object:         objectOperation,
 		permission:     permissionOperation,
 		compatibleV2:   compatibleV2Operation,
+		graphics:       graphics,
+		audit:          audit,
 	}
 }
 
@@ -129,4 +139,10 @@ func (c *core) PermissionOperation() operation.PermissionOperationInterface {
 }
 func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
 	return c.compatibleV2
+}
+func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
+}
+func (c *core) AuditOperation() operation.AuditOperationInterface {
+	return c.audit
 }
