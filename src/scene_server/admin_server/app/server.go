@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/common/backbone/configcenter"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -41,8 +42,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	process := new(MigrateServer)
+	pconfig, err := configcenter.ParseConfigWithFile(op.ServConf.ExConfig)
+	if nil != err {
+		return fmt.Errorf("parse config file error %s", err.Error())
+	}
+	process.onHostConfigUpdate(*pconfig, *pconfig)
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
+		ZkAddr:    process.Config.Register.Address,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
@@ -69,8 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	process := new(MigrateServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	engine, err := backbone.NewBackbone(ctx, process.Config.Register.Address,
 		types.CC_MODULE_MIGRATE,
 		op.ServConf.ExConfig,
 		process.onHostConfigUpdate,
@@ -82,7 +89,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	process.ConfigCenter = configures.NewConfCenter(ctx, op.ServConf.RegDiscover)
+	process.ConfigCenter = configures.NewConfCenter(ctx, process.Config.Register.Address)
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)

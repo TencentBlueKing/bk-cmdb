@@ -13,13 +13,13 @@
 package distribution
 
 import (
-	"configcenter/src/common"
 	"fmt"
 	"io"
 	"strings"
 
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/metadata"
