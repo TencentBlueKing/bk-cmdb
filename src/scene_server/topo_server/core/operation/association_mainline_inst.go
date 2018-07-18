@@ -180,19 +180,14 @@ func (cli *association) constructTopo(params types.ContextParams, targetInst ins
 
 	return results, nil
 }
-func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error) {
-
-	bizObj, err := cli.obj.FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		return nil, err
-	}
+func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = frtypes.MapStr{
-		bizObj.GetInstIDFieldName(): bizID,
+		obj.GetInstIDFieldName(): instID,
 	}
 
-	_, bizInsts, err := cli.inst.FindInst(params, bizObj, cond, false)
+	_, bizInsts, err := cli.inst.FindInst(params, obj, cond, false)
 	if nil != err {
 		return nil, err
 	}
@@ -210,7 +205,7 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 			return nil, err
 		}
 
-		tmp := &metadata.TopoInstRst{}
+		tmp := &metadata.TopoInstRst{Child: []metadata.TopoInstRst{}}
 		tmp.InstID = instID
 		tmp.InstName = instName
 		tmp.ObjID = biz.GetObject().GetID()
