@@ -138,6 +138,11 @@ func (s *topoService) initPrivilege() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", HandlerFunc: s.GetUserPrivi})
 }
 
+func (s *topoService) initGraphics() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", HandlerFunc: s.SelectObjectTopoGraphics})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
+}
+
 func (s *topoService) initService() {
 	s.initAssociation()
 	s.initAuditLog()
@@ -153,4 +158,5 @@ func (s *topoService) initService() {
 	s.initPrivilegeGroup()
 	s.initPrivigeRole()
 	s.initPrivilege()
+	s.initGraphics()
 }
