@@ -44,41 +44,9 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-var (
-	tablenames = []string{
-		"cc_ApplicationBase",
-		"cc_History",
-		"cc_HostBase",
-		"cc_HostFavourite",
-		"cc_ModuleBase",
-		"cc_ModuleHostConfig",
-		"cc_ObjectBase",
-		"cc_OperationLog",
-		"cc_PlatBase",
-		"cc_Privilege",
-		"cc_Proc2Module",
-		"cc_Process",
-		"cc_SetBase",
-		"cc_Subscription",
-		"cc_UserAPI",
-		"cc_UserCustom",
-		"cc_UserGroup",
-		"cc_UserGroupPrivilege",
-		"cc_idgenerator",
-		"cc_ObjAsst",
-		"cc_ObjAttDes",
-		"cc_ObjClassification",
-		"cc_ObjDes",
-		"cc_PropertyGroup",
-		"cc_InstAsst",
-		"cc_System",
-	}
-)
-
 func clearDatabase(instData storage.DI) error {
-
 	// clear mongodb
-	for _, tablename := range tablenames {
+	for _, tablename := range common.AllTables {
 		instData.DropTable(tablename)
 	}
 
