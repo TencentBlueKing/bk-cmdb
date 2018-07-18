@@ -60,7 +60,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 }
 
 func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
+	language := util.GetActionLanguage(req)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	namespace := req.PathParameter("namespace")
@@ -345,7 +345,9 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 			}
 		}
 	}
-
+	if 0 == len(procInstModels) {
+		return nil
+	}
 	// save into db
 	instModelRet, err := ps.CoreAPI.ProcController().CreateProcInstanceModel(context.Background(), forward.Header, procInstModels)
 	if err != nil || (err == nil && !instModelRet.Result) {

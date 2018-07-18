@@ -47,11 +47,12 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
 	params = append(params, cell)
 
-	if err := ps.createProcInstanceModel(appIDStr, procIDStr, moduleName, ownerID, &sourceAPI.ForwardParam{Header: req.Request.Header}); err != nil {
-		blog.Errorf("fail to create process instance model. err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcBindToMoudleFaile)})
-		return
-	}
+	// TODO use change use chan, process model trigger point
+	// if err := ps.createProcInstanceModel(appIDStr, procIDStr, moduleName, ownerID, &sourceAPI.ForwardParam{Header:req.Request.Header}); err != nil {
+	//     blog.Errorf("fail to create process instance model. err: %v", err)
+	//     resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg:defErr.Error(common.CCErrProcBindToMoudleFaile)})
+	//     return
+	// }
 
 	ret, err := ps.CoreAPI.ProcController().CreateProc2Module(context.Background(), req.Request.Header, params)
 	if err != nil || (err == nil && !ret.Result) {
