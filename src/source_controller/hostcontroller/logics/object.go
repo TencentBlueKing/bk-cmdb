@@ -25,7 +25,7 @@ import (
 )
 
 func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, result interface{}, sort string) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	switch objType {
 	case common.BKInnerObjIDApp:
@@ -50,13 +50,13 @@ func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, resu
 }
 
 func (lgc *Logics) CreateObject(objType string, input interface{}, idName *string) (int64, error) {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	objID, err := lgc.Instance.GetIncID(tName)
 	if err != nil {
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
-	*idName = util.GetObjIDByType(objType)
+	*idName = common.GetInstFieldByType(objType)
 	inputc[*idName] = objID
 	_, err = lgc.Instance.Insert(tName, inputc)
 	if err != nil {
@@ -79,7 +79,7 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 }
 
 func (lgc *Logics) GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	if err := lgc.Instance.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err

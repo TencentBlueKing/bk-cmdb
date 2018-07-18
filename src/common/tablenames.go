@@ -56,7 +56,7 @@ const (
 	BKTableNameBaseProcess = "cc_Process"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
-	SystemTableName             = "cc_System"
+	BKTableNameSystem           = "cc_System"
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
 	BKTableNameOperationLog     = "cc_OperationLog"
@@ -65,6 +65,7 @@ const (
 	BKTableNameUserCustom       = "cc_UserCustom"
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
+	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 )
 
 // AllTables alltables
@@ -88,7 +89,7 @@ var AllTables = []string{
 	BKTableNameBaseSet,
 	BKTableNameBaseProcess,
 	BKTableNameModuleHostConfig,
-	SystemTableName,
+	BKTableNameSystem,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
 	BKTableNameOperationLog,
@@ -97,4 +98,29 @@ var AllTables = []string{
 	BKTableNameUserCustom,
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
+	BKTableNameTopoGraphics,
+}
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case BKInnerObjIDApp:
+		return BKTableNameBaseApp
+	case BKInnerObjIDSet:
+		return BKTableNameBaseSet
+	case BKInnerObjIDModule:
+		return BKTableNameBaseModule
+	case BKINnerObjIDObject:
+		return BKTableNameBaseInst
+	case BKInnerObjIDHost:
+		return BKTableNameBaseHost
+	case BKInnerObjIDProc:
+		return BKTableNameBaseProcess
+	case BKInnerObjIDPlat:
+		return BKTableNameBasePlat
+	case BKTableNameInstAsst:
+		return BKTableNameInstAsst
+	default:
+		return BKTableNameBaseInst
+	}
 }

@@ -14,10 +14,13 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
+	"configcenter/src/common/backbone/configcenter"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -39,8 +42,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	process := new(MigrateServer)
+	pconfig, err := configcenter.ParseConfigWithFile(op.ServConf.ExConfig)
+	if nil != err {
+		return fmt.Errorf("parse config file error %s", err.Error())
+	}
+	process.onHostConfigUpdate(*pconfig, *pconfig)
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
+		ZkAddr:    process.Config.Register.Address,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
@@ -67,8 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	process := new(MigrateServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	engine, err := backbone.NewBackbone(ctx, process.Config.Register.Address,
 		types.CC_MODULE_MIGRATE,
 		op.ServConf.ExConfig,
 		process.onHostConfigUpdate,
@@ -80,7 +89,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	process.ConfigCenter = configures.NewConfCenter(ctx, op.ServConf.RegDiscover)
+	process.ConfigCenter = configures.NewConfCenter(ctx, process.Config.Register.Address)
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
@@ -107,7 +116,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		break
 	}
 	<-ctx.Done()
-	blog.V(3).Info("process stoped")
+	blog.V(0).Info("process stoped")
 	return nil
 }
 
@@ -118,11 +127,18 @@ type MigrateServer struct {
 	ConfigCenter *configures.ConfCenter
 }
 
+var configLock sync.Mutex
+
 func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	configLock.Lock()
+	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
+
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		blog.V(3).Infof("config updated: \n%s", out)
 		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]

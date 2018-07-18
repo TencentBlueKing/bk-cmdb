@@ -99,7 +99,7 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 		return fmt.Errorf("directory %s not exists", errorres)
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("Stat directory %s faile, %s", errorres, err.Error())
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("%s is not directory", errorres)
@@ -184,7 +184,7 @@ func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
 		return err
 	}
 
-	blog.Debug("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
+	blog.V(3).Info("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
 	if err := cc.confRegDiscv.Write(key, data); err != nil {
 		blog.Errorf("fail to write configure(%s) data into center. err:%s", key, err.Error())
 		return err

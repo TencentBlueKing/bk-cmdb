@@ -97,11 +97,11 @@ func getVersion(db storage.DI) (*Version, error) {
 	condition := map[string]interface{}{
 		"type": SystemTypeVersion,
 	}
-	err := db.GetOneByCondition(common.SystemTableName, nil, condition, &data)
+	err := db.GetOneByCondition(common.BKTableNameSystem, nil, condition, &data)
 	if err == mgo.ErrNotFound {
 		data = new(Version)
 		data.Type = SystemTypeVersion
-		_, err = db.Insert(common.SystemTableName, data)
+		_, err = db.Insert(common.BKTableNameSystem, data)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func saveVesion(db storage.DI, version *Version) error {
 	condition := map[string]interface{}{
 		"type": SystemTypeVersion,
 	}
-	return db.UpdateByCondition(common.SystemTableName, version, condition)
+	return db.UpdateByCondition(common.BKTableNameSystem, version, condition)
 }
 
 type System struct {

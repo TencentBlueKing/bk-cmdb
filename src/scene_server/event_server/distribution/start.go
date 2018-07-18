@@ -27,7 +27,7 @@ func Start(cache *redis.Client, db storage.DI) error {
 		chErr <- eh.StartHandleInsts()
 	}()
 
-	dh := &DistHandler{cache: cache}
+	dh := &DistHandler{cache: cache, db: db}
 	go func() {
 		chErr <- dh.StartDistribute()
 	}()
@@ -41,4 +41,7 @@ func Start(cache *redis.Client, db storage.DI) error {
 }
 
 type EventHandler struct{ cache *redis.Client }
-type DistHandler struct{ cache *redis.Client }
+type DistHandler struct {
+	cache *redis.Client
+	db    storage.DI
+}
