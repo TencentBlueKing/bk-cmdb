@@ -340,7 +340,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
                 instModel.SetName = setId_Name[instModel.SetID]
                 instModel.ModuleID = uint64(hostMod[common.BKModuleIDField])
                 instModel.HostId = uint64(hostMod[common.BKHostIDField])
-                instModel.InstanceID = 0 // use unified id generation method, uri will provide
+                instModel.InstanceID = 0 //TODO use unified id generation method, uri will provide
 
                 procInstModels = append(procInstModels, instModel)
             }
