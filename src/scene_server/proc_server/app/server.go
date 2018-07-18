@@ -13,6 +13,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -24,7 +25,6 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
-	"context"
 )
 
 //Run ccapi server

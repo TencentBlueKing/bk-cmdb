@@ -17,19 +17,19 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sourceAPI "configcenter/src/source_controller/api/object"
-
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	//get appID
@@ -74,7 +74,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 	}
 
-	blog.Debug("moduleToProcessesMap: %v", moduleToProcessesMap)
+	blog.V(3).Infof("moduleToProcessesMap: %v", moduleToProcessesMap)
 	moduleHostConfigs, err := ps.getModuleHostConfigsByAppID(appID, forward)
 	if err != nil {
 		blog.Errorf("getModuleHostConfigsByAppID failed in GetProcessPortByApplicationID, err: %s", err.Error())
@@ -82,7 +82,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		return
 	}
 
-	blog.Debug("moduleHostConfigs:%v", moduleHostConfigs)
+	blog.V(3).Infof("moduleHostConfigs:%v", moduleHostConfigs)
 	// 根据AppID获取AppInfo
 	appInfoMap, err := ps.getAppInfoByID(appID, forward)
 	if err != nil {
@@ -105,7 +105,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}
-	blog.Debug("GetProcessPortByApplicationID  hostMap:%v", hostMap)
+	blog.V(3).Infof("GetProcessPortByApplicationID  hostMap:%v", hostMap)
 
 	hostProcs := make(map[int][]interface{}, 0)
 	for _, moduleHostConf := range moduleHostConfigs {
@@ -147,13 +147,13 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		retData = append(retData, host)
 	}
 
-	blog.Debug("GetProcessPortByApplicationID: %+v", retData)
+	blog.V(3).Infof("GetProcessPortByApplicationID: %+v", retData)
 	resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
 //根据IP获取进程端口
 func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	reqParam := make(map[string]interface{})
@@ -182,7 +182,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 		return
 	}
-	blog.Debug("configArr: %+v", confArr)
+	blog.V(3).Infof("configArr: %+v", confArr)
 	//根据业务id获取进程
 	resultData := make([]interface{}, 0)
 	for _, item := range confArr {
@@ -212,7 +212,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		blog.Debug("moduleData:%v", moduleData)
+		blog.V(3).Infof("moduleData:%v", moduleData)
 
 		//进程
 		procData, err := ps.getProcessMapByAppID(appId, forward)
@@ -221,7 +221,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		blog.Debug("procData: %v", procData)
+		blog.V(3).Infof("procData: %v", procData)
 		//获取绑定关系
 		result := make(map[string]interface{})
 		for _, itemProcData := range procData {
@@ -239,7 +239,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 
 			for _, procMod := range procModuleData {
 				itemMap, _ := procMod.(map[string]interface{})[common.BKModuleNameField].(string)
-				blog.Debug("process module, %v", itemMap)
+				blog.V(3).Infof("process module, %v", itemMap)
 				if itemMap == moduleName {
 					result[common.BKAppNameField], err = appData[appId].(mapstr.MapStr).String(common.BKAppNameField)
 					if nil != err {
@@ -524,6 +524,6 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int, forward *sourceAPI
 		result = append(result, data)
 	}
 
-	blog.Debug("getProcessBindModule result: %+v", result)
+	blog.V(3).Infof("getProcessBindModule result: %+v", result)
 	return result, nil
 }
