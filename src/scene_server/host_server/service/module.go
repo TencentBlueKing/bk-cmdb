@@ -71,7 +71,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 	var hostIDArr []int64
 
 	for index, hostInfo := range params.HostInfoArr {
-		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(strconv.Itoa(hostInfo.CloudID)).Data()
+		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
 		query := &metadata.QueryInput{
 			Condition: cond,
 			Start:     0,
@@ -153,6 +153,10 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 	}
 
 	// TODO: add audit log later.
+	hostModuleLog := s.Logics.NewHostModuleLog(req.Request.Header, hostIDArr)
+	hostModuleLog.WithCurrent()
+	hostModuleLog.SaveAudit(fmt.Sprintf("%d", params.ApplicationID), util.GetUser(req.Request.Header), "")
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 
 }
 
