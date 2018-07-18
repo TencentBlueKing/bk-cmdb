@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/module/%s/%s", appID, setID)
 
 	err = t.client.Post().
@@ -63,8 +63,8 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID s
 	return
 }
 
-func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/module/search/%s/%s/%s", ownerID, appID, setID)
 
 	err = t.client.Put().

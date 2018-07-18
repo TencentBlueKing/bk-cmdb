@@ -15,6 +15,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -53,20 +54,118 @@ type Object struct {
 	LastTime    *time.Time `field:"last_time" json:"last_time"`
 }
 
-// Parse load the data from mapstr object into object instance
-func (cli *Object) Parse(data types.MapStr) (*Object, error) {
+// GetDefaultInstPropertyName get default inst
+func (o *Object) GetDefaultInstPropertyName() string {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return "业务名"
+	case common.BKInnerObjIDModule:
+		return "模块名"
+	case common.BKInnerObjIDSet:
+		return "集群名"
+	default:
+		return "实例名"
+	}
+}
 
-	err := SetValueToStructByTags(cli, data)
+// GetInstIDFieldName get instid filed
+func (o *Object) GetInstIDFieldName() string {
+
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppIDField
+	case common.BKInnerObjIDSet:
+		return common.BKSetIDField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleIDField
+	case common.BKINnerObjIDObject:
+		return common.BKInstIDField
+	case common.BKInnerObjIDHost:
+		return common.BKHostIDField
+	case common.BKInnerObjIDProc:
+		return common.BKProcIDField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudIDField
+	default:
+		return common.BKInstIDField
+	}
+
+}
+
+// GetInstNameFieldName get the inst name
+func (o *Object) GetInstNameFieldName() string {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppNameField
+	case common.BKInnerObjIDSet:
+		return common.BKSetNameField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleNameField
+	case common.BKInnerObjIDHost:
+		return common.BKHostInnerIPField
+	case common.BKInnerObjIDProc:
+		return common.BKProcNameField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudNameField
+	default:
+		return common.BKInstNameField
+	}
+}
+
+// GetObjectType get the object type
+func (o *Object) GetObjectType() string {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return o.ObjectID
+	case common.BKInnerObjIDSet:
+		return o.ObjectID
+	case common.BKInnerObjIDModule:
+		return o.ObjectID
+	case common.BKInnerObjIDHost:
+		return o.ObjectID
+	case common.BKInnerObjIDProc:
+		return o.ObjectID
+	case common.BKInnerObjIDPlat:
+		return o.ObjectID
+	default:
+		return common.BKINnerObjIDObject
+	}
+}
+
+// IsCommon is common object
+func (o *Object) IsCommon() bool {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return false
+	case common.BKInnerObjIDSet:
+		return false
+	case common.BKInnerObjIDModule:
+		return false
+	case common.BKInnerObjIDHost:
+		return false
+	case common.BKInnerObjIDProc:
+		return false
+	case common.BKInnerObjIDPlat:
+		return false
+	default:
+		return true
+	}
+}
+
+// Parse load the data from mapstr object into object instance
+func (o *Object) Parse(data types.MapStr) (*Object, error) {
+
+	err := SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
 
-	return cli, err
+	return o, err
 }
 
 // ToMapStr to mapstr
-func (cli *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+func (o *Object) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition
@@ -99,14 +198,6 @@ type ObjectClsDes struct {
 	ClsName string `json:"bk_classification_name"`
 	ClsType string `json:"bk_classification_type"`
 	ClsIcon string `json:"bk_classification_icon"`
-}
-
-type ObjAttDes struct {
-	Attribute         `json:",inline"`
-	AssoType          int    `json:"bk_asst_type"`
-	AsstForward       string `json:"bk_asst_forward"`
-	AssociationID     string `json:"bk_asst_obj_id"`
-	PropertyGroupName string `json:"bk_property_group_name"`
 }
 
 type InnerModule struct {

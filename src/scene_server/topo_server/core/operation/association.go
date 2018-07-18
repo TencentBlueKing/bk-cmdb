@@ -32,7 +32,7 @@ type AssociationOperationInterface interface {
 	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error)
+	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
 	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
