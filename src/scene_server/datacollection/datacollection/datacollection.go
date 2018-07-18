@@ -27,8 +27,6 @@ import (
 	"configcenter/src/storage/redisclient"
 )
 
-var dataCollection = &DataCollection{}
-
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
