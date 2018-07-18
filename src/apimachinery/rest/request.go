@@ -102,13 +102,24 @@ func (r *Request) SubResource(subPath string) *Request {
 	return r
 }
 
+func isNil(body interface{}) bool {
+	if nil == body {
+		return true
+	}
+	vi := reflect.ValueOf(body)
+	switch vi.Kind() {
+	case reflect.Ptr, reflect.Array, reflect.Chan, reflect.Func, reflect.Invalid, reflect.Map, reflect.Slice, reflect.UnsafePointer:
+		return reflect.ValueOf(body).IsNil()
+	}
+	return false
+}
+
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
 		r.body = bytes.NewReader([]byte(""))
 		return r
 	}
-
-	if reflect.ValueOf(body).IsNil() {
+	if isNil(body) {
 		r.body = bytes.NewReader([]byte(""))
 		return r
 	}
