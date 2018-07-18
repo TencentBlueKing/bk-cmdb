@@ -15,7 +15,6 @@ package privilege
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -81,7 +80,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 		blog.Warnf("[permission] the group name (%s) repeated", groupName)
 		return u.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
-	fmt.Println("the resp:", rsp.Data)
+
 	return nil
 }
 
