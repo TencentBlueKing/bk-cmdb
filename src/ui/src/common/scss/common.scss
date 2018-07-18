@@ -155,6 +155,9 @@ textarea {
     // border: 1px solid #6b7baa;
 }
 
+.bk-dialog-body {
+    word-wrap: break-word;
+}
 .bk-dialog-btn.bk-dialog-btn-cancel {
     &:hover {
         border-color: $mainBtnColor;
