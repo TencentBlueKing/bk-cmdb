@@ -96,8 +96,8 @@ func (o *operation) WithAssoObjID(id string) *operation {
 }
 
 func (o *operation) WithAssoInstID(id map[string]interface{}) *operation {
-    o.op[common.BKAsstInstIDField] = id
-    return o
+	o.op[common.BKAsstInstIDField] = id
+	return o
 }
 
 func (o *operation) WithHostInnerIP(ip string) *operation {
@@ -105,7 +105,7 @@ func (o *operation) WithHostInnerIP(ip string) *operation {
 	return o
 }
 
-func (o *operation) WithCloudID(id string) *operation {
+func (o *operation) WithCloudID(id int64) *operation {
 	o.op[common.BKCloudIDField] = id
 	return o
 }
