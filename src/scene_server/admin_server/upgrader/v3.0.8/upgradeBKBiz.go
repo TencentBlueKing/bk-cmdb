@@ -109,7 +109,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	}
 	logRow := &metadata.OperationLog{
 		OwnerID:       conf.OwnerID,
-		ApplicationID: int(bizID),
+		ApplicationID: bizID,
 		OpType:        int(auditoplog.AuditOpTypeAdd),
 		OpTarget:      "biz",
 		User:          conf.User,
@@ -117,7 +117,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 		OpDesc:        "create app",
 		Content:       auditContent,
 		CreateTime:    time.Now(),
-		InstID:        int(bizID),
+		InstID:        bizID,
 	}
 	if preData != nil {
 		logRow.OpDesc = "update process"
@@ -235,7 +235,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: int(bizID),
+			ApplicationID: bizID,
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "process",
 			User:          conf.User,
@@ -243,7 +243,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 			OpDesc:        "create process",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        int(processID),
+			InstID:        processID,
 		}
 		if preData != nil {
 			logRow.OpDesc = "update process"
@@ -292,7 +292,7 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: int(bizID),
+			ApplicationID: bizID,
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "set",
 			User:          conf.User,
@@ -300,7 +300,7 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 			OpDesc:        "create set",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        int(setID),
+			InstID:        setID,
 		}
 		if preData != nil {
 			logRow.OpDesc = "update set"
@@ -353,7 +353,7 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: int(bizID),
+			ApplicationID: bizID,
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "module",
 			User:          conf.User,
@@ -361,7 +361,7 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 			OpDesc:        "create module",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        int(moduleID),
+			InstID:        moduleID,
 		}
 		if preData != nil {
 			logRow.OpDesc = "update module"
@@ -409,7 +409,7 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: int(bizID),
+			ApplicationID: bizID,
 			OpType:        int(auditoplog.AuditOpTypeModify),
 			OpTarget:      "module",
 			User:          conf.User,
@@ -417,7 +417,7 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 			OpDesc:        fmt.Sprintf("bind module [%s]", moduleName),
 			Content:       "",
 			CreateTime:    time.Now(),
-			InstID:        int(bizID),
+			InstID:        bizID,
 		}
 		if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
 			blog.Error("add audit log error ", err.Error())

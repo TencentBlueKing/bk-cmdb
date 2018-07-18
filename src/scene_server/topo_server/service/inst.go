@@ -321,7 +321,7 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 
 // SearchInstTopo search the inst topo
 func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstTopo")
+	//fmt.Println("SearchInstTopo")
 	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
@@ -343,7 +343,7 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
-	query.Condition = cond
+	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
 	cnt, instItems, err := s.core.InstOperation().FindInstTopo(params, obj, instID, query)
@@ -356,5 +356,5 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 
-	return nil, nil
+	return result, nil
 }

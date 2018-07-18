@@ -150,6 +150,7 @@ func (s *topoService) initService() {
 	s.initObjectAttribute()
 	s.initObjectClassification()
 	s.initObjectGroup()
+	s.initPrivilegeGroup()
 	s.initPrivigeRole()
 	s.initPrivilege()
 }
