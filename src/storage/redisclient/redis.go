@@ -36,7 +36,10 @@ type RedisConfig struct {
 }
 
 func NewFromConfig(cfg RedisConfig) (*redis.Client, error) {
-	dbNum, _ := strconv.Atoi(cfg.Database)
+	dbNum, err := strconv.Atoi(cfg.Database)
+	if nil != err {
+		return nil, err
+	}
 	var client *redis.Client
 	if cfg.MasterName == "" {
 		if strings.Contains(cfg.Address, ":") {
@@ -61,7 +64,7 @@ func NewFromConfig(cfg RedisConfig) (*redis.Client, error) {
 		client = redis.NewFailoverClient(option)
 	}
 
-	err := client.Ping().Err()
+	err = client.Ping().Err()
 	if err != nil {
 		return nil, err
 	}

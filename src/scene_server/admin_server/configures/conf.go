@@ -58,18 +58,21 @@ func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	// save configures
 	if err := cc.writeConfs2Center(confDir); err != nil {
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
+		return err
 	} else {
 		blog.Infof("writed all configures resource to center %v", types.CC_SERVCONF_BASEPATH)
 	}
 
 	if err := cc.writeErrorRes2Center(errres); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
+		return err
 	} else {
 		blog.Infof("writed error resource to center %v", types.CC_SERVERROR_BASEPATH)
 	}
 
 	if err := cc.writeLanguageRes2Center(languageres); err != nil {
 		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+		return err
 	} else {
 		blog.Infof("writed languate packages to center %v", types.CC_SERVLANG_BASEPATH)
 	}

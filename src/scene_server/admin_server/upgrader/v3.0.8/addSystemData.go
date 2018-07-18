@@ -21,7 +21,7 @@ import (
 
 func addSystemData(db storage.DI, conf *upgrader.Config) error {
 	tablename := "cc_System"
-	blog.Errorf("add data for  %s table ", tablename)
+	blog.V(3).Infof("add data for  %s table ", tablename)
 	data := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue}
 	isExist, err := db.GetCntByCondition(tablename, data)

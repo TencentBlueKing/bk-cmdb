@@ -96,14 +96,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
-		process.ConfigCenter.Start(
+		err = process.ConfigCenter.Start(
 			process.Config.Configures.Dir,
 			process.Config.Errors.Res,
 			process.Config.Language.Res,
 		)
+		if err != nil {
+			return err
+		}
 		break
 	}
 	<-ctx.Done()
+	blog.V(3).Info("process stoped")
 	return nil
 }
 
