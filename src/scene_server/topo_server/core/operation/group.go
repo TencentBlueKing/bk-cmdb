@@ -34,7 +34,8 @@ type GroupOperationInterface interface {
 	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
 	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
 	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
-
+	UpdateObjectAttributeGroup(params types.ContextParams, cond []metadata.PropertyGroupObjectAtt) error
+	DeleteObjectAttributeGroup(params types.ContextParams, objID, propertyID, groupID string) error
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
 }
 
@@ -132,6 +133,41 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 
 	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
 }
+
+func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, cond []metadata.PropertyGroupObjectAtt) error {
+
+	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroupObjectAtt(context.Background(), params.Header, cond)
+
+	if nil != err {
+		blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
+	return nil
+}
+
+func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, propertyID, groupID string) error {
+
+	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroupObjectAtt(context.Background(), params.SupplierAccount, objID, propertyID, groupID, params.Header)
+
+	if nil != err {
+		blog.Errorf("[operation-grp] failed to set the group , error info is %s ", err.Error())
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[operation-grp] failed to set the group , error info is %s ", rsp.ErrMsg)
+		return params.Err.Error(rsp.Code)
+	}
+
+	return nil
+}
+
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
 	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
