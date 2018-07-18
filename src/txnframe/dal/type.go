@@ -12,8 +12,6 @@
 
 package dal
 
-import "github.com/mongodb/mongo-go-driver/mongo"
-
 // mongodb collection names
 const (
 	ApplicationBaseCollection    = "cc_ApplicationBase"
@@ -44,11 +42,3 @@ const (
 	UserGroupPrivilegeCollection = "cc_UserGroupPrivilege"
 	IDGeneratorCollection        = "cc_idgenerator"
 )
-
-type Cursor mongo.Cursor
-type DeleteResult mongo.DeleteResult
-type DocumentResult mongo.DocumentResult
-type InsertManyResult mongo.InsertManyResult
-type InsertOneResult mongo.InsertOneResult
-type UpdateResult mongo.UpdateResult
-type IndexView mongo.IndexView

@@ -24,6 +24,7 @@ func (f *FingerprintsType) Add(finger string) {
 type RollBackType string
 
 const (
+	Unknown    RollBackType = "unknown"
 	InsertOne  RollBackType = "InsertOne"
 	InsertMany RollBackType = "InsertMany"
 	UpdateOne  RollBackType = "UpdateOne"

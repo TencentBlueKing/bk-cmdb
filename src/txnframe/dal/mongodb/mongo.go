@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package dal
+package mongodb
 
 import (
 	"context"
