@@ -13,6 +13,7 @@
 package distribution
 
 import (
+	"configcenter/src/common"
 	"fmt"
 	"io"
 	"strings"
@@ -24,12 +25,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 	"configcenter/src/storage/dbclient"
 )
 
 type reconciler struct {
+	db                   storage.DI
 	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
@@ -38,8 +39,9 @@ type reconciler struct {
 	processID            string
 }
 
-func newReconciler(cache *redis.Client) *reconciler {
+func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
 	return &reconciler{
+		db:                   db,
 		cache:                cache,
 		cached:               map[string][]string{},
 		persisted:            map[string][]string{},
@@ -64,7 +66,7 @@ func (r *reconciler) loadAllCached() {
 
 func (r *reconciler) loadAllPersisted() {
 	subscriptions := []metadata.Subscription{}
-	if err := instdata.GetSubscriptionByCondition(nil, nil, &subscriptions, "", 0, 0); err != nil {
+	if err := r.db.GetMutilByCondition(common.BKTableNameSubscription, nil, nil, &subscriptions, "", 0, 0); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
