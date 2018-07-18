@@ -47,7 +47,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 
 		parent, err := currentInst.GetMainlineParentInst()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, error info is %s", current.GetID(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, the current inst(%v), error info is %s", current.GetID(), currentInst.GetValues(), err.Error())
 			return err
 		}
 
@@ -93,11 +93,18 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	// reset the parent's inst
 	for _, parent := range parentInsts {
 
+		id, err := parent.GetInstID()
+		if nil != err {
+			blog.Errorf("[operation-asst] failed to find the inst id, error info is %s", err.Error())
+			return err
+		}
+
 		// create the default inst
 		defaultInst := cli.instFactory.CreateInst(params, current)
 		defaultInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
 		defaultInst.SetValue(current.GetInstNameFieldName(), current.GetName())
 		defaultInst.SetValue(common.BKDefaultField, 0)
+		defaultInst.SetValue(common.BKInstParentStr, id)
 
 		// create the inst
 		if err = defaultInst.Create(); nil != err {
@@ -173,19 +180,14 @@ func (cli *association) constructTopo(params types.ContextParams, targetInst ins
 
 	return results, nil
 }
-func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error) {
-
-	bizObj, err := cli.obj.FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		return nil, err
-	}
+func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = frtypes.MapStr{
-		bizObj.GetInstIDFieldName(): bizID,
+		obj.GetInstIDFieldName(): instID,
 	}
 
-	_, bizInsts, err := cli.inst.FindInst(params, bizObj, cond, false)
+	_, bizInsts, err := cli.inst.FindInst(params, obj, cond, false)
 	if nil != err {
 		return nil, err
 	}
@@ -203,7 +205,7 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 			return nil, err
 		}
 
-		tmp := &metadata.TopoInstRst{}
+		tmp := &metadata.TopoInstRst{Child: []metadata.TopoInstRst{}}
 		tmp.InstID = instID
 		tmp.InstName = instName
 		tmp.ObjID = biz.GetObject().GetID()

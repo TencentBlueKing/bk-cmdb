@@ -53,7 +53,7 @@ func (s *topoService) UpdateUserGroup(params types.ContextParams, pathParams, qu
 
 // SearchUserGroup search user goup
 func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
+	fmt.Println("search user group")
 	cond := condition.CreateCondition()
 
 	data.ForEach(func(key string, val interface{}) {
