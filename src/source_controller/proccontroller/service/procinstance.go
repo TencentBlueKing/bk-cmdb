@@ -24,7 +24,7 @@ import (
 )
 
 func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	reqParam := make([]meta.ProcInstanceModel, 0)
@@ -45,7 +45,7 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 }
 
 func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	reqParam := make(map[string]interface{})
@@ -67,7 +67,7 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 }
 
 func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	reqParam := make(map[string]interface{})

@@ -42,7 +42,9 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	}
 	// v3
 	ws := new(restful.WebService)
-	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	restful.DefaultRequestContentType(restful.MIME_JSON)
+	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.DELETE("/module").To(ps.DeleteProc2Module))
 	ws.Route(ws.POST("/module").To(ps.CreateProc2Module))
