@@ -162,7 +162,7 @@ const (
 const (
 	// BKFIeldID the id definition
 	BKFieldID = "id"
-
+	
 	// BKDefaultField the default field
 	BKDefaultField = "default"
 
@@ -175,6 +175,9 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
+	// BKIPAddr the ip address
+	BKIPArr = "ipArr"
+	
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
@@ -234,10 +237,13 @@ const (
 
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
+	
+	// BKConfTempId is the config template id field
+	BKConfTempIdField = "bk_conftemp_id"
 
 	// BKProcNameField the proc name field
 	BKProcNameField = "bk_process_name"
-
+	
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
 
@@ -419,6 +425,17 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+    // BKGseTaskIdField the gse taskid
+	BKGseTaskIdField = "task_id"
+	// BKProcPidFile the process pid file
+	BKProcPidFile = "pid_file"
+	BKProcStartCmd = "start_cmd"
+	BKProcStopCmd = "stop_cmd"
+	BKProcReloadCmd = "reload_cmd"
+	BKProcRestartCmd = "restart_cmd"
+	BKProcTimeOut = "timeout"
+	BKProcWorkPath = "work_path"
+	BKProcInstNum = "proc_num"
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
@@ -585,6 +602,12 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
+	// BKTableNameProcConf the table name of the process config
+	BKTableNameProcConf = "cc_ProcConf"
+
+	// BKTableNameProcInstanceModel the table name of the process instance
+    BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
+	
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"
 
