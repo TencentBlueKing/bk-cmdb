@@ -59,7 +59,16 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 
 	appID := formData["ApplicationID"][0]
 
-	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, mapstr.MapStr{})
+	params := mapstr.MapStr{
+		"fields":    []string{},
+		"condition": mapstr.MapStr{},
+		"page": mapstr.MapStr{
+			"start": 0,
+			"limit": 0,
+		},
+	}
+
+	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, params)
 
 	if err != nil {
 		blog.Errorf("getModulesByApp   error:%v", err)
