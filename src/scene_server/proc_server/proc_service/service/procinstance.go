@@ -60,7 +60,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 }
 
 func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	namespace := req.PathParameter("namespace")
