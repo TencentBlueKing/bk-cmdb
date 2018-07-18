@@ -10,35 +10,42 @@
  * limitations under the License.
  */
 
-package distribution
+package v3v0v8
 
 import (
-	redis "gopkg.in/redis.v5"
-
-	"configcenter/src/scene_server/event_server/identifier"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
-	chErr := make(chan error)
-
-	eh := &EventHandler{cache: cache}
-	go func() {
-		chErr <- eh.StartHandleInsts()
-	}()
-
-	dh := &DistHandler{cache: cache}
-	go func() {
-		chErr <- dh.StartDistribute()
-	}()
-
-	ih := identifier.NewIdentifierHandler(cache, db)
-	go func() {
-		chErr <- ih.StartHandleInsts()
-	}()
-
-	return <-chErr
+func init() {
+	upgrader.RegistUpgrader("v3.0.8", upgrade)
 }
 
-type EventHandler struct{ cache *redis.Client }
-type DistHandler struct{ cache *redis.Client }
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = createTable(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPresetObjects(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addPlatData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addSystemData(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addDefaultBiz(db, conf)
+	if err != nil {
+		return err
+	}
+	err = addBKApp(db, conf)
+	if err != nil {
+		return err
+	}
+
+	return
+}

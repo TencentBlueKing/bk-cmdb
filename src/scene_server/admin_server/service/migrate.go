@@ -10,37 +10,36 @@
  * limitations under the License.
  */
 
-package main
+package service
 
 import (
-	"fmt"
-	"os"
-	"runtime"
+	"net/http"
 
-	"github.com/spf13/pflag"
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/datacollection/app"
-	"configcenter/src/scene_server/datacollection/app/options"
+	"configcenter/src/scene_server/admin_server/upgrader"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_DATACOLLECTION)
-	runtime.GOMAXPROCS(runtime.NumCPU())
+func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := common.BKDefaultOwnerID
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
+	err := upgrader.Upgrade(s.db, &upgrader.Config{
+		OwnerID:    ownerID,
+		SupplierID: common.BKDefaultSupplierID,
+		User:       "migrate",
+	})
 
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+	if nil != err {
+		blog.Errorf("db upgrade error: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
+		return
 	}
+
+	resp.WriteEntity(metadata.NewSuccessResp("migrate success"))
 }

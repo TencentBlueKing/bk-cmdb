@@ -83,11 +83,6 @@ type AuditControllerServInfo struct {
 	ServerInfo
 }
 
-// DataCollectionControllerServInfo data-collection-controller server information
-type DataCollectionControllerServInfo struct {
-	ServerInfo
-}
-
 // HostControllerServInfo host-controller server information
 type HostControllerServInfo struct {
 	ServerInfo
