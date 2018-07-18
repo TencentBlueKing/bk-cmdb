@@ -13,12 +13,13 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 )
 
 var _ CommonInstInterface = (*inst)(nil)
@@ -99,7 +100,7 @@ func (cli *inst) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().SearchInst(cond)
 	return attrs, existItems, err
 }
 
@@ -114,7 +115,7 @@ func (cli *inst) IsExists() (bool, error) {
 }
 func (cli *inst) Create() error {
 
-	instID, err := client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
+	instID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().CreateCommonInst(cli.datas)
 	if nil != err {
 		return err
 	}
@@ -159,7 +160,7 @@ func (cli *inst) Update() error {
 			existItem.Remove(key)
 		})
 
-		err = client.GetClient().CCV3().CommonInst().UpdateCommonInst(existItem, updateCond)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().UpdateCommonInst(existItem, updateCond)
 		if nil != err {
 			return err
 		}
