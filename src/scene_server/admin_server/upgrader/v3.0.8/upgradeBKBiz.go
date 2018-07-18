@@ -21,8 +21,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 
