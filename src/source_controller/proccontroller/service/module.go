@@ -19,9 +19,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/eventdata"
 )
 
 // DeleteProc2Module delete proc module config
@@ -52,7 +52,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 
 	//send  event
 	if len(originals) > 0 {
-		ec := eventdata.NewEventContextByReq(req, ps.CacheDI)
+		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 		for _, i := range originals {
 			if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionDelete, nil, i); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
@@ -77,7 +77,7 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 	}
 
 	blog.Infof("create proc module config: %v ", input)
-	ec := eventdata.NewEventContextByReq(req, ps.CacheDI)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 	for _, i := range input {
 		if _, err := ps.DbInstance.Insert(common.BKTableNameProcModule, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)

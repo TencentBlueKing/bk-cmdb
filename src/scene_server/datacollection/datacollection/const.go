@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	RedisSnapKeyPrefix        = common.BKCacheKeyV3Prefix + "snapshot:"
 	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
 	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
 	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
