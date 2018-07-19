@@ -62,7 +62,7 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	}
 
 	modules, err := s.getModulesByAppId(appID, user, pheader)
-	blog.Debug("modules data:%v", modules)
+	blog.V(3).Infof("modules data:%v", modules)
 	if nil != err {
 		blog.Errorf("getProcessPortByApplicationID error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)

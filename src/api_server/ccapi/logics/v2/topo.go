@@ -54,12 +54,12 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 	ret := map[string]interface{}{
 		"Level":           3,
 		"ApplicationName": appName,
-		"ApplicationID":   fmt.Sprintf("%d", appID),
+		"ApplicationID":   strconv.FormatInt(appID, 10),
 		"Children":        make([]interface{}, 0),
 	}
 
 	moduleFields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
-	modules, errCode := lgc.getModulesByConds(user, pheader, fmt.Sprintf("%d", appID), conds, moduleFields, "")
+	modules, errCode := lgc.getModulesByConds(user, pheader, strconv.FormatInt(appID, 10), conds, moduleFields, "")
 	if 0 != errCode {
 		return nil, 0
 	}
@@ -99,7 +99,7 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 		}
 		retSets = append(retSets, map[string]interface{}{
 			"SetName":  setName,
-			"SetID":    fmt.Sprintf("%d", setID),
+			"SetID":    strconv.FormatInt(setID, 10),
 			"Children": moduleArr,
 		})
 
@@ -117,7 +117,7 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 		blog.Errorf("GetAppTopo not find module by app id:%d", appID)
 		return nil, common.CCErrCommNotFound
 	}
-	strAppID := fmt.Sprintf("%d", appID)
+	strAppID := strconv.FormatInt(appID, 10)
 	for _, moduleI := range modules {
 		module, ok := moduleI.(map[string]interface{})
 		if false == ok {
@@ -144,8 +144,8 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 			modulesMap[setID] = make([]map[string]interface{}, 0)
 		}
 		modulesMap[setID] = append(modulesMap[setID], map[string]interface{}{
-			"SetID":         fmt.Sprintf("%d", setID),
-			"ModuleID":      fmt.Sprintf("%d", moduleID),
+			"SetID":         strconv.FormatInt(setID, 10),
+			"ModuleID":      strconv.FormatInt(moduleID, 10),
 			"ModuleName":    moduleName,
 			"HostNum":       "0",
 			"ApplicationID": strAppID,
@@ -307,7 +307,7 @@ func (lgc *Logics) getModules(user string, pheader http.Header, appID int64) ([]
 
 	fields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
 
-	return lgc.getModulesByConds(user, pheader, fmt.Sprintf("%d", appID), nil, fields, "")
+	return lgc.getModulesByConds(user, pheader, strconv.FormatInt(appID, 10), nil, fields, "")
 }
 
 func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appIDStr string, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
