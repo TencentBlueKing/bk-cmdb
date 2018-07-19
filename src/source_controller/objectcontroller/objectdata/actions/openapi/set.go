@@ -1,34 +1,34 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package openapi
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/eventdata"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/emicklei/go-restful"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/source_controller/common/eventdata"
 )
 
 var set *setAction = &setAction{}
@@ -131,7 +131,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 	//发送删除主机关系事件
 	ec := eventdata.NewEventContextByReq(req)
 	for oldContent := range oldContents {
-		err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionDelete, oldContent, nil)
+		err = ec.InsertEvent(metadata.EventTypeRelation, common.BKInnerObjIDHost, metadata.EventActionDelete, oldContent, nil)
 		if err != nil {
 			blog.Error("create event error:%v", err)
 		}
@@ -181,7 +181,7 @@ func delModuleConfigSet(input map[string]interface{}, req *restful.Request) erro
 		}
 		//推送新加到空闲机器的关系
 		for _, row := range addIdleModuleDatas {
-			err = ec.InsertEvent(eventtypes.EventTypeRelation, common.BKInnerObjIDHost, eventtypes.EventActionCreate, nil, row)
+			err = ec.InsertEvent(metadata.EventTypeRelation, common.BKInnerObjIDHost, metadata.EventActionCreate, nil, row)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}

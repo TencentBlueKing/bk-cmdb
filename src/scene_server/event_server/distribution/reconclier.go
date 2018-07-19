@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package distribution
 
 import (
@@ -7,17 +19,18 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 	"configcenter/src/storage/dbclient"
 )
 
 type reconciler struct {
+	db                   storage.DI
 	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
@@ -26,8 +39,9 @@ type reconciler struct {
 	processID            string
 }
 
-func newReconciler(cache *redis.Client) *reconciler {
+func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
 	return &reconciler{
+		db:                   db,
 		cache:                cache,
 		cached:               map[string][]string{},
 		persisted:            map[string][]string{},
@@ -52,7 +66,7 @@ func (r *reconciler) loadAllCached() {
 
 func (r *reconciler) loadAllPersisted() {
 	subscriptions := []metadata.Subscription{}
-	if err := instdata.GetSubscriptionByCondition(nil, nil, &subscriptions, "", 0, 0); err != nil {
+	if err := r.db.GetMutilByCondition(common.BKTableNameSubscription, nil, nil, &subscriptions, "", 0, 0); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))

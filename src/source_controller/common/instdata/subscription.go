@@ -13,11 +13,12 @@
 package instdata
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 )
 
 func DelSubscriptionByCondition(condition interface{}) error {
-	err := DataH.DelByCondition(metadata.TableNameSubscription, condition)
+	err := DataH.DelByCondition(common.BKTableNameSubscription, condition)
 	if nil != err {
 		return err
 	}
@@ -25,7 +26,7 @@ func DelSubscriptionByCondition(condition interface{}) error {
 }
 
 func UpdateSubscriptionByCondition(data interface{}, condition interface{}) error {
-	err := DataH.UpdateByCondition(metadata.TableNameSubscription, data, condition)
+	err := DataH.UpdateByCondition(common.BKTableNameSubscription, data, condition)
 	if nil != err {
 		return err
 	}
@@ -33,13 +34,13 @@ func UpdateSubscriptionByCondition(data interface{}, condition interface{}) erro
 }
 
 func GetOneSubscriptionByCondition(condition, result interface{}) error {
-	return DataH.GetOneByCondition(metadata.TableNameSubscription, nil, condition, result)
+	return DataH.GetOneByCondition(common.BKTableNameSubscription, nil, condition, result)
 }
 func GetSubscriptionByCondition(fields []string, condition, result interface{}, sort string, skip, limit int) error {
-	return DataH.GetMutilByCondition(metadata.TableNameSubscription, fields, condition, result, sort, skip, limit)
+	return DataH.GetMutilByCondition(common.BKTableNameSubscription, fields, condition, result, sort, skip, limit)
 }
 func GetSubscriptionCntByCondition(condition interface{}) (int, error) {
-	cnt, err := DataH.GetCntByCondition(metadata.TableNameSubscription, condition)
+	cnt, err := DataH.GetCntByCondition(common.BKTableNameSubscription, condition)
 	if nil != err {
 		return 0, err
 	}
@@ -47,11 +48,11 @@ func GetSubscriptionCntByCondition(condition interface{}) (int, error) {
 }
 
 func CreateSubscription(input *metadata.Subscription) (int64, error) {
-	id, err := DataH.GetIncID(metadata.TableNameSubscription)
+	id, err := DataH.GetIncID(common.BKTableNameSubscription)
 	if err != nil {
 		return 0, err
 	}
 	input.SubscriptionID = id
-	DataH.Insert(metadata.TableNameSubscription, input)
+	DataH.Insert(common.BKTableNameSubscription, input)
 	return id, nil
 }

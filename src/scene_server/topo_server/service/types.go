@@ -14,7 +14,9 @@ package service
 
 import (
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -25,15 +27,25 @@ type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsG
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string
 
+// ParseOriginDataFunc parse the origin data
+type ParseOriginDataFunc func(data []byte) (frtypes.MapStr, error)
+
 // Action the http action
 type action struct {
-	Method      string
-	Path        string
-	HandlerFunc LogicFunc
+	Method                     string
+	Path                       string
+	HandlerFunc                LogicFunc
+	HandlerParseOriginDataFunc ParseOriginDataFunc
 }
 
 // API the API interface
 type API interface {
 	SetCore(coreMgr core.Core)
 	Actions() []*httpserver.Action
+}
+
+type compatiblev2Condition struct {
+	Condition mapstr.MapStr     `json:"condition"`
+	Page      metadata.BasePage `json:"page"`
+	Fields    []string          `json:"fields"`
 }

@@ -238,5 +238,5 @@ func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.UpdateInst(params, data, obj, innerCond)
+	return b.inst.UpdateInst(params, data, obj, innerCond, bizID)
 }

@@ -63,7 +63,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 	if 0 != len(groupID) {
 		cond.Field("group_id").Eq(groupID)
 	}
-	cond.Field("goup_name").Eq(groupName)
+	cond.Field("group_name").Eq(groupName)
 
 	rsp, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {

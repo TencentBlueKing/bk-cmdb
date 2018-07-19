@@ -110,16 +110,17 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 
 		}
 
-		intHostID, err := util.GetInt64ByInterface(iHostID)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("invalid host id: %v", iHostID)
-		}
-		// delete system fields
-		delete(host, common.BKHostIDField)
-
-		preData, _, _ := lgc.GetHostInstanceDetails(pheader, ownerID, strconv.FormatInt(intHostID, 10))
-
+		var err error
+		var intHostID int64
+		preData := make(map[string]interface{}, 0)
 		if isOK {
+			intHostID, err = util.GetInt64ByInterface(iHostID)
+			if err != nil {
+				return nil, nil, nil, fmt.Errorf("invalid host id: %v", iHostID)
+			}
+			// delete system fields
+			delete(host, common.BKHostIDField)
+			preData, _, _ = lgc.GetHostInstanceDetails(pheader, ownerID, strconv.FormatInt(intHostID, 10))
 			// update host instance.
 			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
 				updateErrMsg = append(updateErrMsg, err.Error())
@@ -127,7 +128,6 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 			}
 
 		} else {
-			var err error
 			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
 			if err != nil {
 				errMsg = append(errMsg, err.Error())
@@ -161,12 +161,12 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 		}
 		_, err := lgc.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, pheader, log)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return nil, nil, nil, errors.New(lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader)).Language("host_import_err"))
+		return succMsg, updateErrMsg, errMsg, errors.New(lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader)).Language("host_import_err"))
 	}
 
 	return succMsg, updateErrMsg, errMsg, nil
@@ -412,7 +412,7 @@ func (lgc *Logics) getAsstInstByAsstObjectConds(pheader http.Header, asstInstCon
 				instPrimayIDMap[objID] = make(map[string]int64)
 			}
 
-			idField := util.GetObjIDByType(objID)
+			idField := common.GetInstFieldByType(objID)
 			idVal, exist := item[idField]
 			if !exist {
 				return nil, fmt.Errorf("%s %s not found", objID, idField)
@@ -489,14 +489,14 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	valid := validator.NewValidMapWithKeyFields(util.GetOwnerID(h.pheader), common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
 	err := valid.ValidMap(host, common.ValidUpdate, hostID)
 	if nil != err {
-		blog.Error("host valid error %v %v", index, err)
+		blog.Errorf("host valid error %v %v", index, err.Error())
 		return fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
 
 	}
 
 	err = h.UpdateInstAssociation(h.pheader, hostID, h.ownerID, common.BKInnerObjIDHost, host)
 	if err != nil {
-		blog.Error("update host asst attr error : %v", err)
+		blog.Errorf("update host asst attr error : %s", err.Error())
 		return fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("import_row_int_error_str", index, err.Error()))
 	}
 
@@ -516,6 +516,7 @@ func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64
 	opt := hutil.NewOperation().WithOwnerID(h.ownerID).WithObjID(objID).Data()
 	result, err := h.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), h.pheader, opt)
 	if err != nil || (err == nil && !result.Result) {
+		blog.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
 
@@ -533,6 +534,7 @@ func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64
 	if 0 < len(asstFieldVal) {
 		oResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, asstFieldVal)
 		if err != nil || (err == nil && !oResult.Result) {
+			blog.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
 			return fmt.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
 		}
 	}
@@ -556,6 +558,7 @@ func (h *importInstance) deleteInstAssociation(instID int64, objID, asstObjID st
 }
 
 func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, host map[string]interface{}) (int64, error) {
+	ip, _ := host[common.BKHostInnerIPField].(string)
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
 		host[common.BKCloudIDField] = cloudID
@@ -570,17 +573,20 @@ func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, 
 	host[common.CreateTimeField] = time.Now().UTC()
 	result, err := h.CoreAPI.HostController().Host().AddHost(context.Background(), h.pheader, host)
 	if err != nil || (err == nil && !result.Result) {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], result.ErrMsg))
+		blog.Errorf("add host by ip:%s, err:%v, reply err:%s", ip, err, result.ErrMsg)
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, result.ErrMsg))
 	}
 
 	hID, ok := result.Data.(map[string]interface{})[common.BKHostIDField]
 	if !ok {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"]))
+		blog.Errorf("add host by ip:%s reply not found hostID, err:%v, reply :%v", ip, err, result.Data)
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip))
 	}
 
 	hostID, err := util.GetInt64ByInterface(hID)
 	if err != nil {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error()))
+		blog.Errorf("add host by ip:%s reply hostID not interger, err:%v, reply :%v", ip, err, result.Data)
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, err.Error()))
 	}
 
 	hostAsstData := ExtractDataFromAssociationField(hostID, host, h.asstDes)
@@ -588,18 +594,24 @@ func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, 
 	for _, item := range hostAsstData {
 		cResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, item)
 		if err != nil {
-			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error()))
-		} else if err == nil && cResult.Result {
-			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], cResult.ErrMsg))
+			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, err.Error()))
+		} else if err == nil && !cResult.Result {
+			return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, cResult.ErrMsg))
 		}
 	}
 
-	opt := hutil.NewOperation().WithAppID(appID).WithModuleIDs([]int64{moduleID}).WithHostID(hostID).Data()
-	hResult, err := h.CoreAPI.HostController().Host().AddHost(context.Background(), h.pheader, opt)
+	opt := &metadata.ModuleHostConfigParams{
+		ApplicationID: appID,
+		ModuleID:      []int64{moduleID},
+		HostID:        hostID,
+	}
+	hResult, err := h.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), h.pheader, opt)
 	if err != nil {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], err.Error()))
-	} else if err == nil && hResult.Result {
-		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, host["InnerIP"], hResult.ErrMsg))
+		blog.Errorf("add host module by ip:%s  err:%s", ip, err.Error())
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, err.Error()))
+	} else if err == nil && !hResult.Result {
+		blog.Errorf("add host module by ip:%s  err:%s", ip, hResult.ErrMsg)
+		return 0, fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_add_fail", index, ip, hResult.ErrMsg))
 	}
 
 	return hostID, nil
