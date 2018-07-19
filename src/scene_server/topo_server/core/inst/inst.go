@@ -85,8 +85,6 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	blog.Infof("debug inst:%#v", rsp.Data.Info)
-
 	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
 
 }
