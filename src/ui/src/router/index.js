@@ -116,7 +116,7 @@ var router = new Router({
 
 router.beforeEach(async (to, from, next) => {
     routerVue.setGlobalLoading(true)
-    routerVue.updateHistoryCount(1)
+    routerVue.updateHistoryCount(-1)
     let isAuthorized = await routerVue.isAuthorized(to)
     if (isAuthorized) {
         if (!to.matched.some(({meta}) => meta.setBkBizId)) {

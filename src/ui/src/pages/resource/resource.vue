@@ -125,7 +125,8 @@
                         importUrl: `${window.siteUrl}hosts/import`
                     }
                 },
-                isShowimportHost: false
+                isShowimportHost: false,
+                prevHistoryCount: 0
             }
         },
         computed: {
@@ -146,6 +147,9 @@
                 if (!isShow) {
                     this.slider.tab.active = 'import'
                 }
+            },
+            'filing.isShow' (isShow) {
+                this.updateHistoryCount(isShow)
             }
         },
         methods: {
@@ -281,9 +285,15 @@
                 this.hosts.table.header = this.$refs.hosts.table.tableHeader
                 this.hosts.table.allAttr = this.$refs.hosts.attribute
                 this.filing.isShow = true
+            },
+            updateHistoryCount (isShow) {
+                if (this.prevHistoryCount) {
+                    this.$store.commit('navigation/updateHistoryCount', isShow ? -1 : 1)
+                }
             }
         },
         created () {
+            this.prevHistoryCount = this.$store.state.navigation.historyCount
             if (!this.bkBizList.length) {
                 this.getBkBizList()
             }
