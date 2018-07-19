@@ -45,7 +45,7 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	ws.GET("/healthz").To(s.Healthz)
 
 	return ws
 }

@@ -52,8 +52,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/subscribe/{ownerID}/{appID}").To(s.Subscribe))
 	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
 	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
-
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	ws.GET("/healthz").To(s.Healthz)
 
 	return ws
 }

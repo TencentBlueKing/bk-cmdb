@@ -43,7 +43,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.Set))
 	ws.Route(ws.POST("/clear").To(s.clear))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	ws.GET("/healthz").To(s.Healthz)
 
 	return ws
 }
