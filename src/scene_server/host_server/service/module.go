@@ -475,7 +475,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		host[common.BKCloudIDField] = data.PlatID
 
 		//dispatch to app
-		err := s.Logics.EnterIP(pheader, data.OwnerID, appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
+		err := s.Logics.EnterIP(pheader, util.GetOwnerID(req.Request.Header), appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
 		if nil != err {
 			blog.Errorf("%s add host error: %s", ip, err.Error())
 			errmsg = append(errmsg, fmt.Sprintf("%s add host error: %s", ip, err.Error()))
