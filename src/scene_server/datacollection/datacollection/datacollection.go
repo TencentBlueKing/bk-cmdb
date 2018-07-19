@@ -13,8 +13,6 @@
 package datacollection
 
 import (
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
 	"context"
 	"fmt"
 	"reflect"
@@ -25,6 +23,8 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/datacollection/app/options"
+	"configcenter/src/storage"
+	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
 )
 
