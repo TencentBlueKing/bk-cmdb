@@ -207,6 +207,8 @@ const (
 
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
+	// BKSubscriptionNameField the subscription name field
+	BKSubscriptionNameField = "subscription_name"
 
 	// BKOSTypeField the os type field
 	BKOSTypeField = "bk_os_type"
