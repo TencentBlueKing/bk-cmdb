@@ -412,7 +412,7 @@ func (lgc *Logics) getAsstInstByAsstObjectConds(pheader http.Header, asstInstCon
 				instPrimayIDMap[objID] = make(map[string]int64)
 			}
 
-			idField := util.GetObjIDByType(objID)
+			idField := common.GetInstFieldByType(objID)
 			idVal, exist := item[idField]
 			if !exist {
 				return nil, fmt.Errorf("%s %s not found", objID, idField)

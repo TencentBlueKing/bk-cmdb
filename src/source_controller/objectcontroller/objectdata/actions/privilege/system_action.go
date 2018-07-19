@@ -13,14 +13,15 @@
 package privilege
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/util"
-	"crypto/md5"
-	"encoding/hex"
-	"net/http"
 
 	"github.com/emicklei/go-restful"
 )
@@ -61,7 +62,7 @@ func (cli *systemAction) GetSystemFlag(req *restful.Request, resp *restful.Respo
 		cipherStr := h.Sum(nil)
 		cond[flag] = hex.EncodeToString(cipherStr) + ownerID
 
-		err := cli.CC.InstCli.GetOneByCondition(common.SystemTableName, []string{}, cond, &result)
+		err := cli.CC.InstCli.GetOneByCondition(common.BKTableNameSystem, []string{}, cond, &result)
 		if nil != err {
 			blog.Error("get system config error :%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrObjectSelectInstFailed)

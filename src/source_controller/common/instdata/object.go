@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"errors"
 	"fmt"
 	"reflect"
@@ -25,7 +24,7 @@ import (
 
 //GetCntByCondition get count by condition
 func GetCntByCondition(objType string, condition interface{}) (int, error) {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	cnt, err := DataH.GetCntByCondition(tName, condition)
 	if nil != err {
 		return 0, err
@@ -35,7 +34,7 @@ func GetCntByCondition(objType string, condition interface{}) (int, error) {
 
 //DelObjByCondition delete object by condition
 func DelObjByCondition(objType string, condition interface{}) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	err := DataH.DelByCondition(tName, condition)
 	if nil != err {
 		return err
@@ -45,7 +44,7 @@ func DelObjByCondition(objType string, condition interface{}) error {
 
 //UpdateObjByCondition update object by condition
 func UpdateObjByCondition(objType string, data interface{}, condition interface{}) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	err := DataH.UpdateByCondition(tName, data, condition)
 	if nil != err {
 		return err
@@ -68,7 +67,7 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 
 //GetObjectByCondition get object by condition
 func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	if err := DataH.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
@@ -95,7 +94,7 @@ func GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, 
 
 //CreateObject add new object
 func CreateObject(objType string, input interface{}, idName *string) (int, error) {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	objID, err := DataH.GetIncID(tName)
 	if err != nil {
 		return 0, err
@@ -133,7 +132,7 @@ func GetIDNameByType(objType string) string {
 
 //GetObjectByID get object by id
 func GetObjectByID(objType string, fields []string, id int, result interface{}, sort string) error {
-	tName := commondata.ObjTableMap[objType]
+	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	switch objType {
 	case common.BKInnerObjIDApp:

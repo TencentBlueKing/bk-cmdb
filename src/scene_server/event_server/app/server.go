@@ -14,8 +14,10 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -28,6 +30,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/event_server/app/options"
+	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
@@ -67,25 +70,27 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	eventSvr := new(EventServer)
+	process := new(EventServer)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_EVENTSERVER,
 		op.ServConf.ExConfig,
-		eventSvr.onHostConfigUpdate,
+		process.onHostConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	service.Engine = engine
-	eventSvr.Core = engine
-	eventSvr.Service = service
+	process.Core = engine
+	process.Service = service
+	errCh := make(chan error)
 	for {
-		if eventSvr.Config == nil {
+		if process.Config == nil {
 			time.Sleep(time.Second * 2)
 			blog.V(3).Info("config not found, retry 2s later")
+			continue
 		}
-		db, err := mgoclient.NewFromConfig(eventSvr.Config.MongoDB)
+		db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
@@ -93,15 +98,25 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
-		eventSvr.Service.SetDB(db)
+		process.Service.SetDB(db)
 
-		cache, err := redisclient.NewFromConfig(eventSvr.Config.Redis)
+		cache, err := redisclient.NewFromConfig(process.Config.Redis)
 		if err != nil {
 			return fmt.Errorf("connect redis server failed %s", err.Error())
 		}
-		eventSvr.Service.SetCache(cache)
+		process.Service.SetCache(cache)
+		go func() {
+			errCh <- distribution.Start(cache, db)
+		}()
+		break
 	}
-	select {}
+	select {
+	case <-ctx.Done():
+	case err = <-errCh:
+		blog.V(5).Infof("distribution routine stoped %s", err.Error())
+	}
+	blog.V(5).Infof("process stoped")
+
 	return nil
 }
 
@@ -111,9 +126,17 @@ type EventServer struct {
 	Service *svc.Service
 }
 
+var configLock sync.Mutex
+
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	configLock.Lock()
+	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
-		h.Config = new(options.Config)
+		if h.Config == nil {
+			h.Config = new(options.Config)
+		}
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		blog.Infof("config updated: \n%s", out)
 		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]

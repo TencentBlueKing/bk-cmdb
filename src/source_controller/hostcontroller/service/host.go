@@ -89,7 +89,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	count, err := s.Instance.GetCntByCondition(commondata.ObjTableMap[objType], condition)
+	count, err := s.Instance.GetCntByCondition(common.GetInstTableName(objType), condition)
 	if err != nil {
 		blog.Error("get object failed type:%s ,input: %v error: %v", objType, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
