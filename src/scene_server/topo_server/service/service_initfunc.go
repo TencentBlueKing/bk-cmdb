@@ -18,6 +18,10 @@ import (
 	"configcenter/src/common"
 )
 
+func (s *topoService) initHealth() {
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/healthz", HandlerFunc: s.Health})
+}
+
 func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
@@ -147,6 +151,7 @@ func (s *topoService) initGraphics() {
 }
 
 func (s *topoService) initService() {
+	s.initHealth()
 	s.initAssociation()
 	s.initAuditLog()
 	s.initCompatiblev2()
