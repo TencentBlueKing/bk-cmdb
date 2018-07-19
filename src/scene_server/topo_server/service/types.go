@@ -14,7 +14,9 @@ package service
 
 import (
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -40,4 +42,10 @@ type action struct {
 type API interface {
 	SetCore(coreMgr core.Core)
 	Actions() []*httpserver.Action
+}
+
+type compatiblev2Condition struct {
+	Condition mapstr.MapStr     `json:"condition"`
+	Page      metadata.BasePage `json:"page"`
+	Fields    []string          `json:"fields"`
 }
