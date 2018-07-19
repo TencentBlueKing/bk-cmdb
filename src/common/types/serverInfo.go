@@ -58,6 +58,8 @@ var AllModule = map[string]bool{
 // cc functionality define
 const (
 	CCFunctionalityServicediscover = "servicediscover"
+	CCFunctionalityMongo           = "mongo"
+	CCFunctionalityRedis           = "redis"
 )
 
 // ServerInfo define base server information
