@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, result interface{}, sort string) error {

@@ -27,7 +27,7 @@ import (
 	"github.com/tidwall/gjson"
 	redis "gopkg.in/redis.v5"
 
-	bkcommon "configcenter/src/common"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage"
 )
@@ -230,30 +230,30 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				blog.Warnf("host not found, continue, %s", val.String())
 				continue
 			}
-			hostid := fmt.Sprint(host.get(bkcommon.BKHostIDField))
+			hostid := fmt.Sprint(host.get(common.BKHostIDField))
 			if hostid == "" {
 				blog.Warnf("host id not found, continue, %s", val.String())
 				continue
 			}
 
-			if err := h.redisCli.Set(RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-				blog.Errorf("save snapshot %s to redis faile: %s", RedisSnapKeyPrefix+hostid, err.Error())
+			if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
+				blog.Errorf("save snapshot %s to redis faile: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
 			}
 
-			condition := map[string]interface{}{bkcommon.BKHostIDField: host.get(bkcommon.BKHostIDField)}
-			innerip, ok := host.get(bkcommon.BKHostInnerIPField).(string)
+			condition := map[string]interface{}{common.BKHostIDField: host.get(common.BKHostIDField)}
+			innerip, ok := host.get(common.BKHostInnerIPField).(string)
 			if !ok {
 				blog.Infof("innerip is empty, continue, %s", val.String())
 				continue
 			}
-			outip, ok := host.get(bkcommon.BKHostOuterIPField).(string)
+			outip, ok := host.get(common.BKHostOuterIPField).(string)
 			if !ok {
 				blog.Warnf("outip is not string, %s", val.String())
 			}
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
 				blog.Infof("update by %v, to %v", condition, setter)
-				if err := h.db.UpdateByCondition(bkcommon.BKTableNameBaseHost, setter, condition); err != nil {
+				if err := h.db.UpdateByCondition(common.BKTableNameBaseHost, setter, condition); err != nil {
 					blog.Error("update host error:", err.Error())
 					continue
 				}
@@ -301,12 +301,12 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		version = strings.Replace(version, ".x86_64", "", 1)
 		version = strings.Replace(version, ".i386", "", 1)
 		osname = fmt.Sprintf("%s %s", ostype, platform)
-		ostype = bkcommon.HostOSTypeEnumLinux
+		ostype = common.HostOSTypeEnumLinux
 	case "windows":
 		version = strings.Replace(version, "Microsoft ", "", 1)
 		platform = strings.Replace(platform, "Microsoft ", "", 1)
 		osname = fmt.Sprintf("%s", platform)
-		ostype = bkcommon.HostOSTypeEnumWindows
+		ostype = common.HostOSTypeEnumWindows
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -411,19 +411,19 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 			return nil
 		}
 		condition := map[string]interface{}{
-			bkcommon.BKCloudIDField: clouidInt,
-			bkcommon.BKHostInnerIPField: map[string]interface{}{
-				bkcommon.BKDBIN: ips,
+			common.BKCloudIDField: clouidInt,
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBIN: ips,
 			},
 		}
 		result := []map[string]interface{}{}
-		err = h.db.GetMutilByCondition(bkcommon.BKTableNameBaseHost, nil, condition, &result, "", 0, 0)
+		err = h.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, condition, &result, "", 0, 0)
 		if err != nil {
 			blog.Errorf("fetch db error %v", err)
 		}
 		for index := range result {
-			cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
-			innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
+			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
 			inst := &HostInst{data: result[index]}
 			h.setCache(cloudid+"::"+innerip, inst)
 			return inst
@@ -613,14 +613,14 @@ func (h *HostSnap) fetchDB() {
 
 func (h *HostSnap) fetch() *HostCache {
 	result := []map[string]interface{}{}
-	err := h.db.GetMutilByCondition(bkcommon.BKTableNameBaseHost, nil, nil, &result, "", 0, 0)
+	err := h.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, nil, &result, "", 0, 0)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}
 	hostcache := &HostCache{data: map[string]*HostInst{}}
 	for index := range result {
-		cloudid := fmt.Sprint(result[index][bkcommon.BKCloudIDField])
-		innerip := fmt.Sprint(result[index][bkcommon.BKHostInnerIPField])
+		cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
+		innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
 		hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
 	}
 	blog.Infof("success fetch %d collections to cache", len(result))
@@ -676,13 +676,13 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 		case <-ticker.C:
 			channelstatus := 0
 			if err := h.snapCli.Ping().Err(); err != nil {
-				channelstatus = bkcommon.CCErrHostGetSnapshotChannelClose
+				channelstatus = common.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("snap redis server connection error: %s", err.Error())
 			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
 				blog.Errorf("snapchannel was empty in last 1 min ")
-				channelstatus = bkcommon.CCErrHostGetSnapshotChannelEmpty
+				channelstatus = common.CCErrHostGetSnapshotChannelEmpty
 			} else {
-				channelstatus = bkcommon.CCSuccess
+				channelstatus = common.CCSuccess
 			}
 			h.redisCli.Set(RedisSnapKeyChannelStatus, channelstatus, time.Minute*2)
 		}
