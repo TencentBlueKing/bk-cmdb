@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common/metadata"
 
@@ -116,6 +117,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 		attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 		attrCond.Field(metadata.AttributeFieldID).Eq(id)
 	}
+
 	attrItems, err := a.FindObjectAttribute(params, attrCond)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to find the attributes by the id(%d), error info is %s", id, err.Error())
@@ -124,6 +126,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 	for _, attrItem := range attrItems {
 		// delete the association
+		fmt.Println("attr:", attrItem)
 		asstCond := condition.CreateCondition()
 		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
 		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
@@ -152,7 +155,6 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
-	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {
