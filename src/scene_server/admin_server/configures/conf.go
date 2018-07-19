@@ -184,7 +184,7 @@ func (cc *ConfCenter) writeConfigure(confFilePath, key string) error {
 		return err
 	}
 
-	blog.V(3).Info("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
+	blog.V(3).Infof("write configure(%s), key(%s), data(%s)", confFilePath, key, data)
 	if err := cc.confRegDiscv.Write(key, data); err != nil {
 		blog.Errorf("fail to write configure(%s) data into center. err:%s", key, err.Error())
 		return err

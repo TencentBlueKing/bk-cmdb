@@ -13,6 +13,7 @@
 package service
 
 import (
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
@@ -80,12 +81,10 @@ func (s *topoService) UpdateMultiSet(params types.ContextParams, pathParams, que
 // DeleteMultiSet delete multi sets
 func (s *topoService) DeleteMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("bizID", pathParams("appid"))
-	bizID, err := paramPath.Int64("bizID")
+	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams("appid"), err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setIDSStr, err := data.String(common.BKSetIDField)
@@ -108,12 +107,10 @@ func (s *topoService) DeleteMultiSet(params types.ContextParams, pathParams, que
 // DeleteSetHost delete hosts in some sets
 func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("bizID", pathParams("appid"))
-	bizID, err := paramPath.Int64("bizID")
+	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams("appid"), err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setIDS, exists := data.Get(common.BKSetIDField)
@@ -125,7 +122,6 @@ func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, quer
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKSetIDField).In(setIDS)
-
 	err = s.core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, cond)
 	return nil, err
 }
@@ -133,12 +129,10 @@ func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, quer
 // UpdateMultiModule update multi modules
 func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("bizID", pathParams(common.BKAppIDField))
-	bizID, err := paramPath.Int64("bizID")
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams(common.BKAppIDField), err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	innerData, err := data.MapStr("data")
@@ -160,52 +154,24 @@ func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, 
 // SearchModuleByApp search module by business
 func (s *topoService) SearchModuleByApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("bizID", pathParams(common.BKAppIDField))
-	bizID, err := paramPath.Int64("bizID")
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams(common.BKAppIDField), err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	cond, err := data.MapStr("condition")
-	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the condition, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	cond := &compatiblev2Condition{}
+	if err := data.MarshalJSONInto(cond); nil != err {
+		return nil, err
 	}
 
-	page, err := data.MapStr("page")
-	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the condition, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-
-	intoPage := &metadata.BasePage{}
-	if err = page.MarshalJSONInto(intoPage); nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse page , error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-
-	fields, err := data.MapStr("fields")
-	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the condition, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-
-	intoFIelds := make([]string, 0)
-	if err = fields.MarshalJSONInto(intoFIelds); nil != err {
-		blog.Errorf("[api-compatiblev2] faied to parse the fields, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-
-	cond.Set(common.BKAppIDField, bizID)
-
+	cond.Condition.Set(common.BKAppIDField, bizID)
 	query := &metadata.QueryInput{}
-	query.Condition = cond
-	query.Fields = strings.Join(intoFIelds, ",")
-	query.Start = intoPage.Start
-	query.Limit = intoPage.Limit
-	query.Sort = intoPage.Sort
+	query.Condition = cond.Condition
+	query.Fields = strings.Join(cond.Fields, ",")
+	query.Start = cond.Page.Start
+	query.Limit = cond.Page.Limit
+	query.Sort = cond.Page.Sort
 
 	return s.core.CompatibleV2Operation().Module(params).SearchModuleByApp(query)
 }
@@ -213,20 +179,17 @@ func (s *topoService) SearchModuleByApp(params types.ContextParams, pathParams, 
 // SearchModuleBySetProperty search module by set property
 func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("bizID", pathParams(common.BKAppIDField))
-	bizID, err := paramPath.Int64("bizID")
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-compatiblev2] failed to parse the path params bizid(%s), error info is %s ", pathParams(common.BKAppIDField), err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		blog.Errorf("[api-compatiblev2]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-
 	cond := condition.CreateCondition()
 
 	data.ForEach(func(key string, val interface{}) {
-		cond.Field(key).In(val)
+		cond.Field(key).In([]interface{}{val})
 	})
-
+	cond.Field(common.BKAppIDField).Eq(bizID)
 	return s.core.CompatibleV2Operation().Module(params).SearchModuleBySetProperty(bizID, cond)
 }
 
@@ -268,16 +231,22 @@ func (s *topoService) AddMultiModule(params types.ContextParams, pathParams, que
 // DeleteMultiModule delete multi modules
 func (s *topoService) DeleteMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-compatiblev2] failed to parse business id, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
 	inputParams := &struct {
 		BizID     int64   `json:"bk_biz_id"`
 		ModuleIDS []int64 `json:"bk_module_id"`
-	}{}
+	}{BizID: bizID}
 
 	if err := data.MarshalJSONInto(inputParams); nil != err {
 		blog.Errorf("[api-compatiblev2] failed to parse the data (%#v), error info is %s", data, err.Error())
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err := s.core.CompatibleV2Operation().Module(params).DeleteMultiModule(inputParams.BizID, inputParams.ModuleIDS)
-	return nil, err
+	return nil, s.core.CompatibleV2Operation().Module(params).DeleteMultiModule(inputParams.BizID, inputParams.ModuleIDS)
+
 }

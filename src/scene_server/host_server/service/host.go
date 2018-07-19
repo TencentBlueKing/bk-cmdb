@@ -329,6 +329,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
+		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
