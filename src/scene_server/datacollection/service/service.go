@@ -13,13 +13,16 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/storage"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -42,5 +45,51 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
+
 	return ws
+}
+
+func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// topo server
+	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TOPO}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+		objCtr.IsHealthy = false
+		objCtr.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, objCtr)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "datacolection server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_DATACOLLECTION,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }
