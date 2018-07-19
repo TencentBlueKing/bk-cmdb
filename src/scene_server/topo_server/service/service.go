@@ -79,12 +79,16 @@ func (s *topoService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.err
-	}
 
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	//ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	/*
+		getErrFun := func() errors.CCErrorIf {
+			return s.err
+		}
+
+		ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	*/
+	ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+
 	innerActions := s.Actions()
 
 	for _, actionItem := range innerActions {
