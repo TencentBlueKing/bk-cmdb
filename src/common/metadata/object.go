@@ -56,16 +56,7 @@ type Object struct {
 
 // GetDefaultInstPropertyName get default inst
 func (o *Object) GetDefaultInstPropertyName() string {
-	switch o.ObjectID {
-	case common.BKInnerObjIDApp:
-		return "业务名"
-	case common.BKInnerObjIDModule:
-		return "模块名"
-	case common.BKInnerObjIDSet:
-		return "集群名"
-	default:
-		return "实例名"
-	}
+	return o.ObjectID
 }
 
 // GetInstIDFieldName get instid filed
