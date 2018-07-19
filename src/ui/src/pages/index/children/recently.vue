@@ -99,6 +99,7 @@
             // 导航至最近浏览的模型
             gotoRecently (model) {
                 if (model) {
+                    this.$store.commit('navigation/updateHistoryCount', 2)
                     this.$router.push(model.path)
                 }
             },

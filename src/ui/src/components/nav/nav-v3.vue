@@ -3,7 +3,7 @@
         :class="{'sticked': navStick}"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
-        <div class="nav-layout" :class="{unfold: unfold}">
+        <div class="nav-layout" :class="{unfold: unfold, flexible: !navStick}">
             <div class="logo">
                 <img src="@/common/svg/logo-cn.svg" alt="蓝鲸配置平台"
                     v-if="$i18n.locale === 'zh_CN'"
@@ -60,7 +60,8 @@
             return {
                 staticClassifyId: ['bk_index', 'bk_host_manage', 'bk_organization', 'bk_back_config'],
                 routerLinkHeight: 36,
-                openedClassify: 'bk_index'
+                openedClassify: 'bk_index',
+                timer: null
             }
         },
         computed: {
@@ -146,10 +147,15 @@
         },
         methods: {
             handleMouseEnter () {
+                if (this.timer) {
+                    clearTimeout(this.timer)
+                }
                 this.$store.commit('navigation/updateNavFold', false)
             },
             handleMouseLeave () {
-                this.$store.commit('navigation/updateNavFold', true)
+                this.timer = setTimeout(() => {
+                    this.$store.commit('navigation/updateNavFold', true)
+                }, 300)
             },
             // 分类点击事件
             handleClassifyClick (classify) {
@@ -201,6 +207,14 @@
             &.unfold{
                 width: 240px;
             }
+            &.unfold.flexible:after{
+                content: "";
+                position: absolute;
+                width: 15px;
+                height: 100%;
+                left: 100%;
+                top: 0;
+            }
             .nav-stick{
                 position: absolute;
                 bottom: 9px;
@@ -248,17 +262,25 @@
         overflow-y: auto;
         overflow-x: hidden;
         white-space: nowrap;
-        @include scrollbar;
+        &::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+            &-thumb {
+                border-radius: 20px;
+                background: rgba(165, 165, 165, .3);
+                box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+            }
+        }
         .classify-item{
             position: relative;
+            &:hover{
+                background-color: rgba(21, 30, 42, .75);
+            }
             &.active{
-                background-color: #3a4156;
+                background-color: #151e2a;
                 .classify-icon{
                     color: #fff;
                 }
-            }
-            &:hover{
-                background-color: rgba(58, 65, 86, .75);
             }
             .classify-info{
                 margin: 0;
@@ -308,15 +330,11 @@
             display: block;
             color: #c3cdd7;
             @include ellipsis;
-            &.active{
-                color: #fff;
-                font-weight: bold;
-            }
             &:hover{
-                color: #fff;
+                color: #3c96ff;
             }
-            &:before{
-                content: "·";
+            &.active{
+                color: #0082ff;
                 font-weight: bold;
             }
         }

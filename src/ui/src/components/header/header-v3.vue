@@ -3,7 +3,7 @@
         :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
             <i class="breadcrumbs-back icon-cc-goback" href="javascript:void(0)"
-                v-if="historyCount > 1"
+                v-if="historyCount > 0"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{currentName}}</h2>
         </div>

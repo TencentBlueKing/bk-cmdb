@@ -180,7 +180,8 @@ const mutations = {
         window.localStorage.setItem('navStick', !!stick)
     },
     updateHistoryCount (state, step = 1) {
-        state.historyCount = state.historyCount + step
+        const count = state.historyCount + step
+        state.historyCount = count > 0 ? count : 0
     },
     setClassifications (state, classifications) {
         state.result.classification = true

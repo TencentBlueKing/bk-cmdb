@@ -1,21 +1,20 @@
 <template>
     <div class="classify">
         <h4 class="classify-name">{{`${classify['bk_classification_name']}(${classify['bk_objects'].length})`}}</h4>
-        <ul class="models-list">
-            <li class="models-item" v-for="(model, index) in classify['bk_objects']" :key="index">
-                <router-link exact class="model-link"
-                    :to="getModelLink(model)"
-                    :title="model['bk_obj_name']">
-                    <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
-                    <span class="model-name">{{model['bk_obj_name']}}</span>
-                    <i class="model-star bk-icon"
-                        v-if="!notCollectable.includes(classify['bk_classification_id'])"
-                        :class="[customNavigation.includes(model['bk_obj_id']) ? 'icon-star-shape' : 'icon-star']"
-                        @click.prevent.stop="toggleCustomNavigation(model)">
-                    </i>
-                </router-link>
-            </li>
-        </ul>
+        <div class="models-layout">
+            <div class="models-link" v-for="(model, index) in classify['bk_objects']"
+                :key="index"
+                :title="model['bk_obj_name']"
+                @click="redirect(model)">
+                <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
+                <span class="model-name">{{model['bk_obj_name']}}</span>
+                <i class="model-star bk-icon"
+                    v-if="!notCollectable.includes(classify['bk_classification_id'])"
+                    :class="[customNavigation.includes(model['bk_obj_id']) ? 'icon-star-shape' : 'icon-star']"
+                    @click.prevent.stop="toggleCustomNavigation(model)">
+                </i>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -41,6 +40,11 @@
             }
         },
         methods: {
+            redirect (model) {
+                const path = this.getModelLink(model)
+                this.$store.commit('navigation/updateHistoryCount', 2)
+                this.$router.push(path)
+            },
             getModelLink (model) {
                 if (this.notModelClassify.includes(model['bk_classification_id'])) {
                     return model.path
@@ -86,61 +90,60 @@
         color: $textColor;
         border-bottom: 1px solid #ebf0f5;
     }
-    .models-list{
+    .models-layout{
         padding: 8px 0;
-        .models-item{
+        .models-link{
+            display: block;
             height: 36px;
+            font-size: 0;
+            position: relative;
+            padding: 6px 25px;
+            cursor: pointer;
             &:hover{
                 background-color: #ecf3ff;
             }
-        }
-    }
-    .model-link{
-        display: block;
-        font-size: 0;
-        position: relative;
-        padding: 6px 25px;
-        &:before{
-            content: "";
-            display: inline-block;
-            height: 100%;
-            vertical-align: middle;
-        }
-        &:hover .model-icon,
-        &:hover .model-name{
-            color: #0082ff;
-        }
-        &:hover .model-star{
-            display: block;
-        }
-        .model-icon,
-        .model-name{
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .model-icon{
-            font-size: 16px;
-            color: $textColor;
-        }
-        .model-name{
-            max-width: calc(100% - 60px);
-            margin: 0 0 0 12px;
-            font-size: 14px;
-            line-height: 24px;
-            color: $textColor;
-            @include ellipsis;
-        }
-        .model-star{
-            display: none;
-            position: absolute;
-            right: 25px;
-            top: 11px;
-            color: #c3cdd7;
-            font-size: 14px;
-            cursor: pointer;
-            &.icon-star-shape{
-                color: #ffb400;
+            &:before{
+                content: "";
+                display: inline-block;
+                height: 100%;
+                vertical-align: middle;
+            }
+            &:hover .model-icon,
+            &:hover .model-name{
+                color: #0082ff;
+            }
+            &:hover .model-star{
                 display: block;
+            }
+            .model-icon,
+            .model-name{
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .model-icon{
+                font-size: 16px;
+                color: $textColor;
+            }
+            .model-name{
+                max-width: calc(100% - 60px);
+                margin: 0 0 0 12px;
+                font-size: 14px;
+                line-height: 24px;
+                color: $textColor;
+                @include ellipsis;
+            }
+            .model-star{
+                display: none;
+                position: absolute;
+                right: 25px;
+                top: 11px;
+                color: #c3cdd7;
+                font-size: 14px;
+                cursor: pointer;
+                &.icon-star-shape{
+                    color: #ffb400;
+                    display: block;
+                }
             }
         }
     }
