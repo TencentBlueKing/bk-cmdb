@@ -21,28 +21,28 @@
         components: {
             vClassifyItem
         },
-        data () {
-            const hostManageClassification = {
-                'bk_classification_icon': bkHostManage.icon,
-                'bk_classification_id': bkHostManage.id,
-                'bk_classification_name': this.$t(bkHostManage.i18n),
-                'bk_classification_type': 'inner',
-                'bk_objects': bkHostManage.children.map(nav => {
+        computed: {
+            ...mapGetters('navigation', ['authorizedClassifications', 'authorizedNavigation']),
+            hostManageClassification () {
+                const hostManageClassification = {
+                    'bk_classification_icon': bkHostManage.icon,
+                    'bk_classification_id': bkHostManage.id,
+                    'bk_classification_name': this.$t(bkHostManage.i18n),
+                    'bk_classification_type': 'inner'
+                }
+                const hostNavigation = this.authorizedNavigation.find(({id}) => id === bkHostManage.id)
+                const authorizedHostModels = bkHostManage.children.filter(model => hostNavigation.children.some(nav => nav.id === model.id))
+                hostManageClassification['bk_objects'] = authorizedHostModels.map(model => {
                     return {
-                        'bk_obj_name': this.$t(nav.i18n),
-                        'bk_obj_id': nav.id,
-                        'bk_obj_icon': nav.icon,
-                        'path': nav.path,
+                        'bk_obj_name': this.$t(model.i18n),
+                        'bk_obj_id': model.id,
+                        'bk_obj_icon': model.icon,
+                        'path': model.path,
                         'bk_classification_id': bkHostManage.id
                     }
                 })
-            }
-            return {
-                hostManageClassification
-            }
-        },
-        computed: {
-            ...mapGetters('navigation', ['authorizedClassifications', 'authorizedNavigation']),
+                return hostManageClassification
+            },
             classifyColumns () {
                 const classifies = [this.hostManageClassification, ...this.authorizedClassifications]
                 let colHeight = [0, 0, 0, 0]
@@ -71,7 +71,7 @@
     .classify-layout{
         width: 90%;
         margin: 20px auto 0;
-        padding: 0 0 45px 0;
+        padding: 0 3px 45px 0;
     }
     .classify-waterfall{
         width: calc((100% - 60px) / 4);

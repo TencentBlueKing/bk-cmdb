@@ -85,7 +85,12 @@
             },
             // 固定到前面的分类
             staticClassify () {
-                return this.authorizedNavigation.filter(classify => this.staticClassifyId.includes(classify.id))
+                return this.authorizedNavigation.filter(classify => {
+                    if (classify.id === 'bk_index') {
+                        return true
+                    }
+                    return this.staticClassifyId.includes(classify.id) && classify.children.length
+                })
             },
             // 用户自定义到导航的分类/模型
             customClassify () {
@@ -168,6 +173,7 @@
             },
             // 切换导航展开固定
             toggleNavStick () {
+                this.$store.commit('navigation/updateNavFold', !this.fold)
                 this.$store.commit('navigation/updateNavStick', !this.navStick)
             }
         }
@@ -197,11 +203,11 @@
             }
             .nav-stick{
                 position: absolute;
-                bottom: 17px;
-                right: 21px;
-                width: 24px;
-                height: 24px;
-                padding: 6px 5px;
+                bottom: 9px;
+                right: 13px;
+                width: 32px;
+                height: 32px;
+                padding: 10px 9px;
                 border-radius: 50%;
                 transition: transform $duration $cubicBezier;
                 transform: scale(0.8333) rotate(180deg);
@@ -222,6 +228,7 @@
         background-color: #4c84ff;
         color: #fff;
         overflow: hidden;
+        cursor: pointer;
         img{
             height: 36px;
         }
@@ -261,10 +268,7 @@
                 font-weight: bold;
                 white-space: nowrap;
                 font-size: 0;
-                cursor: default;
-                &.classify-link{
-                    cursor: pointer;
-                }
+                cursor: pointer;
             }
             .classify-icon{
                 display: inline-block;

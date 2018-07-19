@@ -111,7 +111,8 @@
         "收起导航": "retract navigation",
         "置顶": "Top",
         "更多": "More",
-        "查看更多结果": "More"
+        "查看更多结果": "More",
+        "暂无使用记录": "No use record"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
