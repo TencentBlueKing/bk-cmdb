@@ -86,7 +86,13 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	data.Set("flag", pathParams("flag"))
+	switch common.DataStatusFlag(pathParams("flag")) {
+	case common.DataStatusDisabled, common.DataStatusEnable:
+		data.Set(common.BKDataStatusField, pathParams("flag"))
+	default:
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
+	}
+
 	return nil, s.core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
 }
 

@@ -25,7 +25,6 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -41,7 +40,7 @@ type InstOperationInterface interface {
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
 	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
 	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error)
-	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error
+	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
@@ -883,7 +882,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	for keyObjID, objs := range asstParamCond.Condition {
 		// Extract the ID of the instance according to the associated object.
 		cond := map[string]interface{}{}
-		if util.GetObjByType(keyObjID) == common.BKINnerObjIDObject {
+		if common.GetObjByType(keyObjID) == common.BKINnerObjIDObject {
 			cond[common.BKObjIDField] = keyObjID
 			cond[common.BKOwnerIDField] = params.SupplierAccount
 		}
@@ -1051,9 +1050,9 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 	return rsp.Data.Count, inst.CreateInst(params, c.clientSet, obj, rsp.Data.Info), nil
 }
 
-func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition) error {
+func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
-	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, -1, cond); nil != err {
+	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
 		return err
 	}
 

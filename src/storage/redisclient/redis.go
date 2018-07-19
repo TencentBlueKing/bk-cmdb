@@ -13,41 +13,63 @@
 package redisclient
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-	"configcenter/src/storage"
 	"errors"
 	"strconv"
 	"strings"
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
+	"configcenter/src/storage"
+
 	redis "gopkg.in/redis.v5"
 )
 
 type RedisConfig struct {
-	Address  string
-	User     string
-	Password string
-	Database string
-	Port     string
+	Address    string
+	User       string
+	Password   string
+	Database   string
+	Port       string
+	MasterName string
 }
 
 func NewFromConfig(cfg RedisConfig) (*redis.Client, error) {
-	dbNum, _ := strconv.Atoi(cfg.Database)
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     cfg.Address + ":" + cfg.Port,
-		PoolSize: 100,
-		Password: cfg.Password,
-		DB:       dbNum,
-	})
+	dbNum, err := strconv.Atoi(cfg.Database)
+	if nil != err {
+		return nil, err
+	}
+	var client *redis.Client
+	if cfg.MasterName == "" {
+		if !strings.Contains(cfg.Address, ":") {
+			cfg.Address = cfg.Address + ":" + cfg.Port
+		}
+		option := &redis.Options{
+			Addr:     cfg.Address,
+			Password: cfg.Password,
+			DB:       dbNum,
+			PoolSize: 100,
+		}
+		client = redis.NewClient(option)
+	} else {
+		hosts := strings.Split(cfg.Address, ",")
+		option := &redis.FailoverOptions{
+			MasterName:    cfg.MasterName,
+			SentinelAddrs: hosts,
+			Password:      cfg.Password,
+			DB:            dbNum,
+			PoolSize:      100,
+		}
+		client = redis.NewFailoverClient(option)
+	}
 
-	err := redisClient.Ping().Err()
+	err = client.Ping().Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return redisClient, err
+	return client, err
 }
 
 type Redis struct {

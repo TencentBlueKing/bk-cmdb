@@ -170,7 +170,8 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
-
+	query.Limit = common.BKNoLimit
+	//fmt.Println("cond:", cond.ToMapStr())
 	// search sets
 	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
 	if nil != err {
@@ -244,22 +245,21 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 			return m.params.Err.Errorf(common.CCErrCommDuplicateItem, moduleName)
 		}
 
-		// TODO: 只有一个？
 		data.Set(common.BKModuleNameField, moduleName)
 		data.Set(common.BKAppIDField, bizID)
 		data.Set(common.BKDefaultField, 0)
 		data.Set(common.BKOwnerIDField, common.BKDefaultOwnerID)
-	}
 
-	rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)
-	if nil != err {
-		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
-		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
+		rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)
+		if nil != err {
+			blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())
+			return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
 
-	if !rsp.Result {
-		blog.Errorf("[compatiblev2-module] failed to add the module name, error info is %s", rsp.ErrMsg)
-		return m.params.Err.New(rsp.Code, rsp.ErrMsg)
+		if !rsp.Result {
+			blog.Errorf("[compatiblev2-module] failed to add the module name, error info is %s", rsp.ErrMsg)
+			return m.params.Err.New(rsp.Code, rsp.ErrMsg)
+		}
 	}
 
 	return nil
@@ -280,7 +280,7 @@ func (m *module) DeleteMultiModule(bizID int64, moduleIDS []int64) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
-
+	//fmt.Println("cond:", cond.ToMapStr())
 	rsp, err := m.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, error info is %s", err.Error())

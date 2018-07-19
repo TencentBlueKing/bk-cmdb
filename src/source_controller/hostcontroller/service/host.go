@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	dcCommon "configcenter/src/scene_server/datacollection/common"
 	"configcenter/src/source_controller/common/commondata"
 )
 
@@ -89,7 +88,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	count, err := s.Instance.GetCntByCondition(commondata.ObjTableMap[objType], condition)
+	count, err := s.Instance.GetCntByCondition(common.GetInstTableName(objType), condition)
 	if err != nil {
 		blog.Error("get object failed type:%s ,input: %v error: %v", objType, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
@@ -149,7 +148,7 @@ func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	hostID := req.PathParameter("bk_host_id")
-	key := dcCommon.RedisSnapKeyPrefix + hostID
+	key := common.RedisSnapKeyPrefix + hostID
 	result, err := s.Cache.Get(key).Result()
 	if nil != err && err != redis.Nil {
 		blog.Error("get host snapshot failed, hostid: %v, err: %v ", hostID, err)

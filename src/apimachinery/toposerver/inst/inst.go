@@ -35,9 +35,9 @@ func (t *instanceClient) CreateInst(ctx context.Context, ownerID string, objID s
 	return
 }
 
-func (t *instanceClient) DeleteInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) DeleteInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/inst/%s/%s/%s", ownerID, objID, instID)
+	subPath := fmt.Sprintf("/inst/%s/%s/%d", ownerID, objID, instID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
@@ -49,9 +49,9 @@ func (t *instanceClient) DeleteInst(ctx context.Context, ownerID string, objID s
 	return
 }
 
-func (t *instanceClient) UpdateInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *instanceClient) UpdateInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/inst/%s/%s/%s", ownerID, objID, instID)
+	subPath := fmt.Sprintf("/inst/%s/%s/%d", ownerID, objID, instID)
 
 	err = t.client.Put().
 		WithContext(ctx).
