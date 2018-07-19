@@ -74,7 +74,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	targetInst := inst.New(client)
 
 	// set the operation
-	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation)
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation, groupOperation)
 	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
 	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
 	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
