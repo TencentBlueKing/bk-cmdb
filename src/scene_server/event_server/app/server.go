@@ -58,7 +58,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
+		Handler:    restful.NewContainer().Add(service.WebService()).Add(service.Healthz()),
 		TLS:        backbone.TLSConfig{},
 	}
 

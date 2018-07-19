@@ -45,7 +45,6 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-
 	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
 	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))
 	ws.Route(ws.POST("/subscribe/telnet").To(s.Telnet))
@@ -53,49 +52,52 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.UnSubscribe))
 	ws.Route(ws.PUT("/subscribe/{ownerID}/{appID}/{subscribeID}").To(s.Rebook))
 
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
-
 	return ws
 }
 
-func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
-	meta := metric.HealthMeta{IsHealthy: true}
+func (s *Service) Healthz() *restful.WebService {
+	ws := new(restful.WebService)
+	ws.Path("/").Produces(restful.MIME_JSON)
+	ws.Route(ws.GET("/healthz").To(func(req *restful.Request, resp *restful.Response) {
+		meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
-		zkItem.IsHealthy = false
-		zkItem.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, zkItem)
-
-	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
-
-	// redis
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.cache.Ping().Err()))
-
-	for _, item := range meta.Items {
-		if item.IsHealthy == false {
-			meta.IsHealthy = false
-			meta.Message = "event server is unhealthy"
-			break
+		// zk health status
+		zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+		if err := s.Engine.Ping(); err != nil {
+			zkItem.IsHealthy = false
+			zkItem.Message = err.Error()
 		}
-	}
+		meta.Items = append(meta.Items, zkItem)
 
-	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_EVENTSERVER,
-		HealthMeta: meta,
-		AtTime:     types.Now(),
-	}
+		// mongodb
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
 
-	answer := metric.HealthResponse{
-		Code:    common.CCSuccess,
-		Data:    info,
-		OK:      meta.IsHealthy,
-		Result:  meta.IsHealthy,
-		Message: meta.Message,
-	}
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+		// redis
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.cache.Ping().Err()))
+
+		for _, item := range meta.Items {
+			if item.IsHealthy == false {
+				meta.IsHealthy = false
+				meta.Message = "event server is unhealthy"
+				break
+			}
+		}
+
+		info := metric.HealthInfo{
+			Module:     types.CC_MODULE_EVENTSERVER,
+			HealthMeta: meta,
+			AtTime:     types.Now(),
+		}
+
+		answer := metric.HealthResponse{
+			Code:    common.CCSuccess,
+			Data:    info,
+			OK:      meta.IsHealthy,
+			Result:  meta.IsHealthy,
+			Message: meta.Message,
+		}
+		resp.Header().Set("Content-Type", "application/json")
+		resp.WriteEntity(answer)
+	}))
+	return ws
 }
