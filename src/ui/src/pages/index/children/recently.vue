@@ -1,6 +1,6 @@
 <template>
     <div class="recently-layout clearfix">
-        <template v-if="recently.length">
+        <template v-if="visibleRecentlyModels.length">
             <div class="recently-browse fl"
                 v-for="index in recentlyCount"
                 :key="index"
@@ -154,7 +154,7 @@
 
 <style lang="scss" scoped>
     .recently-layout{
-        width: calc(90% + 6px);
+        width: 90%;
         margin: 0 auto;
     }
     .recently-browse{

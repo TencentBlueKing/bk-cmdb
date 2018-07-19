@@ -9,7 +9,7 @@
         </div>
         <div class="user fr">
             <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
-                {{userName}}
+                {{userName}}({{userRole}})
                 <i class="user-name-angle bk-icon icon-angle-down"
                     :class="{dropped: isShowUserDropdown}">
                 </i>
@@ -31,6 +31,7 @@
     export default {
         data () {
             return {
+                userRole: window.isAdmin === '1' ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]'),
                 userName: window.userName,
                 singleClassifies: ['/index'],
                 isShowUserDropdown: false
@@ -146,8 +147,8 @@
         line-height: 60px;
         position: relative;
         &-name{
-            padding: 0;
-            margin: 0 20px 0 0;
+            padding: 0 20px;
+            margin: 0;
             font-size: 14px;
             font-weight: bold;
             color: rgba(115,121,135,1);
@@ -166,8 +167,8 @@
         &-dropdown{
             position: absolute;
             width: 100px;
-            top: 100%;
-            right: 0;
+            top: 55px;
+            right: 20px;
             padding: 10px 0;
             line-height: 45px;
             font-size: 14px;
