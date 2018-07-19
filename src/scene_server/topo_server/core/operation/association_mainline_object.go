@@ -179,7 +179,11 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 			}
 
 			defaultInstNameAttr := currentObj.CreateAttribute()
-			defaultInstNameAttr.SetIsSystem(true)
+			defaultInstNameAttr.SetIsSystem(false)
+			defaultInstNameAttr.SetIsOnly(true)
+			defaultInstNameAttr.SetIsEditable(false)
+			defaultInstNameAttr.SetType(common.FieldTypeLongChar)
+			defaultInstNameAttr.SetIsRequired(true)
 			defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
 			defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
 
