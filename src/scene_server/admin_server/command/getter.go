@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/storage"
 )
 
@@ -122,7 +121,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 
 	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
-	tablename := commondata.GetInstTableName(asst.ObjectID)
+	tablename := common.GetInstTableName(asst.ObjectID)
 	err = db.GetMutilByCondition(tablename, nil, condition, &childs, "", 0, 0)
 	if nil != err {
 		return fmt.Errorf("get inst for %s error: %s", asst.ObjectID, err.Error())
