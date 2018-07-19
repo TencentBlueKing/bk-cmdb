@@ -99,11 +99,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
-	proctrlSvr.CacheDI, err = redisclient.NewRedis(proctrlSvr.RedisCfg.Address, proctrlSvr.RedisCfg.Port, proctrlSvr.RedisCfg.User, proctrlSvr.RedisCfg.Password, proctrlSvr.RedisCfg.Database)
-	if err != nil {
-		return fmt.Errorf("new redis client failed, err: %v", err)
-	}
-	err = proctrlSvr.CacheDI.Open()
+	proctrlSvr.CacheDI, err = redisclient.NewFromConfig(*proctrlSvr.RedisCfg)
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}

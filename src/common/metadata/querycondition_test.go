@@ -10,25 +10,22 @@
  * limitations under the License.
  */
 
-package datacollection
+package metadata
 
 import (
-	"configcenter/src/common"
+	"encoding/json"
+	"testing"
 )
 
-const (
-	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
-	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
-	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
-)
+func TestConvTime(t *testing.T) {
+	condStr := `{"condition":{"create_time":{"$lt":"2018-05-31 00:00:00", "cc_time_type":"1"},"$or":[{"bk_biz_maintainer":{"$regex":"admin"}},{"bk_biz_productor":{"$regex":"admin"}},{"bk_biz_tester":{"$regex":"admin"}},{"bk_biz_developer":{"$regex":"admin"}},{"operator":{"$regex":"admin"}}],"bk_supplier_account":"0","default":0},"fields":"","start":0,"limit":0,"sort":""}`
+	var input ObjQueryInput
+	err := json.Unmarshal([]byte(condStr), &input)
+	if nil != err {
+		t.Errorf("json unmarshal error:%s", err.Error())
+		return
+	}
+	input.ConvTime()
+	t.Logf("%v", input.Condition)
 
-const (
-	MaxSnapSize     = 2000
-	MaxDiscoverSize = 1000
-)
-
-const (
-	DiscoverChan = "discover"
-	SnapShotChan = "snapshot"
-)
+}

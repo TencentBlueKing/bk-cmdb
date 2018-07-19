@@ -76,14 +76,14 @@ func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case string(*u) == rootPath+"/objects":
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.HasPrefix(string(*u), rootPath+"/object/attr"):
+		from, to, isHit = rootPath+"/object/attr", topoRoot+"/objectattr", true
+
 	case strings.HasPrefix(string(*u), rootPath+"/object/"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/objects/"):
 		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/object/attr"):
-		from, to, isHit = rootPath+"/object/attr", topoRoot+"/objectattr", true
 
 	case strings.HasPrefix(string(*u), rootPath+"/objectatt/"):
 		from, to, isHit = rootPath, topoRoot, true
