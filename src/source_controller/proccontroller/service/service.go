@@ -16,6 +16,7 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
@@ -29,7 +30,7 @@ import (
 type ProctrlServer struct {
 	Core       *backbone.Engine
 	DbInstance storage.DI
-	CacheDI    storage.DI
+	CacheDI    *redis.Client
 	MongoCfg   *mgoclient.MongoConfig
 	RedisCfg   *redisclient.RedisConfig
 }
