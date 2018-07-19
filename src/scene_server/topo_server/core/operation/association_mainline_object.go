@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"fmt"
 	"io"
 
 	"configcenter/src/common"
@@ -50,7 +49,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s", objID, err.Error())
 		return err
 	}
-	fmt.Println("current:", targetObj.GetID(), "parent:", parentObj.GetID(), "child:", childObj.GetID())
+
 	if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err {
 		blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 		return err
@@ -119,7 +118,7 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 }
 
-func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
+func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 
 	// check and fetch the association object's classification
 	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
@@ -173,10 +172,22 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 			attr := currentObj.CreateAttribute()
 			attr.SetIsSystem(true)
 			attr.SetID(common.BKChildStr)
+
 			if err = attr.Save(); nil != err {
 				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, common.BKChildStr, err.Error())
 				return nil, err
 			}
+
+			defaultInstNameAttr := currentObj.CreateAttribute()
+			defaultInstNameAttr.SetIsSystem(true)
+			defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
+			defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
+
+			if err = defaultInstNameAttr.Save(); nil != err {
+				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, currentObj.GetDefaultInstPropertyName(), err.Error())
+				return nil, err
+			}
+
 		}
 	}
 
@@ -198,5 +209,5 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
-	return nil, nil
+	return currentObj, nil
 }
