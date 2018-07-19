@@ -75,7 +75,7 @@ type Cache struct {
 	flag  bool
 }
 
-func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client) *HostSnap {
+func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client, db storage.DI) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
 	}
@@ -87,6 +87,7 @@ func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client
 		maxSize:       maxSize,
 		redisCli:      redisCli,
 		snapCli:       snapCli,
+		db:            db,
 		ts:            time.Now(),
 		id:            xid.New().String()[5:],
 		maxconcurrent: maxconcurrent,
@@ -106,7 +107,7 @@ func (h *HostSnap) Start() {
 		h.Run()
 		for {
 			time.Sleep(time.Second * 10)
-			NewHostSnap(h.hostChanName, h.maxSize, h.redisCli, h.snapCli).Run()
+			NewHostSnap(h.hostChanName, h.maxSize, h.redisCli, h.snapCli, h.db).Run()
 		}
 	}()
 }
