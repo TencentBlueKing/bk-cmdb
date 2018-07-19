@@ -518,7 +518,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		return
 	}
 	formData := req.Request.Form
-	blog.Debug("GetHostAppByCompanyId formData:%v", formData)
+	blog.V(3).Infof("GetHostAppByCompanyId formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"companyId",
 		"ip",

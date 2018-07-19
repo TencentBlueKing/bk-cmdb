@@ -60,7 +60,10 @@ func (s *Service) getModuleInfoByApp(condition map[string]interface{}, pheader h
 	moduleInfo := moduleResult["info"].([]interface{})
 	for _, i := range moduleInfo {
 		module := i.(map[string]interface{})
-		moduleId, _ := util.GetInt64ByInterface(module[common.BKModuleIDField])
+		moduleId, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
+		if nil != err {
+			continue
+		}
 		moduleMap[int(moduleId)] = i
 	}
 	return moduleMap, nil

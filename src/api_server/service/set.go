@@ -596,7 +596,7 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Debug("delSetHost data: %s", formData)
+	blog.V(3).Infof("delSetHost data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
