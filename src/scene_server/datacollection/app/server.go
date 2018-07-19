@@ -31,8 +31,6 @@ import (
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
 	svc "configcenter/src/scene_server/datacollection/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -85,29 +83,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
-			blog.V(3).Info("config not found, retry 2s later")
+			blog.Info("config not found, retry 2s later")
 			continue
 		}
 
-		db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
+		err := datacollection.NewDataCollection(process.Config, process.Core).Run()
 		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
+			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
-		err = db.Open()
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
-		}
-		process.Service.SetDB(db)
-
-		cache, err := redisclient.NewFromConfig(process.Config.CCRedis)
-		if err != nil {
-			return fmt.Errorf("connect redis server failed %s", err.Error())
-		}
-		process.Service.SetCache(cache)
 		break
 	}
-
-	datacollection.NewDataCollection(process.Config, process.Core)
 
 	<-ctx.Done()
 	blog.V(0).Info("process stoped")
@@ -126,7 +111,9 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
-		h.Config = new(options.Config)
+		if h.Config == nil {
+			h.Config = new(options.Config)
+		}
 		dbprefix := "mongodb"
 		h.Config.MongoDB.Address = current.ConfigMap[dbprefix+".host"]
 		h.Config.MongoDB.User = current.ConfigMap[dbprefix+".usr"]
