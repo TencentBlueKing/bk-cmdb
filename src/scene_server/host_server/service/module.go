@@ -71,7 +71,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 	var hostIDArr []int64
 
 	for index, hostInfo := range params.HostInfoArr {
-		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(strconv.Itoa(hostInfo.CloudID)).Data()
+		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
 		query := &metadata.QueryInput{
 			Condition: cond,
 			Start:     0,
@@ -153,6 +153,10 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 	}
 
 	// TODO: add audit log later.
+	hostModuleLog := s.Logics.NewHostModuleLog(req.Request.Header, hostIDArr)
+	hostModuleLog.WithCurrent()
+	hostModuleLog.SaveAudit(fmt.Sprintf("%d", params.ApplicationID), util.GetUser(req.Request.Header), "")
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 
 }
 
@@ -287,7 +291,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
+	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
 	moduleID, err := s.Logics.GetResoulePoolModuleID(pheader, conds.Data())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v", err)
@@ -471,7 +475,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		host[common.BKCloudIDField] = data.PlatID
 
 		//dispatch to app
-		err := s.Logics.EnterIP(pheader, data.OwnerID, appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
+		err := s.Logics.EnterIP(pheader, util.GetOwnerID(req.Request.Header), appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
 		if nil != err {
 			blog.Errorf("%s add host error: %s", ip, err.Error())
 			errmsg = append(errmsg, fmt.Sprintf("%s add host error: %s", ip, err.Error()))

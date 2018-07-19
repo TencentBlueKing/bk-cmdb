@@ -18,6 +18,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/common/backbone"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -30,15 +32,14 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/supplementary"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // TopoServiceInterface the topo service methods used to init
 type TopoServiceInterface interface {
 	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
-	WebService(filter restful.FilterFunction) *restful.WebService
-	SetConfig(cfg options.Config)
+	WebService() *restful.WebService
+	SetConfig(cfg options.Config, engin *backbone.Engine)
 }
 
 // New ceate topo servcie instance
@@ -48,6 +49,7 @@ func New() TopoServiceInterface {
 
 // topoService topo service
 type topoService struct {
+	engin    *backbone.Engine
 	language language.CCLanguageIf
 	err      errors.CCErrorIf
 	actions  []action
@@ -55,8 +57,9 @@ type topoService struct {
 	cfg      options.Config
 }
 
-func (s *topoService) SetConfig(cfg options.Config) {
+func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
+	s.engin = engin
 }
 
 // SetOperation set the operation
@@ -75,11 +78,13 @@ func (s *topoService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.err
-	}
-	//ws.Path("/topo/v3").Filter(filter).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	/*
+		    now ignore
+			getErrFun := func() errors.CCErrorIf {
+				return s.err
+			}
+			//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	*/
 	ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()
@@ -143,7 +148,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
 				ownerID := util.GetActionOnwerID(req)
-				//user := util.GetActionUser(req)
+				user := util.GetActionUser(req)
 
 				// get the language
 				language := util.GetActionLanguage(req)
@@ -162,19 +167,30 @@ func (s *topoService) Actions() []*httpserver.Action {
 				}
 
 				mData := frtypes.MapStr{}
-				if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-					blog.Errorf("failed to unmarshal the data, error %s", err.Error())
-					errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-					s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
-					return
+				if nil == act.HandlerParseOriginDataFunc {
+					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
+						return
+					}
+				} else {
+					mData, err = act.HandlerParseOriginDataFunc(value)
+					if nil != err {
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
+						return
+					}
 				}
 
 				data, dataErr := act.HandlerFunc(types.ContextParams{
-					Support:         supplementary.New(),
 					Err:             defErr,
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
+					User:            user,
+					Engin:           s.engin,
 				},
 					req.PathParameter,
 					req.QueryParameter,

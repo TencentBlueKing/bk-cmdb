@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-    "configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/set/%s", appID)
 
 	err = t.client.Post().
@@ -63,8 +63,8 @@ func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID stri
 	return
 }
 
-func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/set/search/%s/%s", ownerID, appID)
 
 	err = t.client.Post().

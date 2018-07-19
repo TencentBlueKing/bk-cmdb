@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -46,7 +45,6 @@ func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParam
 
 // SearchMainLineOBjectTopo search the main line topo
 func (s *topoService) SearchMainLineOBjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("search mainl line object topo")
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -59,8 +57,14 @@ func (s *topoService) SearchMainLineOBjectTopo(params types.ContextParams, pathP
 
 // SearchObjectByClassificationID search the object by classification ID
 func (s *topoService) SearchObjectByClassificationID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("search object by classification id")
-	return nil, nil
+
+	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+	if nil != err {
+		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
+		return nil, err
+	}
+
+	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
 // SearchBusinessTopo search the business topo
@@ -74,7 +78,12 @@ func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams,
 		return nil, err
 	}
 
-	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, id)
+	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		return nil, err
+	}
+
+	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst
@@ -92,8 +101,11 @@ func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pa
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "inst_id")
 	}
 	_ = bizID
-	_ = instID
-	_ = objID
-	//s.core.AssociationOperation().SearchMainlineAssociationInstTopo()
-	return nil, nil
+
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
+	if nil != err {
+		return nil, err
+	}
+
+	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID)
 }

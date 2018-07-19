@@ -383,7 +383,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	rspDataV3Map := result.Data.(map[string]interface{})
+	rspDataV3Map := result.Data
 	resData := make(map[string]interface{})
 	resData["appId"] = rspDataV3Map[common.BKAppIDField]
 	resData["success"] = true
@@ -518,7 +518,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		return
 	}
 	formData := req.Request.Form
-	blog.Debug("GetHostAppByCompanyId formData:%v", formData)
+	blog.V(3).Infof("GetHostAppByCompanyId formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"companyId",
 		"ip",

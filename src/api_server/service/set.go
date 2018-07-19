@@ -110,6 +110,56 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
+func (s *Service) getsetproperty(req *restful.Request, resp *restful.Response) {
+	resDataV2 := common.KvMap{
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "体验",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "3",
+		        "name" : "正式",
+		        "type" : "text",
+		        "is_default" : true
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "测试",
+		        "type" : "text",
+		        "is_default" : false
+		    }
+		]*/
+		"SetEnviType": []common.KvMap{
+			common.KvMap{"Property": "1", "value": "1"},
+			common.KvMap{"Property": "2", "value": "2"},
+			common.KvMap{"Property": "3", "value": "3"},
+		},
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "关闭",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "开放",
+		        "type" : "text",
+		        "is_default" : true
+		    }
+		]*/
+		"SetServiceStatus": []common.KvMap{
+			common.KvMap{"Property": "0", "value": "2"},
+			common.KvMap{"Property": "1", "value": "1"},
+		},
+	}
+
+	converter.RespSuccessV2(resDataV2, resp)
+}
+
 func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
@@ -284,7 +334,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
-	rspDataV3Map, _ := result.Data.(map[string]interface{})
+	rspDataV3Map := result.Data
 	blog.Infof("rsp_v3:%v", result.Data)
 	converter.RespSuccessV2(rspDataV3Map, resp)
 }
@@ -546,7 +596,7 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Debug("delSetHost data: %s", formData)
+	blog.V(3).Infof("delSetHost data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {

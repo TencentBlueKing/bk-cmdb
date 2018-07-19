@@ -34,6 +34,8 @@ const (
 	CC_MODULE_APISERVER        = "apiserver"
 	CC_MODULE_WEBSERVER        = "webserver"
 	CC_MODULE_EVENTSERVER      = "eventserver"
+
+	GSE_MODULE_PROCSERVER      = "gseprocserver"
 	CC_MODULE_TXC              = "txc"
 )
 
@@ -80,11 +82,6 @@ type WebServerInfo struct {
 
 // AuditControllerServInfo audit-controller server information
 type AuditControllerServInfo struct {
-	ServerInfo
-}
-
-// DataCollectionControllerServInfo data-collection-controller server information
-type DataCollectionControllerServInfo struct {
 	ServerInfo
 }
 

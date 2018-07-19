@@ -15,7 +15,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -63,13 +62,13 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	}
 
 	modules, err := s.getModulesByAppId(appID, user, pheader)
-	blog.Debug("modules:%v", modules)
+	blog.V(3).Infof("modules data:%v", modules)
 	if nil != err {
 		blog.Errorf("getProcessPortByApplicationID error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 		return
 	}
-	modulesMap := modules.(map[string]interface{})
+	modulesMap := modules.([]map[string]interface{})
 
 	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByApplicationID(context.Background(), appID, pheader, modulesMap)
 	if err != nil {
@@ -146,26 +145,26 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 
 func (s *Service) getModulesByAppId(appID string, user string, pheader http.Header) (interface{}, error) {
 
-	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appID
-
-	searchParams := make(map[string]interface{})
-	searchParams["condition"] = condition
-	searchParams["fields"] = fmt.Sprintf("%s,%s", common.BKModuleIDField, common.BKModuleNameField)
-	searchParams["start"] = 0
-	searchParams["limit"] = 0
-	searchParams["sort"] = ""
+	searchParams := mapstr.MapStr{
+		"condition": mapstr.MapStr{},
+		"fields":    []string{common.BKModuleIDField, common.BKModuleNameField},
+		"page": mapstr.MapStr{
+			"start": 0,
+			"limit": 0,
+			"sort":  "",
+		},
+	}
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, searchParams)
 	if nil != err {
 		blog.Errorf("getModulesByAppId error:%v", err)
 		return nil, err
 	}
 
-	resData := make([]mapstr.MapStr, 0)
+	resData := make([]map[string]interface{}, 0)
 	if result.Result {
-		modules := (result.Data.(mapstr.MapStr))["info"]
+		modules := (result.Data.(map[string]interface{}))["info"]
 		for _, module := range modules.([]interface{}) {
-			resData = append(resData, module.(mapstr.MapStr))
+			resData = append(resData, module.(map[string]interface{}))
 		}
 		return resData, nil
 	} else {

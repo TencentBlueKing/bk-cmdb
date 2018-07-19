@@ -68,7 +68,6 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKAppIDField, bizID)
-	data.Set(common.BKDefaultField, 0)
 	data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 
 	return s.inst.CreateInst(params, obj, data)
@@ -123,5 +122,5 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 	innerCond.Field(common.BKSetIDField).Eq(setID)
 
-	return s.inst.UpdateInst(params, data, obj, innerCond)
+	return s.inst.UpdateInst(params, data, obj, innerCond, -1)
 }

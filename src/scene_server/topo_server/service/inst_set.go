@@ -14,13 +14,13 @@ package service
 
 import (
 	"strconv"
-
-	"configcenter/src/common/condition"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -41,6 +41,28 @@ func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryPar
 	}
 
 	return s.core.SetOperation().CreateSet(params, obj, bizID, data)
+}
+func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-set]failed to parse the biz id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+
+	if nil != err {
+		blog.Errorf("failed to search the set, %s", err.Error())
+		return nil, err
+	}
+
+	cond := &operation.OpCondition{}
+	if err = data.MarshalJSONInto(cond); nil != err {
+		blog.Errorf("[api-set] failed to parse to the operation condition, error info is %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	return nil, s.core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
 }
 
 // DeleteSet delete the set
@@ -65,20 +87,7 @@ func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	cond := &operation.OpCondition{}
-	if err = data.MarshalJSONInto(cond); nil != err {
-		blog.Errorf("[api-set] failed to parse to the operation condition, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-
-	setIDS := make([]int64, 0)
-	if setID < 0 {
-		setIDS = []int64{setID}
-	} else {
-		setIDS = cond.Delete.InstID
-	}
-
-	return nil, s.core.SetOperation().DeleteSet(params, obj, bizID, setIDS)
+	return nil, s.core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
 }
 
 // UpdateSet update the set
@@ -120,17 +129,17 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	innerCond := condition.CreateCondition()
-	if err := innerCond.Parse(data); nil != err {
-		blog.Errorf("[api-set] failed to parse the input condition, error info is %s", err.Error())
+	paramsCond := &gparams.SearchParams{}
+	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
 
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	paramsCond.Condition[common.BKAppIDField] = bizID
+	paramsCond.Condition[common.BKOwnerIDField] = params.SupplierAccount
 
 	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
+	queryCond.Condition = paramsCond.Condition
+	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
 
 	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {

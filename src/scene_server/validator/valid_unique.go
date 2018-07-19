@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // validCreateUnique  valid create unique
@@ -47,7 +46,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return nil
 	}
 
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
 	if nil != err {
 		return err
 	}
@@ -55,7 +54,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return valid.errif.Error(result.Code)
 	}
 
-	if 0 >= result.Data.Count {
+	if 0 < result.Data.Count {
 		blog.Error("duplicate data ")
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
@@ -88,7 +87,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 	}
 
-	objIDName := util.GetObjIDByType(objID)
+	objIDName := common.GetInstFieldByType(objID)
 	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
@@ -123,7 +122,7 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 		searchCond[common.BKObjIDField] = objID
 		searchCond[common.BKInstIDField] = instID
 	} else {
-		objIDName := util.GetObjIDByType(objID)
+		objIDName := common.GetInstFieldByType(objID)
 		searchCond[objIDName] = instID
 	}
 
@@ -141,5 +140,6 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	if len(result.Data.Info[0]) > 0 {
 		return result.Data.Info[0], nil
 	}
+
 	return nil, valid.errif.Error(common.CCErrCommNotFound)
 }

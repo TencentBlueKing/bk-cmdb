@@ -39,7 +39,7 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 
 	lenOfHostIDArr := len(hostIDArr)
 	if lenOfHostIDArr != 1 {
-		blog.V(3).Infof("GetHostMapByCond condition: %v", hostCondition)
+		blog.V(3).Infof("GetHostMapByCond condition: %v, host:%v", hostCondition, hostIDArr)
 		return "", errors.New("not find host info ")
 	}
 
@@ -140,7 +140,7 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 
 	blog.V(3).Infof("add object result : %v", resMap)
 
-	objID, err := resp.Data.Int64(util.GetObjByType(objType))
+	objID, err := resp.Data.Int64(common.GetInstFieldByType(objType))
 	if nil != err {
 		blog.Errorf("addObj get id error, reply:%v, error:%s", resp, err.Error())
 		return 0, fmt.Errorf("add object reply error, not found  id")

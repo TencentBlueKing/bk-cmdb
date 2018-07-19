@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package identifier
 
 import (
@@ -14,8 +26,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	scmeta "configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 )
 
@@ -44,7 +54,7 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
 			predata := e.Data[dataIndex].PreData.(map[string]interface{})
 			if checkDifferent(curdata, predata, diffFields...) {
 
-				instIDField := util.GetObjIDByType(e.ObjType)
+				instIDField := common.GetInstFieldByType(e.ObjType)
 
 				instID := getInt(curdata, instIDField)
 				if 0 == instID {
@@ -174,7 +184,7 @@ func getInt(data map[string]interface{}, key string) int {
 func (ih *IdentifierHandler) findHost(objType string, instID int) (hostIDs []string) {
 	relations := []scmeta.ModuleHostConfig{}
 	condiction := map[string]interface{}{
-		util.GetObjIDByType(objType): instID,
+		common.GetInstFieldByType(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
 
@@ -275,7 +285,10 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
 	if "" == ret || "nil" == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
-		err := instdata.GetObjectByID(objType, nil, instID, &inst.data, "")
+		getobjCondition := map[string]interface{}{
+			common.GetInstFieldByType(objType): instID,
+		}
+		err := db.GetOneByCondition(common.GetInstTableName(objType), nil, getobjCondition, &inst.data)
 		if err != nil {
 			return nil, err
 		}
@@ -283,7 +296,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 			inst.ident = NewHostIdentifier(inst.data)
 			relations := []scmeta.ModuleHostConfig{}
 			condiction := map[string]interface{}{
-				util.GetObjIDByType(objType): instID,
+				common.GetInstFieldByType(objType): instID,
 			}
 			db.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			for _, rela := range relations {
@@ -387,11 +400,11 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat}
 	for _, objID := range objs {
 		caches := []map[string]interface{}{}
-		ih.db.GetMutilByCondition(commondata.GetInstTableName(objID), nil, map[string]interface{}{}, &caches, "", -1, -1)
+		ih.db.GetMutilByCondition(common.GetInstTableName(objID), nil, map[string]interface{}{}, &caches, "", -1, -1)
 
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
-			instID := fmt.Sprint(cache[util.GetObjIDByType(objID)])
+			instID := fmt.Sprint(cache[common.GetInstFieldByType(objID)])
 			if err := ih.cache.Set(types.EventCacheIdentInstPrefix+objID+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
 				blog.Errorf("set cache error %s", err.Error())
 			}

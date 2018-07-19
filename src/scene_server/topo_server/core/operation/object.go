@@ -15,6 +15,9 @@ package operation
 import (
 	"context"
 	"fmt"
+	"strconv"
+
+	"github.com/rs/xid"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -29,6 +32,8 @@ import (
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
+	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
+	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
@@ -36,7 +41,7 @@ type ObjectOperationInterface interface {
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 }
 
@@ -52,15 +57,19 @@ type object struct {
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
+	grp          GroupOperationInterface
 	asst         AssociationOperationInterface
 	inst         InstOperationInterface
+	attr         AttributeOperationInterface
 }
 
-func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface) {
+func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface) {
 	o.modelFactory = modelFactory
 	o.instFactory = instFactory
 	o.asst = asst
 	o.inst = inst
+	o.attr = attr
+	o.grp = grp
 }
 
 func (o *object) IsValidObject(params types.ContextParams, objID string) error {
@@ -81,6 +90,178 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 
 	return nil
 }
+
+func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	inputData := map[string]ImportObjectData{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	result := frtypes.New()
+	for objID, inputData := range inputData {
+		subResult := frtypes.New()
+		if err := o.IsValidObject(params, objID); nil != err {
+			blog.Error("not found the  objid: %s", objID)
+			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
+			result[objID] = subResult
+			continue
+		}
+
+		// update the object's attribute
+		for idx, attr := range inputData.Attr {
+
+			metaAttr := metadata.Attribute{}
+			targetAttr, err := metaAttr.Parse(attr)
+			if nil != err {
+				blog.Error("not found the  objid: %s", objID)
+				subResult["errors"] = err.Error()
+				result[objID] = subResult
+				continue
+			}
+
+			if 0 == len(targetAttr.PropertyGroup) {
+				targetAttr.PropertyGroup = "default"
+			}
+
+			// find group
+			grpCond := condition.CreateCondition()
+			grpCond.Field(metadata.GroupFieldObjectID).Eq(objID)
+			grpCond.Field(metadata.GroupFieldGroupName).Eq(targetAttr.PropertyGroup)
+			grps, err := o.grp.FindObjectGroup(params, grpCond)
+			if nil != err {
+				blog.Error("not found the  objid: %s", objID)
+				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err)
+				subResult["errors"] = errStr
+				result[objID] = subResult
+				continue
+			}
+
+			if 0 != len(grps) {
+				targetAttr.PropertyGroup = grps[0].GetID()
+			} else {
+				newGrp := o.modelFactory.CreateGroup(params)
+				newGrp.SetName(targetAttr.PropertyGroup)
+				newGrp.SetID(xid.New().String())
+				newGrp.SetSupplierAccount(params.SupplierAccount)
+				newGrp.SetObjectID(objID)
+				err := newGrp.Save()
+				if nil != err {
+					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
+					if failed, ok := subResult["insert_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["insert_failed"] = failedArr
+					} else {
+						subResult["insert_failed"] = []string{
+							errStr,
+						}
+					}
+					result[objID] = subResult
+					continue
+				}
+
+				targetAttr.PropertyGroup = newGrp.GetID()
+			}
+
+			// create or update the attribute
+			attrID, err := attr.String(metadata.AttributeFieldPropertyID)
+			if nil != err {
+				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
+				if failed, ok := subResult["insert_failed"]; ok {
+					failedArr := failed.([]string)
+					failedArr = append(failedArr, errStr)
+					subResult["insert_failed"] = failedArr
+				} else {
+					subResult["insert_failed"] = []string{
+						errStr,
+					}
+				}
+				result[objID] = subResult
+				continue
+			}
+			attrCond := condition.CreateCondition()
+			attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+			attrCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
+			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
+			attrs, err := o.attr.FindObjectAttribute(params, attrCond)
+			if nil != err {
+				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
+				if failed, ok := subResult["insert_failed"]; ok {
+					failedArr := failed.([]string)
+					failedArr = append(failedArr, errStr)
+					subResult["insert_failed"] = failedArr
+				} else {
+					subResult["insert_failed"] = []string{
+						errStr,
+					}
+				}
+				result[objID] = subResult
+				continue
+			}
+
+			for _, newAttr := range attrs {
+				//fmt.Println("id:", newAttr.GetID())
+				if err := newAttr.Update(attr); nil != err {
+					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
+					if failed, ok := subResult["insert_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["insert_failed"] = failedArr
+					} else {
+						subResult["insert_failed"] = []string{
+							errStr,
+						}
+					}
+					result[objID] = subResult
+					continue
+				}
+
+				if failed, ok := subResult["success"]; ok {
+					failedArr := failed.([]string)
+					failedArr = append(failedArr, strconv.FormatInt(idx, 10))
+					subResult["success"] = failedArr
+				} else {
+					subResult["success"] = []string{
+						strconv.FormatInt(idx, 10),
+					}
+				}
+				result[objID] = subResult
+			}
+		}
+
+	}
+
+	return result, nil
+}
+func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+
+	cond := &ExportObjectCondition{}
+	if err := data.MarshalJSONInto(cond); nil != err {
+		return nil, err
+	}
+
+	result := frtypes.New()
+
+	for _, objID := range cond.ObjIDS {
+		obj, err := o.FindSingleObject(params, objID)
+		if nil != err {
+			return nil, err
+		}
+
+		attrs, err := obj.GetAttributes()
+		if nil != err {
+			return nil, err
+		}
+		result.Set(objID, frtypes.MapStr{
+			"attr": attrs,
+		})
+
+	}
+
+	return result, nil
+}
+
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
@@ -165,18 +346,40 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 
 func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
 
-	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), id, params.Header, cond.ToMapStr())
+	if 0 < id {
+		cond = condition.CreateCondition()
+		cond.Field(metadata.ModelFieldID).Eq(id)
+	}
 
+	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) error info is %s", cond, err.Error())
+		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
-		return params.Err.Error(rsp.Code)
-	}
+	for _, obj := range objs {
 
+		attrCond := condition.CreateCondition()
+		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
+
+		if err := o.attr.DeleteObjectAttribute(params, -1, attrCond); nil != err {
+			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
+			return err
+		}
+
+		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
+
+		if nil != err {
+			blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
+			return params.Err.Error(rsp.Code)
+		}
+	}
 	return nil
 }
 

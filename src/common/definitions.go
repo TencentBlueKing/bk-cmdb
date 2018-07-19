@@ -175,6 +175,9 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
+	// BKIPAddr the ip address
+	BKIPArr = "ipArr"
+
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
@@ -204,6 +207,8 @@ const (
 
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
+	// BKSubscriptionNameField the subscription name field
+	BKSubscriptionNameField = "subscription_name"
 
 	// BKOSTypeField the os type field
 	BKOSTypeField = "bk_os_type"
@@ -234,6 +239,9 @@ const (
 
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
+
+	// BKConfTempId is the config template id field
+	BKConfTempIdField = "bk_conftemp_id"
 
 	// BKProcNameField the proc name field
 	BKProcNameField = "bk_process_name"
@@ -419,6 +427,17 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+	// BKGseTaskIdField the gse taskid
+	BKGseTaskIdField = "task_id"
+	// BKProcPidFile the process pid file
+	BKProcPidFile    = "pid_file"
+	BKProcStartCmd   = "start_cmd"
+	BKProcStopCmd    = "stop_cmd"
+	BKProcReloadCmd  = "reload_cmd"
+	BKProcRestartCmd = "restart_cmd"
+	BKProcTimeOut    = "timeout"
+	BKProcWorkPath   = "work_path"
+	BKProcInstNum    = "proc_num"
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
@@ -580,46 +599,6 @@ const (
 	BatchHostAddMaxRow = 128
 )
 
-// table names
-const (
-	// BKTableNameProcModule the table name of the process module
-	BKTableNameProcModule = "cc_Proc2Module"
-
-	// BKTableNamePrivilege the table name of the privilege module
-	BKTableNamePrivilege = "cc_Privilege"
-
-	// BKTableNameUserGroup the table name of the user group module
-	BKTableNameUserGroup = "cc_UserGroup"
-
-	// BKTableNameUserGroupPrivilege the table name of the user group privilege
-	BKTableNameUserGroupPrivilege = "cc_UserGroupPrivilege"
-
-	// BKTableNamePropertyGroup the table name of the property group
-	BKTableNamePropertyGroup = "cc_PropertyGroup"
-
-	// BKTableNameObjDes the table name of the object
-	BKTableNameObjDes = "cc_ObjDes"
-
-	// BKTableNameObjAttDes the table name of the object attribute
-	BKTableNameObjAttDes = "cc_ObjAttDes"
-
-	// BKTableNameObjClassifiction the table name of the object classification
-	BKTableNameObjClassifiction = "cc_ObjClassification"
-
-	// BKTableNameInstAsst the table name of the inst association
-	BKTableNameInstAsst = "cc_InstAsst"
-
-	BKTableNameBaseApp     = "cc_ApplicationBase"
-	BKTableNameBaseHost    = "cc_HostBase"
-	BKTableNameBaseModule  = "cc_ModuleBase"
-	BKTableNameBaseInst    = "cc_ObjectBase"
-	BKTableNameBasePlat    = "cc_PlatBase"
-	BKTableNameBaseSet     = "cc_SetBase"
-	BKTableNameBaseProcess = "cc_Process"
-
-	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
-)
-
 const (
 	// HTTPBKAPIErrorMessage apiserver error message
 	HTTPBKAPIErrorMessage = "bk_error_msg"
@@ -655,6 +634,7 @@ const (
 const (
 	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
 	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
+	RedisSnapKeyPrefix      = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 const (
@@ -710,8 +690,11 @@ const (
 //flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-const SystemTableName = "cc_System"
 
 const (
 	BKHTTPMIMEJSON = "application/json"
+)
+
+const (
+	APPConfigWaitTime = 15
 )

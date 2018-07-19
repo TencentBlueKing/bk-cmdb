@@ -13,14 +13,12 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -88,14 +86,19 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	data.Set("flag", pathParams("flag"))
+	switch common.DataStatusFlag(pathParams("flag")) {
+	case common.DataStatusDisabled, common.DataStatusEnable:
+		data.Set(common.BKDataStatusField, pathParams("flag"))
+	default:
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
+	}
+
 	return nil, s.core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
 }
 
 // SearchBusiness search the business by condition
 func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	fmt.Println("search business")
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -108,9 +111,8 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, queryCond)
+	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -138,10 +140,7 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
-
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, queryCond)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
