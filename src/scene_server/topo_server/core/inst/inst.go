@@ -253,19 +253,25 @@ func (cli *inst) IsExists() (bool, error) {
 	if cli.target.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
 	}
+	val, exists := cli.datas.Get(common.BKInstParentStr)
+	if exists {
+		cond.Field(common.BKInstParentStr).Eq(val)
+	}
 
 	for _, attrItem := range attrs {
+		//fmt.Println("attr:", attrItem.GetID())
 		// check the inst
-		if attrItem.GetIsOnly() {
+		if attrItem.GetIsOnly() || attrItem.GetID() == cli.target.GetInstNameFieldName() {
 
-			val, exists := cli.datas.Get(attrItem.GetID())
+			val, exists = cli.datas.Get(attrItem.GetID())
 			if !exists {
 				return false, cli.params.Err.Errorf(common.CCErrCommParamsLostField, attrItem.GetID())
 			}
 			cond.Field(attrItem.GetID()).Eq(val)
 		}
-	}
 
+	}
+	//fmt.Println("cond:", cond.ToMapStr())
 	queryCond := metatype.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
 	//fmt.Println("cond:", cond.ToMapStr())

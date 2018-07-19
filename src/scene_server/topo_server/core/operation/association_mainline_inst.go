@@ -28,6 +28,11 @@ import (
 func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
+	cond := condition.CreateCondition()
+	if current.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(current.GetID())
+	}
+	defaultCond.Condition = cond.ToMapStr()
 
 	// fetch all parent inst
 	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond, false)
@@ -82,7 +87,11 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 func (cli *association) SetMainlineInstAssociation(params types.ContextParams, parent, current, child model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
-
+	cond := condition.CreateCondition()
+	if parent.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(parent.GetID())
+	}
+	defaultCond.Condition = cond.ToMapStr()
 	// fetch all parent inst
 	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
