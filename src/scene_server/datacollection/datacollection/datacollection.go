@@ -13,6 +13,8 @@
 package datacollection
 
 import (
+	"configcenter/src/storage"
+	"configcenter/src/storage/mgoclient"
 	"context"
 	"fmt"
 	"reflect"
@@ -23,22 +25,22 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/datacollection/app/options"
-	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage/redisclient"
 )
 
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
+	db storage.DI
 }
 
 func NewDataCollection(config *options.Config, backbone *backbone.Engine) *DataCollection {
 	return &DataCollection{Config: config, Engine: backbone}
 }
 
-func (d *DataCollection) Run(config map[string]string) error {
+func (d *DataCollection) Run() error {
 
-	blog.Infof("AutoExectueAction start...")
+	blog.Infof("datacollection start...")
 
 	var err error
 
@@ -57,6 +59,16 @@ func (d *DataCollection) Run(config map[string]string) error {
 		return err
 	}
 
+	db, err := mgoclient.NewFromConfig(d.Config.MongoDB)
+	if err != nil {
+		return fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	err = db.Open()
+	if err != nil {
+		return fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	d.db = db
+
 	chanName := []string{}
 	for {
 		chanName, err = d.getSnapChanName()
@@ -67,7 +79,7 @@ func (d *DataCollection) Run(config map[string]string) error {
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := NewHostSnap(chanName, MaxSnapSize, rediscli, snapcli)
+	hostSnap := NewHostSnap(chanName, MaxSnapSize, rediscli, snapcli, db)
 	hostSnap.Start()
 
 	discoverChan := ""
@@ -82,7 +94,7 @@ func (d *DataCollection) Run(config map[string]string) error {
 	discover := NewDiscover(context.Background(), discoverChan, MaxDiscoverSize, rediscli, discli, d.Engine)
 	discover.Start()
 
-	blog.Infof("AutoExectueAction finished")
+	blog.Infof("datacollection started")
 	return nil
 }
 
@@ -98,7 +110,7 @@ func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
 
-	if err = instdata.GetObjectByCondition(nil, common.BKInnerObjIDApp, nil, condition, &results, "", 0, 0); err != nil {
+	if err = d.db.GetMutilByCondition(common.BKTableNameBaseApp, nil, condition, &results, "", 0, 0); err != nil {
 		return "", err
 	}
 
