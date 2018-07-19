@@ -95,3 +95,7 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 	e.CCErr.Load(current)
 	blog.V(3).Infof("load new error config success.")
 }
+
+func (e *Engine) Ping() error {
+	return e.SvcDisc.Ping()
+}

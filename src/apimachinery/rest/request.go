@@ -207,6 +207,9 @@ func (r *Request) Do() *Result {
 			}
 
 			req.Header = r.headers
+			if len(req.Header) == 0 {
+				req.Header = make(http.Header)
+			}
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 

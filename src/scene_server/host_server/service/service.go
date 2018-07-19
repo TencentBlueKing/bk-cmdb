@@ -15,10 +15,13 @@ package service
 import (
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 )
@@ -27,6 +30,7 @@ type Service struct {
 	*options.Config
 	*backbone.Engine
 	*logics.Logics
+	disc discovery.DiscoveryInterface
 }
 
 func (s *Service) WebService() *restful.WebService {
@@ -88,6 +92,67 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.GET("/plat").To(s.GetPlat))
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
 	return ws
+}
+
+func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// object controller
+	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
+		objCtr.IsHealthy = false
+		objCtr.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, objCtr)
+
+	// audit controller
+	auditCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_AUDITCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_AUDITCONTROLLER); err != nil {
+		auditCtrl.IsHealthy = false
+		auditCtrl.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, auditCtrl)
+
+	// host controller
+	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
+		auditCtrl.IsHealthy = false
+		auditCtrl.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, hostCtrl)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "host server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_HOST,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }
