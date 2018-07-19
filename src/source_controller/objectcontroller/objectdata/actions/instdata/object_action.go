@@ -17,8 +17,8 @@ import (
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/source_controller/common/commondata"
 	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
@@ -84,7 +84,7 @@ func (cli *objectAction) DelObject(req *restful.Request, resp *restful.Response)
 		if len(originDatas) > 0 {
 			ec := eventdata.NewEventContextByReq(req)
 			for _, originData := range originDatas {
-				err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionDelete, nil, originData)
+				err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
 				if err != nil {
 					blog.Error("create event error:%v", err)
 				}
@@ -146,7 +146,7 @@ func (cli *objectAction) UpdateObject(req *restful.Request, resp *restful.Respon
 					if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil {
 						blog.Error("create event error:%v", err)
 					} else {
-						err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionUpdate, newData, originData)
+						err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
 						if err != nil {
 							blog.Error("create event error:%v", err)
 						}
@@ -235,7 +235,7 @@ func (cli *objectAction) CreateObject(req *restful.Request, resp *restful.Respon
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, objType, eventtypes.EventActionCreate, origindata, nil)
+			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
