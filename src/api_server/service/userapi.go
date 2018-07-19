@@ -15,8 +15,8 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
@@ -134,10 +134,10 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 		if intPage > 0 {
 			intPage -= 1
 		}
-		skip = fmt.Sprintf("%d", intPage*intPageSize)
+		skip = strconv.Itoa(intPage * intPageSize)
 
 	} else {
-		pageSize = fmt.Sprintf("%d", common.BKNoLimit)
+		pageSize = strconv.Itoa(common.BKNoLimit)
 	}
 
 	result, err := s.CoreAPI.HostServer().GetUserCustomQueryResult(context.Background(), appID, id, skip, pageSize, pheader)
