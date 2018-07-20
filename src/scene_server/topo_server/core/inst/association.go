@@ -246,7 +246,7 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
 	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
-
+	//fmt.Println("child:", cond.ToMapStr())
 	return cli.searchInsts(childObj, cond)
 }
 
@@ -354,19 +354,8 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 }
 
 func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
-	parentInst, err := cli.GetMainlineParentInst()
-	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the parent inst, error info is  %s", err.Error())
-		return err
-	}
 
-	if err = cli.updateMainlineAssociation(targetInst, parentInst); nil != err {
-
-		blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
-		return err
-	}
-
-	if err = cli.updateMainlineAssociation(cli, targetInst); nil != err {
+	if err := cli.updateMainlineAssociation(cli, targetInst); nil != err {
 		blog.Errorf("[inst-inst] failed to update the mainline association, error info is %s", err.Error())
 		return err
 	}
