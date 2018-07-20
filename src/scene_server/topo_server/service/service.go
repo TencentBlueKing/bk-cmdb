@@ -18,12 +18,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/rdapi"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
