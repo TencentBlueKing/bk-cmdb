@@ -90,7 +90,7 @@
                     const model = this.getRouteModel(path)
                     if (model && !['bk_host_manage', 'bk_back_config'].includes(model.classificationId)) {
                         this.$store.dispatch('usercustom/updateUserCustom', {
-                            [this.recentlyKey]: [...this.recently, path]
+                            [this.recentlyKey]: [path, ...this.recently]
                         })
                     }
                 }
