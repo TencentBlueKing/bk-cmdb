@@ -87,7 +87,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// mongodb status
 	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if _, err := s.Core.CoreAPI.Healthz().HealthCheck(types.CCFunctionalityMongo); err != nil {
+	if err := s.DbInstance.Ping(); err != nil {
 		mongoItem.IsHealthy = false
 		mongoItem.Message = err.Error()
 	}
@@ -95,7 +95,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
-	if _, err := s.Core.CoreAPI.Healthz().HealthCheck(types.CCFunctionalityRedis); err != nil {
+	if err := s.CacheDI.Ping().Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}
@@ -104,7 +104,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "host server is unhealthy"
+			meta.Message = "host controller is unhealthy"
 			break
 		}
 	}
