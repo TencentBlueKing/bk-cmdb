@@ -10,11 +10,4 @@
  * limitations under the License.
  */
 
-package ccapi
-
-import (
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/identifier"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/instdata"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
-	_ "configcenter/src/source_controller/objectcontroller/objectdata/actions/privilege"
-)
+package service
