@@ -91,13 +91,13 @@
                             max: 25
                         },
                         widthConstraint: {
-                            maximum: 100
+                            maximum: 120
                         }
                     },
                     layout: {
                         hierarchical: {
                             direction: 'LR',
-                            nodeSpacing: 70
+                            nodeSpacing: 90
                         }
                     }
                 },

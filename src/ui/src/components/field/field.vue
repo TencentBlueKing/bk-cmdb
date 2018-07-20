@@ -29,7 +29,7 @@
 
                 <ul class="list-wrapper">
                     <li v-for="(property, index) in hideList" @click="addItem(property)" ref="hideItem" :key="index">
-                        {{property['bk_property_name']}}
+                        <span :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                         <i class="bk-icon icon-angle-right"></i>
                     </li>
                 </ul>
@@ -42,7 +42,7 @@
                 </div>
                 <draggable class="content-right" v-model="shownList" :options="{animation: 150}">
                     <div v-for="(property, index) in shownList" :key="index" class="item">
-                        <i class="icon-triple-dot"></i><span>{{property['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)"></i>
+                        <i class="icon-triple-dot"></i><span :title="property['bk_property_name']">{{property['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)"></i>
                     </div>
                 </draggable>
             </div>
@@ -288,6 +288,11 @@
                 font-size: 14px;
                 padding-left: 27px;
                 cursor: pointer;
+                span{
+                    display: inline-block;
+                    width: 230px;
+                    @include ellipsis;
+                }
                 &:hover{
                     background: #f9f9f9;
                 }
@@ -326,6 +331,12 @@
             line-height: 42px;
             padding-left: 30px;
             cursor: move;
+            span{
+                display: inline-block;
+                width: 200px;
+                @include ellipsis;
+                vertical-align: bottom;
+            }
             &:hover{
                 background: #f9f9f9;
             }
