@@ -17,6 +17,7 @@ import (
 	_ "configcenter/src/scene_server/host_server/host_service/actions/detail"
 	_ "configcenter/src/scene_server/host_server/host_service/actions/hosts"
 	_ "configcenter/src/scene_server/host_server/host_service/actions/phpapi"
+	_ "configcenter/src/scene_server/host_server/host_service/actions/property"
 	_ "configcenter/src/scene_server/host_server/host_service/actions/search"
 	_ "configcenter/src/scene_server/host_server/host_service/actions/update"
 	_ "configcenter/src/scene_server/host_server/host_service/actions/userapi"

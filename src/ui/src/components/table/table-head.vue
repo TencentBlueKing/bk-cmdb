@@ -111,7 +111,7 @@
                 this.table.$emit('handleCheckAll', isChecked, column.head)
             },
             handleSort (column, order) {
-                if (column.dragging) return
+                if (!column.sortable) return
                 if (!order) {
                     order = this.getSortOrder(column)
                 }

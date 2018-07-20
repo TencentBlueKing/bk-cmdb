@@ -43,16 +43,18 @@ func newHostIterator(target model.Model, cond common.Condition) (*hostIterator, 
 		buffer:      make([]types.MapStr, 0),
 	}
 
-	items, err := client.GetClient().CCV3().Host().SearchHost(cond)
+	grpIterator.cond.SetLimit(DefaultLimit)
+	grpIterator.cond.SetStart(grpIterator.bufIdx)
+
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Host().SearchHost(cond)
 	if nil != err {
 		return nil, err
 	}
 
 	grpIterator.buffer = items
 	grpIterator.bufIdx = 0
-	if 0 == len(grpIterator.buffer) {
-		return nil, nil
-	}
+
+	grpIterator.buffer = append(grpIterator.buffer, items...)
 
 	return grpIterator, nil
 }
@@ -87,7 +89,7 @@ func (cli *hostIterator) Next() (HostInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Host().SearchHost(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Host().SearchHost(cli.cond)
 		if nil != err {
 			return nil, err
 		}

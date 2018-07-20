@@ -1,4 +1,5 @@
 'use strict'
+require('./custom-env')
 require('./check-versions')()
 
 const config = require('../config')

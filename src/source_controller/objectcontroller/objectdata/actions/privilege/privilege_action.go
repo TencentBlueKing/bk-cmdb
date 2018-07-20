@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package privilege
 
 import (
@@ -47,13 +47,13 @@ func (cli *privilegeAction) CreateUserGroupPrivi(req *restful.Request, resp *res
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetActionOnwerID(req)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		defer req.Request.Body.Close()
 
 		pathParams := req.PathParameters()
-		ownerID := pathParams["bk_supplier_account"]
 		groupID := pathParams["group_id"]
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if err != nil {
@@ -74,6 +74,7 @@ func (cli *privilegeAction) CreateUserGroupPrivi(req *restful.Request, resp *res
 		data[common.BKOwnerIDField] = ownerID
 		data[common.BKUserGroupIDField] = groupID
 		data[common.BKPrivilegeField] = info
+		data = util.SetModOwner(data, ownerID)
 		_, err = cli.CC.InstCli.Insert(common.BKTableNameUserGroupPrivilege, data)
 		if nil != err {
 			blog.Error("insert user group privi error :%v", err)
@@ -89,13 +90,13 @@ func (cli *privilegeAction) UpdateUserGroupPrivi(req *restful.Request, resp *res
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetActionOnwerID(req)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		defer req.Request.Body.Close()
 
 		pathParams := req.PathParameters()
-		ownerID := pathParams["bk_supplier_account"]
 		groupID := pathParams["group_id"]
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if err != nil {
@@ -117,6 +118,8 @@ func (cli *privilegeAction) UpdateUserGroupPrivi(req *restful.Request, resp *res
 		cond[common.BKOwnerIDField] = ownerID
 		cond[common.BKUserGroupIDField] = groupID
 		data[common.BKPrivilegeField] = info
+		cond = util.SetModOwner(cond, ownerID)
+		data = util.SetModOwner(data, ownerID)
 		err = cli.CC.InstCli.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
 		if nil != err {
 			blog.Error("update user group privi error :%v", err)
@@ -133,18 +136,19 @@ func (cli *privilegeAction) GetUserGroupPrivi(req *restful.Request, resp *restfu
 	language := util.GetActionLanguage(req)
 	//get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetActionOnwerID(req)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 
 		defer req.Request.Body.Close()
 
 		pathParams := req.PathParameters()
-		ownerID := pathParams["bk_supplier_account"]
 		groupID := pathParams["group_id"]
 
 		cond := make(map[string]interface{})
 		cond[common.BKOwnerIDField] = ownerID
 		cond[common.BKUserGroupIDField] = groupID
+		cond = util.SetModOwner(cond, ownerID)
 		var result interface{}
 		err := cli.CC.InstCli.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
 		if nil != err {

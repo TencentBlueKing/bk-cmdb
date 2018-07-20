@@ -13,30 +13,31 @@
 package instdata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/base"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
-	"configcenter/src/common/util"
-	eventtypes "configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/eventdata"
-	"configcenter/src/source_controller/common/instdata"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	dcCommon "configcenter/src/scene_server/datacollection/common"
-
+	"encoding/json"
 	simplejson "github.com/bitly/go-simplejson"
-
 	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common"
+	"configcenter/src/common/base"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/actions"
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/util"
+	dcCommon "configcenter/src/scene_server/datacollection/common"
+	eventtypes "configcenter/src/scene_server/event_server/types"
+	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/source_controller/common/eventdata"
+	"configcenter/src/source_controller/common/instdata"
 )
 
-var host *hostAction = &hostAction{}
+var host = &hostAction{}
 
 type hostAction struct {
 	base.BaseAction
@@ -46,6 +47,7 @@ type hostAction struct {
 func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -57,6 +59,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 		input, _ := js.Map()
 		blog.Info("create object type:%s,data:%v", objType, input)
 		input[common.CreateTimeField] = time.Now()
+		input = util.SetModOwner(input, ownerID)
 		var idName string
 		ID, err := instdata.CreateObject(objType, input, &idName)
 		if err != nil {
@@ -70,7 +73,7 @@ func (cli *hostAction) AddHost(req *restful.Request, resp *restful.Response) {
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventdata.NewEventContextByReq(req)
-			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil)
+			err := ec.InsertEvent(eventtypes.EventTypeInstData, "host", eventtypes.EventActionCreate, originData, nil, ownerID)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
@@ -87,6 +90,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -96,6 +100,7 @@ func (cli *hostAction) GetHostByID(req *restful.Request, resp *restful.Response)
 		var result interface{}
 		condition := make(map[string]interface{})
 		condition[common.BKHostIDField] = hostID
+		condition = util.SetModOwner(condition, ownerID)
 		fields := make([]string, 0)
 		err := cli.CC.InstCli.GetOneByCondition("cc_HostBase", fields, condition, &result)
 		if err != nil {
@@ -111,6 +116,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	defLang := cli.CC.Lang.CreateDefaultCCLanguageIf(language)
@@ -133,6 +139,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 		sort := dat.Sort
 		fieldArr := strings.Split(fields, ",")
 		result := make([]map[string]interface{}, 0)
+		condition = util.SetModOwner(condition, ownerID)
 		count, err := instdata.GetCntByCondition(objType, condition)
 		if err != nil {
 			blog.Error("get object type:%s,input:%s error:%v", objType, value, err)
@@ -152,6 +159,7 @@ func (cli *hostAction) GetHosts(req *restful.Request, resp *restful.Response) {
 
 //GetHostSnap get host snap
 func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response) {
+	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -159,14 +167,24 @@ func (cli *hostAction) GetHostSnap(req *restful.Request, resp *restful.Response)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
 		hostID := req.PathParameter("bk_host_id")
-		data := common.KvMap{"key": dcCommon.RedisSnapKeyPrefix + hostID}
-		var result interface{} = ""
-		err := cli.CC.CacheCli.GetOneByCondition("Get", nil, data, &result)
 
+		var result string
+		err := redisCli.Get(dcCommon.RedisSnapKeyPrefix + hostID).Scan(&result)
 		if err != nil {
+			statuscode := 0
+			err := redisCli.Get(dcCommon.RedisSnapKeyChannelStatus).Scan(&statuscode)
+			if err != nil {
+				blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
+			}
+
+			if statuscode != common.CCSuccess {
+				return http.StatusInternalServerError, nil, defErr.Error(statuscode)
+			}
 			blog.Error("get host snapshot error,input:%v error:%v", hostID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrHostGetSnapshot)
 		}
+
 		return http.StatusOK, common.KvMap{"data": result}, nil
 	}, resp)
 }

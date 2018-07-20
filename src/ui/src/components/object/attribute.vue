@@ -20,7 +20,7 @@
                             <li class="attribute-item fl" v-if="!property['bk_isapi']" :key="propertyIndex">
                                 <template v-if="property['bk_property_type'] !== 'bool'">
                                     <span class="attribute-item-label has-colon" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
-                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
+                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property) === '' ? '--' : getFieldValue(property)}}</span>
                                 </template>
                                 <template v-else>
                                     <span class="attribute-item-label" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
@@ -49,7 +49,7 @@
                                             v-if="checkIsShowField(property)">
                                             <div>
                                                 <label :class="[{'required': property['isrequired']}]" class="bk-form-checkbox bk-checkbox-small">
-                                                    <input type="checkbox" v-if="isMultipleUpdate && property['bk_property_type'] !== 'bool'" 
+                                                    <input type="checkbox" v-if="isMultipleUpdate" 
                                                         v-model="multipleEditableFields[property['bk_property_id']]"
                                                         @change="clearFieldValue(property)">
                                                     <span>{{property['bk_property_name']}}</span>
@@ -100,7 +100,6 @@
                                                         type="checkbox"
                                                         v-model="localValues[property['bk_property_id']]"
                                                         :disabled="checkIsFieldDisabled(property)">
-                                                    </input>
                                                 </span>
                                                 <input type="text" class="bk-form-input" v-else-if="property['bk_property_type'] === 'int'"
                                                     :disabled="checkIsFieldDisabled(property)" maxlength="11" 
@@ -250,7 +249,13 @@
                 this.groupOrder.map(group => {
                     if (this.bkPropertyGroups.hasOwnProperty(group)) {
                         groupEditable[group] = this.bkPropertyGroups[group]['properties'].some(property => {
-                            return property['editable'] && !property['bk_isapi']
+                            if (this.isMultipleUpdate) {
+                                return property['editable'] && !property['bk_isapi'] && !property['isonly']
+                            } else if (this.type === 'create') {
+                                return !property['bk_isapi']
+                            } else {
+                                return property['editable'] && !property['bk_isapi']
+                            }
                         })
                     }
                 })
@@ -524,7 +529,7 @@
                 } = property
                 if (bkPropertyId === 'bk_biz_name' && this.formValues[bkPropertyId] === '蓝鲸') {
                     return true
-                } else if (this.isMultipleUpdate && bkPropertyType !== 'bool') {
+                } else if (this.isMultipleUpdate) {
                     return !this.multipleEditableFields[bkPropertyId]
                 } else if (this.type === 'create') {
                     return false
@@ -569,6 +574,7 @@
             resetData () {
                 this.displayType = 'list'
                 this.localValues = {}
+                this.multipleEditableFields = {}
                 this.$forceUpdate()
             },
             getValidateRules (property) {
@@ -578,7 +584,7 @@
                     option,
                     isrequired
                 } = property
-                if (isrequired) {
+                if (isrequired && !this.isMultipleUpdate) {
                     rules['required'] = true
                 }
                 if (property.hasOwnProperty('option') && option) {
@@ -610,8 +616,6 @@
                         if (Object.keys(this.formData).length) {
                             this.$emit('submit', this.formData, Object.assign({}, this.formValues))
                         }
-                    } else {
-                        this.$alertMsg(this.errors.first(Object.keys(this.errors.collect())[0]))
                     }
                 })
             },

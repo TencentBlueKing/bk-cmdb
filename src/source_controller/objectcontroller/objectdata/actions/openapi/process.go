@@ -42,6 +42,7 @@ func init() {
 
 func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -62,6 +63,7 @@ func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *rest
 		moduleName := input[common.BKModuleNameField]
 		query := make(map[string]interface{})
 		query[common.BKModuleNameField] = moduleName
+		query = util.SetModOwner(query, ownerID)
 		blog.Debug("query;%v", query)
 		fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
 		var result []interface{}
@@ -95,55 +97,6 @@ func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *rest
 			blog.Error("fail to get proc %v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommDBSelectFailed)
 		}
-		/*resData := make([]map[string]interface{}, 0)
-		for _, item := range resultProc {
-			itemMap, ok := item.(bson.M)
-			if false == ok {
-				blog.Error("assign error item is not bson.M,item:%v",item)
-				continue
-			}
-			lastTime ,ok := itemMap[common.LastTimeField].(time.Time)
-			LastTime := ""
-			if false == ok {
-				blog.Error("assign error item is itemMap['last_time'] not (time.Time),itemMap:%v",itemMap)
-			}else{
-				LastTime = lastTime.Format("2006-01-02 15:04:05")
-			}
-			createTime ,ok := itemMap[common.CreateTimeField].(time.Time)
-			CreateTime := ""
-			if false == ok {
-				blog.Error("assign error item is itemMap['create_time'] not (time.Time),itemMap:%v",itemMap)
-			}else{
-				CreateTime = createTime.Format("2006-01-02 15:04:05")
-			}
-
-			resData = append(resData, map[string]interface{}{
-				"WorkPath":    itemMap[common.BKWorkPath],
-				"AutoTimeGap": "0",
-				"LastTime":    LastTime,
-				"StartCmd":    "",
-				"FuncID":      "0",
-				"BindIP":      itemMap[common.BKBindIP],
-				"FuncName":    itemMap[common.BKFuncName],
-				//"Flag":        itemMap["Flag"],
-				"Flag":        "",
-				"User":        itemMap[	common.BKUser],
-				"StopCmd":     "",
-				"ProNum":      "",
-				"ReloadCmd":   "",
-				"ProcessName": itemMap[common.BKProcNameField],
-				"OpTimeout":   "0",
-				"KillCmd":     "",
-				"Protocol":    itemMap[common.BKProtocol],
-				"Seq":         "0",
-				"ProcGrp":     "",
-				"Port":        itemMap[common.BKPort],
-				"ReStartCmd":  "",
-				"AutoStart":   "0",
-				"CreateTime":  CreateTime,
-				"PidFile":     "",
-			})
-		}*/
 		return http.StatusOK, resultProc, nil
 	}, resp)
 }

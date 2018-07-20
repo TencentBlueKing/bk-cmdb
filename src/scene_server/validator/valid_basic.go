@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // NewValidMap returns new NewValidMap
@@ -62,7 +63,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//valid create request
 	if validType == common.ValidCreate {
-		fillLostedFieldValue(valData, valRule.AllFieldAttDes)
+		fillLostedFieldValue(valData, valRule.AllFieldAttDes, valid.IsRequireArr)
 	}
 
 	for key, val := range valData {
@@ -139,8 +140,15 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 		}
 	}
 
-	//fmt.Printf("valdata:%+v\n", valData)
-	//valid unique
+	if validType == common.ValidCreate {
+		diffArr := util.StrArrDiff(valRule.NoEnumFiledArr, keyDataArr)
+		if 0 != len(diffArr) {
+			keyStr := strings.Join(diffArr, ",")
+			blog.Error("params lost filed")
+			return false, valid.ccError.Errorf(common.CCErrCommParamsLostField, keyStr)
+		}
+	}
+
 	if validType == common.ValidCreate {
 		result, err = valid.validCreateUnique(valData)
 		return result, err

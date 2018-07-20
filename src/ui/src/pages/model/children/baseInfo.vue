@@ -12,13 +12,12 @@
     <div class="tab-content">
         <form class="bk-form" id="validate_form">
             <div class="bk-form-item">
-                <div class="from-common-item">
-                    <label class="from-common-label">{{$t('ModelManagement["图标选择"]')}}<span class=""> * </span></label>
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["图标选择"]')}}<span class=""> * </span></label>
                     <div class="form-contain">
                         <div class="select-icon-content">
                             <div class="select-icon-show" @click.stop.prevent="toggleDrop" :class="{'active':isIconDrop}">
                                 <div class="icon-content" >
-                                    <!-- <i :class="list[nowIndex].value"></i> -->
                                     <i :class="baseInfo['bk_obj_icon']"></i>
                                 </div>
                                 <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
@@ -26,11 +25,15 @@
                             <div class="select-icon-mask" v-show="isIconDrop" @click="closeDrop"></div>
                             <div class="select-icon-list" v-show="isIconDrop">
                                 <ul class="clearfix icon-list">
-                                    <li v-for="(item,index) in curIconList" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
+                                    <li v-tooltip="{content: language === 'zh-cn' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': item.value === baseInfo['bk_obj_icon']}" @click.stop.prevent="chooseIcon(index, item)">
                                         <i :class="item.value"></i>
                                     </li>
                                 </ul>
-                                <div class="page-wrapper">
+                                <div class="page-wrapper clearfix">
+                                    <div class="input-wrapper">
+                                        <input type="text" v-model="icon.searchText" :placeholder="$t('ModelManagement[\'请输入关键词\']')">
+                                        <i class="bk-icon icon-search"></i>
+                                    </div>
                                     <ul class="clearfix page">
                                         <li v-for="page in icon.totalPage"
                                         class="page-item" :class="{'cur-page': icon.curPage === page}"
@@ -44,9 +47,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="from-common-item">
-                    <label class="from-common-label">{{$t('ModelManagement["中文名称"]')}}<span class=""> * </span></label>
-                    <div class="from-common-content interior-width-control">
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["中文名称"]')}}<span class=""> * </span></label>
+                    <div class="form-common-content interior-width-control">
                         <input type="text" name="" value=""
                             maxlength="20"
                             :disabled="isReadOnly || baseInfo.ispre"
@@ -59,9 +62,9 @@
                             v-model.trim="baseInfo['bk_obj_name']">
                     </div>
                 </div>
-                <div class="from-common-item" style="padding-right: 0">
-                    <label class="from-common-label">{{$t('ModelManagement["英文名称"]')}}<span class=""> * </span></label>
-                    <div class="from-common-content interior-width-control">
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["英文名称"]')}}<span class=""> * </span></label>
+                    <div class="form-common-content interior-width-control">
                         <input type="text" name="" value=""
                             :placeholder="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"
                             :class="{'is-danger': !baseInfoVerify['bk_obj_id']}" :disabled="type==='change'"
@@ -142,7 +145,7 @@
                     bk_obj_id: '',                // API标识
                     bk_classification_id: '',
                     bk_supplier_account: 0,
-                    bk_obj_icon: 'icon-cc-business'
+                    bk_obj_icon: 'icon-cc-default'
                 },
                 baseInfoCopy: {},
                 baseInfoVerify: {
@@ -152,8 +155,9 @@
                 nowIndex: 0,                   // 选择图标下拉框当前index
                 isIconDrop: false,             // 选择图标下拉框
                 isChoose: true,                // 判断编辑分类的时候是否选择了icon
-                iconValue: 'icon-cc-business', // 选择icon的值
+                iconValue: 'icon-cc-default', // 选择icon的值
                 icon: {
+                    searchText: '',
                     list: [],
                     count: 0,
                     curPage: 1,
@@ -164,10 +168,19 @@
         },
         computed: {
             ...mapGetters([
-                'bkSupplierAccount'
+                'bkSupplierAccount',
+                'language'
             ]),
             curIconList () {
-                return this.icon.list.slice((this.icon.curPage - 1) * this.icon.size, this.icon.curPage * this.icon.size)
+                let list = this.icon.list
+                if (this.icon.searchText.length) {
+                    list = this.icon.list.filter(icon => {
+                        return icon.nameZh.toLowerCase().indexOf(this.icon.searchText.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(this.icon.searchText.toLowerCase()) > -1
+                    })
+                }
+                this.icon.count = list.length
+                this.icon.totalPage = Math.ceil(list.length / this.icon.size)
+                return list.slice((this.icon.curPage - 1) * this.icon.size, this.icon.curPage * this.icon.size)
             }
         },
         watch: {
@@ -181,12 +194,15 @@
                         this.getBaseInfo(this.objId)
                     }
                 }
+            },
+            'icon.searchText' () {
+                this.icon.curPage = 1
             }
         },
         methods: {
             isCloseConfirmShow () {
                 if (this.type === 'new') {
-                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-business') {
+                    if (this.baseInfo['bk_obj_id'] !== '' || this.baseInfo['bk_obj_name'] !== '' || this.baseInfo['bk_obj_icon'] !== 'icon-cc-default') {
                         return true
                     }
                 } else {
@@ -228,9 +244,9 @@
                     bk_obj_id: '',
                     bk_classification_id: '',
                     bk_supplier_account: this.bkSupplierAccount,
-                    bk_obj_icon: 'icon-cc-business'
+                    bk_obj_icon: 'icon-cc-default'
                 }
-                this.iconValue = 'icon-cc-business'
+                this.iconValue = 'icon-cc-default'
                 this.baseInfoVerify = {
                     bk_obj_name: true,          // true: 成功 false 失败
                     bk_obj_id: true
@@ -328,6 +344,7 @@
             this.icon = {
                 list: iconList,
                 count: this.list.length,
+                searchText: '',
                 curPage: 1,
                 totalPage: Math.ceil(this.list.length / 24),
                 size: 24
@@ -350,13 +367,15 @@
                 display: table;
                 width: 100%;
             }
-            .from-common-item{
-                // width:240px;
-                padding-right: 46px;
-                margin-right:0;
+            .form-common-item{
+                position: relative;
+                margin-right: 46px;
                 float: left;
                 font-size: 0;
-                .from-common-label{
+                &:last-child{
+                    margin-right: 0;
+                }
+                .form-common-label{
                     display: inline-block;
                     width: 70px;
                     vertical-align: top;
@@ -369,7 +388,7 @@
                         padding-left: 3px;
                     }
                 }
-                .from-common-content{
+                .form-common-content{
                     width:158px;
                     height: 36px;
                     display: inline-block;
@@ -499,7 +518,7 @@
                 position: absolute;
                 top: 44px;
                 left: 0;
-                width: 390px;
+                width: 382px;
                 height: 248px;
                 border: 1px solid #bec6de;
                 z-index: 500;
@@ -510,6 +529,7 @@
                 .icon-list{
                     padding: 0;
                     margin: 0;
+                    width: 360px;
                     height: 184px;
                     li{
                         width: 60px;
@@ -534,21 +554,40 @@
                     }
                 }
                 .page-wrapper {
-                    text-align: center;
+                    padding: 15px 18px 5px;
+                    .input-wrapper {
+                        float: left;
+                        position: relative;
+                        vertical-align: bottom;
+                        font-size: 12px;
+                        color: #c3cdd7;
+                        input {
+                            width: 116px;
+                            height: 22px;
+                            padding: 0 25px 0 5px;
+                            border: 1px solid #c3cdd7;
+                            border-radius: 2px;
+                        }
+                        .bk-icon {
+                            position: absolute;
+                            top: 5px;
+                            right: 8px;
+                        }
+                    }
                 }
                 .page{
-                    display: inline-block;
-                    margin-top: 15px;
+                    float: right;
                     li{
                         text-align: center;
                         float: left;
                         margin-right: 5px;
-                        width: 24px;
-                        height: 20px;
+                        width: 22px;
+                        height: 22px;
+                        line-height: 20px;
                         border-radius: 2px;
                         font-size: 12px;
                         cursor: pointer;
-                        color: #c3cdd7;
+                        color: #737987;
                         border: 1px solid #c3cdd7;
                         &.cur-page{
                             color: #fff;

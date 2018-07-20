@@ -19,7 +19,8 @@
                     :isShowBiz="isShowBiz"
                     :isShowCollect="isShowCollect"
                     :isShowHistory="isShowHistory"
-                    @refresh="setTableCurrentPage(1)"
+                    :isShowScope="isShowScope"
+                    @refresh="setTableCurrentPage(1, true)"
                     @bkBizSelected="bkBizSelected"
                     @showField="setFilterField"
                     @applyCollect="setQueryColumnData"
@@ -46,34 +47,39 @@
                     </ul>
                 </bk-dropdown-menu>
                 <slot name="btnGroup">
-                    <div class="btn-group clearfix">
-                        <button class="bk-button bk-default"
-                            :disabled="!table.chooseId.length" 
-                            @click="multipleUpdate">
-                            <i class="icon-cc-edit"></i>
-                            <span>{{$t("BusinessTopology['修改']")}}</span>
-                        </button>
-                        <button class="bk-button"
-                            :disabled="!table.chooseId.length"
-                            @click="transferHost">
-                            <i class="icon-cc-shift"></i>
-                            <span>{{$t("BusinessTopology['转移']")}}</span>
-                        </button>
-                        <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
-                            <input type="hidden" name="bk_host_id" :value="table.chooseId">
-                            <input type="hidden" name="bk_biz_id" value="-1">
-                            <button class="bk-button"
-                                :disabled="!table.chooseId.length"
-                                @click.prevent="exportChoose">
-                                <i class="icon-cc-derivation"></i>
-                                <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                    <div class="bk-group btn-group bk-button-group clearfix">
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                            <button class="bk-button bk-default"
+                                :disabled="!table.chooseId.length" 
+                                @click="multipleUpdate">
+                                <i class="icon-cc-edit"></i>
                             </button>
-                        </form>
-                        <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
-                        <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'转移\']')">
+                            <bk-button type="default"
+                                :disabled="!table.chooseId.length"
+                                @click="transferHost">
+                                <i class="icon-cc-shift"></i>
+                            </bk-button>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
+                            <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
+                                <input type="hidden" name="bk_host_id" :value="table.chooseId">
+                                <input type="hidden" name="bk_biz_id" value="-1">
+                                <bk-button type="default"
+                                    class="center"
+                                    btnType="submit"
+                                    :disabled="!table.chooseId.length"
+                                    @click.prevent="exportChoose">
+                                    <i class="icon-cc-derivation"></i>
+                                </bk-button>
+                            </form>
+                        </div>
+                        <bk-button type="default" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</bk-button>
+                        <bk-button type="default" class="button-setting last" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
-                        </button>
-                        <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1)" class="fr mr0">
+                        </bk-button>
+                        <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
                     </div>
@@ -84,10 +90,10 @@
                 :header="table.tableHeader"
                 :list="table.tableList"
                 :defaultSort="table.defaultSort"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="$loading('hostSearch') || outerLoading"
                 :checked="table.chooseId"
-                :wrapperMinusHeight="150"
+                :wrapperMinusHeight="wrapperMinusHeight"
                 :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
@@ -181,9 +187,10 @@
                 </v-field>
             </div>
         </v-sideslider>
-        <v-host-transfer-pop
+        <v-host-transfer-pop v-if="isShowTransfer"
             :isShow.sync="transfer.isShow"
             :chooseId="table.chooseId"
+            :hosts="selectedList"
             @success="transferSuccess">
         </v-host-transfer-pop>
     </div>
@@ -211,17 +218,7 @@
             outerParams: {
                 type: Object,
                 default () {
-                    return {
-                        condition: [{
-                            'bk_obj_id': 'biz',
-                            fields: [],
-                            condition: [{
-                                field: 'default',
-                                operator: '$ne',
-                                value: 1
-                            }]
-                        }]
-                    }
+                    return {}
                 }
             },
             isShowCrossImport: {
@@ -240,7 +237,15 @@
                 type: Boolean,
                 default: true
             },
+            isShowTransfer: {
+                type: Boolean,
+                default: true
+            },
             isShowRefresh: {
+                type: Boolean,
+                default: false
+            },
+            isShowScope: {
                 type: Boolean,
                 default: false
             },
@@ -251,6 +256,10 @@
             tableVisible: {
                 type: Boolean,
                 default: true
+            },
+            wrapperMinusHeight: {
+                type: Number,
+                default: 150
             }
         },
         data () {
@@ -403,7 +412,9 @@
                 if (attrLoaded && this.bkBizId) {
                     this.setTableCurrentPage(1)
                 }
-                this.$emit('attrLoaded')
+                if (attrLoaded) {
+                    this.$emit('attrLoaded')
+                }
             },
             bkBizId (bkBizId) {
                 if (this.attrLoaded) {
@@ -426,7 +437,7 @@
                         text.push(value)
                     }
                 })
-                return text.join(',')
+                return text.join('\n')
             },
             setSelectedList (newId, oldId) {
                 let diffIdList = newId.concat(oldId).filter(id => !newId.includes(id) || !oldId.includes(id))
@@ -509,6 +520,7 @@
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
+                    return res
                 }).catch((e) => {
                     if (e.response && e.response.status === 403) {
                         this.$alertMsg(this.$t('Common[\'您没有当前业务的权限\']'))
@@ -897,8 +909,11 @@
             attributeTabChanged (activeName) {
                 this.sideslider.attribute.active = activeName
             },
-            setTableCurrentPage (current) {
+            setTableCurrentPage (current, reset = false) {
                 this.table.pagination.current = current
+                if (reset) {
+                    this.table.chooseId = []
+                }
                 this.getTableList()
             },
             setTablePageSize (size) {
@@ -912,45 +927,23 @@
             mergeCondition (targetParams, sourceParams) {
                 let mergedParams = this.$deepClone(targetParams)
                 if (sourceParams && sourceParams.hasOwnProperty('condition')) {
-                    let newCondition = []
-                    for (let i = 0; i < sourceParams['condition'].length; i++) {
-                        let {
-                            condition: sourceCondition,
-                            bk_obj_id: sourceBkObjId,
-                            fields: sourceFields
-                        } = sourceParams['condition'][i]
-                        let isIncludeCondition = false
-                        for (let j = 0; j < mergedParams['condition'].length; j++) {
-                            let {
-                                condition: targetCondition,
-                                bk_obj_id: targetBkObjId,
-                                fields: targetFields
-                            } = mergedParams['condition'][j]
-                            if (sourceBkObjId === targetBkObjId) {
-                                let mergedCondition = [...sourceCondition]
-                                for (let m = 0; m < targetCondition.length; m++) {
-                                    let isExist = false
-                                    for (let n = 0; n < sourceCondition.length; n++) {
-                                        if (targetCondition[m]['field'] === sourceCondition[n]['field']) {
-                                            isExist = true
-                                            break
-                                        }
-                                    }
-                                    if (!isExist) {
-                                        mergedCondition.push(targetCondition[m])
-                                    }
+                    sourceParams.condition.forEach(sourceCondition => {
+                        let targetCondition = mergedParams.condition.find(targetCondition => targetCondition['bk_obj_id'] === sourceCondition['bk_obj_id'])
+                        if (targetCondition) {
+                            targetCondition.fields = [...new Set([...targetCondition.fields, ...sourceCondition.fields])]
+                            sourceCondition.condition.forEach(sourceMeta => {
+                                let targetMeta = targetCondition.condition.find(targetMeta => targetMeta.field === sourceMeta.field)
+                                if (targetMeta) {
+                                    targetMeta.operator = sourceMeta.operator
+                                    targetMeta.value = sourceMeta.value
+                                } else {
+                                    targetCondition.condition.push(this.$deepClone(sourceMeta))
                                 }
-                                mergedParams['condition'][j]['condition'] = mergedCondition
-                                mergedParams['condition'][j]['fields'] = [...sourceFields, ...targetFields]
-                                isIncludeCondition = true
-                                break
-                            }
+                            })
+                        } else {
+                            mergedParams.condition.push(sourceCondition)
                         }
-                        if (!isIncludeCondition) {
-                            newCondition.push(sourceParams['condition'][i])
-                        }
-                    }
-                    mergedParams.condition = [...mergedParams.condition, ...newCondition]
+                    })
                 }
                 if (sourceParams && sourceParams.hasOwnProperty('bk_biz_id')) {
                     mergedParams['bk_biz_id'] = sourceParams['bk_biz_id']
@@ -960,7 +953,7 @@
             async init () {
                 await this.setTopoAttribute()
                 await this.getAllAttribute()
-                this.getUserCustomColumn()
+                await this.getUserCustomColumn()
             }
         },
         created () {
@@ -1009,19 +1002,13 @@
     }
     .btn-group{
         display: inline-block;
-        width: calc(100% - 110px);
+        width: calc(100% - 111px);
         vertical-align: middle;
         font-size: 0;
         .bk-button{
             font-size: 14px;
-            margin-right: 10px;
             &:disabled{
                 cursor: not-allowed !important;
-            }
-            &.button-setting{
-                width: 36px;
-                padding: 0;
-                min-width: auto;
             }
             &.button-search{
                 width: 178px;

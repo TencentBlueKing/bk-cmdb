@@ -11,7 +11,7 @@
 <template>
     <div class="topo-wrapper model" :class="{'no-edit': curClassify === 'bk_host_manage'}" id="topo-wrapper">
         <div id="topo" class="topo"></div>
-        <button v-if="curClassify !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editModel">
+        <button v-if="curClassify !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editModel" :title="$t('Common[\'编辑\']')">
             <i class="icon icon-cc-edit"></i>
         </button>
         <bk-button type="primary" class="bk-button vis-button vis-create" v-if="addModelAvailable && curClassify && modelNodes.length" @click="createModel">
@@ -24,7 +24,7 @@
         <transition name="topo-disable-list">
             <div class="topo-disable" v-show="isShowDisableList">
                 <label class="disable-title">
-                    <span>{{$t('ModelManagement["已禁用模型"]')}}</span>
+                    <span>{{$t('ModelManagement["已停用模型"]')}}</span>
                     <i class="bk-icon icon-arrows-right" @click="isShowDisableList = false"></i>
                 </label>
                 <ul class="disable-list" ref="disableList">

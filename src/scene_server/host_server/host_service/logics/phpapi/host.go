@@ -111,7 +111,7 @@ func UpdateHostMain(req *restful.Request, hostCondition, data map[string]interfa
 			bl, _ := resJs.Get("result").Bool()
 			if bl {
 				user := util.GetActionUser(req)
-				opClient := auditlog.NewClient(auditCtrl)
+				opClient := auditlog.NewClient(auditCtrl, req.Request.Header)
 				content, _ := logContent.GetHostLog(strHostID, false)
 				//(id interface{}, Content interface{}, OpDesc string, InnerIP, ownerID, appID, user string, OpType auditoplog.AuditOpType)
 				opClient.AuditHostLog(hostID, content, "修改主机", logContent.GetInnerIP(), common.BKDefaultOwnerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeModify)
@@ -251,6 +251,7 @@ func SetHostData(req *restful.Request, moduleHostConfig []map[string]int, hostMa
 
 		hostNew[common.BKModuleIDField] = module[common.BKModuleIDField]
 		hostNew[common.BKModuleNameField] = module[common.BKModuleNameField]
+		hostNew[common.BKModuleTypeField] = module[common.BKModuleTypeField]
 		hostNew[common.BKSetIDField] = set[common.BKSetIDField]
 		hostNew[common.BKSetNameField] = set[common.BKSetNameField]
 		hostNew[common.BKAppIDField] = app[common.BKAppIDField]

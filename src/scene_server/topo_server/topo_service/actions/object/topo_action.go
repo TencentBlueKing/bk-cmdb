@@ -13,6 +13,13 @@
 package object
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"reflect"
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/bkbase"
 	"configcenter/src/common/blog"
@@ -22,14 +29,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/topo_service/manager"
 	api "configcenter/src/source_controller/api/object"
-	"encoding/json"
-	"fmt"
-	"github.com/bitly/go-simplejson"
-	"io/ioutil"
-	"net/http"
-	"reflect"
-	"strconv"
 
+	"github.com/bitly/go-simplejson"
 	restful "github.com/emicklei/go-restful"
 )
 
@@ -325,6 +326,35 @@ func (cli *topoAction) CreateModel(req *restful.Request, resp *restful.Response)
 		if jsErr := json.Unmarshal(val, &obj); nil != jsErr {
 			blog.Error("unmarshal json failed, error information is %v", jsErr)
 			return http.StatusBadRequest, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		// check the object level limit
+		level := common.BKTopoBusinessLevelDefault
+		if config, err := cli.CC.ParseConfig(); nil != err {
+			blog.Errorf("failed to get the parse the conigure, error info is %s", err.Error())
+		} else if cfg, ok := config[common.BKTopoBusinessLevelLimit]; ok {
+			innerLevel, err := strconv.Atoi(cfg)
+			if nil != err {
+				blog.Errorf("can not convert level(%s) to int, error info is %s", cfg, err.Error())
+			}
+			if innerLevel <= 0 { // the min level limit is 3
+				level = common.BKTopoBusinessLevelDefault
+			} else {
+				level = innerLevel
+			}
+		}
+
+		rstItems, ctrErr := cli.mgr.SelectTopoModel(forward, nil, obj.OwnerID, common.BKInnerObjIDApp, "", "", "", defErr)
+		if nil != ctrErr {
+			blog.Error("select topo model failed, error information is %v, res:%v", ctrErr, rstItems)
+			return http.StatusBadRequest, nil, ctrErr
+		}
+
+		//blog.Debug("select module for insts:%v", rstItems)
+
+		if level <= len(rstItems) {
+			blog.Errorf("business topology level exceeds the limit, %d", level)
+			return http.StatusBadRequest, nil, defErr.Error(common.CCErrTopoBizTopoLevelOverLimit)
 		}
 
 		// to cache the old main association by the parent

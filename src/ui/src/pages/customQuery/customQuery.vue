@@ -36,7 +36,7 @@
                 :header="table.header"
                 :list="table.list"
                 :defaultSort="table.defaultSort"
-                :pagination="table.pagination"
+                :pagination.sync="table.pagination"
                 :loading="$loading('getUserAPIList')"
                 :wrapperMinusHeight="150"
                 @handlePageChange="setCurrentPage"
@@ -126,7 +126,7 @@
                     type: 'create',
                     id: null,
                     title: {
-                        text: this.$t("CustomQuery['查询定义']"),
+                        text: this.$t("CustomQuery['新增查询']"),
                         icon: 'icon-cc-edit'
                     }
                 }
@@ -188,6 +188,7 @@
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']
+                this.slider.title.text = this.$t('CustomQuery["编辑查询"]')
             },
             /* 设置当前页码 */
             setCurrentPage (current) {
@@ -208,6 +209,7 @@
             showUserAPISlider (type) {
                 this.slider.isShow = true
                 this.slider.type = type
+                this.slider.title.text = this.$t("CustomQuery['新增查询']")
             },
             /* 隐藏自定义条件侧滑栏 */
             hideUserAPISlider () {

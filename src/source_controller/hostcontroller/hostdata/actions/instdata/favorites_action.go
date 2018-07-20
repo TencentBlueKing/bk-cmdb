@@ -31,7 +31,8 @@ import (
 )
 
 var (
-	TABLENAME string = "cc_HostFavourite"
+	// TABLENAME cc_HostFavourite table name
+	TABLENAME = "cc_HostFavourite"
 )
 
 var hostFavouriteAction = &hostFavourite{}
@@ -44,6 +45,7 @@ type hostFavourite struct {
 func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -64,6 +66,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		queryParams := make(map[string]interface{})
 		queryParams["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
 		queryParams["name"] = params["name"]
+		queryParams = util.SetModOwner(queryParams, ownerID)
 
 		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, queryParams)
 		if nil != err {
@@ -79,6 +82,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 		params["count"] = 1
 		params[common.CreateTimeField] = time.Now()
 		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+		params = util.SetModOwner(params, ownerID)
 		_, err = cc.InstCli.Insert(TABLENAME, params)
 
 		if err != nil {
@@ -98,6 +102,7 @@ func (cli *hostFavourite) AddHostFavourite(req *restful.Request, resp *restful.R
 func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -121,6 +126,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 		params := make(map[string]interface{})
 		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
 		params["id"] = ID
+		params = util.SetModOwner(params, ownerID)
 		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
 		if nil != err {
 			blog.Error("query host favorites fail, error information is %s, params:%v", err.Error(), params)
@@ -138,7 +144,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 			dupParams["name"] = newName
 			dupParams[common.BKUser] = req.PathParameter("user")
 			dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
-
+			dupParams = util.SetModOwner(dupParams, ownerID)
 			rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, dupParams)
 			if nil != err {
 				blog.Error("query user api validate name duplicatie fail, error information is %s, params:%v", err.Error(), dupParams)
@@ -164,6 +170,7 @@ func (cli *hostFavourite) UpdateHostFavouriteByID(req *restful.Request, resp *re
 func (cli *hostFavourite) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -172,6 +179,7 @@ func (cli *hostFavourite) DeleteHostFavouriteByID(req *restful.Request, resp *re
 		params := make(map[string]interface{})
 		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
 		params["id"] = ID
+		params = util.SetModOwner(params, ownerID)
 
 		rowCount, err := cc.InstCli.GetCntByCondition(TABLENAME, params)
 		if nil != err {
@@ -195,6 +203,7 @@ func (cli *hostFavourite) DeleteHostFavouriteByID(req *restful.Request, resp *re
 func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 	cli.CallResponseEx(func() (int, interface{}, error) {
@@ -238,6 +247,7 @@ func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.
 		}
 
 		condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+		condition = util.SetModOwner(condition, ownerID)
 		result := make([]interface{}, 0)
 		count, err := cc.InstCli.GetCntByCondition(TABLENAME, condition)
 		if err != nil {
@@ -261,6 +271,7 @@ func (cli *hostFavourite) GetHostFavourites(req *restful.Request, resp *restful.
 func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
@@ -275,7 +286,7 @@ func (cli *hostFavourite) GetHostFavouriteByID(req *restful.Request, resp *restf
 		params := make(map[string]interface{})
 		params["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
 		params["id"] = ID
-
+		params = util.SetModOwner(params, ownerID)
 		result := make(map[string]interface{})
 		err := cc.InstCli.GetOneByCondition(TABLENAME, nil, params, &result)
 		if err != nil && mgo_on_not_found_error != err.Error() {

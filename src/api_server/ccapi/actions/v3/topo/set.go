@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package topo
 
 import (
@@ -35,6 +35,7 @@ func init() {
 	// register actions
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/set/{app_id}", Params: nil, Handler: set.CreateSet, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/set/{app_id}/{set_id}", Params: nil, Handler: set.DeleteSet, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/set/{app_id}/batch", Params: nil, Handler: set.DeleteSetBatch, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/set/{app_id}/{set_id}", Params: nil, Handler: set.UpdateSet, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/set/search/{owner_id}/{app_id}", Params: nil, Handler: set.SelectSet, Version: v3.APIVersion})
 
@@ -55,6 +56,19 @@ func (cli *setAction) CreateSet(req *restful.Request, resp *restful.Response) {
 		}, appID),
 		resp)
 
+}
+
+// DeleteSet delete a set
+func (cli *setAction) DeleteSetBatch(req *restful.Request, resp *restful.Response) {
+
+	appID := req.PathParameter("app_id")
+
+	senceCLI := api.NewClient(module.CC.TopoAPI())
+	cli.CallResponse(
+		senceCLI.ReForwardDeleteMetaSet(func(url, method string) (string, error) {
+			return httpclient.ReqForward(req, url, method)
+		}, appID, "-1"), // TODO: -1 means to batch operation, need to implement a new api
+		resp)
 }
 
 // DeleteSet delete a set

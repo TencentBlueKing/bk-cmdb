@@ -144,7 +144,6 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	var err error
 	nameIndexMap, err := checkExcelHealer(sheet, fields, isCheckHeader, defLang)
 	if nil != err {
-
 		return nil, err
 	}
 	hosts := make(map[int]map[string]interface{})
@@ -156,6 +155,42 @@ func GetExcelData(sheet *xlsx.Sheet, fields map[string]Property, defFields commo
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
 		host, getErr := getDataFromByExcelRow(row, index, fields, defFields, nameIndexMap, defLang)
+		if nil != getErr {
+			getErr = fmt.Errorf("%s;%s", getErr.Error())
+			continue
+		}
+		if 0 == len(host) {
+			hosts[index+1] = nil
+		} else {
+			hosts[index+1] = host
+		}
+	}
+	if nil != err {
+
+		return nil, err
+	}
+
+	return hosts, nil
+
+}
+
+//GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
+func GetRawExcelData(sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
+
+	var err error
+	nameIndexMap, err := checkExcelHealer(sheet, nil, false, defLang)
+	if nil != err {
+		return nil, err
+	}
+	hosts := make(map[int]map[string]interface{})
+	index := headerRow
+	if 0 != firstRow {
+		index = firstRow
+	}
+	rowCnt := len(sheet.Rows)
+	for ; index < rowCnt; index++ {
+		row := sheet.Rows[index]
+		host, getErr := getDataFromByExcelRow(row, index, nil, defFields, nameIndexMap, defLang)
 		if nil != getErr {
 			getErr = fmt.Errorf("%s;%s", getErr.Error())
 			continue

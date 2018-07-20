@@ -12,12 +12,10 @@
         <ul class="relevance-box" v-show="!isLoading">
             <template v-if="ztreeDataSourceList.length">
                 <v-tree :list="ztreeDataSourceList"
-                    :treeType="'list'"
                     :callback='nodeClick'
                     :expand="expandClick"
                     :is-open="false"
-                    :pageTurning="pageTurning"
-                    :pageSize="pageSize"
+                    :detailCallback="detailClick"
                     ref="tree"
                 ></v-tree>
             </template>
@@ -28,12 +26,22 @@
                 </div>
             </template>
         </ul>
+        <v-attribute
+            class="list-attribute"
+            ref="attribute"
+            :isShow.sync="attr.isShow"
+            :instId="attr.instId"
+            :objId="attr.objId"
+            :instName="attr.instName"
+            :objName="attr.objName"
+        ></v-attribute>
     </div>
 </template>
 
 <script>
     import vTree from '@/components/tree/tree'
-    import {mapGetters} from 'vuex'
+    import vAttribute from './attribute'
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             // 当前实例ID
@@ -50,7 +58,14 @@
                 isLoading: true,
                 curNode: {},
                 treeItemId: 1,                  // 树形图具体某一项的id 用于区分点击的哪一项 前端递增
-                ztreeDataSourceList: []
+                ztreeDataSourceList: [],
+                attr: {
+                    isShow: false,
+                    instId: '',
+                    objId: '',
+                    instName: '',
+                    objName: ''
+                }
             }
         },
         computed: {
@@ -67,6 +82,13 @@
                 list: 树形图列表
             */
             nodeClick (node, parent, list) {
+            },
+            detailClick (node) {
+                this.attr.instId = node['bk_inst_id']
+                this.attr.objId = node['bk_obj_id']
+                this.attr.instName = node['bk_inst_name']
+                this.attr.objName = node['bk_obj_name']
+                this.attr.isShow = true
             },
             /*
                 节点展开与收起回调事件
@@ -202,16 +224,21 @@
             }
         },
         components: {
-            vTree
+            vTree,
+            vAttribute
         }
     }
 </script>
 
 <style lang="scss" scoped>
     .relevance-wrapper{
+        position: relative;
         min-height: 300px;
         .relevance-box{
             height: 100%;
+        }
+        .list-attribute{
+            z-index: 99;
         }
         .relevance-none{
             margin-top: 50px;

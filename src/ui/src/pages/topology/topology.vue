@@ -27,6 +27,7 @@
                         :outerLoading="tree.loading"
                         :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
                         :tableVisible="view.tab.active === 'host'"
+                        :wrapperMinusHeight="210"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
@@ -46,6 +47,14 @@
                         @delete="deleteNode"
                         @cancel="cancelCreate"></v-attribute>
                 </bk-tabpanel>
+                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')" :show="attributeBkObjId === 'module'">
+                    <v-process
+                        :isShow="view.tab.active === 'process'"
+                        :bizId="tree.bkBizId"
+                        :moduleName="attributeBkObjId === 'module' ? tree.activeNode['bk_inst_name'] : ''"
+                    >
+                    </v-process>
+                </bk-tabpanel>
             </bk-tab>
         </div>
         <bk-dialog :is-show.sync="view.crossImport.isShow" :quick-close="false" :has-header="false" :has-footer="false" :width="700" :padding="0">
@@ -63,6 +72,7 @@
     import vTree from '@/components/tree/tree.v2'
     import vHosts from '@/pages/hosts/hosts'
     import vAttribute from './children/attribute'
+    import vProcess from './children/process'
     import vCrossImport from './children/crossImport'
     import { mapGetters } from 'vuex'
     export default {
@@ -77,7 +87,7 @@
                     activeNodeOptions: {},
                     activeParentNode: {},
                     initNode: {},
-                    loading: true
+                    loading: false
                 },
                 view: {
                     tab: {
@@ -150,7 +160,7 @@
             },
             /* 当前节点发生变化且属性修改面板激活时，加载当前节点的具体属性 */
             'tree.activeNode' () {
-                if (!this.isShowAttribute) {
+                if (!this.isShowAttribute || (this.attributeBkObjId !== 'module' && this.view.tab.active === 'process')) {
                     this.tabChanged('host')
                 }
                 if (this.view.tab.active === 'attribute') {
@@ -488,7 +498,8 @@
             vTree,
             vCrossImport,
             vHosts,
-            vAttribute
+            vAttribute,
+            vProcess
         }
     }
 </script>
@@ -554,6 +565,9 @@
         }
         .bk-tab2-content{
             height: calc(100% - 80px);
+            section.active{
+                height: 100%;
+            }
         }
     }
     .topo-wrapper .hosts-wrapper{

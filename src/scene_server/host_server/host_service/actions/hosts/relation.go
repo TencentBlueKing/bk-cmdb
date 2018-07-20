@@ -47,12 +47,19 @@ type DefaultModuleHostConfigParams struct {
 	HostID        []int `json:"bk_host_id"`
 }
 
+type SetHostConfigParams struct {
+	ApplicationID int `json:"bk_biz_id"`
+	SetID         int `json:"bk_set_id"`
+	ModuleID      int `json:"bk_module_id"`
+}
+
 func init() {
 	hostModuleConfig.CreateAction()
 
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/modules", Params: nil, Handler: hostModuleConfig.HostModuleRelation})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/emptymodule", Params: nil, Handler: hostModuleConfig.MoveHost2EmptyModule})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/faultmodule", Params: nil, Handler: hostModuleConfig.MoveHost2FaultModule})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/faultmodule/set", Params: nil, Handler: hostModuleConfig.moveSetHost2IdleModule})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/resource", Params: nil, Handler: hostModuleConfig.MoveHostToResourcePool})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/hosts/assgin", Params: nil, Handler: hostModuleConfig.AssignHostToApp})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/host/add/module", Params: nil, Handler: hostModuleConfig.AssignHostToAppModule})
@@ -346,7 +353,7 @@ func (m *hostModuleConfigAction) AssignHostToAppModule(req *restful.Request, res
 
 }
 
-//moveHostToModuleName translate module to idle and fault module relation
+// moveHostToModuleName translate module to idle and fault module relation
 func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
 	value, err := ioutil.ReadAll(req.Request.Body)
 	var data DefaultModuleHostConfigParams
@@ -415,6 +422,102 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
 			}
 		}
+		user := util.GetActionUser(req)
+		logClient.SetDesc("host to " + moduleNameLogKey + " module")
+		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)
+
+		return http.StatusOK, nil, nil
+	}, resp)
+}
+
+// moveSetHost2IdleModule move set host to idle module
+func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
+	value, err := ioutil.ReadAll(req.Request.Body)
+	var data SetHostConfigParams
+	defErr := m.CC.Error.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	defLang := m.CC.Lang.CreateDefaultCCLanguageIf(util.GetActionLanguage(req))
+
+	m.CallResponseEx(func() (int, interface{}, error) {
+
+		err = json.Unmarshal([]byte(value), &data)
+		if err != nil {
+			blog.Error("get unmarshall json value %v error:%v", string(value), err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		//get host in set
+		condition := make(map[string]interface{})
+		hostIDArr := make([]int, 0)
+		if 0 != data.SetID {
+			condition[common.BKSetIDField] = []int{data.SetID}
+		}
+		if 0 != data.ModuleID {
+			condition[common.BKModuleIDField] = []int{data.ModuleID}
+		}
+
+		condition[common.BKAppIDField] = []int{data.ApplicationID}
+		hostResult, err := logics.GetConfigByCond(req, m.CC.HostCtrl(), condition)
+		if nil != err {
+			blog.Error("read host from application  error:%v", err)
+			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
+
+		}
+
+		if 0 == len(hostResult) {
+			blog.Error("no host in set")
+			return http.StatusOK, nil, nil
+		}
+		for _, cell := range hostResult {
+			hostIDArr = append(hostIDArr, cell[common.BKHostIDField])
+		}
+
+		conds := make(map[string]interface{})
+		moduleNameLogKey := "idle"
+		conds[common.BKDefaultField] = common.DefaultResModuleFlag
+		conds[common.BKModuleNameField] = common.DefaultResModuleName
+		conds[common.BKAppIDField] = data.ApplicationID
+		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
+		if nil != err {
+			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")
+
+		}
+
+		moduleHostConfigParams := make(map[string]interface{})
+		moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
+		logClient, err := logics.NewHostModuleConfigLog(req, hostIDArr, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
+		if nil != err {
+			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+		}
+
+		for _, hostID := range hostIDArr {
+
+			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
+			if nil != err {
+				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
+			}
+			if false == bl {
+				blog.Error("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, fmt.Sprintf("%d", hostID))
+			}
+
+			moduleHostConfigParams[common.BKHostIDField] = hostID
+			delModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
+			isSuccess, errMsg, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, moduleHostConfigParams)
+			if !isSuccess {
+				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+			}
+			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+			addModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
+
+			isSuccess, errMsg, _ = logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
+			if !isSuccess {
+				blog.Error("add modulehostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
+			}
+		}
+
 		user := util.GetActionUser(req)
 		logClient.SetDesc("host to " + moduleNameLogKey + " module")
 		logClient.SaveLog(fmt.Sprintf("%d", data.ApplicationID), user)

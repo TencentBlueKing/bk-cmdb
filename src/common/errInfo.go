@@ -236,10 +236,13 @@ const (
 	CCErrTopoGetCloudErrStrFaild = 1101031
 	// CCErrTopoCloudNotFound   cloud area not found
 	CCErrTopoCloudNotFound = 1101032
+
 	// CCErrTopoGetAppFaild search app err %s
 	CCErrTopoGetAppFaild = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
+	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
+	CCErrTopoBizTopoLevelOverLimit = 1101035
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -277,10 +280,11 @@ const (
 	// CCErrObjectPropertyGroupUpdateFailed failed to update the filed
 	CCErrObjectPropertyGroupUpdateFailed = 1102003
 
-	CCErrObjectCreateInstFailed = 1102004
-	CCErrObjectUpdateInstFailed = 1102005
-	CCErrObjectDeleteInstFailed = 1102006
-	CCErrObjectSelectInstFailed = 1102007
+	CCErrObjectCreateInstFailed       = 1102004
+	CCErrObjectUpdateInstFailed       = 1102005
+	CCErrObjectDeleteInstFailed       = 1102006
+	CCErrObjectSelectInstFailed       = 1102007
+	CCErrObjectSelectIdentifierFailed = 1102008
 
 	// CCErrObjectDBOpErrno failed to operation database
 	CCErrObjectDBOpErrno = 1102004
@@ -328,7 +332,9 @@ const (
 	CCErrHostFavouriteCreateFail         = 1106015
 	CCErrHostFavouriteUpdateFail         = 1106016
 	CCErrHostFavouriteDeleteFail         = 1106017
-	CCErrHostFavouriteDupFail            = 1106017
+	CCErrHostFavouriteDupFail            = 1106018
+	CCErrHostGetSnapshotChannelEmpty     = 1106019
+	CCErrHostGetSnapshotChannelClose     = 1106020
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module = 1107001

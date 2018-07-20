@@ -77,7 +77,7 @@
                                 {{getEnumLabel(formValues[property['bk_property_id']], property)}}
                             </template>
                             <template v-else>
-                                {{localValues[property['bk_property_id']]}}
+                                {{localValues[property['bk_property_id']] === '' ? '--' : localValues[property['bk_property_id']]}}
                             </template>
                         </div>
                     </div>
@@ -253,7 +253,7 @@
                 if (Array.isArray(value)) {
                     return value.map(({bk_inst_name: bkInstName}) => bkInstName).join(',')
                 }
-                return value
+                return (value === '' || value === undefined) ? '--' : value
             },
             getEnumLabel (value, property) {
                 if (value) {
@@ -264,6 +264,7 @@
                         return obj.name
                     }
                 }
+                return '--'
             },
             setDate (date, bkPropertyId) {
                 if (this.localValues.hasOwnProperty(bkPropertyId)) {

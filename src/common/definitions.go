@@ -57,6 +57,9 @@ const (
 	// BKDefaultOwnerID the default owner value
 	BKDefaultOwnerID = "0"
 
+	// BKSupereOwnerID the super owner value
+	BKSuperOwnerID = "supperowner"
+
 	// BKDefaultSupplierID the default owner id
 	BKDefaultSupplierID = 0
 
@@ -65,6 +68,12 @@ const (
 
 	// BKTimeTypeParseFlag the time flag
 	BKTimeTypeParseFlag = "cc_time_type"
+
+	// BKTopoBusinessLevelLimit the mainline topo level limit
+	BKTopoBusinessLevelLimit = "level.businessTopoMax"
+
+	// BKTopoBusinessLevelDefault the mainline topo level default level
+	BKTopoBusinessLevelDefault = 6
 )
 
 const (
@@ -154,7 +163,6 @@ const (
 )
 
 const (
-
 	// BKFIeldID the id definition
 	BKFieldID = "id"
 
@@ -414,6 +422,9 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+
+	// BKInstKeyField the inst key field for metric discover
+	BKInstKeyField = "bk_inst_key"
 )
 
 // DefaultResSetName the inner module set
@@ -466,7 +477,6 @@ const BKAppName string = "蓝鲸"
 const BKMainLine = "mainline"
 
 const (
-
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
 
@@ -474,7 +484,6 @@ const (
 	DefaultFaultModuleFlag int = 2
 )
 const (
-
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
 
@@ -516,7 +525,6 @@ const (
 )
 
 const (
-
 	// HostAddMethodExcel add a host method
 	HostAddMethodExcel = "1"
 
@@ -627,9 +635,9 @@ const (
 type KvMap map[string]interface{}
 
 const (
-
 	// CCSystemOperatorUserName the system user
-	CCSystemOperatorUserName = "cc_system"
+	CCSystemOperatorUserName  = "cc_system"
+	CCSystemCollectorUserName = "cc_collector"
 )
 
 // APIRsp the result the http requst
@@ -647,7 +655,6 @@ const (
 )
 
 const (
-
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 

@@ -36,7 +36,9 @@ func init() {
 	// register actions
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/inst/{owner_id}/{obj_id}", Params: nil, Handler: inst.CreateInst, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.DeleteInst, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/inst/{owner_id}/{obj_id}/batch", Params: nil, Handler: inst.DeleteInstBatch, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", Params: nil, Handler: inst.UpdateInst, FilterHandler: nil, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/inst/{owner_id}/{obj_id}/batch", Params: nil, Handler: inst.UpdateInstBatch, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/{owner_id}/{obj_id}", Params: nil, Handler: inst.SelectInsts, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}/detail", Params: nil, Handler: inst.SelectInstsAndAsstDetail, FilterHandler: nil, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPSelectPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", Params: nil, Handler: inst.SelectInstsByAssociation, FilterHandler: nil, Version: v3.APIVersion})
@@ -69,6 +71,25 @@ func (cli *instAction) CreateInst(req *restful.Request, resp *restful.Response) 
 }
 
 // DeleteInst delete some inst object
+func (cli *instAction) DeleteInstBatch(req *restful.Request, resp *restful.Response) {
+
+	blog.Info("delete inst")
+
+	ownerID := req.PathParameter("owner_id")
+	objID := req.PathParameter("obj_id")
+
+	senceCLI := api.NewClient(inst.CC.TopoAPI())
+	senceCLI.SetAddress(cli.CC.TopoAPI()) // TODO: need to be removed
+
+	cli.CallResponse(
+		senceCLI.ReForwardDeleteMetaInst(func(url, method string) (string, error) {
+			return httpclient.ReqForward(req, url, method)
+		}, ownerID, objID, "-1"), // TODO:  -1 means batch operation, need to do implement a new api
+		resp)
+
+}
+
+// DeleteInst delete some inst object
 func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) {
 
 	blog.Info("delete inst")
@@ -84,6 +105,25 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 		senceCLI.ReForwardDeleteMetaInst(func(url, method string) (string, error) {
 			return httpclient.ReqForward(req, url, method)
 		}, ownerID, objID, instID),
+		resp)
+
+}
+
+// UpdateInstBatch update some inst object info
+func (cli *instAction) UpdateInstBatch(req *restful.Request, resp *restful.Response) {
+
+	blog.Info("update inst")
+
+	ownerID := req.PathParameter("owner_id")
+	objID := req.PathParameter("obj_id")
+
+	senceCLI := api.NewClient(inst.CC.TopoAPI())
+	senceCLI.SetAddress(cli.CC.TopoAPI()) // TODO: need to be removed
+
+	cli.CallResponse(
+		senceCLI.ReForwardUpdateMetaInst(func(url, method string) (string, error) {
+			return httpclient.ReqForward(req, url, method)
+		}, ownerID, objID, "-1"), // TODO: need to implement a new api, -1 means to batch operation
 		resp)
 
 }
@@ -127,7 +167,7 @@ func (cli *instAction) SelectTopo(req *restful.Request, resp *restful.Response) 
 }
 
 // SelectTopo search inst topo
-func (cli *instAction)SelectInstAssociationTopo(req *restful.Request, resp *restful.Response) {
+func (cli *instAction) SelectInstAssociationTopo(req *restful.Request, resp *restful.Response) {
 
 	blog.Info("select inst topo")
 

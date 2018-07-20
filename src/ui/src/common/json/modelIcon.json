@@ -1,299 +1,377 @@
 [
     {
-        "value": "icon-cc-business"
+        "value": "icon-cc-default",
+        "nameZh": "默认",
+        "nameEn": "Default"
     },
     {
-        "value": "icon-cc-square"
+        "value": "icon-cc-activeMQ",
+        "nameZh": "ActiveMQ",
+        "nameEn": "ActiveMQ"
     },
     {
-        "value": "icon-cc-ip"
+        "value": "icon-cc-mongodb",
+        "nameZh": "MongoDB",
+        "nameEn": "MongoDB"
     },
     {
-        "value": "icon-cc-security"
+        "value": "icon-cc-postgresql",
+        "nameZh": "PostgreSQL",
+        "nameEn": "PostgreSQL"
     },
     {
-        "value": "icon-cc-pie-chart"
+        "value": "icon-cc-mysql",
+        "nameZh": "Mysql",
+        "nameEn": "Mysql"
     },
     {
-        "value": "icon-cc-icon-city"
+        "value": "icon-cc-db2",
+        "nameZh": "DB2",
+        "nameEn": "DB2"
     },
     {
-        "value": "icon-cc-storage"
+        "value": "icon-cc-sqlite",
+        "nameZh": "SQLite",
+        "nameEn": "SQLite"
     },
     {
-        "value": "icon-cc-switch"
+        "value": "icon-cc-influxdb",
+        "nameZh": "InfluxDB",
+        "nameEn": "InfluxDB"
     },
     {
-        "value": "icon-cc-senior"
+        "value": "icon-cc-oracle",
+        "nameZh": "oracle",
+        "nameEn": "oracle"
     },
     {
-        "value": "icon-cc-compact"
+        "value": "icon-cc-sql-server",
+        "nameZh": "SQL server",
+        "nameEn": "SQL server"
     },
     {
-        "value": "icon-cc-backstage"
+        "value": "icon-cc-elastic-search",
+        "nameZh": "ElasticSearch",
+        "nameEn": "ElasticSearch"
     },
     {
-        "value": "icon-cc-engine-room"
+        "value": "icon-cc-triangle",
+        "nameZh": "虚拟集群",
+        "nameEn": "Virtual cluster"
     },
     {
-        "value": "icon-cc-cabinet"
+        "value": "icon-cc-vsphere",
+        "nameZh": "vSphere",
+        "nameEn": "vSphere"
     },
     {
-        "value": "icon-cc-curve"
+        "value": "icon-cc-vmware",
+        "nameZh": "VMware",
+        "nameEn": "VMware"
     },
     {
-        "value": "icon-cc-module"
+        "value": "icon-cc-storage",
+        "nameZh": "存储设备",
+        "nameEn": "Storage device"
     },
     {
-        "value": "icon-cc-model"
+        "value": "icon-cc-ip",
+        "nameZh": "IP",
+        "nameEn": "IP"
     },
     {
-        "value": "icon-cc-equipment"
+        "value": "icon-cc-network-segment",
+        "nameZh": "网段",
+        "nameEn": "network segment"
     },
     {
-        "value": "icon-cc-lock"
+        "value": "icon-cc-domain",
+        "nameZh": "域名",
+        "nameEn": "DNS"
     },
     {
-        "value": "icon-cc-networks"
+        "value": "icon-cc-iis",
+        "nameZh": "IIS",
+        "nameEn": "IIS"
     },
     {
-        "value": "icon-cc-net-port"
+        "value": "icon-cc-nginx",
+        "nameZh": "nginx",
+        "nameEn": "nginx"
     },
     {
-        "value": "icon-cc-network-equipment"
+        "value": "icon-cc-apache",
+        "nameZh": "Apache",
+        "nameEn": "Apache"
     },
     {
-        "value": "icon-cc-information"
+        "value": "icon-cc-tomcat",
+        "nameZh": "Tomcat",
+        "nameEn": "Tomcat"
     },
     {
-        "value": "icon-cc-triangle"
+        "value": "icon-cc-weblogic",
+        "nameZh": "weblogic",
+        "nameEn": "weblogic"
     },
     {
-        "value": "icon-cc-columnar"
+        "value": "icon-cc-redis",
+        "nameZh": "redis",
+        "nameEn": "redis"
     },
     {
-        "value": "icon-cc-subnet"
+        "value": "icon-cc-kafka",
+        "nameZh": "kafka",
+        "nameEn": "kafka"
     },
     {
-        "value": "icon-cc-host"
+        "value": "icon-cc-log",
+        "nameZh": "日志服务",
+        "nameEn": "Log service"
     },
     {
-        "value": "icon-cc-process"
+        "value": "icon-cc-mail-server",
+        "nameZh": "邮件服务",
+        "nameEn": "Mail service"
     },
     {
-        "value": "icon-cc-set"
+        "value": "icon-cc-linux",
+        "nameZh": "linux",
+        "nameEn": "linux"
     },
     {
-        "value": "icon-cc-activeMQ"
+        "value": "icon-cc-win",
+        "nameZh": "windows",
+        "nameEn": "windows"
     },
     {
-        "value": "icon-cc-android"
+        "value": "icon-cc-apple",
+        "nameZh": "IOS",
+        "nameEn": "IOS"
     },
     {
-        "value": "icon-cc-apache"
+        "value": "icon-cc-unix",
+        "nameZh": "unix",
+        "nameEn": "unix"
     },
     {
-        "value": "icon-cc-apple"
+        "value": "icon-cc-idc",
+        "nameZh": "IDC",
+        "nameEn": "IDC"
     },
     {
-        "value": "icon-cc-balance"
+        "value": "icon-cc-engine-room",
+        "nameZh": "机房",
+        "nameEn": "machine room"
     },
     {
-        "value": "icon-cc-biz"
+        "value": "icon-cc-cabinet",
+        "nameZh": "机柜",
+        "nameEn": "machine cabinet"
     },
     {
-        "value": "icon-cc-branch-company"
+        "value": "icon-cc-operator",
+        "nameZh": "运营商",
+        "nameEn": "ISP"
     },
     {
-        "value": "icon-cc-branch-shop"
+        "value": "icon-cc-International",
+        "nameZh": "国家",
+        "nameEn": "country"
     },
     {
-        "value": "icon-cc-camera"
+        "value": "icon-cc-map",
+        "nameZh": "省份/州",
+        "nameEn": "province"
     },
     {
-        "value": "icon-cc-certificate"
+        "value": "icon-cc-firewall",
+        "nameZh": "防火墙",
+        "nameEn": "firewall"
     },
     {
-        "value": "icon-cc-classroom"
+        "value": "icon-cc-router",
+        "nameZh": "路由器",
+        "nameEn": "router"
     },
     {
-        "value": "icon-cc-company"
+        "value": "icon-cc-switch2",
+        "nameZh": "交换机",
+        "nameEn": "switch"
     },
     {
-        "value": "icon-cc-cpu"
+        "value": "icon-cc-network-manage",
+        "nameZh": "网关",
+        "nameEn": "Gateway"
     },
     {
-        "value": "icon-cc-db2"
+        "value": "icon-cc-server",
+        "nameZh": "服务器",
+        "nameEn": "server"
     },
     {
-        "value": "icon-cc-default"
+        "value": "icon-cc-repeater",
+        "nameZh": "中继器",
+        "nameEn": "repeater"
     },
     {
-        "value": "icon-cc-department"
+        "value": "icon-cc-ups",
+        "nameZh": "UPS",
+        "nameEn": "UPS"
     },
     {
-        "value": "icon-cc-directory"
+        "value": "icon-cc-balance",
+        "nameZh": "负载均衡",
+        "nameEn": "Load balancing"
     },
     {
-        "value": "icon-cc-disk"
+        "value": "icon-cc-printer",
+        "nameZh": "打印机",
+        "nameEn": "printer"
     },
     {
-        "value": "icon-cc-domain"
+        "value": "icon-cc-camera",
+        "nameZh": "摄像头",
+        "nameEn": "webcam"
     },
     {
-        "value": "icon-cc-elastic-search"
+        "value": "icon-cc-machine",
+        "nameZh": "大型机",
+        "nameEn": "mainframe"
     },
     {
-        "value": "icon-cc-factory"
+        "value": "icon-cc-minicomputer",
+        "nameZh": "小型机",
+        "nameEn": "minicomputer"
     },
     {
-        "value": "icon-cc-firewall"
+        "value": "icon-cc-cpu",
+        "nameZh": "CPU",
+        "nameEn": "CPU"
     },
     {
-        "value": "icon-cc-group"
+        "value": "icon-cc-memory",
+        "nameZh": "内存",
+        "nameEn": "RAM"
     },
     {
-        "value": "icon-cc-headoffice"
+        "value": "icon-cc-network-card",
+        "nameZh": "网卡",
+        "nameEn": "Network card"
     },
     {
-        "value": "icon-cc-idc"
+        "value": "icon-cc-mainboard",
+        "nameZh": "主板",
+        "nameEn": "Motherboard"
     },
     {
-        "value": "icon-cc-iis"
+        "value": "icon-cc-disk",
+        "nameZh": "磁盘",
+        "nameEn": "disk"
     },
     {
-        "value": "icon-cc-influxdb"
+        "value": "icon-cc-directory",
+        "nameZh": "目录",
+        "nameEn": "directory"
     },
     {
-        "value": "icon-cc-International"
+        "value": "icon-cc-set",
+        "nameZh": "集群",
+        "nameEn": "set"
     },
     {
-        "value": "icon-cc-ip2"
+        "value": "icon-cc-module",
+        "nameZh": "模块",
+        "nameEn": "module"
     },
     {
-        "value": "icon-cc-kafka"
+        "value": "icon-cc-business",
+        "nameZh": "业务",
+        "nameEn": "business"
     },
     {
-        "value": "icon-cc-linux"
+        "value": "icon-cc-project",
+        "nameZh": "项目",
+        "nameEn": "project"
     },
     {
-        "value": "icon-cc-log"
+        "value": "icon-cc-process",
+        "nameZh": "进程",
+        "nameEn": "process"
     },
     {
-        "value": "icon-cc-machine"
+        "value": "icon-cc-port",
+        "nameZh": "端口",
+        "nameEn": "port"
     },
     {
-        "value": "icon-cc-mail-server"
+        "value": "icon-cc-net-port",
+        "nameZh": "端口",
+        "nameEn": "port"
     },
     {
-        "value": "icon-cc-mainboard"
+        "value": "icon-cc-service",
+        "nameZh": "服务",
+        "nameEn": "service"
     },
     {
-        "value": "icon-cc-map"
+        "value": "icon-cc-program",
+        "nameZh": "程序包",
+        "nameEn": "program"
     },
     {
-        "value": "icon-cc-market"
+        "value": "icon-cc-company",
+        "nameZh": "公司",
+        "nameEn": "company"
     },
     {
-        "value": "icon-cc-memory"
+        "value": "icon-cc-department",
+        "nameZh": "部门",
+        "nameEn": "department"
     },
     {
-        "value": "icon-cc-minicomputer"
+        "value": "icon-cc-group",
+        "nameZh": "小组",
+        "nameEn": "group"
     },
     {
-        "value": "icon-cc-model2"
+        "value": "icon-cc-branch-shop",
+        "nameZh": "门店",
+        "nameEn": "store"
     },
     {
-        "value": "icon-cc-mongodb"
+        "value": "icon-cc-branch-company",
+        "nameZh": "分公司",
+        "nameEn": "Branch offices"
     },
     {
-        "value": "icon-cc-mysql"
+        "value": "icon-cc-headoffice",
+        "nameZh": "总公司",
+        "nameEn": "Head office"
     },
     {
-        "value": "icon-cc-network-card"
+        "value": "icon-cc-factory",
+        "nameZh": "工厂",
+        "nameEn": "factory"
     },
     {
-        "value": "icon-cc-network-manage"
+        "value": "icon-cc-market",
+        "nameZh": "超市",
+        "nameEn": "market"
     },
     {
-        "value": "icon-cc-network-segment"
+        "value": "icon-cc-classroom",
+        "nameZh": "教室",
+        "nameEn": "classroom"
     },
     {
-        "value": "icon-cc-nginx"
+        "value": "icon-cc-certificate",
+        "nameZh": "证书",
+        "nameEn": "certificate"
     },
     {
-        "value": "icon-cc-operator"
-    },
-    {
-        "value": "icon-cc-oracle"
-    },
-    {
-        "value": "icon-cc-port"
-    },
-    {
-        "value": "icon-cc-postgresql"
-    },
-    {
-        "value": "icon-cc-printer"
-    },
-    {
-        "value": "icon-cc-process2"
-    },
-    {
-        "value": "icon-cc-program"
-    },
-    {
-        "value": "icon-cc-project"
-    },
-    {
-        "value": "icon-cc-redis"
-    },
-    {
-        "value": "icon-cc-repeater"
-    },
-    {
-        "value": "icon-cc-router"
-    },
-    {
-        "value": "icon-cc-server"
-    },
-    {
-        "value": "icon-cc-service"
-    },
-    {
-        "value": "icon-cc-set2"
-    },
-    {
-        "value": "icon-cc-sql-server"
-    },
-    {
-        "value": "icon-cc-sqlite"
-    },
-    {
-        "value": "icon-cc-storage2"
-    },
-    {
-        "value": "icon-cc-switch2"
-    },
-    {
-        "value": "icon-cc-tomcat"
-    },
-    {
-        "value": "icon-cc-unix"
-    },
-    {
-        "value": "icon-cc-ups"
-    },
-    {
-        "value": "icon-cc-vmware"
-    },
-    {
-        "value": "icon-cc-vsphere"
-    },
-    {
-        "value": "icon-cc-win"
-    },
-    {
-        "value": "icon-cc-weblogic"
+        "value": "icon-cc-host",
+        "nameZh": "主机",
+        "nameEn": "host"
     }
 ]

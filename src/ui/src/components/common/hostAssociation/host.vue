@@ -29,10 +29,11 @@
                                     :header="table.header"
                                     :list="table.list"
                                     :defaultSort="table.defaultSort"
-                                    :pagination="table.pagination"
+                                    :pagination.sync="table.pagination"
                                     :checked.sync="table.chooseId"
                                     :loading="$loading('hostSearch')"
                                     :multipleCheck="multiple"
+                                    :emptyHeight="160"
                                     :maxHeight="202"
                                     @handlePageChange="setCurrentPage"
                                     @handleSizeChange="setCurrentSize"
@@ -153,6 +154,7 @@
             },
             isSelectBoxShow (isSelectBoxShow) {
                 if (isSelectBoxShow) {
+                    this.resetFilterParams()
                     this.initChoosed()
                 } else {
                     this.table.chooseId = []

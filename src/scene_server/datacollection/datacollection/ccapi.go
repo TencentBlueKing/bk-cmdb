@@ -13,19 +13,22 @@
 package ccapi
 
 import (
+	"time"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/metric"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	dccommon "configcenter/src/scene_server/datacollection/common"
 	confCenter "configcenter/src/scene_server/datacollection/datacollection/config"
 	"configcenter/src/scene_server/datacollection/datacollection/rdiscover"
 	"configcenter/src/source_controller/common/instdata"
-	"github.com/emicklei/go-restful"
-	"time"
 )
 
 // CCAPIServer define data struct of bcs ccapi server
@@ -106,7 +109,7 @@ func (ccAPI *CCAPIServer) Start() error {
 	err := a.GetDataCli(config, "mongodb")
 	if err != nil {
 		blog.Error("connect mongodb error exit! err:%s", err.Error())
-		chErr <- err
+		return err
 	}
 	instdata.DataH = a.InstCli
 
@@ -123,6 +126,14 @@ func (ccAPI *CCAPIServer) Start() error {
 			chErr <- err
 		}
 	}()
+
+	a.AddrSrv = ccAPI.rd
+	//check object controller server
+	a.ObjCtrl = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_OBJECTCONTROLLER, a.AddrSrv)
+	//check object topo server
+	a.TopoAPI = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_TOPO, a.AddrSrv)
+
+	blog.Infof("discover topo api url: %s\n", a.TopoAPI())
 
 	go func() {
 		err := ccAPI.rd.Start()

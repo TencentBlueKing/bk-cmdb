@@ -57,6 +57,7 @@ const webpackConfig = merge(baseWebpackConfig, {
       inject: true,
       publicPath: config.build.assetsPublicPath,
       env: config.build.env,
+      cmdb: config.build.cmdb,
       minify: {
         removeComments: true,
         collapseWhitespace: true,

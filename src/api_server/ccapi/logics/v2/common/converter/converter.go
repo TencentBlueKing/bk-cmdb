@@ -379,6 +379,7 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			"ApplicationName": itemMap[common.BKAppNameField],
 			"SetName":         setName,
 			"ModuleName":      itemMap[common.BKModuleNameField],
+			"ModuleType":      itemMap[common.BKModuleTypeField],
 			"Source":          convMap[common.BKCloudIDField],
 		})
 	}

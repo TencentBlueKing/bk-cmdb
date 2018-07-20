@@ -15,6 +15,8 @@
 	"1106014": "Query Host favorites Failed",
 	"1106015": "Failed to create a host favorites",
 	"1106016": "Failed to modify host favorites",
-	"1106017":"Failed to delete host favorites",
+	"1106017": "Failed to delete host favorites",
+	"1106019": "snapshot channel was empty in last minute",
+	"1106020": "couldn't connect to snapshot channel",
 	"": "" 
 }

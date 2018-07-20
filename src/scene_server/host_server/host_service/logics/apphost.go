@@ -63,7 +63,7 @@ func GetConfigByCond(req *restful.Request, hostURL string, cond map[string]inter
 	blog.Info("Get ModuleHostConfig url :%s", url)
 	blog.Info("Get ModuleHostConfig content :%s", string(bodyContent))
 	reply, err := httpcli.ReqHttp(req, url, common.HTTPSelectPost, []byte(bodyContent))
-	blog.Info("Get ModuleHostConfig content :%s", string(reply))
+	blog.Info("Get ModuleHostConfig result :%s", string(reply))
 	if err != nil {
 		return configArr, err
 	}

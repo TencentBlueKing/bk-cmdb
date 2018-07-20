@@ -30,7 +30,7 @@ func SetProxyHeader(c *gin.Context) {
 	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
 }
 
-func GetLanugaeByHTTPRequest(c *gin.Context) string {
+func GetLanguageByHTTPRequest(c *gin.Context) string {
 
 	cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
 	if "" != cookieLanuage && nil == err {
