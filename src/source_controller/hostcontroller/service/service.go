@@ -87,7 +87,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// mongodb status
 	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if err := s.DbInstance.Ping(); err != nil {
+	if err := s.Instance.Ping(); err != nil {
 		mongoItem.IsHealthy = false
 		mongoItem.Message = err.Error()
 	}
@@ -95,7 +95,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
-	if err := s.CacheDI.Ping().Err(); err != nil {
+	if err := s.Cache.Ping().Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}
