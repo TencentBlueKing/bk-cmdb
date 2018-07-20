@@ -14,7 +14,6 @@ package service
 
 import (
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -26,7 +25,6 @@ import (
 type Service struct {
 	Core     *backbone.Engine
 	Instance storage.DI
-	Cache    *redis.Client
 }
 
 func (s *Service) WebService() *restful.WebService {
@@ -40,12 +38,13 @@ func (s *Service) WebService() *restful.WebService {
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))
-	ws.Route(ws.Post("/insts/{obj_type}/search").To(s.SearchObjects))
-	ws.Route(ws.POST("/insts/{obj_type}").To(s.CreateObject))
-	ws.Route(ws.DELETE("/insts/{obj_type}").To(s.DelObject))
-	ws.Route(ws.PUT("/insts/{obj_type}").To(s.UpdateObject))
 
-	ws.Route(ws.POST("/meta/objects").To(s.Selectobjects))
+	ws.Route(ws.POST("/insts/{obj_type}/search").To(s.SearchInstObjects))
+	ws.Route(ws.POST("/insts/{obj_type}").To(s.CreateInstObject))
+	ws.Route(ws.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
+	ws.Route(ws.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
+
+	ws.Route(ws.POST("/meta/objects").To(s.SelectObjects))
 	ws.Route(ws.DELETE("/meta/object/{id}").To(s.DeleteObject))
 	ws.Route(ws.POST("/meta/object").To(s.CreateObject))
 	ws.Route(ws.PUT("/meta/object/{id}").To(s.UpdateObject))

@@ -184,11 +184,11 @@ type ObjectDes struct {
 }
 
 type ObjectClsDes struct {
-	ID      int    `json:"id"`
-	ClsID   string `json:"bk_classification_id"`
-	ClsName string `json:"bk_classification_name"`
-	ClsType string `json:"bk_classification_type"`
-	ClsIcon string `json:"bk_classification_icon"`
+	ID      int    `json:"id" bson:"id"`
+	ClsID   string `json:"bk_classification_id" bson:"bk_classification_id"`
+	ClsName string `json:"bk_classification_name" bson:"bk_classification_name"`
+	ClsType string `json:"bk_classification_type" bson:"bk_classification_type" `
+	ClsIcon string `json:"bk_classification_icon" bson:"bk_classification_icon"`
 }
 
 type InnerModule struct {

@@ -14,11 +14,9 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
+	"golang/go/src/strconv"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -26,245 +24,218 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/eventdata"
-	"configcenter/src/source_controller/common/instdata"
 )
 
-//delete object
-func (cli *Service) DelObject(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-	instdata.DataH = cli.Instance
-	pathParams := req.PathParameters()
-	objType := pathParams["obj_type"]
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
-		return
-	}
-	js, err := simplejson.NewJson([]byte(value))
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-
-	input, err := js.Map()
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-
-	// retrieve original datas
-	originDatas := make([]map[string]interface{}, 0)
-	getErr := instdata.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
-	if getErr != nil {
-		blog.Error("retrieve original data error:%v", getErr)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
-	}
-
-	blog.Info("delete object type:%s,input:%v ", objType, input)
-	err = instdata.DelObjByCondition(objType, input)
-	if err != nil {
-		blog.Error("delete object type:%s,input:%v error:%v", objType, input, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
-		return
-	}
-
-	// send events
-	if len(originDatas) > 0 {
-		ec := eventdata.NewEventContextByReq(req)
-		for _, originData := range originDatas {
-			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
-			if err != nil {
-				blog.Error("create event error:%v", err)
-			}
-		}
-	}
-
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
-
-}
-
-//update object
-func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-
-	pathParams := req.PathParameters()
-	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
-	value, err := ioutil.ReadAll(req.Request.Body)
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
-		return
-	}
-	js, err := simplejson.NewJson([]byte(value))
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-
-	input, err := js.Map()
-	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-
-	data, ok := input["data"].(map[string]interface{})
-	if !ok {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsIsInvalid, "lost data field")})
-		return
-	}
-
-	data[common.LastTimeField] = time.Now()
-	condition := input["condition"]
-
-	// retrieve original datas
-	originDatas := make([]map[string]interface{}, 0)
-	getErr := instdata.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
-	if getErr != nil {
-		blog.Error("retrieve original datas error:%v", getErr)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
-		return
-	}
-
-	blog.Info("update object type:%s,data:%v,condition:%v", objType, data, condition)
-	err = instdata.UpdateObjByCondition(objType, data, condition)
-	if err != nil {
-		blog.Error("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
-		return
-	}
-
-	// record event
-	if len(originDatas) > 0 {
-		newdatas := []map[string]interface{}{}
-		if err := instdata.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
-			blog.Error("create event error:%v", err)
-		} else {
-			ec := eventdata.NewEventContextByReq(req)
-			idname := instdata.GetIDNameByType(objType)
-			for _, originData := range originDatas {
-				newData := map[string]interface{}{}
-				id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))
-				if err != nil {
-					blog.Errorf("create event error:%v", err)
-					continue
-				}
-				if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil {
-					blog.Error("create event error:%v", err)
-				} else {
-					err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
-					if err != nil {
-						blog.Error("create event error:%v", err)
-					}
-				}
-			}
-		}
-	}
-
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
-
-}
-
-//search object
-func (cli *Service) SearchObjects(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetActionLanguage(req)
-	// get the error factory by the language
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-
-	pathParams := req.PathParameters()
-	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
-
-	value, err := ioutil.ReadAll(req.Request.Body)
-	var dat commondata.ObjQueryInput
-	err = json.Unmarshal([]byte(value), &dat)
-	if err != nil {
-		blog.Error("get object type:%s,input:%v error:%v", string(objType), value, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-	//dat.ConvTime()
-	fields := dat.Fields
-	condition := dat.Condition
-
-	skip := dat.Start
-	limit := dat.Limit
-	sort := dat.Sort
-	fieldArr := strings.Split(fields, ",")
-	result := make([]map[string]interface{}, 0)
-	count, err := instdata.GetCntByCondition(objType, condition)
-	if err != nil {
-		blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
-	}
-	err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
-	if err != nil {
-		blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
-	}
-	info := make(map[string]interface{})
-	info["count"] = count
-	info["info"] = result
-
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
-
-}
-
-//create object
+// CreateObject create a common object
 func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
+
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	pathParams := req.PathParameters()
-	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
-	value, _ := ioutil.ReadAll(req.Request.Body)
-	js, _ := simplejson.NewJson([]byte(value))
-	input, _ := js.Map()
-	input[common.CreateTimeField] = time.Now()
-	input[common.LastTimeField] = time.Now()
-	blog.Info("create object type:%s,data:%v", objType, input)
-	var idName string
-	id, err := instdata.CreateObject(objType, input, &idName)
+	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectCreateInstFailed, err.Error())})
+		blog.Error("read http request body failed, error:%s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
-	// record event
-	origindata := map[string]interface{}{}
-	if err := instdata.GetObjectByID(objType, nil, id, origindata, ""); err != nil {
-		blog.Error("create event error:%v", err)
-	} else {
-		ec := eventdata.NewEventContextByReq(req)
-		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
+	obj := &meta.Object{}
+	if jsErr := json.Unmarshal([]byte(value), obj); nil != jsErr {
+		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
+		return
+	}
+
+	// save to the storage
+	obj.CreateTime = new(time.Time)
+	*obj.CreateTime = time.Now()
+	obj.LastTime = new(time.Time)
+	*obj.LastTime = time.Now()
+	obj.OwnerID = ownerID
+
+	// get id
+	id, err := cli.Instance.GetIncID(common.BKTableNameObjDes)
+	if err != nil {
+		blog.Error("failed to get id , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+	obj.ID = id
+
+	// save
+	_, err = cli.Instance.Insert(common.BKTableNameObjDes, obj)
+	if nil == err {
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: []*meta.Object{obj}})
+		return
+	}
+	blog.Error("failed to insert the object, error info is %s", err.Error())
+
+	resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+
+}
+
+//删除Object
+func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
+
+	blog.Info("delete object")
+
+	// get the language
+	language := util.GetActionLanguage(req)
+	//ownerID := util.GetActionOnwerID(req)
+	// get the error factory by the language
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+
+	pathParameters := req.PathParameters()
+	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
+	if nil != err {
+		blog.Error("failed to get params, error info is %s ", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
+
+	condition := map[string]interface{}{"id": appID}
+	// delete object from storage
+	if 0 == appID {
+		js, err := simplejson.NewFromReader(req.Request.Body)
 		if err != nil {
-			blog.Error("create event error:%v", err)
+			blog.Error("read http request body failed, error:%s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
+		}
+
+		condition, err = js.Map()
+		if nil != err {
+			blog.Error("fail to unmarshal json, error information is %s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
+			return
+		}
+
+	}
+
+	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjDes, condition)
+	if nil != cntErr {
+		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
+		return
+	}
+	if 0 == cnt {
+		// success
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
+		return
+	}
+	// execute delete command
+	if delErr := cli.Instance.DelByCondition(common.BKTableNameObjDes, condition); nil != delErr {
+		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
+		return
+	}
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
+}
+
+func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
+
+	// get the language
+	language := util.GetActionLanguage(req)
+	//ownerID := util.GetActionOnwerID(req)
+	// get the error factory by the language
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+
+	js, err := simplejson.NewFromReader(req.Request.Body)
+	if err != nil {
+		blog.Error("read request body failed, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+		return
+	}
+
+	pathParameters := req.PathParameters()
+	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
+	if nil != err {
+		blog.Error("failed to get params, error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
+
+	// update object into storage
+	js.Set(common.LastTimeField, util.GetCurrentTimeStr())
+
+	// decode json string
+	data, jsErr := js.Map()
+	if nil != jsErr {
+		blog.Error("unmarshal json failed, error information is %v", jsErr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
+		return
+	}
+	err = cli.Instance.UpdateByCondition(common.BKTableNameObjDes, data, map[string]interface{}{"id": appID})
+	if nil != err {
+		blog.Error("fail update object by condition, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
+		return
+	}
+
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
+
+}
+
+//查询所有主机信息
+func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) {
+
+	// get the language
+	language := util.GetActionLanguage(req)
+	//ownerID := util.GetActionOnwerID(req)
+	// get the error factory by the language
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+
+	// decode json object
+	js, err := simplejson.NewFromReader(req.Request.Body)
+	if err != nil {
+		blog.Error("read request body failed, error information is %s", err.Error())
+		if nil != err {
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
 		}
 	}
 
-	info := make(map[string]int)
-	info[idName] = id
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
+	page := meta.BasePage{Limit: common.BKNoLimit}
+	if pageJS, ok := js.CheckGet("page"); ok {
+		tmpMap, err := pageJS.Map()
+		if nil != err {
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+			return
+		}
+		page = meta.ParsePage(tmpMap)
+		js.Del("page")
+	}
+	results := make([]meta.Object, 0)
+
+	// select from storage
+
+	selector, err := js.Map()
+	if nil != err {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+
+	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
+		blog.Error("select data failed, error information is %s", selErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
+		return
+	}
+
+	// translate language
+	for index := range results {
+		results[index].ObjectName = commondata.TranslateObjectName(defLang, &results[index])
+	}
+
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})
 
 }

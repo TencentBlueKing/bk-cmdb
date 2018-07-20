@@ -16,13 +16,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-
-	"configcenter/src/common/util"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 //CreateUserGroupPrivi create group privi
@@ -57,7 +57,7 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	data[common.BKOwnerIDField] = ownerID
 	data[common.BKUserGroupIDField] = groupID
 	data[common.BKPrivilegeField] = info
-	_, err = cli.CC.InstCli.Insert(common.BKTableNameUserGroupPrivilege, data)
+	_, err = cli.Instance.Insert(common.BKTableNameUserGroupPrivilege, data)
 	if nil != err {
 		blog.Error("insert user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -100,7 +100,7 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
 	data[common.BKPrivilegeField] = info
-	err = cli.CC.InstCli.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
+	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
 	if nil != err {
 		blog.Error("update user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -127,7 +127,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
 	var result interface{}
-	err := cli.CC.InstCli.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
+	err := cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
 	if nil != err {
 		data := make(map[string]interface{})
 		data[common.BKOwnerIDField] = ownerID
