@@ -257,8 +257,6 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 
 	reqParam[common.BKSetNameField] = formData["SetName"][0]
 
-	reqParam[common.BKOwnerIDField] = user
-
 	appID := formData["ApplicationID"][0]
 	reqParam[common.BKInstParentStr], err = strconv.Atoi(appID)
 	if nil != err {
@@ -318,20 +316,32 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 			reqParam[k] = v
 		}
 	}
+	topoLevel, err := s.Logics.CheckAppTopoIsThreeLevel(user, pheader)
+	if err != nil {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel error:%v", err)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		return
+	}
+	if false == topoLevel {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel  mainline topology level not three")
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "business topology level is more than three, please use the v3 api instead").Error(), resp)
+		return
+	}
 	delete(reqParam, "ChnName")
+
 	reqParam, err = s.Logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, user, pheader)
 	blog.Infof("addSet reqParam:%v", reqParam)
 
 	result, err := s.CoreAPI.TopoServer().Instance().CreateSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
 		blog.Errorf("addSet error:%v", err)
-		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		converter.RespFailV2(common.CCErrTopoSetCreateFailed, defErr.Error(common.CCErrTopoSetCreateFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
 		msg = fmt.Sprintf("%s", result.ErrMsg)
 		blog.Errorf("addSet error:%s", msg)
-		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		converter.RespFailV2(common.CCErrTopoSetCreateFailed, defErr.Error(common.CCErrTopoSetCreateFailed).Error(), resp)
 		return
 	}
 	rspDataV3Map := result.Data

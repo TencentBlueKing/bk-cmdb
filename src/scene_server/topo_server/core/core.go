@@ -35,6 +35,7 @@ type Core interface {
 	GraphicsOperation() operation.GraphicsOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
+	HealthOperation() operation.HealthOperationInterface
 }
 
 type core struct {
@@ -52,10 +53,14 @@ type core struct {
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
+	health         operation.HealthOperationInterface
 }
 
 // New create a core manager
 func New(client apimachinery.ClientSetInterface) Core {
+
+	// health
+	healthOpeartion := operation.NewHealthOperation(client)
 
 	// create insts
 	attributeOperation := operation.NewAttributeOperation(client)
@@ -105,6 +110,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 		graphics:       graphics,
 		audit:          audit,
 		identifier:     identifier,
+		health:         healthOpeartion,
 	}
 }
 
@@ -152,4 +158,7 @@ func (c *core) AuditOperation() operation.AuditOperationInterface {
 }
 func (c *core) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
+}
+func (c *core) HealthOperation() operation.HealthOperationInterface {
+	return c.health
 }

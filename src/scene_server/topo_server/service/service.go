@@ -18,11 +18,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/common/backbone"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
@@ -78,12 +77,13 @@ func (s *topoService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
+
 	/*
-		    now ignore
-			getErrFun := func() errors.CCErrorIf {
-				return s.err
-			}
-			//ws.Path("/topo/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+		getErrFun := func() errors.CCErrorIf {
+			return s.err
+		}
+
+		ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	*/
 	ws.Path("/topo/{version}").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
