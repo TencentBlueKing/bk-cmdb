@@ -111,3 +111,9 @@ type HostCloneInputParams struct {
 	AppID  int64  `json:"bk_biz_id"`
 	PlatID int64  `json:"bk_cloud_id"`
 }
+
+type SetHostConfigParams struct {
+	ApplicationID int64 `json:"bk_biz_id"`
+	SetID         int64 `json:"bk_set_id"`
+	ModuleID      int64 `json:"bk_module_id"`
+}
