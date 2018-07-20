@@ -13,13 +13,14 @@
 package topo
 
 import (
+	"io"
+
 	"configcenter/src/api_server/ccapi/actions/v3"
 	"configcenter/src/common"
 	"configcenter/src/common/base"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/actions"
 	httpcli "configcenter/src/common/http/httpclient"
-	"io"
 
 	"github.com/emicklei/go-restful"
 )
@@ -33,7 +34,7 @@ type appAction struct {
 // CreateApp create application
 func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
+	ownerID := pathParams[pathParamOwnerID]
 	url := cli.CC.TopoAPI() + "/topo/v1/app/" + ownerID
 	//	req.Request.URL.Path = "/topo/v1/app/" + ownerID
 	blog.Info("Create App url:%s", req.Request.URL.Path)
@@ -45,8 +46,8 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 // DeleteApp delete application
 func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
-	appID := pathParams["app_id"]
+	ownerID := pathParams[pathParamOwnerID]
+	appID := pathParams[pathParamAppID]
 	url := cli.CC.TopoAPI() + "/topo/v1/app/" + ownerID + "/" + appID
 	//req.Request.URL.Path = "/topo/v1/app/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPDelete)
@@ -56,8 +57,8 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 // UpdateApp update application
 func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
-	appID := pathParams["app_id"]
+	ownerID := pathParams[pathParamOwnerID]
+	appID := pathParams[pathParamAppID]
 	url := cli.CC.TopoAPI() + "/topo/v1/app/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
 	io.WriteString(resp, rsp)
@@ -66,8 +67,8 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 // UpdateAppDataStatus update application data status
 func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
-	appID := pathParams["app_id"]
+	ownerID := pathParams[pathParamOwnerID]
+	appID := pathParams[pathParamAppID]
 	flag := pathParams["flag"]
 	url := cli.CC.TopoAPI() + "/topo/v1/app/status/" + flag + "/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPUpdate)
@@ -77,7 +78,7 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 // SearchApp search application
 func (cli *appAction) SearchApp(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
+	ownerID := pathParams[pathParamOwnerID]
 	url := cli.CC.TopoAPI() + "/topo/v1/app/search/" + ownerID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectPost)
 	io.WriteString(resp, rsp)
@@ -86,15 +87,46 @@ func (cli *appAction) SearchApp(req *restful.Request, resp *restful.Response) {
 // GetInternalTopo get internal topo
 func (cli *appAction) GetInternalTopo(req *restful.Request, resp *restful.Response) {
 	pathParams := req.PathParameters()
-	ownerID := pathParams["owner_id"]
-	appID := pathParams["app_id"]
+	ownerID := pathParams[pathParamOwnerID]
+	appID := pathParams[pathParamAppID]
 	url := cli.CC.TopoAPI() + "/topo/v1/topo/internal/" + ownerID + "/" + appID
 	rsp, _ := httpcli.ReqForward(req, url, common.HTTPSelectGet)
 	io.WriteString(resp, rsp)
 }
 
+// CreateDefaultApp create default application
+func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams[pathParamOwnerID]
+	url := cli.CC.TopoAPI() + "/topo/v1/app/default/" + ownerID
+	blog.Info("Create default App url:%s", req.Request.URL.Path)
+	rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+	if nil != err {
+		cli.ResponseFailed(common.CCErrTopoAppCreateFailed, "create biz faile", resp)
+	}
+	io.WriteString(resp, rsp)
+}
+
+// SearchDefaultApp search default application
+func (cli *appAction) SearchDefaultApp(req *restful.Request, resp *restful.Response) {
+	pathParams := req.PathParameters()
+	ownerID := pathParams[pathParamOwnerID]
+	url := cli.CC.TopoAPI() + "/topo/v1/app/default/" + ownerID + "/search"
+	blog.Info("search default App url:%s", req.Request.URL.Path)
+	rsp, err := httpcli.ReqForward(req, url, common.HTTPCreate)
+	if nil != err {
+		cli.ResponseFailed(common.CCErrTopoAppSearchFailed, "search biz faile", resp)
+	}
+	io.WriteString(resp, rsp)
+}
+
+const pathParamOwnerID = "owner_id"
+const pathParamAppID = "app_id"
+
 func init() {
 
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/default/{owner_id}", Params: nil, Handler: app.CreateDefaultApp, Version: v3.APIVersion})
+	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/default/{owner_id}/search", Params: nil, Handler: app.SearchDefaultApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPCreate, Path: "/biz/{owner_id}", Params: nil, Handler: app.CreateApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPDelete, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.DeleteApp, Version: v3.APIVersion})
 	actions.RegisterNewAction(actions.Action{Verb: common.HTTPUpdate, Path: "/biz/{owner_id}/{app_id}", Params: nil, Handler: app.UpdateApp, Version: v3.APIVersion})

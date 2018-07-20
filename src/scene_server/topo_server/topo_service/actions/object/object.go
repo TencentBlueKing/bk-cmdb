@@ -348,25 +348,32 @@ func (cli *objectAction) CreateObjectBatch(req *restful.Request, resp *restful.R
 
 				colIdx, _ := strconv.Atoi(keyIdx)
 
-				// check group name
-				propertyGroupName, err := jsObjAttr.Get(keyIdx).Get("bk_property_group_name").String()
-				jsObjAttr.Get(keyIdx).Del("bk_property_group_name")
-				if nil != err {
-					blog.Error("failed to parse the bk_property_group_name, error info is %s", err.Error())
-					errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name"))
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
+				propertyGroupName := ""
+				var err error
+				grpName, exist:=jsObjAttr.Get(keyIdx).CheckGet("bk_property_group_name")
+				if exist{
+					// check group name
+					propertyGroupName, err = grpName.String()
+					jsObjAttr.Get(keyIdx).Del("bk_property_group_name")
+					if nil != err {
+						blog.Error("failed to parse the bk_property_group_name, error info is %s", err.Error())
+						errStr := defLang.Languagef("import_row_int_error_str", colIdx, defErr.Errorf(common.CCErrCommParamsNeedString, "bk_property_group_name"))
+						if failed, ok := subResult["insert_failed"]; ok {
+							failedArr := failed.([]string)
+							failedArr = append(failedArr, errStr)
+							subResult["insert_failed"] = failedArr
+						} else {
+							subResult["insert_failed"] = []string{
+								errStr,
+							}
 						}
+						result[objID] = subResult
+						continue
 					}
-					result[objID] = subResult
-					continue
+
 				}
 
+				
 				// check group name
 				if 0 == len(propertyGroupName) {
 					jsObjAttr.Get(keyIdx).Set("bk_property_group", "default") // set default, if set nothing

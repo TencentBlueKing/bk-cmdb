@@ -92,7 +92,7 @@ func ImportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
-	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, defLang)
+	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, false, defLang)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {

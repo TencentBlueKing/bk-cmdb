@@ -143,7 +143,7 @@ func (cli *appAction) DeleteApp(req *restful.Request, resp *restful.Response) {
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeDel)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "delete app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 		}
 		//delete set in app
 		setInput := make(map[string]interface{})
@@ -273,7 +273,7 @@ func (cli *appAction) UpdateAppDataStatus(req *restful.Request, resp *restful.Re
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
 		return http.StatusOK, nil, nil
@@ -371,7 +371,7 @@ func (cli *appAction) UpdateApp(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
 		return http.StatusOK, nil, nil
@@ -515,7 +515,7 @@ func (cli *appAction) CreateApp(req *restful.Request, resp *restful.Response) {
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "create app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "create app", common.BKInnerObjIDApp, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
 		}
 		//create default set
 		inputSetInfo := make(map[string]interface{})
@@ -701,9 +701,59 @@ func (cli *appAction) CreateDefaultApp(req *restful.Request, resp *restful.Respo
 			blog.Errorf("add default application module error, ownerID:%s, error info is %v ", ownerID, err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
 		}
+
+		if ownerID != common.BKDefaultOwnerID {
+			headerOwner := util.GetActionOnwerID(req)
+			blog.Infof("copy asst for %s, header owner: %s", ownerID, headerOwner)
+			searchAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectassts"
+			searchAsstCondition := map[string]interface{}{
+				common.BKOwnerIDField: common.BKDefaultOwnerID,
+			}
+			searchAsstData, _ := json.Marshal(searchAsstCondition)
+			searchAsstReply, err := httpcli.ReqHttp(req, searchAsstURL, common.HTTPSelectPost, []byte(searchAsstData))
+			if nil != err {
+				blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+			}
+
+			searchAsstJSON := gjson.Parse(searchAsstReply)
+			if !searchAsstJSON.Get("result").Bool() {
+				return http.StatusInternalServerError, nil, defErr.Error(int(searchAsstJSON.Get(common.HTTPBKAPIErrorCode).Int()))
+			}
+
+			assts := []metadata.ObjectAsst{}
+			err = json.Unmarshal([]byte(searchAsstJSON.Get("data").String()), &assts)
+			if nil != err {
+				blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+			}
+
+			blog.Infof("copy asst for %s, %+v", ownerID, assts)
+
+			for index := range assts {
+				assts[index].OwnerID = ownerID
+
+				createAsstURL := cli.CC.ObjCtrl() + "/object/v1/meta/objectasst"
+				createAsstData, err := json.Marshal(assts[index])
+				if nil != err {
+					blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+				}
+				createAsstReply, err := httpcli.ReqHttp(req, createAsstURL, common.HTTPSelectPost, []byte(createAsstData))
+				if nil != err {
+					blog.Errorf("add default application module error, ownerID:%s, error:%v ", ownerID, err)
+					return http.StatusInternalServerError, nil, defErr.Error(common.CCErrTopoAppCreateFailed)
+				}
+				createAsstJSON := gjson.Parse(createAsstReply)
+				if !createAsstJSON.Get("result").Bool() {
+					return http.StatusInternalServerError, nil, defErr.Error(int(createAsstJSON.Get(common.HTTPBKAPIErrorCode).Int()))
+				}
+			}
+
+		}
+
 		result := make(map[string]interface{})
 		result[common.BKAppIDField] = appID
-
 		return http.StatusOK, result, nil
 	}, resp)
 }

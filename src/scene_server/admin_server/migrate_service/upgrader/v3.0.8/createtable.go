@@ -13,9 +13,10 @@
 package v3v0v8
 
 import (
+	"gopkg.in/mgo.v2"
+
 	"configcenter/src/scene_server/admin_server/migrate_service/upgrader"
 	"configcenter/src/storage"
-	"gopkg.in/mgo.v2"
 )
 
 func createTable(db storage.DI, conf *upgrader.Config) (err error) {
@@ -94,6 +95,8 @@ var tables = map[string][]storage.Index{
 	"cc_OperationLog": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"op_target", "inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"bk_biz_id", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"ext_key", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	},
 	"cc_PlatBase": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},

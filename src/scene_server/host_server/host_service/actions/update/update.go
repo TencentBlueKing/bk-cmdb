@@ -140,7 +140,7 @@ func (cli *hostAction) UpdateHostBatch(req *restful.Request, resp *restful.Respo
 			logLastConents = append(logLastConents, auditoplog.AuditLogExt{ID: i, Content: logContent, ExtKey: preLogContent.ExtKey})
 
 		}
-		opClient := auditlog.NewClient(cli.CC.AuditCtrl())
+		opClient := auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header)
 		opClient.AuditHostsLog(logLastConents, "update host", common.BKDefaultOwnerID, appID, user, auditoplog.AuditOpTypeModify)
 
 		return http.StatusOK, common.CCSuccessStr, nil

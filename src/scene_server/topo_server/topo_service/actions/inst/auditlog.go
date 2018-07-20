@@ -91,7 +91,7 @@ func (cli *auditAction) Query(req *restful.Request, resp *restful.Response) {
 			dat.Limit = common.BKDefaultLimit
 		}
 
-		client := auditlogAPI.NewClient(cli.CC.AuditCtrl())
+		client := auditlogAPI.NewClient(cli.CC.AuditCtrl(), req.Request.Header)
 		ret, err := client.GetAuditlogs(dat)
 		blog.Debug("search operation log  params: %v", dat)
 		if nil != err {

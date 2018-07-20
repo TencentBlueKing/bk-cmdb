@@ -9,10 +9,11 @@ var merge = require('webpack-merge')
 var buildEnv = require('./build.env')
 var env4Dev = merge(require('./dev.env'), buildEnv)
 var env4Build = merge(require('./prod.env'), buildEnv)
-var baseOutputPath = process.env.BUILD_OUTPUT ? path.resolve(process.env.BUILD_OUTPUT) : path.resolve(__dirname, '../../bin/enterprise/cmdb')
+var baseOutputPath = process.cmdb.BUILD_OUTPUT ? path.resolve(process.cmdb.BUILD_OUTPUT) : path.resolve(__dirname, '../../bin/enterprise/cmdb')
 module.exports = {
   build: {
     env: env4Build,
+    cmdb: process.cmdb,
     index: `${baseOutputPath}/web/index.html`,
     assetsRoot: `${baseOutputPath}/web`,
     assetsSubDirectory: '',
