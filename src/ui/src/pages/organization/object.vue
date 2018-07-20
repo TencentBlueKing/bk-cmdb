@@ -26,7 +26,7 @@
                         <span>{{$t("ModelManagement['导入']")}}</span>
                     </button>
                     <bk-button type="default"
-                        :disabled="!table.chooseId.length" 
+                        :disabled="!table.chooseId.length && unauthorized.update" 
                         @click="multipleUpdate">
                         <i class="icon-cc-edit"></i>
                         <span>{{$t("BusinessTopology['修改']")}}</span>
