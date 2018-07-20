@@ -13,6 +13,7 @@
 package objcontroller
 
 import (
+	"configcenter/src/apimachinery/objcontroller/identifier"
 	"fmt"
 
 	"configcenter/src/apimachinery/objcontroller/inst"
@@ -26,6 +27,7 @@ import (
 type ObjControllerClientInterface interface {
 	Instance() inst.InstanceInterface
 	Meta() meta.MetaInterface
+	Identifier() identifier.IdentifierInterface
 	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
 }
@@ -55,4 +57,8 @@ func (o *objectctrl) OpenAPI() openapi.OpenApiInterface {
 
 func (o *objectctrl) Privilege() privilege.PrivilegeInterface {
 	return privilege.NewPrivilegeInterface(o.client)
+}
+
+func (o *objectctrl) Identifier() identifier.IdentifierInterface {
+	return identifier.NewIdentifierInterface(o.client)
 }

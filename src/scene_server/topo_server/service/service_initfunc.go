@@ -145,6 +145,9 @@ func (s *topoService) initGraphics() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", HandlerFunc: s.SelectObjectTopoGraphics})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
 }
+func (s *topoService) initIdentifier() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/identifier/{obj_type}/search", HandlerFunc: s.SearchIdentifier, HandlerParseOriginDataFunc: s.ParseSearchIdentifierOriginData})
+}
 
 func (s *topoService) initService() {
 	s.initAssociation()
@@ -162,4 +165,5 @@ func (s *topoService) initService() {
 	s.initPrivigeRole()
 	s.initPrivilege()
 	s.initGraphics()
+	s.initIdentifier()
 }
