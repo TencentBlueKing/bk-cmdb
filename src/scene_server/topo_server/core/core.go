@@ -33,6 +33,7 @@ type Core interface {
 	PermissionOperation() operation.PermissionOperationInterface
 	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
+	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
 	HealthOperation() operation.HealthOperationInterface
 }
@@ -51,6 +52,7 @@ type core struct {
 	compatibleV2   operation.CompatibleV2OperationInterface
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
+	identifier     operation.IdentifierOperationInterface
 	health         operation.HealthOperationInterface
 }
 
@@ -73,6 +75,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 	permissionOperation := operation.NewPermissionOperation(client)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
 	graphics := operation.NewGraphics(client)
+	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
 
 	targetModel := model.New(client)
@@ -106,6 +109,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 		compatibleV2:   compatibleV2Operation,
 		graphics:       graphics,
 		audit:          audit,
+		identifier:     identifier,
 		health:         healthOpeartion,
 	}
 }
@@ -151,6 +155,9 @@ func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
 }
 func (c *core) AuditOperation() operation.AuditOperationInterface {
 	return c.audit
+}
+func (c *core) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
 }
 func (c *core) HealthOperation() operation.HealthOperationInterface {
 	return c.health
