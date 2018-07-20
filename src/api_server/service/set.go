@@ -328,6 +328,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	delete(reqParam, "ChnName")
+
 	reqParam, err = s.Logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, user, pheader)
 	blog.Infof("addSet reqParam:%v", reqParam)
 
