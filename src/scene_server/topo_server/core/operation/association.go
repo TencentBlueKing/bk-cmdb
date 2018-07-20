@@ -29,7 +29,7 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
+	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error)
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
