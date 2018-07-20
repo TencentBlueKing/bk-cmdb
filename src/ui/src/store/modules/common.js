@@ -61,7 +61,7 @@ const getters = {
 
 const actions = {
     getBkBizList ({commit, state}) {
-        $axios.post(`biz/search/${state.bkSupplierAccount}`, {fields: ['bk_biz_id', 'bk_biz_name'], condition: {bk_data_status: {'$ne': 'disabled'}}}).then((res) => {
+        return $axios.post(`biz/search/${state.bkSupplierAccount}`, {fields: ['bk_biz_id', 'bk_biz_name'], condition: {bk_data_status: {'$ne': 'disabled'}}}).then((res) => {
             if (res.result) {
                 if (res.data.info && res.data.info.length) {
                     commit('setBkBizList', res.data.info)
@@ -71,6 +71,7 @@ const actions = {
             } else {
                 alertMsg(res['bk_error_msg'])
             }
+            return res
         })
     },
     getMemberList ({commit, state}, type) {

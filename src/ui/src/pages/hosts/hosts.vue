@@ -31,7 +31,6 @@
             </div>
         </slot>
         <div class="table-container">
-            <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
                 <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
@@ -206,7 +205,6 @@
     import vHostTransferPop from '@/components/hostTransferPop/hostTransferPop'
     import vHistory from '@/components/history/history'
     import vField from '@/components/field/field'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     import vStatus from './children/status.vue'
     import vHost from './children/host'
     import vRouter from './children/router'
@@ -979,6 +977,10 @@
                 })
             })
         },
+        beforeRouteLeave (to, from, next) {
+            this.$store.commit('resetHostSearch')
+            next()
+        },
         components: {
             vTable,
             vFilter,
@@ -990,8 +992,7 @@
             vRouter,
             vHostTransferPop,
             vHistory,
-            vField,
-            vBreadcrumb
+            vField
         }
     }
 </script>
@@ -1001,12 +1002,9 @@
     height: 100%;
 }
 .table-container{
-    padding: 0 20px;
+    padding: 20px 20px 0;
     height: 100%;
     overflow: hidden;
-    .breadcrumbs{
-        padding: 8px 0;
-    }
     .dropdown-btn{
         width: 100px;
         cursor: pointer;
