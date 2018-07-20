@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // getObjFieldIDs get the values of properyID and properyName
@@ -64,9 +65,10 @@ func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, he
 	for fieldId, item := range appFields {
 		mapItem, _ := item.(common.KvMap)
 		_, ok := params[fieldId]
+
 		if !ok {
 			strType, _ := mapItem["type"].(string)
-			if common.FieldTypeLongChar == strType || common.FieldTypeSingleChar == strType {
+			if util.IsStrProperty(strType) {
 				params[fieldId] = ""
 			} else {
 				params[fieldId] = nil
