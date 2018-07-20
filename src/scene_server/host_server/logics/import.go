@@ -32,7 +32,7 @@ import (
 	"configcenter/src/scene_server/validator"
 )
 
-func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.Header, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
+func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheader http.Header, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
 
 	instance := NewImportInstance(ownerID, pheader, lgc.Engine)
 
@@ -51,6 +51,7 @@ func (lgc *Logics) AddHost(appID, moduleID int64, ownerID string, pheader http.H
 
 	hostMap, err := lgc.getAddHostIDMap(pheader, hostInfos)
 	if err != nil {
+		blog.Errorf("get hosts failed, err:%s", err.Error())
 		return nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
 	}
 
@@ -215,6 +216,10 @@ func (lgc *Logics) getAddHostIDMap(pheader http.Header, hostInfos map[int64]map[
 		if isOk && "" != innerIP {
 			ipArr = append(ipArr, innerIP)
 		}
+	}
+
+	if 0 == len(ipArr) {
+		return nil, fmt.Errorf("not found host inner ip fields")
 	}
 
 	var conds map[string]interface{}
@@ -557,7 +562,7 @@ func (h *importInstance) deleteInstAssociation(instID int64, objID, asstObjID st
 	return nil
 }
 
-func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, host map[string]interface{}) (int64, error) {
+func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID []int64, host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
 	_, ok := host[common.BKCloudIDField]
 	if false == ok {
@@ -602,7 +607,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID, moduleID int64, 
 
 	opt := &metadata.ModuleHostConfigParams{
 		ApplicationID: appID,
-		ModuleID:      []int64{moduleID},
+		ModuleID:      moduleID,
 		HostID:        hostID,
 	}
 	hResult, err := h.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), h.pheader, opt)
