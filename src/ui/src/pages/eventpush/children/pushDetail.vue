@@ -411,7 +411,7 @@
                 保存按钮
             */
             save () {
-                this.checkParams().then(res => {
+                this.checkParams().then(async res => {
                     if (res) {
                         let url = ''
                         let method = ''
@@ -435,24 +435,23 @@
                         subscriptionForm = subscriptionForm.substr(0, subscriptionForm.length - 1)
                         params['subscription_form'] = subscriptionForm
                         params['time_out'] = parseInt(params['time_out'])
-                        this.$axios({
-                            url: url,
-                            method: method,
-                            data: params,
-                            id: 'savePush'
-                        }).then(res => {
-                            if (res.result) {
-                                this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')
-                                this.eventData = {...this.tempEventData}
-                                if (this.type === 'add') {
-                                    this.$emit('saveSuccess', res.data['subscription_id'])
-                                } else {
-                                    this.$emit('saveSuccess')
-                                }
+                        try {
+                            await this.$axios({
+                                url: url,
+                                method: method,
+                                data: params,
+                                id: 'savePush'
+                            })
+                            this.$alertMsg(this.$t('EventPush["保存成功"]'), 'success')
+                            this.eventData = {...this.tempEventData}
+                            if (this.type === 'add') {
+                                this.$emit('saveSuccess', res.data['subscription_id'])
                             } else {
-                                this.$alertMsg(res['bk_error_msg'])
+                                this.$emit('saveSuccess')
                             }
-                        })
+                        } catch (e) {
+                            this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                        }
                     }
                 })
             },

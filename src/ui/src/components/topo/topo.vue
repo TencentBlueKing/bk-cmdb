@@ -374,7 +374,7 @@
                 保存位置信息
                 node 拖拽的节点的ObjId
             */
-            savePosition (node) {
+            async savePosition (node) {
                 let position = window.network.getPositions()
                 let params = {
                     bk_classification_id: '',
@@ -400,13 +400,12 @@
                         break
                     }
                 }
-                this.$axios.put(`object/${id}`, params).then(res => {
-                    if (res.result) {
-                        this.$set(this.modelNodes[index], 'position', params['position'])
-                    } else {
-                        this.$alertMsg(this.$t('["更新位置信息失败"]'))
-                    }
-                })
+                try {
+                    await this.$axios.put(`object/${id}`, params)
+                    this.$set(this.modelNodes[index], 'position', params['position'])
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 根据ObjId判断是否属于当前分类

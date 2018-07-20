@@ -101,29 +101,25 @@
                     this.updateRole()
                 }
             },
-            createRole () {
-                this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'}).then((res) => {
-                    if (res.result) {
-                        this.closeRoleForm()
-                        this.$alertMsg('新建角色成功', 'success')
-                        this.$emit('on-success', res)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                        this.$emit('on-error', res)
-                    }
-                })
+            async createRole () {
+                try {
+                    const res = await this.$axios.post(`topo/privilege/group/${this.bkSupplierAccount}`, this.params, {id: 'saveRole'})
+                    this.closeRoleForm()
+                    this.$alertMsg('新建角色成功', 'success')
+                    this.$emit('on-success', res)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            updateRole () {
-                this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params, {id: 'saveRole'}).then(res => {
-                    if (res.result) {
-                        this.closeRoleForm()
-                        this.$alertMsg('更新角色成功', 'success')
-                        this.$emit('on-success', res)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                        this.$emit('on-error', res)
-                    }
-                })
+            async updateRole () {
+                try {
+                    const res = await this.$axios.put(`topo/privilege/group/${this.data['bk_supplier_account']}/${this.data['group_id']}`, this.params, {id: 'saveRole'})
+                    this.closeRoleForm()
+                    this.$alertMsg('更新角色成功', 'success')
+                    this.$emit('on-success', res)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             closeRoleForm () {
                 this.$emit('update:isShow', false)

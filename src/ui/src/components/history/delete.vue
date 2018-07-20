@@ -182,10 +182,7 @@
             },
             async recoveryBiz (item) {
                 try {
-                    const res = await this.$axios.put(`biz/status/enable/${this.bkSupplierAccount}/${item['bk_biz_id']}`)
-                    if (!res.result) {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
+                    await this.$axios.put(`biz/status/enable/${this.bkSupplierAccount}/${item['bk_biz_id']}`)
                     this.getTableList()
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)

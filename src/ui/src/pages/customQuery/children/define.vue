@@ -430,15 +430,19 @@
                     this.$alertMsg(e.data['bk_error_msg'])
                 }
             },
-            initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
-                    this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
-                    this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
-                    this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
-                    this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
-                    this.addDisabled()
-                }))
+            async initObjectProperties () {
+                try {
+                    await this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
+                    .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
+                        this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
+                        this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
+                        this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
+                        this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
+                        this.addDisabled()
+                    }))
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             getObjectProperty (bkObjId) {
                 return this.$axios.post('object/attr/search', {
@@ -454,11 +458,7 @@
             async getUserAPIDetail () {
                 try {
                     const res = await this.$axios.get(`userapi/detail/${this.bkBizId}/${this.id}`)
-                    if (res.result) {
-                        this.setUserProperties(res.data)
-                    } else {
-                        this.$alertMsg(res.data['bk_error_msg'])
-                    }
+                    this.setUserProperties(res.data)
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
@@ -633,39 +633,36 @@
             },
             /* 保存自定义条件 */
             saveUserAPI () {
-                this.$validator.validateAll().then(isValid => {
+                this.$validator.validateAll().then(async isValid => {
                     if (isValid) {
                         // 将Info字段转为JSON字符串提交
                         let params = Object.assign({}, this.apiParams, {'info': JSON.stringify(this.apiParams['info'])})
                         if (this.type === 'create') {
-                            this.$axios.post('userapi', params, {id: 'saveUserAPI'}).then(res => {
-                                if (res.result) {
-                                    this.$alertMsg(this.$t("Common['保存成功']"), 'success')
-                                    this.dataCopy = {
-                                        name: this.name,
-                                        userProperties: this.$deepClone(this.userProperties),
-                                        attributeSelected: this.attribute.selected
-                                    }
-                                    this.$emit('create', res.data)
-                                } else {
-                                    this.$alertMsg(res['bk_error_msg'])
+                            try {
+                                const res = await this.$axios.post('userapi', params, {id: 'saveUserAPI'})
+                                this.$alertMsg(this.$t("Common['保存成功']"), 'success')
+                                this.dataCopy = {
+                                    name: this.name,
+                                    userProperties: this.$deepClone(this.userProperties),
+                                    attributeSelected: this.attribute.selected
                                 }
-                            })
+                                this.$emit('create', res.data)
+                            } catch (e) {
+                                this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                            }
                         } else {
-                            this.$axios.put(`userapi/${this.bkBizId}/${this.id}`, params, {id: 'saveUserAPI'})
-                            .then(res => {
-                                if (res.result) {
-                                    this.$emit('update', res.data)
-                                    this.dataCopy = {
-                                        name: this.name,
-                                        userProperties: this.$deepClone(this.userProperties),
-                                        attributeSelected: this.attribute.selected
-                                    }
-                                    this.$alertMsg(this.$t("Common['修改成功']"), 'success')
-                                } else {
-                                    this.$alertMsg(res['bk_error_msg'])
+                            try {
+                                const res = await this.$axios.put(`userapi/${this.bkBizId}/${this.id}`, params, {id: 'saveUserAPI'})
+                                this.$emit('update', res.data)
+                                this.dataCopy = {
+                                    name: this.name,
+                                    userProperties: this.$deepClone(this.userProperties),
+                                    attributeSelected: this.attribute.selected
                                 }
-                            })
+                                this.$alertMsg(this.$t("Common['修改成功']"), 'success')
+                            } catch (e) {
+                                this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                            }
                         }
                     }
                 })

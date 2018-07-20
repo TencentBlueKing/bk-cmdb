@@ -1337,32 +1337,28 @@
                 // 校验模型名
                 return this.$refs.baseInfo.isCloseConfirmShow()
             },
-            handleFile (e) {
+            async handleFile (e) {
                 this.isLoading = true
                 let files = e.target.files
                 let formData = new FormData()
                 formData.append('file', files[0])
-                this.$axios.post(this.importUrl, formData).then(res => {
-                    if (res.result) {
-                        let data = res.data[this.objId]
-                        if (data.hasOwnProperty('insert_failed')) {
-                            this.$alertMsg(data['insert_failed'][0])
-                        } else if (data.hasOwnProperty('update_failed')) {
-                            this.$alertMsg(data['update_failed'][0])
-                        } else {
-                            this.$alertMsg(this.$t('ModelManagement["导入成功"]'), 'success')
-                            this.getModelField()
-                        }
+                try {
+                    const res = await this.$axios.post(this.importUrl, formData)
+                    let data = res.data[this.objId]
+                    if (data.hasOwnProperty('insert_failed')) {
+                        this.$alertMsg(data['insert_failed'][0])
+                    } else if (data.hasOwnProperty('update_failed')) {
+                        this.$alertMsg(data['update_failed'][0])
                     } else {
-                        this.$alertMsg(res['bk_error_msg'])
+                        this.$alertMsg(this.$t('ModelManagement["导入成功"]'), 'success')
+                        this.getModelField()
                     }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                } finally {
                     this.$refs.fileInput.value = ''
                     this.isLoading = false
-                }).catch(reject => {
-                    this.$alertMsg(this.$t('ModelManagement["导入失败"]'))
-                    this.$refs.fileInput.value = ''
-                    this.isLoading = false
-                })
+                }
             },
             /*
                 保存基本信息成功
@@ -1637,14 +1633,13 @@
                 id: 需要删除项的ID
                 index: 索引
             */
-            deleteField (id, index) {
-                this.$axios.delete('object/attr/' + id, {}).then(res => {
-                    if (res.result) {
-                        this.fieldList.splice(index, 1)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async deleteField (id, index) {
+                try {
+                    await this.$axios.delete(`object/attr/${id}`)
+                    this.fieldList.splice(index, 1)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 二次确认弹窗
@@ -1736,7 +1731,7 @@
             /*
                 新增字段确认按钮
             */
-            saveNewField () {
+            async saveNewField () {
                 $('#validate-form-new').parsley().validate()
                 if (!$('#validate-form-new').parsley().isValid()) return
                 if (!this.checkParams()) {
@@ -1759,15 +1754,14 @@
                     unit: this.newFieldInfo.unit,
                     bk_asst_obj_id: this.newFieldInfo['bk_asst_obj_id']
                 }
-                this.$axios.post('object/attr', params, {id: 'saveNew'}).then(res => {
-                    if (res.result) {
-                        this.getModelField()
-                        this.closeAddFieldBox()
-                        this.$emit('newField') // 更新字段分栏列表
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                try {
+                    await this.$axios.post('object/attr', params, {id: 'saveNew'})
+                    this.getModelField()
+                    this.closeAddFieldBox()
+                    this.$emit('newField') // 更新字段分栏列表
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 关闭添加字段弹窗
@@ -1811,7 +1805,7 @@
                 item: 当前项
                 index: 索引
             */
-            saveFieldChange (item, index) {
+            async saveFieldChange (item, index) {
                 $('#validate-form-change').parsley().validate()
                 if (!$('#validate-form-change').parsley().isValid()) return
                 if (!this.checkChangeParams(item, index)) {
@@ -1842,14 +1836,13 @@
                     params['bk_obj_id'] = this.objId
                     params['bk_supplier_account'] = this.bkSupplierAccount
                 }
-                this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'}).then(res => {
-                    if (res.result) {
-                        this.getModelField()
-                        this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                try {
+                    await this.$axios.put(`object/attr/${item['id']}`, params, {id: 'saveChange'})
+                    this.getModelField()
+                    this.curFieldInfoCopy = this.$deepClone(this.curFieldInfo)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 取消变更
@@ -1963,29 +1956,28 @@
             /*
                 获取模型分类以及模型信息
             */
-            getClassification () {
-                this.$axios.post(`object/classification/${this.bkSupplierAccount}/objects`, {}).then(res => {
-                    if (res.result) {
-                        this.modelList = []
-                        res.data.map(val => {
-                            if (val.hasOwnProperty('bk_objects') && val['bk_objects'].length) {
-                                // 不显示自己 obj[i].ObjId === this.objId
-                                // 暂时不显示主机 进程 业务 集群 模块
-                                for (let obj = val['bk_objects'], i = obj.length - 1; i >= 0; i--) {
-                                    if (obj[i]['bk_obj_id'] === 'plat' || obj[i]['bk_obj_id'] === 'process' || obj[i]['bk_obj_id'] === 'set' || obj[i]['bk_obj_id'] === 'module' || obj[i]['bk_obj_id'] === this.objId) {
-                                        obj.splice(i, 1)
-                                    }
-                                }
-                                // 去掉临时不显示的内容后长度不为0时才添加到列表中
-                                if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
-                                    this.modelList.push(val)
+            async getClassification () {
+                try {
+                    let res = await this.$axios.post(`object/classification/${this.bkSupplierAccount}/objects`, {})
+                    this.modelList = []
+                    res.data.map(val => {
+                        if (val.hasOwnProperty('bk_objects') && val['bk_objects'].length) {
+                            // 不显示自己 obj[i].ObjId === this.objId
+                            // 暂时不显示主机 进程 业务 集群 模块
+                            for (let obj = val['bk_objects'], i = obj.length - 1; i >= 0; i--) {
+                                if (obj[i]['bk_obj_id'] === 'plat' || obj[i]['bk_obj_id'] === 'process' || obj[i]['bk_obj_id'] === 'set' || obj[i]['bk_obj_id'] === 'module' || obj[i]['bk_obj_id'] === this.objId) {
+                                    obj.splice(i, 1)
                                 }
                             }
-                        })
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                            // 去掉临时不显示的内容后长度不为0时才添加到列表中
+                            if (val['bk_objects'].length && val['bk_classification_id'] !== 'bk_biz_topo') {
+                                this.modelList.push(val)
+                            }
+                        }
+                    })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             modelChange (item) {
                 this.fieldList[this.curIndex].option = item

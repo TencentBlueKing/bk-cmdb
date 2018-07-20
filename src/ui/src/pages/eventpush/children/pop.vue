@@ -81,7 +81,7 @@
                 isResultOpen: false,
                 isResultShow: false,
                 resultInfo: {
-                    result: true,
+                    result: false,
                     bk_error_msg: '',
                     data: ''
                 }
@@ -98,24 +98,30 @@
             /*
                 测试推送
             */
-            testPing () {
+            async testPing () {
                 this.isResultShow = true
-                this.$axios.post(`event/subscribe/ping`, {
-                    callback_url: this.callbackURL
-                }, {id: 'testPush'}).then(res => {
+                try {
+                    const res = await this.$axios.post(`event/subscribe/ping`, {
+                        callback_url: this.callbackURL
+                    }, {id: 'testPush', globalError: false})
                     this.resultInfo = res
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             /*
                 测试连通性
             */
-            testTelnet () {
+            async testTelnet () {
                 this.isResultShow = true
-                this.$axios.post(`event/subscribe/telnet`, {
-                    callback_url: this.callbackURL
-                }, {id: 'testPush'}).then(res => {
+                try {
+                    const res = await this.$axios.post(`event/subscribe/telnet`, {
+                        callback_url: this.callbackURL
+                    }, {id: 'testPush', globalError: false})
                     this.resultInfo = res
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             closePop () {
                 this.isResultShow = false

@@ -94,41 +94,38 @@
             }
         },
         methods: {
-            getBusinessRoles () {
-                this.$axios.post('object/attr/search', {bk_obj_id: 'biz', bk_supplier_account: this.bkSupplierAccount}).then((res) => {
-                    if (res.result) {
-                        let roles = []
-                        res.data.map((role) => {
-                            if (role['bk_property_type'] === 'objuser') {
-                                roles.push(Object.assign(role, {selectedAuthorities: []}))
-                            }
-                        })
-                        this.businessRoles = roles
-                        this.selectedBusinessRole = roles[0]['bk_property_id']
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-            },
-            getBusinessRoleAuthorities () {
-                this.$axios.get(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`).then((res) => {
-                    if (res.result) {
-                        if (!this.isMaintainers) {
-                            this.authorities.selected = res.data.length ? res.data : []
-                        }
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
-            },
-            updateAuthorities: Throttle(function () {
-                this.$nextTick(() => {
-                    this.$axios.post(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`, this.authorities.selected)
-                    .then((res) => {
-                        if (!res.result) {
-                            this.$alertMsgThrottle(res['bk_error_msg'])
+            async getBusinessRoles () {
+                try {
+                    const res = await this.$axios.post('object/attr/search', {bk_obj_id: 'biz', bk_supplier_account: this.bkSupplierAccount})
+                    let roles = []
+                    res.data.map((role) => {
+                        if (role['bk_property_type'] === 'objuser') {
+                            roles.push(Object.assign(role, {selectedAuthorities: []}))
                         }
                     })
+                    this.businessRoles = roles
+                    this.selectedBusinessRole = roles[0]['bk_property_id']
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
+            async getBusinessRoleAuthorities () {
+                try {
+                    const res = await this.$axios.get(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`)
+                    if (!this.isMaintainers) {
+                        this.authorities.selected = res.data.length ? res.data : []
+                    }
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
+            },
+            updateAuthorities: Throttle(function () {
+                this.$nextTick(async () => {
+                    try {
+                        await this.$axios.post(`topo/privilege/${this.bkSupplierAccount}/biz/${this.selectedBusinessRole}`, this.authorities.selected)
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 })
             }, 300, {leading: false, trailing: true})
         },

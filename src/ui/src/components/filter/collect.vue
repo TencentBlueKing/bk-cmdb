@@ -144,30 +144,28 @@
                     })
                 })
             },
-            updateCollectName (item) {
+            async updateCollectName (item) {
                 let updateItem = Object.assign({}, item)
                 delete updateItem.isShow
                 delete updateItem.edit
                 delete updateItem.isShowDeleteConfirm
-                this.$axios.put(`hosts/favorites/${updateItem['id']}`, updateItem).then(res => {
-                    if (res.result) {
-                        item.edit = false
-                        this.$emit('update', updateItem)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+                try {
+                    await this.$axios.put(`hosts/favorites/${updateItem['id']}`, updateItem)
+                    item.edit = false
+                    this.$emit('update', updateItem)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
-            deleteCollect (item, index) {
-                this.$axios.delete(`hosts/favorites/${item['id']}`).then(res => {
-                    if (res.result) {
-                        this.localFavoriteList.splice(index, 1)
-                        this.$alertMsg(this.$t('Common[\'删除成功\']'), 'success')
-                        this.$emit('delete', item, index)
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                })
+            async deleteCollect (item, index) {
+                try {
+                    await this.$axios.delete(`hosts/favorites/${item['id']}`)
+                    this.localFavoriteList.splice(index, 1)
+                    this.$alertMsg(this.$t('Common[\'删除成功\']'), 'success')
+                    this.$emit('delete', item, index)
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             apply (collect) {
                 let isAppExist = false

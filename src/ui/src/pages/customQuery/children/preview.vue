@@ -196,20 +196,16 @@
                 }
                 return ''
             },
-            getPreviewList () {
+            async getPreviewList () {
                 this.table.isLoading = true
-                this.$axios.post('hosts/search', this.previewParams).then(res => {
-                    if (res.result) {
-                        this.table.pagination.count = res.data.count
-                        this.setTableHeader()
-                        this.table.list = res.data.info
-                    } else {
-                        this.$alertMsg(res['bk_error_msg'])
-                    }
-                    this.table.isLoading = false
-                }).catch(() => {
-                    this.table.isLoading = false
-                })
+                try {
+                    const res = await this.$axios.post('hosts/search', this.previewParams)
+                    this.table.pagination.count = res.data.count
+                    this.setTableHeader()
+                    this.table.list = res.data.info
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             setCurrentPage (current) {
                 this.table.pagination.current = current

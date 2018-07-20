@@ -48,7 +48,7 @@
                 <a href="javascript:void(0)" class="group-more-link" :class="{'open': !isNoneGroupHide}" @click="isNoneGroupHide = !isNoneGroupHide">{{$t("Common['更多属性']")}}</a>
             </div>
         </div>
-        <div class="search-tips" v-show="showTips" v-bkloading="{isLoading: loading}">
+        <div class="search-tips" v-show="showTips" v-bkloading="{isLoading: $loading('hostSearch')}">
             <p v-if="noResult">{{$t("BusinessTopology['未查询到该IP地址对应的主机']")}}</p>
             <p v-else>{{$t("BusinessTopology['请输入完整IP地址进行查询']")}}</p>
         </div>
@@ -89,7 +89,6 @@
                 isNoneGroupHide: true,
                 attribute: {},
                 propertyGroups: {},
-                loading: false,
                 showTips: true,
                 hostRelation: []
             }
@@ -142,50 +141,47 @@
             }
         },
         methods: {
-            getHostAttribute () {
+            async getHostAttribute () {
                 let hostObjId = 'host'
                 if (!this.attribute.hasOwnProperty(hostObjId)) {
-                    this.$axios.post('object/attr/search', {
-                        bk_obj_id: hostObjId,
-                        bk_supplier_account: this.bkSupplierAccount
-                    }).then(res => {
-                        if (res.result) {
-                            res.data.sort((objA, objB) => {
-                                return objA['bk_property_index'] - objB['bk_property_index']
-                            })
-                            this.attribute[hostObjId] = res.data
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        let res = await this.$axios.post('object/attr/search', {
+                            bk_obj_id: hostObjId,
+                            bk_supplier_account: this.bkSupplierAccount
+                        })
+                        res.data.sort((objA, objB) => {
+                            return objA['bk_property_index'] - objB['bk_property_index']
+                        })
+                        this.attribute[hostObjId] = res.data
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
-            getPropertyGroups () {
+            async getPropertyGroups () {
                 let hostObjId = 'host'
                 if (!this.propertyGroups.hasOwnProperty(hostObjId)) {
-                    this.$axios.post(`objectatt/group/property/owner/${this.bkSupplierAccount}/object/${hostObjId}`, {}).then(res => {
-                        if (res.result) {
-                            this.propertyGroups[hostObjId] = res.data
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        const res = await this.$axios.post(`objectatt/group/property/owner/${this.bkSupplierAccount}/object/${hostObjId}`, {})
+                        this.propertyGroups[hostObjId] = res.data
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
-            getPlat () {
+            async getPlat () {
                 if (!this.search.plat.length) {
-                    this.$axios.post(`inst/search/owner/${this.bkSupplierAccount}/object/plat`, {
-                        condition: {},
-                        fields: [],
-                        page: {}
-                    }).then(res => {
-                        if (res.result) {
-                            this.search.plat = res.data.info
-                            this.search.selectedPlat = 0
-                        } else {
-                            this.$alertMsg(res['bk_error_msg'])
-                        }
-                    })
+                    try {
+                        const res = await this.$axios.post(`inst/search/owner/${this.bkSupplierAccount}/object/plat`, {
+                            condition: {},
+                            fields: [],
+                            page: {}
+                        })
+                        this.search.plat = res.data.info
+                        this.search.selectedPlat = 0
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 } else {
                     this.search.selectedPlat = 0
                 }
@@ -230,12 +226,11 @@
                 this.noResult = false
                 this.showTips = true
             },
-            doSearch () {
+            async doSearch () {
                 if (this.isValidIp) {
-                    this.loading = true
                     this.noResult = false
                     this.resultPlat = this.search.selectedPlat
-                    this.$axios.post('hosts/search', {
+                    let params = {
                         bk_biz_id: -1,
                         condition: [{
                             bk_obj_id: 'host',
@@ -255,37 +250,35 @@
                             start: 0,
                             limit: 1
                         }
-                    }).then(res => {
-                        if (res.result) {
-                            if (res.data.count) {
-                                this.showTips = false
-                                this.noResult = false
-                                this.result = res.data.info[0]['host']
-                                this.hostRelation = getHostRelation(res.data.info[0])
-                            } else {
-                                this.noResult = true
-                                this.showTips = true
-                                this.result = {}
-                                this.hostRelation = []
-                            }
+                    }
+                    try {
+                        const res = await this.$axios.post('hosts/search', params, {id: 'hostSearch'})
+                        if (res.data.count) {
+                            this.showTips = false
+                            this.noResult = false
+                            this.result = res.data.info[0]['host']
+                            this.hostRelation = getHostRelation(res.data.info[0])
                         } else {
-                            this.$alertMsg(res['bk_error_msg'])
+                            this.noResult = true
+                            this.showTips = true
+                            this.result = {}
+                            this.hostRelation = []
                         }
-                        this.loading = false
-                    }).catch(() => {
-                        this.loading = false
-                    })
+                    } catch (e) {
+                        this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                    }
                 }
             },
-            doCrossImport () {
-                this.$axios.post('hosts/modules/biz/mutilple', {
-                    bk_biz_id: this.bizId,
-                    bk_module_id: this.moduleId,
-                    host_info: [{
-                        bk_host_innerip: this.result['bk_host_innerip'],
-                        bk_cloud_id: this.resultPlat
-                    }]
-                }).then(res => {
+            async doCrossImport () {
+                try {
+                    const res = await this.$axios.post('hosts/modules/biz/mutilple', {
+                        bk_biz_id: this.bizId,
+                        bk_module_id: this.moduleId,
+                        host_info: [{
+                            bk_host_innerip: this.result['bk_host_innerip'],
+                            bk_cloud_id: this.resultPlat
+                        }]
+                    }, {globalError: false})
                     if (res.result) {
                         this.$alertMsg(this.$t("Common['导入成功']"), 'success')
                         this.$emit('update:isShow', false)
@@ -297,7 +290,9 @@
                             this.$alertMsg(res['bk_error_msg'])
                         }
                     }
-                })
+                } catch (e) {
+                    this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
+                }
             },
             cancelCrossImport () {
                 this.$emit('update:isShow', false)
