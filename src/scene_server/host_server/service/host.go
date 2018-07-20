@@ -262,7 +262,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, moduleID, common.BKDefaultOwnerID, pheader, hostList.HostInfo, hostList.InputType)
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, common.BKDefaultOwnerID, pheader, hostList.HostInfo, hostList.InputType)
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
@@ -317,7 +317,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	addHost := make(map[int64]map[string]interface{})
 	addHost[1] = agents
 
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, moduleID, common.BKDefaultOwnerID, pheader, addHost, "")
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, common.BKDefaultOwnerID, pheader, addHost, "")
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
@@ -547,4 +547,77 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	hostList := new(meta.HostSyncList)
+	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
+		blog.Errorf("add host failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if hostList.HostInfo == nil {
+		blog.Errorf("add host, but host info is nil.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
+	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow)})
+		return
+	}
+
+	appConds := map[string]interface{}{
+		common.BKAppIDField: hostList.ApplicationID,
+	}
+	appInfo, err := s.GetAppDetails("", appConds, req.Request.Header)
+	if nil != err {
+		blog.Errorf("host sync app %d error:%s", hostList.ApplicationID, err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetAppFaild, err.Error())})
+		return
+	}
+	if 0 == len(appInfo) {
+		blog.Errorf("host sync app %d not found, reply:%v", hostList.ApplicationID, appInfo)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetAppFaild, "not foud ")})
+		return
+	}
+
+	moduleCond := []meta.ConditionItem{
+		meta.ConditionItem{
+			Field:    common.BKModuleIDField,
+			Operator: common.BKDBIN,
+			Value:    hostList.ModuleID,
+		},
+	}
+	moduleIDS, err := s.Logics.GetModuleIDByCond(req.Request.Header, moduleCond) //s.Logics.NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
+	if nil != err {
+		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error()))
+		return
+	}
+	if len(moduleIDS) != len(hostList.ModuleID) {
+		blog.Errorf("not found part module: source:%v, db:%v", hostList.ModuleID, moduleIDS)
+		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id"))
+		return
+
+	}
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(hostList.ApplicationID, hostList.ModuleID, util.GetOwnerID(req.Request.Header), req.Request.Header, hostList.HostInfo, common.InputTypeApiNewHostSync)
+	if err != nil {
+		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
+
+		retData := make(map[string]interface{})
+		retData["success"] = succ
+		retData["error"] = errRow
+		retData["update_error"] = updateErrRow
+		resp.WriteEntity(meta.Response{
+			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			Data:     retData,
+		})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
