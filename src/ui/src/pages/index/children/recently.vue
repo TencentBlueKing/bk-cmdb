@@ -167,6 +167,7 @@
         font-size: 0;
         background-color: #fff;
         border: 1px solid #ebf0f5;
+        white-space: nowrap;
         &-model{
             cursor: pointer;
             &:hover{
@@ -203,11 +204,13 @@
             display: inline-block;
             vertical-align: middle;
             margin-left: 16px;
+            width: calc(100% - 42px - 16px);
             .recently-name{
                 display: block;
                 margin: 0 0 5px 0;
                 font-size: 16px;
                 color: #333c48;
+                @include ellipsis;
             }
             .recently-inst{
                 font-size: 12px;
