@@ -40,6 +40,7 @@ type LockMeta struct {
 
 	// fingerprints is used to define the resources that this lock should be locked
 	// lock server will uses these fingerprints to lock the resources that it describes.
+	// if fingerprints is empty, lock server should return the lock operation with success.
 	Fingerprints FingerprintsType `json:"fingerprints"`
 
 	// timeout means that the time of the client can bear to wait for the lock is locked.
