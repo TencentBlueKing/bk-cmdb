@@ -66,6 +66,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/usercustom/{bk_user}/{id}").To(s.UpdateUserCustomByID))
 	ws.Route(ws.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
 	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
-
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
 	return ws
 }
