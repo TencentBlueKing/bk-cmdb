@@ -300,7 +300,6 @@
             .item{
                 height: 36px;
                 line-height: 36px;
-                paddint-top: 15px;
                 &:hover{
                     background: #f1f7ff;
                     >.item-name{
