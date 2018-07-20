@@ -230,7 +230,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	page := metadata.ParsePage(selector["page"])
 	delete(selector, "page")
 
-	clsResults := make([]metadata.ObjClassificationObject, 0)
+	clsResults := make([]meta.ObjClassificationObject, 0)
 	// select from storage
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &clsResults, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error:%s", selerr.Error())
@@ -257,7 +257,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 
 	// translate language
 	for index := range clsResults {
-		clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, &clsResults[index].ObjClassification)
+		clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, &clsResults[index].Classification)
 		for attindex := range clsResults[index].Objects {
 			clsResults[index].Objects[attindex].ObjectName = commondata.TranslateObjectName(defLang, &clsResults[index].Objects[attindex])
 		}

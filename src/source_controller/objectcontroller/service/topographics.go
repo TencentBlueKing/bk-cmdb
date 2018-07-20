@@ -21,8 +21,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
 )
 
 // CreateClassification create object's classification
@@ -47,15 +47,15 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	blog.Infof("search param %s", value)
 
-	selector := metadata.TopoGraphics{}
+	selector := meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
 		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
-	results := []metadata.TopoGraphics{}
-	if selErr := cli.CC.InstCli.GetMutilByCondition(metadata.TopoGraphics{}.TableName(), nil, selector, &results, "", -1, -1); nil != selErr {
+	results := []meta.TopoGraphics{}
+	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameTopoGraphics, nil, selector, &results, "", -1, -1); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -82,7 +82,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	datas := []metadata.TopoGraphics{}
+	datas := []meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &datas); nil != jsErr {
 		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
@@ -90,16 +90,15 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 	}
 
 	for index := range datas {
-		blog.InfoJSON("update graphic %s", datas[index])
-		_, err = cli.CC.InstCli.Insert(metadata.TopoGraphics{}.TableName(), datas[index].FillBlank())
-		if cli.CC.InstCli.IsDuplicateErr(err) {
-			condition := metadata.TopoGraphics{}
+		_, err = cli.Instance.Insert(common.BKTableNameTopoGraphics, datas[index].FillBlank())
+		if cli.Instance.IsDuplicateErr(err) {
+			condition := meta.TopoGraphics{}
 			condition.SetScopeType(*datas[index].ScopeType)
 			condition.SetScopeID(*datas[index].ScopeID)
 			condition.SetNodeType(*datas[index].NodeType)
 			condition.SetObjID(*datas[index].ObjID)
 			condition.SetInstID(*datas[index].InstID)
-			if err = cli.CC.InstCli.UpdateByCondition(metadata.TopoGraphics{}.TableName(), datas[index], condition); err != nil {
+			if err = cli.Instance.UpdateByCondition(common.BKTableNameTopoGraphics, datas[index], condition); err != nil {
 				blog.Error("update data failed, error information is %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
 				return

@@ -24,7 +24,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/eventdata"
 )
@@ -52,7 +52,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	err = delModuleConfigSet(input, req)
+	err = cli.delModuleConfigSet(input, req)
 	if err != nil {
 		blog.Error("fail to delSetConfigHost: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
@@ -64,7 +64,8 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 
 // TODO
 func (cli *Service) getModuleConfigCount(con map[string]interface{}) (int, error) {
-	count, err := set.CC.InstCli.GetCntByCondition("cc_ModuleHostConfig", con)
+
+	count, err := cli.Instance.GetCntByCondition("cc_ModuleHostConfig", con)
 	if err != nil {
 		blog.Error("fail getModuleConfigCount error:%v", err)
 		return 0, err
@@ -81,19 +82,19 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 		return errors.New("params ApplicationID is required")
 	}
 	var oldContents []interface{}
-	getErr := set.CC.InstCli.GetMutilByCondition(tableName, nil, input, &oldContents, "", 0, common.BKNoLimit)
+	getErr := cli.Instance.GetMutilByCondition(tableName, nil, input, &oldContents, "", 0, common.BKNoLimit)
 	if getErr != nil {
 		blog.Errorf("fail to delSetConfigHost: %v", getErr)
 		return getErr
 	}
 
-	setID, moduleID, defErr := GetIdleModule(appID)
+	setID, moduleID, defErr := cli.GetIdleModule(appID)
 	if nil != defErr {
 		blog.Errorf("get idle module error:%v", defErr)
 		return defErr
 	}
 
-	err := set.CC.InstCli.DelByCondition(tableName, input)
+	err := cli.Instance.DelByCondition(tableName, input)
 	if err != nil {
 		blog.Error("fail to delSetConfigHost: %v", err)
 		return err
@@ -102,7 +103,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	//发送删除主机关系事件
 	ec := eventdata.NewEventContextByReq(req)
 	for oldContent := range oldContents {
-		err = ec.InsertEvent(metadata.EventTypeRelation, common.BKInnerObjIDHost, metadata.EventActionDelete, oldContent, nil)
+		err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionDelete, oldContent, nil)
 		if err != nil {
 			blog.Error("create event error:%v", err)
 		}
@@ -119,7 +120,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	//del host from set, get host module relation
 	params := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: common.KvMap{"$in": hostIDs}}
 	var hostRelations []interface{}
-	getErr = set.CC.InstCli.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
+	getErr = cli.Instance.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
 	if getErr != nil {
 		blog.Error("fail to exist relation host error: %v", getErr)
 		return getErr
@@ -145,14 +146,14 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 
 	}
 	if 0 < len(addIdleModuleDatas) {
-		err := set.CC.InstCli.InsertMuti(tableName, addIdleModuleDatas...)
+		err := cli.Instance.InsertMuti(tableName, addIdleModuleDatas...)
 		if getErr != nil {
 			blog.Error("fail to exist relation host error: %v", err)
 			return err
 		}
 		//推送新加到空闲机器的关系
 		for _, row := range addIdleModuleDatas {
-			err = ec.InsertEvent(metadata.EventTypeRelation, common.BKInnerObjIDHost, metadata.EventActionCreate, nil, row)
+			err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionCreate, nil, row)
 			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
@@ -166,7 +167,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 func (cli *Service) GetIdleModule(appID interface{}) (interface{}, interface{}, error) {
 	params := common.KvMap{common.BKAppIDField: appID, common.BKDefaultField: common.DefaultResModuleFlag, common.BKModuleNameField: common.DefaultResModuleName}
 	var result bson.M
-	err := set.CC.InstCli.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
+	err := cli.Instance.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
 
 	if nil != err {
 		return nil, nil, err

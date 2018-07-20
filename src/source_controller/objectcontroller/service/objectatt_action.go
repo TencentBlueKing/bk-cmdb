@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
 	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 )
@@ -220,7 +219,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 
 	// select from storage
-	result := make([]metadata.ObjectAttDes, 0)
+	result := make([]meta.Attribute, 0)
 	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAttDes", nil, map[string]interface{}{"id": id}, &result, "", 0, 0); nil != selErr {
 		blog.Error("find object by selector failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -264,7 +263,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 		js.Del("page")
 	}
 
-	results := make([]metadata.ObjectAttDes, 0)
+	results := make([]meta.Attribute, 0)
 	// select from storage
 	selector, err := js.Map()
 	if nil != err {

@@ -17,11 +17,12 @@ import (
 	"encoding/hex"
 	"net/http"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 //GetSystemFlag get the system define flag
@@ -43,7 +44,7 @@ func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) 
 	cipherStr := h.Sum(nil)
 	cond[flag] = hex.EncodeToString(cipherStr) + ownerID
 
-	err := cli.CC.InstCli.GetOneByCondition(common.BKTableNameSystem, []string{}, cond, &result)
+	err := cli.Instance.GetOneByCondition(common.BKTableNameSystem, []string{}, cond, &result)
 	if nil != err {
 		blog.Error("get system config error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})

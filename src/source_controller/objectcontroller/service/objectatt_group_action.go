@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/commondata"
 
 	restful "github.com/emicklei/go-restful"
@@ -45,7 +44,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 	val, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		blog.Error("read http request body failed, error:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, jsErr.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
@@ -324,14 +323,14 @@ func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *re
 	groupSelector[common.BKOwnerIDField] = req.PathParameter("owner_id")
 	groupSelector[common.BKObjIDField] = req.PathParameter("object_id")
 
-	page := metadata.ParsePage(groupSelector["page"])
+	page := meta.ParsePage(groupSelector["page"])
 	if page.Sort == "" {
 		page.Sort = "bk_group_name"
 	}
 	delete(groupSelector, "page")
 
 	blog.Debug("group property selector %+v", groupSelector)
-	results := make([]metadata.PropertyGroup, 0)
+	results := make([]meta.Group, 0)
 	// select the object group
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNamePropertyGroup, nil, groupSelector, &results, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error information is %s", selerr.Error())

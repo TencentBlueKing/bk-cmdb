@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	//"time"
 )
@@ -52,7 +53,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	blog.Debug("query;%v", query)
 	fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
 	var result []interface{}
-	err = proc.CC.InstCli.GetMutilByCondition("cc_Proc2Module", fields, query, &result, common.BKHostIDField, 0, 100000)
+	err = cli.Instance.GetMutilByCondition("cc_Proc2Module", fields, query, &result, common.BKHostIDField, 0, 100000)
 	if err != nil {
 		blog.Error("fail to get module proc config %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
@@ -77,7 +78,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 		"$in": processIdArr,
 	}
 	var resultProc []interface{}
-	err = proc.CC.InstCli.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
+	err = cli.Instance.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
 	blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)
 	if err != nil {
 		blog.Error("fail to get proc %v", err)
