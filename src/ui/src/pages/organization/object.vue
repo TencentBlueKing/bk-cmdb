@@ -10,7 +10,6 @@
 
 <template lang="html">
    <div class="host-resource-wrapper clearfix">
-        <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
@@ -184,7 +183,6 @@
     import vSideslider from '@/components/slider/sideslider'
     import vConfigField from './children/configField'
     import vDeleteHistory from '@/components/history/delete'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     export default {
         mixins: [Authority],
         data () {
@@ -243,7 +241,8 @@
                 // 选项卡
                 tab: {
                     activeName: 'attr'
-                }
+                },
+                prevHistoryCount: 0
             }
         },
         computed: {
@@ -344,6 +343,7 @@
                 if (!isShow && this.objId === 'biz') {
                     this.getTableList()
                 }
+                this.updateHistoryCount(isShow)
             },
             // 切换模型时，重新初始化表格
             objId () {
@@ -775,7 +775,15 @@
                     return property.option || []
                 }
                 return []
+            },
+            updateHistoryCount (isShow) {
+                if (this.prevHistoryCount) {
+                    this.$store.commit('navigation/updateHistoryCount', isShow ? -1 : 1)
+                }
             }
+        },
+        created () {
+            this.prevHistoryCount = this.$store.state.navigation.historyCount
         },
         mounted () {
             this.initTable()
@@ -790,8 +798,7 @@
             vConfigField,
             vDeleteHistory,
             vAssociationList,
-            vNewAssociation,
-            vBreadcrumb
+            vNewAssociation
         }
     }
 </script>
@@ -802,9 +809,6 @@
     $primaryColor: #f9f9f9; //主要
     $fnMainColor: #bec6de; //文案主要颜色
     $primaryHoverColor: #6b7baa; //鼠标移上 主要颜色
-    .breadcrumbs{
-        padding: 8px 20px;
-    }
     .main-btn{  //主要按钮
         background: $primaryHoverColor;
         &:hover{
@@ -870,7 +874,7 @@
             margin: 0;
         }
         .bottom-contain{
-            padding:0 20px;
+            padding:20px 20px 0;
         }
     }
     .bk-button-componey{
