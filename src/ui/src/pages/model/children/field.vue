@@ -2399,7 +2399,7 @@
                 }
             }
             .button-wraper{
-                margin-left: 70px;
+                margin-left:83px;
                 .bk-button{
                     height: 30px;
                     line-height: 28px;
@@ -2509,7 +2509,7 @@
             }
         }
         .submit-btn{
-            margin-left: 70px;
+            margin-left: 83px;
             .bk-button{
                 height: 30px;
                 line-height: 28px;
@@ -2631,7 +2631,7 @@
 <style lang="scss" scoped>
     .form-enum-wrapper{
         margin-top: 10px;
-        margin-left: 69px;
+        margin-left: 82px;
         font-size: 0;
         position: relative;
         float: left;
