@@ -10,9 +10,25 @@
  * limitations under the License.
  */
 
-package main
+package identifier
 
 import (
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.8"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.1"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
+
+func (t *identifier) SearchIdentifier(ctx context.Context, h http.Header, objType string, param *metadata.SearchIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
+	subPath := fmt.Sprintf("/identifier/%s/search", objType)
+	resp = new(metadata.SearchHostIdentifierResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(param).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
