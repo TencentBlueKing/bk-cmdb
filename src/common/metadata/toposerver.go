@@ -30,3 +30,8 @@ type SearchInnterAppTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     InnterAppTopo
 }
+
+type MainlineObjectTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     []MainlineObjectTopo `json:"data"`
+}
