@@ -12,6 +12,13 @@
 
 package metadata
 
+import (
+	"fmt"
+	"strconv"
+
+	"configcenter/src/common"
+)
+
 const (
 	PageName  = "page"
 	PageSort  = "sort"
@@ -23,4 +30,28 @@ type BasePage struct {
 	Sort  string `json:"sort,omitempty"`
 	Limit int    `json:"limit,omitempty"`
 	Start int    `json:"start,omitempty"`
+}
+
+func ParsePage(origin interface{}) BasePage {
+	if origin == nil {
+		return BasePage{Limit: common.BKNoLimit}
+	}
+	page, ok := origin.(map[string]interface{})
+	if !ok {
+		return BasePage{Limit: common.BKNoLimit}
+	}
+	result := BasePage{}
+	if sort, ok := page["sort"]; ok && sort != nil {
+		result.Sort = fmt.Sprint(sort)
+	}
+	if start, ok := page["start"]; ok {
+		result.Start, _ = strconv.Atoi(fmt.Sprint(start))
+	}
+	if limit, ok := page["limit"]; ok {
+		result.Limit, _ = strconv.Atoi(fmt.Sprint(limit))
+		if result.Limit <= 0 {
+			result.Limit = common.BKNoLimit
+		}
+	}
+	return result
 }
