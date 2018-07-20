@@ -1333,6 +1333,7 @@ func (cli *instAction) SelectTopo(req *restful.Request, resp *restful.Response) 
 			blog.Error("failed to select the insts, error info is %s", err.Error())
 			return http.StatusInternalServerError, "", defErr.Error(common.CCErrTopoInstSelectFailed)
 		}
+		blog.Infof("search object inst from %s, param %s, response: %s ", sURL, inputJSON, instRes)
 
 		// get common topo inst
 		results := make([]commonInstTopo, 0)
