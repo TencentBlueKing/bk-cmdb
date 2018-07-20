@@ -48,8 +48,8 @@ func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, 
 	return
 }
 
-func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error) {
+	resp = new(metadata.MainlineObjectTopoResult)
 	subPath := fmt.Sprintf("/topo/model/%s", ownerID)
 
 	err = t.client.Get().
