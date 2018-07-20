@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -125,7 +124,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
-	fmt.Println("rsp.data:", rsp.Data)
+	//fmt.Println("rsp.data:", rsp.Data)
 	for idx, clsItem := range rsp.Data {
 		rsp.Data[idx].AsstObjects = make(map[string][]metadata.Object)
 		for _, objItem := range clsItem.Objects {

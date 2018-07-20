@@ -13,8 +13,6 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -25,7 +23,6 @@ import (
 
 // CreateUserGroup create user goup
 func (s *topoService) CreateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
 
 	userGroup := &metadata.UserGroup{}
 	_, err := userGroup.Parse(data)
@@ -53,7 +50,7 @@ func (s *topoService) UpdateUserGroup(params types.ContextParams, pathParams, qu
 
 // SearchUserGroup search user goup
 func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("search user group")
+
 	cond := condition.CreateCondition()
 
 	data.ForEach(func(key string, val interface{}) {

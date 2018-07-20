@@ -47,6 +47,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	ws.Route(ws.POST("/hosts/addhost").To(s.AddHost))
 	ws.Route(ws.POST("/host/add/agent").To(s.AddHostFromAgent))
+	ws.Route(ws.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	ws.Route(ws.POST("hosts/favorites/search").To(s.GetHostFavourites))
 	ws.Route(ws.POST("hosts/favorites").To(s.AddHostFavourite))
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))

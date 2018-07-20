@@ -13,9 +13,9 @@
 package objcontroller
 
 import (
-	"configcenter/src/apimachinery/objcontroller/identifier"
 	"fmt"
 
+	"configcenter/src/apimachinery/objcontroller/identifier"
 	"configcenter/src/apimachinery/objcontroller/inst"
 	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/objcontroller/openapi"

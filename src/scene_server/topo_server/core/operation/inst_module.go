@@ -9,7 +9,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -65,7 +64,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
-	data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
+	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 
 	return m.inst.CreateInst(params, obj, data)
 }

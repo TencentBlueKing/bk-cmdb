@@ -10,28 +10,13 @@
  * limitations under the License.
  */
 
-package metadata
+package service
 
-type SearchInstResult struct {
-	BaseResp `json",inline"`
-	Data     InstResult `json:"data"`
-}
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
 
-type CreateModelResult struct {
-	BaseResp `json:",inline"`
-	Data     Object `json:"data"`
-}
-type SearchModelResult struct {
-	BaseResp `json:",inline"`
-	Data     []Object `json:"data"`
-}
-
-type SearchInnterAppTopoResult struct {
-	BaseResp `json:",inline"`
-	Data     InnterAppTopo
-}
-
-type MainlineObjectTopoResult struct {
-	BaseResp `json:",inline"`
-	Data     []MainlineObjectTopo `json:"data"`
+func (s *topoService) Health(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.core.HealthOperation().Health(params)
 }

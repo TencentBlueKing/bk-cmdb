@@ -23,7 +23,7 @@ import (
 type ObjectInterface interface {
 	CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error)
 	DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *metadata.Response, err error)
-	SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
+	SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error)
 	SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error)
 	SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error)
 	SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *metadata.Response, err error)

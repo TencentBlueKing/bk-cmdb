@@ -210,6 +210,7 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		host[common.BKSetNameField] = set[common.BKSetNameField]
 		host[common.BKAppIDField], _ = app.Int64(common.BKAppIDField) //[common.BKAppIDField]
 		host[common.BKAppNameField] = app[common.BKAppNameField]
+		host[common.BKModuleTypeField] = module[common.BKModuleTypeField]
 		host[common.BKOwnerIDField] = app[common.BKOwnerIDField]
 		host[common.BKOperatorField] = module[common.BKOperatorField]
 		host[common.BKBakOperatorField] = module[common.BKBakOperatorField]
