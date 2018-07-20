@@ -313,9 +313,9 @@ func (cli *instAction) subCreateInst(forward *api.ForwardParam, req *restful.Req
 			Headers: headers,
 		}
 		if targetMethod == common.HTTPSelectPost {
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "create inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "create inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeAdd)
 		} else {
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 		}
 
 	}
@@ -707,7 +707,7 @@ func (cli *instAction) DeleteInst(req *restful.Request, resp *restful.Response) 
 						PreData: preData,
 						Headers: attDesCache[delItem.objID],
 					}
-					auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(delItem.instID, auditContent, "delete inst", delItem.objID, ownerID, "0", user, auditoplog.AuditOpTypeDel)
+					auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(delItem.instID, auditContent, "delete inst", delItem.objID, ownerID, "0", user, auditoplog.AuditOpTypeDel)
 				}
 
 			}
@@ -862,7 +862,7 @@ func (cli *instAction) UpdateInst(req *restful.Request, resp *restful.Response) 
 					CurData: curData,
 					Headers: headers,
 				}
-				auditlog.NewClient(cli.CC.AuditCtrl()).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
+				auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditObjLog(instID, auditContent, "update inst", objID, ownerID, "0", user, auditoplog.AuditOpTypeModify)
 			}
 		}
 		return http.StatusOK, nil, nil

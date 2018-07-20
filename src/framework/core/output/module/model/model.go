@@ -45,7 +45,7 @@ func (cli *model) Attributes() ([]Attribute, error) {
 
 	cond := common.CreateCondition().Field(ObjectID).Like(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
 
-	dataMap, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
+	dataMap, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().SearchObjectAttributes(cond)
 
 	if nil != err {
 		return nil, err
@@ -71,7 +71,7 @@ func (cli *model) search() ([]types.MapStr, error) {
 	cond := common.CreateCondition().Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
-	return client.GetClient().CCV3().Model().SearchObjects(cond)
+	return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().SearchObjects(cond)
 }
 func (cli *model) IsExists() (bool, error) {
 
@@ -83,7 +83,7 @@ func (cli *model) IsExists() (bool, error) {
 }
 func (cli *model) Create() error {
 
-	id, err := client.GetClient().CCV3().Model().CreateObject(cli.ToMapStr())
+	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().CreateObject(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
@@ -119,7 +119,7 @@ func (cli *model) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3().Model().UpdateObject(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().UpdateObject(item, cond); nil != err {
 			return err
 		}
 	}
@@ -231,15 +231,15 @@ func (cli *model) CreateGroup() Group {
 
 func (cli *model) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
 	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
-	return newAttributeIterator(cond)
+	return newAttributeIterator(cli.OwnerID, cond)
 }
 func (cli *model) FindAttributesByCondition(cond common.Condition) (AttributeIterator, error) {
-	return newAttributeIterator(cond)
+	return newAttributeIterator(cli.OwnerID, cond)
 }
 func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
 	cond := common.CreateCondition().Field(GroupName).Like(groupName).Field(ObjectID).Eq(cli.GetID())
-	return newGroupIterator(cond)
+	return newGroupIterator(cli.OwnerID, cond)
 }
 func (cli *model) FindGroupsByCondition(cond common.Condition) (GroupIterator, error) {
-	return newGroupIterator(cond.Field(ObjectID).Eq(cli.GetID()))
+	return newGroupIterator(cli.OwnerID, cond.Field(ObjectID).Eq(cli.GetID()))
 }

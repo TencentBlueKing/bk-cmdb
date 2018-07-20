@@ -14,7 +14,8 @@
             ref="hosts"
             :isShowBiz="false" 
             :isShowCollect="false" 
-            :isShowHistory="false" 
+            :isShowHistory="false"
+            :isShowTransfer="false"
             :isShowScope="true"
             :outerParams="hosts.searchParams"
             @choose="setSelectedHost" 
@@ -44,7 +45,7 @@
                         </form>
                     </div>
                     <div class="btn-tooltip-wrapper" v-tooltip="$t('Common[\'删除\']')">
-                        <bk-button type="default" class="delete-button fl" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" @click="confirmDel">
+                        <bk-button type="default" class="delete-button fl" :class="{'disabled': !hasSelectedHost || $loading('deleteHosts')}" :disabled="!hasSelectedHost || $loading('deleteHosts')" @click="confirmDel">
                             <i class="icon-cc-del"></i>
                         </bk-button>
                     </div>
@@ -158,7 +159,7 @@
                 this.slider.tab.active = active
             },
             hasAssignedHosts () {
-                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['bk_biz_id'] !== 1))
+                return this.$refs.hosts.selectedList.find(host => !!host['biz'].find(biz => biz['default'] !== 1))
             },
             confirmTransfer (selected, index) {
                 if (this.hasAssignedHosts()) {
@@ -237,7 +238,8 @@
                             data: JSON.stringify({
                                 'bk_host_id': this.hosts.selectedHost.join(','),
                                 'bk_supplier_account': this.bkSupplierAccount
-                            })
+                            }),
+                            id: 'deleteHosts'
                         }).then(res => {
                             if (res.result) {
                                 this.$bkInfo({

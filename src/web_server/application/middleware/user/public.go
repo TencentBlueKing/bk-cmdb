@@ -124,6 +124,22 @@ func (m *publicUser) LoginUser(c *gin.Context, checkUrl string, isMultiOwner boo
 			blog.Error("get owner_uin info role error: %v", err)
 			return false
 		}
+		_, ok = userName.(string)
+		if false == ok {
+			blog.Error("get username info role error: %v", err)
+			return false
+		}
+		_, ok = language.(string)
+		if false == ok {
+			blog.Error("get language info role error: %v", err)
+			return false
+		}
+
+		err := NewOwnerManager(userName.(string), ownerID, language.(string)).InitOwner()
+		if nil != err {
+			blog.Error("InitOwner error: %v", err)
+			return false
+		}
 	}
 
 	cookielanguage, _ := c.Cookie("blueking_language")

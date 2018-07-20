@@ -47,8 +47,8 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	c.httpCli.SetHeader("Accept", "application/json")
 
 	c.disc = disc
-	c.SetSupplierAccount(conf.Get("core.supplierAccount"))
-	c.SetUser(conf.Get("core.user"))
+	c.supplierAccount = conf.Get("core.supplierAccount")
+	c.user = conf.Get("core.user")
 	c.SetAddress(conf.Get("core.ccaddress"))
 	return c
 }
@@ -88,24 +88,33 @@ func (cli *Client) SetAddress(address string) {
 
 // SetSupplierAccount set a new supplieraccount
 func (cli *Client) SetSupplierAccount(supplierAccount string) {
-	cli.supplierAccount = supplierAccount
-	cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
+	if 0 != len(supplierAccount) {
+		//fmt.Println("client owner:", supplierAccount)
+		//panic(supplierAccount)
+		cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
+	} else {
+		cli.httpCli.SetHeader(common.BKHTTPOwnerID, cli.supplierAccount)
+	}
+
 }
 
 // SetUser set a new user
 func (cli *Client) SetUser(user string) {
-	cli.user = user
-	cli.httpCli.SetHeader(common.BKHTTPHeaderUser, user)
+	if 0 != len(user) {
+		cli.httpCli.SetHeader(common.BKHTTPHeaderUser, user)
+	} else {
+		cli.httpCli.SetHeader(common.BKHTTPHeaderUser, cli.user)
+	}
 }
 
 // GetUser get the user
 func (cli *Client) GetUser() string {
-	return cli.user
+	return cli.httpCli.GetHeader(common.BKHTTPHeaderUser)
 }
 
 // GetSupplierAccount get the supplier account
 func (cli *Client) GetSupplierAccount() string {
-	return cli.supplierAccount
+	return cli.httpCli.GetHeader(common.BKHTTPOwnerID)
 }
 
 // GetAddress get the address

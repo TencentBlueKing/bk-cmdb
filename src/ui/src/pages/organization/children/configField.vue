@@ -24,7 +24,7 @@
                     <li v-for="(item, index) in shownList" 
                         @click="addItem(index)"
                         :key="index">
-                        {{item['bk_property_name']}}
+                        <span :title="item['bk_property_name']">{{item['bk_property_name']}}</span>
                         <i class="bk-icon icon-angle-right"></i>
                     </li>
                 </ul>
@@ -39,7 +39,7 @@
                     <div slot="contentRight">
                         <draggable class="content-right" v-model="localHasSelectionList" :options="{animation: 150}">
                             <div v-for="(item, index) in localHasSelectionList" :key="index" class="item">
-                                <i class="icon-triple-dot"></i><span>{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
+                                <i class="icon-triple-dot"></i><span :title="item['bk_property_name']">{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
                             </div>
                         </draggable>
                     </div>
@@ -347,6 +347,11 @@
                     &:hover{
                         background: #f9f9f9;
                     }
+                    span{
+                        display: inline-block;
+                        width: 230px;
+                        @include ellipsis;
+                    }
                     i{
                         float: right;
                         margin-top: 12px;
@@ -467,6 +472,12 @@
                         cursor: move;
                         &:hover{
                             background: #f9f9f9;
+                        }
+                        span{
+                            display: inline-block;
+                            width: 200px;
+                            @include ellipsis;
+                            vertical-align: bottom;
                         }
                         .icon-triple-dot{
                             position: relative;

@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	httpClient "configcenter/src/source_controller/api/client"
 	"fmt"
+	"net/http"
 )
 
 type Client struct {
@@ -28,13 +29,16 @@ type Client struct {
 // NewClient 创建审计日志操作接口
 // log OpDesc The multi-language version is used as the translation key.
 // There is no corresponding value in the language pack. The current content is displayed.
-func NewClient(address string) *Client {
+func NewClient(address string, header http.Header) *Client {
 
 	cli := &Client{}
 	cli.SetAddress(address)
 
 	cli.Base = base.BaseLogic{}
 	cli.Base.CreateHttpClient()
+	for key := range header {
+		cli.Base.HttpCli.SetHeader(key, header.Get(key))
+	}
 
 	return cli
 }

@@ -405,6 +405,7 @@ func getIPS(val *gjson.Result) (ips []string) {
 
 func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 	cloudid := val.Get("cloudid").String()
+	ownerID := val.Get("bizid").String()
 	/*if cloudid == "0" || cloudid == "" {
 		cloudid := common.BKCloudIDField
 	}*/
@@ -428,6 +429,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 			bkcommon.BKHostInnerIPField: map[string]interface{}{
 				bkcommon.BKDBIN: ips,
 			},
+			bkcommon.BKOwnerIDField: ownerID,
 		}
 		result := []map[string]interface{}{}
 		err = instdata.GetHostByCondition(nil, condition, &result, "", 0, 0)

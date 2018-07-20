@@ -43,6 +43,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	value, _ := ioutil.ReadAll(req.Request.Body)
 
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	params := make(map[string]interface{})
@@ -76,7 +77,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	//queryParams["CreateUser"] = params["User"] //libraries.GetOperateUser(req)
 	queryParams[common.BKAppIDField] = appID
 	queryParams["name"] = name
-
+	queryParams = util.SetModOwner(queryParams, ownerID)
 	rowCount, err := userAPI.CC.InstCli.GetCntByCondition(u.tableName, queryParams)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), queryParams)
@@ -96,6 +97,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 	params[common.CreateTimeField] = time.Now()
 	params["modify_user"] = ""
 	params[common.LastTimeField] = ""
+	params = util.SetModOwner(params, ownerID)
 	_, err = u.CC.InstCli.Insert(u.tableName, params)
 
 	if err != nil {
@@ -116,7 +118,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetActionOnwerID(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	ID := req.PathParameter("id")
@@ -134,6 +136,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	params := make(map[string]interface{})
 	params[common.BKFieldID] = ID
 	params[common.BKAppIDField] = appID
+	params = util.SetModOwner(params, ownerID)
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
 	if nil != err {
@@ -153,6 +156,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 		dupParams["name"] = newName
 		dupParams[common.BKAppIDField] = appID
 		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: ID}
+		dupParams = util.SetModOwner(dupParams, ownerID)
 
 		rowCount, getErr := u.CC.InstCli.GetCntByCondition(u.tableName, dupParams)
 		if nil != getErr {
@@ -184,6 +188,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 //Delete delete user api
 func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	ID := req.PathParameter("id")
@@ -192,6 +197,7 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 	params := make(map[string]interface{})
 	params[common.BKAppIDField] = appID
 	params["id"] = ID
+	params = util.SetModOwner(params, ownerID)
 
 	rowCount, err := u.CC.InstCli.GetCntByCondition(u.tableName, params)
 	if nil != err {
@@ -219,6 +225,7 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	var dat commondata.ObjQueryInput
@@ -264,6 +271,7 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 	}
 
 	condition[common.BKAppIDField] = appID
+	condition = util.SetModOwner(condition, ownerID)
 	//result := make([]interface{}, 0)
 	count, err := u.CC.InstCli.GetCntByCondition(u.tableName, condition)
 	if err != nil {
@@ -288,8 +296,8 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 
 //Detail use api detail
 func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
-
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetActionOnwerID(req)
 	defErr := u.CC.Error.CreateDefaultCCErrorIf(language)
 
 	appID, _ := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
@@ -298,6 +306,7 @@ func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
 	params := make(map[string]interface{})
 	params[common.BKAppIDField] = appID
 	params["id"] = ID
+	params = util.SetModOwner(params, ownerID)
 	var fieldArr []string
 
 	result := make(map[string]interface{})

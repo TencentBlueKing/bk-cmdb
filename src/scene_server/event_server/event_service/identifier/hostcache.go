@@ -13,10 +13,11 @@
 package identifier
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 )
 
 // HostIdentifier define
@@ -56,9 +57,7 @@ func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
 }
 
 func (iden *HostIdentifier) fillIden() *HostIdentifier {
-
 	for moduleID := range iden.Module {
-
 		biz, err := getCache(common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())

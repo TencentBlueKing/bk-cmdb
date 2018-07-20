@@ -55,7 +55,7 @@ func (a *procAuditAction) AddLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetActionOnwerID(req)
 	strAppID := req.PathParameter("biz_id")
 	appID, _ := strconv.Atoi(strAppID)
 	user := req.PathParameter("user")
@@ -96,7 +96,7 @@ func (a *procAuditAction) AddLogs(req *restful.Request, resp *restful.Response) 
 	language := util.GetActionLanguage(req)
 	defErr := a.CC.Error.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetActionOnwerID(req)
 	strAppID := req.PathParameter("biz_id")
 	appID, _ := strconv.Atoi(strAppID)
 	user := req.PathParameter("user")

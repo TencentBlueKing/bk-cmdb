@@ -143,7 +143,7 @@ func AddHost(req *restful.Request, ownerID string, appID int, hostInfos map[int]
 
 	if 0 < len(logConents) {
 
-		logAPIClient := sourceAuditAPI.NewClient(cc.AuditCtrl())
+		logAPIClient := sourceAuditAPI.NewClient(cc.AuditCtrl(), req.Request.Header)
 		_, err := logAPIClient.AuditHostsLog(logConents, "import host", ownerID, fmt.Sprintf("%d", appID), hostsInst.user, auditoplog.AuditOpTypeAdd)
 		//addAuditLogs(req, logAdd, "新加主机", ownerID, appID, user, auditAddr)
 		if nil != err {
@@ -280,7 +280,7 @@ func EnterIP(req *restful.Request, ownerID string, appID, moduleID int, ip strin
 	hostLogFields, _ := GetHostLogFields(req, ownerID, ObjAddr)
 	logObj := NewHostLog(req, common.BKDefaultOwnerID, "", hostAddr, ObjAddr, hostLogFields)
 	content, _ := logObj.GetHostLog(fmt.Sprintf("%d", hostID), false)
-	logAPIClient := sourceAuditAPI.NewClient(auditAddr)
+	logAPIClient := sourceAuditAPI.NewClient(auditAddr, req.Request.Header)
 	logAPIClient.AuditHostLog(hostID, content, "enter IP HOST", ip, ownerID, fmt.Sprintf("%d", appID), user, auditoplog.AuditOpTypeAdd)
 	logClient, err := NewHostModuleConfigLog(req, nil, hostAddr, ObjAddr, auditAddr)
 	logClient.SetHostID([]int{hostID})

@@ -174,7 +174,7 @@ func (cli *moduleAction) CreateModule(req *restful.Request, resp *restful.Respon
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditModuleLog(instID, auditContent, "create module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditModuleLog(instID, auditContent, "create module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeAdd)
 		}
 		return http.StatusOK, moduleRes, nil
 	}, resp)
@@ -272,7 +272,7 @@ func (cli *moduleAction) DeleteModule(req *restful.Request, resp *restful.Respon
 				PreData: preData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditModuleLog(instID, auditContent, "delete module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditModuleLog(instID, auditContent, "delete module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeDel)
 		}
 		return http.StatusOK, moduleRes, nil
 
@@ -397,7 +397,7 @@ func (cli *moduleAction) UpdateModule(req *restful.Request, resp *restful.Respon
 				CurData: curData,
 				Headers: headers,
 			}
-			auditlog.NewClient(cli.CC.AuditCtrl()).AuditModuleLog(instID, auditContent, "update module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
+			auditlog.NewClient(cli.CC.AuditCtrl(), req.Request.Header).AuditModuleLog(instID, auditContent, "update module", ownerID, fmt.Sprint(appID), user, auditoplog.AuditOpTypeModify)
 		}
 
 		return http.StatusOK, nil, nil

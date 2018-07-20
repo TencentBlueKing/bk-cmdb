@@ -187,7 +187,7 @@
                 </v-field>
             </div>
         </v-sideslider>
-        <v-host-transfer-pop
+        <v-host-transfer-pop v-if="isShowTransfer"
             :isShow.sync="transfer.isShow"
             :chooseId="table.chooseId"
             :hosts="selectedList"
@@ -237,6 +237,10 @@
                 type: Boolean,
                 default: true
             },
+            isShowTransfer: {
+                type: Boolean,
+                default: true
+            },
             isShowRefresh: {
                 type: Boolean,
                 default: false
@@ -276,7 +280,7 @@
                         count: 0
                     },
                     chooseId: [],
-                    isLoading: true
+                    isLoading: false
                 },
                 filter: {
                     queryColumns: [],

@@ -119,7 +119,7 @@ func handleInst(event *types.EventInstCtx) (err error) {
 	origindists := GetDistInst(&event.EventInst)
 
 	for _, origindist := range origindists {
-		subscribers := findEventTypeSubscribers(origindist.GetType())
+		subscribers := findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
 		if len(subscribers) <= 0 || "nil" == subscribers[0] {
 			blog.Infof("%v no subscriber，continue", origindist.GetType())
 			return SaveEventDone(event)
@@ -254,9 +254,9 @@ func saveRunning(key string, timeout time.Duration) (err error) {
 	return err
 }
 
-func findEventTypeSubscribers(eventtype string) []string {
+func findEventTypeSubscribers(eventtype string, ownerID string) []string {
 	redisCli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
-	return redisCli.SMembers(types.EventCacheSubscribeformKey + eventtype).Val()
+	return redisCli.SMembers(types.EventCacheSubscribeformKey + ownerID + ":" + eventtype).Val()
 }
 
 func popEventInst() *types.EventInstCtx {

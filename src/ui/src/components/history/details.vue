@@ -27,7 +27,7 @@
                     <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
-            <p class="field-btn" @click="toggleFields" v-if="this.details.op_type !== 1">
+            <p class="field-btn" @click="toggleFields" v-if="this.details.op_type !== 1 && this.details.op_type !== 3">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
         </template>
@@ -193,9 +193,7 @@
                 }
             },
             isShow (isShow) {
-                if (!isShow) {
-                    this.isShowAllFields = false
-                }
+                this.isShowAllFields = this.details.op_type === 1 || this.details.op_type === 3
             }
         },
         methods: {
