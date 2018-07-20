@@ -42,7 +42,7 @@
                         <span>{{$t('HostResourcePool[\'导出选中\']')}}</span>
                     </button>
                 </form>
-                <button class="bk-button icon-btn del-button fl mr10" :class="{'disabled': !hasSelectedHost}" :disabled="!hasSelectedHost" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
+                <button class="bk-button icon-btn del-button fl mr10" :class="{'disabled': !hasSelectedHost || $loading('deleteHosts')}" :disabled="!hasSelectedHost || $loading('deleteHosts')" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
                     <i class="icon-cc-del"></i>
                 </button>
                 <div class="fr">
@@ -233,7 +233,8 @@
                             data: JSON.stringify({
                                 'bk_host_id': this.hosts.selectedHost.join(','),
                                 'bk_supplier_account': this.bkSupplierAccount
-                            })
+                            }),
+                            id: 'deleteHosts'
                         }).then(res => {
                             if (res.result) {
                                 this.$bkInfo({
