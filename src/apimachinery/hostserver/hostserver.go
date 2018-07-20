@@ -63,6 +63,7 @@ type HostServerClientInterface interface {
 	GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.HostCloneInputParams) (resp *metadata.Response, err error)
+	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
 	GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
