@@ -20,7 +20,7 @@
                             <li class="attribute-item fl" v-if="!property['bk_isapi']" :key="propertyIndex">
                                 <template v-if="property['bk_property_type'] !== 'bool'">
                                     <span class="attribute-item-label has-colon" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
-                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property)}}</span>
+                                    <span class="attribute-item-value" :title="getFieldValue(property)">{{getFieldValue(property) === '' ? '--' : getFieldValue(property)}}</span>
                                 </template>
                                 <template v-else>
                                     <span class="attribute-item-label" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>

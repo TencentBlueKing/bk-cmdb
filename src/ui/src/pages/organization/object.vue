@@ -14,39 +14,44 @@
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
-                    <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
-                        <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
-                        <button class="bk-button" :disabled="!table.chooseId.length">
-                            <i class="icon-cc-derivation"></i>
-                            <span>{{$t("ModelManagement['导出']")}}</span>
-                        </button>
-                    </form>
-                    <button class="bk-button" @click="importSlider.isShow = true" :disabled="unauthorized.update">
-                        <i class="icon-cc-import"></i>
-                        <span>{{$t("ModelManagement['导入']")}}</span>
-                    </button>
-                    <bk-button type="default"
-                        :disabled="!table.chooseId.length && unauthorized.update" 
-                        @click="multipleUpdate">
-                        <i class="icon-cc-edit"></i>
-                        <span>{{$t("BusinessTopology['修改']")}}</span>
-                    </bk-button>
+                    <div class="bk-group bk-button-group mr10">
+                        <bk-button v-tooltip="$t('ModelManagement[\'导入\']')" type="default" class="bk-button vice-btn" @click="importSlider.isShow = true" :disabled="unauthorized.update">
+                            <i class="icon-cc-import"></i>
+                        </bk-button>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('ModelManagement[\'导出\']')">
+                            <form :action="exportUrl" ref="export" style="display: inline-block;" method="POST">
+                                <input type="hidden" :value="table.chooseId.join(',')" name="bk_inst_id">
+                                <bk-button btnType="submit" class="bk-button vice-btn first" :disabled="!table.chooseId.length" title="test">
+                                    <i class="icon-cc-derivation"></i>
+                                </bk-button>
+                            </form>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                            <bk-button type="default" class="vice-btn"
+                                :disabled="!table.chooseId.length" 
+                                @click="multipleUpdate">
+                                <i class="icon-cc-edit"></i>
+                            </bk-button>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('Common[\'删除\']')">
+                            <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" @click="confirmBatchDel">
+                                <i class="icon-cc-del"></i>
+                            </bk-button>
+                        </div>
+                    </div>
                 </template>
-                <button class="bk-button bk-primary bk-button-componey create-btn" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
-                <button v-if="objId !== 'biz'" class="bk-button icon-btn del-button mr10" :disabled="!table.chooseId.length" v-tooltip="$t('Common[\'删除\']')" @click="confirmBatchDel">
-                    <i class="icon-cc-del"></i>
-                </button>
+                <button class="bk-button bk-primary bk-button-componey create-btn mr10" @click="openObjectSlider('create')" :disabled="unauthorized.update">{{$t("Inst['立即创建']")}}</button>
             </div>
-            <div class="fr btn-group">
-                <button v-if="objId !== 'biz'" class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
+            <div class="fr bk-group bk-button-group">
+                <bk-button v-if="objId !== 'biz'" class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看删除历史\']')">
                     <i class="icon-cc-history"></i>
-                </button>
-                <button v-else class="bk-button setting" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
+                </bk-button>
+                <bk-button v-else class="bk-button ml10" @click="filing.isShow = true" v-tooltip="$t('Common[\'查看归档历史\']')">
                     <i class="icon-cc-history2"></i>
-                </button>
-                <button class="bk-button setting" @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                </bk-button>
+                <bk-button class="bk-button " @click="settingSlider.isShow = true" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <i class="icon-cc-setting"></i>
-                </button>
+                </bk-button>
             </div>
             <div class="quick-search fr">
                 <div class="fl left-select">
@@ -148,11 +153,13 @@
         </v-sideslider>
         <v-sideslider :isShow.sync="settingSlider.isShow" :hasQuickClose="true" :width="600" :title="settingSlider.title">
             <v-config-field 
+                ref="configField"
                 slot="content"
                 :isShow="settingSlider.isShow"
                 :attrList="attr.formFields"
                 @apply="settingApply"
                 @cancel="settingSlider.isShow = false"
+                @resetFields="resetFields"
                 :objId="objId">
             </v-config-field>
         </v-sideslider>
@@ -366,6 +373,10 @@
             }
         },
         methods: {
+            async resetFields () {
+                await this.getTableHeader()
+                this.$refs.configField.getUserAttr()
+            },
             multipleUpdate () {
                 this.tab.activeName = 'attr'
                 this.slider.isShow = true
@@ -800,38 +811,6 @@
             background: #4d597d;
         }
     }
-    .vice-btn{  //次要按钮 取消按钮
-        border: 1px solid #e6e9f2;
-        color:  $primaryHoverColor;
-        cursor: pointer;
-        &:hover{
-            border-color: $primaryHoverColor;
-        }
-    }
-    .icon-btn{  //单纯图标的按钮
-        background: #ffffff;
-        color: $primaryHoverColor;
-        cursor: pointer;
-        &:hover{
-            color: $defaultColor;
-        }
-    }
-    .icon-btn{
-        width: 36px;
-        padding: 0;
-        color: #737987;
-        &:not(:disabled):hover{
-            border-color: #ef4c4c;
-            .icon-cc-del{
-                color: #ef4c4c;
-            }
-        }
-        &:disabled{
-            .icon-cc-del{
-                color: #ccc;
-            }
-        }
-    }
     .no-border-btn{    //无边框按钮
         background: #fff;
         color: $primaryHoverColor;
@@ -845,7 +824,6 @@
         font-size: 0;
     }
     .bk-button{
-        margin-right: 10px;
         &.import,
         &.export,
         &.setting{
