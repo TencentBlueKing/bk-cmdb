@@ -32,24 +32,29 @@
                         :label="bkBiz['bk_biz_name']">
                     </bk-select-option>
                 </bk-select>
-                <form ref="exportForm" :action="exportUrl" method="POST" class="fl mr10">
-                    <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
-                    <input type="hidden" name="bk_biz_id" value="-1">
-                    <button class="bk-button"
-                        :disabled="!hasSelectedHost"
-                        @click.prevent="exportChoose">
-                        <i class="icon-cc-derivation"></i>
-                        <span>{{$t('HostResourcePool[\'导出选中\']')}}</span>
-                    </button>
-                </form>
-                <button class="bk-button icon-btn del-button fl mr10" :class="{'disabled': !hasSelectedHost || $loading('deleteHosts')}" :disabled="!hasSelectedHost || $loading('deleteHosts')" v-tooltip="$t('Common[\'删除\']')" @click="confirmDel">
-                    <i class="icon-cc-del"></i>
-                </button>
+                <div class="fl bk-group bk-button-group">
+                    <div class="btn-tooltip-wrapper" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
+                        <form ref="exportForm" :action="exportUrl" method="POST" class="fl">
+                            <input type="hidden" name="bk_host_id" :value="hosts.selectedHost">
+                            <input type="hidden" name="bk_biz_id" value="-1">
+                            <bk-button type="default" class="first"
+                                :disabled="!hasSelectedHost"
+                                @click.prevent="exportChoose">
+                                <i class="icon-cc-derivation"></i>
+                            </bk-button>
+                        </form>
+                    </div>
+                    <div class="btn-tooltip-wrapper" v-tooltip="$t('Common[\'删除\']')">
+                        <bk-button type="default" class="delete-button fl" :class="{'disabled': !hasSelectedHost || $loading('deleteHosts')}" :disabled="!hasSelectedHost || $loading('deleteHosts')" @click="confirmDel">
+                            <i class="icon-cc-del"></i>
+                        </bk-button>
+                    </div>
+                </div>
                 <div class="fr">
                     <bk-button type="primary" class="fl" @click="importHostShow">{{$t('HostResourcePool[\'导入主机\']')}}</bk-button>
-                    <button class="bk-button icon-btn icon-history fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">
+                    <bk-button class="icon-btn icon-history fl ml10" @click="showFiling" v-tooltip="$t('Common[\'查看删除历史\']')">
                         <i class="icon-cc-history"></i>
-                    </button>
+                    </bk-button>
                 </div>
             </div>
         </v-hosts>
@@ -313,6 +318,8 @@
         width: 200px;
     }
     .icon-cc-history{
+        position: relative;
+        top: -1px;
         font-size: 16px;
     }
     .icon-btn{
