@@ -20,7 +20,9 @@ import (
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 )
 
 type ProcServer struct {
@@ -61,10 +63,78 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
 	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
 	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
+	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)
 
 	return container
+}
+
+func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// object controller
+	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
+		objCtr.IsHealthy = false
+		objCtr.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, objCtr)
+
+	// audit controller
+	auditCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_AUDITCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_AUDITCONTROLLER); err != nil {
+		auditCtrl.IsHealthy = false
+		auditCtrl.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, auditCtrl)
+
+	// host controller
+	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
+		hostCtrl.IsHealthy = false
+		hostCtrl.Message = err.Error()
+	}
+
+	// host controller
+	procCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROCCONTROLLER}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
+		procCtrl.IsHealthy = false
+		procCtrl.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, procCtrl)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "proc server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_HOST,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {

@@ -696,5 +696,14 @@ const (
 )
 
 const (
+	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
 	APPConfigWaitTime = 15
+)
+
+const (
+	// URLFilterWhiteList url filter white list not execute any filter
+	// multiple url separeted by commas
+	URLFilterWhiteListSuffix = "/healthz"
+
+	URLFilterWhiteListSepareteChar = ","
 )
