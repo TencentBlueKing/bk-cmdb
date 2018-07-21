@@ -621,3 +621,95 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
+
+func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
+
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	user := util.GetUser(pheader)
+	var data meta.SetHostConfigParams
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("update host batch failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	//get host in set
+	condition := make(map[string][]int64)
+	hostIDArr := make([]int64, 0)
+	if 0 != data.SetID {
+		condition[common.BKSetIDField] = []int64{data.SetID}
+	}
+	if 0 != data.ModuleID {
+		condition[common.BKModuleIDField] = []int64{data.ModuleID}
+	}
+
+	condition[common.BKAppIDField] = []int64{data.ApplicationID}
+	hostResult, err := s.Logics.GetConfigByCond(pheader, condition) //logics.GetConfigByCond(req, m.CC.HostCtrl(), condition)
+	if nil != err {
+		blog.Errorf("read host from application  error:%v", err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	if 0 == len(hostResult) {
+		blog.Errorf("no host in set")
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
+	for _, cell := range hostResult {
+		hostIDArr = append(hostIDArr, cell[common.BKHostIDField])
+	}
+
+	getModuleCond := make([]meta.ConditionItem, 0)
+	getModuleCond = append(getModuleCond, meta.ConditionItem{Field: common.BKDefaultField, Operator: common.BKDBEQ, Value: common.DefaultResModuleFlag})
+	getModuleCond = append(getModuleCond, meta.ConditionItem{Field: common.BKModuleNameField, Operator: common.BKDBEQ, Value: common.DefaultResModuleName})
+	getModuleCond = append(getModuleCond, meta.ConditionItem{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: data.ApplicationID})
+
+	moduleIDArr, err := s.Logics.GetModuleIDByCond(pheader, getModuleCond) //GetSingleModuleID(req, conds, m.CC.ObjCtrl())
+	if nil != err || 0 == len(moduleIDArr) {
+		blog.Errorf("module params   error:%v", err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+	moduleID := moduleIDArr[0]
+
+	moduleHostConfigParams := make(map[string]interface{})
+	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
+	audit := s.Logics.NewHostModuleLog(pheader, hostIDArr)
+
+	for _, hostID := range hostIDArr {
+
+		bl, err := s.Logics.IsHostExistInApp(data.ApplicationID, hostID, pheader)
+		if nil != err {
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPPFail)})
+			return
+		}
+		if false == bl {
+			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPP)})
+			return
+		}
+		moduleHostConfigParams := meta.ModuleHostConfigParams{HostID: hostID, ApplicationID: data.ApplicationID}
+
+		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
+		if nil != err || !result.Result {
+			blog.Errorf("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		moduleHostConfigParams = meta.ModuleHostConfigParams{HostID: hostID, ModuleID: []int64{moduleID}, ApplicationID: data.ApplicationID}
+		result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
+		if nil != err || !result.Result {
+			blog.Error("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+	}
+
+	audit.SaveAudit(strconv.FormatInt(data.ApplicationID, 10), user, "host to empty module")
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+	return
+}

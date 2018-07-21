@@ -68,6 +68,9 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/hosts/search").To(s.SearchHost))
 	ws.Route(ws.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	ws.Route(ws.PUT("/hosts/batch").To(s.UpdateHostBatch))
+	ws.Route(ws.PUT("/hosts/property/clone").To(s.CloneHostProperty))
+	ws.Route(ws.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
+
 	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
 	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
 	ws.Route(ws.DELETE("/userapi/{bk_biz_id}/{id}").To(s.DeleteUserCustomQuery))
@@ -86,7 +89,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/gethostsbyproperty").To(s.HostSearchByProperty))
 	ws.Route(ws.POST("/getIPAndProxyByCompany").To(s.GetIPAndProxyByCompany))
 	ws.Route(ws.PUT("/openapi/updatecustomproperty").To(s.UpdateCustomProperty))
-	ws.Route(ws.PUT("openapi/host/clonehostproperty").To(s.CloneHostProperty))
 	ws.Route(ws.POST("/openapi/host/getHostAppByCompanyId").To(s.GetHostAppByCompanyId))
 	ws.Route(ws.DELETE("/openapi/host/delhostinapp").To(s.DelHostInApp))
 	ws.Route(ws.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
