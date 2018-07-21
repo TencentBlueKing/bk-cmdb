@@ -18,10 +18,13 @@ import (
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/storage"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
@@ -59,10 +62,62 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
 	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))
 	ws.Route(ws.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
+	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)
 
 	return container
+}
+
+func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := ps.Core.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// mongodb status
+	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
+	if err := ps.DbInstance.Ping(); err != nil {
+		mongoItem.IsHealthy = false
+		mongoItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, mongoItem)
+
+	// redis status
+	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
+	if err := ps.CacheDI.Ping().Err(); err != nil {
+		redisItem.IsHealthy = false
+		redisItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, redisItem)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "audit controller is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_PROCCONTROLLER,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.WriteJson(answer, "application/json")
 }
 
 func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfig) {

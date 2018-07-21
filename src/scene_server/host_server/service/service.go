@@ -128,8 +128,8 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
 	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
-		auditCtrl.IsHealthy = false
-		auditCtrl.Message = err.Error()
+		hostCtrl.IsHealthy = false
+		hostCtrl.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, hostCtrl)
 
