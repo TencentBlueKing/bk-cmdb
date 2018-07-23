@@ -103,8 +103,10 @@
                 }
             },
             handleClickoutside () {
-                this.isShow = false
-                this.$emit('hide')
+                if (this.isShow) {
+                    this.isShow = false
+                    this.$emit('hide')
+                }
             }
         }
     }
