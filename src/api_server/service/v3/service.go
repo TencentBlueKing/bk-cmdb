@@ -53,9 +53,7 @@ func (s *Service) V3WebService() *restful.WebService {
 	}
 	ws.Path(rootPath).
 		Filter(rdapi.AllGlobalFilter(getErrFun)).
-		Produces(restful.MIME_JSON).
-		Consumes(restful.MIME_JSON)
-
+		Produces(restful.MIME_JSON)
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
