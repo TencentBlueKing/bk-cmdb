@@ -77,3 +77,11 @@ type IPParam struct {
 	Data    []string `json:"data"`
 	CloudID *int64   `json:"bk_cloud_id"`
 }
+
+type SearchHostIdentifierResult struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int              `json:"count"`
+		Info  []HostIdentifier `json:"info"`
+	} `json:"data"`
+}
