@@ -26,11 +26,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/eventdata"
 	"configcenter/src/source_controller/common/instdata"
 )
 
@@ -80,7 +80,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	// send events
 	if len(originDatas) > 0 {
-		ec := eventdata.NewEventContextByReq(req)
+		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		for _, originData := range originDatas {
 			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
 			if err != nil {
@@ -153,7 +153,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 		if err := instdata.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
 			blog.Error("create event error:%v", err)
 		} else {
-			ec := eventdata.NewEventContextByReq(req)
+			ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 			idname := instdata.GetIDNameByType(objType)
 			for _, originData := range originDatas {
 				newData := map[string]interface{}{}
@@ -256,7 +256,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	if err := instdata.GetObjectByID(objType, nil, id, origindata, ""); err != nil {
 		blog.Error("create event error:%v", err)
 	} else {
-		ec := eventdata.NewEventContextByReq(req)
+		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
 		if err != nil {
 			blog.Error("create event error:%v", err)
