@@ -14,6 +14,7 @@ package service
 
 import (
 	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -28,6 +29,7 @@ import (
 type Service struct {
 	Core     *backbone.Engine
 	Instance storage.DI
+	Cache    *redis.Client
 }
 
 func (s *Service) WebService() *restful.WebService {
@@ -120,6 +122,14 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		mongoItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, mongoItem)
+
+	// redis status
+	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
+	if err := s.Cache.Ping().Err(); err != nil {
+		redisItem.IsHealthy = false
+		redisItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

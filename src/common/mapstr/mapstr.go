@@ -41,7 +41,12 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return MapStr{}, nil
 	case *map[string]interface{}:
 		return MapStr(*tmp), nil
-
+	case map[string]string:
+		result := New()
+		for key, val := range tmp {
+			result.Set(key, val)
+		}
+		return result, nil
 	case map[string]interface{}:
 		return MapStr(tmp), nil
 	}
