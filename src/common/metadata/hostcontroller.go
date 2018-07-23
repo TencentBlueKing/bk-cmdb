@@ -59,6 +59,7 @@ type HistoryMeta struct {
 	User       string    `json:"user,omitempty" bson:"user,omitempty"`
 	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type HistoryResult struct {
@@ -126,6 +127,7 @@ type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
 	ModuleID      []int64 `json:"bk_module_id"`
+	OwnerID       string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type UserConfig struct {
@@ -170,6 +172,7 @@ type FavouriteMeta struct {
 	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
 	User        string    `json:"user,omitempty" bson:"user,omitempty"`
 	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
+	OwnerID     string    `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
 	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
 	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
@@ -189,6 +192,7 @@ type UserConfigMeta struct {
 	CreateUser string      `json:"create_user,omitempty" bson:"create_user,omitempty"`
 	ModifyUser string      `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
 	UpdateTime interface{} `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type AddConfigQuery struct {

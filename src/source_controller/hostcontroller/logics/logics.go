@@ -38,7 +38,7 @@ const (
 )
 
 //DelSingleHostModuleRelation delete single host module relation
-func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64, ownerID string) (bool, error) {
 
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{}, 0)
@@ -58,6 +58,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hos
 	}
 
 	delCondition := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID}
+	delCondition = util.SetModOwner(delCondition, ownerID)
 	num, numError := lgc.Instance.GetCntByCondition(ModuleHostCollection, delCondition)
 	if numError != nil {
 		blog.Errorf("delete single host relation, but get module host relation failed, err: %v", numError)
@@ -94,7 +95,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hos
 }
 
 //AddSingleHostModuleRelation add single host module relation
-func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64, ownerID string) (bool, error) {
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{})
 	errHost := lgc.GetObjectByID(common.BKInnerObjIDHost, hostFieldArr, hostID, &hostResult, common.BKHostIDField)
@@ -136,6 +137,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hos
 	}
 
 	moduleHostConfig[common.BKSetIDField] = setID
+	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 	_, err = lgc.Instance.Insert(common.BKTableNameModuleHostConfig, moduleHostConfig)
 	if err != nil {
 		blog.Errorf("add single host module relation, add module host relation error:", err.Error())

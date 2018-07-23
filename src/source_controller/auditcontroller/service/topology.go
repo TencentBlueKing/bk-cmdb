@@ -29,7 +29,7 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
@@ -60,7 +60,7 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
@@ -92,7 +92,7 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
@@ -124,7 +124,7 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
@@ -156,7 +156,7 @@ func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	ownerID := req.PathParameter("owner_id")
+	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
 
