@@ -45,7 +45,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	ws.Route(ws.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
-	ws.Route(ws.POST("/hosts/addhost").To(s.AddHost))
+	ws.Route(ws.POST("/hosts/add").To(s.AddHost))
 	ws.Route(ws.POST("/host/add/agent").To(s.AddHostFromAgent))
 	ws.Route(ws.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	ws.Route(ws.POST("hosts/favorites/search").To(s.GetHostFavourites))
