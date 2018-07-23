@@ -50,7 +50,10 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 	}
 
 	if rsp.Result {
-
+		tmpData, ok := rsp.Data.([]interface{})
+		if !ok || 0 == len(tmpData) {
+			goto CreateLabel
+		}
 		rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 		if nil != err {
 			blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
@@ -64,7 +67,7 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 
 		return nil
 	}
-
+CreateLabel:
 	rsp, err = r.client.ObjectController().Privilege().CreateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 
 	if nil != err {

@@ -27,6 +27,7 @@ import (
 
 // GetRolePri get role privilege
 func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
+	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -51,9 +52,10 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	}
 	privilege, ok := result["privilege"]
 	if !ok {
-		blog.Error("get role pri field error :%v", err)
+		blog.Errorf("not privilege, the origin data is %#v", result)
 		info := make(map[string]interface{})
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
+		return
 
 	}
 
@@ -62,6 +64,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
 //CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
+	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -101,6 +104,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 
 //UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
+	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
