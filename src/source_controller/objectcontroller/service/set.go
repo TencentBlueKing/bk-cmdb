@@ -19,6 +19,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/common/eventclient"
+
 	"github.com/emicklei/go-restful"
 	"gopkg.in/mgo.v2/bson"
 
@@ -26,7 +28,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/eventdata"
 )
 
 func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) {
@@ -101,7 +102,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	}
 
 	//发送删除主机关系事件
-	ec := eventdata.NewEventContextByReq(req, cli.Cache)
+	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 	for oldContent := range oldContents {
 		err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionDelete, oldContent, nil)
 		if err != nil {
