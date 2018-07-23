@@ -196,7 +196,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 
 	results := make([]meta.Classification, 0)
 
-	selector = util.SetModOwner(selector, ownerID)
+	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error: %s", selerr.Error())
@@ -235,7 +235,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	delete(selector, "page")
 
 	clsResults := make([]meta.ObjClassificationObject, 0)
-	selector = util.SetModOwner(selector, ownerID)
+	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &clsResults, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error:%s", selerr.Error())
@@ -250,7 +250,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 			"bk_classification_id": tmpobj.ClassificationID,
 			common.BKOwnerIDField:  ownerID,
 		}
-		selector = util.SetModOwner(selector, ownerID)
+		selector = util.SetQueryOwner(selector, ownerID)
 		if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &clsResults[tmpidx].Objects, "", 0, common.BKNoLimit); nil != selerr {
 			blog.Error("select data failed, error:%s", selerr.Error())
 			continue

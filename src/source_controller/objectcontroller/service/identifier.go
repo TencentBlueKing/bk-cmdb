@@ -73,7 +73,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 			},
 		},
 	}
-	condition = util.SetModOwner(condition, ownerID)
+	condition = util.SetQueryOwner(condition, ownerID)
 
 	// fetch hosts
 	hosts := []*metadata.HostIdentifier{}

@@ -29,6 +29,7 @@ import (
 
 func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -53,6 +54,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	blog.Debug("query;%v", query)
 	fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
 	var result []interface{}
+	query = util.SetModOwner(query, ownerID)
 	err = cli.Instance.GetMutilByCondition("cc_Proc2Module", fields, query, &result, common.BKHostIDField, 0, 100000)
 	if err != nil {
 		blog.Error("fail to get module proc config %v", err)
@@ -77,6 +79,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	procQuery[common.BKProcIDField] = map[string]interface{}{
 		"$in": processIdArr,
 	}
+	procQuery = util.SetModOwner(procQuery, ownerID)
 	var resultProc []interface{}
 	err = cli.Instance.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
 	blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)

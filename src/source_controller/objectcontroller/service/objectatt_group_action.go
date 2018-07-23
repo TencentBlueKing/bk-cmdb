@@ -144,7 +144,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 
 	page := meta.ParsePage(condition["page"])
 	delete(condition, "page")
-	condition = util.SetModOwner(condition, ownerID)
+	condition = util.SetQueryOwner(condition, ownerID)
 
 	results := make([]meta.Group, 0)
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNamePropertyGroup, nil, condition, &results, page.Sort, page.Start, page.Limit); nil != selerr {
@@ -334,7 +334,7 @@ func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *re
 		page.Sort = "bk_group_name"
 	}
 	delete(groupSelector, "page")
-	groupSelector = util.SetModOwner(groupSelector, ownerID)
+	groupSelector = util.SetQueryOwner(groupSelector, ownerID)
 
 	blog.Debug("group property selector %+v", groupSelector)
 	results := make([]meta.Group, 0)

@@ -227,7 +227,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 
 	condition := map[string]interface{}{"id": id}
-	condition = util.SetModOwner(condition, ownerID)
+	condition = util.SetQueryOwner(condition, ownerID)
 	// select from storage
 	result := make([]meta.Attribute, 0)
 	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAttDes", nil, condition, &result, "", 0, 0); nil != selErr {
@@ -281,7 +281,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
-	selector = util.SetModOwner(selector, ownerID)
+	selector = util.SetQueryOwner(selector, ownerID)
 
 	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAttDes", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 		blog.Error("find object by selector failed, error information is %s", selErr.Error())
