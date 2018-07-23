@@ -9,36 +9,21 @@
  */
 
 <template>
-    <ul class="tree-wrapper" :class="treeType">
+    <ul class="tree-wrapper list">
         <tree-item class="root" :key='index' v-for="(item, index) in treeDataSource"
         :model.sync="item"
-        :hasCheckbox="hasCheckbox"
         :trees.sync="treeDataSource"
         :callback="callback"
+        :detailCallback="detailCallback"
         :expand="expand"
-        :treeType="treeType"
-        :pageTurning="pageTurning"
-        :pageSize="pageSize"
         ></tree-item>
     </ul>
 </template>
 
 <script type="text/javascript">
     import treeItem from './treeItem'
-    import $ from 'jquery'
     export default {
         props: {
-            pageSize: {
-                type: Function
-            },
-            pageTurning: {
-                type: Function
-            },
-            // 树形图类型 默认为空 可选值 list
-            treeType: {
-                type: String,
-                default: ''
-            },
             // 点击展开回调
             expand: {
                 type: Function
@@ -54,12 +39,8 @@
                 default: false,
                 type: Boolean
             },
-            /*
-                是否包含有checkbox
-            */
-            hasCheckbox: {
-                default: false,
-                type: Boolean
+            detailCallback: {
+                type: Function
             }
         },
         data () {
@@ -145,111 +126,6 @@
         border-bottom: 0;
         .tree-item-wrapper{
             border-bottom: 1px solid #bec6de;
-        }
-    }
-</style>
-
-<style lang="scss">
-    $borderColor: #bec6de;
-    .tree-wrapper.list{
-        .tree-item-wrapper{
-            color: #6b7baa;
-            padding: 0;
-            &:before{
-                width: 0;
-                height: 0;
-            }
-            &:after{
-                width: 0;
-                height: 0;
-            }
-            .item-active{
-                background: #f1f7ff;
-                .item-name{
-                    color: #6b7baa;
-                    &.active{
-                        color: #3c96ff;
-                        .icon{
-                            color: #3c96ff;
-                        }
-                        .icon-none{
-                            background: #3c96ff;
-                        }
-                    }
-                }
-            }
-        }
-        .root{
-            >.item{
-                &.open{
-                    border-bottom: 1px solid $borderColor;
-                }
-                .tree-icon{
-                    left: 0;
-                }
-            }
-            .item{
-                height: 36px;
-                line-height: 36px;
-                paddint-top: 15px;
-                &:hover{
-                    background: #f1f7ff;
-                }
-                &:before{
-                    padding: 0;
-                    width: 0;
-                    height: 0;
-                }
-                .item-name{
-                    border-right-width: 13px;
-                    .icon{
-                        margin-right: 10px;
-                        vertical-align: text-bottom;
-                        font-size: 14px;
-                        color: #ffb400;
-                    }
-                    .icon-none{
-                        display: inline-block;
-                        margin-top: -2px;
-                        margin-right: 8px;
-                        border-radius: 2px;
-                        width: 10px;
-                        height: 10px;
-                        background: #c3cdd7;
-                    }
-                    .count{
-                        float: right;
-                        display: inline-block;
-                        vertical-align: text-bottom;
-                        margin-top: 11px;
-                        margin-left: 10px;
-                        color: #ffb80f;
-                        background: #fff7e5;
-                        border-radius: 7px;
-                        height: 14px;
-                        font-size: 12px;
-                        line-height: 14px;
-                        padding: 0 8px;
-                    }
-                }
-                .tree-icon{
-                    top: 10px;
-                    font-size: 14px;
-                    color: #498fe0;
-                    background: none;
-                    transition: all .2s;
-                }
-                .tree-icon-open{
-                    transform: rotate(-135deg);
-                }
-                .tree-icon-close{
-                    color: #bec6de;
-                    transform: rotate(-180deg);
-                }
-                .item-loading{
-                    top: 10px;
-                }
-            }
         }
     }
 </style>

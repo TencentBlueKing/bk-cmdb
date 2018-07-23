@@ -15,7 +15,7 @@ import Router from 'vue-router'
 
 Vue.use(Router)
 
-const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index-v2')
+const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index-v3')
 const pageHosts = () => import(/* webpackChunkName: "page-hosts" */ '@/pages/hosts/hosts')
 const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
 const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
@@ -34,6 +34,7 @@ var routerVue = new Vue({
     },
     methods: {
         ...mapMutations(['setGlobalLoading']),
+        ...mapMutations('navigation', ['updateHistoryCount']),
         async isAuthorized (to) {
             await this.$store.dispatch('navigation/getAuthority')
             await Promise.all([this.$store.dispatch('navigation/getClassifications'), this.$store.dispatch('usercustom/getUserCustom')])
@@ -115,6 +116,7 @@ var router = new Router({
 
 router.beforeEach(async (to, from, next) => {
     routerVue.setGlobalLoading(true)
+    routerVue.updateHistoryCount(-1)
     let isAuthorized = await routerVue.isAuthorized(to)
     if (isAuthorized) {
         if (!to.matched.some(({meta}) => meta.setBkBizId)) {
