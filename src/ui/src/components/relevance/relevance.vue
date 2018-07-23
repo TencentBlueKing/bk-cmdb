@@ -10,7 +10,7 @@
                 </li>
             </ul>
             <div class="btn-group">
-                <span class="resize-btn" @click="resizeFull()" v-if="currentComponent === 'v-topo'" :title="$t('Common[\'全屏\']')">
+                <span class="resize-btn" @click="resizeFull()" v-if="currentComponent === 'v-topo'" v-tooltip="$t('Common[\'全屏\']')">
                     <i class="icon-cc-resize-full"></i>
                 </span>
                 <bk-button type="primary" class="btn btn-add"
