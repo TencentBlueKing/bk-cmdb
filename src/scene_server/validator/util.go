@@ -42,10 +42,14 @@ func getBool(val interface{}) bool {
 	return false
 }
 
-// fillLostedFieldValue fill the value in inst map data
-func (valid *ValidMap) fillLostedFieldValue(valData map[string]interface{}, propertys map[string]metadata.Attribute) {
+// FillLostedFieldValue fill the value in inst map data
+func FillLostedFieldValue(valData map[string]interface{}, propertys map[string]metadata.Attribute, ignorefields []string) {
+	ignores := map[string]bool{}
+	for _, field := range ignorefields {
+		ignores[field] = true
+	}
 	for _, field := range propertys {
-		if valid.require[field.PropertyID] {
+		if ignores[field.PropertyID] {
 			continue
 		}
 		_, ok := valData[field.PropertyID]
