@@ -53,7 +53,6 @@
                             :timer="true"
                             :start-date="property.value.split(' - ')[0]"
                             :end-date="property.value.split(' - ')[1]"
-                            :init-date="property.value"
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
                     </span>
@@ -220,6 +219,11 @@
                         id: 'module',
                         name: this.$t("Hosts['模块']"),
                         properties: []
+                    },
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: []
                     }
                 },
                 selectedObjId: 'host',
@@ -231,7 +235,8 @@
                 operatorMap: {
                     'time': '$in',
                     'enum': '$eq'
-                }
+                },
+                saveSuccess: false
             }
         },
         computed: {
@@ -388,15 +393,17 @@
                 this.attribute.isShow = isShow
             },
             isCloseConfirmShow () {
-                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
-                    return true
-                }
-                for (let i = 0; i < this.userProperties.length; i++) {
-                    let property = this.userProperties[i]
-                    let propertyCopy = this.dataCopy.userProperties[i]
-                    for (let key in property) {
-                        if (property[key] !== propertyCopy[key]) {
-                            return true
+                if (!this.saveSuccess) {
+                    if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                        return true
+                    }
+                    for (let i = 0; i < this.userProperties.length; i++) {
+                        let property = this.userProperties[i]
+                        let propertyCopy = this.dataCopy.userProperties[i]
+                        for (let key in property) {
+                            if (property[key] !== propertyCopy[key]) {
+                                return true
+                            }
                         }
                     }
                 }
@@ -424,11 +431,12 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
+                .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
                     this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
@@ -608,6 +616,7 @@
             resetDefine () {
                 this.isPropertiesShow = false
                 this.isPreviewShow = false
+                this.saveSuccess = false
                 this.name = ''
                 this.userProperties = []
                 this.attribute.selected = this.attribute.default.map(({bk_property_id: bkPropertyId}) => bkPropertyId).join(',')
