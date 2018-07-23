@@ -137,7 +137,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 //valid char
 func (valid *ValidMap) validChar(val interface{}, key string) error {
-	if nil == val {
+	if nil == val || "" == val {
 		blog.Error("params in need")
 		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 	}
@@ -180,7 +180,7 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 
 //valid long char
 func (valid *ValidMap) validLongChar(val interface{}, key string) error {
-	if nil == val {
+	if nil == val || "" == val {
 		blog.Error("params in need")
 		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 	}

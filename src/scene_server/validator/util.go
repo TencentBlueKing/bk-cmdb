@@ -52,9 +52,9 @@ func (valid *ValidMap) fillLostedFieldValue(valData map[string]interface{}, prop
 		if !ok {
 			switch field.PropertyType {
 			case common.FieldTypeSingleChar:
-				valData[field.PropertyID] = nil
+				valData[field.PropertyID] = ""
 			case common.FieldTypeLongChar:
-				valData[field.PropertyID] = nil
+				valData[field.PropertyID] = ""
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
