@@ -69,6 +69,7 @@ type ValidMap struct {
 	errif   errors.DefaultCCErrorIf
 
 	propertys     map[string]metadata.Attribute
+	propertyslice []metadata.Attribute
 	require       map[string]bool
 	requirefields []string
 	isOnly        map[string]bool
