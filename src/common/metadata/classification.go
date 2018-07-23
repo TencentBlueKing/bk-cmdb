@@ -30,6 +30,7 @@ type Classification struct {
 	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
 	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
 	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bason:"bk_classification_icon"`
+	OwnerID            string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
 }
 
 // Parse load the data from mapstr classification into classification instance
