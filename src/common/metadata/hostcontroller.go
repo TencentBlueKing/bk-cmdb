@@ -112,10 +112,11 @@ type AssignHostToAppParams struct {
 }
 
 type ModuleHost struct {
-	AppID    int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	HostID   int64 `json:"bk_host_id" bson:"bk_host_id"`
-	ModuleID int64 `json:"bk_module_id" bson:"bk_module_id"`
-	SetID    int64 `json:"bk_set_id" bson:"bk_set_id"`
+	AppID    int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`
+	ModuleID int64  `json:"bk_module_id" bson:"bk_module_id"`
+	SetID    int64  `json:"bk_set_id" bson:"bk_set_id"`
+	OwnerID  string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type HostConfig struct {
