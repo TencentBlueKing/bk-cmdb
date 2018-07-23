@@ -101,7 +101,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	}
 
 	//发送删除主机关系事件
-	ec := eventdata.NewEventContextByReq(req)
+	ec := eventdata.NewEventContextByReq(req, cli.Cache)
 	for oldContent := range oldContents {
 		err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionDelete, oldContent, nil)
 		if err != nil {
