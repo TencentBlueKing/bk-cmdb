@@ -43,7 +43,21 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	cond[common.BKObjIDField] = objID
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
-	err := cli.Instance.GetOneByCondition(common.BKTableNamePrivilege, []string{}, cond, &result)
+
+	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
+	if nil != err {
+		blog.Error("get user group privi error :%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+	if 0 == cnt { // TODO:
+		blog.V(3).Infof("failed to find the cnt")
+		info := make(map[string]interface{})
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
+		return
+	}
+
+	err = cli.Instance.GetOneByCondition(common.BKTableNamePrivilege, []string{}, cond, &result)
 	if nil != err {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
