@@ -27,6 +27,7 @@ import (
 
 //CreateUserGroupPrivi create group privi
 func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
+	blog.V(3).Infof("create user group privi")
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -69,6 +70,9 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 
 //UpdateUserGroupPrivi update group privi
 func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
+
+	blog.V(3).Infof("update user group privi")
+
 	// get the language
 	language := util.GetActionLanguage(req)
 	// get the error factory by the language
@@ -111,7 +115,7 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 
 //GetUserGroupPrivi get group privi
 func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Response) {
-
+	blog.V(3).Infof("get user group privi")
 	//get the language
 	language := util.GetActionLanguage(req)
 	//get the error factory by the language
@@ -126,7 +130,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond := make(map[string]interface{})
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
-	var result interface{}
+	var result map[string]interface{}
 	err := cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
 	if nil != err {
 		data := make(map[string]interface{})
