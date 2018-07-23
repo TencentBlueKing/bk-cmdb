@@ -49,7 +49,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
 		blog.Errorf("failed to update config, error info is %s", err.Error())
 	}
-
+	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 }
 
 // Run main function
