@@ -121,8 +121,6 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	//get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	defer req.Request.Body.Close()
-
 	pathParams := req.PathParameters()
 	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
@@ -130,13 +128,20 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond := make(map[string]interface{})
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
-	var result map[string]interface{}
-	err := cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
+	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
 	if nil != err {
-		data := make(map[string]interface{})
-		data[common.BKOwnerIDField] = ownerID
-		data[common.BKUserGroupIDField] = groupID
-		data[common.BKPrivilegeField] = common.KvMap{}
+		blog.Error("get user group privi error :%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+	if 0 == cnt { // TODO: 兼容老的逻辑
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: nil})
+		return
+	}
+
+	var result interface{}
+	err = cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
+	if nil != err {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
