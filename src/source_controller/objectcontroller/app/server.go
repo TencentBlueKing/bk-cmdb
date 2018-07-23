@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	restful "github.com/emicklei/go-restful"
@@ -32,6 +33,7 @@ import (
 	"configcenter/src/source_controller/objectcontroller/service"
 	"configcenter/src/storage"
 	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/redisclient"
 )
 
 //Run ccapi server
@@ -101,8 +103,27 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
+	rdsc := objCtr.Config.Redis
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
+	}
+	objCtr.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address + ":" + rdsc.Port,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = objCtr.Cache.Ping().Err()
+	if err != nil {
+		return fmt.Errorf("new redis client failed, err: %v", err)
+	}
+
 	coreService.Core = objCtr.Core
 	coreService.Instance = objCtr.Instance
+	coreService.Cache = objCtr.Cache
 
 	select {
 	case <-ctx.Done():
@@ -130,8 +151,18 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		Mechanism:    current.ConfigMap[prefix+".mechanism"],
 	}
 
+	prefix = storage.DI_REDIS
+	redis := redisclient.RedisConfig{
+		Address:  current.ConfigMap[prefix+".host"],
+		User:     current.ConfigMap[prefix+".user"],
+		Password: current.ConfigMap[prefix+".pwd"],
+		Database: current.ConfigMap[prefix+".database"],
+		Port:     current.ConfigMap[prefix+".port"],
+	}
+
 	h.Config = &options.Config{
 		Mongo: mongo,
+		Redis: redis,
 	}
 }
 
