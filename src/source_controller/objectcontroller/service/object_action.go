@@ -227,7 +227,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	selector = util.SetModOwner(selector, ownerID)
+	selector = util.SetQueryOwner(selector, ownerID)
 	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
