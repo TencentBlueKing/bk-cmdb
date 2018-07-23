@@ -1,3 +1,4 @@
+import sortUnicode from '@/common/js/sortUnicode'
 /**
  * 获取主机关联关系
  * @param data - 主机列表信息
@@ -113,4 +114,31 @@ export function getImgUrl (url) {
     return new Promise((resolve, reject) => {
         loadImage(url, img => resolve(img), e => reject(e))
     })
+}
+
+/**
+ * 数组按中英文首字母排序
+ * @param {Array} array - 需要设置排序的数组
+ * @param {String} field - 根据该字段内容进行排序 默认为null 只有数组中为对象时需要传该值
+ * @param {Boolean} order - 正序为true 倒序为false 默认为true
+ * @return {Array} 排序后的数组
+ */
+export function sortArray (array, field = null, order = true) {
+    let arrayCopy = JSON.parse(JSON.stringify(array))
+    arrayCopy.map(item => {
+        let str = field === null ? item : item[field]
+        let sortKey = ''
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i)
+            if (code < 40869 && code >= 19968) { // 为中文
+                sortKey += sortUnicode.charAt(code - 19968)
+            } else {
+                sortKey += str[i]
+            }
+        }
+        item['_sortKey'] = sortKey
+    })
+    arrayCopy.sort((itemA, itemB) => order ? itemA['_sortKey'].localeCompare(itemB['_sortKey']) : itemB['_sortKey'].localeCompare(itemA['_sortKey']))
+    arrayCopy.map(item => delete item['_sortKey'])
+    return arrayCopy
 }
