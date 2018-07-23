@@ -38,6 +38,7 @@ import (
 func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
@@ -61,6 +62,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
+	input = util.SetModOwner(input, ownerID)
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
@@ -98,6 +100,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
@@ -130,6 +133,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	data[common.LastTimeField] = time.Now()
 	condition := input["condition"]
+	condition = util.SetModOwner(condition, ownerID)
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
@@ -183,6 +187,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
@@ -202,6 +207,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	//dat.ConvTime()
 	fields := dat.Fields
 	condition := dat.Condition
+	condition = util.SetModOwner(condition, ownerID)
 
 	skip := dat.Start
 	limit := dat.Limit
@@ -232,6 +238,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -243,6 +250,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	input, _ := js.Map()
 	input[common.CreateTimeField] = time.Now()
 	input[common.LastTimeField] = time.Now()
+	input = util.SetModOwner(input, ownerID)
 	blog.Info("create object type:%s,data:%v", objType, input)
 	var idName string
 	id, err := instdata.CreateObject(objType, input, &idName)

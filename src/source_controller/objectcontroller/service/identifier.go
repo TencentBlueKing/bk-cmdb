@@ -32,6 +32,7 @@ import (
 func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	instdata.DataH = cli.Instance
@@ -72,6 +73,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 			},
 		},
 	}
+	condition = util.SetModOwner(condition, ownerID)
 
 	// fetch hosts
 	hosts := []*metadata.HostIdentifier{}
