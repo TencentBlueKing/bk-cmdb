@@ -33,6 +33,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -61,6 +62,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 		return
 	}
 	obj.ID = id
+	obj.OwnerID = ownerID
 	_, err = cli.Instance.Insert(common.BKTableNameObjClassifiction, obj)
 	if nil != err {
 		blog.Error("create objectcls failed, error:%s", err.Error())
@@ -76,7 +78,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	blog.Info("delete classification")
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -108,6 +110,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 			return
 		}
 	}
+	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjClassifiction, condition)
 	if nil != cntErr {
 		blog.Error("failed to select object classification by condition(%+v), error is %d", cntErr)
@@ -135,6 +138,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -158,6 +162,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 		return
 	}
 
+	selector = util.SetModOwner(selector, ownerID)
 	// update object into storage
 	if updateErr := cli.Instance.UpdateByCondition(common.BKTableNameObjClassifiction, &data, selector); nil != updateErr {
 		blog.Error("fail update object by condition, error:%v", updateErr.Error())
@@ -173,7 +178,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	// get the language
 	language := util.GetActionLanguage(req)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -191,6 +196,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 
 	results := make([]meta.Classification, 0)
 
+	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error: %s", selerr.Error())
@@ -211,14 +217,12 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 
 	// get the language
 	language := util.GetActionLanguage(req)
-
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
 
 	// execute
-
-	ownerID := req.PathParameter("owner_id")
 
 	// decode json object
 	selector := map[string]interface{}{}
@@ -231,6 +235,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	delete(selector, "page")
 
 	clsResults := make([]meta.ObjClassificationObject, 0)
+	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
 	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &clsResults, page.Sort, page.Start, page.Limit); nil != selerr {
 		blog.Error("select data failed, error:%s", selerr.Error())
@@ -245,6 +250,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 			"bk_classification_id": tmpobj.ClassificationID,
 			common.BKOwnerIDField:  ownerID,
 		}
+		selector = util.SetModOwner(selector, ownerID)
 		if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &clsResults[tmpidx].Objects, "", 0, common.BKNoLimit); nil != selerr {
 			blog.Error("select data failed, error:%s", selerr.Error())
 			continue
