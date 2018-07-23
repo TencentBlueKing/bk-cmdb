@@ -1,6 +1,6 @@
 <template>
     <div :class="['bk-tab2', {'bk-tab2-small': size === 'small'}]">
-        <div :class="['bk-tab2-head',{'is-fill': type === 'fill'}]">
+        <div :class="['bk-tab2-head',{'is-fill': type === 'fill'}]" :style="headStyle">
             <ul class="bk-tab2-nav">
                 <li class="tab2-nav-item"
                     v-for="(item, index) in navList"
@@ -16,7 +16,7 @@
                 </div>
             </div>
         </div>
-        <div class="bk-tab2-content">
+        <div class="bk-tab2-content" :style="contentStyle">
             <slot></slot>
         </div>
     </div>
@@ -53,6 +53,18 @@
             size: {
                 type: String,
                 default: ''
+            },
+            headStyle: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
+            contentStyle: {
+                type: Object,
+                default () {
+                    return {}
+                }
             }
         },
         watch: {
@@ -80,6 +92,7 @@
                 // this.calcActiveName = this.navList[index].name
                 // this.$emit('tab-changed', this.calcActiveName, index)
                 if (this.navList[index].name !== this.activeName) {
+                    this.$emit('update:activeName', this.navList[index].name)
                     this.$emit('tab-changed', this.navList[index].name)
                 }
             },

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="10px" height="10px" viewBox="0 0 10 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>Combined Shape</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="第三版" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="6" transform="translate(-210.000000, -741.000000)" fill="#C3CDD7">
+            <g id="侧边导航">
+                <g id="Group" transform="translate(210.000000, 741.000000)">
+                    <path d="M8,0 L9.5,0 L9.5,10 L8,10 L8,0 Z M6,0.999586032 L1.99417284,5 L6,9.00058718 L4.99975945,10 L0,5 L4.99975945,3.67349852e-16 L6,0.999586032 Z" id="Combined-Shape"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
