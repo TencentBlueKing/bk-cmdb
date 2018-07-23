@@ -13,15 +13,15 @@
 package validator
 
 import (
+	"net/http"
+	"regexp"
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"net/http"
-	"regexp"
-	"strconv"
 )
 
 // NewValidMap returns new NewValidMap
@@ -88,7 +88,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//valid create request
 	if validType == common.ValidCreate {
-		valid.fillLostedFieldValue(valData, valid.propertys)
+		FillLostedFieldValue(valData, valid.propertys, valid.requirefields)
 	}
 
 	for key, val := range valData {
