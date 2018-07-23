@@ -13,12 +13,13 @@
 package mgoclient
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/storage"
 	"errors"
 	"fmt"
 	"strings"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage"
 
 	// "log"
 	// "os"
@@ -159,6 +160,9 @@ func (m *MgoCli) GetOneByCondition(cName string, fields []string, condiction int
 	}
 	err := query.One(result)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -196,6 +200,9 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 	}
 	err := query.All(result)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
 		return err
 	}
 	return nil

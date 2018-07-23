@@ -13,43 +13,43 @@
 package eventdata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
+	"encoding/json"
+	"time"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common/metadata"
 	commontypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/types"
-	"encoding/json"
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-	"time"
 )
 
 type EventContext struct {
 	RequestID   string
 	RequestTime commontypes.Time
+	chache      *redis.Client
 }
 
-func NewEventContext(requestID string, requestTime time.Time) *EventContext {
+func NewEventContext(requestID string, requestTime time.Time, chache *redis.Client) *EventContext {
 	return &EventContext{
 		RequestID:   requestID,
 		RequestTime: commontypes.Time{requestTime},
+		chache:      chache,
 	}
 }
 
-func NewEventContextByReq(req *restful.Request) *EventContext {
+func NewEventContextByReq(req *restful.Request, chache *redis.Client) *EventContext {
 	// TODO get reqid and time from req
 	return &EventContext{
 		RequestID:   "xxx-xxxx-xxx-xxx",
 		RequestTime: commontypes.Now(),
+		chache:      chache,
 	}
 }
 
 func (c *EventContext) InsertEvent(eventType, objType, action string, curData interface{}, preData interface{}) (err error) {
-	ar := api.GetAPIResource()
-	eventIDseletor := common.KvMap{
-		"key": types.EventCacheEventIDKey,
-	}
-	eventID, err := ar.CacheCli.Insert("incr", eventIDseletor)
+
+	eventID, err := c.chache.Incr(types.EventCacheEventIDKey).Result()
 	if err != nil {
 		return err
 	}
@@ -74,8 +74,7 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 		return err
 	}
 
-	redisCli := ar.CacheCli.GetSession().(*redis.Client)
-	err = redisCli.LPush(types.EventCacheEventQueueKey, value).Err()
+	err = c.chache.LPush(types.EventCacheEventQueueKey, value).Err()
 	if err != nil {
 		return
 	}
