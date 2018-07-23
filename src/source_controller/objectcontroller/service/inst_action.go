@@ -57,6 +57,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	input, err := js.Map()
 	if nil != err {
+		blog.Errorf("failed to unmarshal json, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
