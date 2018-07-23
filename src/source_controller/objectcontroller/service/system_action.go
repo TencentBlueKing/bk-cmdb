@@ -46,7 +46,7 @@ func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) 
 
 	err := cli.Instance.GetOneByCondition(common.BKTableNameSystem, []string{}, cond, &result)
 	if nil != err {
-		blog.Error("get system config error :%v, cond:%#v", err, cond)
+		blog.Errorf("get system config error :%v, cond:%#v", err, cond)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
