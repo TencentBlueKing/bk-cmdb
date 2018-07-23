@@ -44,6 +44,7 @@ type Property struct {
 type PropertyGroup struct {
 	Name  string
 	Index int
+	ID    string
 }
 
 // GetObjFieldIDs get object fields
@@ -63,7 +64,7 @@ func GetObjFieldIDs(objID, url string, filterFields []string, header http.Header
 
 	for _, group := range groups {
 		for _, field := range fields {
-			if field.Group == group.Name {
+			if field.Group == group.ID {
 				if util.InStrArr(filterFields, field.ID) {
 					continue
 				}
@@ -100,18 +101,24 @@ func getObjectGroup(objID, url string, header http.Header) ([]PropertyGroup, err
 	blog.Info("get %s fields group return:%s", objID, result)
 	js, err := simplejson.NewJson([]byte(result))
 	if nil != err {
-		blog.Info("get %s fields group  url:%s return:%s", objID, url, result)
+		blog.Errorf("get %s fields group  url:%s return:%s, err:%s", objID, url, result, err.Error())
 		return nil, err
 	}
-	fields, _ := js.Get("data").Array()
+	fields, err := js.Get("data").Array()
+	if nil != err {
+		blog.Errorf("get %s fields group  url:%s return:%s data not array, err:%s", objID, url, result, err.Error())
+		return nil, err
+	}
 	ret := []PropertyGroup{}
 	for _, field := range fields {
 		mapField, _ := field.(map[string]interface{})
 		propertyGroup := PropertyGroup{}
 		propertyGroup.Index, _ = util.GetIntByInterface(mapField[common.BKPropertyGroupIndexField])
 		propertyGroup.Name, _ = mapField[common.BKPropertyGroupNameField].(string)
+		propertyGroup.ID, _ = mapField[common.BKPropertyGroupIDField].(string)
 		ret = append(ret, propertyGroup)
 	}
+	blog.V(3).Infof("getObjectGroup count:%d", len(ret))
 	return ret, nil
 
 }
@@ -157,10 +164,14 @@ func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Proper
 	blog.Info("get %s fields return:%s", objID, result)
 	js, err := simplejson.NewJson([]byte(result))
 	if nil != err {
-		blog.Info("get %s fields  url:%s return:%s", objID, url, result)
+		blog.Errorf("get %s fields  url:%s return:%s", objID, url, result)
 		return nil, err
 	}
-	fields, _ := js.Get("data").Array()
+	fields, err := js.Get("data").Array()
+	if nil != err {
+		blog.Errorf("get %s fields  url:%s return:%s data not array, error:%s", objID, url, result, err.Error())
+		return nil, err
+	}
 	ret := []Property{}
 
 	for _, field := range fields {
@@ -176,7 +187,7 @@ func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Proper
 		fieldIsRequire, _ := mapField[common.BKIsRequiredField].(bool)
 		fieldIsOption, _ := mapField[common.BKOptionField]
 		fieldIsPre, _ := mapField[common.BKIsPre].(bool)
-		fieldGroup, _ := mapField["bk_property_group_name"].(string)
+		fieldGroup, _ := mapField[common.BKPropertyGroupField].(string)
 		fieldIndex, _ := util.GetIntByInterface(mapField["bk_property_index"])
 		fieldAsstObjID, _ := mapField[common.BKAsstObjIDField].(string)
 
@@ -193,6 +204,7 @@ func getObjFieldIDsBySort(objID, url, sort string, header http.Header) ([]Proper
 			AsstObjID:    fieldAsstObjID,
 		})
 	}
+	blog.V(3).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
 
 	return ret, nil
 }
@@ -232,7 +244,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		ID:            "",
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
-		Group:         "基础信息",
+		Group:         "defalut",
 		ExcelColIndex: 0,
 	}
 
