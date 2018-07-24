@@ -130,7 +130,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -142,7 +142,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 
 	var result interface{}
 	err = cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return

@@ -76,7 +76,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 		obj.PropertyIndex = -1 // not set any value
 	}
 	id, err := cli.Instance.GetIncID("cc_ObjAttDes")
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -132,7 +132,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := cli.Instance.GetCntByCondition("cc_ObjAttDes", condition)
-	if nil != cntErr {
+	if nil != cntErr && !cli.Instance.IsNotFoundErr(cntErr) {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -145,7 +145,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 		return
 	}
 	delErr := cli.Instance.DelByCondition("cc_ObjAttDes", condition)
-	if nil != delErr {
+	if nil != delErr && !cli.Instance.IsNotFoundErr(delErr) {
 		blog.Error("failed to delete, error info is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
