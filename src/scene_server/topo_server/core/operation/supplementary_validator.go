@@ -33,7 +33,7 @@ type valid struct {
 }
 
 func (v *valid) ValidatorCreate(params types.ContextParams, obj model.Object, datas mapstr.MapStr) error {
-	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), []string{common.BKOwnerIDField, common.BKDefaultField}, params.Header, params.Engin)
+	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), []string{common.BKOwnerIDField, common.BKDefaultField, common.BKInstParentStr}, params.Header, params.Engin)
 	return validObj.ValidMap(datas, common.ValidCreate, -1)
 }
 func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, datas mapstr.MapStr, instID int64, cond condition.Condition) error {
