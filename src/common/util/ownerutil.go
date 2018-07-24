@@ -51,7 +51,6 @@ func SetModOwner(condition interface{}, ownerID string) map[string]interface{} {
 			common.BKOwnerIDField: ownerID,
 		}
 	}
-	blog.Infof("condition: %#v", condition)
 	switch cond := condition.(type) {
 	case map[string]interface{}:
 		if ownerID == common.BKSuperOwnerID {

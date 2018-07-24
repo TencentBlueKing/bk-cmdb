@@ -77,7 +77,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	// save to subscribeform in cache
 	events := strings.Split(sub.SubscriptionForm, ",")
 	for _, event := range events {
-		if err := s.cache.SAdd(types.EventCacheSubscribeformKey+ownerID+":"+event, sub.SubscriptionID).Err(); err != nil {
+		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 			return
@@ -128,7 +128,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	eventTypes := strings.Split(sub.SubscriptionForm, ",")
 	for _, eventType := range eventTypes {
 		eventType = strings.TrimSpace(eventType)
-		if err := s.cache.SRem(types.EventCacheSubscribeformKey+ownerID+":"+eventType, subID).Err(); err != nil {
+		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), subID).Err(); err != nil {
 			blog.Errorf("delete subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		}
@@ -206,14 +206,14 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 
 	for _, eventType := range subs {
 		eventType = strings.TrimSpace(eventType)
-		if err := s.cache.SRem(types.EventCacheSubscribeformKey+ownerID+":"+eventType, id).Err(); err != nil {
+		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), id).Err(); err != nil {
 			blog.Errorf("delete subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 			return
 		}
 	}
 	for _, event := range plugs {
-		if err := s.cache.SAdd(types.EventCacheSubscribeformKey+ownerID+":"+event, sub.SubscriptionID).Err(); err != nil {
+		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 			return

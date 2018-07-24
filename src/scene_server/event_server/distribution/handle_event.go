@@ -242,7 +242,7 @@ func saveRunning(cache *redis.Client, key string, timeout time.Duration) (err er
 }
 
 func (eh *EventHandler) findEventTypeSubscribers(eventtype, ownerID string) []string {
-	return eh.cache.SMembers(types.EventCacheSubscribeformKey + ownerID + ":" + eventtype).Val()
+	return eh.cache.SMembers(types.EventSubscriberCacheKey(ownerID, eventtype)).Val()
 }
 
 func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {

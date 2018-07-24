@@ -13,6 +13,13 @@
 package user
 
 import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -21,11 +28,6 @@ import (
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/web_server/application/middleware/types"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
-	"time"
 )
 
 type OwnerManager struct {

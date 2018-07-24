@@ -66,11 +66,7 @@ type HostIdentModule struct {
 // SearchIdentifierParam defines the param
 type SearchIdentifierParam struct {
 	IP   IPParam `json:"ip"`
-	Page struct {
-		Start int    `json:"start"`
-		Limit int    `json:"limit"`
-		Sort  string `json:"sort"`
-	} `json:"page"`
+	Page BasePage
 }
 
 type IPParam struct {
