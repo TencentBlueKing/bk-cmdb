@@ -45,6 +45,7 @@
                 topoStruct: {},
                 nodeId: 0,                  // 前端节点ID 递增
                 isFullScreen: false,        // 是否全屏显示
+                scale: 0.8,
                 network: {},
                 attr: {
                     isShow: false,
@@ -91,13 +92,13 @@
                             max: 25
                         },
                         widthConstraint: {
-                            maximum: 100
+                            maximum: 120
                         }
                     },
                     layout: {
                         hierarchical: {
                             direction: 'LR',
-                            nodeSpacing: 70
+                            nodeSpacing: 90
                         }
                     }
                 },
@@ -147,7 +148,9 @@
             resizeCanvas (isFullScreen) {
                 this.isLoading = true
                 this.isFullScreen = isFullScreen
+                this.scale = this.network.getScale()
                 this.$nextTick(() => {
+                    this.network.moveTo({scale: this.scale})
                     this.$refs.attribute.resetAttributeBox()
                 })
             },
@@ -466,6 +469,7 @@
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 this.network.focus(this.activeNode.id)
                 this.network.moveTo({scale: 0.8})
+                window.network = this.network
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
                 this.network.on('hoverNode', (params) => {
@@ -481,6 +485,9 @@
                 })
                 this.network.on('resize', () => {
                     this.isLoading = false
+                    this.$nextTick(() => {
+                        this.network.moveTo({scale: this.scale})
+                    })
                 })
                 this.network.on('click', (params) => {
                     this.removePop()
