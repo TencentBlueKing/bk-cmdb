@@ -1,6 +1,8 @@
 package operation
 
 import (
+	"configcenter/src/common/util"
+	"context"
 	"strings"
 
 	"configcenter/src/apimachinery"
@@ -122,6 +124,44 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	if nil != err {
 		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	defaulFieldVal, err := data.Int64(common.BKDefaultField)
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s", err.Error())
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
+		asstQuery := &metadata.QueryInput{
+			Condition: map[string]interface{}{
+				common.BKOwnerIDField: common.BKDefaultOwnerID,
+			},
+		}
+		defaultOwnerHeader := util.CopyHeader(params.Header)
+		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
+
+		asstRsp, err := b.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, defaultOwnerHeader, asstQuery)
+		if nil != err {
+			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
+			return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+		}
+		if !asstRsp.Result {
+			return bizInst, params.Err.Error(asstRsp.Code)
+		}
+		assts := asstRsp.Data.Info
+		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, assts)
+
+		for _, asst := range assts {
+			asst[common.BKOwnerIDField] = params.SupplierAccount
+			b.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, params.Header, asst)
+			if nil != err {
+				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
+				return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+			}
+			if !asstRsp.Result {
+				return bizInst, params.Err.Error(asstRsp.Code)
+			}
+		}
 	}
 
 	return bizInst, nil
