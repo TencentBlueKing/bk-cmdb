@@ -134,7 +134,6 @@ func (t *privilege) CreateRolePri(ctx context.Context, ownerID string, objID str
 
 func (t *privilege) GetRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	resp.Result = true
 	resp.Data = []interface{}{}
 	subPath := fmt.Sprintf("/role/%s/%s/%s", ownerID, objID, propertyID)
 
