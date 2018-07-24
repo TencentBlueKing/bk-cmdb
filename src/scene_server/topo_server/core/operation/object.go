@@ -107,7 +107,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			result[objID] = subResult
 			continue
 		}
-		fmt.Println("the input:", inputData.Attr)
+
 		// update the object's attribute
 		for idx, attr := range inputData.Attr {
 
@@ -205,7 +205,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 			if 0 == len(attrs) {
 
-				fmt.Println("targetattr:", targetAttr.ToMapStr())
+				//fmt.Println("targetattr:", targetAttr.ToMapStr())
 				newAttr := o.modelFactory.CreateAttribute(params)
 				if _, err := newAttr.Parse(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
@@ -240,7 +240,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			}
 
 			for _, newAttr := range attrs {
-				fmt.Println("id:", targetAttr.ToMapStr())
+				//fmt.Println("id:", targetAttr.ToMapStr())
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["update_failed"]; ok {
