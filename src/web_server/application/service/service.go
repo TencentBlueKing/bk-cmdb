@@ -308,7 +308,7 @@ func (ccWeb *CCWebServer) Start() error {
 }
 
 func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
-	fmt.Println(actions)
+	//fmt.Println(actions)
 	for _, action := range actions {
 		switch action.Verb {
 		case "GET":
