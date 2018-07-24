@@ -30,20 +30,19 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	objID := pathParams["bk_obj_id"]
 	propertyID := pathParams["bk_property_id"]
 	cond := make(map[string]interface{})
-	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKObjIDField] = objID
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
-
+	cond = util.SetModOwner(cond, ownerID)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
 	if nil != err {
 		blog.Error("get user group privi error :%v", err)
@@ -81,11 +80,11 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	objID := pathParams["bk_obj_id"]
 	propertyID := pathParams["bk_property_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
@@ -106,6 +105,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	input[common.BKObjIDField] = objID
 	input[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
+	input = util.SetModOwner(input, ownerID)
 	_, err = cli.Instance.Insert(common.BKTableNamePrivilege, input)
 	if nil != err {
 		blog.Error("create role privilege error :%v", err)
@@ -121,11 +121,11 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	blog.V(3).Infof("get role privi")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	objID := pathParams["bk_obj_id"]
 	propertyID := pathParams["bk_property_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
@@ -147,6 +147,7 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	cond[common.BKObjIDField] = objID
 	cond[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
+	cond = util.SetModOwner(cond, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNamePrivilege, input, cond)
 	if nil != err {
 		blog.Error("update role privilege error :%v", err)

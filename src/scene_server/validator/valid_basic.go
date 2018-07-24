@@ -68,8 +68,10 @@ func (valid *ValidMap) Init() error {
 			continue
 		}
 		valid.propertys[attr.PropertyID] = attr
+		valid.propertyslice = append(valid.propertyslice, attr)
 		if attr.IsRequired {
 			valid.require[attr.PropertyID] = true
+			valid.requirefields = append(valid.requirefields, attr.PropertyID)
 		}
 		if attr.IsOnly {
 			valid.isOnly[attr.PropertyID] = true
@@ -88,7 +90,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//valid create request
 	if validType == common.ValidCreate {
-		FillLostedFieldValue(valData, valid.propertys, valid.requirefields)
+		FillLostedFieldValue(valData, valid.propertyslice, valid.requirefields)
 	}
 
 	for key, val := range valData {

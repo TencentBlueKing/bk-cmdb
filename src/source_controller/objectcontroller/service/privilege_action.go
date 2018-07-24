@@ -30,11 +30,11 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	blog.V(3).Infof("create user group privi")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -55,9 +55,9 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 		return
 	}
 	data := make(map[string]interface{})
-	data[common.BKOwnerIDField] = ownerID
 	data[common.BKUserGroupIDField] = groupID
 	data[common.BKPrivilegeField] = info
+	data = util.SetModOwner(data, ownerID)
 	_, err = cli.Instance.Insert(common.BKTableNameUserGroupPrivilege, data)
 	if nil != err {
 		blog.Error("insert user group privi error :%v", err)
@@ -75,11 +75,11 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -101,9 +101,9 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	}
 	cond := make(map[string]interface{})
 	data := make(map[string]interface{})
-	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
 	data[common.BKPrivilegeField] = info
+	cond = util.SetModOwner(cond, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
 	if nil != err {
 		blog.Error("update user group privi error :%v", err)
@@ -118,16 +118,17 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	blog.V(3).Infof("get user group privi")
 	//get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	//get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
 
 	cond := make(map[string]interface{})
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
+	cond = util.SetModOwner(cond, ownerID)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
 	if nil != err {
 		blog.Error("get user group privi error :%v", err)

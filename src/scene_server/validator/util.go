@@ -43,12 +43,15 @@ func getBool(val interface{}) bool {
 }
 
 // FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(valData map[string]interface{}, propertys map[string]metadata.Attribute, ignorefields []string) {
+func FillLostedFieldValue(valData map[string]interface{}, propertys []metadata.Attribute, ignorefields []string) {
 	ignores := map[string]bool{}
 	for _, field := range ignorefields {
 		ignores[field] = true
 	}
 	for _, field := range propertys {
+		if field.PropertyID == common.BKChildStr || field.PropertyID == common.BKParentStr {
+			continue
+		}
 		if ignores[field.PropertyID] {
 			continue
 		}
