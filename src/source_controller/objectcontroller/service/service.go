@@ -38,8 +38,8 @@ func (s *Service) WebService() *restful.WebService {
 		return s.Core.CCErr
 	}
 
-	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	restful.DefaultRequestContentType(restful.MIME_JSON)
+	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))

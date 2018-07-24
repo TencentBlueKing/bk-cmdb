@@ -62,7 +62,6 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 }
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
-	data.Set(common.BKDefaultField, 0)
 	data.Set(common.BKOwnerIDField, params.SupplierAccount)
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {

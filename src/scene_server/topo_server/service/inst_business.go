@@ -32,6 +32,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
+	data.Set(common.BKDefaultField, 0)
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
 }
 
@@ -184,7 +185,6 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 	}
 
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
-
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
 }
 
