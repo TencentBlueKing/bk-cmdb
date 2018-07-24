@@ -64,15 +64,20 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 
 	// create a new privilege
 	if !rsp.Result {
+		blog.Errorf("[privilege] failed to get user group privi, error info is %s", rsp.ErrMsg)
+		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	if nil == rsp.Data.Privilege {
 		rsp, err := u.client.ObjectController().Privilege().CreateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
 		if nil != err {
 			blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
 			return u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-
 		if !rsp.Result {
 			return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
+		return nil
 	}
 
 	// update privilege
@@ -149,6 +154,10 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 
 		if !grpPrivilege.Result {
 			blog.Errorf("[privige] failed to search the user group, error info is %s", grpPrivilege.ErrMsg)
+			continue
+		}
+
+		if nil == grpPrivilege.Data.Privilege {
 			continue
 		}
 

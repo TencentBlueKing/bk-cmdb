@@ -71,7 +71,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	// save
 	_, err = cli.Instance.Insert(common.BKTableNameObjDes, obj)
 	if nil == err {
-		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: []*meta.Object{obj}})
+		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: id}})
 		return
 	}
 	blog.Error("failed to insert the object, error info is %s", err.Error())

@@ -38,14 +38,14 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	restful.DefaultRequestContentType(restful.MIME_JSON)
-	restful.DefaultResponseContentType(restful.MIME_JSON)
+	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	//restful.DefaultRequestContentType(restful.MIME_JSON)
+	//restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.DELETE("/host/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	ws.Route(ws.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
-	ws.Route(ws.POST("/hosts/addhost").To(s.AddHost))
+	ws.Route(ws.POST("/hosts/add").To(s.AddHost))
 	ws.Route(ws.POST("/host/add/agent").To(s.AddHostFromAgent))
 	ws.Route(ws.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	ws.Route(ws.POST("hosts/favorites/search").To(s.GetHostFavourites))

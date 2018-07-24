@@ -10,45 +10,30 @@
 
 <template lang="html">
     <li class="tree-item-wrapper">
-        <template v-if="treeType==='list'">
-            <div class="item" :class="{'item-active': isActive, 'open': model.isFolder}" :style="{'padding-left': model.level * 20 + 'px'}">
-                <i 
-                    class="tree-icon icon-cc-triangle-sider" 
-                    v-if="model.children&&!(model.children.length===0&&model.level===1)&&!(model.children&&model.children.length===0&&model.loadNode===2)&&model.loadNode!==1" 
-                    :class="model.isFolder ? 'tree-icon-open' : 'tree-icon-close'" 
-                    @click="open(model)" :style="{'left': model.level * 20 + 'px'}">
-                </i>
-                <span class="item-loading" v-show='model.loadNode==1' :style="{'left': model.level * 20 + 'px'}">
-                    <img alt="loading" src="../../common/images/icon/loading_2_16x16.gif">
-                </span>
-                <span @click="Func(model)" :class="isActive" :title="model['bk_inst_name']" class="item-name">
-                    <i :class="model['bk_obj_icon']" class="icon" v-if="model['bk_obj_icon']"></i><i v-else class="icon-none"></i>{{model['name']}}
-                    <span class="count" v-if="model.count">{{model.count}}</span>
-                </span>
-            </div>
-        </template>
-        <template v-else>
-            <div class="item" :class="{'item-active': isActive}">
-                <span class="tree-icon" v-if="model.children&&!(model.children&&model.children.length===0)&&model.loadNode!==1" :class="model.isFolder ? 'tree-icon-open' : 'tree-icon-close'" @click="open(model)"></span>
-                <span class="item-loading" v-show='model.loadNode==1'>
-                    <img alt="loading" src="../../common/images/icon/loading_2_16x16.gif">
-                </span>
-                <span v-if="hasCheckbox" class="bk-form-checkbox"><input type="checkbox" v-model="model.isChecked" @click="checkboxClick(model)"></span>
-                <span @click="Func(model)" :class="isActive" :title="model.name" class="item-name"><i class="name-icon" v-if="model.ObjName">{{model.ObjName[0]}}</i><i class="name-icon" v-else-if="model.ObjId==='app'">业</i>{{model.name}}</span>
-                <span>{{model.count}}</span>
-            </div>
-        </template>
+        <div class="item" :class="{'item-active': isActive, 'open': model.isFolder}" :style="{'padding-left': model.level * 20 + 'px'}">
+            <i 
+                class="tree-icon icon-cc-triangle-sider" 
+                v-if="model.children&&!(model.children.length===0&&model.level===1)&&!(model.children&&model.children.length===0&&model.loadNode===2)&&model.loadNode!==1" 
+                :class="model.isFolder ? 'tree-icon-open' : 'tree-icon-close'" 
+                @click="open(model)" :style="{'left': model.level * 20 + 'px'}">
+            </i>
+            <span class="item-loading" v-show='model.loadNode==1' :style="{'left': model.level * 20 + 'px'}">
+                <img alt="loading" src="../../common/images/icon/loading_2_16x16.gif">
+            </span>
+            <span @click="Func(model)" :class="isActive" :title="model['bk_inst_name']" class="item-name">
+                <i :class="model['bk_obj_icon']" class="icon" v-if="model['bk_obj_icon']"></i><i v-else class="icon-none"></i>{{model['name']}}
+                <span class="count" v-if="model.count">{{model.count}}</span>
+                <span class="detail" v-if="!(model.level % 2)" @click="detailClick(model)">{{$t('Common["详情信息"]')}}</span>
+            </span>
+        </div>
         <ul v-show="model.isFolder">
             <tree-item v-for="(item, index) in model.children"
             :key="index"
-            :hasCheckbox="hasCheckbox"
             :model.sync="item"
             :trees.sync="trees"
             :callback="callback"
             :expand="expand"
-            :treeType="treeType"
-            :pageSize="pageSize"
-            :pageTurning="pageTurning"
+            :detailCallback="detailCallback"
             ></tree-item>
         </ul>
     </li>
@@ -58,19 +43,6 @@
     export default {
         name: 'treeItem',
         props: {
-            // 改变分页信息回调
-            pageSize: {
-                type: Function
-            },
-            // 翻页回调
-            pageTurning: {
-                type: Function
-            },
-            // 树形图类型 默认为空 可选值 list
-            treeType: {
-                type: String,
-                default: ''
-            },
             // 点击展开回调
             expand: {
                 type: Function
@@ -86,12 +58,9 @@
             callback: {
                 type: Function
             },
-            /*
-                是否包含有checkbox
-            */
-            hasCheckbox: {
-                default: false,
-                type: Boolean
+            // 点击详情回调
+            detailCallback: {
+                type: Function
             }
         },
         computed: {
@@ -105,13 +74,14 @@
             }
         },
         methods: {
+            detailClick (m) {
+                this.detailCallback.call(null, m)
+            },
             Func (m) {
                 // 查找点击的子节点
                 var recurFunc = (data, list) => {
                     data.forEach((i) => {
                         if (i.id === m.id) {
-                            // i.clickNode = true
-                            // console.log(i)
                             this.$set(i, 'clickNode', true)
                             if (typeof this.callback === 'function') {
                                 this.callback.call(null, m, list, this.trees)
@@ -129,9 +99,7 @@
             },
             open (m) {
                 this.$set(m, 'isExpand', !m.isExpand)
-                // this.$set(m, 'isFolder', !m.isFolder)
                 if (typeof this.expand === 'function' && m.isExpand) {
-                    // this.expand.call(null, m)
                     if (m.loadNode !== 2) {  // 节点未加载完毕
                         this.expand.call(null, m)
                     } else {
@@ -140,35 +108,6 @@
                 } else {
                     m.isFolder = !m.isFolder
                 }
-            },
-            checkboxClick (m) {
-                // 判断是否有子级
-                if (m.hasOwnProperty('children') && m.children.length) {
-                    m.children.map(val => {
-                        // 此处拿到的状态值是相反的
-                        val.isChecked = !m.isChecked
-                    })
-                }
-            },
-            /*
-                上一页
-            */
-            pageUp (m) {
-                if (m.page === 1) {
-                    return
-                }
-                m.page--
-                this.pageTurning.call(null, m, 'prev')
-            },
-            /*
-                下一页
-            */
-            pageDown (m) {
-                if (m.page === Math.ceil(m.count / m.pageSize)) {
-                    return
-                }
-                m.page++
-                this.pageTurning.call(null, m, 'next')
             }
         }
     }
@@ -268,7 +207,7 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 border: 4px solid transparent;
-                border-right-width: 25px;
+                // border-right-width: 25px;
                 border-left-width: 0;
                 margin-top: -4px;
                 .operation-group{
@@ -318,3 +257,128 @@
         }
     }
 </style>
+
+<style lang="scss">
+    $borderColor: #bec6de;
+    .tree-wrapper.list{
+        .tree-item-wrapper{
+            color: #6b7baa;
+            padding: 0;
+            &:before{
+                width: 0;
+                height: 0;
+            }
+            &:after{
+                width: 0;
+                height: 0;
+            }
+            .item-active{
+                background: #f1f7ff;
+                .item-name{
+                    color: #6b7baa;
+                    &.active{
+                        color: #3c96ff;
+                        .icon{
+                            color: #3c96ff;
+                        }
+                        .icon-none{
+                            background: #3c96ff;
+                        }
+                    }
+                }
+            }
+        }
+        .root{
+            >.item{
+                &.open{
+                    border-bottom: 1px solid $borderColor;
+                }
+                .tree-icon{
+                    left: 0;
+                }
+            }
+            .item{
+                height: 36px;
+                line-height: 36px;
+                &:hover{
+                    background: #f1f7ff;
+                    >.item-name{
+                        >.detail{
+                            display: block;
+                        }
+                    }
+                }
+                &:before{
+                    padding: 0;
+                    width: 0;
+                    height: 0;
+                }
+                .item-name{
+                    .icon{
+                        margin-right: 10px;
+                        vertical-align: text-bottom;
+                        font-size: 14px;
+                        color: #ffb400;
+                    }
+                    .icon-none{
+                        display: inline-block;
+                        margin-top: -2px;
+                        margin-right: 8px;
+                        border-radius: 2px;
+                        width: 10px;
+                        height: 10px;
+                        background: #c3cdd7;
+                    }
+                    .count{
+                        float: right;
+                        display: inline-block;
+                        vertical-align: text-bottom;
+                        margin-top: 11px;
+                        margin-left: 10px;
+                        margin: 11px 13px 11px 10px;
+                        color: #ffb80f;
+                        background: #fff7e5;
+                        border-radius: 7px;
+                        height: 14px;
+                        font-size: 12px;
+                        line-height: 14px;
+                        padding: 0 8px;
+                    }
+                    .detail{
+                        display: none;
+                        float: right;
+                        margin: 7px 10px;
+                        padding: 0 5px;
+                        height: 22px;
+                        line-height: 20px;
+                        border: 1px solid #c3cdd7;
+                        border-radius: 2px;
+                        color: #737987;
+                        background: #fff;
+                        &:hover{
+                            background: #fafafa;
+                        }
+                    }
+                }
+                .tree-icon{
+                    top: 10px;
+                    font-size: 14px;
+                    color: #498fe0;
+                    background: none;
+                    transition: all .2s;
+                }
+                .tree-icon-open{
+                    transform: rotate(-135deg);
+                }
+                .tree-icon-close{
+                    color: #bec6de;
+                    transform: rotate(-180deg);
+                }
+                .item-loading{
+                    top: 10px;
+                }
+            }
+        }
+    }
+</style>
+

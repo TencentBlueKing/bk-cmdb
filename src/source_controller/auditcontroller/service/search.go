@@ -43,6 +43,7 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	data := new(metadata.AuditQueryResult) //common.KvMap{"info": rows, "count": cnt}
+	data.Result = true
 	data.Data.Info = rows
 	data.Data.Count = cnt
 	resp.WriteEntity(data)

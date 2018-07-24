@@ -60,8 +60,9 @@
     }
 
     class BkDate {
-        constructor (flag) {
-            const dater = new Date()
+        constructor (flag, time) {
+            const dater = time ? new Date(time) : new Date()
+            
             // 当前日期
             this.currentDay = {
                 year: dater.getFullYear(),
@@ -71,7 +72,8 @@
             // 当前时间
             this.currentTime = {
                 hour: dater.getHours(),
-                minute: dater.getMinutes() + 1,
+                minute: dater.getMinutes(),
+                // minute: dater.getMinutes() + 1,
                 second: dater.getSeconds()
             }
             // 日期选择器默认显示
@@ -229,10 +231,10 @@
             const initEndDate = this.endDate || moment().format('YYYY-MM-DD')
             const initStartDate = moment(initEndDate).subtract(1, 'month').format('YYYY-MM-DD')
 
-            const bkDateStart = new BkDate('start')
+            const bkDateStart = this.startDate ? new BkDate('start', this.startDate) : new BkDate('start')
             bkDateStart.setDate(initStartDate)
 
-            const bkDateEnd = new BkDate('end')
+            const bkDateEnd = this.endDate ? new BkDate('end', this.endDate) : new BkDate('end')
             bkDateEnd.setDate(initEndDate)
 
             let transitionName = 'toggle-slide'
@@ -313,9 +315,9 @@
                 let minute = ''
                 let second = ''
                 if (this.timer) {
-                    hour = moment().hour()
-                    minute = moment().minute()
-                    second = moment().second()
+                    hour = moment(val).hour()
+                    minute = moment(val).minute()
+                    second = moment(val).second()
                 }
 
                 if (this.startDate) {
@@ -347,9 +349,9 @@
                 let minute = ''
                 let second = ''
                 if (this.timer) {
-                    hour = moment().hour()
-                    minute = moment().minute()
-                    second = moment().second()
+                    hour = moment(val).hour()
+                    minute = moment(val).minute()
+                    second = moment(val).second()
                 }
                 
                 if (this.endDate) {
@@ -607,6 +609,9 @@
                 }
 
                 if (this.startDate) {
+                    hour = moment(this.startDate).hour()
+                    minute = moment(this.startDate).minute()
+                    second = moment(this.startDate).second()
                     this.selectedDateRange.unshift(
                         this.timer
                             ? moment(this.startDate).hour(hour).minute(minute).second(second).format('YYYY-MM-DD HH:mm:ss')
@@ -619,6 +624,9 @@
                     )
                 }
                 if (this.endDate) {
+                    hour = moment(this.endDate).hour()
+                    minute = moment(this.endDate).minute()
+                    second = moment(this.endDate).second()
                     this.selectedDateRange.pop()
                     this.selectedDateRange.push(
                         this.timer
