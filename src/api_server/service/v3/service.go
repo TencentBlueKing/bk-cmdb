@@ -100,17 +100,18 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.Client.Do(proxyReq)
 	if err != nil {
-		blog.Errorf("do request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+		blog.Errorf("*failed do request[url: %s] , err: %v", url, err)
 
 		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
 			Msg:     errors.New("proxy request failed"),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("response request[url: %s] failed, err: %v", url, err)
 		}
 		return
 	}
+	blog.V(3).Infof("success [%s] do request[url: %s]  ", response.Status, url)
 
 	defer response.Body.Close()
 
