@@ -61,7 +61,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 
 	// get id
 	id, err := cli.Instance.GetIncID(common.BKTableNameObjDes)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -70,7 +70,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 
 	// save
 	_, err = cli.Instance.Insert(common.BKTableNameObjDes, obj)
-	if nil == err {
+	if nil == err && !cli.Instance.IsNotFoundErr(err) {
 		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: id}})
 		return
 	}
@@ -120,7 +120,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjDes, condition)
-	if nil != cntErr {
+	if nil != cntErr && !cli.Instance.IsNotFoundErr(cntErr) {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
 		return
@@ -131,7 +131,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	// execute delete command
-	if delErr := cli.Instance.DelByCondition(common.BKTableNameObjDes, condition); nil != delErr {
+	if delErr := cli.Instance.DelByCondition(common.BKTableNameObjDes, condition); nil != delErr && !cli.Instance.IsNotFoundErr(delErr) {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
@@ -176,7 +176,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	condition := map[string]interface{}{"id": appID}
 	condition = util.SetModOwner(condition, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNameObjDes, data, condition)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail update object by condition, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
 		return

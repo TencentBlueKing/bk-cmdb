@@ -67,7 +67,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
 	getErr := instdata.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
-	if getErr != nil {
+	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("retrieve original data error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
@@ -75,7 +75,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	blog.Info("delete object type:%s,input:%v ", objType, input)
 	err = instdata.DelObjByCondition(objType, input)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("delete object type:%s,input:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
 		return
@@ -86,7 +86,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		for _, originData := range originDatas {
 			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
-			if err != nil {
+			if err != nil && !cli.Instance.IsNotFoundErr(err) {
 				blog.Error("create event error:%v", err)
 			}
 		}
@@ -138,7 +138,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
 	getErr := instdata.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
-	if getErr != nil {
+	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("retrieve original datas error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
 		return
@@ -146,7 +146,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	blog.Info("update object type:%s,data:%v,condition:%v", objType, data, condition)
 	err = instdata.UpdateObjByCondition(objType, data, condition)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
 		return
@@ -167,11 +167,11 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 					blog.Errorf("create event error:%v", err)
 					continue
 				}
-				if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil {
+				if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 					blog.Error("create event error:%v", err)
 				} else {
 					err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
-					if err != nil {
+					if err != nil && !cli.Instance.IsNotFoundErr(err) {
 						blog.Error("create event error:%v", err)
 					}
 				}
@@ -215,13 +215,13 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	fieldArr := strings.Split(fields, ",")
 	result := make([]map[string]interface{}, 0)
 	count, err := instdata.GetCntByCondition(objType, condition)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
 	err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
@@ -254,7 +254,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	blog.Info("create object type:%s,data:%v", objType, input)
 	var idName string
 	id, err := instdata.CreateObject(objType, input, &idName)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectCreateInstFailed, err.Error())})
 		return
@@ -262,12 +262,12 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 
 	// record event
 	origindata := map[string]interface{}{}
-	if err := instdata.GetObjectByID(objType, nil, id, origindata, ""); err != nil {
+	if err := instdata.GetObjectByID(objType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
-		if err != nil {
+		if err != nil && !cli.Instance.IsNotFoundErr(err) {
 			blog.Error("create event error:%v", err)
 		}
 	}

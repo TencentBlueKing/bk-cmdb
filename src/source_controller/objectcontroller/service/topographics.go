@@ -57,7 +57,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	selector.SetSupplierAccount(ownerID)
 	results := []meta.TopoGraphics{}
-	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameTopoGraphics, nil, selector, &results, "", -1, -1); nil != selErr {
+	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameTopoGraphics, nil, selector, &results, "", -1, -1); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -79,7 +79,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
