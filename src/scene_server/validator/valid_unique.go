@@ -103,7 +103,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		return valid.errif.Error(result.Code)
 	}
 
-	if 0 >= result.Data.Count {
+	if 0 < result.Data.Count {
 		blog.Error("duplicate data ")
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}

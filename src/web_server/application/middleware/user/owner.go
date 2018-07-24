@@ -41,7 +41,7 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager.httpCli = httpclient.NewHttpClient()
 	ownerManager.httpCli.SetHeader(common.BKHTTPHeaderUser, userName)
 	ownerManager.httpCli.SetHeader(common.BKHTTPLanguage, language)
-	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, ownerID)
 	return ownerManager
 }
 
