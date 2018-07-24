@@ -1,6 +1,8 @@
 package operation
 
 import (
+	"strings"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -16,7 +18,7 @@ import (
 type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
-	FindBusiness(params types.ContextParams, obj model.Object, cond condition.Condition) (count int, results []inst.Inst, err error)
+	FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error)
 	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 
@@ -151,10 +153,13 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	return b.inst.DeleteInst(params, bizObj, innerCond)
 }
 
-func (b *business) FindBusiness(params types.ContextParams, obj model.Object, cond condition.Condition) (count int, results []inst.Inst, err error) {
+func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
 
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
+	query.Condition = cond.ToMapStr()
+	query.Limit = common.BKNoLimit
+	query.Fields = strings.Join(fields, ",")
 
 	return b.inst.FindInst(params, obj, query, false)
 }
