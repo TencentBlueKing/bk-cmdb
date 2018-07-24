@@ -158,14 +158,7 @@ func (m *MgoCli) GetOneByCondition(cName string, fields []string, condiction int
 	if 0 < len(fieldmap) {
 		query.Select(fieldmap)
 	}
-	err := query.One(result)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil
-		}
-		return err
-	}
-	return nil
+	return query.One(result)
 }
 
 // GetMutilByCondition get multiple document by condiction
@@ -358,4 +351,9 @@ func (m *MgoCli) GetType() string {
 // IsDuplicateErr returns whether err is duplicate error
 func (m *MgoCli) IsDuplicateErr(err error) bool {
 	return mgo.IsDup(err)
+}
+
+// IsNotFoundErr returns whether err is not found error
+func (m *MgoCli) IsNotFoundErr(err error) bool {
+	return mgo.ErrNotFound == err
 }
