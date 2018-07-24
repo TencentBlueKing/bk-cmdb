@@ -54,6 +54,7 @@ ${TARGET_NAME}: $(GOFILES_ALL)
 	@cp -f ${SCRIPT_DIR}/upgrade.sh ${BIN_PATH}/upgrade.sh
 	@cp -f ${SCRIPT_DIR}/start.sh ${BIN_PATH}/start.sh
 	@cp -f ${SCRIPT_DIR}/stop.sh ${BIN_PATH}/stop.sh
+	@cp -f ${SCRIPT_DIR}/restart.sh ${BIN_PATH}/restart.sh
 	@sed -e 's/version_placeholer/${VERSION}/g' ${SCRIPT_DIR}/image.sh > ${BIN_PATH}/image.sh
 	@chmod +x  ${BIN_PATH}/${TARGET_NAME}/*.sh
 	@chmod +x  ${BIN_PATH}/${TARGET_NAME}/*.py

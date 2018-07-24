@@ -45,5 +45,5 @@ func (g *identifier) SearchIdentifier(params types.ContextParams, objType string
 		return nil, params.Err.New(common.CCErrObjectSelectIdentifierFailed, rsp.ErrMsg)
 	}
 
-	return rsp.Data, nil
+	return rsp.Data.Info, nil
 }

@@ -40,6 +40,7 @@ const (
 func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	pathParams := req.PathParameters()
 	hostID, err := strconv.Atoi(pathParams["bk_host_id"])
@@ -51,6 +52,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 
 	var result map[string]interface{}
 	condition := common.KvMap{common.BKHostIDField: hostID}
+	condition = util.SetModOwner(condition, ownerID)
 	fields := make([]string, 0)
 	err = s.Instance.GetOneByCondition(HostBaseCollection, fields, condition, &result)
 	if err != nil {
@@ -69,6 +71,8 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	lang := s.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
+
 	objType := common.BKInnerObjIDHost
 	var dat commondata.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
@@ -78,6 +82,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	}
 
 	condition := util.ConvParamsTime(dat.Condition)
+	condition = util.SetModOwner(condition, ownerID)
 	fieldArr := strings.Split(dat.Fields, ",")
 	result := make([]map[string]interface{}, 0)
 
@@ -107,6 +112,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	objType := common.BKInnerObjIDHost
 	input := make(map[string]interface{})
@@ -117,6 +123,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	input[common.CreateTimeField] = time.Now()
+	input = util.SetModOwner(input, ownerID)
 	var idName string
 	id, err := s.Logics.CreateObject(objType, input, &idName)
 	if err != nil {
@@ -130,7 +137,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	if err := s.Logics.GetObjectByID(objType, nil, id, originData, ""); err != nil {
 		blog.Error("create event error:%v", err)
 	} else {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
+		ec := eventclient.NewEventContextByReq(pheader, s.Cache)
 		err := ec.InsertEvent(meta.EventTypeInstData, "host", meta.EventActionCreate, originData, nil)
 		if err != nil {
 			blog.Error("add host, but create event error:%v", err)
@@ -167,6 +174,7 @@ func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
 func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -175,7 +183,9 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	moduleIDs, err := s.Logics.GetModuleIDsByHostID(map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}) //params.HostID, params.ApplicationID)
+	condition := map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}
+	condition = util.SetModOwner(condition, ownerID)
+	moduleIDs, err := s.Logics.GetModuleIDsByHostID(condition) //params.HostID, params.ApplicationID)
 	if nil != err {
 		blog.Errorf("get host module id failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
@@ -191,6 +201,7 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -201,7 +212,7 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range params.ModuleID {
-		_, err := s.Logics.AddSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID)
+		_, err := s.Logics.AddSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostTransferModule)})
 			return
@@ -214,6 +225,7 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -234,7 +246,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range moduleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("delete module host config, but delete module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelOriginHostModuelRelationship)})
@@ -248,6 +260,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -266,7 +279,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 	//delete default host module relation
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, defaultModuleID := range defaultModuleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, defaultModuleID, params.ApplicationID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, defaultModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("del default module host config failed, with relation, err:%v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelDefaultModuleHostConfig)})
@@ -280,6 +293,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.ParamData)
@@ -313,7 +327,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	for _, hostID := range params.HostID {
 		//host not belong to other biz, add new host
 		if !util.ContainsInt(faultHostIDs, hostID) {
-			_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerAppplicationID)
+			_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
 			if nil != err {
 				addErr = append(addErr, hostID)
 				continue
@@ -321,7 +335,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 		}
 
 		//delete origin relation
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, idleModuleID, params.ApplicationID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, idleModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			delErr = append(delErr, hostID)
 			continue
@@ -342,6 +356,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.AssignHostToAppParams)
@@ -354,7 +369,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	getModuleParams := make(map[string]interface{})
 	for _, hostID := range params.HostID {
 		// delete relation in default app module
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerApplicationID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
@@ -376,7 +391,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		}
 
 		// add new host
-		_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.ModuleID, params.ApplicationID)
+		_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.ModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but add single host module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
@@ -389,6 +404,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	var params = make(map[string][]int)
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -404,6 +420,7 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 		query[key] = conditon
 	}
 
+	query = util.SetModOwner(query, ownerID)
 	fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
 	var result []meta.ModuleHost
 	err := s.Instance.GetMutilByCondition(ModuleHostCollection, fields, query, &result, common.BKHostIDField, 0, common.BKNoLimit)
