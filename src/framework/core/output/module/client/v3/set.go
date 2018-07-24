@@ -13,12 +13,14 @@
 package v3
 
 import (
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/types"
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/tidwall/gjson"
+
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/types"
 )
 
 // SetGetter the set getter interface
@@ -56,7 +58,7 @@ func (cli *Set) CreateSet(bizID int64, data types.MapStr) (int, error) {
 		return 0, err
 	}
 
-	fmt.Println("the set id:", string(rst))
+	//fmt.Println("the set id:", string(rst))
 	gs := gjson.ParseBytes(rst)
 
 	// check result
