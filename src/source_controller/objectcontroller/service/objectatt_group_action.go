@@ -67,7 +67,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 	propertyGroup.ID = id
 	propertyGroup.OwnerID = ownerID
 	_, err = cli.Instance.Insert("cc_PropertyGroup", propertyGroup)
-	if nil == err {
+	if nil == err && !cli.Instance.IsNotFoundErr(err) {
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: propertyGroup})
 		return
 	}

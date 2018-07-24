@@ -69,7 +69,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 func (cli *Service) getModuleConfigCount(con map[string]interface{}) (int, error) {
 
 	count, err := cli.Instance.GetCntByCondition("cc_ModuleHostConfig", con)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail getModuleConfigCount error:%v", err)
 		return 0, err
 	}
@@ -86,7 +86,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	}
 	var oldContents []interface{}
 	getErr := cli.Instance.GetMutilByCondition(tableName, nil, input, &oldContents, "", 0, common.BKNoLimit)
-	if getErr != nil {
+	if getErr != nil && !cli.Instance.IsNotFoundErr(getErr) {
 		blog.Errorf("fail to delSetConfigHost: %v", getErr)
 		return getErr
 	}
@@ -124,7 +124,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	params := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: common.KvMap{"$in": hostIDs}}
 	var hostRelations []interface{}
 	getErr = cli.Instance.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
-	if getErr != nil {
+	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail to exist relation host error: %v", getErr)
 		return getErr
 	}
@@ -172,7 +172,7 @@ func (cli *Service) GetIdleModule(appID interface{}) (interface{}, interface{}, 
 	var result bson.M
 	err := cli.Instance.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
 
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		return nil, nil, err
 	}
 	return result[common.BKSetIDField], result[common.BKModuleIDField], nil
