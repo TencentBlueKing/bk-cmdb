@@ -13,8 +13,6 @@
 package operation
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
@@ -74,6 +72,6 @@ func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, da
 		}
 		return nil
 	}
-	fmt.Println("datas:", datas, "instid:", instID)
+
 	return validObj.ValidMap(datas, common.ValidUpdate, instID)
 }
