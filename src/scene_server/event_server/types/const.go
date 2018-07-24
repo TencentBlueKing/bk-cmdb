@@ -44,3 +44,8 @@ const (
 
 	EventCacheIdentInstPrefix = common.BKCacheKeyV3Prefix + "ident:inst_"
 )
+
+// EventSubscriberCacheKey returns EventSubscriberCacheKey
+func EventSubscriberCacheKey(ownerID, eventtype string) string {
+	return EventCacheSubscribeformKey + ownerID + ":" + eventtype
+}

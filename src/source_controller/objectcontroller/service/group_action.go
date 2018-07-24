@@ -31,11 +31,9 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -58,9 +56,9 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	data[common.BKOwnerIDField] = ownerID
 	guid := xid.New()
 	data[common.BKUserGroupIDField] = guid.String()
+	data = util.SetModOwner(data, ownerID)
 	_, err = cli.Instance.Insert(common.BKTableNameUserGroup, data)
 	if nil != err {
 		blog.Error("create user group error :%v", err)
@@ -76,11 +74,11 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -104,8 +102,8 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	}
 
 	cond := make(map[string]interface{})
-	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
+	cond = util.SetModOwner(cond, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroup, data, cond)
 	if nil != err {
 		blog.Error("update user group error :%v", err)
@@ -120,16 +118,16 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	groupID := pathParams["group_id"]
 	cond := make(map[string]interface{})
-	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
+	cond = util.SetModOwner(cond, ownerID)
 	err := cli.Instance.DelByCondition(common.BKTableNameUserGroup, cond)
 	if nil != err {
 		blog.Error("delete user group error :%v", err)
@@ -144,11 +142,10 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	pathParams := req.PathParameters()
-	ownerID := pathParams["bk_supplier_account"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		blog.Error("read json data error :%v", err)
@@ -168,7 +165,7 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
-	cond[common.BKOwnerIDField] = ownerID
+	cond = util.SetModOwner(cond, ownerID)
 	var result []interface{}
 	err = cli.Instance.GetMutilByCondition(common.BKTableNameUserGroup, []string{}, cond, &result, "", 0, 0)
 	if nil != err {

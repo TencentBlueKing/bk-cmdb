@@ -37,6 +37,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	blog.Info("create obj-association")
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -63,6 +64,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	obj.ID = id
+	obj.OwnerID = ownerID
 	_, err = cli.Instance.Insert("cc_ObjAsst", obj)
 	if nil != err {
 		blog.Error("create objectasst failed, error:%s", err.Error())
@@ -80,6 +82,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -109,6 +112,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 		}
 	}
 
+	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := cli.Instance.GetCntByCondition("cc_ObjAsst", condition)
 	if nil != cntErr {
 		blog.Error("failed to select objectasst by condition(%+v), error is %d", cntErr)
@@ -140,6 +144,7 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -165,9 +170,10 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-
+	condititon := map[string]interface{}{"id": id}
+	condititon = util.SetModOwner(condititon, ownerID)
 	// update object into storage
-	if updateErr := cli.Instance.UpdateByCondition("cc_ObjAsst", data, map[string]interface{}{"id": id}); nil != updateErr {
+	if updateErr := cli.Instance.UpdateByCondition("cc_ObjAsst", data, condititon); nil != updateErr {
 		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
@@ -185,6 +191,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -214,6 +221,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	results := make([]meta.Association, 0)
 	selector, _ := js.Map()
+	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
 	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())

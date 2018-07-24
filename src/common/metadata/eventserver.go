@@ -63,7 +63,7 @@ type Subscription struct {
 	TimeOut          int64       `bson:"time_out" json:"time_out"`                   // second
 	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
-	OwnerID          string      `bson:"bk_supplier_account" json:"nk_supplier_account"`
+	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
 	LastTime         *types.Time `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
@@ -102,6 +102,7 @@ type EventInst struct {
 	ActionTime  types.Time  `json:"action_time"`
 	ObjType     string      `json:"obj_type"`
 	Data        []EventData `json:"data"`
+	OwnerID     string      `json:"bk_supplier_account"`
 	RequestID   string      `json:"request_id"`
 	RequestTime types.Time  `json:"request_time"`
 }

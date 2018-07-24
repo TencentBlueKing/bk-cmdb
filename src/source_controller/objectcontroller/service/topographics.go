@@ -32,6 +32,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -54,6 +55,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	selector.SetSupplierAccount(ownerID)
 	results := []meta.TopoGraphics{}
 	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameTopoGraphics, nil, selector, &results, "", -1, -1); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
@@ -70,6 +72,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -90,6 +93,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 	}
 
 	for index := range datas {
+		datas[index].SetSupplierAccount(ownerID)
 		_, err = cli.Instance.Insert(common.BKTableNameTopoGraphics, datas[index].FillBlank())
 		if cli.Instance.IsDuplicateErr(err) {
 			condition := meta.TopoGraphics{}
@@ -98,6 +102,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			condition.SetNodeType(*datas[index].NodeType)
 			condition.SetObjID(*datas[index].ObjID)
 			condition.SetInstID(*datas[index].InstID)
+			condition.SetSupplierAccount(ownerID)
 			if err = cli.Instance.UpdateByCondition(common.BKTableNameTopoGraphics, datas[index], condition); err != nil {
 				blog.Error("update data failed, error information is %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
