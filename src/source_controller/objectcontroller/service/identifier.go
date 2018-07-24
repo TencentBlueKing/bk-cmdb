@@ -21,9 +21,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 )
@@ -32,57 +31,62 @@ import (
 func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	instdata.DataH = cli.Instance
-	param := new(SearchIdentifierParam)
+	param := new(metadata.SearchIdentifierParam)
 	err := json.NewDecoder(req.Request.Body).Decode(param)
 	if err != nil {
 		blog.Errorf("SearchIdentifier error:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 
 	}
 
 	var (
-		setIDs    = []int{}
-		moduleIDs = []int{}
-		bizIDs    = []int{}
-		cloudIDs  = []int{}
+		setIDs    = []int64{}
+		moduleIDs = []int64{}
+		bizIDs    = []int64{}
+		cloudIDs  = []int64{}
 	)
 
 	// caches
 	var (
-		sets    = map[int]metadata.SetInst{}
-		modules = map[int]metadata.ModuleInst{}
-		bizs    = map[int]metadata.BizInst{}
-		clouds  = map[int]metadata.CloudInst{}
+		sets    = map[int64]metadata.SetInst{}
+		modules = map[int64]metadata.ModuleInst{}
+		bizs    = map[int64]metadata.BizInst{}
+		clouds  = map[int64]metadata.CloudInst{}
 	)
 
 	condition := map[string]interface{}{
 		common.BKDBOR: []map[string]interface{}{
 			{
 				common.BKHostInnerIPField: map[string]interface{}{
-					common.BKDBIN: param.IP,
+					common.BKDBIN: param.IP.Data,
 				},
 			}, {
 				common.BKHostOuterIPField: map[string]interface{}{
-					common.BKDBIN: param.IP,
+					common.BKDBIN: param.IP.Data,
 				},
 			},
 		},
 	}
+	if param.IP.CloudID != nil {
+		condition[common.BKCloudIDField] = *param.IP.CloudID
+	}
+	condition = util.SetQueryOwner(condition, ownerID)
 
 	// fetch hosts
 	hosts := []*metadata.HostIdentifier{}
 	err = instdata.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
 	if err != nil {
 		blog.Errorf("SearchIdentifier error:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
 		return
 	}
 	for _, host := range hosts {
-		relations := []metadata.ModuleHostConfig{}
+		relations := []metadata.ModuleHost{}
 		condiction := map[string]interface{}{
 			common.BKHostIDField: host.HostID,
 		}
@@ -90,7 +94,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		err = cli.Instance.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
 			return
 		}
 
@@ -99,11 +103,11 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 			host.HostIdentModule[fmt.Sprint(rela.ModuleID)] = &metadata.HostIdentModule{
 				SetID:    rela.SetID,
 				ModuleID: rela.ModuleID,
-				BizID:    rela.ApplicationID,
+				BizID:    rela.AppID,
 			}
 			setIDs = append(setIDs, rela.SetID)
 			moduleIDs = append(moduleIDs, rela.ModuleID)
-			bizIDs = append(bizIDs, rela.ApplicationID)
+			bizIDs = append(bizIDs, rela.AppID)
 		}
 		cloudIDs = append(cloudIDs, host.CloudID)
 	}
@@ -115,7 +119,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		err = getCache(cli.Instance, common.BKTableNameBaseSet, common.BKSetIDField, setIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
 			return
 		}
 		for _, tmp := range tmps {
@@ -136,7 +140,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		err = getCache(cli.Instance, common.BKTableNameBaseApp, common.BKAppIDField, bizIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
 			return
 		}
 		for _, tmp := range tmps {
@@ -148,7 +152,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		err = getCache(cli.Instance, common.BKTableNameBasePlat, common.BKCloudIDField, cloudIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
 			return
 		}
 		for _, tmp := range tmps {
@@ -191,25 +195,15 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	info["count"] = len(hosts)
 	info["info"] = hosts
 
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
+	resp.WriteEntity(metadata.Response{BaseResp: metadata.SuccessBaseResp, Data: info})
 
 }
 
-func getCache(db storage.DI, tablename string, idfield string, ids []int, result interface{}) error {
+func getCache(db storage.DI, tablename string, idfield string, ids []int64, result interface{}) error {
 	condition := map[string]interface{}{
 		idfield: map[string]interface{}{
 			common.BKDBIN: ids,
 		},
 	}
 	return db.GetMutilByCondition(tablename, nil, condition, result, "", 0, 0)
-}
-
-// SearchIdentifierParam defines the param
-type SearchIdentifierParam struct {
-	IP   []string `json:"ip"`
-	Page struct {
-		Start int    `json:"start"`
-		Limit int    `json:"limit"`
-		Sort  string `json:"sort"`
-	} `json:"page"`
 }

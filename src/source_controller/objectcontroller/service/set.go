@@ -33,6 +33,7 @@ import (
 func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) {
 	// get the language
 	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -53,6 +54,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	input = util.SetModOwner(input, ownerID)
 	err = cli.delModuleConfigSet(input, req)
 	if err != nil {
 		blog.Error("fail to delSetConfigHost: %v", err)

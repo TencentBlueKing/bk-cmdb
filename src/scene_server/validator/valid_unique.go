@@ -25,7 +25,6 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return nil
 	}
 
-	objID := valid.objID
 	searchCond := make(map[string]interface{})
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
@@ -37,8 +36,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		}
 	}
 
-	if innerObject[valid.objID] {
-		objID = common.BKINnerObjIDObject
+	if common.GetObjByType(valid.objID) == common.BKINnerObjIDObject {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
@@ -46,7 +44,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return nil
 	}
 
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
 	if nil != err {
 		return err
 	}
@@ -105,7 +103,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		return valid.errif.Error(result.Code)
 	}
 
-	if 0 >= result.Data.Count {
+	if 0 < result.Data.Count {
 		blog.Error("duplicate data ")
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}

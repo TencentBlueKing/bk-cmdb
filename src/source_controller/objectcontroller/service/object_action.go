@@ -34,7 +34,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
-	ownerID := util.GetActionOnwerID(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -87,7 +87,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
-	//ownerID := util.GetActionOnwerID(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -118,6 +118,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 
 	}
 
+	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjDes, condition)
 	if nil != cntErr {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
@@ -143,7 +144,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
-	//ownerID := util.GetActionOnwerID(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -172,7 +173,9 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-	err = cli.Instance.UpdateByCondition(common.BKTableNameObjDes, data, map[string]interface{}{"id": appID})
+	condition := map[string]interface{}{"id": appID}
+	condition = util.SetModOwner(condition, ownerID)
+	err = cli.Instance.UpdateByCondition(common.BKTableNameObjDes, data, condition)
 	if nil != err {
 		blog.Error("fail update object by condition, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
@@ -189,7 +192,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 
 	// get the language
 	language := util.GetActionLanguage(req)
-	//ownerID := util.GetActionOnwerID(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
@@ -224,6 +227,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	selector = util.SetQueryOwner(selector, ownerID)
 	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
