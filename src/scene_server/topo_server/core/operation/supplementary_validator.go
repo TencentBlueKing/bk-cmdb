@@ -13,6 +13,8 @@
 package operation
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
@@ -33,13 +35,27 @@ type valid struct {
 }
 
 func (v *valid) ValidatorCreate(params types.ContextParams, obj model.Object, datas mapstr.MapStr) error {
-	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), []string{common.BKOwnerIDField, common.BKDefaultField, common.BKInstParentStr}, params.Header, params.Engin)
+	ignoreKeys := []string{
+		common.BKOwnerIDField,
+		common.BKDefaultField,
+		common.BKInstParentStr,
+		common.BKOwnerIDField,
+	}
+	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
 	return validObj.ValidMap(datas, common.ValidCreate, -1)
 }
 func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, datas mapstr.MapStr, instID int64, cond condition.Condition) error {
 
-	validObj := validator.NewValidMap(params.SupplierAccount, obj.GetID(), params.Header, params.Engin)
+	ignoreKeys := []string{
+		common.BKOwnerIDField,
+		common.BKDefaultField,
+		common.BKInstParentStr,
+		common.BKOwnerIDField,
+	}
+
+	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
 	query := &metadata.QueryInput{}
+	query.Fields = obj.GetInstIDFieldName()
 	if instID < 0 {
 		query.Condition = cond.ToMapStr()
 		_, insts, err := v.inst.FindInst(params, obj, query, false)
@@ -58,6 +74,6 @@ func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, da
 		}
 		return nil
 	}
-
+	fmt.Println("datas:", datas, "instid:", instID)
 	return validObj.ValidMap(datas, common.ValidUpdate, instID)
 }
