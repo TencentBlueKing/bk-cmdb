@@ -22,7 +22,11 @@ func init() {
 }
 
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
-	err = fixesPortPattern(db, conf)
+	err = fixesProcessPortPattern(db, conf)
+	if err != nil {
+		return err
+	}
+	err = fixesProcessPriorityPattern(db, conf)
 	if err != nil {
 		return err
 	}

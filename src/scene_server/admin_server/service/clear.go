@@ -44,10 +44,10 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-func clearDatabase(instData storage.DI) error {
+func clearDatabase(db storage.DI) error {
 	// clear mongodb
 	for _, tablename := range common.AllTables {
-		instData.DropTable(tablename)
+		db.DropTable(tablename)
 	}
 
 	// clear redis
