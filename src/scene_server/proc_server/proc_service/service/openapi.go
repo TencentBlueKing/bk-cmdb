@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	sourceAPI "configcenter/src/source_controller/api/object"
 )
 
 func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
@@ -48,7 +47,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		return
 	}
 
-	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	forward := req.Request.Header
 	// 根据模块获取所有关联的进程，建立Map ModuleToProcesses
 	moduleToProcessesMap := make(map[int64][]interface{})
 	for _, module := range modules {
@@ -163,7 +162,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	forward := req.Request.Header
 	ipArr := reqParam[common.BKIPArr]
 	hostCondition := map[string]interface{}{common.BKHostInnerIPField: map[string]interface{}{"$in": ipArr}}
 	hostData, hostIdArr, err := ps.getHostMapByCond(forward, hostCondition)
@@ -273,13 +272,13 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 }
 
 // 根据模块获取所有关联的进程，建立Map ModuleToProcesses
-func (ps *ProcServer) getProcessesByModuleName(forward *sourceAPI.ForwardParam, moduleName string) ([]interface{}, error) {
+func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName string) ([]interface{}, error) {
 	procData := make([]interface{}, 0)
 	params := map[string]interface{}{
 		common.BKModuleNameField: moduleName,
 	}
 
-	ret, err := ps.CoreAPI.ObjectController().OpenAPI().GetProcessesByModuleName(context.Background(), forward.Header, params)
+	ret, err := ps.CoreAPI.ObjectController().OpenAPI().GetProcessesByModuleName(context.Background(), forward, params)
 	if err != nil || (err == nil && !ret.Result) {
 		blog.Errorf("get process by module failed. err: %s, errcode: %d, errmsg: %s", err.Error(), ret.Code, ret.ErrMsg)
 		return procData, err
@@ -289,15 +288,15 @@ func (ps *ProcServer) getProcessesByModuleName(forward *sourceAPI.ForwardParam, 
 	return procData, nil
 }
 
-func (ps *ProcServer) getModuleHostConfigsByAppID(appID int, forward *sourceAPI.ForwardParam) (moduleHostConfigs []map[string]int, err error) {
+func (ps *ProcServer) getModuleHostConfigsByAppID(appID int, forward http.Header) (moduleHostConfigs []map[string]int, err error) {
 	return ps.getConfigByCond(forward, map[string][]int64{
 		common.BKAppIDField: []int64{int64(appID)},
 	})
 }
 
-func (ps *ProcServer) getConfigByCond(forward *sourceAPI.ForwardParam, cond map[string][]int64) ([]map[string]int, error) {
+func (ps *ProcServer) getConfigByCond(forward http.Header, cond map[string][]int64) ([]map[string]int, error) {
 	configArr := make([]map[string]int, 0)
-	ret, err := ps.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), forward.Header, cond)
+	ret, err := ps.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), forward, cond)
 	if err != nil || (err == nil && !ret.Result) {
 		blog.Errorf("fail to get module host config. err:%v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 		return configArr, fmt.Errorf("fail to get module host config")
@@ -315,7 +314,7 @@ func (ps *ProcServer) getConfigByCond(forward *sourceAPI.ForwardParam, cond map[
 	return configArr, nil
 }
 
-func (ps *ProcServer) getAppInfoByID(appID int, forward *sourceAPI.ForwardParam) (map[int]interface{}, error) {
+func (ps *ProcServer) getAppInfoByID(appID int, forward http.Header) (map[int]interface{}, error) {
 	return ps.getAppMapByCond(forward, "", map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
 			"$in": []int{appID},
@@ -323,7 +322,7 @@ func (ps *ProcServer) getAppInfoByID(appID int, forward *sourceAPI.ForwardParam)
 	})
 }
 
-func (ps *ProcServer) getAppMapByCond(forward *sourceAPI.ForwardParam, fields string, cond interface{}) (map[int]interface{}, error) {
+func (ps *ProcServer) getAppMapByCond(forward http.Header, fields string, cond interface{}) (map[int]interface{}, error) {
 	appMap := make(map[int]interface{})
 	input := new(meta.QueryInput)
 	input.Condition = cond
@@ -331,7 +330,7 @@ func (ps *ProcServer) getAppMapByCond(forward *sourceAPI.ForwardParam, fields st
 	input.Sort = common.BKAppIDField
 	input.Start = 0
 	input.Limit = 0
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, forward.Header, input)
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, forward, input)
 	if err != nil || (err == nil && !ret.Result) {
 		blog.Errorf("fail to get appinfo by condition. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 		return appMap, fmt.Errorf("fail to get appid by condition")
@@ -348,7 +347,7 @@ func (ps *ProcServer) getAppMapByCond(forward *sourceAPI.ForwardParam, fields st
 	return appMap, nil
 }
 
-func (ps *ProcServer) getHostMapByAppID(forward *sourceAPI.ForwardParam, configData []map[string]int) (map[int]map[string]interface{}, error) {
+func (ps *ProcServer) getHostMapByAppID(forward http.Header, configData []map[string]int) (map[int]map[string]interface{}, error) {
 	hostIDArr := make([]int, 0)
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
@@ -366,7 +365,7 @@ func (ps *ProcServer) getHostMapByAppID(forward *sourceAPI.ForwardParam, configD
 	input := new(meta.QueryInput)
 	input.Fields = fmt.Sprintf("%s,%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostOuterIPField)
 	input.Condition = hostMapCondition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward.Header, input)
+	ret, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward, input)
 	if err != nil || (err == nil && !ret.Result) {
 		return hostMap, fmt.Errorf("fail to gethosts. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -382,14 +381,14 @@ func (ps *ProcServer) getHostMapByAppID(forward *sourceAPI.ForwardParam, configD
 	return hostMap, nil
 }
 
-func (ps *ProcServer) getHostMapByCond(forward *sourceAPI.ForwardParam, condition map[string]interface{}) (map[int]map[string]interface{}, []int64, error) {
+func (ps *ProcServer) getHostMapByCond(forward http.Header, condition map[string]interface{}) (map[int]map[string]interface{}, []int64, error) {
 	hostMap := make(map[int]map[string]interface{})
 	hostIdArr := make([]int64, 0)
 
 	input := new(meta.QueryInput)
 	input.Fields = ""
 	input.Condition = condition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward.Header, input)
+	ret, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward, input)
 	if err != nil || (err == nil && !ret.Result) {
 		return hostMap, hostIdArr, fmt.Errorf("fail to getHostMapByCondition. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -407,7 +406,7 @@ func (ps *ProcServer) getHostMapByCond(forward *sourceAPI.ForwardParam, conditio
 	return hostMap, hostIdArr, nil
 }
 
-func (ps *ProcServer) getModuleMapByCond(forward *sourceAPI.ForwardParam, field string, cond interface{}) (map[int]interface{}, error) {
+func (ps *ProcServer) getModuleMapByCond(forward http.Header, field string, cond interface{}) (map[int]interface{}, error) {
 	moduleMap := make(map[int]interface{})
 	input := new(meta.QueryInput)
 	input.Fields = field
@@ -415,7 +414,7 @@ func (ps *ProcServer) getModuleMapByCond(forward *sourceAPI.ForwardParam, field 
 	input.Start = 0
 	input.Limit = 0
 	input.Condition = cond
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward.Header, input)
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward, input)
 	if err != nil || (err == nil && !ret.Result) {
 		return moduleMap, fmt.Errorf("fail to getModuleMapByCond. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -432,7 +431,7 @@ func (ps *ProcServer) getModuleMapByCond(forward *sourceAPI.ForwardParam, field 
 	return moduleMap, nil
 }
 
-func (ps *ProcServer) getProcessMapByAppID(appId int, forward *sourceAPI.ForwardParam) (map[int]map[string]interface{}, error) {
+func (ps *ProcServer) getProcessMapByAppID(appId int, forward http.Header) (map[int]map[string]interface{}, error) {
 	procMap := make(map[int]map[string]interface{})
 	condition := map[string]interface{}{
 		common.BKAppIDField: appId,
@@ -441,7 +440,7 @@ func (ps *ProcServer) getProcessMapByAppID(appId int, forward *sourceAPI.Forward
 	input := new(meta.QueryInput)
 	input.Condition = condition
 	input.Fields = ""
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward.Header, input)
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, input)
 	if err != nil || (err == nil && !ret.Result) {
 		return procMap, fmt.Errorf("fail to getProcessMapByAppID. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -458,19 +457,19 @@ func (ps *ProcServer) getProcessMapByAppID(appId int, forward *sourceAPI.Forward
 	return procMap, nil
 }
 
-func (ps *ProcServer) getProcessBindModule(appId, procId int, forward *sourceAPI.ForwardParam) ([]interface{}, error) {
+func (ps *ProcServer) getProcessBindModule(appId, procId int, forward http.Header) ([]interface{}, error) {
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
 	input := new(meta.QueryInput)
 	input.Condition = condition
-	objModRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward.Header, input)
+	objModRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward, input)
 	if err != nil || (err == nil && !objModRet.Result) {
 		return nil, fmt.Errorf("fail to get module by appid(%d). err: %v, errcode: %d, errmsg: %s", err, objModRet.Code, objModRet.ErrMsg)
 	}
 
 	moduleArr := objModRet.Data.Info
 	condition[common.BKProcIDField] = procId
-	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), forward.Header, condition)
+	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), forward, condition)
 	if err != nil || (err == nil && !procRet.Result) {
 		return nil, fmt.Errorf("fail to GetProc2Module in getProcessBindModule. err: %v, errcode: %d, errmsg: %s", err, procRet.Code, procRet.ErrMsg)
 	}

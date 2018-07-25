@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 const (
@@ -74,7 +73,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 
 	objType := common.BKInnerObjIDHost
-	var dat commondata.ObjQueryInput
+	var dat meta.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
 		blog.Errorf("get hosts failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
