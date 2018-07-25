@@ -157,7 +157,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-			idname := common.GetInstFieldByType(objType)
+			idname := common.GetInstIDField(objType)
 			for _, originData := range originDatas {
 				newData := map[string]interface{}{}
 				id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))

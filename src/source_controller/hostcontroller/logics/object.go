@@ -55,7 +55,7 @@ func (lgc *Logics) CreateObject(objType string, input interface{}, idName *strin
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
-	*idName = common.GetInstFieldByType(objType)
+	*idName = common.GetInstIDField(objType)
 	inputc[*idName] = objID
 	_, err = lgc.Instance.Insert(tName, inputc)
 	if err != nil {

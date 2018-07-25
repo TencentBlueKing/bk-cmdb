@@ -140,7 +140,7 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 
 	blog.V(3).Infof("add object result : %v", resMap)
 
-	objID, err := resp.Data.Int64(common.GetInstFieldByType(objType))
+	objID, err := resp.Data.Int64(common.GetInstIDField(objType))
 	if nil != err {
 		blog.Errorf("addObj get id error, reply:%v, error:%s", resp, err.Error())
 		return 0, fmt.Errorf("add object reply error, not found  id")

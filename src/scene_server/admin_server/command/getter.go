@@ -16,8 +16,8 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 

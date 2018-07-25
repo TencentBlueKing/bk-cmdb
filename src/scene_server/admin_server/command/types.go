@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/source_controller/common/instdata"
 )
 
 type option struct {
@@ -46,7 +45,7 @@ func (n *Node) getChildObjID() string {
 }
 
 func (n *Node) getInstID() (int64, error) {
-	id, err := getInt64(n.Data[instdata.GetIDNameByType(n.ObjID)])
+	id, err := getInt64(n.Data[common.GetInstIDField(n.ObjID)])
 	if nil != err {
 		return 0, fmt.Errorf("node has no instID: %+v", *n)
 	}
