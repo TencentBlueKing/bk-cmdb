@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -172,7 +171,7 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstAndAssociationDetail")
+	//fmt.Println("SearchInstAndAssociationDetail")
 	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
 
 	objID := pathParams("obj_id")
@@ -297,7 +296,7 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchInstChildTopo")
+	//fmt.Println("SearchInstChildTopo")
 	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")

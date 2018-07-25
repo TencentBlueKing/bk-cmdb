@@ -21,8 +21,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"configcenter/src/source_controller/common/commondata"
 )
+
+const CCTimeTypeParseFlag = "cc_time_type"
 
 type AuditOperationInterface interface {
 	Query(params types.ContextParams, data mapstr.MapStr) (interface{}, error)
@@ -87,7 +88,7 @@ func (a *audit) Query(params types.ContextParams, data mapstr.MapStr) (interface
 				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 			}
 
-			conds[common.BKOpTimeField] = common.KvMap{"$gte": times[0], "$lte": times[1], commondata.CC_time_type_parse_flag: "1"}
+			conds[common.BKOpTimeField] = common.KvMap{"$gte": times[0], "$lte": times[1], CCTimeTypeParseFlag: "1"}
 			//delete(conds, "Time")
 		}
 		conds[common.BKOwnerIDField] = params.SupplierAccount

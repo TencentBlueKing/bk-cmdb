@@ -10,13 +10,28 @@
  * limitations under the License.
  */
 
-package ccapi
+package v3v0v9beta3
 
 import (
-	_ "configcenter/src/api_server/ccapi/actions/v2"
-	_ "configcenter/src/api_server/ccapi/actions/v3/audit"   // import audit log(operationlog)
-	_ "configcenter/src/api_server/ccapi/actions/v3/event"   // import event
-	_ "configcenter/src/api_server/ccapi/actions/v3/host"    // import host
-	_ "configcenter/src/api_server/ccapi/actions/v3/process" // import topo
-	_ "configcenter/src/api_server/ccapi/actions/v3/topo"    // import process
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
+
+func fixesPortPattern(db storage.DI, conf *upgrader.Config) (err error) {
+	condition := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDProc,
+		common.BKPropertyIDField: "port",
+		common.BKOwnerIDField:    conf.OwnerID,
+	}
+	data := map[string]interface{}{
+		"option": common.PatternMultiplePortRange,
+	}
+	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+	if nil != err {
+		blog.Errorf("[upgrade v3.0.9-beta.3] fixesPortPattern error  %s", err.Error())
+		return err
+	}
+	return nil
+}

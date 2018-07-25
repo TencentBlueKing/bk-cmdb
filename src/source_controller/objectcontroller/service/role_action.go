@@ -44,7 +44,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	var result map[string]interface{}
 	cond = util.SetModOwner(cond, ownerID)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -57,7 +57,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	}
 
 	err = cli.Instance.GetOneByCondition(common.BKTableNamePrivilege, []string{}, cond, &result)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return

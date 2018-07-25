@@ -15,4 +15,5 @@ package main
 import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.8"
 	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.1"
+	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.3"
 )

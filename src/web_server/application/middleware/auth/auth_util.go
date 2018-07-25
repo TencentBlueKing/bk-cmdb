@@ -13,15 +13,16 @@
 package auth
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
-	"configcenter/src/web_server/application/middleware/types"
 	"encoding/json"
 	"strings"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
+	"configcenter/src/web_server/application/middleware/types"
 )
 
 // validModelConfigPrivi valid model inst privilege

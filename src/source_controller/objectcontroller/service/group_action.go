@@ -60,7 +60,7 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	data[common.BKUserGroupIDField] = guid.String()
 	data = util.SetModOwner(data, ownerID)
 	_, err = cli.Instance.Insert(common.BKTableNameUserGroup, data)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -105,7 +105,7 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroup, data, cond)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("update user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -129,7 +129,7 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
 	err := cli.Instance.DelByCondition(common.BKTableNameUserGroup, cond)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("delete user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -168,7 +168,7 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 	cond = util.SetModOwner(cond, ownerID)
 	var result []interface{}
 	err = cli.Instance.GetMutilByCondition(common.BKTableNameUserGroup, []string{}, cond, &result, "", 0, 0)
-	if nil != err {
+	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return

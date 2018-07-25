@@ -56,7 +56,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	var result []interface{}
 	query = util.SetModOwner(query, ownerID)
 	err = cli.Instance.GetMutilByCondition("cc_Proc2Module", fields, query, &result, common.BKHostIDField, 0, 100000)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail to get module proc config %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -83,7 +83,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	var resultProc []interface{}
 	err = cli.Instance.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
 	blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail to get proc %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
