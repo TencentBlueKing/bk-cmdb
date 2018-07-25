@@ -15,7 +15,6 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	_ "io"
 	"math/rand"
 	"net/http"
 	"os"
