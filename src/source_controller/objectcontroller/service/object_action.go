@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 // CreateObject create a common object
@@ -236,7 +235,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 
 	// translate language
 	for index := range results {
-		results[index].ObjectName = commondata.TranslateObjectName(defLang, &results[index])
+		results[index].ObjectName = cli.TranslateObjectName(defLang, &results[index])
 	}
 
 	// success
