@@ -23,6 +23,8 @@ const (
 	lockFmtStr           = "%s:lock:%s"
 
 	noticeMaxCount = 500
+
+	redisScanKeyCount = 256
 )
 
 type compareFunc func(val, redisVal *types.Lock) (bool, error)

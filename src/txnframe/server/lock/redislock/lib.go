@@ -13,6 +13,7 @@ package redislock
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	redis "github.com/go-redis/redis"
@@ -28,28 +29,7 @@ func (rl *RedisLock) tryLockSubTxnID(meta *types.Lock) {
 
 func (rl *RedisLock) lock(lockKey, lockcollectionKey string, meta *types.Lock, compare compareFunc) (locked bool, SubTxnID string, err error) {
 	total := int(meta.Timeout / time.Second)
-
 	rl.tryLockSubTxnID(meta)
-
-	/*idx := 0
-	tryChan := make(chan bool, 1)
-	go func() {
-		for range time.NewTicker(time.Second).C {
-			if idx > total {
-				break
-			}
-			idx++
-			tryChan <- true
-		}
-		tryChan <- false
-	}()
-	tryChan <- true
-	idx++
-	select {
-	case iFlag := <-tryChan:
-		if false == iFlag {
-			break
-		}*/
 	for idx := 0; idx < total; idx++ {
 		content := rl.storage.Get(lockKey)
 		if nil == content.Err() {
@@ -95,6 +75,7 @@ func (rl *RedisLock) unlock(lockKey, lockcollectionKey string, meta *types.Lock,
 		if nil != err {
 			rl.notice(lockcollectionKey, string(meta.TxnID), meta.LockName, noticTypeErrUnLockCollection)
 		}
+		rl.notice(lockcollectionKey, meta.TxnID, meta.LockName, noticeTypeUnlockSuccess)
 		return nil
 	}
 
@@ -102,11 +83,12 @@ func (rl *RedisLock) unlock(lockKey, lockcollectionKey string, meta *types.Lock,
 }
 
 func (rl *RedisLock) setLock(lockKey, lockcollectionKey string, meta *types.Lock) (bool, string, error) {
+	meta.Createtime = time.Now().UTC()
 	err := rl.storage.SetNX(lockKey, meta, 0).Err()
 	if nil == err {
-		// TODO compensation mechanism  is considered here
 		err := rl.storage.HSet(lockcollectionKey, meta.LockName, meta).Err()
 		if nil != err {
+			// compensation mechanism  is considered here, notice function clear lockkey
 			rl.notice(lockKey, string(meta.TxnID), meta.LockName, noticTypeErrLockCollection)
 			return false, "", err
 		}
@@ -144,17 +126,91 @@ func (rl *RedisLock) compensation() {
 	timer := time.NewTicker(time.Minute * 5)
 
 	select {
-	case errNotice := <-rl.noticeChan:
-		switch errNotice.noticType {
+	case n := <-rl.noticeChan:
+		switch n.noticType {
 		case noticTypeErrLockCollection:
 			//lock successfully, but record lock and sub id relationship failed
-
+			rl.noticTypeErrLockCollection(n)
 		case noticTypeErrUnLockCollection:
 			//unlock successfully, but delete lock and sub id relationship failed
+			rl.noticTypeErrUnLockCollection(n)
 		case noticeTypeUnlockSuccess:
 			// unlock sucessfully, clear lock and sub id relationship emtpy key
+			rl.noticeTypeUnlockSuccess(n)
 		}
 	case <-timer.C:
+		rl.noticeTimedTrigger()
+	}
+}
 
+func (rl *RedisLock) noticeTimedTrigger() error {
+	handle := func(prefix string, isHash bool) error {
+		var keys []string
+		var err error
+		var cursor uint64
+
+		keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
+		if nil != err && redis.Nil != err {
+			return err
+		}
+		for _, key := range keys {
+			ret := rl.storage.HLen(key)
+			if nil == ret.Err() || redis.Nil == ret.Err() {
+				if 0 == ret.Val() {
+					rl.storage.Del(key)
+				}
+			}
+		}
+		return nil
+	}
+
+	prefix := fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "")
+	return handle(prefix, true)
+
+}
+
+func (rl *RedisLock) noticeTypeUnlockSuccess(n *notice) {
+	for {
+		ret := rl.storage.HLen(n.key)
+		if nil == ret.Err() || redis.Nil == ret.Err() {
+			if 0 == ret.Val() {
+				rl.storage.Del(n.key)
+			}
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
+	}
+}
+
+func (rl *RedisLock) noticTypeErrUnLockCollection(n *notice) {
+	for {
+		err := rl.storage.HDel(n.key, n.lockName).Err()
+		if nil == err || redis.Nil == err {
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
+	}
+}
+
+func (rl *RedisLock) noticTypeErrLockCollection(n *notice) {
+	for {
+		ret := rl.storage.Get(n.key)
+		if nil == ret {
+			meta := new(types.Lock)
+			if meta.TxnID == n.tid {
+				err := rl.storage.Del(n.key).Err()
+				if nil != err && redis.Nil != err {
+					continue
+				} else {
+					break
+				}
+			} else {
+				break
+			}
+		}
+		if redis.Nil == ret.Err() {
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
 	}
 }

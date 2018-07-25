@@ -30,6 +30,8 @@ type Lock struct {
 
 	// timeout means that the time of the client can bear to wait for the lock is locked.
 	Timeout time.Duration `json:"timeout"`
+
+	Createtime time.Time `json:"createTime"`
 }
 
 // LockResult lock check result

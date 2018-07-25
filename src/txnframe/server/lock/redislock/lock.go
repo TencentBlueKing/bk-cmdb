@@ -73,7 +73,6 @@ func (rl *RedisLock) Lock(meta *types.Lock) (*types.LockResult, error) {
 		return nil, err
 	}
 
-	rl.notice(lockCollKey, meta.TxnID, meta.LockName, noticeTypeUnlockSuccess)
 	result := new(types.LockResult)
 	result.Locked = locked
 	result.SubTxnID = meta.SubTxnID
