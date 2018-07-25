@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -23,11 +24,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
 	frtypes "configcenter/src/common/mapstr"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
@@ -108,19 +109,17 @@ func (s *topoService) WebService() *restful.WebService {
 }
 
 func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {
-	rsp := api.BKAPIRsp{
-		Result:  true,
-		Code:    0,
-		Message: nil,
-		Data:    nil,
+
+	rsp := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     nil,
 	}
 
 	if common.CCSuccess != errcode {
 		rsp.Result = false
-		rsp.Code = errcode
-		rsp.Message = info
+		rsp.ErrMsg = fmt.Sprintf("%v", info)
 	} else {
-		rsp.Message = common.CCSuccessStr
+		rsp.ErrMsg = common.CCSuccessStr
 		rsp.Data = info
 	}
 
