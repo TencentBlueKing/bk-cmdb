@@ -108,7 +108,7 @@ func (m *OwnerManager) addDefaultApp() error {
 		return err
 	}
 
-	if result.Code != common.CCSuccess {
+	if result.Code != common.CCSuccess && result.Code != common.CCErrCommDuplicateItem {
 		return fmt.Errorf("create app faild %s", result.Message)
 	}
 	return nil
@@ -135,7 +135,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 		return false, err
 	}
 
-	if result.Code != common.CCSuccess && result.Code != common.CCErrCommDuplicateItem {
+	if result.Code != common.CCSuccess {
 		return false, fmt.Errorf("search default app err: %s", result.Message)
 	}
 
