@@ -35,7 +35,7 @@
             </bk-tabpanel>
             <template slot="setting">
                 <div class="filter-operate" v-show="tab.active === 'screening'">
-                    <i class="icon-cc icon-cc-broom" @click="emptiedField" v-tooltip="$t('HostResourcePool[\'清空\']')"></i>
+                    <i class="icon-cc icon-cc-broom" @click="emptiedField" v-tooltip="$t('HostResourcePool[\'清空查询条件\']')"></i>
                     <i class="icon-cc icon-cc-collection" :class="{'collecting': tab.screening.isCollecting}" @click.stop="showCollectBox" v-tooltip="$t('Hosts[\'收藏\']')" v-if="isShowCollect"></i>
                     <i class="icon-cc icon-cc-funnel" @click="showField" v-tooltip="$t('HostResourcePool[\'设置筛选项\']')"></i>
                 </div>

@@ -45,6 +45,7 @@
                 topoStruct: {},
                 nodeId: 0,                  // 前端节点ID 递增
                 isFullScreen: false,        // 是否全屏显示
+                scale: 0.8,
                 network: {},
                 attr: {
                     isShow: false,
@@ -91,13 +92,13 @@
                             max: 25
                         },
                         widthConstraint: {
-                            maximum: 100
+                            maximum: 120
                         }
                     },
                     layout: {
                         hierarchical: {
                             direction: 'LR',
-                            nodeSpacing: 70
+                            nodeSpacing: 90
                         }
                     }
                 },
@@ -108,6 +109,7 @@
             ...mapGetters('object', [
                 'attribute'
             ]),
+            ...mapGetters(['bkSupplierAccount']),
             graphData () {
                 return {
                     nodes: new vis.DataSet(this.nodes),
@@ -147,7 +149,9 @@
             resizeCanvas (isFullScreen) {
                 this.isLoading = true
                 this.isFullScreen = isFullScreen
+                this.scale = this.network.getScale()
                 this.$nextTick(() => {
+                    this.network.moveTo({scale: this.scale})
                     this.$refs.attribute.resetAttributeBox()
                 })
             },
@@ -436,7 +440,7 @@
             async getRelationInfo (objId, instId, isRoot = false) {
                 this.isLoading = true
                 try {
-                    const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${objId}/inst/${instId}`)
+                    const res = await this.$axios.post(`inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${objId}/inst/${instId}`)
                     if (isRoot) {
                         this.$emit('handleAssociationLoaded', res.data[0])
                     }
@@ -466,6 +470,7 @@
                 this.network = new vis.Network(this.container, this.graphData, this.options)
                 this.network.focus(this.activeNode.id)
                 this.network.moveTo({scale: 0.8})
+                window.network = this.network
                 // 绑定事件
                 let networkCanvas = this.container.getElementsByTagName('canvas')[0]
                 this.network.on('hoverNode', (params) => {
@@ -481,6 +486,9 @@
                 })
                 this.network.on('resize', () => {
                     this.isLoading = false
+                    this.$nextTick(() => {
+                        this.network.moveTo({scale: this.scale})
+                    })
                 })
                 this.network.on('click', (params) => {
                     this.removePop()
@@ -517,7 +525,7 @@
                 this.removePop()
                 this.isLoading = true
                 try {
-                    const res = await this.$axios.post(`inst/association/topo/search/owner/0/object/${toNode['bk_obj_id']}/inst/${toNode['bk_inst_id']}`)
+                    const res = await this.$axios.post(`inst/association/topo/search/owner/${this.bkSupplierAccount}/object/${toNode['bk_obj_id']}/inst/${toNode['bk_inst_id']}`)
                     for (let key in res.data[0]) {
                         if (key !== 'curr') {
                             res.data[0][key].map(model => {
