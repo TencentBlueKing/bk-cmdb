@@ -710,3 +710,12 @@ const (
 
 	URLFilterWhiteListSepareteChar = ","
 )
+
+type DataStatusFlag string
+
+const (
+    DataStatusDisabled DataStatusFlag = "disabled"
+    DataStatusEnable   DataStatusFlag = "enable"
+)
+
+const BKDataStatusField = "bk_data_status"
