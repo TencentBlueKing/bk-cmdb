@@ -54,7 +54,7 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
 			predata := e.Data[dataIndex].PreData.(map[string]interface{})
 			if checkDifferent(curdata, predata, diffFields...) {
 
-				instIDField := common.GetInstFieldByType(e.ObjType)
+				instIDField := common.GetInstIDField(e.ObjType)
 
 				instID := getInt(curdata, instIDField)
 				if 0 == instID {
@@ -184,7 +184,7 @@ func getInt(data map[string]interface{}, key string) int {
 func (ih *IdentifierHandler) findHost(objType string, instID int) (hostIDs []string) {
 	relations := []scmeta.ModuleHostConfig{}
 	condiction := map[string]interface{}{
-		common.GetInstFieldByType(objType): instID,
+		common.GetInstIDField(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
 
@@ -286,7 +286,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 	if "" == ret || "nil" == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		getobjCondition := map[string]interface{}{
-			common.GetInstFieldByType(objType): instID,
+			common.GetInstIDField(objType): instID,
 		}
 		err := db.GetOneByCondition(common.GetInstTableName(objType), nil, getobjCondition, &inst.data)
 		if err != nil {
@@ -296,7 +296,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 			inst.ident = NewHostIdentifier(inst.data)
 			relations := []scmeta.ModuleHostConfig{}
 			condiction := map[string]interface{}{
-				common.GetInstFieldByType(objType): instID,
+				common.GetInstIDField(objType): instID,
 			}
 			db.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
 			for _, rela := range relations {
@@ -404,7 +404,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
-			instID := fmt.Sprint(cache[common.GetInstFieldByType(objID)])
+			instID := fmt.Sprint(cache[common.GetInstIDField(objID)])
 			if err := ih.cache.Set(types.EventCacheIdentInstPrefix+objID+fmt.Sprint("_", instID), string(out), 0).Err(); err != nil {
 				blog.Errorf("set cache error %s", err.Error())
 			}

@@ -107,7 +107,7 @@ func (cli *Service) CreateObjectIntoDB(objType string, input interface{}, idName
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
-	*idName = common.GetInstFieldByType(objType)
+	*idName = common.GetInstIDField(objType)
 	inputc[*idName] = objID
 	cli.Instance.Insert(tName, inputc)
 	return int(objID), nil

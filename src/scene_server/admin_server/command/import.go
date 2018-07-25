@@ -24,8 +24,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
-	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/instdata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage"
 )
 
@@ -94,7 +93,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 						return err
 					}
 					updateCondition := map[string]interface{}{
-						instdata.GetIDNameByType(node.ObjID): instID,
+						common.GetInstIDField(node.ObjID): instID,
 					}
 					err = db.UpdateByCondition(common.GetInstTableName(node.ObjID), node.Data, updateCondition)
 					if nil != err {
@@ -110,7 +109,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 			for _, sdelete := range sdeletes {
 				// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
 
-				instID, err := getInt64(sdelete[instdata.GetIDNameByType(objID)])
+				instID, err := getInt64(sdelete[common.GetInstIDField(objID)])
 				if nil != err {
 					return err
 				}
@@ -142,7 +141,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 
 							//
 							deleteconition := map[string]interface{}{
-								instdata.GetIDNameByType(child.ObjID): childID,
+								common.GetInstIDField(child.ObjID): childID,
 							}
 							switch child.ObjID {
 							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
@@ -466,15 +465,15 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
 				}
-				node.Data[instdata.GetIDNameByType(node.ObjID)] = nid
+				node.Data[common.GetInstIDField(node.ObjID)] = nid
 				ipt.parentID = nid
 			} else {
 				node.mark = actionUpdate
-				instID, err := getInt64(inst[instdata.GetIDNameByType(node.ObjID)])
+				instID, err := getInt64(inst[common.GetInstIDField(node.ObjID)])
 				if nil != err {
 					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
 				}
-				node.Data[instdata.GetIDNameByType(node.ObjID)] = instID
+				node.Data[common.GetInstIDField(node.ObjID)] = instID
 				ipt.parentID = instID
 			}
 		}
@@ -540,20 +539,20 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 }
 
 // getModelAttributes returns the model attributes
-func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string, err error) {
+func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttributes map[string][]metadata.Attribute, modelKeys map[string][]string, err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
 			"$in": objIDs,
 		},
 	}
 
-	attributes := []metadata.ObjectAttDes{}
+	attributes := []metadata.Attribute{}
 	err = db.GetMutilByCondition("cc_ObjAttDes", nil, condition, &attributes, "", 0, 0)
 	if nil != err {
 		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}
 
-	modelAttributes = map[string][]metadata.ObjectAttDes{}
+	modelAttributes = map[string][]metadata.Attribute{}
 	modelKeys = map[string][]string{}
 	for _, att := range attributes {
 		if att.IsRequired {
