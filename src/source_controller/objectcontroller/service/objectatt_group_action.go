@@ -18,13 +18,12 @@ import (
 	"net/http"
 	"strconv"
 
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 // CreatePropertyGroup to create property group
@@ -154,7 +153,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 	}
 	// translate language
 	for index := range results {
-		results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
+		results[index].GroupName = cli.TranslatePropertyGroupName(defLang, &results[index])
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})
@@ -347,7 +346,7 @@ func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *re
 
 	// translate language
 	for index := range results {
-		results[index].GroupName = commondata.TranslatePropertyGroupName(defLang, &results[index])
+		results[index].GroupName = cli.TranslatePropertyGroupName(defLang, &results[index])
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})

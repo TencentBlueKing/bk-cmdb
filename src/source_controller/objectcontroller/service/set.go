@@ -19,13 +19,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/common/eventclient"
-
 	"github.com/emicklei/go-restful"
 	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
