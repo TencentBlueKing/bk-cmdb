@@ -10,10 +10,28 @@
  * limitations under the License.
  */
 
-package main
+package v3v0v9beta3
 
 import (
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.8"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.1"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.3"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
+
+func fixesPortPattern(db storage.DI, conf *upgrader.Config) (err error) {
+	condition := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDProc,
+		common.BKPropertyIDField: "port",
+		common.BKOwnerIDField:    conf.OwnerID,
+	}
+	data := map[string]interface{}{
+		"option": common.PatternMultiplePortRange,
+	}
+	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+	if nil != err {
+		blog.Errorf("[upgrade v3.0.9-beta.3] fixesPortPattern error  %s", err.Error())
+		return err
+	}
+	return nil
+}
