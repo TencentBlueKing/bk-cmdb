@@ -13,6 +13,16 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -21,15 +31,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/web_server/application/logics"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-	_ "io"
-	"math/rand"
-	"net/http"
-	"os"
-	"time"
 )
 
 var (
