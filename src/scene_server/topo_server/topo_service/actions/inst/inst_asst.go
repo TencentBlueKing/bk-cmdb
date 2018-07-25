@@ -269,9 +269,12 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 		// used to search insts
 		instCondition := map[string]interface{}{
-			common.BKObjIDField:   objID,
 			common.BKOwnerIDField: ownerID,
 		}
+		if util.GetObjByType(objID) == common.BKINnerObjIDObject {
+			instCondition[common.BKObjIDField] = objID
+		}
+
 		// targetInstIDS used to search the instance of the objID
 		targetInstIDS := make([]int64, 0)
 		for keyObjID, objs := range js.Condition {
@@ -372,14 +375,19 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 
 		}
 
+		if instIDParam, ok := instCondition[common.BKInstIDField]; ok {
+			delete(instCondition, common.BKInstIDField)
+			instCondition[util.GetObjIDByType(objID)] = instIDParam
+		}
+
 		// search all the inst by the condition
 		if 0 != len(targetInstIDS) {
-			instCondition[common.BKInstIDField] = map[string]interface{}{
+			instCondition[util.GetObjIDByType(objID)] = map[string]interface{}{
 				common.BKDBIN: targetInstIDS,
 			}
 		} else if 0 != len(js.Condition) {
 			if _, ok := js.Condition[objID]; !ok {
-				instCondition[common.BKInstIDField] = map[string]interface{}{
+				instCondition[util.GetObjIDByType(objID)] = map[string]interface{}{
 					common.BKDBIN: targetInstIDS,
 				}
 			}
@@ -396,7 +404,7 @@ func (cli *instAction) SelectInstsByAssociation(req *restful.Request, resp *rest
 		searchParams["sort"] = js.Page.Sort
 
 		// search insts
-		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/object/search"
+		sURL := cli.CC.ObjCtrl() + "/object/v1/insts/" + util.GetObjByType(objID) + "/search"
 		inputJSON, jsErr := json.Marshal(searchParams)
 
 		if nil != jsErr {
