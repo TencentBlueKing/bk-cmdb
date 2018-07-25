@@ -36,7 +36,7 @@ func GetInstNameField(objID string) string {
 	}
 }
 
-func GetInstFieldByType(objType string) string {
+func GetInstIDField(objType string) string {
 	switch objType {
 	case BKInnerObjIDApp:
 		return BKAppIDField

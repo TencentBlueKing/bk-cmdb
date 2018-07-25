@@ -16,17 +16,33 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage"
 )
 
-func fixesPortPattern(db storage.DI, conf *upgrader.Config) (err error) {
+func fixesProcessPortPattern(db storage.DI, conf *upgrader.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: "port",
-		common.BKOwnerIDField:    conf.OwnerID,
 	}
 	data := map[string]interface{}{
 		"option": common.PatternMultiplePortRange,
+	}
+	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+	if nil != err {
+		blog.Errorf("[upgrade v3.0.9-beta.3] fixesPortPattern error  %s", err.Error())
+		return err
+	}
+	return nil
+}
+
+func fixesProcessPriorityPattern(db storage.DI, conf *upgrader.Config) (err error) {
+	condition := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDProc,
+		common.BKPropertyIDField: "priority",
+	}
+	data := map[string]interface{}{
+		"option": validator.IntOption{Min: "1", Max: "10000"},
 	}
 	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
 	if nil != err {
