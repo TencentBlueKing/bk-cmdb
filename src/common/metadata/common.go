@@ -13,11 +13,16 @@
 package metadata
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/coccyx/timeparser"
+	"github.com/gin-gonic/gin/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/basetype"
 	"configcenter/src/common/errors"
-	"fmt"
-	"github.com/gin-gonic/gin/json"
+	"configcenter/src/common/util"
 )
 
 type BaseResp struct {
@@ -87,6 +92,111 @@ type QueryInput struct {
 	Start     int         `json:"start,omitempty"`
 	Limit     int         `json:"limit,omitempty"`
 	Sort      string      `json:"sort,omitempty"`
+}
+
+//ConvTime ??????????cc_type key ??????time.Time
+func (o *QueryInput) ConvTime() error {
+	conds, ok := o.Condition.(map[string]interface{})
+	if true != ok && nil != conds {
+		return nil
+	}
+	for key, item := range conds {
+		convItem, err := o.convTimeItem(item)
+		if nil != err {
+			continue
+		}
+		conds[key] = convItem
+	}
+
+	return nil
+}
+
+//convTimeItem ????????,??????????cc_time_type
+func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
+
+	switch item.(type) {
+	case map[string]interface{}:
+
+		arrItem, ok := item.(map[string]interface{})
+		if true == ok {
+			_, timeTypeOk := arrItem[common.BKTimeTypeParseFlag]
+			if timeTypeOk {
+				delete(arrItem, common.BKTimeTypeParseFlag)
+			}
+
+			for key, value := range arrItem {
+				switch value.(type) {
+
+				case []interface{}:
+					var err error
+					arrItem[key], err = o.convTimeItem(value)
+					if nil != err {
+						return nil, err
+					}
+				case map[string]interface{}:
+					arrItemVal, ok := value.(map[string]interface{})
+					if ok {
+						for key, value := range arrItemVal {
+							var err error
+							arrItemVal[key], err = o.convTimeItem(value)
+							if nil != err {
+								return nil, err
+							}
+						}
+						arrItem[key] = value
+					}
+
+				default:
+					if timeTypeOk {
+						var err error
+						arrItem[key], err = o.convInterfaceToTime(value)
+						if nil != err {
+							return nil, err
+						}
+					}
+
+				}
+			}
+			item = arrItem
+		}
+	case []interface{}:
+		//??????????????
+		arrItem, ok := item.([]interface{})
+		if true == ok {
+			for index, value := range arrItem {
+				newValue, err := o.convTimeItem(value)
+				if nil != err {
+					return nil, err
+
+				}
+				arrItem[index] = newValue
+			}
+			item = arrItem
+
+		}
+
+	}
+
+	return item, nil
+}
+
+func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
+	switch val.(type) {
+	case string:
+		ts, err := timeparser.TimeParser(val.(string))
+		if nil != err {
+			return nil, err
+		}
+		return ts.UTC(), nil
+	default:
+		ts, err := util.GetInt64ByInterface(val)
+		if nil != err {
+			return 0, err
+		}
+		t := time.Unix(ts, 0).UTC()
+		return t, nil
+	}
+
 }
 
 type CloudHostModuleParams struct {

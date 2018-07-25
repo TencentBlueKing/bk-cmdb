@@ -18,15 +18,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"configcenter/src/common/mapstr"
-
-	"configcenter/src/common/metadata"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -57,7 +55,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 
 	// save to the storage
 	id, err := cli.Instance.GetIncID("cc_ObjAsst")
-	if err != nil {
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -128,7 +126,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 
 	// execute delete command
 	delErr := cli.Instance.DelByCondition("cc_ObjAsst", condition)
-	if nil != delErr {
+	if nil != delErr && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -223,7 +221,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 	selector, _ := js.Map()
 	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
-	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
+	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

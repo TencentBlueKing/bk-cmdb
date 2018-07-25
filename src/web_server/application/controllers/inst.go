@@ -13,6 +13,15 @@
 package controllers
 
 import (
+	"fmt"
+	"math/rand"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -20,13 +29,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/web_server/application/logics"
 	webCommon "configcenter/src/web_server/common"
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-	"math/rand"
-	"net/http"
-	"os"
-	"time"
 )
 
 func init() {

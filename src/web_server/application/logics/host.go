@@ -24,10 +24,10 @@ import (
 	"strconv"
 	"strings"
 
-	webCommon "configcenter/src/web_server/common"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/rentiansheng/xlsx"
+
+	webCommon "configcenter/src/web_server/common"
 )
 
 //GetHostData get host data from excel
