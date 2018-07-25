@@ -46,14 +46,17 @@ func GetInstFieldByType(objType string) string {
 		return BKModuleIDField
 	case BKINnerObjIDObject:
 		return BKInstIDField
-	case BKInnerObjIDProc:
-		return BKProcIDField
 	case BKInnerObjIDHost:
 		return BKHostIDField
+	case BKInnerObjIDProc:
+		return BKProcIDField
 	case BKInnerObjIDPlat:
 		return BKCloudIDField
+	case BKTableNameInstAsst:
+		return BKFieldID
+	default:
+		return BKInstIDField
 	}
-	return BKInstIDField
 }
 
 func GetObjByType(objType string) string {

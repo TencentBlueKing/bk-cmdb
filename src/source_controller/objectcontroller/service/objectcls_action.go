@@ -24,8 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 // CreateClassification create object's classification
@@ -205,7 +203,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	}
 	// translate language
 	for index := range results {
-		results[index].ClassificationName = commondata.TranslateClassificationName(defLang, &results[index])
+		results[index].ClassificationName = cli.TranslateClassificationName(defLang, &results[index])
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})
@@ -231,7 +229,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-	page := metadata.ParsePage(selector["page"])
+	page := meta.ParsePage(selector["page"])
 	delete(selector, "page")
 
 	clsResults := make([]meta.ObjClassificationObject, 0)
@@ -263,9 +261,9 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 
 	// translate language
 	for index := range clsResults {
-		clsResults[index].ClassificationName = commondata.TranslateClassificationName(defLang, &clsResults[index].Classification)
+		clsResults[index].ClassificationName = cli.TranslateClassificationName(defLang, &clsResults[index].Classification)
 		for attindex := range clsResults[index].Objects {
-			clsResults[index].Objects[attindex].ObjectName = commondata.TranslateObjectName(defLang, &clsResults[index].Objects[attindex])
+			clsResults[index].Objects[attindex].ObjectName = cli.TranslateObjectName(defLang, &clsResults[index].Objects[attindex])
 		}
 	}
 
