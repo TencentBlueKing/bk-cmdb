@@ -570,6 +570,6 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			return
 		}
 
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
 	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
