@@ -135,14 +135,11 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 		return false, err
 	}
 
-	if result.Code != common.CCSuccess {
+	if result.Code != common.CCSuccess && result.Code != common.CCErrCommDuplicateItem {
 		return false, fmt.Errorf("search default app err: %s", result.Message)
 	}
 
-	if 0 >= result.Data.Count {
-		return false, nil
-	}
-	return true, nil
+	return 0 < result.Data.Count, nil
 }
 
 func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, error) {
