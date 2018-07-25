@@ -18,15 +18,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"configcenter/src/common/mapstr"
-
-	"configcenter/src/common/metadata"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
