@@ -113,9 +113,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	select {
 	case <-ctx.Done():
 	case err = <-errCh:
-		blog.V(5).Infof("distribution routine stoped %s", err.Error())
+		blog.V(3).Infof("distribution routine stoped %s", err.Error())
 	}
-	blog.V(5).Infof("process stoped")
+	blog.V(3).Infof("process stoped")
 
 	return nil
 }
