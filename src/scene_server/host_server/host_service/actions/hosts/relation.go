@@ -385,7 +385,6 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		moduleID, err := logics.GetSingleModuleID(req, conds, m.CC.ObjCtrl())
 		if nil != err {
 			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")
-
 		}
 		moduleHostConfigParams := make(map[string]interface{})
 		moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
@@ -448,6 +447,7 @@ func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, re
 		//get host in set
 		condition := make(map[string]interface{})
 		hostIDArr := make([]int, 0)
+		moduleIDArr := make([]int, 0)
 		if 0 != data.SetID {
 			condition[common.BKSetIDField] = []int{data.SetID}
 		}
@@ -460,7 +460,6 @@ func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, re
 		if nil != err {
 			blog.Error("read host from application  error:%v", err)
 			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrCommHTTPInputInvalid)
-
 		}
 
 		if 0 == len(hostResult) {
@@ -469,6 +468,7 @@ func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, re
 		}
 		for _, cell := range hostResult {
 			hostIDArr = append(hostIDArr, cell[common.BKHostIDField])
+			moduleIDArr = append(moduleIDArr, cell[common.BKModuleIDField])
 		}
 
 		conds := make(map[string]interface{})
@@ -482,15 +482,16 @@ func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, re
 
 		}
 
-		moduleHostConfigParams := make(map[string]interface{})
-		moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
+		delModuleHostConfigParams := make(map[string]interface{})
+		addModuleHostConfigParams := make(map[string]interface{})
+		delModuleHostConfigParams[common.BKAppIDField] = data.ApplicationID
+		addModuleHostConfigParams[common.BKAppIDField] = data.ApplicationID
 		logClient, err := logics.NewHostModuleConfigLog(req, hostIDArr, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
 		if nil != err {
 			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 		}
 
 		for _, hostID := range hostIDArr {
-
 			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
@@ -501,21 +502,45 @@ func (m *hostModuleConfigAction) moveSetHost2IdleModule(req *restful.Request, re
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrHostNotINAPP, fmt.Sprintf("%d", hostID))
 			}
 
-			moduleHostConfigParams[common.BKHostIDField] = hostID
-			delModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
-			isSuccess, errMsg, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, moduleHostConfigParams)
-			if !isSuccess {
-				blog.Error("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
+			var toEmptyModule = true
+			sCond := make(map[string]interface{})
+			sCond[common.BKAppIDField] = []int{data.ApplicationID}
+			sCond[common.BKHostIDField] = []int{hostID}
+			configResult, err := logics.GetConfigByCond(req, m.CC.HostCtrl(), sCond)
+			if nil != err {
+				blog.Errorf("remove hosthostconfig error, params:%v, error:%v", sCond, err)
 				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
 			}
-			moduleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
-			addModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
-
-			isSuccess, errMsg, _ = logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, moduleHostConfigParams)
-			if !isSuccess {
-				blog.Error("add modulehostconfig error, params:%v, error:%s", moduleHostConfigParams, errMsg)
-				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
+			for _, config := range configResult {
+				if 0 != data.SetID && config[common.BKSetIDField] != data.SetID {
+					toEmptyModule = false
+				}
+				if 0 != data.ModuleID && config[common.BKModuleIDField] != data.ModuleID {
+					toEmptyModule = false
+				}
 			}
+			delModuleHostConfigParams[common.BKModuleIDField] = moduleIDArr
+			delModuleHostConfigParams[common.BKHostIDField] = hostID
+			delModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
+			isSuccess, errMsg, _ := logics.GetHttpResult(req, delModulesURL, common.HTTPDelete, delModuleHostConfigParams)
+			blog.Infof("delete module host config params:%v", delModuleHostConfigParams)
+			if !isSuccess {
+				blog.Errorf("remove hosthostconfig error, params:%v, error:%s", delModuleHostConfigParams, errMsg)
+				return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+			}
+
+			if toEmptyModule {
+				addModuleHostConfigParams[common.BKHostIDField] = hostID
+				addModuleHostConfigParams[common.BKModuleIDField] = []int{moduleID}
+				addModulesURL := m.CC.HostCtrl() + "/host/v1/meta/hosts/modules"
+
+				isSuccess, errMsg, _ = logics.GetHttpResult(req, addModulesURL, common.HTTPCreate, addModuleHostConfigParams)
+				if !isSuccess {
+					blog.Errorf("add modulehostconfig error, params:%v, error:%s", addModuleHostConfigParams, errMsg)
+					return http.StatusInternalServerError, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, errMsg)
+				}
+			}
+
 		}
 
 		user := util.GetActionUser(req)

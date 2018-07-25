@@ -137,7 +137,7 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 	defErr := cli.CC.Error.CreateDefaultCCErrorIf(language)
 
 	cli.CallResponseEx(func() (int, interface{}, error) {
-
+		var moduleIDs []int
 		cc := api.NewAPIResource()
 		//instdata.DataH = cc.InstCli
 		value, err := ioutil.ReadAll(req.Request.Body)
@@ -155,9 +155,14 @@ func (cli *moduleHostConfigAction) DelModuleHostConfig(req *restful.Request, res
 		getModuleParams[common.BKHostIDField] = params.HostID
 		getModuleParams[common.BKAppIDField] = params.ApplicationID
 		getModuleParams = util.SetModOwner(getModuleParams, ownerID)
-		moduleIDs, err := logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
-		if nil != err {
-			return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetOriginHostModuelRelationship)
+
+		if 0 == len(params.ModuleID) {
+			moduleIDs, err = logics.GetModuleIDsByHostID(cc, getModuleParams) //params.HostID, params.ApplicationID)
+			if nil != err {
+				return http.StatusInternalServerError, nil, defErr.Error(common.CCErrGetOriginHostModuelRelationship)
+			}
+		} else {
+			moduleIDs = params.ModuleID
 		}
 
 		ec := eventdata.NewEventContextByReq(req)
