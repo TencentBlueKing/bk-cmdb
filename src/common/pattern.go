@@ -28,4 +28,4 @@ const (
 )
 
 // PatternMultiplePortRange regular pattern for multiple port range
-var PatternMultiplePortRange = fmt.Sprintf(`^((%s+-%s+)|(%s+))(,((%s+)|(%s+-%s+)))*$`, PatternPort, PatternPort, PatternPort, PatternPort, PatternPort, PatternPort)
+var PatternMultiplePortRange = fmt.Sprintf(`^((%s-%s)|(%s))(,((%s)|(%s-%s)))*$`, PatternPort, PatternPort, PatternPort, PatternPort, PatternPort, PatternPort)
