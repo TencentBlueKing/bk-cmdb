@@ -149,3 +149,10 @@ type CreateInstResult struct {
 	BaseResp `json:",inline"`
 	Data     types.MapStr `json:"data"`
 }
+
+// ObjClassificationObject define the class object class
+type ObjClassificationObject struct {
+	Classification `bson:",inline"`
+	Objects        []Object                 `json:"bk_objects"`
+	AsstObjects    map[string][]interface{} `json:"bk_asst_objects"`
+}

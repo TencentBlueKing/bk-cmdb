@@ -60,6 +60,9 @@ const (
 	// BKDefaultSupplierID the default owner id
 	BKDefaultSupplierID = 0
 
+	// BKSuperOwnerID the super owner value
+	BKSuperOwnerID = "supperowner"
+
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
 
@@ -696,5 +699,14 @@ const (
 )
 
 const (
+	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
 	APPConfigWaitTime = 15
+)
+
+const (
+	// URLFilterWhiteList url filter white list not execute any filter
+	// multiple url separeted by commas
+	URLFilterWhiteListSuffix = "/healthz"
+
+	URLFilterWhiteListSepareteChar = ","
 )

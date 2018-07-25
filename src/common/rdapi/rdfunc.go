@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -150,7 +151,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
 	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	blog.V(3).Infof("rd http header %v", req.Request.Header)
+	blog.V(4).Infof("rd http header %v", req.Request.Header)
 	if "" == ownerId {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
@@ -164,8 +165,17 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+
 		generateHttpHeaderRID(req, resp)
-		cli := api.NewAPIResource()
+
+		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
+		for _, url := range whilteListSuffix {
+			if strings.HasSuffix(req.Request.URL.Path, url) {
+				fchain.ProcessFilter(req, resp)
+				return
+			}
+		}
+
 		language := util.GetActionLanguage(req)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
@@ -180,36 +190,6 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 		if 1 < len(fchain.Filters) {
 			fchain.ProcessFilter(req, resp)
 			return
-		}
-
-		for typeSrv, _ := range srvNames {
-			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.V(3).Infof("AllGlobalFilter %s url:%s", typeSrv, url)
-			if nil != err {
-				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusBadGateway)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-
-				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-
-			} else if "" == url {
-				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusBadGateway)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-			}
 		}
 
 		fchain.ProcessFilter(req, resp)

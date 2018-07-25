@@ -74,6 +74,7 @@ func (r *reconciler) loadAllPersisted() {
 		eventnames := strings.Split(sub.SubscriptionForm, ",")
 		r.persistedSubscribers = append(r.persistedSubscribers, sub.GetCacheKey())
 		for _, eventname := range eventnames {
+			eventname = sub.OwnerID + ":" + eventname
 			r.persisted[eventname] = append(r.persisted[eventname], fmt.Sprint(sub.SubscriptionID))
 		}
 	}

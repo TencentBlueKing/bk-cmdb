@@ -54,6 +54,14 @@ type HostList struct {
 	InputType     HostInputType                    `json:"input_type"`
 }
 
+type HostSyncList struct {
+	ApplicationID int64                            `json:"bk_biz_id"`
+	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
+	SupplierID    int64                            `json:"bk_supplier_id"`
+	ModuleID      []int64                          `json:"bk_module_id"`
+	InputType     HostInputType                    `json:"input_type"`
+}
+
 type HostsModuleRelation struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        []int64 `json:"bk_host_id"`
@@ -110,4 +118,10 @@ type HostCloneInputParams struct {
 	DstIP  string `json:"bk_dst_ip"`
 	AppID  int64  `json:"bk_biz_id"`
 	PlatID int64  `json:"bk_cloud_id"`
+}
+
+type SetHostConfigParams struct {
+	ApplicationID int64 `json:"bk_biz_id"`
+	SetID         int64 `json:"bk_set_id"`
+	ModuleID      int64 `json:"bk_module_id"`
 }

@@ -13,13 +13,13 @@
 package validator
 
 import (
+	"context"
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-
-	"context"
-	"net/http"
 )
 
 var innerObject = map[string]bool{
@@ -68,8 +68,10 @@ type ValidMap struct {
 	objID   string
 	errif   errors.DefaultCCErrorIf
 
-	propertys    map[string]metadata.Attribute
-	require      map[string]bool
-	isOnly       map[string]bool
-	shouldIgnore map[string]bool
+	propertys     map[string]metadata.Attribute
+	propertyslice []metadata.Attribute
+	require       map[string]bool
+	requirefields []string
+	isOnly        map[string]bool
+	shouldIgnore  map[string]bool
 }
