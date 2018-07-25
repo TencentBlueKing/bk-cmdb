@@ -30,7 +30,6 @@ import (
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
-	"configcenter/src/source_controller/api/metadata"
 )
 
 type AppResult struct {
@@ -530,7 +529,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logContent.CurData = logContent.PreData
 		preLogContent, ok := logPreConents[hostID]
 		if ok {
-			content, ok := preLogContent.Content.(*metadata.Content)
+			content, ok := preLogContent.Content.(*meta.Content)
 			if ok {
 				logContent.PreData = content.PreData
 			}
