@@ -151,7 +151,7 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 	case string:
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
@@ -199,7 +199,7 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 	case string:
 		if len(value) > common.FieldTypeLongLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {

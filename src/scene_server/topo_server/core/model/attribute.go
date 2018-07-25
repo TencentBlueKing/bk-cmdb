@@ -371,7 +371,6 @@ func (a *attribute) Create() error {
 	}
 
 	// check the property name repeated
-
 	cond = condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
 	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
