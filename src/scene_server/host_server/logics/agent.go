@@ -16,9 +16,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bitly/go-simplejson"
+
 	"configcenter/src/common"
 	"configcenter/src/common/util"
-	"github.com/bitly/go-simplejson"
 )
 
 func ParseHostSnap(data string) (map[string]interface{}, error) {
