@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	scmeta "configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 
@@ -173,16 +172,16 @@ func NewModule(m map[string]interface{}) *Module {
 	return &belong
 }
 
-func getInt(data map[string]interface{}, key string) int {
-	i, err := strconv.Atoi(fmt.Sprint(data[key]))
+func getInt(data map[string]interface{}, key string) int64 {
+	i, err := util.GetInt64ByInterface(data[key])
 	if err != nil {
 		blog.Errorf("identifier: getInt error: %+v", err)
 	}
 	return i
 }
 
-func (ih *IdentifierHandler) findHost(objType string, instID int) (hostIDs []string) {
-	relations := []scmeta.ModuleHostConfig{}
+func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []string) {
+	relations := []metadata.ModuleHost{}
 	condiction := map[string]interface{}{
 		common.GetInstIDField(objType): instID,
 	}
@@ -195,14 +194,14 @@ func (ih *IdentifierHandler) findHost(objType string, instID int) (hostIDs []str
 
 	for index := range relations {
 
-		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.Itoa(relations[index].HostID))
+		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.FormatInt(relations[index].HostID, 10))
 	}
 	return hostIDs
 }
 
 type Inst struct {
 	objType string
-	instID  int
+	instID  int64
 	data    map[string]interface{}
 	ident   *HostIdentifier
 }
@@ -215,7 +214,7 @@ func (i *Inst) set(key string, value interface{}) {
 		case "bk_host_name":
 			i.ident.HostName = fmt.Sprint(value)
 		case "bk_cloud_id":
-			i.ident.CloudID, err = strconv.Atoi(fmt.Sprint(value))
+			i.ident.CloudID, err = util.GetInt64ByInterface(value)
 		case "bk_host_innerip":
 			i.ident.InnerIP = fmt.Sprint(value)
 		case "bk_host_outerip":
@@ -225,11 +224,11 @@ func (i *Inst) set(key string, value interface{}) {
 		case "bk_os_name":
 			i.ident.OSName = fmt.Sprint(value)
 		case "bk_mem":
-			i.ident.Memory, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.Memory, err = util.GetInt64ByInterface(value)
 		case "bk_cpu":
-			i.ident.CPU, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.CPU, err = util.GetInt64ByInterface(value)
 		case "bk_disk":
-			i.ident.Disk, err = strconv.ParseInt(fmt.Sprint(value), 10, 64)
+			i.ident.Disk, err = util.GetInt64ByInterface(value)
 		}
 		if nil != err {
 			blog.Errorf("key %s	convert error %s", key, err.Error())
@@ -253,7 +252,7 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	var err error
 	ident := HostIdentifier{}
 	ident.HostName = fmt.Sprint(m["bk_host_name"])
-	ident.CloudID, err = strconv.Atoi(fmt.Sprint(m["bk_cloud_id"]))
+	ident.CloudID, err = util.GetInt64ByInterface(m["bk_cloud_id"])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v", "bk_cloud_id", m)
 	}
@@ -261,26 +260,26 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.OuterIP = fmt.Sprint(m["bk_host_outerip"])
 	ident.OSType = fmt.Sprint(m["bk_os_type"])
 	ident.OSName = fmt.Sprint(m["bk_os_name"])
-	ident.HostID, err = util.GetIntByInterface(m[common.BKHostIDField])
+	ident.HostID, err = util.GetInt64ByInterface(m[common.BKHostIDField])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_host_id", m)
 	}
-	ident.Memory, err = strconv.ParseInt(fmt.Sprint(m["bk_mem"]), 10, 64)
+	ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)
 	}
-	ident.CPU, err = strconv.ParseInt(fmt.Sprint(m["bk_cpu"]), 10, 64)
+	ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_cpu", m)
 	}
-	ident.Disk, err = strconv.ParseInt(fmt.Sprint(m["bk_disk"]), 10, 64)
+	ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_disk", m)
 	}
 	ident.Module = map[string]*Module{}
 	return &ident
 }
-func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fromdb bool) (*Inst, error) {
+func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, fromdb bool) (*Inst, error) {
 	ret := cache.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
 	if "" == ret || "nil" == ret || fromdb {
@@ -294,7 +293,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 		}
 		if common.BKInnerObjIDHost == objType {
 			inst.ident = NewHostIdentifier(inst.data)
-			relations := []scmeta.ModuleHostConfig{}
+			relations := []metadata.ModuleHost{}
 			condiction := map[string]interface{}{
 				common.GetInstIDField(objType): instID,
 			}
@@ -303,7 +302,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int, fr
 				inst.ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
 					SetID:    rela.SetID,
 					ModuleID: rela.ModuleID,
-					BizID:    rela.ApplicationID,
+					BizID:    rela.AppID,
 				}
 			}
 			inst.data["associations"] = inst.ident.Module
@@ -370,13 +369,13 @@ func (ih *IdentifierHandler) popEventInst() *metadata.EventInst {
 
 func (ih *IdentifierHandler) fetchHostCache() {
 
-	relations := []scmeta.ModuleHostConfig{}
+	relations := []metadata.ModuleHost{}
 	hosts := []*HostIdentifier{}
 
 	ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, map[string]interface{}{}, &relations, "", -1, -1)
 	ih.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, map[string]interface{}{}, &hosts, "", -1, -1)
 
-	relationMap := map[int][]scmeta.ModuleHostConfig{}
+	relationMap := map[int64][]metadata.ModuleHost{}
 	for _, relate := range relations {
 		relationMap[relate.HostID] = append(relationMap[relate.HostID], relate)
 	}
@@ -387,7 +386,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 			ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
 				SetID:    rela.SetID,
 				ModuleID: rela.ModuleID,
-				BizID:    rela.ApplicationID,
+				BizID:    rela.AppID,
 			}
 		}
 
