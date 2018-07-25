@@ -26,14 +26,10 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 // CreateObjectAtt create object's attribute
 func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response) {
-
-	blog.Info("create objectatt")
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -97,8 +93,6 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 // DeleteObjectAttByID delete object's attribute by id
 func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("delete objectatt ")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -158,8 +152,6 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 // UpdateObjectAttByID update object's attribute by id
 func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("update objectatt")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -209,8 +201,6 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 // SelectObjectAttByID select object's attribute by id
 func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("select objectatt by id")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -237,9 +227,9 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 	// translate language
 	for index := range result {
-		result[index].PropertyName = commondata.TranslatePropertyName(defLang, &result[index])
+		result[index].PropertyName = cli.TranslatePropertyName(defLang, &result[index])
 		if result[index].PropertyType == common.FieldTypeEnum {
-			result[index].Option = commondata.TranslateEnumName(defLang, &result[index], result[index].Option)
+			result[index].Option = cli.TranslateEnumName(defLang, &result[index], result[index].Option)
 		}
 	}
 
@@ -249,8 +239,6 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 
 // SelectObjectAttWithParams select object's attribute with some params
 func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restful.Response) {
-
-	blog.Info("select objectatts with params")
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -267,10 +255,10 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 		return
 	}
 
-	page := metadata.BasePage{Limit: common.BKNoLimit}
+	page := meta.BasePage{Limit: common.BKNoLimit}
 	if pageJS, ok := js.CheckGet("page"); ok {
 		tmpMap, _ := pageJS.Map()
-		page = metadata.ParsePage(tmpMap)
+		page = meta.ParsePage(tmpMap)
 		js.Del("page")
 	}
 
@@ -291,9 +279,9 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 
 	// translate language
 	for index := range results {
-		results[index].PropertyName = commondata.TranslatePropertyName(defLang, &results[index])
+		results[index].PropertyName = cli.TranslatePropertyName(defLang, &results[index])
 		if results[index].PropertyType == common.FieldTypeEnum {
-			results[index].Option = commondata.TranslateEnumName(defLang, &results[index], results[index].Option)
+			results[index].Option = cli.TranslateEnumName(defLang, &results[index], results[index].Option)
 		}
 	}
 	// success

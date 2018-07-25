@@ -30,7 +30,6 @@ import (
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
-	"configcenter/src/source_controller/api/metadata"
 )
 
 type AppResult struct {
@@ -530,7 +529,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logContent.CurData = logContent.PreData
 		preLogContent, ok := logPreConents[hostID]
 		if ok {
-			content, ok := preLogContent.Content.(*metadata.Content)
+			content, ok := preLogContent.Content.(*meta.Content)
 			if ok {
 				logContent.PreData = content.PreData
 			}
@@ -637,6 +636,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	//get host in set
 	condition := make(map[string][]int64)
 	hostIDArr := make([]int64, 0)
+	sModuleIDArr := make([]int64, 0)
 	if 0 != data.SetID {
 		condition[common.BKSetIDField] = []int64{data.SetID}
 	}
@@ -659,6 +659,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 	for _, cell := range hostResult {
 		hostIDArr = append(hostIDArr, cell[common.BKHostIDField])
+		sModuleIDArr = append(sModuleIDArr, cell[common.BKModuleIDField])
 	}
 
 	getModuleCond := make([]meta.ConditionItem, 0)
@@ -691,7 +692,28 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPP)})
 			return
 		}
-		moduleHostConfigParams := meta.ModuleHostConfigParams{HostID: hostID, ApplicationID: data.ApplicationID}
+
+		var toEmptyModule = true
+
+		sCond := make(map[string][]int64)
+		sCond[common.BKAppIDField] = []int64{data.ApplicationID}
+		sCond[common.BKHostIDField] = []int64{hostID}
+		configResult, err := s.Logics.GetConfigByCond(pheader, sCond)
+		if nil != err {
+			blog.Errorf("remove hosthostconfig error, params:%v, error:%v", sCond, err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		for _, config := range configResult {
+			if 0 != data.SetID && config[common.BKSetIDField] != data.SetID {
+				toEmptyModule = false
+			}
+			if 0 != data.ModuleID && config[common.BKModuleIDField] != data.ModuleID {
+				toEmptyModule = false
+			}
+		}
+
+		moduleHostConfigParams := meta.ModuleHostConfigParams{HostID: hostID, ApplicationID: data.ApplicationID, ModuleID: sModuleIDArr}
 
 		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
 		if nil != err || !result.Result {
@@ -699,13 +721,16 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 			return
 		}
-		moduleHostConfigParams = meta.ModuleHostConfigParams{HostID: hostID, ModuleID: []int64{moduleID}, ApplicationID: data.ApplicationID}
-		result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
-		if nil != err || !result.Result {
-			blog.Error("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
+		if toEmptyModule {
+			moduleHostConfigParams = meta.ModuleHostConfigParams{HostID: hostID, ModuleID: []int64{moduleID}, ApplicationID: data.ApplicationID}
+			result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
+			if nil != err || !result.Result {
+				blog.Error("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
+				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+				return
+			}
 		}
+
 	}
 
 	audit.SaveAudit(strconv.FormatInt(data.ApplicationID, 10), user, "host to empty module")

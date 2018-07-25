@@ -30,8 +30,6 @@ import (
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/instdata"
 )
 
 //delete object
@@ -42,7 +40,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-	instdata.DataH = cli.Instance
+
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
 	value, err := ioutil.ReadAll(req.Request.Body)
@@ -66,7 +64,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
-	getErr := instdata.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
+	getErr := cli.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
 	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("retrieve original data error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
@@ -74,7 +72,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 	}
 
 	blog.Info("delete object type:%s,input:%v ", objType, input)
-	err = instdata.DelObjByCondition(objType, input)
+	err = cli.DelObjByCondition(objType, input)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("delete object type:%s,input:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
@@ -107,7 +105,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
+
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
@@ -137,7 +135,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
-	getErr := instdata.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
+	getErr := cli.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
 	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("retrieve original datas error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
@@ -145,7 +143,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	}
 
 	blog.Info("update object type:%s,data:%v,condition:%v", objType, data, condition)
-	err = instdata.UpdateObjByCondition(objType, data, condition)
+	err = cli.UpdateObjByCondition(objType, data, condition)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
@@ -155,11 +153,11 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	// record event
 	if len(originDatas) > 0 {
 		newdatas := []map[string]interface{}{}
-		if err := instdata.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
+		if err := cli.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
 			blog.Error("create event error:%v", err)
 		} else {
 			ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-			idname := instdata.GetIDNameByType(objType)
+			idname := common.GetInstIDField(objType)
 			for _, originData := range originDatas {
 				newData := map[string]interface{}{}
 				id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))
@@ -167,7 +165,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 					blog.Errorf("create event error:%v", err)
 					continue
 				}
-				if err := instdata.GetObjectByID(objType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+				if err := cli.GetObjectByID(objType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 					blog.Error("create event error:%v", err)
 				} else {
 					err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
@@ -194,10 +192,9 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
 
 	value, err := ioutil.ReadAll(req.Request.Body)
-	var dat commondata.ObjQueryInput
+	var dat meta.QueryInput
 	err = json.Unmarshal([]byte(value), &dat)
 	if err != nil {
 		blog.Error("get object type:%s,input:%v error:%v", string(objType), value, err)
@@ -214,13 +211,13 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	sort := dat.Sort
 	fieldArr := strings.Split(fields, ",")
 	result := make([]map[string]interface{}, 0)
-	count, err := instdata.GetCntByCondition(objType, condition)
+	count, err := cli.GetCntByCondition(objType, condition)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
-	err = instdata.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
+	err = cli.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
@@ -244,7 +241,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
-	instdata.DataH = cli.Instance
+
 	value, _ := ioutil.ReadAll(req.Request.Body)
 	js, _ := simplejson.NewJson([]byte(value))
 	input, _ := js.Map()
@@ -253,7 +250,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	input = util.SetModOwner(input, ownerID)
 	blog.Info("create object type:%s,data:%v", objType, input)
 	var idName string
-	id, err := instdata.CreateObject(objType, input, &idName)
+	id, err := cli.CreateObjectIntoDB(objType, input, &idName)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectCreateInstFailed, err.Error())})
@@ -262,7 +259,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 
 	// record event
 	origindata := map[string]interface{}{}
-	if err := instdata.GetObjectByID(objType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+	if err := cli.GetObjectByID(objType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)

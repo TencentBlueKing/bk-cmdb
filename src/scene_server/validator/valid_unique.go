@@ -85,7 +85,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 	}
 
-	objIDName := common.GetInstFieldByType(objID)
+	objIDName := common.GetInstIDField(objID)
 	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
@@ -120,7 +120,7 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 		searchCond[common.BKObjIDField] = objID
 		searchCond[common.BKInstIDField] = instID
 	} else {
-		objIDName := common.GetInstFieldByType(objID)
+		objIDName := common.GetInstIDField(objID)
 		searchCond[objIDName] = instID
 	}
 

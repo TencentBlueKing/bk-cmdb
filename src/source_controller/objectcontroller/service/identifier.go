@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/instdata"
 	"configcenter/src/storage"
 )
 
@@ -34,7 +33,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	instdata.DataH = cli.Instance
+
 	param := new(metadata.SearchIdentifierParam)
 	err := json.NewDecoder(req.Request.Body).Decode(param)
 	if err != nil {
@@ -79,7 +78,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 
 	// fetch hosts
 	hosts := []*metadata.HostIdentifier{}
-	err = instdata.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
+	err = cli.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Errorf("SearchIdentifier error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})

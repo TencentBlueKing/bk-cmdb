@@ -10,13 +10,26 @@
  * limitations under the License.
  */
 
-package ccapi
+package v3v0v9beta3
 
 import (
-	_ "configcenter/src/api_server/ccapi/actions/v2"
-	_ "configcenter/src/api_server/ccapi/actions/v3/audit"   // import audit log(operationlog)
-	_ "configcenter/src/api_server/ccapi/actions/v3/event"   // import event
-	_ "configcenter/src/api_server/ccapi/actions/v3/host"    // import host
-	_ "configcenter/src/api_server/ccapi/actions/v3/process" // import topo
-	_ "configcenter/src/api_server/ccapi/actions/v3/topo"    // import process
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
+
+func init() {
+	upgrader.RegistUpgrader("v3.0.9-beta.3", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = fixesProcessPortPattern(db, conf)
+	if err != nil {
+		return err
+	}
+	err = fixesProcessPriorityPattern(db, conf)
+	if err != nil {
+		return err
+	}
+
+	return
+}

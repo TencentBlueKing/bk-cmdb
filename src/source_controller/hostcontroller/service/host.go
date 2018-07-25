@@ -228,6 +228,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 	ownerID := util.GetOwnerID(pheader)
 
 	params := meta.ModuleHostConfigParams{}
+	var moduleIDs []int64
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("del module host config failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -237,11 +238,17 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 	getModuleParams := make(map[string]interface{}, 2)
 	getModuleParams[common.BKHostIDField] = params.HostID
 	getModuleParams[common.BKAppIDField] = params.ApplicationID
-	moduleIDs, err := s.Logics.GetModuleIDsByHostID(getModuleParams) //params.HostID, params.ApplicationID)
-	if nil != err {
-		blog.Errorf("delete module host config failed, %v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetOriginHostModuelRelationship)})
-		return
+
+	if 0 == len(params.ModuleID) {
+		var err error
+		moduleIDs, err = s.Logics.GetModuleIDsByHostID(getModuleParams) //params.HostID, params.ApplicationID)
+		if nil != err {
+			blog.Errorf("delete module host config failed, %v", err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetOriginHostModuelRelationship)})
+			return
+		}
+	} else {
+		moduleIDs = params.ModuleID
 	}
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
