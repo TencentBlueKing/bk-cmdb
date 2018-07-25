@@ -13,10 +13,11 @@
 package logics
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 )
 
 func SetProxyHeader(c *gin.Context) {
