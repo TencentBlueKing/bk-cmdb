@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	sourceAPI "configcenter/src/source_controller/api/object"
 )
 
 func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful.Response) {
@@ -40,7 +39,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 		return
 	}
 
-	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	forward := req.Request.Header
 
 	procInstModel, err := ps.matchProcessInstance(procOpParam, forward)
 	if err != nil {
@@ -89,7 +88,7 @@ func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *rest
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
-func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, instModels map[string]*meta.ProcInstanceModel, namespace string, forward *sourceAPI.ForwardParam) (map[string]string, error) {
+func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, instModels map[string]*meta.ProcInstanceModel, namespace string, forward http.Header) (map[string]string, error) {
 	var err error
 	model_TaskId := make(map[string]string)
 	for key, model := range instModels {
@@ -124,7 +123,7 @@ func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, inst
 		gseprocReq.Meta.Namespace = namespace
 		gseprocReq.OpType = procOp.OpType
 
-		gseRsp, err := ps.CoreAPI.GseProcServer().OperateProcess(context.Background(), forward.Header, gseprocReq.Meta.Namespace, gseprocReq)
+		gseRsp, err := ps.CoreAPI.GseProcServer().OperateProcess(context.Background(), forward, gseprocReq.Meta.Namespace, gseprocReq)
 		if err != nil || (err == nil || !gseRsp.Result) {
 			blog.Warnf("fail to operate process by gse process server. err: %v, errcode: %d, errmsg: %s", err, gseRsp.Code, gseRsp.ErrMsg)
 			continue
@@ -142,7 +141,7 @@ func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, inst
 	return model_TaskId, nil
 }
 
-func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[string]interface{}, forward *sourceAPI.ForwardParam) error {
+func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[string]interface{}, forward http.Header) error {
 	// process
 	procName, _ := procInfo[common.BKProcessNameField].(string)
 	pidFilePath, _ := procInfo[common.BKProcPidFile].(string)
@@ -162,7 +161,7 @@ func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[s
 	gseproc.Spec.Control.ReloadCmd = reloadCmd
 	gseproc.Spec.Control.RestartCmd = restartCmd
 
-	ret, err := ps.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward.Header, namespace, gseproc)
+	ret, err := ps.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward, namespace, gseproc)
 	if err != nil || (err == nil && !ret.Result) {
 		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", procName, err, ret.Code, ret.ErrMsg)
 	}
@@ -170,14 +169,14 @@ func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[s
 	return nil
 }
 
-func (ps *ProcServer) getHostForGse(appId, hostId string, forward *sourceAPI.ForwardParam) ([]meta.GseHost, error) {
+func (ps *ProcServer) getHostForGse(appId, hostId string, forward http.Header) ([]meta.GseHost, error) {
 	gseHosts := make([]meta.GseHost, 0)
 	// get bk_supplier_id from applicationbase
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
 	reqParam := new(meta.QueryInput)
 	reqParam.Condition = condition
-	appRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, forward.Header, reqParam)
+	appRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, forward, reqParam)
 	if err != nil || (err == nil && !appRet.Result) {
 		return nil, fmt.Errorf("get application failed. condition: %+v, err: %v, errcode: %d, errmsg: %s", reqParam, err, appRet.Code, appRet.ErrMsg)
 	}
@@ -196,7 +195,7 @@ func (ps *ProcServer) getHostForGse(appId, hostId string, forward *sourceAPI.For
 	}
 
 	// get host info
-	hostRet, err := ps.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostId, forward.Header)
+	hostRet, err := ps.CoreAPI.HostController().Host().GetHostByID(context.Background(), hostId, forward)
 	if err != nil || (err == nil && !hostRet.Result) {
 		return nil, fmt.Errorf("get host by hostid(%s) failed. err: %v, errcode: %d, errmsg: %s", hostId, err, hostRet.Code, hostRet.ErrMsg)
 	}
@@ -221,7 +220,7 @@ func (ps *ProcServer) getHostForGse(appId, hostId string, forward *sourceAPI.For
 	return gseHosts, nil
 }
 
-func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId string, forward *sourceAPI.ForwardParam) error {
+func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId string, forward http.Header) error {
 	u64AppId, err := strconv.ParseUint(appId, 10, 64)
 	if err != nil {
 		return fmt.Errorf("fail to parse appId into uint64. err: %v", err)
@@ -238,7 +237,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 	modIdCond[common.BKOwnerIDField] = ownerId
 	modIdSearchParam := new(meta.QueryInput)
 	modIdSearchParam.Condition = modIdCond
-	modIdRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward.Header, modIdSearchParam)
+	modIdRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward, modIdSearchParam)
 	if err != nil || (err == nil && !modIdRet.Result) {
 		return fmt.Errorf("fail to search module info when create process instance. err: %v, errcode: %d, errmsg: %s", err, modIdRet.Code, modIdRet.ErrMsg)
 	}
@@ -269,7 +268,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 		setIdCond[common.BKAppIDField] = appId
 		setIdCond[common.BKOwnerIDField] = ownerId
 		setIdSearchParam := new(meta.QueryInput)
-		setIdRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, forward.Header, setIdSearchParam)
+		setIdRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, forward, setIdSearchParam)
 		if err != nil || (err == nil && !setIdRet.Result) {
 			blog.Warnf("fail to search set info by condition(%+v), err: %v, errcode: %d, errmsg: %s", setIdSearchParam, err, setIdRet.Code, setIdRet.ErrMsg)
 			continue
@@ -297,7 +296,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 	procCond[common.BKProcIDField] = procId
 	procParam := new(meta.QueryInput)
 	procParam.Condition = procCond
-	procRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward.Header, procParam)
+	procRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, procParam)
 	if err != nil || (err == nil && !procRet.Result) {
 		return fmt.Errorf("fail to search process object by search param(%+v). err: %v, errcode: %d, errmsg: %s", procParam, err, procRet.Code, procRet.ErrMsg)
 	}
@@ -349,7 +348,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 		return nil
 	}
 	// save into db
-	instModelRet, err := ps.CoreAPI.ProcController().CreateProcInstanceModel(context.Background(), forward.Header, procInstModels)
+	instModelRet, err := ps.CoreAPI.ProcController().CreateProcInstanceModel(context.Background(), forward, procInstModels)
 	if err != nil || (err == nil && !instModelRet.Result) {
 		return fmt.Errorf("fail to save process instance model into db. err: %v, errcode: %d, errmsg: %s", err, instModelRet.Code, instModelRet.ErrMsg)
 	}
@@ -357,13 +356,13 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 	return nil
 }
 
-func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward *sourceAPI.ForwardParam) error {
+func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
 	condition[common.BKProcIDField] = procId
 	condition[common.BKModuleNameField] = moduleName
 
-	ret, err := ps.CoreAPI.ProcController().DeleteProcInstanceModel(context.Background(), forward.Header, condition)
+	ret, err := ps.CoreAPI.ProcController().DeleteProcInstanceModel(context.Background(), forward, condition)
 	if err != nil || (err == nil && !ret.Result) {
 		return fmt.Errorf("fail to delete process instance model. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -371,11 +370,11 @@ func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, 
 	return nil
 }
 
-func (ps *ProcServer) getProcInstanceModel(appId string, forward *sourceAPI.ForwardParam) (map[string]*meta.ProcInstanceModel, error) {
+func (ps *ProcServer) getProcInstanceModel(appId string, forward http.Header) (map[string]*meta.ProcInstanceModel, error) {
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
 
-	ret, err := ps.CoreAPI.ProcController().GetProcInstanceModel(context.Background(), forward.Header, condition)
+	ret, err := ps.CoreAPI.ProcController().GetProcInstanceModel(context.Background(), forward, condition)
 	if err != nil || (err == nil && !ret.Result) {
 		return nil, fmt.Errorf("fail to get process instance model from db. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 	}
@@ -389,7 +388,7 @@ func (ps *ProcServer) getProcInstanceModel(appId string, forward *sourceAPI.Forw
 	return result, nil
 }
 
-func (ps *ProcServer) matchProcessInstance(procOp *meta.ProcessOperate, forward *sourceAPI.ForwardParam) (map[string]*meta.ProcInstanceModel, error) {
+func (ps *ProcServer) matchProcessInstance(procOp *meta.ProcessOperate, forward http.Header) (map[string]*meta.ProcInstanceModel, error) {
 	allProcInst, err := ps.getProcInstanceModel(procOp.ApplicationID, forward)
 	if err != nil {
 		blog.Errorf("match process instance failed! err: %v", err)
