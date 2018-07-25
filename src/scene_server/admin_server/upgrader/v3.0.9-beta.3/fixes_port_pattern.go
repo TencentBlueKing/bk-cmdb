@@ -30,7 +30,7 @@ func fixesPortPattern(db storage.DI, conf *upgrader.Config) (err error) {
 	}
 	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
 	if nil != err {
-		blog.Errorf("fixesPortPattern error  %s", err.Error())
+		blog.Errorf("[upgrade v3.0.9-beta.3] fixesPortPattern error  %s", err.Error())
 		return err
 	}
 	return nil
