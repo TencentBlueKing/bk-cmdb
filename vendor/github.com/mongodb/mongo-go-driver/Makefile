@@ -1,0 +1,120 @@
+BSON_PKGS = $(shell ./etc/find_pkgs.sh ./bson)
+BSON_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./bson _test)
+MONGO_PKGS = $(shell ./etc/find_pkgs.sh ./mongo)
+MONGO_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./mongo _test)
+CORE_PKGS = $(shell ./etc/find_pkgs.sh ./core)
+CORE_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./core _test)
+PKGS = $(BSON_PKGS) $(MONGO_PKGS) $(CORE_PKGS)
+TEST_PKGS = $(BSON_TEST_PKGS) $(MONGO_TEST_PKGS) $(CORE_TEST_PKGS)
+
+TEST_TIMEOUT = 300
+
+.PHONY: default
+default: check-fmt vet build-examples lint errcheck test-cover test-race
+
+.PHONY: doc
+doc:
+	godoc -http=:6060 -index
+
+.PHONY: build-examples
+build-examples:
+	go build $(BUILD_TAGS) ./examples/... ./core/examples/...
+
+.PHONY: build
+build:
+	go build $(filter-out ./core/auth/internal/gssapi,$(PKGS))
+
+.PHONY: check-fmt
+check-fmt:
+	@gofmt -l -s $(PKGS) | read; if [ $$? == 0 ]; then echo "gofmt check failed for:"; gofmt -l -s $(PKGS) | sed -e 's/^/ - /'; exit 1; fi
+
+.PHONY: fmt
+fmt:
+	gofmt -l -s -w $(PKGS)
+
+.PHONY: lint
+lint:
+	golint $(PKGS) | ./etc/lintscreen.pl .lint-whitelist
+
+.PHONY: lint-add-whitelist
+lint-add-whitelist:
+	golint $(PKGS) | ./etc/lintscreen.pl -u .lint-whitelist
+	sort .lint-whitelist -o .lint-whitelist
+
+.PHONY: errcheck
+errcheck:
+	errcheck -exclude .errcheck-excludes ./bson/... ./mongo/... ./core/...
+
+.PHONY: test
+test:
+	go test $(BUILD_TAGS) -timeout $(TEST_TIMEOUT)s $(TEST_PKGS)
+
+.PHONY: test-cover
+test-cover:
+	go test $(BUILD_TAGS) -timeout $(TEST_TIMEOUT)s -cover $(COVER_ARGS) $(TEST_PKGS)
+
+.PHONY: test-race
+test-race:
+	go test $(BUILD_TAGS) -timeout $(TEST_TIMEOUT)s -race $(TEST_PKGS)
+
+.PHONY: test-short
+test-short:
+	go test $(BUILD_TAGS) -timeout $(TEST_TIMEOUT)s -short $(TEST_PKGS)
+
+.PHONY: update-bson-corpus-tests
+update-bson-corpus-tests:
+	etc/update-spec-tests.sh bson-corpus
+
+.PHONY: update-connection-string-tests
+update-connection-string-tests:
+	etc/update-spec-tests.sh connection-string
+
+.PHONY: update-crud-tests
+update-crud-tests:
+	etc/update-spec-tests.sh crud
+
+.PHONY: update-initial-dns-seedlist-discovery-tests
+update-initial-dns-seedlist-discovery-tests:
+	etc/update-spec-tests.sh initial-dns-seedlist-discovery
+
+.PHONY: update-max-staleness-tests
+update-max-staleness-tests:
+	etc/update-spec-tests.sh max-staleness
+
+.PHONY: update-server-discovery-and-monitoring-tests
+update-server-discovery-and-monitoring-tests:
+	etc/update-spec-tests.sh server-discovery-and-monitoring
+
+.PHONY: update-server-selection-tests
+update-server-selection-tests:
+	etc/update-spec-tests.sh server-selection
+
+.PHONY: update-notices
+update-notices:
+	etc/generate-notices.pl > THIRD-PARTY-NOTICES
+
+.PHONY: vet
+vet:
+	go tool vet -cgocall=false -composites=false -structtags=false -unusedstringmethods="Error" $(PKGS)
+
+
+# Evergreen specific targets
+.PHONY: evg-test
+evg-test:
+	go test $(BUILD_TAGS) -v -timeout $(TEST_TIMEOUT)s $(TEST_PKGS) > test.suite
+
+.PHONY: evg-test-auth
+evg-test-auth:
+	go run -tags gssapi ./core/examples/count/main.go -uri $(MONGODB_URI)
+
+# benchmark specific targets and support
+perf:driver-test-data.tar.gz
+	tar -zxf $< $(if $(eq $(UNAME_S),Darwin),-s , --transform=s)/data/perf/
+	@touch $@
+driver-test-data.tar.gz:
+	curl --retry 5 "https://s3.amazonaws.com/boxes.10gen.com/build/driver-test-data.tar.gz" -o driver-test-data.tar.gz --silent --max-time 120
+benchmark:perf
+	go test $(BUILD_TAGS) -benchmem -bench=. ./benchmark
+driver-benchmark:perf
+	@go run cmd/godriver-benchmark/main.go | tee perf.suite
+.PHONY:benchmark driver-benchmark
