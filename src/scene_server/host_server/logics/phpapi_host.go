@@ -106,7 +106,7 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 func (phpapi *PHPAPI) AddHost(data map[string]interface{}) (int64, error) {
 	hostID, err := phpapi.addObj(data, common.BKInnerObjIDHost)
 	if nil == err {
-		phpapi.handleHostAssocation(hostID, data)
+		err = phpapi.handleHostAssocation(hostID, data)
 	}
 	return hostID, err
 }
