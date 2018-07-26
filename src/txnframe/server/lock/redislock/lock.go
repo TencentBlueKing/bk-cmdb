@@ -15,7 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	redis "github.com/go-redis/redis"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/txnframe/server/lock/types"
 )

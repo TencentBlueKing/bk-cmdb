@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	redis "github.com/go-redis/redis"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/txnframe/server/lock/types"
 )
@@ -31,11 +31,9 @@ func (rl *RedisLock) lock(lockKey, lockcollectionKey string, meta *types.Lock, c
 	total := int(meta.Timeout / time.Second)
 	rl.tryLockSubTxnID(meta)
 	for idx := 0; idx < total; idx++ {
-		content := rl.storage.Get(lockKey)
-		if nil == content.Err() {
-			locked, SubTxnID, err = rl.compareLock(content.Val(), meta, compare)
-		} else if redis.Nil == content.Err() {
-			locked, SubTxnID, err = rl.setLock(lockKey, lockcollectionKey, meta)
+		locked, SubTxnID, err = rl.setLock(lockKey, lockcollectionKey, meta)
+		if nil == err && false == locked {
+			locked, SubTxnID, err = rl.compareLock(lockKey, meta, compare)
 		}
 
 		// has error or get locked return
@@ -84,25 +82,38 @@ func (rl *RedisLock) unlock(lockKey, lockcollectionKey string, meta *types.Lock,
 
 func (rl *RedisLock) setLock(lockKey, lockcollectionKey string, meta *types.Lock) (bool, string, error) {
 	meta.Createtime = time.Now().UTC()
-	err := rl.storage.SetNX(lockKey, meta, 0).Err()
-	if nil == err {
-		err := rl.storage.HSet(lockcollectionKey, meta.LockName, meta).Err()
-		if nil != err {
-			// compensation mechanism  is considered here, notice function clear lockkey
-			rl.notice(lockKey, string(meta.TxnID), meta.LockName, noticTypeErrLockCollection)
-			return false, "", err
-		}
-		return true, meta.SubTxnID, nil
-	} else {
-		// wait next execute, try to lock
-		//return false, err
+	strVal, err := json.Marshal(meta)
+	if nil != err {
+		return false, "", err
 	}
-	return false, "", nil
+	locked, err := rl.storage.SetNX(lockKey, string(strVal), 0).Result()
+	if nil != err {
+		return false, "", err
+
+	}
+	if false == locked {
+		return false, "", nil
+	}
+
+	err = rl.storage.HSet(lockcollectionKey, meta.LockName, string(strVal)).Err()
+	if nil != err {
+		// compensation mechanism  is considered here, notice function clear lockkey
+		rl.notice(lockKey, string(meta.TxnID), meta.LockName, noticTypeErrLockCollection)
+		return false, "", err
+	}
+	return true, meta.SubTxnID, nil
 }
 
-func (rl *RedisLock) compareLock(content string, meta *types.Lock, compare compareFunc) (bool, string, error) {
+func (rl *RedisLock) compareLock(lockKey string, meta *types.Lock, compare compareFunc) (bool, string, error) {
+	content, err := rl.storage.Get(lockKey).Result()
+	if nil != err {
+		if redis.Nil == err {
+			return false, "", nil
+		}
+		return false, "", err
+	}
 	redisMeta := new(types.Lock)
-	err := json.Unmarshal([]byte(content), redisMeta)
+	err = json.Unmarshal([]byte(content), redisMeta)
 	if nil != err {
 		return false, "", err
 	}
