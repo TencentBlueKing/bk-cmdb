@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"configcenter/src/common/util"
@@ -353,7 +352,7 @@ func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
 }
 
 func (a *attribute) Create() error {
-	fmt.Println("attribute:", a.attr)
+
 	// check the property id repeated
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
