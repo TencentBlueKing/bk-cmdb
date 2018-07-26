@@ -67,6 +67,15 @@ type InstAsst struct {
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
 	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
 }
+type InstNameAsst struct {
+	ID         string                 `json:"id"`
+	ObjID      string                 `json:"bk_obj_id"`
+	ObjIcon    string                 `json:"bk_obj_icon"`
+	InstID     int64                  `json:"bk_inst_id"`
+	ObjectName string                 `json:"bk_obj_name"`
+	InstName   string                 `json:"bk_inst_name"`
+	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
+}
 
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *InstAsst) Parse(data types.MapStr) (*InstAsst, error) {
