@@ -45,15 +45,6 @@ type InstBatchInfo struct {
 	BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
 	InputType string                          `json:"input_type"`
 }
-type instNameAsst struct {
-	ID         string                 `json:"id"`
-	ObjID      string                 `json:"bk_obj_id"`
-	ObjIcon    string                 `json:"bk_obj_icon"`
-	InstID     int64                  `json:"bk_inst_id"`
-	ObjectName string                 `json:"bk_obj_name"`
-	InstName   string                 `json:"bk_inst_name"`
-	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
-}
 
 // ConditionItem subcondition
 type ConditionItem struct {
@@ -71,9 +62,9 @@ type AssociationParams struct {
 
 // commonInstTopo common inst topo
 type commonInstTopo struct {
-	instNameAsst
-	Count    int            `json:"count"`
-	Children []instNameAsst `json:"children"`
+	metadata.InstNameAsst
+	Count    int                     `json:"count"`
+	Children []metadata.InstNameAsst `json:"children"`
 }
 
 type commonInstTopoV2 struct {
