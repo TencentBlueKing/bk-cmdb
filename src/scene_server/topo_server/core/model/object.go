@@ -219,7 +219,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
+func (o *object) searchObjects(isNeedChild bool, cond condition.Condition) ([]Object, error) {
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -230,7 +230,11 @@ func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
 	for _, asst := range rsp.Data {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		if isNeedChild {
+			cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
+		} else {
+			cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		}
 		rspRst, err := o.search(cond)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
@@ -246,26 +250,26 @@ func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
 func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(false, cond)
 }
 func (o *object) GetParentObject() ([]Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(false, cond)
 }
 
 func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(true, cond)
 }
 
 func (o *object) SetMainlineParentObject(objID string) error {
