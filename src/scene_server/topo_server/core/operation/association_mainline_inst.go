@@ -171,7 +171,6 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 		for _, child := range childs {
-			blog.Infof("the child: %s", child.GetObject().GetID())
 
 			// set the child's parent
 			if err = child.SetMainlineParentInst(defaultInst); nil != err {
