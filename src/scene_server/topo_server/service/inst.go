@@ -38,6 +38,17 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
+	if data.Exists("BatchInfo") {
+		batchInfo := new(operation.InstBatchInfo)
+		data.MarshalJSONInto(batchInfo)
+		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
+		if nil != err {
+			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+			return nil, err
+		}
+		return setInst, nil
+	}
+
 	setInst, err := s.core.InstOperation().CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("failed to create a new %s, %s", objID, err.Error())

@@ -40,7 +40,7 @@ type OpCondition struct {
 	Update []updateCondition `json:"update"`
 }
 
-type instBatchInfo struct {
+type InstBatchInfo struct {
 	// BatchInfo batch info
 	BatchInfo *map[int]map[string]interface{} `json:"BatchInfo"`
 	InputType string                          `json:"input_type"`
