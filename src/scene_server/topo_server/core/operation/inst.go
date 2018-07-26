@@ -33,6 +33,7 @@ import (
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
 	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
+	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
@@ -63,7 +64,7 @@ type asstObjectAttribute struct {
 	attrs []model.Attribute
 }
 
-type batchResult struct {
+type BatchResult struct {
 	Errors       []string `json:"error"`
 	Success      []string `json:"success"`
 	UpdateErrors []string `json:"update_error"`
@@ -130,7 +131,7 @@ func (c *commonInst) getAsstObjectPrimaryFields(obj model.Object) ([]model.Attri
 	return fields, asstPrimaryFields, nil
 }
 
-func (c *commonInst) constructAssociationInstSearchCondition(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, batch *instBatchInfo) (map[AssociationObjectID][]frtypes.MapStr, map[RowIndex]error, error) {
+func (c *commonInst) constructAssociationInstSearchCondition(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, batch *InstBatchInfo) (map[AssociationObjectID][]frtypes.MapStr, map[RowIndex]error, error) {
 
 	results := make(map[AssociationObjectID][]frtypes.MapStr)
 	errs := make(map[RowIndex]error, 0)
@@ -283,7 +284,7 @@ func (c *commonInst) searchAssociationInstByConditions(params types.ContextParam
 	return results, nil
 }
 
-func (c *commonInst) importExcelData(params types.ContextParams, obj model.Object, batch *instBatchInfo) (map[AssociationObjectID]map[InputKey]InstID, map[RowIndex]error, error) {
+func (c *commonInst) importExcelData(params types.ContextParams, obj model.Object, batch *InstBatchInfo) (map[AssociationObjectID]map[InputKey]InstID, map[RowIndex]error, error) {
 
 	fields, asstPrimaryFields, err := c.getAsstObjectPrimaryFields(obj)
 	if nil != err {
@@ -324,7 +325,7 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 		asstKeyIDS, ok := importAsstInsts[AssociationObjectID(asstObj.GetID())]
 		if !ok {
 			blog.Errorf("[operation-inst] not found the association object(%s)", asstObj.GetID())
-			return params.Err.New(common.CCErrCommParamsIsInvalid, asstObj.GetID())
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, asstObj.GetID())
 		}
 
 		for _, asstAttr := range asstAttr {
@@ -337,7 +338,7 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 			strInst, err := batch.String(asstAttr.GetID())
 			if nil != err {
 				blog.Errorf("[operation-inst] the asst key(%s) is invalid, error info is %s", asstAttr.GetID(), err.Error())
-				return params.Err.New(common.CCErrCommParamsInvalid, asstAttr.GetID())
+				return params.Err.Errorf(common.CCErrCommParamsInvalid, asstAttr.GetID())
 			}
 
 			if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strInst) {
@@ -366,20 +367,12 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 	return nil
 }
 
-func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
-
-	// extract internal data
-	batchInfo := &instBatchInfo{}
-	err := data.MarshalJSONInto(batchInfo)
-	if nil != err {
-		blog.Errorf("[operation-inst] failed to unmarshal the data(%#v) into the inst batch info struct, error info is %s", data, err.Error())
-		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
-	}
-
+func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
+	var err error
 	// create association
 	var importInsts map[AssociationObjectID]map[InputKey]InstID
 	var rowsErrors map[RowIndex]error
-	results := &batchResult{}
+	results := &BatchResult{}
 	if common.InputTypeExcel == batchInfo.InputType && nil != batchInfo.BatchInfo {
 		importInsts, rowsErrors, err = c.importExcelData(params, obj, batchInfo)
 		if nil != err {
@@ -404,28 +397,33 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 			item.SetValues(colInput)
 			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				return nil, err
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
 			}
-			err = item.Create()
+			err = item.Save()
 			if nil != err {
-				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
-				return nil, err
+				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), colInput, err.Error())
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
 			}
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-			return item, nil
 		} // end foreach batchinfo
 	}
+	return results, nil
+}
+
+func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	// create new insts
 	blog.Infof("the data inst:%#v", data)
 	item := c.instFactory.CreateInst(params, obj)
 	item.SetValues(data)
-	if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  error info is %s", item.ToMapStr(), err.Error())
 		return nil, err
 	}
-	err = item.Create()
-	if nil != err {
+
+	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 		return nil, err
 	}
@@ -869,7 +867,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 
 	if err := data.MarshalJSONInto(asstParamCond); nil != err {
 		blog.Errorf("[operation-inst] find inst by association inst , error info is %s", err.Error())
-		return 0, nil, params.Err.New(common.CCErrTopoInstSelectFailed, err.Error())
+		return 0, nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
 	}
 
 	instCond := map[string]interface{}{}
