@@ -139,11 +139,11 @@ func (cli *Service) GetObjectByID(objType string, fields []string, id int, resul
 	return err
 }
 
-func (cli *Service) TranslateObjectName(defLang language.DefaultCCLanguageIf, att *meta.Object) string {
-	return util.FirstNotEmptyString(defLang.Language("object_"+att.ObjectID), att.ObjectName, att.ObjectID)
+func (cli *Service) TranslateObjectName(defLang language.DefaultCCLanguageIf, obj *meta.Object) string {
+	return util.FirstNotEmptyString(defLang.Language("object_"+obj.ObjectID), obj.ObjectName, obj.ObjectID)
 }
-func (cli *Service) TranslateInstName(defLang language.DefaultCCLanguageIf, att *meta.Object) string {
-	return util.FirstNotEmptyString(defLang.Language("inst_"+att.ObjectID), att.ObjectName, att.ObjectID)
+func (cli *Service) TranslateInstName(defLang language.DefaultCCLanguageIf, obj *meta.Object) string {
+	return util.FirstNotEmptyString(defLang.Language("inst_"+obj.ObjectID), obj.ObjectName, obj.ObjectID)
 }
 
 func (cli *Service) TranslatePropertyName(defLang language.DefaultCCLanguageIf, att *meta.Attribute) string {
