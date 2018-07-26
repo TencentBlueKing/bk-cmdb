@@ -104,6 +104,72 @@ func TestPreLockErr(t *testing.T) {
 	}
 }
 
+func TestPreUnlock(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+	lock := types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	locked, err := ss.PreLock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == locked {
+		t.Errorf("lock is false")
+		return
+	}
+	err = ss.PreUnlock(&lock)
+	if nil != err {
+		t.Errorf("preunlock  error %s", err.Error())
+		return
+	}
+
+	locked, err = ss.PreLock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == locked {
+		t.Errorf("lock is false")
+		return
+	}
+}
+
+func TestPreUnlockErr(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+	lock := types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	locked, err := ss.PreLock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == locked {
+		t.Errorf("lock is false")
+		return
+	}
+	lock = types.Lock{
+		TxnID:    "2",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	err = ss.PreUnlock(&lock)
+	if nil == err {
+		t.Errorf("preunlock  error, should be not permission")
+		return
+	}
+}
+
 func TestLock(t *testing.T) {
 	s := getRedisInstance()
 	ss := NewLock(s, "cc")
@@ -231,6 +297,176 @@ func TestLockErr(t *testing.T) {
 		t.Errorf("lock id and sub id expect not equal")
 		return
 	}
+}
+
+func TestUnlock(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+	lock := types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	lockInfo, err := ss.Lock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+	err = ss.Unlock(&lock)
+	if nil != err {
+		t.Errorf("unlock  error %s", err.Error())
+		return
+	}
+
+	lockInfo, err = ss.Lock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+}
+
+func TestUnlockErr(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+	lock := types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	lockInfo, err := ss.Lock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+	lock = types.Lock{
+		TxnID:    "2",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	err = ss.Unlock(&lock)
+	if nil == err {
+		t.Errorf("unlock  error, should be not permission")
+		return
+	}
+
+	lock = types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	err = ss.Unlock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+
+	lockInfo, err = ss.Lock(&lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+
+}
+
+func TestUnLockAll(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+	lock := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+
+	lock.SubTxnID = ""
+	lockInfo, err := ss.Lock(lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+	if nil != err {
+		t.Errorf(err.Error())
+		return
+	}
+
+	lock.SubTxnID = ""
+	locked, err := ss.PreLock(lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+	}
+	if false == locked {
+		t.Errorf("pre lock is false")
+		return
+	}
+	if nil != err {
+		t.Errorf(err.Error())
+		return
+	}
+
+	err = ss.UnlockAll(lock.TxnID)
+	if nil != err {
+		t.Errorf(err.Error())
+		return
+	}
+
+	lock.SubTxnID = ""
+	lockInfo, err = ss.Lock(lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+	}
+	if false == lockInfo.Locked {
+		t.Errorf("lock is false")
+		return
+	}
+	if nil != err {
+		t.Errorf(err.Error())
+		return
+	}
+	lock.SubTxnID = ""
+	locked, err = ss.PreLock(lock)
+	if nil != err {
+		t.Errorf("%s", err.Error())
+		return
+	}
+	if false == locked {
+		t.Errorf("pre lock is false")
+		return
+	}
+	if nil != err {
+		t.Errorf(err.Error())
+		return
+	}
+
 }
 
 func getRedisInstance() *redis.Client {
