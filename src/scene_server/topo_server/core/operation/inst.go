@@ -583,6 +583,9 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 	ids := []int64{}
 	for _, id := range instIDS {
+		if 0 == len(strings.TrimSpace(id)) {
+			continue
+		}
 		idbit, err := strconv.ParseInt(id, 10, 64)
 		if nil != err {
 			return nil, err
@@ -691,41 +694,43 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	tmpResults := map[string]*commonInstTopo{}
 	for _, inst := range insts {
 
-		childInsts, err := inst.GetChildInst()
+		childs, err := inst.GetChildObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, childInst := range childInsts {
+		for _, child := range childs {
 
-			childObj := childInst.GetObject()
-			commonInst, exists := tmpResults[childObj.GetID()]
+			commonInst, exists := tmpResults[child.Object.GetID()]
 			if !exists {
 				commonInst = &commonInstTopo{}
-				commonInst.ObjectName = childObj.GetName()
-				commonInst.ObjIcon = childObj.GetIcon()
-				commonInst.ObjID = childObj.GetID()
-				tmpResults[childObj.GetID()] = commonInst
+				commonInst.ObjectName = child.Object.GetName()
+				commonInst.ObjIcon = child.Object.GetIcon()
+				commonInst.ObjID = child.Object.GetID()
+				commonInst.Children = []instNameAsst{}
+				tmpResults[child.Object.GetID()] = commonInst
 			}
 
-			instAsst := instNameAsst{}
-			id, err := childInst.GetInstID()
-			if nil != err {
-				return 0, nil, err
+			for _, childInst := range child.Insts {
+				instAsst := instNameAsst{}
+				id, err := childInst.GetInstID()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				name, err := childInst.GetInstName()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				instAsst.InstID = id
+				instAsst.InstName = name
+				instAsst.ObjectName = child.Object.GetName()
+				instAsst.ObjIcon = child.Object.GetIcon()
+				instAsst.ObjID = child.Object.GetID()
+
+				commonInst.Children = append(commonInst.Children, instAsst)
 			}
-
-			name, err := childInst.GetInstName()
-			if nil != err {
-				return 0, nil, err
-			}
-
-			instAsst.InstID = id
-			instAsst.InstName = name
-			instAsst.ObjectName = childInst.GetObject().GetName()
-			instAsst.ObjIcon = childInst.GetObject().GetIcon()
-			instAsst.ObjID = childInst.GetObject().GetID()
-
-			commonInst.Children = append(commonInst.Children, instAsst)
 		}
 	}
 
@@ -733,7 +738,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		results = append(results, subResult)
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
@@ -755,41 +760,43 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 	tmpResults := map[string]*commonInstTopo{}
 	for _, inst := range insts {
 
-		parentInsts, err := inst.GetParentInst()
+		parents, err := inst.GetParentObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, parentInst := range parentInsts {
+		for _, parent := range parents {
 
-			childObj := parentInst.GetObject()
-			commonInst, exists := tmpResults[childObj.GetID()]
+			commonInst, exists := tmpResults[parent.Object.GetID()]
 			if !exists {
 				commonInst = &commonInstTopo{}
-				commonInst.ObjectName = childObj.GetName()
-				commonInst.ObjIcon = childObj.GetIcon()
-				commonInst.ObjID = childObj.GetID()
-				tmpResults[childObj.GetID()] = commonInst
+				commonInst.ObjectName = parent.Object.GetName()
+				commonInst.ObjIcon = parent.Object.GetIcon()
+				commonInst.ObjID = parent.Object.GetID()
+				commonInst.Children = []instNameAsst{}
+				tmpResults[parent.Object.GetID()] = commonInst
 			}
 
-			instAsst := instNameAsst{}
-			id, err := parentInst.GetInstID()
-			if nil != err {
-				return 0, nil, err
+			for _, parentInst := range parent.Insts {
+				instAsst := instNameAsst{}
+				id, err := parentInst.GetInstID()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				name, err := parentInst.GetInstName()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				instAsst.InstID = id
+				instAsst.InstName = name
+				instAsst.ObjectName = parent.Object.GetName()
+				instAsst.ObjIcon = parent.Object.GetIcon()
+				instAsst.ObjID = parent.Object.GetID()
+
+				commonInst.Children = append(commonInst.Children, instAsst)
 			}
-
-			name, err := parentInst.GetInstName()
-			if nil != err {
-				return 0, nil, err
-			}
-
-			instAsst.InstID = id
-			instAsst.InstName = name
-			instAsst.ObjectName = parentInst.GetObject().GetName()
-			instAsst.ObjIcon = parentInst.GetObject().GetIcon()
-			instAsst.ObjID = parentInst.GetObject().GetID()
-
-			commonInst.Children = append(commonInst.Children, instAsst)
 		}
 	}
 
@@ -797,7 +804,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		results = append(results, subResult)
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error) {
@@ -858,7 +865,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error) {

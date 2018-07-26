@@ -338,17 +338,8 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 	query.Condition = cond
 	query.Limit = common.BKNoLimit
 
-	cnt, instItems, err := s.core.InstOperation().FindInstChildTopo(params, obj, instID, query)
-	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
-		return nil, err
-	}
-
-	result := frtypes.MapStr{}
-	result.Set("count", cnt)
-	result.Set("info", instItems)
-
-	return result, nil
+	_, instItems, err := s.core.InstOperation().FindInstChildTopo(params, obj, instID, query)
+	return instItems, err
 
 }
 
