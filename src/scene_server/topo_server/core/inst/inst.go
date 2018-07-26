@@ -54,6 +54,8 @@ type Inst interface {
 	GetValues() frtypes.MapStr
 
 	ToMapStr() frtypes.MapStr
+
+	IsDefault() bool
 }
 
 var _ Inst = (*inst)(nil)
@@ -90,15 +92,6 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
-
-	exists, err := cli.IsExists()
-	if nil != err {
-		return err
-	}
-
-	if exists {
-		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
 
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
@@ -328,4 +321,19 @@ func (cli *inst) SetValues(values frtypes.MapStr) {
 
 func (cli *inst) GetValues() frtypes.MapStr {
 	return cli.datas
+}
+func (cli *inst) IsDefault() bool {
+	if cli.datas.Exists(common.BKDefaultField) {
+		defaultVal, err := cli.datas.Int64(common.BKDefaultField)
+		if nil != err {
+			blog.Errorf("[operation-inst]the default value(%#v) is invalid, error info is %s", cli.datas[common.BKDefaultField], err.Error())
+			return false
+		}
+
+		if defaultVal == int64(common.DefaultAppFlag) {
+			return false
+		}
+	}
+
+	return false
 }
