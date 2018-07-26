@@ -585,6 +585,9 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 	ids := []int64{}
 	for _, id := range instIDS {
+		if 0 == len(strings.TrimSpace(id)) {
+			continue
+		}
 		idbit, err := strconv.ParseInt(id, 10, 64)
 		if nil != err {
 			return nil, err
