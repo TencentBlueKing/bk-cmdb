@@ -40,7 +40,7 @@ func GetActionLanguage(req *restful.Request) string {
 	if "" == language {
 		language = "zh-cn"
 	}
-	blog.V(2).Infof("request language: %s, header: %v", language, req.Request.Header)
+	blog.V(5).Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 
