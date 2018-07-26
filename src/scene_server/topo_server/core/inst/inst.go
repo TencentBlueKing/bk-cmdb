@@ -16,6 +16,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -78,7 +80,23 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	queryInput := &metatype.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), targetModel.GetObjectType(), cli.params.Header, queryInput)
+	if targetModel.GetID() != common.BKInnerObjIDHost {
+		rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), targetModel.GetObjectType(), cli.params.Header, queryInput)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
+			return nil, cli.params.Err.Error(rsp.Code)
+		}
+
+		return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
+	}
+
+	// search hosts
+	rsp, err := cli.clientSet.HostController().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -89,7 +107,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
+	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromInterface(rsp.Data.Info)), nil
 
 }
 

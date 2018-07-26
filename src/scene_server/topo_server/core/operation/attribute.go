@@ -102,7 +102,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		}
 
 		attrMeta.ObjectAttID = att.GetID() // the structural difference
-		if _, err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
+		if err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
 			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 		}
