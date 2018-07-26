@@ -15,12 +15,15 @@ package inst
 import (
 	"context"
 	"io"
+	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 func (cli *inst) updateMainlineAssociation(child Inst, parent Inst) error {
@@ -137,10 +140,10 @@ func (cli *inst) searchInstAssociation(instID, asstInstID int64, objID, asstObjI
 
 	cond := condition.CreateCondition()
 
-	if 0 > instID {
+	if 0 < instID {
 		cond.Field(common.BKInstIDField).Eq(instID)
 	}
-	if 0 > asstInstID {
+	if 0 < asstInstID {
 		cond.Field(common.BKAsstInstIDField).Eq(asstInstID)
 	}
 	if 0 != len(objID) {
@@ -152,7 +155,8 @@ func (cli *inst) searchInstAssociation(instID, asstInstID int64, objID, asstObjI
 
 	queryInput := &metatype.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
-
+	queryInput.Limit = common.BKNoLimit
+	//fmt.Println("cond:", cond.ToMapStr())
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
@@ -267,7 +271,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 	for _, parentObj := range parentObjs {
 
 		rstObj := &ObjectWithInsts{Object: parentObj}
-		asstItems, err := cli.searchInstAssociation(currInstID, -1, cli.target.GetID(), parentObj.GetID())
+		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
 			return result, err
@@ -288,7 +292,9 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(parentObj.GetInstIDFieldName()).In(parentInstIDS)
-		innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+		if parentObj.IsCommon() {
+			innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+		}
 
 		rspItems, err := cli.searchInsts(parentObj, innerCond)
 		if nil != err {
@@ -322,7 +328,7 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 
 	for _, parentObj := range parentObjs {
 
-		asstItems, err := cli.searchInstAssociation(currInstID, -1, cli.target.GetID(), parentObj.GetID())
+		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
 			return nil, err
@@ -343,11 +349,13 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 		innerCond := condition.CreateCondition()
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(parentObj.GetInstIDFieldName()).In(parentInstIDS)
-		innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+		if parentObj.IsCommon() {
+			innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+		}
 
 		rspItems, err := cli.searchInsts(parentObj, innerCond)
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
+			blog.Errorf("[inst-asst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
 			return nil, err
 		}
 
@@ -356,6 +364,53 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 	}
 
 	return result, nil
+}
+
+func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
+	cond.Field(common.BKAsstObjIDField).Eq(asstObj.GetID())
+	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[inst-asst] failed to request controller server, error info is %s ", err.Error())
+		return nil, err
+	}
+	if !rsp.Result {
+		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	instIDS := []int64{}
+	for _, item := range rsp.Data {
+		asstVals, exists := cli.datas.Get(item.ObjectAttID)
+		if !exists {
+			continue
+		}
+
+		switch targetAssts := asstVals.(type) {
+		default:
+
+		case string:
+			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
+			for _, asstID := range tmpIDS {
+
+				id, err := strconv.ParseInt(asstID, 10, 64)
+				if nil != err {
+					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.ObjectAttID, asstID, err.Error())
+					return nil, err
+				}
+				instIDS = append(instIDS, id)
+			}
+
+		case []metatype.InstNameAsst:
+			for _, item := range targetAssts {
+				instIDS = append(instIDS, item.InstID)
+			}
+		}
+
+		break // should be only one object association
+	}
+	//fmt.Println("instids:", instIDS)
+	return instIDS, nil
 }
 
 func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
@@ -377,15 +432,19 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 	for _, childObj := range childObjs {
 
 		rstObj := &ObjectWithInsts{Object: childObj}
-		asstItems, err := cli.searchInstAssociation(-1, currInstID, childObj.GetID(), cli.target.GetID())
+		asstItems, err := cli.searchInstAssociation(currInstID, -1, cli.target.GetID(), childObj.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association,  the error info is %s", err.Error())
 			return result, err
 		}
 
-		childInstIDS := []int64{}
+		childInstIDS, err := cli.getAsstChildInstIDSByAsstField(childObj)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to get the association, error info is %s", err.Error())
+			return result, err
+		}
 		for _, item := range asstItems {
-			childInstID, err := item.Int64(common.BKInstIDField)
+			childInstID, err := item.Int64(common.BKAsstInstIDField)
 			if nil != err {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return result, err
@@ -396,7 +455,9 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		innerCond := condition.CreateCondition()
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(childObj.GetInstIDFieldName()).In(childInstIDS)
-		innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+		if childObj.IsCommon() {
+			innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+		}
 
 		rspItems, err := cli.searchInsts(childObj, innerCond)
 		if nil != err {
@@ -428,7 +489,7 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 
 	for _, childObj := range childObjs {
 
-		asstItems, err := cli.searchInstAssociation(-1, currInstID, childObj.GetID(), cli.target.GetID())
+		asstItems, err := cli.searchInstAssociation(currInstID, -1, cli.target.GetID(), childObj.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association,  the error info is %s", err.Error())
 			return nil, err
@@ -448,7 +509,9 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 		innerCond := condition.CreateCondition()
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(childObj.GetInstIDFieldName()).In(childInstIDS)
-		innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+		if childObj.IsCommon() {
+			innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+		}
 
 		rspItems, err := cli.searchInsts(childObj, innerCond)
 		if nil != err {
