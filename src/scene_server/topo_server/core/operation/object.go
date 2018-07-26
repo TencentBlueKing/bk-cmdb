@@ -81,7 +81,7 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	objItems, err := o.FindObject(params, checkObjCond)
 	if nil != err {
 		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
-		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		return params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if 0 == len(objItems) {
