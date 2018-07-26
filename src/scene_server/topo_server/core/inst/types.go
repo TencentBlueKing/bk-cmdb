@@ -21,3 +21,9 @@ import (
 type Factory interface {
 	CreateInst(params types.ContextParams, obj model.Object) Inst
 }
+
+// ObjectWithInsts the object with insts
+type ObjectWithInsts struct {
+	Object model.Object
+	Insts  []Inst
+}
