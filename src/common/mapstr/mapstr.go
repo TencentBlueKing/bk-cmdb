@@ -29,6 +29,15 @@ func New() MapStr {
 	return MapStr{}
 }
 
+// NewArrayFromInterface create a new array from interface
+func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
+	}
+	return results
+}
+
 // NewFromInterface create a mapstr instance from the interface
 func NewFromInterface(data interface{}) (MapStr, error) {
 
