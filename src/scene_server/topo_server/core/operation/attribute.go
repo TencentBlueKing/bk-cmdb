@@ -182,9 +182,11 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 			return nil, err
 		}
 
-		for _, asst := range assts { // should be only one
-			result.AssociationID = asst.AsstObjID
-			result.AsstForward = asst.AsstForward
+		for _, asst := range assts {
+			if asst.ObjectAttID == attr.GetID() { // should be only one
+				result.AssociationID = asst.AsstObjID
+				result.AsstForward = asst.AsstForward
+			}
 		}
 
 		results = append(results, result)
