@@ -1,0 +1,15 @@
+.idea/.name
+*.iml
+*.xml
+src/source_controller/proccontroller/proccontroller
+src/scene_server/host_server/host_server
+src/web_server/web_server
+src/api_server/api_server
+src/source_controller/objectcontroller/objectcontroller
+src/source_controller/auditcontroller/auditcontroller
+src/scene_server/event_server/event_server
+src/api_server/api_server.exe
+src/api_server/app/options/options.go
+src/source_controller/hostcontroller/pid/hostcontroller.exe.pid
+src/source_controller/hostcontroller/app/options/options.go
+src/api_server/app/options/options.go
