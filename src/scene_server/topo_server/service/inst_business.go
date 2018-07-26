@@ -116,7 +116,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
-	if !data.Exists(common.BKDataStatusField) {
+	if !conditionData.Exists(common.BKDataStatusField) {
 		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 	}
 	innerCond.Field(common.BKDefaultField).Eq(0)
