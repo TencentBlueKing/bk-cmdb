@@ -19,8 +19,6 @@ import (
 	"reflect"
 	"strconv"
 	"time"
-
-	"configcenter/src/common/basetype"
 )
 
 // MapStr the common event data definition
@@ -107,20 +105,6 @@ func (cli MapStr) Bool(key string) (bool, error) {
 		return false, fmt.Errorf("the key (%s) is invalid", key)
 	case bool:
 		return t, nil
-	}
-}
-
-// BaseType get the value as BaseType.Type
-func (cli MapStr) BaseType(key string) (*basetype.Type, error) {
-	switch t := cli[key].(type) {
-	case nil:
-		return nil, fmt.Errorf("the key (%s) is invalid", key)
-	default:
-		return nil, fmt.Errorf("the key (%s) is invalid", key)
-	case *basetype.Type:
-		return t, nil
-	case basetype.Type:
-		return &t, nil
 	}
 }
 
