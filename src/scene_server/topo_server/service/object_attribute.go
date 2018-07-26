@@ -41,7 +41,7 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 		return nil, err
 	}
 	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
-	return s.core.AttributeOperation().FindObjectAttribute(params, cond)
+	return s.core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 
 // UpdateObjectAttribute update the object attribute
