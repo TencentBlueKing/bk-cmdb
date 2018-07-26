@@ -13,7 +13,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -117,23 +116,9 @@ func (cli *Service) CreateObjectIntoDB(objType string, input interface{}, idName
 func (cli *Service) GetObjectByID(objType string, fields []string, id int, result interface{}, sort string) error {
 	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
-	switch objType {
-	case common.BKInnerObjIDApp:
-		condition[common.BKAppIDField] = id
-	case common.BKInnerObjIDSet:
-		condition[common.BKSetIDField] = id
-	case common.BKInnerObjIDModule:
-		condition[common.BKModuleIDField] = id
-	case common.BKINnerObjIDObject:
-		condition[common.BKInstIDField] = id
-	case common.BKInnerObjIDHost:
-		condition[common.BKHostIDField] = id
-	case common.BKInnerObjIDProc:
-		condition[common.BKProcIDField] = id
-	case common.BKInnerObjIDPlat:
-		condition[common.BKCloudIDField] = id
-	default:
-		return errors.New("invalid object type")
+	condition[common.GetInstIDField(objType)] = id
+	if tName == common.BKTableNameBaseInst && objType != common.BKINnerObjIDObject {
+		condition[common.BKObjIDField] = objType
 	}
 	err := cli.Instance.GetOneByCondition(tName, fields, condition, result)
 	return err
