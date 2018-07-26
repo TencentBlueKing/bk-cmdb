@@ -181,7 +181,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 			defaultInstNameAttr := currentObj.CreateAttribute()
 			defaultInstNameAttr.SetIsSystem(false)
 			defaultInstNameAttr.SetIsOnly(true)
-			defaultInstNameAttr.SetIsEditable(false)
+			defaultInstNameAttr.SetIsEditable(true)
 			defaultInstNameAttr.SetType(common.FieldTypeLongChar)
 			defaultInstNameAttr.SetIsRequired(true)
 			defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
@@ -189,6 +189,19 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 
 			if err = defaultInstNameAttr.Save(); nil != err {
 				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, currentObj.GetDefaultInstPropertyName(), err.Error())
+				return nil, err
+			}
+
+			defaultInstParentAttr := currentObj.CreateAttribute()
+			defaultInstParentAttr.SetIsSystem(true)
+			defaultInstParentAttr.SetIsOnly(true)
+			defaultInstParentAttr.SetIsEditable(false)
+			defaultInstParentAttr.SetType(common.FieldTypeInt)
+			defaultInstParentAttr.SetIsRequired(true)
+			defaultInstParentAttr.SetID(common.BKInstParentStr)
+
+			if err = defaultInstParentAttr.Save(); nil != err {
+				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, common.BKInstParentStr, err.Error())
 				return nil, err
 			}
 
