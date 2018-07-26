@@ -53,7 +53,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	}
 
 	if 0 < result.Data.Count {
-		blog.Error("duplicate data ")
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, isonly: %#v, objID %s", searchCond, valid.isOnly, valid.objID)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -89,10 +89,9 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
-
-	if !innerObject[valid.objID] {
-		searchCond[common.BKObjIDField] = valid.objID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		objID = common.BKINnerObjIDObject
+		searchCond[common.BKObjIDField] = valid.objID
 	}
 
 	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
@@ -104,7 +103,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	}
 
 	if 0 < result.Data.Count {
-		blog.Error("duplicate data ")
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v", searchCond, mapData, valid.isOnly, valid.objID, instID)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 	return nil
@@ -115,15 +114,13 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	objID := valid.objID
 	searchCond := make(map[string]interface{})
 
-	if innerObject[valid.objID] {
+	searchCond[common.GetInstIDField(objID)] = instID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		objID = common.BKINnerObjIDObject
-		searchCond[common.BKObjIDField] = objID
-		searchCond[common.BKInstIDField] = instID
-	} else {
-		objIDName := common.GetInstIDField(objID)
-		searchCond[objIDName] = instID
+		searchCond[common.BKObjIDField] = valid.objID
 	}
 
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
 	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
 	if nil != err {
 		return nil, err

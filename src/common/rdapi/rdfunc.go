@@ -151,7 +151,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
 	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	blog.V(4).Infof("rd http header %v", req.Request.Header)
+	blog.V(5).Infof("rd http header %v", req.Request.Header)
 	if "" == ownerId {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
