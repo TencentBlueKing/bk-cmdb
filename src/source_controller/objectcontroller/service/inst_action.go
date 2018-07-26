@@ -165,7 +165,15 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 					blog.Errorf("create event error:%v", err)
 					continue
 				}
-				if err := cli.GetObjectByID(objType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+				realObjType := objType
+				if objType == common.BKINnerObjIDObject {
+					var ok bool
+					realObjType, ok = originData[common.BKObjIDField].(string)
+					if !ok {
+						blog.Error("create event error: there is no bk_obj_type exist", err)
+					}
+				}
+				if err := cli.GetObjectByID(realObjType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 					blog.Error("create event error:%v", err)
 				} else {
 					err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
@@ -259,7 +267,15 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 
 	// record event
 	origindata := map[string]interface{}{}
-	if err := cli.GetObjectByID(objType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+	realObjType := objType
+	if objType == common.BKINnerObjIDObject {
+		var ok bool
+		realObjType, ok = origindata[common.BKObjIDField].(string)
+		if !ok {
+			blog.Error("create event error: there is no bk_obj_type exist", err)
+		}
+	}
+	if err := cli.GetObjectByID(realObjType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
