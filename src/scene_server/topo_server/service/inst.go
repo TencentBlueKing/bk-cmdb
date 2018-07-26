@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/scene_server/topo_server/core/operation"
 
@@ -22,6 +23,7 @@ import (
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	paraparse "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -225,13 +227,19 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 		return nil, err
 	}
 
-	queryCond := &metadata.QueryInput{}
+	queryCond := &paraparse.SearchParams{}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
-
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
+	page := metadata.ParsePage(queryCond.Page)
+	query := &metadata.QueryInput{}
+	query.Condition = queryCond.Condition
+	query.Fields = strings.Join(queryCond.Fields, ",")
+	query.Limit = page.Limit
+	query.Sort = page.Sort
+	query.Start = page.Start
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, false)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
