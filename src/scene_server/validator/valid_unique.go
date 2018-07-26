@@ -53,7 +53,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	}
 
 	if 0 < result.Data.Count {
-		blog.Error("duplicate data ")
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, isonly: %#v, objID %s", searchCond, valid.isOnly, valid.objID)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -103,7 +103,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	}
 
 	if 0 < result.Data.Count {
-		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, instID %v", searchCond, mapData, valid.isOnly, instID)
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v", searchCond, mapData, valid.isOnly, valid.objID, instID)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 	return nil

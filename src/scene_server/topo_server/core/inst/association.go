@@ -249,6 +249,60 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 	//fmt.Println("child:", cond.ToMapStr())
 	return cli.searchInsts(childObj, cond)
 }
+func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
+
+	result := make([]*ObjectWithInsts, 0)
+	parentObjs, err := cli.target.GetParentObject()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the object(%s)'s parent, error info is %s", cli.target.GetID(), err.Error())
+		return result, err
+	}
+
+	currInstID, err := cli.GetInstID()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
+		return result, err
+	}
+
+	for _, parentObj := range parentObjs {
+
+		rstObj := &ObjectWithInsts{Object: parentObj}
+		asstItems, err := cli.searchInstAssociation(currInstID, -1, cli.target.GetID(), parentObj.GetID())
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
+			return result, err
+		}
+
+		parentInstIDS := []int64{}
+		for _, item := range asstItems {
+
+			parentInstID, err := item.Int64(common.BKAsstInstIDField)
+			if nil != err {
+				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
+				return result, err
+			}
+			parentInstIDS = append(parentInstIDS, parentInstID)
+		}
+
+		innerCond := condition.CreateCondition()
+
+		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
+		innerCond.Field(parentObj.GetInstIDFieldName()).In(parentInstIDS)
+		innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+
+		rspItems, err := cli.searchInsts(parentObj, innerCond)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
+			return result, err
+		}
+
+		rstObj.Insts = rspItems
+		result = append(result, rstObj)
+
+	}
+
+	return result, nil
+}
 
 func (cli *inst) GetParentInst() ([]Inst, error) {
 
@@ -274,6 +328,7 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 			return nil, err
 		}
 
+		parentInstIDS := []int64{}
 		for _, item := range asstItems {
 
 			parentInstID, err := item.Int64(common.BKAsstInstIDField)
@@ -282,21 +337,75 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 				return nil, err
 			}
 
-			innerCond := condition.CreateCondition()
-
-			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
-			innerCond.Field(parentObj.GetInstIDFieldName()).Eq(parentInstID)
-			innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
-
-			rspItems, err := cli.searchInsts(parentObj, innerCond)
-			if nil != err {
-				blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
-				return nil, err
-			}
-
-			result = append(result, rspItems...)
+			parentInstIDS = append(parentInstIDS, parentInstID)
 		}
 
+		innerCond := condition.CreateCondition()
+		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
+		innerCond.Field(parentObj.GetInstIDFieldName()).In(parentInstIDS)
+		innerCond.Field(metatype.ModelFieldObjectID).Eq(parentObj.GetID())
+
+		rspItems, err := cli.searchInsts(parentObj, innerCond)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
+			return nil, err
+		}
+
+		result = append(result, rspItems...)
+
+	}
+
+	return result, nil
+}
+
+func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
+
+	result := make([]*ObjectWithInsts, 0)
+
+	childObjs, err := cli.target.GetChildObject()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the object(%s)'s child, error info is %s", cli.target.GetID(), err.Error())
+		return result, err
+	}
+
+	currInstID, err := cli.GetInstID()
+	if nil != err {
+		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
+		return result, err
+	}
+
+	for _, childObj := range childObjs {
+
+		rstObj := &ObjectWithInsts{Object: childObj}
+		asstItems, err := cli.searchInstAssociation(-1, currInstID, childObj.GetID(), cli.target.GetID())
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the inst association,  the error info is %s", err.Error())
+			return result, err
+		}
+
+		childInstIDS := []int64{}
+		for _, item := range asstItems {
+			childInstID, err := item.Int64(common.BKInstIDField)
+			if nil != err {
+				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
+				return result, err
+			}
+			childInstIDS = append(childInstIDS, childInstID)
+		}
+
+		innerCond := condition.CreateCondition()
+		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
+		innerCond.Field(childObj.GetInstIDFieldName()).In(childInstIDS)
+		innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+
+		rspItems, err := cli.searchInsts(childObj, innerCond)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
+			return result, err
+		}
+
+		rstObj.Insts = rspItems
+		result = append(result, rstObj)
 	}
 
 	return result, nil
@@ -325,6 +434,7 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 			return nil, err
 		}
 
+		childInstIDS := []int64{}
 		for _, item := range asstItems {
 
 			childInstID, err := item.Int64(common.BKInstIDField)
@@ -332,21 +442,21 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return nil, err
 			}
-
-			innerCond := condition.CreateCondition()
-
-			innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
-			innerCond.Field(childObj.GetInstIDFieldName()).Eq(childInstID)
-			innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
-
-			rspItems, err := cli.searchInsts(childObj, innerCond)
-			if nil != err {
-				blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
-				return nil, err
-			}
-
-			result = append(result, rspItems...)
+			childInstIDS = append(childInstIDS, childInstID)
 		}
+
+		innerCond := condition.CreateCondition()
+		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
+		innerCond.Field(childObj.GetInstIDFieldName()).In(childInstIDS)
+		innerCond.Field(metatype.ModelFieldObjectID).Eq(childObj.GetID())
+
+		rspItems, err := cli.searchInsts(childObj, innerCond)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
+			return nil, err
+		}
+
+		result = append(result, rspItems...)
 
 	}
 
