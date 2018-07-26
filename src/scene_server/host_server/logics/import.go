@@ -74,11 +74,14 @@ func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheade
 			continue
 		}
 
-		err = instance.assObjectInt.SetObjAsstPropertyVal(host)
-		if nil != err {
-			blog.Errorf("host assocate property error %v %v", index, err)
-			updateErrMsg = append(updateErrMsg, defLang.Languagef("import_row_int_error_str", index, err.Error()))
-			continue
+		if importType == common.InputTypeExcel {
+
+			err = instance.assObjectInt.SetObjAsstPropertyVal(host)
+			if nil != err {
+				blog.Errorf("host assocate property error %v %v", index, err)
+				updateErrMsg = append(updateErrMsg, defLang.Languagef("import_row_int_error_str", index, err.Error()))
+				continue
+			}
 		}
 
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
@@ -98,11 +101,8 @@ func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheade
 
 		var iHostID interface{}
 		var isOK bool
-		if importType == common.InputTypeExcel {
-			// host not db ,check params host info with host id
-			iHostID, isOK = host[common.BKHostIDField]
-
-		}
+		// host not db ,check params host info with host id
+		iHostID, isOK = host[common.BKHostIDField]
 
 		if false == isOK {
 			key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
