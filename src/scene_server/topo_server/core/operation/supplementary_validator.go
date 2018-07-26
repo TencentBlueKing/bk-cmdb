@@ -51,6 +51,7 @@ func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, da
 		common.BKInstParentStr,
 		common.BKOwnerIDField,
 		common.BKAppIDField,
+		common.BKDataStatusField,
 	}
 
 	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
