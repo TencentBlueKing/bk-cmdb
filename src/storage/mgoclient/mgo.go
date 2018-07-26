@@ -41,6 +41,18 @@ type MongoConfig struct {
 	Mechanism    string
 }
 
+func NewMongoConfig(src map[string]string) *MongoConfig {
+	config := MongoConfig{}
+	config.Address = src["mongodb.host"]
+	config.User = src["mongodb.usr"]
+	config.Password = src["mongodb.pwd"]
+	config.Database = src["mongodb.database"]
+	config.Port = src["mongodb.port"]
+	config.MaxOpenConns = src["mongodb.maxOpenConns"]
+	config.MaxIdleConns = src["mongodb.maxIDleConns"]
+	return &config
+}
+
 type MgoCli struct {
 	host      string
 	port      string

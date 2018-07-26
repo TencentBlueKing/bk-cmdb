@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	sourceAPI "configcenter/src/source_controller/api/object"
+	
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -85,7 +85,7 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	cell[common.BKProcIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 
-	if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, &sourceAPI.ForwardParam{Header: req.Request.Header}); err != nil {
+	if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, req.Request.Header); err != nil {
 		blog.Errorf("%v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUnBindToMoudleFaile)})
 		return
