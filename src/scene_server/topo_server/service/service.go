@@ -116,6 +116,7 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	}
 
 	if common.CCSuccess != errcode {
+		rsp.Code = errcode
 		rsp.Result = false
 		rsp.ErrMsg = fmt.Sprintf("%v", info)
 	} else {
