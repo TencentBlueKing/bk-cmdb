@@ -168,6 +168,9 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	attr := currentObj.CreateAttribute()
 	attr.SetIsSystem(true)
 	attr.SetID(common.BKChildStr)
+	attr.SetType(common.FieldTypeLongChar)
+	attr.SetName(common.BKChildStr)
+	attr.SetOption(nil)
 
 	if err = attr.Save(); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
