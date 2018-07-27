@@ -155,34 +155,41 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 		newdatas := []map[string]interface{}{}
 		if err := cli.GetObjectByCondition(defLang, objType, nil, condition, &newdatas, "", 0, 0); err != nil {
 			blog.Error("create event error:%v", err)
-		} else {
-			ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-			idname := common.GetInstIDField(objType)
-			for _, originData := range originDatas {
-				newData := map[string]interface{}{}
-				id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))
-				if err != nil {
-					blog.Errorf("create event error:%v", err)
-					continue
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+			return
+		}
+		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+		idname := common.GetInstIDField(objType)
+		for _, originData := range originDatas {
+			newData := map[string]interface{}{}
+			id, err := strconv.Atoi(fmt.Sprintf("%v", originData[idname]))
+			if err != nil {
+				blog.Errorf("create event error:%v", err)
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+				return
+			}
+			realObjType := objType
+			if objType == common.BKINnerObjIDObject {
+				var ok bool
+				realObjType, ok = originData[common.BKObjIDField].(string)
+				if !ok {
+					blog.Error("create event error: there is no bk_obj_type exist", err)
+					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+					return
 				}
-				realObjType := objType
-				if objType == common.BKINnerObjIDObject {
-					var ok bool
-					realObjType, ok = originData[common.BKObjIDField].(string)
-					if !ok {
-						blog.Error("create event error: there is no bk_obj_type exist", err)
-					}
-				}
-				if err := cli.GetObjectByID(realObjType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+			}
+			if err := cli.GetObjectByID(realObjType, nil, id, &newData, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+				blog.Error("create event error:%v", err)
+			} else {
+				err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
+				if err != nil && !cli.Instance.IsNotFoundErr(err) {
 					blog.Error("create event error:%v", err)
-				} else {
-					err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
-					if err != nil && !cli.Instance.IsNotFoundErr(err) {
-						blog.Error("create event error:%v", err)
-					}
+					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+					return
 				}
 			}
 		}
+
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
@@ -260,7 +267,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	var idName string
 	id, err := cli.CreateObjectIntoDB(objType, input, &idName)
 	if err != nil && !cli.Instance.IsNotFoundErr(err) {
-		blog.Error("create object type:%s,data:%v error:%v", objType, input, err)
+		blog.Errorf("create object type:%s,data:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectCreateInstFailed, err.Error())})
 		return
 	}
@@ -272,16 +279,22 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 		var ok bool
 		realObjType, ok = origindata[common.BKObjIDField].(string)
 		if !ok {
-			blog.Error("create event error: there is no bk_obj_type exist", err)
+			blog.Error("create event error: there is no bk_obj_type exist")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+			return
 		}
 	}
 	if err := cli.GetObjectByID(realObjType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
-		blog.Error("create event error:%v", err)
+		blog.Errorf("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+		return
 	} else {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
 		if err != nil && !cli.Instance.IsNotFoundErr(err) {
-			blog.Error("create event error:%v", err)
+			blog.Errorf("create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+			return
 		}
 	}
 
