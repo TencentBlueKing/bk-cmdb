@@ -600,37 +600,51 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	for _, delInst := range deleteIDS {
+		preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
 
-		cond = condition.CreateCondition()
-		cond.Field(common.BKObjIDField).Eq(delInst.obj.GetID())
-		cond.Field(common.BKInstIDField).Eq(delInst.instID)
-		if err = c.asst.DeleteInstAssociation(params, cond); nil != err {
+		innerCond := condition.CreateCondition()
+		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKAsstInstIDField).Eq(delInst)
+		err := c.asst.CheckBeAssociation(params, obj, innerCond)
+		if nil != err {
 			return err
 		}
 
-		cond = condition.CreateCondition()
-		cond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		cond.Field(common.BKAsstObjIDField).Eq(delInst.obj.GetID())
-		if err = c.asst.DeleteAssociation(params, cond); nil != err {
+		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
 			return err
 		}
 
-		cond = condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		cond.Field(obj.GetInstIDFieldName()).Eq(delInst.instID)
-
-		if err = c.DeleteInst(params, delInst.obj, cond); nil != err {
+		innerCond = condition.CreateCondition()
+		innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKInstIDField).Eq(delInst)
+		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
 			return err
 		}
+
+		// clear association
+		rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
+
+		if nil != err {
+			blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
+			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
+			return params.Err.Error(rsp.Code)
+		}
+
+		NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
 
 	}
-
 	return nil
-
 }
-func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
 
-	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
+func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
 
 	// clear inst associations
 	query := &metatype.QueryInput{}
@@ -647,40 +661,12 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		if nil != err {
 			return err
 		}
-
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		innerCond.Field(common.BKInstIDField).Eq(targetInstID)
-		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+		err = c.DeleteInstByInstID(params, obj, []int64{targetInstID})
+		if nil != err {
 			return err
 		}
 
-		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		innerCond.Field(common.BKAsstInstIDField).Eq(targetInstID)
-		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
-			return err
-		}
 	}
-
-	// clear association
-	rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
-
-	if nil != err {
-		blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
-	}
-
-	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
 
 	return nil
 }
@@ -1065,7 +1051,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 			"bk_obj_id":      obj.GetID(),
 		}
 
-		asstInst, err := c.asst.SearchInstAssociation(params, obj.GetID(), keyObjID, query)
+		asstInst, err := c.asst.SearchInstAssociation(params, query)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to search the association inst, error info is %s", err.Error())
 			return 0, nil, err
