@@ -93,6 +93,9 @@
                     this.$emit('update:selected', val)
                     this.$emit('on-selected', this.selectedData, this.selectedIndex)
                 })
+            },
+            bkBizId () {
+                this.setSelectedData()
             }
         },
         methods: {
@@ -103,8 +106,7 @@
                     this.selectedIndex = index
                 } else {
                     /* 用于默认选择时向父组件派发on-selected事件 */
-                    const defaultBizId = parseInt(Cookies.get('bk_biz_id') || '-1')
-                    const biz = this.bkPrivBizList.find(biz => biz['bk_biz_id'] === defaultBizId) || this.bkPrivBizList[0] || {}
+                    const biz = this.bkPrivBizList.find(biz => biz['bk_biz_id'] === this.bkBizId) || this.bkPrivBizList[0] || {}
                     const index = this.bkPrivBizList.indexOf(biz)
                     this.selectedData = {
                         label: biz['bk_biz_name'],
