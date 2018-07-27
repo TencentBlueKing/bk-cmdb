@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	GroupFieldID              = "id"
 	GroupFieldGroupID         = "bk_group_id"
 	GroupFieldGroupName       = "bk_group_name"
 	GroupFieldGroupIndex      = "bk_group_index"
