@@ -13,9 +13,10 @@
 package operation
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"strings"
+
+	"configcenter/src/common/util"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -63,6 +64,8 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKOwnerIDField, params.SupplierAccount)
+	data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
+
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())
