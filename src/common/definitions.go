@@ -73,7 +73,7 @@ const (
 	BKTopoBusinessLevelLimit = "level.businessTopoMax"
 
 	// BKTopoBusinessLevelDefault the mainline topo level default level
-	BKTopoBusinessLevelDefault = 6
+	BKTopoBusinessLevelDefault = 7
 )
 
 const (
@@ -714,8 +714,8 @@ const (
 type DataStatusFlag string
 
 const (
-    DataStatusDisabled DataStatusFlag = "disabled"
-    DataStatusEnable   DataStatusFlag = "enable"
+	DataStatusDisabled DataStatusFlag = "disabled"
+	DataStatusEnable   DataStatusFlag = "enable"
 )
 
 const BKDataStatusField = "bk_data_status"
