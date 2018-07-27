@@ -33,6 +33,7 @@ import (
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
 	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
+	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
@@ -63,7 +64,7 @@ type asstObjectAttribute struct {
 	attrs []model.Attribute
 }
 
-type batchResult struct {
+type BatchResult struct {
 	Errors       []string `json:"error"`
 	Success      []string `json:"success"`
 	UpdateErrors []string `json:"update_error"`
@@ -130,7 +131,7 @@ func (c *commonInst) getAsstObjectPrimaryFields(obj model.Object) ([]model.Attri
 	return fields, asstPrimaryFields, nil
 }
 
-func (c *commonInst) constructAssociationInstSearchCondition(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, batch *instBatchInfo) (map[AssociationObjectID][]frtypes.MapStr, map[RowIndex]error, error) {
+func (c *commonInst) constructAssociationInstSearchCondition(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, batch *InstBatchInfo) (map[AssociationObjectID][]frtypes.MapStr, map[RowIndex]error, error) {
 
 	results := make(map[AssociationObjectID][]frtypes.MapStr)
 	errs := make(map[RowIndex]error, 0)
@@ -283,7 +284,7 @@ func (c *commonInst) searchAssociationInstByConditions(params types.ContextParam
 	return results, nil
 }
 
-func (c *commonInst) importExcelData(params types.ContextParams, obj model.Object, batch *instBatchInfo) (map[AssociationObjectID]map[InputKey]InstID, map[RowIndex]error, error) {
+func (c *commonInst) importExcelData(params types.ContextParams, obj model.Object, batch *InstBatchInfo) (map[AssociationObjectID]map[InputKey]InstID, map[RowIndex]error, error) {
 
 	fields, asstPrimaryFields, err := c.getAsstObjectPrimaryFields(obj)
 	if nil != err {
@@ -324,7 +325,7 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 		asstKeyIDS, ok := importAsstInsts[AssociationObjectID(asstObj.GetID())]
 		if !ok {
 			blog.Errorf("[operation-inst] not found the association object(%s)", asstObj.GetID())
-			return params.Err.New(common.CCErrCommParamsIsInvalid, asstObj.GetID())
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, asstObj.GetID())
 		}
 
 		for _, asstAttr := range asstAttr {
@@ -337,7 +338,7 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 			strInst, err := batch.String(asstAttr.GetID())
 			if nil != err {
 				blog.Errorf("[operation-inst] the asst key(%s) is invalid, error info is %s", asstAttr.GetID(), err.Error())
-				return params.Err.New(common.CCErrCommParamsInvalid, asstAttr.GetID())
+				return params.Err.Errorf(common.CCErrCommParamsInvalid, asstAttr.GetID())
 			}
 
 			if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strInst) {
@@ -366,20 +367,12 @@ func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs ma
 	return nil
 }
 
-func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
-
-	// extract internal data
-	batchInfo := &instBatchInfo{}
-	err := data.MarshalJSONInto(batchInfo)
-	if nil != err {
-		blog.Errorf("[operation-inst] failed to unmarshal the data(%#v) into the inst batch info struct, error info is %s", data, err.Error())
-		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
-	}
-
+func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
+	var err error
 	// create association
 	var importInsts map[AssociationObjectID]map[InputKey]InstID
 	var rowsErrors map[RowIndex]error
-	results := &batchResult{}
+	results := &BatchResult{}
 	if common.InputTypeExcel == batchInfo.InputType && nil != batchInfo.BatchInfo {
 		importInsts, rowsErrors, err = c.importExcelData(params, obj, batchInfo)
 		if nil != err {
@@ -404,33 +397,112 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 			item.SetValues(colInput)
 			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				return nil, err
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
 			}
-			err = item.Create()
+			err = item.Save()
 			if nil != err {
-				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
-				return nil, err
+				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), colInput, err.Error())
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
 			}
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-			return item, nil
 		} // end foreach batchinfo
 	}
+	return results, nil
+}
+
+func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, inst inst.Inst) error {
+
+	currInstID, err := inst.GetInstID()
+	if nil != err {
+		return err
+	}
+	attrs, err := obj.GetAttributes()
+	if nil != err {
+		return err
+	}
+
+	assts, err := c.asst.SearchObjectAssociation(params, obj.GetID())
+	if nil != err {
+		return err
+	}
+
+	data := inst.GetValues()
+	for _, attr := range attrs {
+		if !attr.IsAssociationType() {
+			continue
+		}
+
+		asstVal, err := data.String(attr.GetID())
+		if nil != err {
+			return err
+		}
+
+		for _, asst := range assts {
+			if asst.ObjectAttID != attr.GetID() {
+				continue
+			}
+
+			// delete the inst asst
+			innerCond := condition.CreateCondition()
+			innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
+			innerCond.Field(common.BKAsstObjIDField).Eq(asst.AsstObjID)
+			innerCond.Field(common.BKInstIDField).Eq(currInstID)
+			if err = c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+				blog.Errorf("[operation-inst] failed to delete inst association,by the condition(%#v), error info is %s", innerCond.ToMapStr(), err.Error())
+				return err
+			}
+
+			if 0 == len(strings.TrimSpace(asstVal)) {
+				continue
+			}
+
+			// create a new new asst
+			asstInstIDS := strings.Split(asstVal, common.InstAsstIDSplit)
+			for _, asstInstID := range asstInstIDS {
+				if 0 == len(strings.TrimSpace(asstInstID)) {
+					continue
+				}
+				tmpID, err := strconv.ParseInt(asstInstID, 10, 64)
+				if nil != err {
+					blog.Errorf("[operation-inst] failed to convert value(%v) to int, error info is %s", asstInstID, err.Error())
+					return params.Err.Errorf(common.CCErrCommParamsIsInvalid, attr.GetID())
+				}
+				if err = c.asst.CreateCommonInstAssociation(params, &metatype.InstAsst{InstID: currInstID, ObjectID: obj.GetID(), AsstInstID: tmpID, AsstObjectID: asst.AsstObjID}); nil != err {
+					blog.Errorf("[operation-inst] failed to create inst association, error info is %s", err.Error())
+					return err
+				}
+			}
+		}
+
+	}
+
+	return nil
+}
+func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	// create new insts
-	blog.Infof("the data inst:%#v", data)
+	blog.V(3).Infof("the data inst:%#v", data)
 	item := c.instFactory.CreateInst(params, obj)
 	item.SetValues(data)
-	if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+
+	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  error info is %s", item.ToMapStr(), err.Error())
 		return nil, err
 	}
-	err = item.Create()
-	if nil != err {
+
+	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), data, err.Error())
 		return nil, err
 	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+	if err := c.setInstAsst(params, obj, item); nil != err {
+		blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+		return nil, err
+	}
 
 	return item, nil
 }
@@ -560,6 +632,42 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 
 	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 
+	// clear inst associations
+	query := &metatype.QueryInput{}
+	query.Limit = common.BKNoLimit
+	query.Condition = cond.ToMapStr()
+
+	_, insts, err := c.FindInst(params, obj, query, false)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
+		return err
+	}
+	for _, inst := range insts {
+		targetInstID, err := inst.GetInstID()
+		if nil != err {
+			return err
+		}
+
+		innerCond := condition.CreateCondition()
+		innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKInstIDField).Eq(targetInstID)
+		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+			return err
+		}
+
+		innerCond = condition.CreateCondition()
+		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKAsstInstIDField).Eq(targetInstID)
+		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+			return err
+		}
+	}
+
+	// clear association
 	rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, cond.ToMapStr())
 
 	if nil != err {
@@ -576,7 +684,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 
 	return nil
 }
-func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj metatype.Association, instIDS []string, needAsstDetail bool) ([]instNameAsst, error) {
+func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj metatype.Association, instIDS []string, needAsstDetail bool) ([]metatype.InstNameAsst, error) {
 
 	obj, err := c.obj.FindSingleObject(params, asstObj.AsstObjID)
 	if nil != err {
@@ -585,6 +693,9 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 	ids := []int64{}
 	for _, id := range instIDS {
+		if 0 == len(strings.TrimSpace(id)) {
+			continue
+		}
 		idbit, err := strconv.ParseInt(id, 10, 64)
 		if nil != err {
 			return nil, err
@@ -611,7 +722,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		return nil, params.Err.Error(rsp.Code)
 	}
 
-	instAsstNames := []instNameAsst{}
+	instAsstNames := []metatype.InstNameAsst{}
 	for _, instInfo := range rsp.Data.Info {
 		instName, err := instInfo.String(obj.GetInstNameFieldName())
 		if nil != err {
@@ -623,7 +734,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		}
 
 		if needAsstDetail {
-			instAsstNames = append(instAsstNames, instNameAsst{
+			instAsstNames = append(instAsstNames, metatype.InstNameAsst{
 				ObjID:      obj.GetID(),
 				ObjectName: obj.GetName(),
 				ObjIcon:    obj.GetIcon(),
@@ -634,7 +745,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 			continue
 		}
 
-		instAsstNames = append(instAsstNames, instNameAsst{
+		instAsstNames = append(instAsstNames, metatype.InstNameAsst{
 			ObjID:      obj.GetID(),
 			ObjectName: obj.GetName(),
 			ObjIcon:    obj.GetIcon(),
@@ -647,15 +758,12 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	return instAsstNames, nil
 }
 
-func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, searchCond frtypes.MapStr) ([]int64, error) {
+func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, query *metatype.QueryInput) ([]int64, error) {
 
 	obj, err := c.obj.FindSingleObject(params, objID)
 	if nil != err {
 		return nil, err
 	}
-
-	query := &metatype.QueryInput{}
-	query.Condition = searchCond
 
 	_, insts, err := c.FindInst(params, obj, query, false)
 	if nil != err {
@@ -693,41 +801,46 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	tmpResults := map[string]*commonInstTopo{}
 	for _, inst := range insts {
 
-		childInsts, err := inst.GetChildInst()
+		childs, err := inst.GetChildObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, childInst := range childInsts {
+		for _, child := range childs {
 
-			childObj := childInst.GetObject()
-			commonInst, exists := tmpResults[childObj.GetID()]
+			commonInst, exists := tmpResults[child.Object.GetID()]
 			if !exists {
 				commonInst = &commonInstTopo{}
-				commonInst.ObjectName = childObj.GetName()
-				commonInst.ObjIcon = childObj.GetIcon()
-				commonInst.ObjID = childObj.GetID()
-				tmpResults[childObj.GetID()] = commonInst
+				commonInst.ObjectName = child.Object.GetName()
+				commonInst.ObjIcon = child.Object.GetIcon()
+				commonInst.ObjID = child.Object.GetID()
+				commonInst.Count = len(childs)
+				commonInst.Children = []metatype.InstNameAsst{}
+				tmpResults[child.Object.GetID()] = commonInst
 			}
 
-			instAsst := instNameAsst{}
-			id, err := childInst.GetInstID()
-			if nil != err {
-				return 0, nil, err
+			for _, childInst := range child.Insts {
+
+				instAsst := metatype.InstNameAsst{}
+				id, err := childInst.GetInstID()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				name, err := childInst.GetInstName()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				instAsst.ID = strconv.Itoa(int(id))
+				instAsst.InstID = id
+				instAsst.InstName = name
+				instAsst.ObjectName = child.Object.GetName()
+				instAsst.ObjIcon = child.Object.GetIcon()
+				instAsst.ObjID = child.Object.GetID()
+
+				tmpResults[child.Object.GetID()].Children = append(tmpResults[child.Object.GetID()].Children, instAsst)
 			}
-
-			name, err := childInst.GetInstName()
-			if nil != err {
-				return 0, nil, err
-			}
-
-			instAsst.InstID = id
-			instAsst.InstName = name
-			instAsst.ObjectName = childInst.GetObject().GetName()
-			instAsst.ObjIcon = childInst.GetObject().GetIcon()
-			instAsst.ObjID = childInst.GetObject().GetID()
-
-			commonInst.Children = append(commonInst.Children, instAsst)
 		}
 	}
 
@@ -735,7 +848,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		results = append(results, subResult)
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
@@ -757,41 +870,44 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 	tmpResults := map[string]*commonInstTopo{}
 	for _, inst := range insts {
 
-		parentInsts, err := inst.GetParentInst()
+		parents, err := inst.GetParentObjectWithInsts()
 		if nil != err {
 			return 0, nil, err
 		}
 
-		for _, parentInst := range parentInsts {
+		for _, parent := range parents {
 
-			childObj := parentInst.GetObject()
-			commonInst, exists := tmpResults[childObj.GetID()]
+			commonInst, exists := tmpResults[parent.Object.GetID()]
 			if !exists {
 				commonInst = &commonInstTopo{}
-				commonInst.ObjectName = childObj.GetName()
-				commonInst.ObjIcon = childObj.GetIcon()
-				commonInst.ObjID = childObj.GetID()
-				tmpResults[childObj.GetID()] = commonInst
+				commonInst.ObjectName = parent.Object.GetName()
+				commonInst.ObjIcon = parent.Object.GetIcon()
+				commonInst.ObjID = parent.Object.GetID()
+				commonInst.Count = len(parents)
+				commonInst.Children = []metatype.InstNameAsst{}
+				tmpResults[parent.Object.GetID()] = commonInst
 			}
 
-			instAsst := instNameAsst{}
-			id, err := parentInst.GetInstID()
-			if nil != err {
-				return 0, nil, err
+			for _, parentInst := range parent.Insts {
+				instAsst := metatype.InstNameAsst{}
+				id, err := parentInst.GetInstID()
+				if nil != err {
+					return 0, nil, err
+				}
+
+				name, err := parentInst.GetInstName()
+				if nil != err {
+					return 0, nil, err
+				}
+				instAsst.ID = strconv.Itoa(int(id))
+				instAsst.InstID = id
+				instAsst.InstName = name
+				instAsst.ObjectName = parent.Object.GetName()
+				instAsst.ObjIcon = parent.Object.GetIcon()
+				instAsst.ObjID = parent.Object.GetID()
+
+				tmpResults[parent.Object.GetID()].Children = append(tmpResults[parent.Object.GetID()].Children, instAsst)
 			}
-
-			name, err := parentInst.GetInstName()
-			if nil != err {
-				return 0, nil, err
-			}
-
-			instAsst.InstID = id
-			instAsst.InstName = name
-			instAsst.ObjectName = parentInst.GetObject().GetName()
-			instAsst.ObjIcon = parentInst.GetObject().GetIcon()
-			instAsst.ObjID = parentInst.GetObject().GetID()
-
-			commonInst.Children = append(commonInst.Children, instAsst)
 		}
 	}
 
@@ -799,7 +915,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		results = append(results, subResult)
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error) {
@@ -833,7 +949,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 			return 0, nil, err
 		}
 
-		commonInst := commonInstTopo{Children: []instNameAsst{}}
+		commonInst := commonInstTopo{Children: []metatype.InstNameAsst{}}
 		commonInst.ObjectName = inst.GetObject().GetName()
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
@@ -860,7 +976,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 
 	}
 
-	return 0, results, nil
+	return len(results), results, nil
 }
 
 func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error) {
@@ -869,7 +985,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 
 	if err := data.MarshalJSONInto(asstParamCond); nil != err {
 		blog.Errorf("[operation-inst] find inst by association inst , error info is %s", err.Error())
-		return 0, nil, params.Err.New(common.CCErrTopoInstSelectFailed, err.Error())
+		return 0, nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
 	}
 
 	instCond := map[string]interface{}{}
@@ -927,42 +1043,27 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 			continue
 		}
 
-		innerCond := frtypes.New()
+		innerCond := new(metatype.QueryInput)
 		if fields, ok := asstParamCond.Fields[keyObjID]; ok {
-			innerCond.Set("fields", strings.Join(fields, ","))
-
-		} else {
-			innerCond.Set("fields", "")
+			innerCond.Fields = strings.Join(fields, ",")
 		}
+		innerCond.Condition = cond
 
-		innerCond.Set("condition", cond)
-		innerCond.Set("start", 0)
-		innerCond.Set("limit", common.BKNoLimit)
-		innerCond.Set("sort", "")
-		//fmt.Println("input cond:", innerCond)
 		asstInstIDS, err := c.searchAssociationInst(params, keyObjID, innerCond)
 		if nil != err {
 			blog.Errorf("[operation-inst]failed to search the association inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
+		blog.V(4).Infof("[FindInstByAssociationInst] search association insts, keyObjID %s, condition: %v, results: %v", keyObjID, innerCond, asstInstIDS)
 
-		input := map[string]interface{}{
-			"page": map[string]interface{}{
-				"start": 0,
-				"sort":  "",
-				"limit": common.BKNoLimit,
-			},
-			"condition": map[string]interface{}{
-				"bk_asst_inst_id": map[string]interface{}{
-					common.BKDBIN: asstInstIDS,
-				},
-				"bk_asst_obj_id": keyObjID,
-				"bk_obj_id":      obj.GetID(),
-			},
-			"fields": "",
-		}
 		query := &metatype.QueryInput{}
-		query.Condition = input
+		query.Condition = map[string]interface{}{
+			"bk_asst_inst_id": map[string]interface{}{
+				common.BKDBIN: asstInstIDS,
+			},
+			"bk_asst_obj_id": keyObjID,
+			"bk_obj_id":      obj.GetID(),
+		}
 
 		asstInst, err := c.asst.SearchInstAssociation(params, obj.GetID(), keyObjID, query)
 		if nil != err {
@@ -973,6 +1074,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		for _, asst := range asstInst {
 			targetInstIDS = append(targetInstIDS, asst.InstID)
 		}
+		blog.V(4).Infof("[FindInstByAssociationInst] search association, objectID=%s, keyObjID=%s, condition: %v, results: %v", obj.GetID(), keyObjID, query, targetInstIDS)
 
 	} // end foreach conditions
 
@@ -988,8 +1090,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		}
 	}
 
-	//fmt.Println("the targetids:", targetInstIDS, instCond)
-
 	query := &metatype.QueryInput{}
 	query.Condition = instCond
 	if fields, ok := asstParamCond.Fields[obj.GetID()]; ok {
@@ -998,6 +1098,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	query.Limit = asstParamCond.Page.Limit
 	query.Sort = asstParamCond.Page.Sort
 	query.Start = asstParamCond.Page.Start
+	blog.V(4).Infof("[FindInstByAssociationInst] search inst condition: %v", instCond)
 	return c.FindInst(params, obj, query, false)
 }
 
@@ -1056,6 +1157,33 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		return err
 	}
 
+	// update association
+	query := &metatype.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	query.Limit = common.BKNoLimit
+	if 0 < instID {
+		innerCond := condition.CreateCondition()
+		innerCond.Field(obj.GetInstIDFieldName()).Eq(instID)
+		query.Condition = innerCond.ToMapStr()
+	}
+	_, insts, err := c.FindInst(params, obj, query, false)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
+		return err
+	}
+	for _, inst := range insts {
+
+		data.ForEach(func(key string, val interface{}) {
+			inst.SetValue(key, val)
+		})
+
+		if err := c.setInstAsst(params, obj, inst); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+			return err
+		}
+	}
+
+	// update insts
 	inputParams := frtypes.New()
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
