@@ -129,6 +129,31 @@ func (cli *classification) Create() error {
 		return err
 	}
 
+	// check name
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationName).Eq(cli.cls.ClassificationName)
+	items, err := cli.search(cond)
+	if nil != err {
+		return err
+	}
+
+	if 0 < len(items) {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	// check id
+	cond = condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+
+	items, err = cli.search(cond)
+	if nil != err {
+		return err
+	}
+
+	if 0 < len(items) {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
@@ -152,7 +177,27 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 		return err
 	}
 
-	updateItems, err := cli.search()
+	if val, exists := data.Get(metadata.ClassFieldClassificationName); exists {
+		cond := condition.CreateCondition()
+		cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+		cond.Field(metadata.ClassFieldClassificationName).Eq(val)
+		updateItems, err := cli.search(cond)
+		if nil != err {
+			return err
+		}
+
+		if 0 < len(updateItems) {
+			return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+		}
+	}
+	cond := condition.CreateCondition()
+	if 0 == len(cli.cls.ClassificationID) {
+		cond.Field(metadata.ClassificationFieldID).Eq(cli.cls.ID)
+	} else {
+		cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+	}
+
+	updateItems, err := cli.search(cond)
 	if nil != err {
 		return err
 	}
@@ -176,10 +221,7 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 	return nil
 }
 
-func (cli *classification) search() ([]metadata.Classification, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -197,7 +239,9 @@ func (cli *classification) search() ([]metadata.Classification, error) {
 
 func (cli *classification) IsExists() (bool, error) {
 
-	items, err := cli.search()
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+	items, err := cli.search(cond)
 	if nil != err {
 		return false, err
 	}
