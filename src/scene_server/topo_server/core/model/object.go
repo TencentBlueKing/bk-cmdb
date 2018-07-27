@@ -402,20 +402,37 @@ func (o *object) SetMainlineChildObject(objID string) error {
 
 func (o *object) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-	if 0 != len(o.obj.ObjectID) {
-		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	} else {
-		cond.Field(metadata.ModelFieldID).Eq(o.obj.ID)
-	}
+	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
 	items, err := o.search(cond)
 	if nil != err {
 		return false, err
 	}
 
-	return 0 != len(items), nil
+	if 0 != len(items) {
+		return true, nil
+	}
+
+	// check name
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectName)
+	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
+
+	items, err = o.search(cond)
+	if nil != err {
+		return false, err
+	}
+
+	if 0 != len(items) {
+		return true, nil
+	}
+
+	return false, nil
 }
 func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
@@ -449,6 +466,16 @@ func (o *object) Create() error {
 		return err
 	}
 
+	o.obj.OwnerID = o.params.SupplierAccount
+	exists, err := o.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
 	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
 
 	if nil != err {
@@ -474,28 +501,17 @@ func (o *object) Update(data frtypes.MapStr) error {
 		return err
 	}
 
-	// check the name repeated
-
-	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(o.params.SupplierAccount)
-	cond.Field(metadata.ModelFieldObjectName).Eq(o.obj.ObjectName)
-	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
-
-	tmpItems, err := o.search(cond)
+	exists, err := o.IsExists()
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to check the repeated, error info is %s", err.Error())
 		return err
 	}
 
-	if 0 != len(tmpItems) {
-		//str, _ := cond.ToMapStr().ToJSON()
-		//fmt.Println("objects:", tmpItems, string(str))
+	if exists {
 		return o.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
 	// update action
-
-	cond = condition.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	if 0 != len(o.obj.ObjectID) {
 		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
