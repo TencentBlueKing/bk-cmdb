@@ -288,7 +288,7 @@ func (r *Result) Into(obj interface{}) error {
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
-			blog.Errorf("reply:%s", string(r.Body))
+			blog.Errorf("http reply not json, reply:%s", string(r.Body))
 			return err
 		}
 	}
