@@ -24,6 +24,7 @@ import (
 type ContextParams struct {
 	Engin           *backbone.Engine
 	Header          http.Header
+	MaxTopoLevel    int
 	SupplierAccount string
 	User            string
 	Err             errors.DefaultCCErrorIf
