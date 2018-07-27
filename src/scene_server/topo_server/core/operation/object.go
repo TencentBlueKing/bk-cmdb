@@ -81,7 +81,7 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	objItems, err := o.FindObject(params, checkObjCond)
 	if nil != err {
 		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
-		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		return params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if 0 == len(objItems) {
@@ -335,7 +335,6 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	}
 
 	// check repeated
-
 	exists, err := obj.IsExists()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to create the object(%#v), error info is %s", data, err.Error())
@@ -540,6 +539,17 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 		return err
 	}
 
+	// check repeated
+	exists, err := obj.IsExists()
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to update the object(%#v), error info is %s", data, err.Error())
+		return params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
+	}
+
+	if exists {
+		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
+		return params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 	if err = obj.Update(data); nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), error info is %s", id, data, err.Error())
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())

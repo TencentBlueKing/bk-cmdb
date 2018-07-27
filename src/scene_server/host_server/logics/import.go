@@ -35,6 +35,7 @@ import (
 func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheader http.Header, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
 
 	instance := NewImportInstance(ownerID, pheader, lgc.Engine)
+	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ownerID, pheader)
@@ -61,12 +62,7 @@ func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheade
 		return nil, nil, nil, err
 	}
 
-	for index, host := range hostInfos {
-		instance.parseHostInstanceAssocate(importType, index, host)
-	}
-
 	var errMsg, updateErrMsg, succMsg []string
-
 	logConents := make([]auditoplog.AuditLogExt, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ownerID, pheader)
 	if err != nil {
@@ -78,9 +74,19 @@ func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheade
 			continue
 		}
 
+		if importType == common.InputTypeExcel {
+
+			err = instance.assObjectInt.SetObjAsstPropertyVal(host)
+			if nil != err {
+				blog.Errorf("host assocate property error %v %v", index, err)
+				updateErrMsg = append(updateErrMsg, defLang.Languagef("import_row_int_error_str", index, err.Error()))
+				continue
+			}
+		}
+
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
 		if isOk == false || "" == innerIP {
-			errMsg = append(errMsg, lgc.Language.Languagef("host_import_innerip_empty", strconv.FormatInt(index, 10)))
+			errMsg = append(errMsg, defLang.Languagef("host_import_innerip_empty", strconv.FormatInt(index, 10)))
 			continue
 		}
 
@@ -95,11 +101,8 @@ func (lgc *Logics) AddHost(appID int64, moduleID []int64, ownerID string, pheade
 
 		var iHostID interface{}
 		var isOK bool
-		if importType == common.InputTypeExcel {
-			// host not db ,check params host info with host id
-			iHostID, isOK = host[common.BKHostIDField]
-
-		}
+		// host not db ,check params host info with host id
+		iHostID, isOK = host[common.BKHostIDField]
 
 		if false == isOK {
 			key := fmt.Sprintf("%s-%v", innerIP, iSubArea)
@@ -509,9 +512,9 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	input["condition"] = map[string]interface{}{common.BKHostIDField: hostID}
 	input["data"] = host
 
-	ip := host[common.BKHostInnerIPField].(string)
 	uResult, err := h.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, h.pheader, input)
 	if err != nil || (err == nil && !uResult.Result) {
+		ip, _ := host[common.BKHostInnerIPField].(string)
 		return fmt.Errorf(h.Language.CreateDefaultCCLanguageIf(util.GetLanguage(h.pheader)).Languagef("host_import_update_fail", index, ip, fmt.Sprintf("%v, %v", err, uResult.ErrMsg)))
 	}
 	return nil
@@ -535,12 +538,14 @@ func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64
 		}
 	}
 
-	asstFieldVal := ExtractDataFromAssociationField(int64(instID), input, result.Data)
-	if 0 < len(asstFieldVal) {
-		oResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, asstFieldVal)
-		if err != nil || (err == nil && !oResult.Result) {
-			blog.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
-			return fmt.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
+	asstFieldVals := ExtractDataFromAssociationField(int64(instID), input, result.Data)
+	if 0 < len(asstFieldVals) {
+		for _, asstFieldVal := range asstFieldVals {
+			oResult, err := h.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, h.pheader, asstFieldVal)
+			if err != nil || (err == nil && !oResult.Result) {
+				blog.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
+				return fmt.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
+			}
 		}
 	}
 
