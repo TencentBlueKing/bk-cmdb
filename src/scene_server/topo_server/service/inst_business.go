@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -31,6 +32,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
+	data.Set(common.BKDefaultField, 0)
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
 }
 
@@ -106,13 +108,35 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	}
 
 	innerCond := condition.CreateCondition()
-	if err = innerCond.Parse(data); nil != err {
+	conditionData, err := data.MapStr("condition")
+	if nil != err {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+	if err = innerCond.Parse(conditionData); nil != err {
 		blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
-
+	if !conditionData.Exists(common.BKDataStatusField) {
+		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+	}
+	innerCond.Field(common.BKDefaultField).Eq(0)
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
+
+	fields, exists := data.Get("fields")
+	fieldInput := []string{}
+	if exists {
+		fieldsVal, ok := fields.([]interface{})
+		if !ok {
+			blog.Errorf("the input fields is not string array")
+			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, "the fields is not a array")
+		}
+		for _, val := range fieldsVal {
+			fieldInput = append(fieldInput, fmt.Sprintf("%v", val))
+		}
+
+	}
+
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, fieldInput, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -139,8 +163,9 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 		blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
+	innerCond.Field(common.BKDefaultField).Eq(common.DefaultAppFlag)
 
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, innerCond)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -159,6 +184,7 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 		return nil, err
 	}
 
+	data.Set(common.BKDefaultField, common.DefaultAppFlag)
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
 }
 

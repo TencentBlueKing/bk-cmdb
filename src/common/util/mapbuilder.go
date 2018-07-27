@@ -12,7 +12,10 @@
 
 package util
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type MapBuiler struct {
 	value map[string]interface{}
@@ -74,4 +77,13 @@ func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[s
 	}
 	return newinst
 
+}
+
+// CopyHeader copy http header
+func CopyHeader(src http.Header) http.Header {
+	tar := http.Header{}
+	for key := range src {
+		tar.Set(key, src.Get(key))
+	}
+	return tar
 }

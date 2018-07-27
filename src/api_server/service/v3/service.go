@@ -19,14 +19,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	cErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common/types"
 )
 
 type HttpClient interface {
@@ -50,14 +53,11 @@ func (s *Service) V3WebService() *restful.WebService {
 	}
 	ws.Path(rootPath).
 		Filter(rdapi.AllGlobalFilter(getErrFun)).
-		Produces(restful.MIME_JSON).
-		Consumes(restful.MIME_JSON)
-
+		Produces(restful.MIME_JSON)
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
-
 	return ws
 }
 
@@ -100,17 +100,18 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.Client.Do(proxyReq)
 	if err != nil {
-		blog.Errorf("do request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+		blog.Errorf("*failed do request[url: %s] , err: %v", url, err)
 
 		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
 			Msg:     errors.New("proxy request failed"),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("response request[url: %s] failed, err: %v", url, err)
 		}
 		return
 	}
+	blog.V(3).Infof("success [%s] do request[url: %s]  ", response.Status, url)
 
 	defer response.Body.Close()
 
@@ -191,4 +192,76 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	req.Request.URL.Scheme = "http"
 
 	chain.ProcessFilter(req, resp)
+}
+
+func (s *Service) V3Healthz() *restful.WebService {
+	ws := new(restful.WebService)
+	getErrFun := func() cErr.CCErrorIf {
+		return s.Engine.CCErr
+	}
+	ws.Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+
+	ws.Route(ws.GET("healthz").To(s.healthz))
+
+	return ws
+
+}
+
+func (s *Service) healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// topo server
+	topoSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TOPO}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TOPO); err != nil {
+		topoSrv.IsHealthy = false
+		topoSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, topoSrv)
+
+	// host server
+	hostSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOST}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOST); err != nil {
+		hostSrv.IsHealthy = false
+		hostSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, hostSrv)
+
+	// proc server
+	procSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROC}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROC); err != nil {
+		procSrv.IsHealthy = false
+		procSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, procSrv)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "api server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_APISERVER,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.WriteJson(answer, "application/json")
 }

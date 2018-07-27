@@ -40,8 +40,8 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
 		return nil, err
 	}
-
-	return s.core.AttributeOperation().FindObjectAttribute(params, cond)
+	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
+	return s.core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 
 // UpdateObjectAttribute update the object attribute

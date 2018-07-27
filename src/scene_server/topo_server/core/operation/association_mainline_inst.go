@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"fmt"
 	"io"
 
 	"configcenter/src/common"
@@ -25,14 +26,58 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
+func (cli *association) canReset(params types.ContextParams, currentInsts []inst.Inst) error {
+
+	instNames := map[string]struct{}{}
+	for _, currInst := range currentInsts {
+
+		currInstParentID, err := currInst.GetParentID()
+		if nil != err {
+			return err
+		}
+
+		// reset the child's parent
+		childs, err := currInst.GetMainlineChildInst()
+		if nil != err {
+			return err
+		}
+
+		for _, child := range childs {
+			instName, err := child.GetInstName()
+			if nil != err {
+				return err
+			}
+			key := fmt.Sprintf("%d_%s", currInstParentID, instName)
+			if _, ok := instNames[key]; ok {
+				errMsg := params.Err.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat).Error() + " " + instName
+				return params.Err.New(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat, errMsg)
+			}
+
+			instNames[key] = struct{}{}
+		}
+	}
+
+	return nil
+}
+
 func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
+	cond := condition.CreateCondition()
+	if current.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(current.GetID())
+	}
+	defaultCond.Condition = cond.ToMapStr()
 
 	// fetch all parent inst
 	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find current object(%s) inst, error info is %s", current.GetID(), err.Error())
+		return err
+	}
+
+	if err := cli.canReset(params, currentInsts); nil != err {
+		blog.Errorf("[operation-asst] can not be reset, error info is %s", err.Error())
 		return err
 	}
 
@@ -82,7 +127,11 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 func (cli *association) SetMainlineInstAssociation(params types.ContextParams, parent, current, child model.Object) error {
 
 	defaultCond := &metadata.QueryInput{}
-
+	cond := condition.CreateCondition()
+	if parent.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(parent.GetID())
+	}
+	defaultCond.Condition = cond.ToMapStr()
 	// fetch all parent inst
 	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
@@ -122,7 +171,6 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 		for _, child := range childs {
-			blog.Infof("the child: %s", child.GetObject().GetID())
 
 			// set the child's parent
 			if err = child.SetMainlineParentInst(defaultInst); nil != err {

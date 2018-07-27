@@ -31,10 +31,11 @@ import (
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error)
 	DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error
+	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
 	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
 
 // NewAttributeOperation create a new attribute operation instance
@@ -50,13 +51,15 @@ type attribute struct {
 	instFactory  inst.Factory
 	obj          ObjectOperationInterface
 	asst         AssociationOperationInterface
+	grp          GroupOperationInterface
 }
 
-func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface) {
+func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface) {
 	a.modelFactory = modelFactory
 	a.instFactory = instFactory
 	a.obj = obj
 	a.asst = asst
+	a.grp = grp
 }
 
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
@@ -98,7 +101,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		}
 
 		attrMeta.ObjectAttID = att.GetID() // the structural difference
-		if _, err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
+		if err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
 			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 		}
@@ -116,6 +119,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 		attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 		attrCond.Field(metadata.AttributeFieldID).Eq(id)
 	}
+
 	attrItems, err := a.FindObjectAttribute(params, attrCond)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to find the attributes by the id(%d), error info is %s", id, err.Error())
@@ -124,6 +128,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 	for _, attrItem := range attrItems {
 		// delete the association
+		//fmt.Println("attr:", attrItem)
 		asstCond := condition.CreateCondition()
 		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
 		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
@@ -149,10 +154,47 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 	return nil
 }
+func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error) {
+	attrs, err := a.FindObjectAttribute(params, cond)
+	if nil != err {
+		return nil, err
+	}
+	results := []*metadata.ObjAttDes{}
+	for _, attr := range attrs {
+		result := &metadata.ObjAttDes{Attribute: attr.Origin()}
 
+		grpCond := condition.CreateCondition()
+		grpCond.Field(metadata.GroupFieldGroupID).Eq(attr.Origin().PropertyGroup)
+		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attr.GetSupplierAccount())
+		grpCond.Field(metadata.GroupFieldObjectID).Eq(attr.GetObjectID())
+		grps, err := a.grp.FindObjectGroup(params, grpCond)
+		if nil != err {
+			return nil, err
+		}
+
+		for _, grp := range grps { // should be only one
+			result.PropertyGroupName = grp.GetName()
+		}
+
+		assts, err := a.asst.SearchObjectAssociation(params, attr.GetObjectID())
+		if nil != err {
+			return nil, err
+		}
+
+		for _, asst := range assts {
+			if asst.ObjectAttID == attr.GetID() { // should be only one
+				result.AssociationID = asst.AsstObjID
+				result.AsstForward = asst.AsstForward
+			}
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
 
-	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 
 	if nil != err {

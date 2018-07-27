@@ -211,7 +211,7 @@ func (a *asstObjectInst) getAsstInstByAsstObjectConds() error {
 }
 
 func (a *asstObjectInst) getInstIDFromMapByObjectID(objType string, mapInst mapstr.MapStr) (int64, error) {
-	idField := common.GetInstFieldByType(objType)
+	idField := common.GetInstIDField(objType)
 	idInterface, ok := mapInst[idField]
 	if false == ok {
 		return 0, fmt.Errorf("%s %s not found", objType, idField)
@@ -311,7 +311,7 @@ func (a *asstObjectInst) getAsstObjectConds(infos map[int64]map[string]interface
 //GetObjectFields get object fields
 func (a *asstObjectInst) getObjectFields(objID, sort string) ([]metadata.ObjAttDes, error) {
 	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKPropertyIDField}
-	query := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(a.ownerID).WithPage(page).Data()
+	query := hutil.NewOperation().WithObjID(objID).WithOwnerID(a.ownerID).WithPage(page).Data()
 	result, err := a.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), a.pheader, query)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("search host attributes failed, err: %v, result err: %s", err, result.ErrMsg)

@@ -358,46 +358,31 @@ func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) (
 	return dataInfo, 0
 }
 
-//func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (bool, error) {
-//	type mainLineItem struct {
-//		Result bool                   `json:"result"`
-//		Code   int                    `json:"bk_error_code"`
-//		ErrMsg string                 `json:"bk_error_msg"`
-//		Data   []manager.TopoModelRsp `json:"data"`
-//	}
-//	url := fmt.Sprintf("%s/topo/v1/model/%s", cc.TopoAPI(), util.GetActionOnwerID(req))
-//	rspV3, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
-//	blog.V(0).Infof("getAppInfo url:%s, input:%s ", url, rspV3)
-//	result, err := lgc.CoreAPI.TopoServer().Instance().CreateSet()
-//	if nil != err {
-//		blog.Errorf("CheckAppTopoIsThreeLevel url:%s, error:%s ", url, err.Error())
-//		return false, err
-//	}
+func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (bool, error) {
 
-//	resMainLine := &mainLineItem{}
-//	err = json.Unmarshal([]byte(rspV3), resMainLine)
-//	if nil != err {
-//		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", rspV3, err.Error())
-//		return false, fmt.Errorf("check mainline topology reply:%s", rspV3)
-//	}
-//	if false == resMainLine.Result {
-//		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", rspV3, err.Error())
-//		return false, fmt.Errorf(resMainLine.ErrMsg)
-//	}
+	result, err := lgc.CoreAPI.TopoServer().Object().SelectModel(context.Background(), util.GetOwnerID(pheader), pheader)
+	if nil != err {
+		blog.Errorf("CheckAppTopoIsThreeLevel  error:%s ", err.Error())
+		return false, err
+	}
+	if false == result.Result {
+		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", result.ErrMsg)
+		return false, fmt.Errorf(result.ErrMsg)
+	}
 
-//	for _, item := range resMainLine.Data {
-//		if common.BKInnerObjIDApp == item.ObjID {
-//			if common.BKInnerObjIDSet != item.NextObj {
-//				return false, nil
-//			}
-//		}
+	for _, item := range result.Data {
+		if common.BKInnerObjIDApp == item.ObjID {
+			if common.BKInnerObjIDSet != item.NextObj {
+				return false, nil
+			}
+		}
 
-//		if common.BKInnerObjIDSet == item.ObjID {
-//			if common.BKInnerObjIDModule != item.NextObj {
-//				return false, nil
-//			}
-//		}
-//	}
+		if common.BKInnerObjIDSet == item.ObjID {
+			if common.BKInnerObjIDModule != item.NextObj {
+				return false, nil
+			}
+		}
+	}
 
-//	return true, nil
-//}
+	return true, nil
+}

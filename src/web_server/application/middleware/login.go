@@ -13,17 +13,18 @@
 package middleware
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/web_server/application/middleware/auth"
 	"configcenter/src/web_server/application/middleware/user"
 	webCommon "configcenter/src/web_server/common"
-	"fmt"
-	"strings"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
 )
 
 var APIAddr func() string
@@ -114,9 +115,21 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 			session.Set("language", cookieLanuage)
 		}
 
+		cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
+		if "" == cookieOwnerID || nil != err {
+			c.SetCookie(common.BKHTTPOwnerID, common.BKDefaultOwnerID, 0, "/", "", false, false)
+			session.Set("owner_uin", cookieOwnerID)
+		} else if cookieOwnerID != session.Get("owner_uin") {
+			session.Set("owner_uin", cookieOwnerID)
+			ownerMan := user.NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
+			if err := ownerMan.InitOwner(); nil != err {
+				blog.Errorf("init owner fail %s", err.Error())
+				return true
+			}
+
+		}
 		session.Set("userName", "admin")
 		session.Set("role", "1")
-		session.Set("owner_uin", "0")
 		session.Set(webCommon.IsSkipLogin, "1")
 		session.Save()
 		return true

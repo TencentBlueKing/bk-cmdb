@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -47,7 +46,7 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 
 // SearchObject search some objects by condition
 func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObject")
+
 	cond := condition.CreateCondition()
 
 	if err := cond.Parse(data); nil != err {

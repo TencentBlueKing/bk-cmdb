@@ -13,8 +13,6 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
@@ -63,7 +61,6 @@ func (s *topoService) SearchClassificationWithObjects(params types.ContextParams
 // SearchClassification search the classifications
 func (s *topoService) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	fmt.Println("serch classifications ")
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 

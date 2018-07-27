@@ -32,6 +32,7 @@ func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	bodyData := new(meta.HistoryContent)
 	if err := json.NewDecoder(req.Request.Body).Decode(bodyData); err != nil {
@@ -51,6 +52,7 @@ func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
 		ID:         id,
 		User:       user,
 		Content:    bodyData.Content,
+		OwnerID:    ownerID,
 		CreateTime: time.Now().UTC(),
 	}
 
@@ -72,6 +74,7 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	start, err := strconv.Atoi(req.PathParameter("start"))
 	if err != nil {
@@ -85,6 +88,7 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 	}
 
 	conds := common.KvMap{"user": user}
+	conds = util.SetModOwner(conds, ownerID)
 	fields := []string{"id", "content", common.CreateTimeField, "user"}
 	var result []meta.HistoryMeta
 	sort := "-" + common.LastTimeField

@@ -50,10 +50,11 @@ ${TARGET_NAME}: $(GOFILES_ALL)
 	@cp -f ${SCRIPT_DIR}/ip.py ${BIN_PATH}/${TARGET_NAME}/ip.py
 	@cp -f ${SCRIPT_DIR}/init.py ${BIN_PATH}/init.py
 	@cp -f ${SCRIPT_DIR}/ip.py ${BIN_PATH}/ip.py
-	@cp -f ${SCRIPT_DIR}/reset.sh ${BIN_PATH}/reset.sh
 	@cp -f ${SCRIPT_DIR}/upgrade.sh ${BIN_PATH}/upgrade.sh
 	@cp -f ${SCRIPT_DIR}/start.sh ${BIN_PATH}/start.sh
 	@cp -f ${SCRIPT_DIR}/stop.sh ${BIN_PATH}/stop.sh
+	@cp -f ${SCRIPT_DIR}/restart.sh ${BIN_PATH}/restart.sh
+	@cp -f ${SCRIPT_DIR}/restart.sh ${BIN_PATH}/${TARGET_NAME}/restart.sh
 	@sed -e 's/version_placeholer/${VERSION}/g' ${SCRIPT_DIR}/image.sh > ${BIN_PATH}/image.sh
 	@chmod +x  ${BIN_PATH}/${TARGET_NAME}/*.sh
 	@chmod +x  ${BIN_PATH}/${TARGET_NAME}/*.py
@@ -62,5 +63,5 @@ ${TARGET_NAME}: $(GOFILES_ALL)
 	@echo 
 	@echo -e "\033[34mbuilding the target: $@... \033[0m"
 	@echo 
-	go build $(GOBUILD_FLAGS) -o ${BIN_PATH}/${TARGET_NAME}/${TARGET_NAME}
+	go build -i $(GOBUILD_FLAGS) -o ${BIN_PATH}/${TARGET_NAME}/${TARGET_NAME}
 	@chmod +x  ${BIN_PATH}/${TARGET_NAME}/${TARGET_NAME}

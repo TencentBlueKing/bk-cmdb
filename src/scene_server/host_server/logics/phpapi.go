@@ -93,7 +93,6 @@ func (lgc *Logics) UpdateHost(input map[string]interface{}, appID int64, header 
 	data[common.BKHostInnerIPField] = input["condition"].(map[string]interface{})[common.BKHostInnerIPField]
 
 	res, err := phpapi.UpdateHostMain(hostCondition, data, appID)
-
 	if nil != err {
 		blog.Errorf("updateHostMain error:%v", err)
 		return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostModifyFail)

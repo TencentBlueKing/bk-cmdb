@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -31,6 +30,7 @@ import (
 func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	addQuery := new(meta.AddConfigQuery)
 	if err := json.NewDecoder(req.Request.Body).Decode(&addQuery); err != nil {
@@ -57,6 +57,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	}
 
 	queryParams := common.KvMap{"name": addQuery.Name, common.BKAppIDField: addQuery.AppID}
+	queryParams = util.SetModOwner(queryParams, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, queryParams)
 	if nil != err {
 		blog.Errorf("add user config, query user api fail, error information is %s, params:%v", err.Error(), queryParams)
@@ -77,6 +78,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 		ID:         id,
 		CreateTime: time.Now().UTC(),
 		CreateUser: addQuery.CreateUser,
+		OwnerID:    ownerID,
 	}
 
 	_, err = s.Instance.Insert(UserQueryCollection, userQuery)
@@ -95,6 +97,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 	id := req.PathParameter("id")
 
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
@@ -112,6 +115,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	}
 
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
+	params = util.SetModOwner(params, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, params)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
@@ -126,6 +130,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 
 	if len(data.Name) != 0 {
 		dupParams := common.KvMap{"name": data.Name, common.BKAppIDField: appID, common.BKFieldID: common.KvMap{common.BKDBNE: id}}
+		dupParams = util.SetModOwner(dupParams, ownerID)
 		rowCount, getErr := s.Instance.GetCntByCondition(UserQueryCollection, dupParams)
 		if nil != getErr {
 			blog.Error("query user api validate name duplicate fail, error information is %s, params:%v", getErr.Error(), dupParams)
@@ -153,6 +158,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	id := req.PathParameter("id")
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
@@ -163,6 +169,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 	}
 
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
+	params = util.SetModOwner(params, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, params)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
@@ -188,8 +195,9 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
-	dat := new(commondata.ObjQueryInput)
+	dat := new(meta.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
 		blog.Errorf("get user config failed with decode body, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -222,6 +230,7 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 	}
 
 	condition[common.BKAppIDField] = appID
+	condition = util.SetModOwner(condition, ownerID)
 	count, err := s.Instance.GetCntByCondition(UserQueryCollection, condition)
 	if err != nil {
 		blog.Error("get user api information failed, err:%v", err)
@@ -248,6 +257,7 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 	id := req.PathParameter("id")
 
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
@@ -259,6 +269,7 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 
 	var fieldArr []string
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
+	params = util.SetModOwner(params, ownerID)
 	result := new(meta.UserConfigMeta)
 	err = s.Instance.GetOneByCondition(UserQueryCollection, fieldArr, params, result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
@@ -277,6 +288,7 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 func (s *Service) AddUserCustom(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	data := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
@@ -288,6 +300,7 @@ func (s *Service) AddUserCustom(req *restful.Request, resp *restful.Response) {
 	ID := xid.New()
 	data["id"] = ID.String()
 	data["bk_user"] = req.PathParameter("bk_user")
+	data = util.SetModOwner(data, ownerID)
 	_, err := s.Instance.Insert(userCustomTableName, data)
 	if nil != err {
 		blog.Errorf("Create  user custom fail, err: %v, params:%v", err, data)
@@ -301,6 +314,7 @@ func (s *Service) AddUserCustom(req *restful.Request, resp *restful.Response) {
 func (s *Service) UpdateUserCustomByID(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	conditons := make(map[string]interface{})
 	conditons["id"] = req.PathParameter("id")
@@ -313,6 +327,7 @@ func (s *Service) UpdateUserCustomByID(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	conditons = util.SetModOwner(conditons, ownerID)
 	err := s.Instance.UpdateByCondition(userCustomTableName, data, conditons)
 	if nil != err {
 		blog.Errorf("update  user custom failed, err: %v, data:%v", err, data)
@@ -325,10 +340,12 @@ func (s *Service) UpdateUserCustomByID(req *restful.Request, resp *restful.Respo
 
 func (s *Service) GetUserCustomByUser(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	conds, result := make(map[string]interface{}), make(map[string]interface{})
 	conds["bk_user"] = req.PathParameter("bk_user")
+	conds = util.SetModOwner(conds, ownerID)
 
 	err := s.Instance.GetOneByCondition(userCustomTableName, nil, conds, &result)
 	if nil != err && mgo_on_not_found_error != err.Error() {
@@ -345,10 +362,12 @@ func (s *Service) GetUserCustomByUser(req *restful.Request, resp *restful.Respon
 
 func (s *Service) GetDefaultUserCustom(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	conds, result := make(map[string]interface{}), make(map[string]interface{})
 	conds["is_default"] = 1
+	conds = util.SetModOwner(conds, ownerID)
 
 	err := s.Instance.GetOneByCondition(userCustomTableName, nil, conds, &result)
 	if nil != err {

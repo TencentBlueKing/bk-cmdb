@@ -81,7 +81,7 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	objItems, err := o.FindObject(params, checkObjCond)
 	if nil != err {
 		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
-		return params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
+		return params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if 0 == len(objItems) {
@@ -113,6 +113,8 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 			metaAttr := metadata.Attribute{}
 			targetAttr, err := metaAttr.Parse(attr)
+			targetAttr.OwnerID = params.SupplierAccount
+			targetAttr.ObjectID = objID
 			if nil != err {
 				blog.Error("not found the  objid: %s", objID)
 				subResult["errors"] = err.Error()
@@ -120,14 +122,14 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				continue
 			}
 
-			if 0 == len(targetAttr.PropertyGroup) {
-				targetAttr.PropertyGroup = "default"
+			if 0 == len(targetAttr.PropertyGroupName) {
+				targetAttr.PropertyGroup = "Default"
 			}
 
 			// find group
 			grpCond := condition.CreateCondition()
 			grpCond.Field(metadata.GroupFieldObjectID).Eq(objID)
-			grpCond.Field(metadata.GroupFieldGroupName).Eq(targetAttr.PropertyGroup)
+			grpCond.Field(metadata.GroupFieldGroupName).Eq(targetAttr.PropertyGroupName)
 			grps, err := o.grp.FindObjectGroup(params, grpCond)
 			if nil != err {
 				blog.Error("not found the  objid: %s", objID)
@@ -138,10 +140,11 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			}
 
 			if 0 != len(grps) {
-				targetAttr.PropertyGroup = grps[0].GetID()
+				targetAttr.PropertyGroup = grps[0].GetID() // should be only one group
 			} else {
+
 				newGrp := o.modelFactory.CreateGroup(params)
-				newGrp.SetName(targetAttr.PropertyGroup)
+				newGrp.SetName(targetAttr.PropertyGroupName)
 				newGrp.SetID(xid.New().String())
 				newGrp.SetSupplierAccount(params.SupplierAccount)
 				newGrp.SetObjectID(objID)
@@ -200,9 +203,11 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				continue
 			}
 
-			for _, newAttr := range attrs {
-				//fmt.Println("id:", newAttr.GetID())
-				if err := newAttr.Update(attr); nil != err {
+			if 0 == len(attrs) {
+
+				//fmt.Println("targetattr:", targetAttr.ToMapStr())
+				newAttr := o.modelFactory.CreateAttribute(params)
+				if _, err := newAttr.Parse(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -217,17 +222,52 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 					continue
 				}
 
-				if failed, ok := subResult["success"]; ok {
-					failedArr := failed.([]string)
-					failedArr = append(failedArr, strconv.FormatInt(idx, 10))
-					subResult["success"] = failedArr
-				} else {
-					subResult["success"] = []string{
-						strconv.FormatInt(idx, 10),
+				if err = newAttr.Save(); nil != err {
+					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
+					if failed, ok := subResult["insert_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["insert_failed"] = failedArr
+					} else {
+						subResult["insert_failed"] = []string{
+							errStr,
+						}
 					}
+					result[objID] = subResult
+					continue
 				}
-				result[objID] = subResult
+
 			}
+
+			for _, newAttr := range attrs {
+				//fmt.Println("id:", targetAttr.ToMapStr())
+				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
+					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
+					if failed, ok := subResult["update_failed"]; ok {
+						failedArr := failed.([]string)
+						failedArr = append(failedArr, errStr)
+						subResult["update_failed"] = failedArr
+					} else {
+						subResult["update_failed"] = []string{
+							errStr,
+						}
+					}
+					result[objID] = subResult
+					continue
+				}
+
+			}
+
+			if failed, ok := subResult["success"]; ok {
+				failedArr := failed.([]string)
+				failedArr = append(failedArr, strconv.FormatInt(idx, 10))
+				subResult["success"] = failedArr
+			} else {
+				subResult["success"] = []string{
+					strconv.FormatInt(idx, 10),
+				}
+			}
+			result[objID] = subResult
 		}
 
 	}
@@ -295,7 +335,6 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	}
 
 	// check repeated
-
 	exists, err := obj.IsExists()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to create the object(%#v), error info is %s", data, err.Error())
@@ -500,6 +539,17 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 		return err
 	}
 
+	// check repeated
+	exists, err := obj.IsExists()
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to update the object(%#v), error info is %s", data, err.Error())
+		return params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
+	}
+
+	if exists {
+		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
+		return params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 	if err = obj.Update(data); nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), error info is %s", id, data, err.Error())
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())

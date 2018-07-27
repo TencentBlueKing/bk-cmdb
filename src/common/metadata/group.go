@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	GroupFieldID              = "id"
 	GroupFieldGroupID         = "bk_group_id"
 	GroupFieldGroupName       = "bk_group_name"
 	GroupFieldGroupIndex      = "bk_group_index"
@@ -41,14 +42,14 @@ type PropertyGroupObjectAtt struct {
 
 // Group group metadata definition
 type Group struct {
-	ID         int64  `field:"id" json:"id"`
-	GroupID    string `field:"bk_group_id" json:"bk_group_id"`
-	GroupName  string `field:"bk_group_name" json:"bk_group_name"`
-	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index"`
-	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id"`
-	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account"`
-	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault"`
-	IsPre      bool   `field:"ispre" json:"ispre"`
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
 }
 
 // Parse load the data from mapstr group into group instance

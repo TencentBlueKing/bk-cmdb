@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin/json"
 	"github.com/rs/xid"
@@ -36,6 +35,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	paras := new(meta.FavouriteParms)
 	if err := json.NewDecoder(req.Request.Body).Decode(paras); err != nil {
@@ -44,6 +44,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		return
 	}
 	query := common.KvMap{"user": user, "name": paras.Name}
+	query = util.SetModOwner(query, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(FavouriteCollection, query)
 	if err != nil {
 		blog.Error("query host favorites fail, err: %v, params:%v", err, query)
@@ -65,6 +66,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 		User:        user,
 		IsDefault:   paras.IsDefault,
 		QueryParams: paras.QueryParams,
+		OwnerID:     ownerID,
 		CreateTime:  time.Now().UTC(),
 		UpdateTime:  time.Now().UTC(),
 	}
@@ -85,6 +87,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	id := req.PathParameter("id")
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	fav := new(meta.FavouriteMeta)
 	if err := json.NewDecoder(req.Request.Body).Decode(fav); err != nil {
@@ -95,6 +98,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	fav.UpdateTime = time.Now().UTC()
 
 	query := common.KvMap{"user": user, "id": id}
+	query = util.SetModOwner(query, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(FavouriteCollection, query)
 	if nil != err {
 		blog.Error("update host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
@@ -113,6 +117,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		dupParams["name"] = fav.Name
 		dupParams[common.BKUser] = user
 		dupParams[common.BKFieldID] = common.KvMap{common.BKDBNE: id}
+		dupParams = util.SetModOwner(dupParams, ownerID)
 		rowCount, err := s.Instance.GetCntByCondition(FavouriteCollection, dupParams)
 		if nil != err {
 			blog.Error("query user api validate name duplicate fail, err: %v, params:%v", err, dupParams)
@@ -140,8 +145,10 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	id := req.PathParameter("id")
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	query := common.KvMap{"user": user, "id": id}
+	query = util.SetModOwner(query, ownerID)
 	rowCount, err := s.Instance.GetCntByCondition(FavouriteCollection, query)
 	if nil != err {
 		blog.Error("delete host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
@@ -168,8 +175,9 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
-	dat := new(commondata.ObjQueryInput)
+	dat := new(meta.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
 		blog.Errorf("get host favourite, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -196,6 +204,7 @@ func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response
 	}
 
 	condition["user"] = req.PathParameter("user") //libraries.GetOperateUser(req)
+	condition = util.SetModOwner(condition, ownerID)
 	result := make([]map[string]interface{}, 0)
 	count, err := s.Instance.GetCntByCondition(FavouriteCollection, condition)
 	if err != nil {
@@ -223,6 +232,7 @@ func (s *Service) GetHostFavouriteByID(req *restful.Request, resp *restful.Respo
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ID := req.PathParameter("id")
 	user := req.PathParameter("user")
+	ownerID := util.GetOwnerID(pheader)
 
 	if "" == ID || "0" == ID {
 		blog.Errorf("get host favourite, but id is emtpy")
@@ -231,6 +241,7 @@ func (s *Service) GetHostFavouriteByID(req *restful.Request, resp *restful.Respo
 	}
 
 	query := common.KvMap{"user": user, "id": ID}
+	query = util.SetModOwner(query, ownerID)
 	result := new(meta.FavouriteMeta)
 	err := s.Instance.GetOneByCondition(FavouriteCollection, nil, query, result)
 	if err != nil && mgo_on_not_found_error != err.Error() {

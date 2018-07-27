@@ -265,7 +265,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	appInfo, err := s.Logics.GetAppDetails(common.BKOwnerIDField, cond, pheader)
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get app detail failed, err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrHostMoveResourcePoolFail)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostMoveResourcePoolFail, fmt.Sprintf("%v", conf.HostID))})
 		return
 	}
 
@@ -570,6 +570,6 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			return
 		}
 
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
 	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

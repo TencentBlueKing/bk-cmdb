@@ -15,9 +15,12 @@ package service
 import (
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/storage"
 )
@@ -49,5 +52,50 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
 	ws.Route(ws.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
 	ws.Route(ws.POST("/search").To(s.Get))
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
+
 	return ws
+}
+
+func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// mongodb status
+	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
+	if err := s.Instance.Ping(); err != nil {
+		mongoItem.IsHealthy = false
+		mongoItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, mongoItem)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "audit controller is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_AUDITCONTROLLER,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.WriteJson(answer, "application/json")
 }

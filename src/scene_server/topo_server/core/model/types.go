@@ -33,7 +33,6 @@ const (
 type Operation interface {
 	IsExists() (bool, error)
 	Create() error
-	Delete() error
 	Update(data frtypes.MapStr) error
 	Save() error
 }

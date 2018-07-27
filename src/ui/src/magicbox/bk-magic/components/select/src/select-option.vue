@@ -1,5 +1,6 @@
 <template id="">
     <li class="bk-select-list-item"
+        :title="localLabel"
         :class="{
             selected: selected,
             disabled: disabled}"

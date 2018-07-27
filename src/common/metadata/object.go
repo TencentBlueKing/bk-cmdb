@@ -38,34 +38,25 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int64      `field:"id" json:"id"`
-	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id"`
-	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon"`
-	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id"`
-	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name"`
-	IsPre       bool       `field:"ispre" json:"ispre"`
-	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused"`
-	Position    string     `field:"position" json:"position"`
-	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account"`
-	Description string     `field:"description" json:"description"`
-	Creator     string     `field:"creator" json:"creator"`
-	Modifier    string     `field:"modifier" json:"modifier"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time"`
+	ID          int64      `field:"id" json:"id" bson:"id"`
+	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
+	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	IsPre       bool       `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	Position    string     `field:"position" json:"position" bson:"position"`
+	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Description string     `field:"description" json:"description" bson:"description"`
+	Creator     string     `field:"creator" json:"creator" bson:"creator"`
+	Modifier    string     `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime  *time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime    *time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 // GetDefaultInstPropertyName get default inst
 func (o *Object) GetDefaultInstPropertyName() string {
-	switch o.ObjectID {
-	case common.BKInnerObjIDApp:
-		return "业务名"
-	case common.BKInnerObjIDModule:
-		return "模块名"
-	case common.BKInnerObjIDSet:
-		return "集群名"
-	default:
-		return "实例名"
-	}
+	return o.ObjectID
 }
 
 // GetInstIDFieldName get instid filed
@@ -193,11 +184,11 @@ type ObjectDes struct {
 }
 
 type ObjectClsDes struct {
-	ID      int    `json:"id"`
-	ClsID   string `json:"bk_classification_id"`
-	ClsName string `json:"bk_classification_name"`
-	ClsType string `json:"bk_classification_type"`
-	ClsIcon string `json:"bk_classification_icon"`
+	ID      int    `json:"id" bson:"id"`
+	ClsID   string `json:"bk_classification_id" bson:"bk_classification_id"`
+	ClsName string `json:"bk_classification_name" bson:"bk_classification_name"`
+	ClsType string `json:"bk_classification_type" bson:"bk_classification_type" `
+	ClsIcon string `json:"bk_classification_icon" bson:"bk_classification_icon"`
 }
 
 type InnerModule struct {

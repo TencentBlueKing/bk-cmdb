@@ -150,6 +150,8 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Errors.Res = current.ConfigMap["errors.res"]
 		h.Config.Language.Res = current.ConfigMap["language.res"]
 		h.Config.Configures.Dir = current.ConfigMap["confs.dir"]
+
+		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
 	}
 }
 
