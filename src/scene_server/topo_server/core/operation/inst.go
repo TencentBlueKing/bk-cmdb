@@ -758,15 +758,12 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	return instAsstNames, nil
 }
 
-func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, searchCond frtypes.MapStr) ([]int64, error) {
+func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, query *metatype.QueryInput) ([]int64, error) {
 
 	obj, err := c.obj.FindSingleObject(params, objID)
 	if nil != err {
 		return nil, err
 	}
-
-	query := &metatype.QueryInput{}
-	query.Condition = searchCond
 
 	_, insts, err := c.FindInst(params, obj, query, false)
 	if nil != err {
@@ -1046,42 +1043,27 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 			continue
 		}
 
-		innerCond := frtypes.New()
+		innerCond := new(metatype.QueryInput)
 		if fields, ok := asstParamCond.Fields[keyObjID]; ok {
-			innerCond.Set("fields", strings.Join(fields, ","))
-
-		} else {
-			innerCond.Set("fields", "")
+			innerCond.Fields = strings.Join(fields, ",")
 		}
+		innerCond.Condition = cond
 
-		innerCond.Set("condition", cond)
-		innerCond.Set("start", 0)
-		innerCond.Set("limit", common.BKNoLimit)
-		innerCond.Set("sort", "")
-		//fmt.Println("input cond:", innerCond)
 		asstInstIDS, err := c.searchAssociationInst(params, keyObjID, innerCond)
 		if nil != err {
 			blog.Errorf("[operation-inst]failed to search the association inst, error info is %s", err.Error())
 			return 0, nil, err
 		}
+		blog.V(4).Infof("[FindInstByAssociationInst] search association insts, keyObjID %s, condition: %v, results: %v", keyObjID, innerCond, asstInstIDS)
 
-		input := map[string]interface{}{
-			"page": map[string]interface{}{
-				"start": 0,
-				"sort":  "",
-				"limit": common.BKNoLimit,
-			},
-			"condition": map[string]interface{}{
-				"bk_asst_inst_id": map[string]interface{}{
-					common.BKDBIN: asstInstIDS,
-				},
-				"bk_asst_obj_id": keyObjID,
-				"bk_obj_id":      obj.GetID(),
-			},
-			"fields": "",
-		}
 		query := &metatype.QueryInput{}
-		query.Condition = input
+		query.Condition = map[string]interface{}{
+			"bk_asst_inst_id": map[string]interface{}{
+				common.BKDBIN: asstInstIDS,
+			},
+			"bk_asst_obj_id": keyObjID,
+			"bk_obj_id":      obj.GetID(),
+		}
 
 		asstInst, err := c.asst.SearchInstAssociation(params, obj.GetID(), keyObjID, query)
 		if nil != err {
@@ -1092,6 +1074,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		for _, asst := range asstInst {
 			targetInstIDS = append(targetInstIDS, asst.InstID)
 		}
+		blog.V(4).Infof("[FindInstByAssociationInst] search association, objectID=%s, keyObjID=%s, condition: %v, results: %v", obj.GetID(), keyObjID, query, targetInstIDS)
 
 	} // end foreach conditions
 
@@ -1107,8 +1090,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		}
 	}
 
-	//fmt.Println("the targetids:", targetInstIDS, instCond)
-
 	query := &metatype.QueryInput{}
 	query.Condition = instCond
 	if fields, ok := asstParamCond.Fields[obj.GetID()]; ok {
@@ -1117,6 +1098,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	query.Limit = asstParamCond.Page.Limit
 	query.Sort = asstParamCond.Page.Sort
 	query.Start = asstParamCond.Page.Start
+	blog.V(4).Infof("[FindInstByAssociationInst] search inst condition: %v", instCond)
 	return c.FindInst(params, obj, query, false)
 }
 
