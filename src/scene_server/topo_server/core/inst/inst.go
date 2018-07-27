@@ -16,6 +16,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -34,7 +36,9 @@ type Inst interface {
 	GetMainlineParentInst() (Inst, error)
 	GetMainlineChildInst() ([]Inst, error)
 
+	GetParentObjectWithInsts() ([]*ObjectWithInsts, error)
 	GetParentInst() ([]Inst, error)
+	GetChildObjectWithInsts() ([]*ObjectWithInsts, error)
 	GetChildInst() ([]Inst, error)
 
 	SetParentInst(targetInst Inst) error
@@ -76,7 +80,23 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	queryInput := &metatype.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
 
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), targetModel.GetObjectType(), cli.params.Header, queryInput)
+	if targetModel.GetID() != common.BKInnerObjIDHost {
+		rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), targetModel.GetObjectType(), cli.params.Header, queryInput)
+		if nil != err {
+			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
+			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
+			return nil, cli.params.Err.Error(rsp.Code)
+		}
+
+		return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
+	}
+
+	// search hosts
+	rsp, err := cli.clientSet.HostController().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -87,7 +107,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
+	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromInterface(rsp.Data.Info)), nil
 
 }
 
@@ -185,53 +205,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 
 	return nil
 }
-func (cli *inst) Delete() error {
 
-	instIDName := cli.target.GetInstIDFieldName()
-	instID, exists := cli.datas.Get(instIDName)
-
-	cond := condition.CreateCondition()
-
-	if exists {
-		// construct the delete condition by the instid
-		cond.Field(instIDName).Eq(instID)
-	} else {
-		// construct the delete condition by the only key
-
-		attrs, err := cli.target.GetAttributes()
-		if nil != err {
-			blog.Errorf("failed to get attributes for the object(%s), error info is is %s", cli.target.GetID(), err.Error())
-			return err
-		}
-
-		for _, attrItem := range attrs {
-			// check the inst
-			if attrItem.GetIsOnly() {
-
-				val, exists := cli.datas.Get(attrItem.GetID())
-				if !exists {
-					continue
-				}
-				cond.Field(attrItem.GetID()).Eq(val)
-			}
-		}
-
-	}
-
-	// execute delete action
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoInstUpdateFailed)
-	}
-
-	return nil
-}
 func (cli *inst) IsExists() (bool, error) {
 
 	attrs, err := cli.target.GetAttributes()

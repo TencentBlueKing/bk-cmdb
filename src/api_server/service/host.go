@@ -463,25 +463,11 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 	dstIp := formData.Get("dstIp")
 	platId := formData.Get("platId")
 
-	appIdI, err := strconv.ParseInt(appId, 10, 64)
-	if nil != err {
-		blog.Errorf("cloneHostProperty  error: %s", msg)
-		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
-		return
-	}
-
-	platIdI, err := strconv.ParseInt(platId, 10, 64)
-
-	if nil != err {
-		blog.Errorf("cloneHostProperty  error: %s", msg)
-		platIdI = 0
-	}
-
-	var param metadata.HostCloneInputParams
-	param.AppID = appIdI
+	var param metadata.CloneHostPropertyParams
+	param.AppIDStr = appId
 	param.DstIP = dstIp
 	param.OrgIP = orgIp
-	param.PlatID = platIdI
+	param.CloudIDStr = platId
 
 	result, err := s.CoreAPI.HostServer().CloneHostProperty(context.Background(), pheader, &param)
 	if err != nil {
