@@ -342,6 +342,9 @@ func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
 	if a.attr.IsOnly {
 		a.attr.IsRequired = true
 	}
+	if 0 == len(a.attr.PropertyGroup) {
+		a.attr.PropertyGroup = "default"
+	}
 	return nil, err
 }
 
@@ -353,6 +356,10 @@ func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
 }
 
 func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
+		return nil
+	}
 
 	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
 		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
@@ -372,7 +379,7 @@ func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
 			return a.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
-		if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+		if option, exists := data.Get(metadata.AttributeFieldOption); exists && (propertyType == common.FieldTypeInt || propertyType == common.FieldTypeEnum) {
 			if err := util.ValidPropertyOption(propertyType, option, a.params.Err); nil != err {
 				return err
 			}
