@@ -56,8 +56,8 @@ type UserPriviResult struct {
 }
 
 type GroupPrivilege struct {
-	GroupID   string
-	OwnerID   string
+	GroupID   string     `json:"group_id" bson:"group_id"`
+	OwnerID   string     `json:"bk_supplier_account" bson:"group_id"`
 	Privilege *Privilege `json:"privilege"`
 }
 
