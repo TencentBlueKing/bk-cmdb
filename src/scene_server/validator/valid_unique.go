@@ -103,7 +103,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	}
 
 	if 0 < result.Data.Count {
-		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v", searchCond, mapData, valid.isOnly, valid.objID, instID)
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v count %d", searchCond, mapData, valid.isOnly, valid.objID, instID, result.Data.Count)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 	return nil
@@ -121,7 +121,7 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	}
 
 	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
 	if nil != err {
 		return nil, err
 	}
