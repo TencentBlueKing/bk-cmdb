@@ -28,8 +28,7 @@ import (
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-	"configcenter/src/source_controller/api/metadata"
-	sourceAPI "configcenter/src/source_controller/api/object"
+	
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -195,7 +194,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 	// parse process id and valid
 	var iProcIDArr []int
-	auditContentArr := make([]metadata.Content, len(procIDArr))
+	auditContentArr := make([]meta.Content, len(procIDArr))
 
 	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 
@@ -218,13 +217,13 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			return
 		}
 		// save change log
-		headers := []metadata.Header{}
+		headers := []meta.Header{}
 
 		curData := map[string]interface{}{}
 		for _, detail := range details {
 			curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
 			headers = append(headers,
-				metadata.Header{
+				meta.Header{
 					PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField].(string)),
 					PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
 				})
@@ -233,7 +232,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		curData["bk_process_id"] = procID
 
 		// save proc info before modify
-		auditContentArr[index] = metadata.Content{
+		auditContentArr[index] = meta.Content{
 			CurData: make(map[string]interface{}),
 			PreData: curData,
 			Headers: headers,
@@ -431,14 +430,14 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 }
 
 func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, instanceID int, header http.Header) error {
-	headers := []metadata.Header{}
+	headers := []meta.Header{}
 	curData := map[string]interface{}{}
 	preData := map[string]interface{}{}
 	for _, detail := range preProcDetails {
 		preData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
 		if nil == curProcDetails {
 			headers = append(headers,
-				metadata.Header{
+				meta.Header{
 					PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField]),
 					PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
 				})
@@ -448,13 +447,13 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 	for _, detail := range curProcDetails {
 		curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
 		headers = append(headers,
-			metadata.Header{
+			meta.Header{
 				PropertyID:   fmt.Sprint(detail[common.BKPropertyIDField]),
 				PropertyName: fmt.Sprint(detail[common.BKPropertyNameField]),
 			})
 	}
 
-	auditContent := metadata.Content{
+	auditContent := meta.Content{
 		CurData: curData,
 		PreData: preData,
 		Headers: headers,
@@ -465,14 +464,14 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 	return err
 }
 
-func (ps *ProcServer) getProcessbyProcID(procID string, forward *sourceAPI.ForwardParam) (map[string]interface{}, error) {
+func (ps *ProcServer) getProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
 	condition := map[string]interface{}{
 		common.BKProcIDField: procID,
 	}
 
 	reqParam := new(meta.QueryInput)
 	reqParam.Condition = condition
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward.Header, reqParam)
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, reqParam)
 	if err != nil || (err == nil && !ret.Result) {
 		return nil, fmt.Errorf("get process by procID(%s) failed. err: %v, errcode: %d, errmsg: %s", procID, err, ret.Code, ret.ErrMsg)
 	}

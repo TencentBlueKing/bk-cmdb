@@ -13,15 +13,15 @@
 package validator
 
 import (
+	"net/http"
+	"regexp"
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"net/http"
-	"regexp"
-	"strconv"
 )
 
 // NewValidMap returns new NewValidMap
@@ -68,8 +68,10 @@ func (valid *ValidMap) Init() error {
 			continue
 		}
 		valid.propertys[attr.PropertyID] = attr
+		valid.propertyslice = append(valid.propertyslice, attr)
 		if attr.IsRequired {
 			valid.require[attr.PropertyID] = true
+			valid.requirefields = append(valid.requirefields, attr.PropertyID)
 		}
 		if attr.IsOnly {
 			valid.isOnly[attr.PropertyID] = true
@@ -88,7 +90,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 	//valid create request
 	if validType == common.ValidCreate {
-		valid.fillLostedFieldValue(valData, valid.propertys)
+		FillLostedFieldValue(valData, valid.propertyslice, valid.requirefields)
 	}
 
 	for key, val := range valData {
@@ -137,15 +139,19 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 //valid char
 func (valid *ValidMap) validChar(val interface{}, key string) error {
-	if nil == val {
-		blog.Error("params in need")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+	if nil == val || "" == val {
+		if valid.require[key] {
+			blog.Error("params in need")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
 	}
 	switch value := val.(type) {
 	case string:
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
@@ -180,15 +186,20 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 
 //valid long char
 func (valid *ValidMap) validLongChar(val interface{}, key string) error {
-	if nil == val {
-		blog.Error("params in need")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+	if nil == val || "" == val {
+		if valid.require[key] {
+			blog.Error("params in need")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
 	}
+
 	switch value := val.(type) {
 	case string:
 		if len(value) > common.FieldTypeLongLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key, common.FieldTypeSingleLenChar)
+			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {

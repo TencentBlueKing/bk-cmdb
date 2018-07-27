@@ -142,7 +142,7 @@ func (u *V3URLPath) WithEvent(req *restful.Request) (isHit bool) {
 
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/event/"):
-		from, to, isHit = rootPath+"/event", eventRoot+"/subscribe", true
+		from, to, isHit = rootPath+"/event", eventRoot, true
 
 	default:
 		isHit = false

@@ -70,6 +70,7 @@
                     objId: '',
                     property: {
                         id: '',
+                        name: '',
                         operator: '',
                         value: ''
                     }
@@ -133,6 +134,9 @@
                     'bk_module_name': this.$t('Hosts["模块名"]'),
                     'bk_set_name': this.$t('Hosts["集群名"]'),
                     'bk_inst_name': this.$t('Association["实例名"]')
+                }
+                if (name.hasOwnProperty(this.filter.property.id)) {
+                    return this.filter.property.name
                 }
                 return name[this.instanceNameKey]
             },
@@ -436,6 +440,7 @@
             },
             handlePropertySelected (data) {
                 this.filter.property.id = data.value
+                this.filter.property.name = data.label
             },
             handleOperatorSelected (operator) {
                 this.filter.property.operator = operator

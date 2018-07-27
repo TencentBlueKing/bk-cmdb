@@ -13,12 +13,15 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/storage"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -35,11 +38,51 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.Set))
 	ws.Route(ws.POST("/clear").To(s.clear))
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
 	return ws
+}
+
+func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// mongodb
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "admin server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_MIGRATE,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }

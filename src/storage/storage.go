@@ -18,11 +18,12 @@ type DI interface {
 	Insert(cName string, data interface{}) (int, error)
 	InsertMuti(cName string, data ...interface{}) error
 	IsDuplicateErr(err error) bool
-	UpdateByCondition(cName string, data, condiction interface{}) error
-	GetOneByCondition(cName string, fields []string, condiction interface{}, result interface{}) error
-	GetMutilByCondition(cName string, fields []string, condiction interface{}, result interface{}, sort string, start, limit int) error
-	GetCntByCondition(cName string, condiction interface{}) (int, error)
-	DelByCondition(cName string, condiction interface{}) error
+	IsNotFoundErr(err error) bool
+	UpdateByCondition(cName string, data, condition interface{}) error
+	GetOneByCondition(cName string, fields []string, condition interface{}, result interface{}) error
+	GetMutilByCondition(cName string, fields []string, condition interface{}, result interface{}, sort string, start, limit int) error
+	GetCntByCondition(cName string, condition interface{}) (int, error)
+	DelByCondition(cName string, condition interface{}) error
 	HasTable(cName string) (bool, error)
 	ExecSql(cmd interface{}) error
 	Index(cName string, index *Index) error

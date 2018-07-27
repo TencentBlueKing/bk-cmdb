@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -80,15 +81,11 @@ func DecorateUserName(originUserName string) string {
 }
 
 // ResToV2ForAppList  convert cc v3 json data to cc v2 for application list
-func ResToV2ForAppList(resDataV3 interface{}) (interface{}, error) {
+func ResToV2ForAppList(resDataV3 metadata.InstResult) (interface{}, error) {
 
 	resDataV2 := make([]map[string]interface{}, 0)
-
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
-		mapV2, err := convertOneApp(itemMap)
+	for _, item := range resDataV3.Info {
+		mapV2, err := convertOneApp(item)
 		if nil != err {
 			blog.Errorf("get app list error:%s, reply:%v", err.Error(), resDataV3)
 			return nil, err
@@ -221,34 +218,19 @@ func ResToV2ForModuleMapList(result bool, message string, data interface{}) (int
 }
 
 //ResToV2ForSetList: convert cc v3 json data to cc v2 for set
-func ResToV2ForSetList(result bool, message string, data interface{}) (interface{}, error) {
+func ResToV2ForSetList(result bool, message string, data metadata.InstResult) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
 
-	resDataV3, err := getResDataV3(result, message, data)
+	_, err := getResDataV3(result, message, data)
 	if nil != err {
 		return nil, err
 	}
-	mapData, ok := resDataV3.(map[string]interface{})
-	if false == ok {
-		blog.Errorf("get data info error：%s ", data)
-		return nil, errors.New("get set info error")
-	}
-
-	resDataInfoV3, ok := mapData["info"].([]interface{})
-	if false == ok {
-		blog.Errorf("get data info error：%s ", data)
-		return nil, errors.New("get set info error")
-	}
-	for _, item := range resDataInfoV3 {
-		itemMap, ok := item.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("get set info error")
-		}
-		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKSetIDField})
+	for _, item := range data.Info {
+		convMap, err := convertFieldsIntToStr(item, []string{common.BKSetIDField})
 		if nil != err {
 			return nil, err
 		}
-		setName, ok := itemMap[common.BKSetNameField]
+		setName, ok := item[common.BKSetNameField]
 		if false == ok {
 			return nil, errors.New("get set info error")
 		}

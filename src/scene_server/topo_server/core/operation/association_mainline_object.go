@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"fmt"
 	"io"
 
 	"configcenter/src/common"
@@ -46,18 +45,18 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		return err
 	}
 
-	if err = a.ResetMainlineInstAssociatoin(params, targetObj); nil != err {
+	if err = a.ResetMainlineInstAssociatoin(params, targetObj); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s)'s insts, error info %s", objID, err.Error())
 		return err
 	}
-	fmt.Println("current:", targetObj.GetID(), "parent:", parentObj.GetID(), "child:", childObj.GetID())
-	if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err {
+
+	if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 		return err
 	}
 
 	// delete objects
-	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil); nil != err {
+	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", targetObj.GetID(), err.Error())
 		return err
 	}
@@ -119,7 +118,7 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 }
 
-func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
+func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 
 	// check and fetch the association object's classification
 	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
@@ -150,34 +149,60 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	}
 
 	// check and create the association mainline object
-	currentObj, err := a.obj.FindSingleObject(params, data.ObjectID)
-	switch t := err.(type) {
-	case nil:
-	default:
-		blog.Errorf("[operation-asst] failed to find the single object(%s), error info is %s", data.AsstObjID, err.Error())
-		return nil, t
-	case errors.CCErrorCoder:
-		if t.GetCode() == common.CCErrTopoObjectSelectFailed {
+	if err = a.obj.IsValidObject(params, data.ObjectID); nil == err {
+		blog.Errorf("[operation-asst] the object(%s) is duplicate", data.ObjectID)
+		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
+	}
 
-			currentObj = a.modelFactory.CreaetObject(params)
-			currentObj.SetID(data.ObjectID)
-			currentObj.SetName(data.ObjectName)
-			currentObj.SetIcon(data.ObjectIcon)
-			currentObj.SetClassification(objCls)
+	currentObj := a.modelFactory.CreaetObject(params)
+	currentObj.SetID(data.ObjectID)
+	currentObj.SetName(data.ObjectName)
+	currentObj.SetIcon(data.ObjectIcon)
+	currentObj.SetClassification(objCls)
 
-			if err = currentObj.Save(); nil != err {
-				blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", data.AsstObjID, err.Error())
-				return nil, err
-			}
+	if err = currentObj.Save(); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
+		return nil, err
+	}
 
-			attr := currentObj.CreateAttribute()
-			attr.SetIsSystem(true)
-			attr.SetID(common.BKChildStr)
-			if err = attr.Save(); nil != err {
-				blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", data.AsstObjID, common.BKChildStr, err.Error())
-				return nil, err
-			}
-		}
+	attr := currentObj.CreateAttribute()
+	attr.SetIsSystem(true)
+	attr.SetID(common.BKChildStr)
+	attr.SetType(common.FieldTypeLongChar)
+	attr.SetName(common.BKChildStr)
+	attr.SetOption(nil)
+
+	if err = attr.Save(); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
+		return nil, err
+	}
+
+	defaultInstNameAttr := currentObj.CreateAttribute()
+	defaultInstNameAttr.SetIsSystem(false)
+	defaultInstNameAttr.SetIsOnly(true)
+	defaultInstNameAttr.SetIsEditable(true)
+	defaultInstNameAttr.SetType(common.FieldTypeLongChar)
+	defaultInstNameAttr.SetIsRequired(true)
+	defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
+	defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
+
+	if err = defaultInstNameAttr.Save(); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), currentObj.GetDefaultInstPropertyName(), err.Error())
+		return nil, err
+	}
+
+	defaultInstParentAttr := currentObj.CreateAttribute()
+	defaultInstParentAttr.SetIsSystem(true)
+	defaultInstParentAttr.SetIsOnly(true)
+	defaultInstParentAttr.SetIsEditable(false)
+	defaultInstParentAttr.SetType(common.FieldTypeInt)
+	defaultInstParentAttr.SetIsRequired(true)
+	defaultInstParentAttr.SetID(common.BKInstParentStr)
+	defaultInstParentAttr.SetName(common.BKInstParentStr)
+
+	if err = defaultInstParentAttr.Save(); nil != err {
+		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKInstParentStr, err.Error())
+		return nil, err
 	}
 
 	// update the mainline topo inst association
@@ -198,5 +223,5 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
-	return nil, nil
+	return currentObj, nil
 }

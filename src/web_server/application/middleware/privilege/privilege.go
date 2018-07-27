@@ -13,17 +13,18 @@
 package privilege
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/web_server/application/middleware/types"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Privilege struct {

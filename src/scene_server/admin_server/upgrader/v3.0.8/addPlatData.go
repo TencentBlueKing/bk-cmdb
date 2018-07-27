@@ -27,7 +27,7 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 	rows := []map[string]interface{}{
 		map[string]interface{}{
 			common.BKCloudNameField: "default area",
-			common.BKOwnerIDField:   "",
+			common.BKOwnerIDField:   common.BKDefaultOwnerID,
 			common.BKCloudIDField:   common.BKDefaultDirSubArea,
 			common.CreateTimeField:  time.Now(),
 			common.LastTimeField:    time.Now(),

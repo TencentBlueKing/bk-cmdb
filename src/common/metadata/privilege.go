@@ -27,14 +27,14 @@ type PermissionGroupListResult struct {
 }
 
 type Gprivilege struct {
-	ModelConfig    map[string]map[string][]string `json:"model_config"`
-	SysConfig      SysConfigStruct                `json:"sys_config,omitempty"`
-	IsHostCrossBiz bool                           `json:"is_host_cross_biz"`
+	ModelConfig    map[string]map[string][]string `json:"model_config" bson:"model_config"`
+	SysConfig      SysConfigStruct                `json:"sys_config,omitempty" bson:"sys_config"`
+	IsHostCrossBiz bool                           `json:"is_host_cross_biz" bson:"is_host_cross_biz"`
 }
 
 type Privilege struct {
-	ModelConfig map[string]map[string][]string `json:"model_config,omitempty"`
-	SysConfig   *SysConfigStruct               `json:"sys_config,omitempty"`
+	ModelConfig map[string]map[string][]string `json:"model_config,omitempty" bson:"model_config"`
+	SysConfig   *SysConfigStruct               `json:"sys_config,omitempty" bson:"sys_config"`
 }
 
 type SysConfigStruct struct {
@@ -43,9 +43,9 @@ type SysConfigStruct struct {
 }
 
 type UserPrivilege struct {
-	GroupID     string                         `json:"bk_group_id"`
-	ModelConfig map[string]map[string][]string `json:"model_config"`
-	SysConfig   SysConfigStruct                `json:"sys_config"`
+	GroupID     string                         `json:"bk_group_id" bson:"bk_group_id"`
+	ModelConfig map[string]map[string][]string `json:"model_config" bson:"model_config"`
+	SysConfig   SysConfigStruct                `json:"sys_config" bson:"sys_config"`
 }
 
 type UserPriviResult struct {
@@ -58,7 +58,7 @@ type UserPriviResult struct {
 type GroupPrivilege struct {
 	GroupID   string
 	OwnerID   string
-	Privilege Privilege `json:"privilege"`
+	Privilege *Privilege `json:"privilege"`
 }
 
 type GroupPriviResult struct {
@@ -82,10 +82,10 @@ type SearchMainLine struct {
 
 // UserGroup the privilege user group definition
 type UserGroup struct {
-	GroupName       string `field:"group_name" json:"group_name"`
-	UserList        string `field:"user_list" json:"user_list"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account"`
-	GroupID         string `field:"group_id" json:"group_id"`
+	GroupName       string `field:"group_name" json:"group_name" bson:"group_name"`
+	UserList        string `field:"user_list" json:"user_list" bson:"user_list"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	GroupID         string `field:"group_id" json:"group_id" bson:"group_id"`
 }
 
 // Parse load the data from mapstr object into object instance
@@ -106,10 +106,10 @@ func (u *UserGroup) ToMapStr() types.MapStr {
 
 // PrivilegeUserGroup the user group permission configure
 type PrivilegeUserGroup struct {
-	SupplierAccount string       `field:"bk_supplier_account" json:"bk_supplier_account"`
-	GroupID         string       `field:"group_id" json:"group_id"`
-	ModelConfig     types.MapStr `field:"model_config" json:"model_config"`
-	SystemConfig    types.MapStr `field:"sys_config" json:"sys_config"`
+	SupplierAccount string       `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	GroupID         string       `field:"group_id" json:"group_id" bson:"bk_supplier_account"`
+	ModelConfig     types.MapStr `field:"model_config" json:"model_config" bson:"model_config"`
+	SystemConfig    types.MapStr `field:"sys_config" json:"sys_config" bson:"sys_config"`
 }
 
 // Parse load the data from mapstr object into object instance

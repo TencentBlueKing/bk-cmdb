@@ -13,6 +13,15 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -23,19 +32,12 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/redisclient"
 	confCenter "configcenter/src/web_server/application/config"
 	"configcenter/src/web_server/application/logics"
 	"configcenter/src/web_server/application/middleware"
 	"configcenter/src/web_server/application/rdiscover"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -62,6 +64,7 @@ func NewCCWebServer(conf *config.CCAPIConfig) (*CCWebServer, error) {
 	//RDiscover
 	s.rd = rdiscover.NewRegDiscover(s.conf.RegDiscover, addr, port, false)
 	a.AddrSrv = s.rd
+	a.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
 
 	//	a.Lang = language.New()
 
@@ -174,6 +177,18 @@ func (ccWeb *CCWebServer) Start() error {
 	agentAppUrl := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
+
+	redisCli, err := redisclient.NewRedis(redisIp, redisPort, "", redisSecret, "0")
+	if nil != err {
+		blog.Errorf("connect redis error %s", err.Error())
+		return err
+	}
+	err = redisCli.Open()
+	if nil != err {
+		blog.Errorf("connect redis error %s", err.Error())
+		return err
+	}
+	a.CacheCli = redisCli
 	go func() {
 		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIp+":"+redisPort, redisSecret, []byte("secret"))
 		if rediserr != nil {
@@ -293,7 +308,7 @@ func (ccWeb *CCWebServer) Start() error {
 }
 
 func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
-	fmt.Println(actions)
+	//fmt.Println(actions)
 	for _, action := range actions {
 		switch action.Verb {
 		case "GET":

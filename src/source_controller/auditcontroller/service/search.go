@@ -27,6 +27,7 @@ import (
 func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	ownerID := util.GetOwnerID(req.Request.Header)
 
 	dat := new(metadata.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
@@ -34,6 +35,7 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	dat.Condition = util.SetModOwner(dat.Condition, ownerID)
 	rows, cnt, err := s.Logics.Search(dat)
 	if nil != err {
 		blog.Error("get data from data  error:%s", err.Error())
@@ -41,6 +43,7 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	data := new(metadata.AuditQueryResult) //common.KvMap{"info": rows, "count": cnt}
+	data.Result = true
 	data.Data.Info = rows
 	data.Data.Count = cnt
 	resp.WriteEntity(data)

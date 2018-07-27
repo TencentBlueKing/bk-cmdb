@@ -13,11 +13,12 @@
 package util
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"net/http"
 
 	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -39,7 +40,7 @@ func GetActionLanguage(req *restful.Request) string {
 	if "" == language {
 		language = "zh-cn"
 	}
-	blog.Infof("request language: %s, header: %v", language, req.Request.Header)
+	blog.V(5).Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 

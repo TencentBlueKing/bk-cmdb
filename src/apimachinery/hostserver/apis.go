@@ -481,9 +481,23 @@ func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h http.Header, d
 	return
 }
 
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.HostCloneInputParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/propery/clone"
+	subPath := "/hosts/property/clone"
+
+	err = hs.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/idle/set"
 
 	err = hs.client.Put().
 		WithContext(ctx).

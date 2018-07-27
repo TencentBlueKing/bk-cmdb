@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	sourceAPI "configcenter/src/source_controller/api/object"
+	
 
 	"github.com/emicklei/go-restful"
 )
@@ -88,7 +88,7 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 		return nil, err
 	}
 
-	forward := &sourceAPI.ForwardParam{Header: req.Request.Header}
+	forward := req.Request.Header
 	rstmap, errno := ps.getObjectAsst(forward, common.BKInnerObjIDProc, ownerID)
 	if common.CCSuccess != errno {
 		return nil, fmt.Errorf("get object asst faile")
@@ -122,13 +122,13 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 	return reResult, nil
 }
 
-func (ps *ProcServer) getObjectAsst(forward *sourceAPI.ForwardParam, objID, ownerID string) (map[string]string, int) {
+func (ps *ProcServer) getObjectAsst(forward http.Header, objID, ownerID string) (map[string]string, int) {
 	rstmap := make(map[string]string)
 
 	objattCondition := make(map[string]interface{})
 	objattCondition[common.BKObjIDField] = objID
 	objattCondition[common.BKOwnerIDField] = ownerID
-	objattRet, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), forward.Header, objattCondition)
+	objattRet, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), forward, objattCondition)
 	if err != nil || (err == nil && !objattRet.Result) {
 		blog.Errorf("getObjectAsst failed when SelectObjectAttWithParams . err: %s", err.Error())
 		return nil, common.CCErrObjectSelectInstFailed
@@ -140,7 +140,7 @@ func (ps *ProcServer) getObjectAsst(forward *sourceAPI.ForwardParam, objID, owne
 		asst[common.BKObjAttIDField] = item.PropertyID
 		asst[common.BKOwnerIDField] = item.OwnerID
 		asst[common.BKObjIDField] = item.ObjectID
-		ret, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), forward.Header, asst)
+		ret, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), forward, asst)
 		if err != nil || (err == nil && !ret.Result) {
 			blog.Errorf("failed to read the object asst, err:%v, errcode:%d, errmsg:%s", err, ret.BaseResp.Code, ret.ErrMsg)
 			return nil, common.CCErrObjectSelectInstFailed
@@ -164,7 +164,7 @@ type instNameAsst struct {
 	InstName   string `json:"bk_inst_name"`
 }
 
-func (ps *ProcServer) getInstAsst(forward *sourceAPI.ForwardParam, ownerID, objID string, ids []string, page map[string]interface{}) ([]instNameAsst, int, int) {
+func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, ids []string, page map[string]interface{}) ([]instNameAsst, int, int) {
 
 	tmpIDS := make([]int, 0)
 	for _, id := range ids {
@@ -250,7 +250,7 @@ func (ps *ProcServer) getInstAsst(forward *sourceAPI.ForwardParam, ownerID, objI
 	cnt := 0
 	switch objID {
 	case common.BKInnerObjIDHost:
-		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward.Header, input)
+		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward, input)
 		if err != nil || (err == nil && !hostRet.Result) {
 			blog.Errorf("search inst detail failed when GetHosts, err: %v", err)
 			return nil, 0, common.CCErrHostSelectInst
@@ -258,7 +258,7 @@ func (ps *ProcServer) getInstAsst(forward *sourceAPI.ForwardParam, ownerID, objI
 		dataInfo = hostRet.Data.Info
 		cnt = hostRet.Data.Count
 	default:
-		objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), targetOBJ, forward.Header, input)
+		objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), targetOBJ, forward, input)
 		if err != nil || (err == nil && !objRet.Result) {
 			blog.Errorf("search inst detail failed when SearchObjects, err: %v", err)
 			return nil, 0, common.CCErrObjectSelectInstFailed

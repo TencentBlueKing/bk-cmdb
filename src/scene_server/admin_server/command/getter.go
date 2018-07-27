@@ -16,8 +16,8 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 
@@ -98,7 +98,7 @@ func getBKAppNode(db storage.DI, opt *option) (*Node, error) {
 	return bkapp, nil
 }
 
-func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) error {
+func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.Association) error {
 	asst := pcmap[root.ObjID]
 	if asst == nil {
 		return nil
@@ -144,8 +144,8 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.ObjectAsst) e
 	return nil
 }
 
-func getPCmap(assts []*metadata.ObjectAsst) map[string]*metadata.ObjectAsst {
-	m := map[string]*metadata.ObjectAsst{}
+func getPCmap(assts []*metadata.Association) map[string]*metadata.Association {
+	m := map[string]*metadata.Association{}
 	for _, asst := range assts {
 		child := getChileAsst(asst.AsstObjID, assts)
 		if child != nil {
@@ -155,7 +155,7 @@ func getPCmap(assts []*metadata.ObjectAsst) map[string]*metadata.ObjectAsst {
 	return m
 }
 
-func getChileAsst(objID string, assts []*metadata.ObjectAsst) *metadata.ObjectAsst {
+func getChileAsst(objID string, assts []*metadata.Association) *metadata.Association {
 	if objID == common.BKInnerObjIDModule {
 		return nil
 	}
@@ -167,7 +167,7 @@ func getChileAsst(objID string, assts []*metadata.ObjectAsst) *metadata.ObjectAs
 	return nil
 }
 
-func getMainline(root string, assts []*metadata.ObjectAsst) ([]string, error) {
+func getMainline(root string, assts []*metadata.Association) ([]string, error) {
 	if root == common.BKInnerObjIDModule {
 		return []string{common.BKInnerObjIDModule}, nil
 	}
@@ -183,8 +183,8 @@ func getMainline(root string, assts []*metadata.ObjectAsst) ([]string, error) {
 	return nil, fmt.Errorf("topo association broken: %+v", assts)
 }
 
-func getAsst(db storage.DI, opt *option) ([]*metadata.ObjectAsst, error) {
-	assts := []*metadata.ObjectAsst{}
+func getAsst(db storage.DI, opt *option) ([]*metadata.Association, error) {
+	assts := []*metadata.Association{}
 	condition := map[string]interface{}{
 		common.BKOwnerIDField:  opt.OwnerID,
 		common.BKObjAttIDField: common.BKChildStr,

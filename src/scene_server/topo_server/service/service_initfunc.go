@@ -18,6 +18,10 @@ import (
 	"configcenter/src/common"
 )
 
+func (s *topoService) initHealth() {
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/healthz", HandlerFunc: s.Health})
+}
+
 func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
@@ -35,7 +39,7 @@ func (s *topoService) initAuditLog() {
 func (s *topoService) initCompatiblev2() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/searchAll", HandlerFunc: s.SearchAllApp})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.UpdateMultiSet})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.UpdateMultiSet})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.DeleteMultiSet})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/openapi/set/setHost/{appid}", HandlerFunc: s.DeleteSetHost})
 
@@ -145,8 +149,12 @@ func (s *topoService) initGraphics() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", HandlerFunc: s.SelectObjectTopoGraphics})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
 }
+func (s *topoService) initIdentifier() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/identifier/{obj_type}/search", HandlerFunc: s.SearchIdentifier, HandlerParseOriginDataFunc: s.ParseSearchIdentifierOriginData})
+}
 
 func (s *topoService) initService() {
+	s.initHealth()
 	s.initAssociation()
 	s.initAuditLog()
 	s.initCompatiblev2()
@@ -162,4 +170,5 @@ func (s *topoService) initService() {
 	s.initPrivigeRole()
 	s.initPrivilege()
 	s.initGraphics()
+	s.initIdentifier()
 }

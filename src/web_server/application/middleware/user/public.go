@@ -13,19 +13,18 @@
 package user
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/web_server/application/middleware/types"
-	//"configcenter/src/web_server/application/middleware/user"
-	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/httpclient"
+	"configcenter/src/web_server/application/middleware/types"
+	webCommon "configcenter/src/web_server/common"
 )
 
 type publicUser struct {
@@ -122,6 +121,22 @@ func (m *publicUser) LoginUser(c *gin.Context, checkUrl string, isMultiOwner boo
 		ownerID, ok = userInfo["owner_uin"].(string)
 		if false == ok {
 			blog.Error("get owner_uin info role error: %v", err)
+			return false
+		}
+		_, ok = userName.(string)
+		if false == ok {
+			blog.Error("get username info role error: %v", err)
+			return false
+		}
+		_, ok = language.(string)
+		if false == ok {
+			blog.Error("get language info role error: %v", err)
+			return false
+		}
+
+		err := NewOwnerManager(userName.(string), ownerID, language.(string)).InitOwner()
+		if nil != err {
+			blog.Error("InitOwner error: %v", err)
 			return false
 		}
 	}

@@ -17,7 +17,7 @@
         <v-nav class="fl"></v-nav>
         <div class="main-container">
             <div class="main-wrapper">
-                <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
+                <div class="content-wrapper" v-bkloading="{isLoading: globalLoading}">
                     <router-view/>
                 </div>
             </div>
@@ -25,9 +25,9 @@
     </div>
 </template>
 <script>
-    import vHeader from '@/components/header/header'
+    import vHeader from '@/components/header/header-v3'
     import vNavigation from '@/components/nav/nav'
-    import vNav from '@/components/nav/nav-v2'
+    import vNav from '@/components/nav/nav-v3'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
@@ -42,8 +42,7 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading']),
-            ...mapGetters('navigation', ['fold'])
+            ...mapGetters(['globalLoading'])
         },
         methods: {
             closeInfo () {
@@ -63,15 +62,12 @@
         position: relative;
         .main-wrapper{
             height: 100%;
-            padding-top: 43px;
+            padding-top: 61px;
             overflow: auto;
             position: relative;
             .content-wrapper{
                 height: 100%;
                 min-width: 1060px;
-                &.fold{
-                    min-width: 1220px;
-                }
             }
         }
     }

@@ -1,40 +1,48 @@
 <template>
-    <div class="search-container">
+    <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
             <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
-                @focus="focus = true"
-                @keydown="handleKeydow($event)">
+                @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
-            <ul ref="searchList" class="search-list" v-show="focus && !loading && searchList.length">
-                <li ref="searchItem" class="search-item clearfix" v-for="(result, index) in searchList" :key="index" @click="handleRoute(index)">
-                    <search-item-match class="fl"
-                        :result="result"
-                        :keyword="keyword">
-                    </search-item-match>
-                    <span class="search-item-source fr">{{result['biz'][0]['bk_biz_name']}}</span>
-                </li>
-            </ul>
-            <div class="search-loading" v-show="loading">
-                <div v-bkloading="{isLoading: loading}" style="height: 100%;"></div>
+            <div class="search-result" v-show="focus && keyword.length > 2">
+                <div class="search-loading" v-bkloading="{isLoading: loading}" v-if="loading"></div>
+                <div :class="['result-layout', {'result-layout-empty': !resultTabpanels.length}]" v-show="!loading">
+                    <bk-tab class="result-tab" v-if="resultTabpanels.length"
+                        :active-name.sync="resultTab.active"
+                        :size="'small'"
+                        :headStyle="resultTab.headStyle">
+                        <bk-tabpanel v-for="(panel, index) in resultTabpanels"
+                            :key="index"
+                            :name="panel"
+                            :title="getPanelTitle(panel)">
+                            <v-search-item :list="resultTab.list[panel]" :model="panel"></v-search-item>
+                        </bk-tabpanel>
+                    </bk-tab>
+                    <div class="result-empty" v-else>{{$t('Common["暂时没有数据"]')}}</div>
+                    <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('Index["查看更多结果"]')}}</div>
+                </div>
             </div>
-            <div class="search-empty" v-show="!loading && keyword.length > 2 && !searchList.length">{{$t("Common['暂时没有数据']")}}</div>
         </div>
     </div>
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
+    import vSearchItem from './search-item'
     import Throttle from 'lodash.throttle'
     export default {
+        components: {
+            vSearchItem
+        },
         data () {
             return {
                 focus: false,
                 keyword: '',
-                searchList: [],
                 searchParams: {
                     'page': {
                         'start': 0,
-                        'limit': 20,
+                        'limit': 15,
                         'sort': 'bk_host_id'
                     },
                     'pattern': '',
@@ -62,8 +70,31 @@
                     }]
                 },
                 loading: false,
-                highlightIndex: -1,
-                cancelSource: null
+                cancelSource: null,
+                resultTab: {
+                    active: 'host',
+                    headStyle: {
+                        'height': '40px',
+                        'color': '#3c96ff'
+                    },
+                    list: {},
+                    count: {}
+                }
+            }
+        },
+        computed: {
+            ...mapGetters('navigation', ['classifications']),
+            allModels () {
+                let allModels = []
+                this.classifications.forEach(classify => {
+                    classify['bk_objects'].forEach(model => {
+                        allModels.push(model)
+                    })
+                })
+                return allModels
+            },
+            resultTabpanels () {
+                return Object.keys(this.resultTab.list)
             }
         },
         watch: {
@@ -76,24 +107,8 @@
                     this.loading = false
                     this.cancelSource && this.cancelSource.cancel()
                     this.searchParams.ip.data = []
-                    this.searchList = []
-                }
-                this.highlightIndex = -1
-            },
-            highlightIndex (highlightIndex) {
-                let $searchItems = this.$refs.searchItem
-                if ($searchItems && $searchItems.length) {
-                    $searchItems.forEach(($searchItem, index) => {
-                        index === highlightIndex ? $searchItem.classList.add('highlight') : $searchItem.classList.remove('highlight')
-                    })
-                }
-                let scrollCount = 6
-                let searchItemHeight = 48
-                let $searchList = this.$refs.searchList
-                if (highlightIndex !== -1 && (highlightIndex + 1) > scrollCount) {
-                    $searchList.scrollTop = (highlightIndex - scrollCount + 1) * searchItemHeight
-                } else {
-                    $searchList.scrollTop = 0
+                    this.resultTab.list = {}
+                    this.resultTab.count = {}
                 }
             }
         },
@@ -105,9 +120,14 @@
                     this.cancelSource = this.$Axios.CancelToken.source()
                     this.loading = true
                     this.$axios.post('hosts/search', this.searchParams, {cancelToken: this.cancelSource.token}).then(res => {
-                        this.searchList = this.initSearchList(res.data.info)
-                        this.loading = false
-                        this.cancelSource = null
+                        if (res.result) {
+                            this.addResultList('host', this.initSearchList(res.data.info))
+                            this.addResultCount('host', res.data.count)
+                            this.loading = false
+                            this.cancelSource = null
+                        } else {
+                            this.$alertMsg(res['bk_error_msg'])
+                        }
                     }).catch((e) => {
                         if (!this.$Axios.isCancel(e)) {
                             this.cancelSource = null
@@ -116,6 +136,24 @@
                     })
                 }
             }, 500, {leading: false, trailing: true}),
+            addResultList (model, list) {
+                if (list.length) {
+                    this.$set(this.resultTab.list, model, list)
+                } else {
+                    this.$delete(this.resultTab.list, model)
+                }
+            },
+            addResultCount (model, count) {
+                if (count) {
+                    this.$set(this.resultTab.count, model, count)
+                } else {
+                    this.$delete(this.resultTab.count, model)
+                }
+            },
+            getPanelTitle (panel) {
+                const panelModel = this.allModels.find(model => model['bk_obj_id'] === panel)
+                return panelModel ? `${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})` : null
+            },
             initSearchList (data) {
                 let list = []
                 data.forEach(item => {
@@ -127,22 +165,31 @@
                 })
                 return list
             },
-            // 点击搜索结果，进行路由跳转
-            handleRoute (index) {
-                this.highlightIndex = index
-                this.handleEnter()
+            hasMore () {
+                return this.resultTabpanels.length && this.resultTab.count[this.resultTab.active] > 15
             },
-            // 处理回车与上下箭头事件
-            handleKeydow (event) {
-                let keydownFunc = {
-                    'Enter': this.handleEnter,
-                    'ArrowDown': this.handleArrow,
-                    'ArrowUp': this.handleArrow
+            showMore () {
+                const funcMaps = {
+                    'host': this.showMoreHost
                 }
-                let eventKey = event.key
-                if (keydownFunc.hasOwnProperty(eventKey)) {
-                    keydownFunc[event.key](event)
+                const model = this.resultTab.active
+                if (funcMaps.hasOwnProperty(model)) {
+                    funcMaps[model]()
                 }
+                this.handleClickOutside()
+            },
+            showMoreHost () {
+                this.$store.commit('setHostSearch', {
+                    ip: this.keyword,
+                    exact: 0,
+                    innerip: true,
+                    outerip: true,
+                    assigned: true
+                })
+                this.$router.push('/resource')
+            },
+            handleClickOutside () {
+                this.focus = false
             },
             // 跳转至选中的搜索结果的路由
             handleEnter () {
@@ -161,53 +208,23 @@
                         this.$router.push('/hosts')
                     }
                 }
-            },
-            // 上下箭头事件，高亮搜索结果
-            handleArrow (event) {
-                event.preventDefault()
-                let eventKey = event.key
-                if (eventKey === 'ArrowDown' && this.highlightIndex < this.searchList.length - 1) {
-                    this.highlightIndex++
-                } else if (eventKey === 'ArrowUp' && this.highlightIndex >= 0) {
-                    this.highlightIndex--
-                }
-            },
-            handleClickOutside () {
-                this.focus = false
-            }
-        },
-        components: {
-            'search-item-match': {
-                props: {
-                    result: {
-                        required: true
-                    },
-                    keyword: {
-                        type: String,
-                        required: true
-                    }
-                },
-                render (h) {
-                    // todo 用render函数处理搜索结果的文本，高亮搜索结果中的关键词，需后端返回分词结果
-                    let innerip = this.result['host']['bk_host_innerip']
-                    return h('div', innerip)
-                }
             }
         }
     }
 </script>
 <style lang="scss" scoped>
+    .search-layout{}
     .search-box{
-        width: 900px;
-        margin: 0 auto;
         position: relative;
+        height: 42px;
+        overflow: visible;
         .search-keyword{
             width: 100%;
-            height: 44px;
+            height: 100%;
             border-radius: 2px;
             border: solid 1px #c3cdd7;
             padding: 0 56px 0 16px;
-            font-size: 16px;
+            font-size: 14px;
         }
         .icon-search{
             position: absolute;
@@ -216,55 +233,54 @@
             font-size: 20px;
         }
     }
-    .search-list{
+    .search-result{
         position: absolute;
         top: 100%;
         left: 0;
         width: 100%;
-        max-height: 289px;
-        overflow-x: hidden;
-        overflow-y: auto;
-        background-color: #fff;
-        z-index: 1;
-        box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.13);
-        border-radius: 2px;
-        border-top-right-radius: 0;
-        border-top-left-radius: 0;
-        border: solid 1px #c3cdd7;
-        border-top: none;
-        @include scrollbar;
-        &::-webkit-scrollbar-thumb {
-            background: #dde4eb;
-        }
-        .search-item{
-            height: 48px;
-            line-height: 48px;
-            padding: 0 20px 0 17px;
-            &.highlight,
-            &:hover{
-                background-color: #f2f7fe;
-            }
-            .search-item-source{
-                font-size: 12px;
-                color: #c3cdd7;
-            }
-        }
+        margin: 2px 0 0 0;
+        background:rgba(255,255,255,1);
+        box-shadow:0px 3px 6px 0px rgba(51,60,72,0.1);
+        border-radius:2px;
+        border:1px solid rgba(221,228,235,1);
+        z-index: 2;
     }
-    .search-loading,
-    .search-empty{
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        height: 32px;
-        line-height: 32px;
-        padding: 0 20px 0 17px;
-        background-color: #fff;
-        border-radius: 2px;
-        border-top-right-radius: 0;
-        border-top-left-radius: 0;
-        border: solid 1px #c3cdd7;
-        border-top: none;
-        font-size: 12px;
+    .search-loading {
+        height: 40px;
+    }
+    .result-layout{
+        height: 100%;
+        font-size: 0;
+        &-empty:before{
+            content: "";
+            display: inline-block;
+            vertical-align: middle;
+            height: 100%;
+        }
+        .result-tab{
+            display: inline-block;
+            width: 100%;
+            border: none;
+            padding: 0 20px;
+        }
+        .result-empty{
+            height: 40px;
+            line-height: 40px;
+            width: 100%;
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 12px;
+        }
+        .result-more{
+            height:33px;
+            line-height: 32px;
+            font-size: 12px;
+            color: #3c96ff;
+            text-align: center;
+            background:rgba(250,251,253,1);
+            border-top: 1px solid #ebf0f5;
+            cursor: pointer;
+        }
     }
 </style>

@@ -118,7 +118,7 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 	origindists := eh.GetDistInst(&event.EventInst)
 
 	for _, origindist := range origindists {
-		subscribers := eh.findEventTypeSubscribers(origindist.GetType())
+		subscribers := eh.findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
 		if len(subscribers) <= 0 || "nil" == subscribers[0] {
 			blog.Infof("%v no subscriber，continue", origindist.GetType())
 			return eh.SaveEventDone(event)
@@ -241,8 +241,8 @@ func saveRunning(cache *redis.Client, key string, timeout time.Duration) (err er
 	return err
 }
 
-func (eh *EventHandler) findEventTypeSubscribers(eventtype string) []string {
-	return eh.cache.SMembers(types.EventCacheSubscribeformKey + eventtype).Val()
+func (eh *EventHandler) findEventTypeSubscribers(eventtype, ownerID string) []string {
+	return eh.cache.SMembers(types.EventSubscriberCacheKey(ownerID, eventtype)).Val()
 }
 
 func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {

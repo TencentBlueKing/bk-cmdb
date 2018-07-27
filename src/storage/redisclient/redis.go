@@ -423,3 +423,8 @@ func (r *Redis) Close() {
 func (r *Redis) IsDuplicateErr(err error) bool {
 	return false
 }
+
+// IsNotFoundErr returns whether err is not found error
+func (r *Redis) IsNotFoundErr(err error) bool {
+	return redis.Nil == err
+}
