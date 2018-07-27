@@ -205,53 +205,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 
 	return nil
 }
-func (cli *inst) Delete() error {
 
-	instIDName := cli.target.GetInstIDFieldName()
-	instID, exists := cli.datas.Get(instIDName)
-
-	cond := condition.CreateCondition()
-
-	if exists {
-		// construct the delete condition by the instid
-		cond.Field(instIDName).Eq(instID)
-	} else {
-		// construct the delete condition by the only key
-
-		attrs, err := cli.target.GetAttributes()
-		if nil != err {
-			blog.Errorf("failed to get attributes for the object(%s), error info is is %s", cli.target.GetID(), err.Error())
-			return err
-		}
-
-		for _, attrItem := range attrs {
-			// check the inst
-			if attrItem.GetIsOnly() {
-
-				val, exists := cli.datas.Get(attrItem.GetID())
-				if !exists {
-					continue
-				}
-				cond.Field(attrItem.GetID()).Eq(val)
-			}
-		}
-
-	}
-
-	// execute delete action
-	rsp, err := cli.clientSet.ObjectController().Instance().DelObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), err.Error())
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete the object(%s) instances, error info is %s", cli.target.GetID(), rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoInstUpdateFailed)
-	}
-
-	return nil
-}
 func (cli *inst) IsExists() (bool, error) {
 
 	attrs, err := cli.target.GetAttributes()
