@@ -102,6 +102,7 @@ type Object interface {
 var _ Object = (*object)(nil)
 
 type object struct {
+	FieldValid
 	obj       meta.Object
 	isNew     bool
 	params    types.ContextParams
@@ -416,8 +417,37 @@ func (o *object) IsExists() (bool, error) {
 
 	return 0 != len(items), nil
 }
+func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
+	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
+		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
+		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.ModelFieldObjCls) {
+		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate && !o.IsCommon() {
+		return o.params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("'%s' the built-in object id, please use a new one", o.GetID()))
+	}
+
+	return nil
+}
 func (o *object) Create() error {
+
+	if err := o.IsValid(false, o.obj.ToMapStr()); nil != err {
+		return err
+	}
 
 	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
 
@@ -436,22 +466,13 @@ func (o *object) Create() error {
 	return nil
 }
 
-func (o *object) Delete() error {
-	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), o.obj.ID, o.params.Header, nil)
-
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[opration-obj] failed to delete the object by the id(%d)", o.obj.ID)
-		return o.params.Err.Error(rsp.Code)
-	}
-	return nil
-}
-
 func (o *object) Update(data frtypes.MapStr) error {
+
+	data.Remove(metadata.ModelFieldObjectID)
+
+	if err := o.IsValid(true, data); nil != err {
+		return err
+	}
 
 	// check the name repeated
 

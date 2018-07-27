@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Tencent is pleased to support the open source community by making čé˛¸ available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,35 +13,25 @@
 package model
 
 import (
-	//"encoding/json"
-
-	"configcenter/src/apimachinery"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-var _ Topo = (*topo)(nil)
-
-type topo struct {
-	params    types.ContextParams
-	clientSet apimachinery.ClientSetInterface
+// FieldValid field valid method
+type FieldValid struct {
 }
 
-func (cli *topo) MarshalJSON() ([]byte, error) {
-	return nil, nil
-}
+// Valid valid the field
+func (f *FieldValid) Valid(params types.ContextParams, data mapstr.MapStr, fieldID string) error {
 
-func (cli *topo) Current() Object {
-	return nil
-}
-func (cli *topo) Prev() Object {
-	return nil
-}
+	val, err := data.String(fieldID)
+	if nil != err {
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, fieldID)
+	}
+	if 0 == len(val) {
+		return params.Err.Errorf(common.CCErrCommParamsNeedSet, fieldID)
+	}
 
-func (cli *topo) Next() Object {
-	return nil
-}
-
-func (cli *topo) ToMapStr() frtypes.MapStr {
 	return nil
 }
