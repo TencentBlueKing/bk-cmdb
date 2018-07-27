@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/common/metadata"
 
@@ -129,7 +128,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 
 	for _, attrItem := range attrItems {
 		// delete the association
-		fmt.Println("attr:", attrItem)
+		//fmt.Println("attr:", attrItem)
 		asstCond := condition.CreateCondition()
 		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
 		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
