@@ -112,7 +112,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, objID, a
 		}
 		instAsst = append(instAsst, asst)
 	}
-
+	blog.V(4).Infof("[SearchInstAssociation] search association, condition: %#v, results: %#v, unmarshal to: %#v", query, rsp.Data.Info, instAsst)
 	return instAsst, nil
 }
 
