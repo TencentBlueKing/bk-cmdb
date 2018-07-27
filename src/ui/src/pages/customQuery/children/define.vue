@@ -44,7 +44,7 @@
         </div>
         <div class="userapi-group list">
             <ul class="userapi-list">
-                <li :key="`${property.bkPropertyId}-${property.bkObjId}`" class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
+                <li :key="`${property.bkPropertyId}-${property.bkObjId}`" class="userapi-item clearfix" v-for="(property, index) in userProperties" @click="setZIndex($event)">
                     <label class="userapi-name fl" :title="`${property.bkObjName} - ${property.bkPropertyName}`">{{property.bkObjName}} - {{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
@@ -236,7 +236,8 @@
                     'time': '$in',
                     'enum': '$eq'
                 },
-                saveSuccess: false
+                saveSuccess: false,
+                zIndex: 100
             }
         },
         computed: {
@@ -388,6 +389,9 @@
             this.initObjectProperties()
         },
         methods: {
+            setZIndex (event) {
+                event.currentTarget.style.zIndex = ++this.zIndex
+            },
             toggleContentSelector (isShow) {
                 this.$refs.content.open = isShow
                 this.attribute.isShow = isShow
