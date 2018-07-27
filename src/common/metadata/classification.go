@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	ClassificationFieldID        = "id"
 	ClassFieldClassificationID   = "bk_classification_id"
 	ClassFieldClassificationName = "bk_classification_name"
 	ClassFieldClassificationType = "bk_classification_type"
