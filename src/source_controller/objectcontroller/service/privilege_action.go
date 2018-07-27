@@ -129,6 +129,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
+
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
 	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group privi error :%v", err)
@@ -136,7 +137,11 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 		return
 	}
 	if 0 == cnt { // TODO: 兼容老的逻辑
-		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: nil})
+		data := make(map[string]interface{})
+		data[common.BKOwnerIDField] = ownerID
+		data[common.BKUserGroupIDField] = groupID
+		data[common.BKPrivilegeField] = common.KvMap{}
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: data})
 		return
 	}
 
