@@ -49,6 +49,9 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 			blog.Errorf("save user custom, add failed, err: %v, %v", err, result.ErrMsg)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 			return
+		} else {
+			resp.WriteEntity(result)
+			return
 		}
 	}
 	id := result.Data["id"].(string)
