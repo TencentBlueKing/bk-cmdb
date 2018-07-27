@@ -158,6 +158,7 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 		}
 
 		if nil == grpPrivilege.Data.Privilege {
+			grpPrivilege.Data.Privilege = &metadata.Privilege{}
 			continue
 		}
 
