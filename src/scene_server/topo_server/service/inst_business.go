@@ -87,7 +87,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-
+	data = frtypes.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled, common.DataStatusEnable:
 		data.Set(common.BKDataStatusField, pathParams("flag"))
