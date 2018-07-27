@@ -399,6 +399,11 @@
                 } else {
                     this.initEndDate = this.selectedDateView.split(` ${this.rangeSeparator} `)[1]
                 }
+            },
+            showDatePanel (val) {
+                if (val) {
+                    this.$set(this.panelStyle, 'zIndex', (new Date()).getTime())
+                }
             }
         },
         methods: {

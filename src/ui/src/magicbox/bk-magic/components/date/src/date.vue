@@ -415,6 +415,11 @@
                 if (this.autoClose && !this.isSetTimer) {
                     this.close()
                 }
+            },
+            showDatePanel (val) {
+                if (val) {
+                    this.$set(this.panelStyle, 'zIndex', (new Date()).getTime())
+                }
             }
         },
         directives: {
