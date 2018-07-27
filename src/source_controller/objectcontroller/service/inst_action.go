@@ -277,14 +277,14 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	realObjType := objType
 	if objType == common.BKINnerObjIDObject {
 		var ok bool
-		realObjType, ok = origindata[common.BKObjIDField].(string)
+		realObjType, ok = input[common.BKObjIDField].(string)
 		if !ok {
-			blog.Error("create event error: there is no bk_obj_type exist")
+			blog.Error("create event error: there is no bk_obj_id exist")
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 			return
 		}
 	}
-	if err := cli.GetObjectByID(realObjType, nil, id, origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
+	if err := cli.GetObjectByID(realObjType, nil, id, &origindata, ""); err != nil && !cli.Instance.IsNotFoundErr(err) {
 		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 		return
