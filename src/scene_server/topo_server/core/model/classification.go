@@ -128,29 +128,12 @@ func (cli *classification) Create() error {
 	if err := cli.IsValid(false, cli.cls.ToMapStr()); nil != err {
 		return err
 	}
-
-	// check name
-	cond := condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationName).Eq(cli.cls.ClassificationName)
-	items, err := cli.search(cond)
+	exists, err := cli.IsExists()
 	if nil != err {
 		return err
 	}
 
-	if 0 < len(items) {
-		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
-
-	// check id
-	cond = condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
-
-	items, err = cli.search(cond)
-	if nil != err {
-		return err
-	}
-
-	if 0 < len(items) {
+	if exists {
 		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -177,19 +160,15 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 		return err
 	}
 
-	if val, exists := data.Get(metadata.ClassFieldClassificationName); exists {
-		cond := condition.CreateCondition()
-		cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
-		cond.Field(metadata.ClassFieldClassificationName).Eq(val)
-		updateItems, err := cli.search(cond)
-		if nil != err {
-			return err
-		}
-
-		if 0 < len(updateItems) {
-			return cli.params.Err.Error(common.CCErrCommDuplicateItem)
-		}
+	exists, err := cli.IsExists()
+	if nil != err {
+		return err
 	}
+
+	if exists {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
 	cond := condition.CreateCondition()
 	if 0 == len(cli.cls.ClassificationID) {
 		cond.Field(metadata.ClassificationFieldID).Eq(cli.cls.ID)
@@ -239,14 +218,31 @@ func (cli *classification) search(cond condition.Condition) ([]metadata.Classifi
 
 func (cli *classification) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
 	items, err := cli.search(cond)
 	if nil != err {
 		return false, err
 	}
+	if 0 != len(items) {
+		return true, err
+	}
 
-	return 0 != len(items), nil
+	// check name
+	cond = condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationName)
+	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	items, err = cli.search(cond)
+	if nil != err {
+		return false, err
+	}
+	if 0 != len(items) {
+		return true, err
+	}
+
+	return false, nil
 }
 
 func (cli *classification) Save() error {
@@ -257,7 +253,7 @@ func (cli *classification) Save() error {
 		return cli.Create()
 	}
 
-	return cli.Update(nil)
+	return cli.Update(cli.cls.ToMapStr())
 }
 
 func (cli *classification) SetID(classificationID string) {
