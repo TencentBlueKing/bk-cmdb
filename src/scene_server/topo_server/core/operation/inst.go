@@ -1197,7 +1197,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond.ToMapStr(), rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
 	NewSupplementary().Audit(params, c.clientSet, obj, c).CommitUpdateLog(preAuditLog, currAuditLog, nil)
