@@ -145,6 +145,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	}
 
 	data.AppID = appID
+	data.OwnerID = ownerID
 	err = s.Instance.UpdateByCondition(UserQueryCollection, data, params)
 	if nil != err {
 		blog.Error("update user api fail, error information is %s, params:%v", err.Error(), params)
