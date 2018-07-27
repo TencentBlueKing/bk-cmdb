@@ -25,7 +25,7 @@
                     <textarea v-model="selectedName" disabled name="" id="" cols="30" rows="10"></textarea>
                     <bk-button :disabled="attribute.isShow" v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus" @click="toggleContentSelector(true)"></bk-button>
                 </div>
-                <div v-show="attribute.isShow">
+                <div v-show="attribute.isShow" ref="userapiContentSelector" style="position: relative;">
                     <bk-select class="fl userapi-content-selector"
                         ref="content"
                         @on-toggle="toggleContentSelector"
@@ -96,7 +96,7 @@
             </ul>
             <div class="userapi-new" v-click-outside="clickOutside">
                 <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
-                <div class="userapi-pop-wrapper">
+                <div class="userapi-pop-wrapper" ref="userapiPop">
                     <div class="userapi-new-selector-pop" v-show="isPropertiesShow">
                         <p class="pop-title">{{$t("CustomQuery['新增查询条件']")}}</p>
                         <bk-select class="userapi-new-selector" 
@@ -141,7 +141,7 @@
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
-        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
+        <v-preview ref="preview" :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
     </div>
 </template>
 <script>
@@ -393,6 +393,7 @@
                 event.currentTarget.style.zIndex = ++this.zIndex
             },
             toggleContentSelector (isShow) {
+                this.$refs.userapiContentSelector.style.zIndex = ++this.zIndex
                 this.$refs.content.open = isShow
                 this.attribute.isShow = isShow
             },
@@ -612,6 +613,7 @@
                     this.propertySelected.module = properties.module.join(',')
                 }
                 this.isPropertiesShow = isPropertiesShow
+                this.$refs.userapiPop.style.zIndex = ++this.zIndex
             },
             clickOutside () {
                 this.toggleUserAPISelector(false)
@@ -677,6 +679,7 @@
             previewUserAPI () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
+                        this.$refs.preview.$el.style.zIndex = ++this.zIndex
                         this.isPreviewShow = true
                     } else {
                         this.$alertMsg(this.errors.all()[0])
