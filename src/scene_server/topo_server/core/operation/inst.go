@@ -487,11 +487,6 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	item := c.instFactory.CreateInst(params, obj)
 	item.SetValues(data)
 
-	if err := c.setInstAsst(params, obj, item); nil != err {
-		blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
-		return nil, err
-	}
-
 	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  error info is %s", item.ToMapStr(), err.Error())
 		return nil, err
@@ -503,6 +498,11 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+	if err := c.setInstAsst(params, obj, item); nil != err {
+		blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+		return nil, err
+	}
 
 	return item, nil
 }
