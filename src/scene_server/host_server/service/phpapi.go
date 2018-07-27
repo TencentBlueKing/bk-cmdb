@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -942,4 +943,76 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 		Data:     res,
 	})
 
+}
+
+func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful.Response) {
+
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+
+	// 获取AppID
+	pathParams := req.PathParameters()
+	appID, err := util.GetInt64ByInterface(pathParams[common.BKAppIDField])
+	if nil != err {
+		blog.Errorf("getHostListByAppidAndField error :%s", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
+
+	field := req.PathParameter("field")
+
+	configData, err := s.Logics.GetConfigByCond(req.Request.Header, map[string][]int64{
+		common.BKAppIDField: []int64{appID},
+	})
+
+	if nil != err {
+		blog.Errorf("getHostListByAppidAndField error : %s, input:%v", err.Error(), common.KvMap{"appid": appID, "field": field})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+		return
+	}
+
+	hostIDArr := make([]int64, 0)
+	for _, config := range configData {
+		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+	}
+
+	query := new(meta.QueryInput)
+	query.Fields = fmt.Sprintf("%s,%s,%s,%s,", common.BKHostInnerIPField, common.BKCloudIDField, common.BKAppIDField, common.BKHostIDField) + field
+	query.Condition = map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDArr,
+		},
+	}
+	ret, err := s.Logics.CoreAPI.HostController().Host().GetHosts(context.Background(), req.Request.Header, query)
+	if nil != err {
+		blog.Error("getHostListByAppidAndField search host error: %s, input:%v", err.Error(), common.KvMap{"appid": appID, "field": field})
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
+		return
+	}
+	if !ret.Result {
+		blog.Error("getHostListByAppidAndField search host error: %s, input:%v", ret.ErrMsg, common.KvMap{"appid": appID, "field": field})
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
+		return
+	}
+	retData := make(map[string][]interface{})
+	for _, itemMap := range ret.Data.Info {
+		fieldValue, ok := itemMap[field]
+		if !ok {
+			continue
+		}
+
+		fieldValueStr := fmt.Sprintf("%v", fieldValue)
+		groupData, ok := retData[fieldValueStr]
+		if ok {
+			retData[fieldValueStr] = append(groupData, itemMap)
+		} else {
+			retData[fieldValueStr] = []interface{}{
+				itemMap,
+			}
+		}
+	}
+
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     retData,
+	})
 }

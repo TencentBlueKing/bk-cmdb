@@ -261,7 +261,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, common.BKDefaultOwnerID, pheader, hostList.HostInfo, hostList.InputType)
+	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, util.GetOwnerID(pheader), pheader, hostList.HostInfo, hostList.InputType)
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
