@@ -54,6 +54,7 @@ var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
+	FieldValid
 	cls       metadata.Classification
 	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
@@ -107,7 +108,26 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	return rstItems, nil
 }
 
+func (cli *classification) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
+		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
+			return err
+		}
+	}
+	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
+		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
+			return err
+		}
+	}
+	return nil
+}
+
 func (cli *classification) Create() error {
+
+	if err := cli.IsValid(false, cli.cls.ToMapStr()); nil != err {
+		return err
+	}
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
 	if nil != err {
@@ -126,6 +146,12 @@ func (cli *classification) Create() error {
 
 func (cli *classification) Update(data frtypes.MapStr) error {
 
+	data.Remove(metadata.ClassFieldClassificationID)
+
+	if err := cli.IsValid(true, data); nil != err {
+		return err
+	}
+
 	updateItems, err := cli.search()
 	if nil != err {
 		return err
@@ -133,7 +159,7 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 
 	for _, item := range updateItems { // only one item
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, cli.cls.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, data)
 		if nil != err {
 			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
 			return err
@@ -147,21 +173,6 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 		cli.cls = item
 	}
 
-	return nil
-}
-
-func (cli *classification) Delete() error {
-
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), cli.cls.ID, cli.params.Header, cli.cls.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return err
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete the classification(%s)", cli.cls.ClassificationID)
-		return cli.params.Err.Error(rsp.Code)
-	}
 	return nil
 }
 
