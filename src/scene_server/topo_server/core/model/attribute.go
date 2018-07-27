@@ -107,6 +107,7 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
+	FieldValid
 	attr      metadata.Attribute
 	isNew     bool
 	params    types.ContextParams
@@ -351,7 +352,40 @@ func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
 
 }
 
+func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
+		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyName) {
+		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldOption) {
+		propertyType, err := data.String(metadata.AttributeFieldPropertyType)
+		if nil != err {
+			return a.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		}
+
+		if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+			if err := util.ValidPropertyOption(propertyType, option, a.params.Err); nil != err {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (a *attribute) Create() error {
+
+	if err := a.IsValid(false, a.attr.ToMapStr()); nil != err {
+		return err
+	}
 
 	// check the property id repeated
 	cond := condition.CreateCondition()
@@ -404,6 +438,31 @@ func (a *attribute) Create() error {
 
 func (a *attribute) Update(data frtypes.MapStr) error {
 
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldObjectID)
+
+	if err := a.IsValid(true, data); nil != err {
+		return err
+	}
+
+	if propertyName, exists := data.Get(metadata.AttributeFieldPropertyName); exists {
+		// check the property name repeated
+		cond := condition.CreateCondition()
+		cond.Field(metadata.AttributeFieldPropertyName).Eq(propertyName)
+		cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
+		cond.Field(metadata.AttributeFieldID).NotIn(a.attr.ID)
+		attrItems, err := a.search(cond)
+		if nil != err {
+			blog.Errorf("[model-attr] failed to check the property name (%s), error info is %s", propertyName, err.Error())
+			return err
+		}
+
+		if 0 != len(attrItems) {
+			blog.Errorf("[model-attr] the property name(%s) is repeated", propertyName)
+			return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		}
+	}
+
 	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
 
 	if nil != err {
@@ -447,28 +506,6 @@ func (a *attribute) IsExists() (bool, error) {
 	}
 
 	return 0 != len(items), nil
-}
-
-func (a *attribute) Delete() error {
-
-	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
-
-	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), a.attr.ID, a.params.Header, cond.ToMapStr())
-
-	if nil != err {
-		blog.Errorf("failed to request object, error info is %s", err.Error())
-		return err
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete attribute,error info is is %s", rsp.ErrMsg)
-		return a.params.Err.Error(common.CCErrTopoObjectAttributeDeleteFailed)
-	}
-
-	return nil
 }
 
 func (a *attribute) Save() error {
