@@ -54,6 +54,7 @@ var _ Classification = (*classification)(nil)
 
 // classification the model classification definition
 type classification struct {
+	FieldValid
 	cls       metadata.Classification
 	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
@@ -107,7 +108,34 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	return rstItems, nil
 }
 
+func (cli *classification) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
+		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
+			return err
+		}
+	}
+	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
+		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
+			return err
+		}
+	}
+	return nil
+}
+
 func (cli *classification) Create() error {
+
+	if err := cli.IsValid(false, cli.cls.ToMapStr()); nil != err {
+		return err
+	}
+	exists, err := cli.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
 	if nil != err {
@@ -126,14 +154,36 @@ func (cli *classification) Create() error {
 
 func (cli *classification) Update(data frtypes.MapStr) error {
 
-	updateItems, err := cli.search()
+	data.Remove(metadata.ClassFieldClassificationID)
+
+	if err := cli.IsValid(true, data); nil != err {
+		return err
+	}
+
+	exists, err := cli.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	cond := condition.CreateCondition()
+	if 0 == len(cli.cls.ClassificationID) {
+		cond.Field(metadata.ClassificationFieldID).Eq(cli.cls.ID)
+	} else {
+		cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+	}
+
+	updateItems, err := cli.search(cond)
 	if nil != err {
 		return err
 	}
 
 	for _, item := range updateItems { // only one item
 
-		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, cli.cls.ToMapStr())
+		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, data)
 		if nil != err {
 			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
 			return err
@@ -150,25 +200,7 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 	return nil
 }
 
-func (cli *classification) Delete() error {
-
-	rsp, err := cli.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), cli.cls.ID, cli.params.Header, cli.cls.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return err
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete the classification(%s)", cli.cls.ClassificationID)
-		return cli.params.Err.Error(rsp.Code)
-	}
-	return nil
-}
-
-func (cli *classification) search() ([]metadata.Classification, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -186,12 +218,31 @@ func (cli *classification) search() ([]metadata.Classification, error) {
 
 func (cli *classification) IsExists() (bool, error) {
 
-	items, err := cli.search()
+	// check id
+	cond := condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
+	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	items, err := cli.search(cond)
 	if nil != err {
 		return false, err
 	}
+	if 0 != len(items) {
+		return true, err
+	}
 
-	return 0 != len(items), nil
+	// check name
+	cond = condition.CreateCondition()
+	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationName)
+	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	items, err = cli.search(cond)
+	if nil != err {
+		return false, err
+	}
+	if 0 != len(items) {
+		return true, err
+	}
+
+	return false, nil
 }
 
 func (cli *classification) Save() error {
@@ -202,7 +253,7 @@ func (cli *classification) Save() error {
 		return cli.Create()
 	}
 
-	return cli.Update(nil)
+	return cli.Update(cli.cls.ToMapStr())
 }
 
 func (cli *classification) SetID(classificationID string) {

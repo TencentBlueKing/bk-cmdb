@@ -38,6 +38,7 @@ func (v *valid) ValidatorCreate(params types.ContextParams, obj model.Object, da
 		common.BKDefaultField,
 		common.BKInstParentStr,
 		common.BKOwnerIDField,
+		common.BKAppIDField,
 	}
 	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
 	return validObj.ValidMap(datas, common.ValidCreate, -1)
@@ -49,6 +50,9 @@ func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, da
 		common.BKDefaultField,
 		common.BKInstParentStr,
 		common.BKOwnerIDField,
+		common.BKAppIDField,
+		common.BKDataStatusField,
+		common.BKDataStatusField,
 	}
 
 	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)

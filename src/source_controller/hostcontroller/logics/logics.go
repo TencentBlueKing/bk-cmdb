@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	metadataTable "configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 
@@ -186,8 +185,7 @@ func (lgc *Logics) GetModuleIDsByHostID(moduleCond interface{}) ([]int64, error)
 	result := make([]interface{}, 0)
 	var ret []int64
 
-	tableName := metadataTable.ModuleHostConfig{}
-	err := lgc.Instance.GetMutilByCondition(tableName.TableName(), []string{common.BKModuleIDField}, moduleCond, &result, "", 0, common.BKNoLimit)
+	err := lgc.Instance.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKModuleIDField}, moduleCond, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		blog.Error("get moudle id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
@@ -227,11 +225,10 @@ func (lgc *Logics) GetResourcePoolApp(ownerID int64) (int64, error) {
 //check if host belong to empty module
 func (lgc *Logics) CheckHostInIDle(appID, emptyModuleID int64, hostIDs []int64) ([]int64, []int64, error) {
 
-	moduleHostConfig := metadataTable.ModuleHostConfig{}
 	conds := common.KvMap{common.BKHostIDField: bson.M{common.BKDBIN: hostIDs}}
 	result := make([]interface{}, 0)
 
-	err := lgc.Instance.GetMutilByCondition(moduleHostConfig.TableName(), []string{common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField}, conds, &result, "", 0, common.BKNoLimit)
+	err := lgc.Instance.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField}, conds, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		return nil, nil, fmt.Errorf("get relation between host and module failed, err: %v", err)
 	}

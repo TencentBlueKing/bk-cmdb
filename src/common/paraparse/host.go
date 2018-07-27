@@ -127,7 +127,7 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 		orCond := make([]map[string]map[string]interface{}, 0)
 		for _, ip := range ipArr {
 			c := make(map[string]interface{})
-			c[common.BKDBLIKE] = ip
+			c[common.BKDBLIKE] = SpeceialCharChange(ip)
 			if INNERONLY == flag {
 				ipCon := make(map[string]map[string]interface{})
 				ipCon[common.BKHostInnerIPField] = c

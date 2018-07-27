@@ -16,21 +16,10 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
-
-var innerObject = map[string]bool{
-	common.BKInnerObjIDApp: true,
-	common.BKInnerObjIDSet: true,
-
-	common.BKInnerObjIDModule: true,
-	common.BKInnerObjIDProc:   true,
-	common.BKInnerObjIDHost:   true,
-	common.BKInnerObjIDPlat:   true,
-}
 
 // IntOption integer option
 type IntOption struct {

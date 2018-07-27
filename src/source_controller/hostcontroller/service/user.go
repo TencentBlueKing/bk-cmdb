@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/common/commondata"
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -198,7 +197,7 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
 
-	dat := new(commondata.ObjQueryInput)
+	dat := new(meta.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
 		blog.Errorf("get user config failed with decode body, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})

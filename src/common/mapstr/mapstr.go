@@ -19,8 +19,6 @@ import (
 	"reflect"
 	"strconv"
 	"time"
-
-	"configcenter/src/common/basetype"
 )
 
 // MapStr the common event data definition
@@ -29,6 +27,15 @@ type MapStr map[string]interface{}
 // New create a new MapStr instance
 func New() MapStr {
 	return MapStr{}
+}
+
+// NewArrayFromInterface create a new array from interface
+func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
+	}
+	return results
 }
 
 // NewFromInterface create a mapstr instance from the interface
@@ -107,20 +114,6 @@ func (cli MapStr) Bool(key string) (bool, error) {
 		return false, fmt.Errorf("the key (%s) is invalid", key)
 	case bool:
 		return t, nil
-	}
-}
-
-// BaseType get the value as BaseType.Type
-func (cli MapStr) BaseType(key string) (*basetype.Type, error) {
-	switch t := cli[key].(type) {
-	case nil:
-		return nil, fmt.Errorf("the key (%s) is invalid", key)
-	default:
-		return nil, fmt.Errorf("the key (%s) is invalid", key)
-	case *basetype.Type:
-		return t, nil
-	case basetype.Type:
-		return &t, nil
 	}
 }
 

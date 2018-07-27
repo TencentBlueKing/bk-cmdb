@@ -39,7 +39,7 @@ func (s *topoService) initAuditLog() {
 func (s *topoService) initCompatiblev2() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/app/searchAll", HandlerFunc: s.SearchAllApp})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.UpdateMultiSet})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.UpdateMultiSet})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/openapi/set/multi/{appid}", HandlerFunc: s.DeleteMultiSet})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/openapi/set/setHost/{appid}", HandlerFunc: s.DeleteSetHost})
 

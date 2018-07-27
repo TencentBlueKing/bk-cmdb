@@ -20,7 +20,6 @@ import (
 	"github.com/gin-gonic/gin/json"
 
 	"configcenter/src/common"
-	"configcenter/src/common/basetype"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 )
@@ -74,16 +73,6 @@ func NewSuccessResp(data interface{}) *Response {
 type Response struct {
 	BaseResp `json:",inline"`
 	Data     interface{} `json:"data"`
-}
-
-type MapResponse struct {
-	BaseResp `json:",inline"`
-	Data     map[string]*basetype.Type `json:"data"`
-}
-
-type RecursiveMapResponse struct {
-	BaseResp `json:",inline"`
-	Data     map[string]map[string]*basetype.Type `json:"data"`
 }
 
 type QueryInput struct {

@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	ClassificationFieldID        = "id"
 	ClassFieldClassificationID   = "bk_classification_id"
 	ClassFieldClassificationName = "bk_classification_name"
 	ClassFieldClassificationType = "bk_classification_type"
@@ -29,7 +30,7 @@ type Classification struct {
 	ClassificationID   string `field:"bk_classification_id"  json:"bk_classification_id" bson:"bk_classification_id"`
 	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
 	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
-	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bason:"bk_classification_icon"`
+	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon"`
 	OwnerID            string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
 }
 
