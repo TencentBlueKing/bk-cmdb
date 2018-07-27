@@ -33,7 +33,7 @@
         "确认转移": "Confirm",
         "覆盖": "Cover",
         "更新": "Update",
-        "转移确认": "Transfer to {target} will clear the current module binding, confirm?",
+        "转移确认": "Transfer to {target} will clear the selected module binding, confirm?",
         "转移成功": "Successful Transfer",
         "您没有主机转移的权限": "You do not have permission to transfer from the host",
         "主机资源池": "Host Resource Pool",
