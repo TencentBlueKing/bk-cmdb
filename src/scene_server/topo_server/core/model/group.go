@@ -186,6 +186,7 @@ func (g *group) IsExists() (bool, error) {
 	// check id
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
 	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
 	grps, err := g.search(cond)
 	if nil != err {
@@ -198,6 +199,7 @@ func (g *group) IsExists() (bool, error) {
 	// check name
 	cond = condition.CreateCondition()
 	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
 	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
 	grps, err = g.search(cond)
 	if nil != err {
