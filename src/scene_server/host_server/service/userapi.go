@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -78,6 +79,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	}
 
 	params["modify_user"] = util.GetActionUser(req)
+	params[common.LastTimeField] = time.Now().UTC()
 	result, err := s.CoreAPI.HostController().User().UpdateUserConfig(context.Background(), req.PathParameter("bk_biz_id"), req.PathParameter("id"), req.Request.Header, params)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {
@@ -234,7 +236,10 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     retData.Info,
+		Data: meta.SearchHost{
+			Count: retData.Count,
+			Info:  retData.Info,
+		},
 	})
 
 	return
