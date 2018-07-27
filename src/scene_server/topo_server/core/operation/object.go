@@ -358,8 +358,7 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	grp.SetIndex(-1)
 	grp.SetName("Default")
 	grp.SetID("default")
-
-	if err = grp.Create(); nil != err {
+	if err = grp.Save(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
 	}
 
