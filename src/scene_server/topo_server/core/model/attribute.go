@@ -395,34 +395,13 @@ func (a *attribute) Create() error {
 	}
 
 	// check the property id repeated
-	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	attrItems, err := a.search(cond)
+	a.attr.OwnerID = a.params.SupplierAccount
+	exists, err := a.IsExists()
 	if nil != err {
-		blog.Errorf("[model-attr] failed to check the property id (%s), error info is %s", a.attr.PropertyID, err.Error())
 		return err
 	}
 
-	if 0 != len(attrItems) {
-		blog.Errorf("[model-attr] the property id(%s) is repeated", a.attr.PropertyID)
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
-
-	// check the property name repeated
-	cond = condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	attrItems, err = a.search(cond)
-	if nil != err {
-		blog.Errorf("[model-attr] failed to check the property name (%s), error info is %s", a.attr.PropertyName, err.Error())
-		return err
-	}
-
-	if 0 != len(attrItems) {
-		blog.Errorf("[model-attr] the property name(%s) is repeated", a.attr.PropertyName)
+	if exists {
 		return a.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -452,22 +431,14 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 		return err
 	}
 
-	if propertyName, exists := data.Get(metadata.AttributeFieldPropertyName); exists {
-		// check the property name repeated
-		cond := condition.CreateCondition()
-		cond.Field(metadata.AttributeFieldPropertyName).Eq(propertyName)
-		cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-		cond.Field(metadata.AttributeFieldID).NotIn(a.attr.ID)
-		attrItems, err := a.search(cond)
-		if nil != err {
-			blog.Errorf("[model-attr] failed to check the property name (%s), error info is %s", propertyName, err.Error())
-			return err
-		}
+	a.attr.OwnerID = a.params.SupplierAccount
+	exists, err := a.IsExists()
+	if nil != err {
+		return err
+	}
 
-		if 0 != len(attrItems) {
-			blog.Errorf("[model-attr] the property name(%s) is repeated", propertyName)
-			return a.params.Err.Error(common.CCErrCommDuplicateItem)
-		}
+	if exists {
+		return a.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
 	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
@@ -502,17 +473,39 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 }
 func (a *attribute) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
 
 	items, err := a.search(cond)
 	if nil != err {
 		return false, err
 	}
 
-	return 0 != len(items), nil
+	if 0 != len(items) {
+		return true, err
+	}
+
+	// ceck nam
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
+	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
+
+	items, err = a.search(cond)
+	if nil != err {
+		return false, err
+	}
+
+	if 0 != len(items) {
+		return true, err
+	}
+
+	return false, nil
 }
 
 func (a *attribute) Save() error {
