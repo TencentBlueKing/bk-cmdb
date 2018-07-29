@@ -169,7 +169,9 @@
                     const targetBiz = bizArr.find(biz => biz['bk_biz_id'] === module['bk_biz_id'])
                     if (targetBiz['bk_biz_id'] === this.bkBizId) {
                         const node = this.allModulesNodes.find(moduleNode => moduleNode['bk_inst_id'] === module['bk_module_id'])
-                        selected.push(node)
+                        if (node) {
+                            selected.push(node)
+                        }
                     } else {
                         otherBizNodes.push({
                             module,
