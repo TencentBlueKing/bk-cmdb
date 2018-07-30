@@ -45,7 +45,7 @@ func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator,
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
 
-	existItems, err := client.GetClient().CCV3().Set().SearchSets(iter.cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Set().SearchSets(iter.cond)
 	if nil != err {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (cli *iteratorInstSet) Next() (SetInterface, error) {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Set().SearchSets(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Set().SearchSets(cli.cond)
 		if nil != err {
 			return nil, err
 		}

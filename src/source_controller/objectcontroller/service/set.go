@@ -121,6 +121,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	}
 	//del host from set, get host module relation
 	params := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: common.KvMap{"$in": hostIDs}}
+	params = util.SetModOwner(params, ownerID)
 	var hostRelations []interface{}
 	getErr = cli.Instance.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
 	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
@@ -143,6 +144,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 		if !ok {
 			param := map[string]interface{}{common.BKAppIDField: appID, common.BKSetIDField: setID, common.BKModuleIDField: moduleID, common.BKHostIDField: rawHostID}
 			//set.CC.InstCli.InsertMuti
+			param = util.SetModOwner(param, ownerID)
 			addIdleModuleDatas = append(addIdleModuleDatas, param)
 		}
 
@@ -168,6 +170,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 
 func (cli *Service) GetIdleModule(appID interface{}) (interface{}, interface{}, error) {
 	params := common.KvMap{common.BKAppIDField: appID, common.BKDefaultField: common.DefaultResModuleFlag, common.BKModuleNameField: common.DefaultResModuleName}
+	params = util.SetModOwner(params, ownerID)
 	var result bson.M
 	err := cli.Instance.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
 
