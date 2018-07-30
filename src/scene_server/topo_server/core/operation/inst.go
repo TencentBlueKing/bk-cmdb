@@ -661,7 +661,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		innerCond := condition.CreateCondition()
 		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
 		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		innerCond.Field(common.BKAsstInstIDField).Eq(delInst)
+		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
 		err := c.asst.CheckBeAssociation(params, obj, innerCond)
 		if nil != err {
 			return err
