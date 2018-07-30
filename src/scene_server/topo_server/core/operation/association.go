@@ -206,7 +206,7 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 
 // CheckBeAssociation and return error if the obj has been bind
 func (a *association) CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error {
-	exists, err := a.SearchInstAssociation(params, &metatype.QueryInput{Condition: cond})
+	exists, err := a.SearchInstAssociation(params, &metatype.QueryInput{Condition: cond.ToMapStr()})
 	if nil != err {
 		return err
 	}
