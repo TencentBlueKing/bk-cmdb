@@ -14,15 +14,15 @@ package openapi
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"	
 )
 
 type OpenApiInterface interface {
-	GetProcessesByModuleName(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteSetHost(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 }
 
 func NewOpenApiInterface(client rest.ClientInterface) OpenApiInterface {

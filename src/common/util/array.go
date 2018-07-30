@@ -56,7 +56,7 @@ func StrArrayUnique(a []string) (ret []string) {
 }
 
 //IntArrayUnique get unique int array
-func IntArrayUnique(a []int) (ret []int) {
+func IntArrayUnique(a []int64) (ret []int64) {
 	length := len(a)
 	for i := 0; i < length; i++ {
 		if !ContainsInt(ret, a[i]) {
@@ -92,8 +92,8 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 	return diffStr
 }
 
-func IntArrIntersection(slice1 []int, slice2 []int) []int {
-	var intersectInt []int
+func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
+	var intersectInt []int64
 	for _, i := range slice1 {
 		if InArray(i, slice2) {
 			intersectInt = append(intersectInt, i)

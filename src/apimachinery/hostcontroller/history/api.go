@@ -13,37 +13,37 @@
 package history
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
-func(hi *history) AddHistory(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/history/%s", user)
+func (hi *history) AddHistory(ctx context.Context, user string, h http.Header, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error) {
+	resp = new(metadata.AddHistoryResult)
+	subPath := fmt.Sprintf("/history/%s", user)
 
-        err = hi.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = hi.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(hi *history) GetHistorys(ctx context.Context, user string, start string, limit string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/history/%s/%s/%s", user, start, limit)
+func (hi *history) GetHistorys(ctx context.Context, user string, start string, limit string, h http.Header) (resp *metadata.GetHistoryResult, err error) {
+	resp = new(metadata.GetHistoryResult)
+	subPath := fmt.Sprintf("/history/%s/%s/%s", user, start, limit)
 
-        err = hi.client.Get().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = hi.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

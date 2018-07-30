@@ -17,12 +17,12 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	gutil "configcenter/src/common/util"
-	sourceAPI "configcenter/src/source_controller/api/object"
 )
 
 // ConvByPropertytype convert str to property type
-func ConvByPropertytype(field *sourceAPI.ObjAttDes, val string) (interface{}, error) {
+func ConvByPropertytype(field *metadata.ObjAttDes, val string) (interface{}, error) {
 	switch field.PropertyType {
 	case common.FieldTypeInt:
 		return gutil.GetIntByInterface(val)

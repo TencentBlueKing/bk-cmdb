@@ -40,7 +40,7 @@ func NewHttpServer(port uint, addr, sock string) *HttpServer {
 
 	wsContainer := restful.NewContainer()
 
-	// Add container filter to enable CORS
+	// AddUserConfig container filter to enable CORS
 	//	cors := restful.CrossOriginResourceSharing{
 	//		AllowedHeaders: []string{"Content-Type", "Accept"},
 	//		AllowedDomains: []string{},

@@ -47,7 +47,7 @@ func ContainsInt64(set []int64, sub int64) bool {
 }
 
 // ContainsInt if int target in array
-func ContainsInt(set []int, sub int) bool {
+func ContainsInt(set []int64, sub int64) bool {
 	for _, s := range set {
 		if s == sub {
 			return true
