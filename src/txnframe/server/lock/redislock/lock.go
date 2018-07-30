@@ -29,11 +29,13 @@ type RedisLock struct {
 
 // NewLock create lock
 func NewLock(client *redis.Client, prefix string) *RedisLock {
-	return &RedisLock{
+	rl := &RedisLock{
 		storage:    client,
 		prefix:     prefix,
 		noticeChan: make(chan *notice, noticeMaxCount),
 	}
+	go rl.compensation()
+	return rl
 }
 
 // PreLock  lock resources, exclusive mode

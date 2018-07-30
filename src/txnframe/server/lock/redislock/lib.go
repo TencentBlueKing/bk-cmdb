@@ -18,6 +18,7 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/server/lock/types"
 )
 
@@ -150,34 +151,73 @@ func (rl *RedisLock) compensation() {
 			rl.noticeTypeUnlockSuccess(n)
 		}
 	case <-timer.C:
-		rl.noticeTimedTrigger()
+		err := rl.noticeTimedTrigger()
+		if nil != err {
+			blog.Errorf("compensation error:%s", err.Error())
+		}
 	}
 }
 
 func (rl *RedisLock) noticeTimedTrigger() error {
-	handle := func(prefix string, isHash bool) error {
-		var keys []string
-		var err error
-		var cursor uint64
+	prefix := fmt.Sprintf(lockPreFmtStr, rl.prefix, "")
+	relationPrefix := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, "")
+	rl.compensationLock(prefix, relationPrefix)
+	rl.compensationRelation(relationPrefix)
 
-		keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
-		if nil != err && redis.Nil != err {
-			return err
+	prefix = fmt.Sprintf(lockFmtStr, rl.prefix, "")
+	relationPrefix = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "")
+	rl.compensationRelation(prefix)
+
+	return nil
+}
+
+func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
+	var keys []string
+	var err error
+	var cursor uint64
+
+	keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
+	if nil != err && redis.Nil != err {
+		blog.Errorf("compensationLock redis scan error %s", err.Error())
+	}
+	for _, key := range keys {
+		lockInfo, isExist, err := getRedisInfoByKey(rl.storage, key)
+		if nil != err {
+			blog.Errorf("compensationLock %s", err.Error())
+			continue
 		}
-		for _, key := range keys {
-			ret := rl.storage.HLen(key)
-			if nil == ret.Err() || redis.Nil == ret.Err() {
-				if 0 == ret.Val() {
-					rl.storage.Del(key)
-				}
+		if false == isExist {
+			continue
+		}
+		_, isExist, err = getRedisInfoByKey(rl.storage, fmt.Sprintf("%s%s", relationPrefix, lockInfo.LockName))
+		if nil != err {
+			blog.Errorf("compensationLock %s", err.Error())
+			continue
+		}
+		if false == isExist {
+			rl.storage.Del(key)
+		}
+
+	}
+}
+
+func (rl *RedisLock) compensationRelation(prefix string) {
+	var keys []string
+	var err error
+	var cursor uint64
+
+	keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
+	if nil != err && redis.Nil != err {
+		blog.Errorf("compensationRelation redis scan error %s", err.Error())
+	}
+	for _, key := range keys {
+		ret := rl.storage.HLen(key)
+		if nil == ret.Err() || redis.Nil == ret.Err() {
+			if 0 == ret.Val() {
+				rl.storage.Del(key)
 			}
 		}
-		return nil
 	}
-
-	prefix := fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "")
-	return handle(prefix, true)
-
 }
 
 func (rl *RedisLock) noticeTypeUnlockSuccess(n *notice) {

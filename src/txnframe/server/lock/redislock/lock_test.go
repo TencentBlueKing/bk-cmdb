@@ -13,6 +13,7 @@
 package redislock
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -464,6 +465,37 @@ func TestUnLockAll(t *testing.T) {
 	}
 	if nil != err {
 		t.Errorf(err.Error())
+		return
+	}
+
+}
+
+func TestPrivateCompensationNotice(t *testing.T) {
+	lock1 := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+
+	lock2 := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+
+	// hte analog lock alread exists, but the relationship does not exist
+	setKey := fmt.Sprintf(lockPreFmtStr, ss.prefix, lock1.LockName)
+	s.Set(setKey, "{}", 0)
+	locked, err := ss.PreLock(lock1)
+	if nil != err {
+		t.Errorf("lock test lock1 error:%s", err.Error())
+		return
+	}
+	if true == locked {
+		t.Errorf("lock must be false, not true")
 		return
 	}
 

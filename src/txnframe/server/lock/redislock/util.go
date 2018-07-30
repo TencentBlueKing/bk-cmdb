@@ -12,6 +12,12 @@
 package redislock
 
 import (
+	"encoding/json"
+	"fmt"
+
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/server/lock/types"
 )
 
@@ -51,4 +57,24 @@ func lockCompare(val, redisMeta *types.Lock) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func getRedisInfoByKey(storage *redis.Client, key string) (*types.Lock, bool, error) {
+	ret := storage.Get(key)
+
+	if nil == ret.Err() {
+		lockInfo := new(types.Lock)
+		err := json.Unmarshal([]byte(ret.String()), lockInfo)
+		if nil != err {
+			err := fmt.Errorf("redis key %s json unmarshal error, , reply:%s, error:%s", key, ret.String(), err.Error())
+			blog.Error(err.Error())
+			return nil, false, err
+		} else {
+			return lockInfo, true, nil
+		}
+	} else if redis.Nil == ret.Err() {
+		return nil, false, nil
+	}
+
+	return nil, false, ret.Err()
 }
