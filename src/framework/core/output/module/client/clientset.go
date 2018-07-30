@@ -20,18 +20,27 @@ import (
 
 var _ Interface = &Clientset{}
 
+type Params struct {
+	SupplierAccount string
+	UserName        string
+}
+
 type Interface interface {
-	CCV3() v3.CCV3Interface
+	CCV3(params Params) v3.CCV3Interface
 }
 
 type Clientset struct {
 	ccv3 *v3.Client
 }
 
-func (c *Clientset) CCV3() v3.CCV3Interface {
+func (c *Clientset) CCV3(params Params) v3.CCV3Interface {
 	if c == nil {
 		return nil
 	}
+
+	c.ccv3.SetSupplierAccount(params.SupplierAccount)
+	c.ccv3.SetUser(params.UserName)
+
 	return c.ccv3
 }
 

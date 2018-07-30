@@ -44,7 +44,7 @@ func GetActionLanguage(req *restful.Request) string {
 	return language
 }
 
-// GetActionLanguage returns user form hender
+// GetActionUser returns user form hender
 func GetActionUser(req *restful.Request) string {
 	user := req.HeaderParameter(common.BKHTTPHeaderUser)
 	return user
@@ -53,6 +53,7 @@ func GetActionUser(req *restful.Request) string {
 // GetActionOnwerID returns owner_uin form hender
 func GetActionOnwerID(req *restful.Request) string {
 	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
+	blog.Infof("request ownerID : %s", ownerID)
 	return ownerID
 }
 
