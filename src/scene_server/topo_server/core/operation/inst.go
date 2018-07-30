@@ -464,11 +464,37 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 			continue
 		}
 
-		asstVal, err := data.String(attr.GetID())
-		if nil != err {
-			return err
+		// extract the assocaition insts ids
+		asstVal, exists := data.Get(attr.GetID())
+		if !exists {
+			continue
 		}
 
+		asstInstIDS := []int64{}
+		switch targetAssts := asstVal.(type) {
+		default:
+		case string:
+			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
+			for _, asstID := range tmpIDS {
+				if 0 == len(strings.TrimSpace(asstID)) {
+					continue
+				}
+
+				id, err := strconv.ParseInt(asstID, 10, 64)
+				if nil != err {
+					blog.Errorf("[operation-inst] failed to parse  the value(%s), error info is %s", asstID, err.Error())
+					return err
+				}
+				asstInstIDS = append(asstInstIDS, id)
+			}
+
+		case []metatype.InstNameAsst:
+			for _, item := range targetAssts {
+				asstInstIDS = append(asstInstIDS, item.InstID)
+			}
+		}
+
+		// update the inst association
 		for _, asst := range assts {
 			if asst.ObjectAttID != attr.GetID() {
 				continue
@@ -484,31 +510,18 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 				return err
 			}
 
-			if 0 == len(strings.TrimSpace(asstVal)) {
-				continue
-			}
-
 			// create a new new asst
-			asstInstIDS := strings.Split(asstVal, common.InstAsstIDSplit)
 			validInstIDS := []string{}
 			for _, asstInstID := range asstInstIDS {
-				if 0 == len(strings.TrimSpace(asstInstID)) {
-					continue
-				}
-				tmpID, err := strconv.ParseInt(asstInstID, 10, 64)
-				if nil != err {
-					blog.Errorf("[operation-inst] failed to convert value(%v) to int, error info is %s", asstInstID, err.Error())
-					return params.Err.Errorf(common.CCErrCommParamsIsInvalid, attr.GetID())
-				}
 
 				// check the inst id
-				if err := c.isValidInstID(params, metatype.Object{ObjectID: asst.AsstObjID}, tmpID); nil != err {
-					blog.Warnf("[operation-int] the association object(%s)' instid(%d) is invalid", asst.AsstObjID, tmpID)
+				if err := c.isValidInstID(params, metatype.Object{ObjectID: asst.AsstObjID}, asstInstID); nil != err {
+					blog.Warnf("[operation-int] the association object(%s)' instid(%d) is invalid", asst.AsstObjID, asstInstID)
 					continue
 				}
-				validInstIDS = append(validInstIDS, strconv.Itoa(int(tmpID)))
+				validInstIDS = append(validInstIDS, strconv.Itoa(int(asstInstID)))
 				// create a new inst in inst asst table
-				if err = c.asst.CreateCommonInstAssociation(params, &metatype.InstAsst{InstID: currInstID, ObjectID: obj.GetID(), AsstInstID: tmpID, AsstObjectID: asst.AsstObjID}); nil != err {
+				if err = c.asst.CreateCommonInstAssociation(params, &metatype.InstAsst{InstID: currInstID, ObjectID: obj.GetID(), AsstInstID: asstInstID, AsstObjectID: asst.AsstObjID}); nil != err {
 					blog.Errorf("[operation-inst] failed to create inst association, error info is %s", err.Error())
 					return err
 				}
