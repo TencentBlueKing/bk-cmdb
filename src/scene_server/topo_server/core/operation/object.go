@@ -240,7 +240,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			}
 
 			for _, newAttr := range attrs {
-				//fmt.Println("id:", targetAttr.ToMapStr())
+				//fmt.Println("id:", newAttr.Origin().ID, targetAttr.ToMapStr())
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["update_failed"]; ok {
@@ -293,10 +293,10 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 		if nil != err {
 			return nil, err
 		}
+
 		result.Set(objID, frtypes.MapStr{
 			"attr": attrs,
 		})
-
 	}
 
 	return result, nil
