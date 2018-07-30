@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/rs/xid"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -143,11 +145,11 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 				newGrp := o.modelFactory.CreateGroup(params)
 				newGrp.SetName(targetAttr.PropertyGroupName)
+				newGrp.SetID(xid.New().String())
 				newGrp.SetSupplierAccount(params.SupplierAccount)
 				newGrp.SetObjectID(objID)
 				err := newGrp.Save()
 				if nil != err {
-					blog.Errorf("[CreateObjectBatch] save group error: %s", err.Error())
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -168,7 +170,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			// create or update the attribute
 			attrID, err := attr.String(metadata.AttributeFieldPropertyID)
 			if nil != err {
-				blog.Errorf("[CreateObjectBatch] get property_id faile: %s", err.Error())
 				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 				if failed, ok := subResult["insert_failed"]; ok {
 					failedArr := failed.([]string)
@@ -188,7 +189,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
 			attrs, err := o.attr.FindObjectAttribute(params, attrCond)
 			if nil != err {
-				blog.Errorf("[CreateObjectBatch] find attribute faile: %s", err.Error())
 				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 				if failed, ok := subResult["insert_failed"]; ok {
 					failedArr := failed.([]string)
@@ -208,7 +208,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				//fmt.Println("targetattr:", targetAttr.ToMapStr())
 				newAttr := o.modelFactory.CreateAttribute(params)
 				if _, err := newAttr.Parse(targetAttr.ToMapStr()); nil != err {
-					blog.Errorf("[CreateObjectBatch] parse attribute faile: %s", err.Error())
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -224,7 +223,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				}
 
 				if err = newAttr.Save(); nil != err {
-					blog.Errorf("[CreateObjectBatch] save attribute faile: %s", err.Error())
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -244,7 +242,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			for _, newAttr := range attrs {
 				//fmt.Println("id:", targetAttr.ToMapStr())
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
-					blog.Errorf("[CreateObjectBatch] update attribute faile: %s", err.Error())
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["update_failed"]; ok {
 						failedArr := failed.([]string)
