@@ -59,22 +59,29 @@ func lockCompare(val, redisMeta *types.Lock) (bool, error) {
 	return false, nil
 }
 
-func getRedisInfoByKey(storage *redis.Client, key string) (*types.Lock, bool, error) {
-	ret := storage.Get(key)
+func getRedisRelationInfoBy(storage *redis.Client, key, field string) (*types.Lock, bool, error) {
+	return getLockInfoByKey(storage.HGet(key, field).Result())
+}
 
-	if nil == ret.Err() {
+func getRedisLockInfoByKey(storage *redis.Client, key string) (*types.Lock, bool, error) {
+	return getLockInfoByKey(storage.Get(key).Result())
+}
+
+func getLockInfoByKey(str string, err error) (*types.Lock, bool, error) {
+
+	if nil == err {
 		lockInfo := new(types.Lock)
-		err := json.Unmarshal([]byte(ret.String()), lockInfo)
+		err := json.Unmarshal([]byte(str), lockInfo)
 		if nil != err {
-			err := fmt.Errorf("redis key %s json unmarshal error, , reply:%s, error:%s", key, ret.String(), err.Error())
+			err := fmt.Errorf("json unmarshal error, reply:%s, error:%s", str, err.Error())
 			blog.Error(err.Error())
 			return nil, false, err
 		} else {
 			return lockInfo, true, nil
 		}
-	} else if redis.Nil == ret.Err() {
+	} else if redis.Nil == err {
 		return nil, false, nil
 	}
 
-	return nil, false, ret.Err()
+	return nil, false, err
 }

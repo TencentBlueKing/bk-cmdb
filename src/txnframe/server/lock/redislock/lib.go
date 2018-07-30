@@ -72,7 +72,7 @@ func (rl *RedisLock) unlock(lockKey, lockcollectionKey string, meta *types.Lock,
 		}
 		err = rl.storage.HDel(lockcollectionKey, meta.LockName).Err()
 		if nil != err {
-			rl.notice(lockcollectionKey, string(meta.TxnID), meta.LockName, noticTypeErrUnLockCollection)
+			rl.notice(lockcollectionKey, meta.TxnID, meta.LockName, noticTypeErrUnLockCollection)
 		}
 		rl.notice(lockcollectionKey, meta.TxnID, meta.LockName, noticeTypeUnlockSuccess)
 		return nil
@@ -159,14 +159,15 @@ func (rl *RedisLock) compensation() {
 }
 
 func (rl *RedisLock) noticeTimedTrigger() error {
-	prefix := fmt.Sprintf(lockPreFmtStr, rl.prefix, "")
-	relationPrefix := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, "")
+	prefix := fmt.Sprintf(lockPreFmtStr, rl.prefix, "*")
+	relationPrefix := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, "*")
 	rl.compensationLock(prefix, relationPrefix)
-	rl.compensationRelation(relationPrefix)
+	rl.compensationRelation(relationPrefix, true)
 
-	prefix = fmt.Sprintf(lockFmtStr, rl.prefix, "")
-	relationPrefix = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "")
-	rl.compensationRelation(prefix)
+	prefix = fmt.Sprintf(lockFmtStr, rl.prefix, "*")
+	relationPrefix = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "*")
+	rl.compensationLock(prefix, relationPrefix)
+	rl.compensationRelation(relationPrefix, false)
 
 	return nil
 }
@@ -180,8 +181,9 @@ func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
 	if nil != err && redis.Nil != err {
 		blog.Errorf("compensationLock redis scan error %s", err.Error())
 	}
+
 	for _, key := range keys {
-		lockInfo, isExist, err := getRedisInfoByKey(rl.storage, key)
+		lockInfo, isExist, err := getRedisLockInfoByKey(rl.storage, key)
 		if nil != err {
 			blog.Errorf("compensationLock %s", err.Error())
 			continue
@@ -189,7 +191,7 @@ func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
 		if false == isExist {
 			continue
 		}
-		_, isExist, err = getRedisInfoByKey(rl.storage, fmt.Sprintf("%s%s", relationPrefix, lockInfo.LockName))
+		_, isExist, err = getRedisLockInfoByKey(rl.storage, fmt.Sprintf("%s%s", relationPrefix, lockInfo.LockName))
 		if nil != err {
 			blog.Errorf("compensationLock %s", err.Error())
 			continue
@@ -201,7 +203,7 @@ func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
 	}
 }
 
-func (rl *RedisLock) compensationRelation(prefix string) {
+func (rl *RedisLock) compensationRelation(prefix string, isPre bool) {
 	var keys []string
 	var err error
 	var cursor uint64
@@ -215,6 +217,11 @@ func (rl *RedisLock) compensationRelation(prefix string) {
 		if nil == ret.Err() || redis.Nil == ret.Err() {
 			if 0 == ret.Val() {
 				rl.storage.Del(key)
+			} else {
+				err := rl.compensationRelationHashFields(key, isPre)
+				if nil != err {
+					blog.Errorf("compensationRelationHashFields  error %s", err.Error())
+				}
 			}
 		}
 	}
@@ -268,4 +275,46 @@ func (rl *RedisLock) noticTypeErrLockCollection(n *notice) {
 		}
 		time.Sleep(time.Millisecond * 500)
 	}
+}
+
+func (rl *RedisLock) compensationRelationHashFields(key string, isPre bool) error {
+	var fields []string
+	var err error
+	var cursor uint64
+
+	fields, cursor, err = rl.storage.HScan(key, cursor, "", redisScanKeyCount).Result() //Scan(cursor, prefix, redisScanKeyCount).Result()
+	if nil != err && redis.Nil != err {
+		return fmt.Errorf("compensationRelation redis scan error %s", err.Error())
+
+	}
+	for _, field := range fields {
+		relLockInfo, isExist, err := getRedisRelationInfoBy(rl.storage, key, field)
+		if nil != err {
+			blog.Errorf("compensationLock %s", err.Error())
+			continue
+		}
+		if false == isExist {
+			continue
+		}
+		lockKey := ""
+		if isPre {
+			lockKey = fmt.Sprintf("%s%s", lockPreCollectionFmtStr, relLockInfo.LockName)
+		} else {
+			lockKey = fmt.Sprintf("%s%s", lockCollectionFmtStr, relLockInfo.LockName)
+
+		}
+		lockInfo, isExist, err := getRedisLockInfoByKey(rl.storage, lockKey)
+		if nil != err {
+			blog.Errorf("compensationLock %s", err.Error())
+			continue
+		}
+		if false == isExist {
+			rl.storage.HDel(key, field)
+		} else if lockInfo.TxnID != relLockInfo.TxnID || lockInfo.SubTxnID != relLockInfo.SubTxnID {
+			rl.storage.HDel(key, field)
+		}
+
+	}
+
+	return nil
 }
