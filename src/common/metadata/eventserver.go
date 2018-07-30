@@ -104,7 +104,6 @@ type EventInst struct {
 	Data        []EventData `json:"data"`
 	OwnerID     string      `json:"bk_supplier_account"`
 	RequestID   string      `json:"request_id"`
-	OwnerID     string      `json:"supplier_account"`
 	RequestTime types.Time  `json:"request_time"`
 }
 
