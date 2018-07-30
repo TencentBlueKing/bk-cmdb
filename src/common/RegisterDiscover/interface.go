@@ -20,10 +20,10 @@ type RegDiscvServer interface {
 	Start() error
 	// stop the register and discover service
 	Stop() error
-	// register server info into registe-discover service platform
-	Register(key string, data []byte) error
 	// RegisterAndWatch register server info into registe-discover service platform, and watch the info, if not exist, then register again
 	RegisterAndWatch(key string, data []byte) error
+	// GetServNodes get server nodes
+	GetServNodes(key string) ([]string, error)
 	// discover server from the registe-discover service platform
 	Discover(key string) (<-chan *DiscoverEvent, error)
 }

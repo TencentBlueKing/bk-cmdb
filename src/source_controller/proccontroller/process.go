@@ -16,16 +16,16 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+    "context"
 
-	"configcenter/src/common/blog"
+    "configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/proccontroller/app"
 	"configcenter/src/source_controller/proccontroller/app/options"
-
+    "configcenter/src/common"
+    "configcenter/src/common/types"
+	
 	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
-	"configcenter/src/common/types"
 )
 
 func main() {
@@ -39,8 +39,12 @@ func main() {
 	op.AddFlags(pflag.CommandLine)
 
 	util.InitFlags()
+	
+	if err := common.SavePid(); err != nil {
+	    blog.Error("fail to save pid. err: %s", err.Error())
+    }
 
-	if err := app.Run(op); err != nil {
+	if err := app.Run(context.Background() ,op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}

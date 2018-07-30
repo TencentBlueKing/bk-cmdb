@@ -13,25 +13,24 @@
 package host
 
 import (
-    "context"
+	"context"
+	"net/http"
 
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
 type HostInterface interface {
-    GetHostByID(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    GetHosts(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error)
-    AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    GetHostSnap(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.HostInstanceResult, err error)
+	GetHosts(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error)
+	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	GetHostSnap(ctx context.Context, hostID string, h http.Header) (resp *metadata.GetHostSnapResult, err error)
 }
 
 func NewHostInterface(client rest.ClientInterface) HostInterface {
-    return &hostctrl{client:client}
+	return &hostctrl{client: client}
 }
 
 type hostctrl struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

@@ -13,7 +13,6 @@
 package language
 
 import (
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +20,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 // ccErrorHelper CC 错误处理接口的实现
@@ -51,7 +52,7 @@ func (cli *ccLanguageHelper) Languagef(language string, key string, args ...inte
 
 // load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
-	blog.InfoJSON("loaded language resource: %s", lang)
+	// blog.V(3).Infof("loaded language resource: %#v", lang)
 	cli.lang = lang
 }
 
@@ -102,7 +103,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 		return nil
 
 	})
-	blog.Infof("loaded language from dir %v", langMap)
+	// blog.Infof("loaded language from dir %v", langMap)
 
 	if walkerr != nil {
 		return nil, walkerr

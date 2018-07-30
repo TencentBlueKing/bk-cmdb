@@ -13,12 +13,13 @@
 package mgoclient
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/storage"
 	"errors"
 	"fmt"
 	"strings"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage"
 
 	// "log"
 	// "os"
@@ -29,6 +30,29 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type MongoConfig struct {
+	Address      string
+	User         string
+	Password     string
+	Database     string
+	Port         string
+	MaxOpenConns string
+	MaxIdleConns string
+	Mechanism    string
+}
+
+func NewMongoConfig(src map[string]string) *MongoConfig {
+	config := MongoConfig{}
+	config.Address = src["mongodb.host"]
+	config.User = src["mongodb.usr"]
+	config.Password = src["mongodb.pwd"]
+	config.Database = src["mongodb.database"]
+	config.Port = src["mongodb.port"]
+	config.MaxOpenConns = src["mongodb.maxOpenConns"]
+	config.MaxIdleConns = src["mongodb.maxIDleConns"]
+	return &config
+}
+
 type MgoCli struct {
 	host      string
 	port      string
@@ -37,6 +61,10 @@ type MgoCli struct {
 	dbName    string
 	mechanism string
 	session   *mgo.Session
+}
+
+func NewFromConfig(cfg MongoConfig) (*MgoCli, error) {
+	return NewMgoCli(cfg.Address, cfg.Port, cfg.User, cfg.Password, cfg.Mechanism, cfg.Database)
 }
 
 func NewMgoCli(host, port, usr, pwd, mechanism, database string) (*MgoCli, error) {
@@ -142,11 +170,7 @@ func (m *MgoCli) GetOneByCondition(cName string, fields []string, condiction int
 	if 0 < len(fieldmap) {
 		query.Select(fieldmap)
 	}
-	err := query.One(result)
-	if err != nil {
-		return err
-	}
-	return nil
+	return query.One(result)
 }
 
 // GetMutilByCondition get multiple document by condiction
@@ -182,6 +206,9 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 	}
 	err := query.All(result)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -337,4 +364,9 @@ func (m *MgoCli) GetType() string {
 // IsDuplicateErr returns whether err is duplicate error
 func (m *MgoCli) IsDuplicateErr(err error) bool {
 	return mgo.IsDup(err)
+}
+
+// IsNotFoundErr returns whether err is not found error
+func (m *MgoCli) IsNotFoundErr(err error) bool {
+	return mgo.ErrNotFound == err
 }

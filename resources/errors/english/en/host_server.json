@@ -29,6 +29,17 @@
 	"1110028": "Failed to modify host relationship",
 	"1110029": "Failed to add host to module",
 	"1110030": "Failed to add host to module, error:%s",
-
+	
+	"1110040": "Create custom query failed, error %s",
+	"1110041": "Modify custom query failed, error %s",
+	"1110042": "Delete custom query failed, error %s",
+	"1110043": "Search custom query failed, error %s",
+	"1110044": "Get custom query details failed, error %s",
+	"1110045": "Failed to get host relationship, error %s",
+	"1110046": "Failed to get set information, error %s",
+	"1110047": "Failed to get application information, error %s",
+	"1110048": "%v appliction not found",
+	"1110049": "Failed to get module information, error %s",
+	"1110050": "Get host agent status, error %s",
 	"": ""
 }

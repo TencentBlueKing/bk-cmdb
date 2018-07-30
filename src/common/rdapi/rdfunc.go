@@ -13,16 +13,20 @@
 package rdapi
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
-	"encoding/json"
-	"io"
-	"net/http"
-
-	restful "github.com/emicklei/go-restful"
+	"github.com/rs/xid"
 )
 
 var (
@@ -37,7 +41,7 @@ func GetRdAddrSrvHandle(typeSrv string, addrSrv api.AddrSrv) func() string {
 	srvNames[typeSrv] = 1
 	return func() string {
 		url, err := addrSrv.GetServer(typeSrv)
-		// blog.Infof("GetRdAddrSrvHandle  get %s url:%s", typeSrv, url)
+		blog.V(3).Infof("GetRdAddrSrvHandle  get %s url:%s", typeSrv, url)
 		if nil != err {
 			blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
 			return ""
@@ -63,7 +67,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 			io.WriteString(resp, rsp)
 			return
 		}
-		blog.Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
+		blog.V(3).Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
 
 		defErr := cli.Error.CreateDefaultCCErrorIf(language)
 		if nil != err {
@@ -112,7 +116,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 		for _, typeSrv := range typeSrvs {
 			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
+			blog.V(3).Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
 			if nil != err {
 				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
 				resp.WriteHeader(http.StatusBadGateway)
@@ -147,7 +151,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
 	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	// blog.Infof("rd http header %v", req.Request.Header)
+	blog.V(5).Infof("rd http header %v", req.Request.Header)
 	if "" == ownerId {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
@@ -159,11 +163,21 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 }
 
-func AllGlobalFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		cli := api.NewAPIResource()
+
+		generateHttpHeaderRID(req, resp)
+
+		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
+		for _, url := range whilteListSuffix {
+			if strings.HasSuffix(req.Request.URL.Path, url) {
+				fchain.ProcessFilter(req, resp)
+				return
+			}
+		}
+
 		language := util.GetActionLanguage(req)
-		defErr := cli.Error.CreateDefaultCCErrorIf(language)
+		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
 		if common.CCSuccess != errNO {
@@ -176,36 +190,6 @@ func AllGlobalFilter() func(req *restful.Request, resp *restful.Response, fchain
 		if 1 < len(fchain.Filters) {
 			fchain.ProcessFilter(req, resp)
 			return
-		}
-
-		for typeSrv := range srvNames {
-			url, err := cli.AddrSrv.GetServer(typeSrv)
-			// blog.Infof("AllGlobalFilter %s url:%s", typeSrv, url)
-			if nil != err {
-				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusBadGateway)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-
-				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-
-			} else if "" == url {
-				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusBadGateway)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-			}
 		}
 
 		fchain.ProcessFilter(req, resp)
@@ -239,7 +223,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 
 		for _, typeSrv := range typeSrvs {
 			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.Infof("GlobalFilter %s url:%s", typeSrv, url)
+			blog.V(3).Infof("GlobalFilter %s url:%s", typeSrv, url)
 			if nil != err {
 				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
 				resp.WriteHeader(http.StatusBadGateway)
@@ -297,4 +281,21 @@ func createAPIRspStr(errcode int, info interface{}) (string, error) {
 	s, err := json.Marshal(rsp)
 
 	return string(s), err
+}
+
+func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
+	unused := "0000"
+	cid := util.GetHTTPCCRequestID(req.Request.Header)
+	if "" == cid {
+		cid = generateRID(unused)
+		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
+	}
+	// todo support esb request id
+
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+}
+
+func generateRID(unused string) string {
+	id := xid.New()
+	return fmt.Sprintf("cc%s%s", unused, id.String())
 }

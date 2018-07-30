@@ -13,10 +13,6 @@
 package rdiscover
 
 import (
-	"configcenter/src/common/RegisterDiscover"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,6 +21,11 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"configcenter/src/common/RegisterDiscover"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
 )
 
 // RegDiscover register and discover

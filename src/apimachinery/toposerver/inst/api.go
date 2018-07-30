@@ -14,53 +14,42 @@ package inst
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/topo_service/actions/inst"
-	"configcenter/src/source_controller/common/commondata"
 )
 
 type InstanceInterface interface {
-	// app operation
-	CreateApp(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error)
-	DeleteApp(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateApp(ctx context.Context, appID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateAppDataStatus(ctx context.Context, flag common.DataStatusFlag, appID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SearchApp(ctx context.Context, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	GetDefaultApp(ctx context.Context, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	CreateDefaultApp(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-
-	// inst operation
-	CreateInst(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteInst(ctx context.Context, objID string, instID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateInst(ctx context.Context, objID string, instID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SelectInsts(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	SelectInstsAndAsstDetail(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	InstSearch(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	SelectInstsByAssociation(ctx context.Context, objID string, h util.Headers, p *inst.AssociationParams) (resp *api.BKAPIRsp, err error)
-	SelectInst(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	SelectTopo(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error)
-	SelectAssociationTopo(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error)
-
-	// module operation
-	CreateModule(ctx context.Context, appID string, setID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SearchModule(ctx context.Context, appID string, setID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-
-	// set operation
-	CreateSet(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteSet(ctx context.Context, appID string, setID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateSet(ctx context.Context, appID string, setID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SearchSet(ctx context.Context, ownerID string, appID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error)
-
-	// common operation
-	QueryAudit(ctx context.Context, h util.Headers, input *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error)
-	GetInternalModule(ctx context.Context, ownerID, appID string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	CreateApp(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
+	DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string, h http.Header) (resp *metadata.Response, err error)
+	SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.CreateInstResult, err error)
+	QueryAudit(ctx context.Context, ownerID string, h http.Header, input *metadata.QueryInput) (resp *metadata.Response, err error)
+	GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error)
+	CreateInst(ctx context.Context, ownerID string, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error)
+	DeleteInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header) (resp *metadata.Response, err error)
+	UpdateInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SelectInstsAndAsstDetail(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	InstSearch(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error)
+	SelectInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
+	DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	CreateSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
+	DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 }
 
 type instanceClient struct {
