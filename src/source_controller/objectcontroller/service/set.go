@@ -76,6 +76,7 @@ func (cli *Service) getModuleConfigCount(con map[string]interface{}) (int, error
 }
 
 func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restful.Request) error {
+	ownerID := util.GetOwnerID(req.Request.Header)
 	tableName := "cc_ModuleHostConfig"
 
 	appID, ok := input[common.BKAppIDField]
@@ -90,7 +91,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 		return getErr
 	}
 
-	setID, moduleID, defErr := cli.GetIdleModule(appID)
+	setID, moduleID, defErr := cli.GetIdleModule(appID, ownerID)
 	if nil != defErr {
 		blog.Errorf("get idle module error:%v", defErr)
 		return defErr
@@ -168,7 +169,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	return nil
 }
 
-func (cli *Service) GetIdleModule(appID interface{}) (interface{}, interface{}, error) {
+func (cli *Service) GetIdleModule(appID interface{}, ownerID string) (interface{}, interface{}, error) {
 	params := common.KvMap{common.BKAppIDField: appID, common.BKDefaultField: common.DefaultResModuleFlag, common.BKModuleNameField: common.DefaultResModuleName}
 	params = util.SetModOwner(params, ownerID)
 	var result bson.M
