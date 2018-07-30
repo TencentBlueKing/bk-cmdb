@@ -557,10 +557,32 @@ func (a *attribute) GetName() string {
 
 func (a *attribute) SetGroup(grp Group) {
 	a.attr.PropertyGroup = grp.GetID()
+	a.attr.PropertyGroupName = grp.GetName()
 }
 
 func (a *attribute) GetGroup() (Group, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
+	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
+
+	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.GetObjectID(), a.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())
+		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.GetObjectID(), cond.ToMapStr(), rsp.ErrMsg)
+		return nil, a.params.Err.Error(rsp.Code)
+	}
+
+	if 0 == len(rsp.Data) {
+		return CreateGroup(a.params, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+	}
+
+	return CreateGroup(a.params, a.clientSet, rsp.Data)[0], nil // should be one group
 }
 
 func (a *attribute) SetGroupIndex(attGroupIndex int64) {
