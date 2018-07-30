@@ -26,7 +26,7 @@ import (
 
 func TestPreLock(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -45,7 +45,7 @@ func TestPreLock(t *testing.T) {
 
 func TestPreLockGetMulti(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -74,7 +74,7 @@ func TestPreLockGetMulti(t *testing.T) {
 
 func TestPreLockErr(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -108,7 +108,7 @@ func TestPreLockErr(t *testing.T) {
 
 func TestPreUnlock(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -144,7 +144,7 @@ func TestPreUnlock(t *testing.T) {
 
 func TestPreUnlockErr(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -174,7 +174,7 @@ func TestPreUnlockErr(t *testing.T) {
 
 func TestLock(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -198,7 +198,7 @@ func TestLock(t *testing.T) {
 
 func TestLockGetMulti(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -228,7 +228,7 @@ func TestLockGetMulti(t *testing.T) {
 
 func TestLockGetMultiSameMasterID(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -264,7 +264,7 @@ func TestLockGetMultiSameMasterID(t *testing.T) {
 
 func TestLockErr(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -303,7 +303,7 @@ func TestLockErr(t *testing.T) {
 
 func TestUnlock(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -339,7 +339,7 @@ func TestUnlock(t *testing.T) {
 
 func TestUnlockErr(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -397,7 +397,7 @@ func TestUnlockErr(t *testing.T) {
 
 func TestUnLockAll(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 	lock := &types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -485,7 +485,7 @@ func TestPrivateCompensationNoticeLockErr(t *testing.T) {
 	}
 
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 
 	// lock alread exists, but the relationship does not exist
 	setKey := fmt.Sprintf(lockPreFmtStr, ss.prefix, lock1.LockName)
@@ -519,7 +519,7 @@ func TestPrivateCompensationNoticeLockErr(t *testing.T) {
 
 func TestPrivateCompensationNoticeSuccess(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 
 	lock := &types.Lock{
 		TxnID:    "1",
@@ -528,7 +528,7 @@ func TestPrivateCompensationNoticeSuccess(t *testing.T) {
 	}
 
 	// test compensation delete redis emtpy hash key
-	setKey := fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
+	setKey := getFmtRedisKey(ss.prefix, lock.TxnID, true, true) //fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
 	locked, err := ss.PreLock(lock)
 	if nil != err {
 		t.Error(err.Error())
@@ -553,7 +553,7 @@ func TestPrivateCompensationNoticeSuccess(t *testing.T) {
 func TestPrivateCompensationRelationNotDel(t *testing.T) {
 
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 
 	lock := &types.Lock{
 		TxnID:    "1",
@@ -561,7 +561,7 @@ func TestPrivateCompensationRelationNotDel(t *testing.T) {
 		Timeout:  time.Second,
 	}
 	// test compensation,  lock key is delete bu relation key not delete
-	setKey := fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
+	setKey := getFmtRedisKey(ss.prefix, lock.TxnID, true, true) //fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
 	ok, err := s.HSet(setKey, lock.LockName, "{}").Result()
 	if nil != err {
 		t.Errorf("set hash key %s field %s error, error:%s", setKey, lock.LockName, err.Error())
@@ -587,7 +587,7 @@ func TestPrivateCompensationRelationNotDel(t *testing.T) {
 
 func TestPrivateCompensationTimeTrigger(t *testing.T) {
 	s := getRedisInstance()
-	ss := NewLock(s, "cc")
+	ss := NewLock(s, "cc", 10, 120, LockCompare, LockCompare)
 
 	lock := &types.Lock{
 		TxnID:    "1",
@@ -645,7 +645,7 @@ func TestPrivateCompensationTimeTrigger(t *testing.T) {
 		t.Errorf("set key %s  value %s error, error:%s", setKey, str, err.Error())
 		return
 	}
-	setRelKey := fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
+	setRelKey := getFmtRedisKey(ss.prefix, lock.TxnID, false, true) //fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
 	err = s.HSet(setRelKey, lock.LockName, str1).Err()
 	if nil != err {
 		t.Errorf("set key %s  value %s error, error:%s", setRelKey, str1, err.Error())
@@ -680,7 +680,7 @@ func TestPrivateCompensationTimeTrigger(t *testing.T) {
 		t.Errorf("set key %s  value %s error, error:%s", setKey, str, err.Error())
 		return
 	}
-	setRelKey = fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
+	setRelKey = getFmtRedisKey(ss.prefix, lock.TxnID, false, true) //fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
 	err = s.HSet(setRelKey, lock.LockName, str1).Err()
 	if nil != err {
 		t.Errorf("set key %s  value %s error, error:%s", setRelKey, str1, err.Error())

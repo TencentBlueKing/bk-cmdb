@@ -22,18 +22,18 @@ import (
 )
 
 const (
-	lockPreCollectionFmtStr = "%s:lock:table:id:%s"
-	lockPreFmtStr           = "%s:lock:table:%s"
+	lockPreRelationFmtStr = "%s:lock:pre:id:%s"
+	lockPreFmtStr         = "%s:lock:pre:name:%s"
 
-	lockCollectionFmtStr = "%s:lock:id:%s"
-	lockFmtStr           = "%s:lock:%s"
+	lockRelationFmtStr = "%s:lock:detail:id:%s"
+	lockFmtStr         = "%s:lock:detail:name:%s"
 
 	noticeMaxCount = 500
 
 	redisScanKeyCount = 256
 )
 
-type compareFunc func(val, redisVal *types.Lock) (bool, error)
+type CompareFunc func(val, redisVal *types.Lock) (bool, error)
 
 type noticType int
 
@@ -52,7 +52,7 @@ type notice struct {
 	noticType noticType
 }
 
-func lockCompare(val, redisMeta *types.Lock) (bool, error) {
+func LockCompare(val, redisMeta *types.Lock) (bool, error) {
 	if redisMeta.TxnID == val.TxnID {
 		return true, nil
 	}
@@ -68,7 +68,6 @@ func getRedisLockInfoByKey(storage *redis.Client, key string) (*types.Lock, bool
 }
 
 func getLockInfoByKey(str string, err error) (*types.Lock, bool, error) {
-
 	if nil == err {
 		lockInfo := new(types.Lock)
 		err := json.Unmarshal([]byte(str), lockInfo)
@@ -84,4 +83,22 @@ func getLockInfoByKey(str string, err error) (*types.Lock, bool, error) {
 	}
 
 	return nil, false, err
+}
+
+func getFmtRedisKey(prefix, name string, isPre, isRelation bool) string {
+	if isPre {
+		if isRelation {
+			return fmt.Sprintf(lockPreRelationFmtStr, prefix, name)
+		} else {
+			return fmt.Sprintf(lockPreFmtStr, prefix, name)
+		}
+	} else {
+		if isRelation {
+			return fmt.Sprintf(lockRelationFmtStr, prefix, name)
+		} else {
+			return fmt.Sprintf(lockFmtStr, prefix, name)
+		}
+	}
+
+	return ""
 }
