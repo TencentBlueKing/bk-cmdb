@@ -68,6 +68,9 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 		if 0 == len(tag) || strings.Contains(tag, "ignoretomap") {
 			continue
 		}
+		if 0 == len(tag) || strings.Contains(tag, ",omitempty") {
+			continue
+		}
 		tags := strings.Split(tag, ",")
 
 		fieldValue := targetValue.FieldByName(structField.Name)
