@@ -133,6 +133,9 @@ const (
 	// CCErrCommXXExceedLimit  xx exceed limit number
 	CCErrCommXXExceedLimit = 1199035
 
+	CCErrProxyRequestFailed      = 1199036
+	CCErrRewriteRequestUriFailed = 1199037
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -243,6 +246,8 @@ const (
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
 	CCErrTopoBizTopoLevelOverLimit = 1101035
+	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
+	CCErrTopoInstHasBeenAssociation = 1101036
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -302,10 +307,12 @@ const (
 	// CCErrEventSubscribeUpdateFailed failed to update the filed
 	CCErrEventSubscribeUpdateFailed = 1103003
 
-	// CCErrEventSubscribePingFailed failed to ping the filed
+	// CCErrEventSubscribePingFailed failed to ping the target
 	CCErrEventSubscribePingFailed = 1103004
-	// CCErrEventSubscribePingFailed failed to telnet the filed
+	// CCErrEventSubscribePingFailed failed to telnet the target
 	CCErrEventSubscribeTelnetFailed = 1103005
+	// CCErrEventOperateSuccessBUtSentEventFailed failed to sent event
+	CCErrEventPushEventFailed = 1103006
 
 	// host 1104XXX
 	CCErrHostModuleRelationAddFailed = 1104000
@@ -337,9 +344,16 @@ const (
 	CCErrHostGetSnapshotChannelClose     = 1106020
 
 	// proccontroller 1107XXX
-	CCErrProcDeleteProc2Module = 1107001
-	CCErrProcCreateProc2Module = 1107002
-	CCErrProcSelectProc2Module = 1107003
+	CCErrProcDeleteProc2Module   = 1107001
+	CCErrProcCreateProc2Module   = 1107002
+	CCErrProcSelectProc2Module   = 1107003
+	CCErrProcCreateProcConf      = 1107004
+	CCErrProcDeleteProcConf      = 1107005
+	CCErrProcGetProcConf         = 1107006
+	CCErrProcUpdateProcConf      = 1107007
+	CCErrProcCreateInstanceModel = 1107008
+	CCErrProcGetInstanceModel    = 1107009
+	CCErrProcDeleteInstanceModel = 1107010
 
 	// procserver 1108XXX
 	CCErrProcSearchDetailFaile       = 1108001
@@ -350,6 +364,10 @@ const (
 	CCErrProcSearchProcessFaile      = 1108006
 	CCErrProcDeleteProcessFaile      = 1108007
 	CCErrProcCreateProcessFaile      = 1108008
+	CCErrProcFieldValidFaile         = 1108009
+	CCErrProcGetByApplicationIDFail  = 1108010
+	CCErrProcGetByIP                 = 1108011
+	CCErrProcOperateFaile            = 1108012
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -386,6 +404,19 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
+
+	// hostserver api machinery new error code
+	CCErrAddUserCustomQueryFaild       = 1110040
+	CCErrUpdateUserCustomQueryFaild    = 1110041
+	CCErrDeleteUserCustomQueryFaild    = 1110042
+	CCErrSearchUserCustomQueryFaild    = 1110043
+	CCErrGetUserCustomQueryDetailFaild = 1110044
+	CCErrHostModuleConfigFaild         = 1110045
+	CCErrHostGetSetFaild               = 1110046
+	CCErrHostGetAPPFail                = 1110047
+	CCErrHostAPPNotFoundFail           = 1110048
+	CCErrHostGetModuleFail             = 1110049
+	CCErrHostAgentStatusFail           = 1110050
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001

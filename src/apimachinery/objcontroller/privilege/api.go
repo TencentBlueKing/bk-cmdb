@@ -14,20 +14,26 @@ package privilege
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 )
 
 type PrivilegeInterface interface {
-	CreateUserGroupPrivi(ctx context.Context, groupID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateUserGroupPrivi(ctx context.Context, groupID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-	GetUserGroupPrivi(ctx context.Context, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	CreateRolePri(ctx context.Context, objID string, propertyID string, h util.Headers, role []string) (resp *api.BKAPIRsp, err error)
-	GetRolePri(ctx context.Context, objID string, propertyID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateRolePri(ctx context.Context, objID string, propertyID string, h util.Headers, role []string) (resp *api.BKAPIRsp, err error)
-	GetSystemFlag(ctx context.Context, flag string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	CreateUserGroup(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateUserGroup(ctx context.Context, ownerID string, groupID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	DeleteUserGroup(ctx context.Context, ownerID string, groupID string, h http.Header) (resp *metadata.Response, err error)
+	SearchUserGroup(ctx context.Context, ownerID string, h http.Header, dat interface{}) (resp *metadata.PermissionGroupListResult, err error)
+
+	CreateUserGroupPrivi(ctx context.Context, ownerID string, groupID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	UpdateUserGroupPrivi(ctx context.Context, ownerID string, groupID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	GetUserGroupPrivi(ctx context.Context, ownerID string, groupID string, h http.Header) (resp *metadata.GroupPriviResult, err error)
+
+	CreateRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header, role []string) (resp *metadata.Response, err error)
+	GetRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateRolePri(ctx context.Context, ownerID string, objID string, propertyID string, h http.Header, role []string) (resp *metadata.Response, err error)
+	GetSystemFlag(ctx context.Context, ownerID string, flag string, h http.Header) (resp *metadata.PermissionSystemResponse, err error)
 }
 
 func NewPrivilegeInterface(client rest.ClientInterface) PrivilegeInterface {

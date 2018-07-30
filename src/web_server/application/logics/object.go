@@ -13,15 +13,17 @@
 package logics
 
 import (
+	"encoding/json"
+	_ "errors" //
+	"fmt"
+	"net/http"
+
+	"github.com/bitly/go-simplejson"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	_ "errors" //
-	"fmt"
-	"github.com/bitly/go-simplejson"
-	"net/http"
 )
 
 // GetObjectData get object data

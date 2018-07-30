@@ -13,18 +13,21 @@
 package user
 
 import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/web_server/application/middleware/types"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
-	"time"
 )
 
 type OwnerManager struct {
@@ -40,7 +43,7 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager.httpCli = httpclient.NewHttpClient()
 	ownerManager.httpCli.SetHeader(common.BKHTTPHeaderUser, userName)
 	ownerManager.httpCli.SetHeader(common.BKHTTPLanguage, language)
-	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	ownerManager.httpCli.SetHeader(common.BKHTTPOwnerID, ownerID)
 	return ownerManager
 }
 
@@ -105,7 +108,7 @@ func (m *OwnerManager) addDefaultApp() error {
 		return err
 	}
 
-	if result.Code != common.CCSuccess {
+	if result.Code != common.CCSuccess && result.Code != common.CCErrCommDuplicateItem {
 		return fmt.Errorf("create app faild %s", result.Message)
 	}
 	return nil
@@ -136,10 +139,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, error) {
 		return false, fmt.Errorf("search default app err: %s", result.Message)
 	}
 
-	if 0 >= result.Data.Count {
-		return false, nil
-	}
-	return true, nil
+	return 0 < result.Data.Count, nil
 }
 
 func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, error) {
@@ -156,64 +156,14 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 		return nil, fmt.Errorf("get object fields faile: %s", replyVal.Get(common.HTTPBKAPIErrorMessage))
 	}
 
-	fields := []map[string]interface{}{}
-	json.Unmarshal([]byte(replyVal.Get("data").String()), &fields)
+	fields := []metadata.Attribute{}
+	err = json.Unmarshal([]byte(replyVal.Get("data").String()), &fields)
+	if nil != err {
+		return nil, err
+	}
 
 	ret := map[string]interface{}{}
-	type intOptionType struct {
-		Min int
-		Max int
-	}
-	type EnumOptionType struct {
-		Name string
-		Type string
-	}
-
-	for _, mapField := range fields {
-		fieldName, _ := mapField["bk_property_id"].(string)
-		fieldType, _ := mapField["bk_property_type"].(string)
-		option, _ := mapField["option"]
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			ret[fieldName] = ""
-		case common.FieldTypeLongChar:
-			ret[fieldName] = ""
-		case common.FieldTypeInt:
-			ret[fieldName] = nil
-		case common.FieldTypeEnum:
-			enumOptions := validator.ParseEnumOption(option)
-			v := ""
-			if len(enumOptions) > 0 {
-				var defaultOption *validator.EnumVal
-				for _, k := range enumOptions {
-					if k.IsDefault {
-						defaultOption = &k
-						break
-					}
-				}
-				if nil != defaultOption {
-					v = defaultOption.ID
-				}
-			}
-			ret[fieldName] = v
-		case common.FieldTypeDate:
-			ret[fieldName] = ""
-		case common.FieldTypeTime:
-			ret[fieldName] = ""
-		case common.FieldTypeUser:
-			ret[fieldName] = ""
-		case common.FieldTypeMultiAsst:
-			ret[fieldName] = nil
-		case common.FieldTypeTimeZone:
-			ret[fieldName] = nil
-		case common.FieldTypeBool:
-			ret[fieldName] = false
-		default:
-			ret[fieldName] = nil
-		}
-		blog.Infof("set field %s to %+v", fieldName, ret[fieldName])
-
-	}
+	validator.FillLostedFieldValue(ret, fields, nil)
 	return ret, nil
 }
 

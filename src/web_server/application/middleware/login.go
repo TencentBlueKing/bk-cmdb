@@ -13,17 +13,18 @@
 package middleware
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/web_server/application/middleware/auth"
 	"configcenter/src/web_server/application/middleware/user"
 	webCommon "configcenter/src/web_server/common"
-	"fmt"
-	"strings"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
 )
 
 var APIAddr func() string
@@ -125,8 +126,8 @@ func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage stri
 				blog.Errorf("init owner fail %s", err.Error())
 				return true
 			}
-		}
 
+		}
 		session.Set("userName", "admin")
 		session.Set("role", "1")
 		session.Set(webCommon.IsSkipLogin, "1")

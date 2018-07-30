@@ -14,29 +14,31 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
-    "fmt"
 )
 
 func main() {
-    c := util.APIMachineryConfig{
-        ZkAddr: "127.0.0.1:2181",
-        QPS: 100,
-        Burst: 200,
-        TLSConfig: &util.TLSClientConfig{
-            InsecureSkipVerify: false,
-            CertFile: "",
-            KeyFile: "",
-            CAFile: "",
-            Password: "",
-        },
-    }
-	
+	c := util.APIMachineryConfig{
+		ZkAddr: "127.0.0.1:2181",
+		QPS:    100,
+		Burst:  200,
+		TLSConfig: &util.TLSClientConfig{
+			InsecureSkipVerify: false,
+			CertFile:           "",
+			KeyFile:            "",
+			CAFile:             "",
+			Password:           "",
+		},
+	}
+
 	clientset, err := apimachinery.NewApiMachinery(&c)
 	if err != nil {
-	    fmt.Println(err)
-	    return 
-    }
-	clientset.TopoServer().Instance().CreateApp(context.Background(), util.Headers{})
+		fmt.Println(err)
+		return
+	}
+	clientset.TopoServer().Instance().CreateApp(context.Background(), "id", http.Header{})
 }

@@ -13,19 +13,18 @@
 package user
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/web_server/application/middleware/types"
-	//"configcenter/src/web_server/application/middleware/user"
-	webCommon "configcenter/src/web_server/common"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/httpclient"
+	"configcenter/src/web_server/application/middleware/types"
+	webCommon "configcenter/src/web_server/common"
 )
 
 type publicUser struct {

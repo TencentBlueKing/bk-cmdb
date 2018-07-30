@@ -63,6 +63,13 @@ def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_use
     pwd = $redis_pass
     database = 0
 
+    [discover-redis]
+    host = $redis_host
+    usr = $redis_user
+    pwd = $redis_pass
+    database = 0
+    chan = 3_snapshot
+
     [redis]
     host = $redis_host
     usr = $redis_user

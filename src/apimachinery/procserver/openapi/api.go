@@ -13,22 +13,22 @@
 package openapi
 
 import (
-    "context"
+	"context"
+	"net/http"
 
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
 type OpenAPIClientInterface interface {
-    GetProcessPortByApplicationID(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    GetProcessPortByIP(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat []map[string]interface{}) (resp *metadata.Response, err error)
+	GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 }
 
 func NewOpenApiClientInterface(client rest.ClientInterface) OpenAPIClientInterface {
-    return &openapi{client: client}
+	return &openapi{client: client}
 }
 
 type openapi struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

@@ -34,6 +34,7 @@ const (
 	CC_MODULE_APISERVER        = "apiserver"
 	CC_MODULE_WEBSERVER        = "webserver"
 	CC_MODULE_EVENTSERVER      = "eventserver"
+	GSE_MODULE_PROCSERVER      = "gseprocserver"
 )
 
 // AllModule all cc module
@@ -55,6 +56,8 @@ var AllModule = map[string]bool{
 // cc functionality define
 const (
 	CCFunctionalityServicediscover = "servicediscover"
+	CCFunctionalityMongo           = "mongo"
+	CCFunctionalityRedis           = "redis"
 )
 
 // ServerInfo define base server information
@@ -79,11 +82,6 @@ type WebServerInfo struct {
 
 // AuditControllerServInfo audit-controller server information
 type AuditControllerServInfo struct {
-	ServerInfo
-}
-
-// DataCollectionControllerServInfo data-collection-controller server information
-type DataCollectionControllerServInfo struct {
 	ServerInfo
 }
 

@@ -225,7 +225,7 @@ func (a *AsstObjectInst) getAsstInstByAsstObjectConds() error {
 }
 
 func (a *AsstObjectInst) getInstIDFromMapByObjectID(objType string, mapInst map[string]interface{}) (int64, error) {
-	idField := util.GetObjIDByType(objType)
+	idField := common.GetInstIDField(objType)
 	idInterface, ok := mapInst[idField]
 	if false == ok {
 		return 0, fmt.Errorf("%s %s not found", objType, idField)

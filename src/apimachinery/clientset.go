@@ -13,46 +13,51 @@
 package apimachinery
 
 import (
+	"configcenter/src/apimachinery/adminserver"
+	"configcenter/src/apimachinery/auditcontroller"
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/apimachinery/gseprocserver"
+	"configcenter/src/apimachinery/healthz"
+	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
 	"configcenter/src/apimachinery/objcontroller"
+	"configcenter/src/apimachinery/proccontroller"
+	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/procserver"
-    "configcenter/src/apimachinery/adminserver"
-    "configcenter/src/apimachinery/eventserver"
-    "configcenter/src/apimachinery/auditcontroller"
-    "configcenter/src/apimachinery/proccontroller"
-    "configcenter/src/apimachinery/hostcontroller"
 )
 
 type ClientSetInterface interface {
 	HostServer() hostserver.HostServerClientInterface
 	TopoServer() toposerver.TopoServerClientInterface
 	ProcServer() procserver.ProcServerClientInterface
-    AdminServer() adminserver.AdminServerClientInterface
-    EventServer() eventserver.EventServerClientInterface
-    
-    ObjectController() objcontroller.ObjControllerClientInterface
-    AuditController() auditcontroller.AuditCtrlInterface
-    ProcController() proccontroller.ProcCtrlClientInterface
-    HostController() hostcontroller.HostCtrlClientInterface
+	AdminServer() adminserver.AdminServerClientInterface
+	EventServer() eventserver.EventServerClientInterface
+
+	ObjectController() objcontroller.ObjControllerClientInterface
+	AuditController() auditcontroller.AuditCtrlInterface
+	ProcController() proccontroller.ProcCtrlClientInterface
+	HostController() hostcontroller.HostCtrlClientInterface
+
+	GseProcServer() gseprocserver.GseProcClientInterface
+	Healthz() healthz.HealthzInterface
 }
 
 func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
-    client, err := util.NewClient(c.TLSConfig)
-    if err != nil {
-        return nil, err
-    }
-    
-    discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
-    if err != nil {
-        return nil, err
-    }
-    
-    flowcontrol := flowctrl.NewRateLimiter(c.QPS, c.Burst)
-    return NewClientSet(client, discover, flowcontrol), nil
+	client, err := util.NewClient(c.TLSConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr, c.GseProcServ)
+	if err != nil {
+		return nil, err
+	}
+
+	flowcontrol := flowctrl.NewRateLimiter(c.QPS, c.Burst)
+	return NewClientSet(client, discover, flowcontrol), nil
 }
 
 func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface, throttle flowctrl.RateLimiter) ClientSetInterface {
@@ -72,12 +77,12 @@ type ClientSet struct {
 }
 
 func (cs *ClientSet) HostServer() hostserver.HostServerClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.HostServer(),
-        Throttle: cs.throttle,
-    }
-    return hostserver.NewHostServerClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.HostServer(),
+		Throttle: cs.throttle,
+	}
+	return hostserver.NewHostServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
@@ -99,55 +104,72 @@ func (cs *ClientSet) ObjectController() objcontroller.ObjControllerClientInterfa
 }
 
 func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.ProcServer(),
-        Throttle: cs.throttle,
-    }
-    return procserver.NewProcServerClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ProcServer(),
+		Throttle: cs.throttle,
+	}
+	return procserver.NewProcServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.MigrateServer(),
-        Throttle: cs.throttle,
-    }
-    return adminserver.NewAdminServerClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.MigrateServer(),
+		Throttle: cs.throttle,
+	}
+	return adminserver.NewAdminServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.EventServer(),
-        Throttle: cs.throttle,
-    }
-    return eventserver.NewEventServerClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.EventServer(),
+		Throttle: cs.throttle,
+	}
+	return eventserver.NewEventServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) AuditController() auditcontroller.AuditCtrlInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.AuditCtrl(),
-        Throttle: cs.throttle,
-    }
-    return auditcontroller.NewAuditCtrlInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.AuditCtrl(),
+		Throttle: cs.throttle,
+	}
+	return auditcontroller.NewAuditCtrlInterface(c, cs.version)
 }
 
 func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.ProcCtrl(),
-        Throttle: cs.throttle,
-    }
-    return proccontroller.NewProcCtrlClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ProcCtrl(),
+		Throttle: cs.throttle,
+	}
+	return proccontroller.NewProcCtrlClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
-    c := &util.Capability{
-        Client:   cs.client,
-        Discover: cs.discover.HostCtrl(),
-        Throttle: cs.throttle,
-    }
-    return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.HostCtrl(),
+		Throttle: cs.throttle,
+	}
+	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) GseProcServer() gseprocserver.GseProcClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.GseProcServ(),
+		Throttle: cs.throttle,
+	}
+	return gseprocserver.NewGseProcClientInterface(c, "v1")
+}
+
+func (cs *ClientSet) Healthz() healthz.HealthzInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Throttle: cs.throttle,
+	}
+	return healthz.NewHealthzClient(c, cs.discover)
 }
