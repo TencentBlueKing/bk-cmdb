@@ -13,23 +13,35 @@
 package proccontroller
 
 import (
-    "fmt"
-
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/rest"
+	"fmt"
+    "context"
+    "net/http"
+	
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
+    "configcenter/src/common/metadata"
 )
 
 type ProcCtrlClientInterface interface {
-
+    CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcModuleResult, err error)
+    DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    CreateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    UpdateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    DeleteConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    QueryConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    CreateProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    GetProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcInstModelResult, err error)
+    DeleteProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 }
 
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
-    base := fmt.Sprintf("/process/%s", version)
-    return &procctrl{
-        client: rest.NewRESTClient(c, base),
-    }
+	base := fmt.Sprintf("/process/%s", version)
+	return &procctrl{
+		client: rest.NewRESTClient(c, base),
+	}
 }
 
 type procctrl struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

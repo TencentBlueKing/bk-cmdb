@@ -13,7 +13,6 @@
 package errors
 
 import (
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +20,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 // ccErrorHelper CC 错误处理接口的实现
@@ -53,7 +54,7 @@ func (cli *ccErrorHelper) Errorf(language string, ErrorCode int, args ...interfa
 
 // load load language package file from dir
 func (cli *ccErrorHelper) Load(errcode map[string]ErrorCode) {
-	blog.InfoJSON("loaded error resource: %s", errcode)
+	// blog.V(3).Infof("loaded error resource: %#v", errcode)
 	cli.errCode = errcode
 }
 
@@ -76,8 +77,8 @@ func LoadErrorResourceFromDir(dir string) (map[string]ErrorCode, error) {
 		items := strings.Split(path, string(os.PathSeparator))
 		language := items[len(items)-2 : len(items)-1]
 
-		// analysis language package file
-		fmt.Printf("loading language from %s\n", path)
+		// analysis error package file
+		fmt.Printf("loading error resource from %s\n", path)
 		data, rerr := ioutil.ReadFile(path)
 		if nil != rerr {
 			return rerr

@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package command
 
 import (
@@ -7,9 +19,9 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/conf"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/storage/mgoclient"
 )
 
 const bkbizCmdName = "bkbiz"
@@ -45,15 +57,19 @@ func Parse(args []string) error {
 	}
 
 	// init config
-	config := new(conf.Config)
-	config.InitConfig(configposition)
-
+	pconfig, err := configcenter.ParseConfigWithFile(configposition)
+	if nil != err {
+		return fmt.Errorf("parse config file error %s", err.Error())
+	}
+	config := mgoclient.NewMongoConfig(pconfig.ConfigMap)
 	// connect to mongo db
-	a := api.NewAPIResource()
-	err = a.GetDataCli(config.Configmap, "mongodb")
+	db, err := mgoclient.NewFromConfig(*config)
 	if err != nil {
-		blog.Error("connect mongodb error exit! err:%s", err.Error())
-		return err
+		return fmt.Errorf("connect mongo server failed %s", err.Error())
+	}
+	err = db.Open()
+	if err != nil {
+		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 
 	opt := &option{
@@ -73,7 +89,7 @@ func Parse(args []string) error {
 
 		}
 		fmt.Printf("exporting blueking business to %s in \033[34m%s\033[0m mode\n", filepath, mode)
-		if err := export(a.InstCli, opt); err != nil {
+		if err := export(db, opt); err != nil {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
 		}
@@ -82,7 +98,7 @@ func Parse(args []string) error {
 		fmt.Printf("importing blueking business from %s\n", filepath)
 		opt.mini = false
 		opt.scope = "all"
-		if err := importBKBiz(a.InstCli, opt); err != nil {
+		if err := importBKBiz(db, opt); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}

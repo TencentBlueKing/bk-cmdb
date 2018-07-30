@@ -13,11 +13,13 @@
 package main
 
 import (
-	"configcenter/src/common/util"
 	"flag"
-	"gopkg.in/mgo.v2"
 	"log"
 	"time"
+
+	"gopkg.in/mgo.v2"
+
+	"configcenter/src/common/util"
 )
 
 var src = flag.String("source", "127.0.0.1:27017", "")

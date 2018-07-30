@@ -13,22 +13,22 @@
 package history
 
 import (
-    "context"
+	"context"
+	"net/http"
 
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
 type HistoryInterface interface {
-    AddHistory(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-    GetHistorys(ctx context.Context, user string, start string, limit string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	AddHistory(ctx context.Context, user string, h http.Header, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error)
+	GetHistorys(ctx context.Context, user string, start string, limit string, h http.Header) (resp *metadata.GetHistoryResult, err error)
 }
 
 func NewHistoryInterface(client rest.ClientInterface) HistoryInterface {
-    return &history{client:client}
+	return &history{client: client}
 }
 
 type history struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

@@ -66,19 +66,16 @@ func (rd *RegDiscover) Stop() error {
 	return rd.rdServer.Stop()
 }
 
-//RegisterService used to write service info into register and discover server
-// key is the index of registered service
-// data is the service information
-func (rd *RegDiscover) RegisterService(key string, data []byte) error {
-	return rd.rdServer.Register(key, data)
-}
-
 //RegisterAndWatchService register service info into register-discover platform
 // and then watch the service info, if not exist, then register again
 // key is the index of registered service
 // data is the service information
 func (rd *RegDiscover) RegisterAndWatchService(key string, data []byte) error {
 	return rd.rdServer.RegisterAndWatch(key, data)
+}
+
+func (rd *RegDiscover) GetServNodes(key string) ([]string, error) {
+    return rd.rdServer.GetServNodes(key)
 }
 
 //DiscoverService used to discover the service that registered in `key`

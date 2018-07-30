@@ -13,11 +13,12 @@
 package util
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"net/http"
 
 	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -29,13 +30,17 @@ func InStrArr(arr []string, key string) bool {
 	return false
 }
 
+func GetLanguage(header http.Header) string {
+	return header.Get(common.BKHTTPLanguage)
+}
+
 // GetActionLanguage returns language form hender
 func GetActionLanguage(req *restful.Request) string {
 	language := req.HeaderParameter(common.BKHTTPLanguage)
 	if "" == language {
 		language = "zh-cn"
 	}
-	// blog.Infof("request language: %s, header: %v", language, req.Request.Header)
+	blog.V(5).Infof("request language: %s, header: %v", language, req.Request.Header)
 	return language
 }
 
@@ -50,6 +55,18 @@ func GetActionOnwerID(req *restful.Request) string {
 	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
 	blog.Infof("request ownerID : %s", ownerID)
 	return ownerID
+}
+
+func GetUser(header http.Header) string {
+	return header.Get(common.BKHTTPHeaderUser)
+}
+
+func GetOwnerID(header http.Header) string {
+	return header.Get(common.BKHTTPOwnerID)
+}
+
+func GetOwnerIDAndUser(header http.Header) (string, string) {
+	return header.Get(common.BKHTTPOwnerID), header.Get(common.BKHTTPHeaderUser)
 }
 
 // GetActionOnwerIDAndUser returns owner_uin and user form hender
@@ -73,4 +90,10 @@ func GetActionLanguageByHTTPHeader(header http.Header) string {
 func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 	ownerID := header.Get(common.BKHTTPOwnerID)
 	return ownerID
+}
+
+// GetHTTPCCRequestID return configcenter request id from http header
+func GetHTTPCCRequestID(header http.Header) string {
+	rid := header.Get(common.BKHTTPCCRequestID)
+	return rid
 }

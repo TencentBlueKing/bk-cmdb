@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package command
 
 import (
@@ -12,9 +24,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
-	"configcenter/src/source_controller/api/metadata"
-	"configcenter/src/source_controller/common/commondata"
-	"configcenter/src/source_controller/common/instdata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage"
 )
 
@@ -69,7 +79,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 			if node.mark == actionCreate {
 				fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 				if !opt.dryrun {
-					_, err := db.Insert(commondata.GetInstTableName(node.ObjID), node.Data)
+					_, err := db.Insert(common.GetInstTableName(node.ObjID), node.Data)
 					if nil != err {
 						return fmt.Errorf("insert to %s, data:%+v, error: %s", node.ObjID, node.Data, err.Error())
 					}
@@ -83,9 +93,9 @@ func importBKBiz(db storage.DI, opt *option) error {
 						return err
 					}
 					updateCondition := map[string]interface{}{
-						instdata.GetIDNameByType(node.ObjID): instID,
+						common.GetInstIDField(node.ObjID): instID,
 					}
-					err = db.UpdateByCondition(commondata.GetInstTableName(node.ObjID), node.Data, updateCondition)
+					err = db.UpdateByCondition(common.GetInstTableName(node.ObjID), node.Data, updateCondition)
 					if nil != err {
 						return fmt.Errorf("update to %s by %+v data:%+v, error: %s", node.ObjID, updateCondition, node.Data, err.Error())
 					}
@@ -99,7 +109,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 			for _, sdelete := range sdeletes {
 				// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
 
-				instID, err := getInt64(sdelete[instdata.GetIDNameByType(objID)])
+				instID, err := getInt64(sdelete[common.GetInstIDField(objID)])
 				if nil != err {
 					return err
 				}
@@ -131,7 +141,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 
 							//
 							deleteconition := map[string]interface{}{
-								instdata.GetIDNameByType(child.ObjID): childID,
+								common.GetInstIDField(child.ObjID): childID,
 							}
 							switch child.ObjID {
 							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
@@ -140,7 +150,7 @@ func importBKBiz(db storage.DI, opt *option) error {
 							}
 							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
 							if !opt.dryrun {
-								err = db.DelByCondition(commondata.GetInstTableName(child.ObjID), deleteconition)
+								err = db.DelByCondition(common.GetInstTableName(child.ObjID), deleteconition)
 								if nil != err {
 									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
 								}
@@ -366,7 +376,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		case common.BKInnerObjIDApp:
 			condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
 			app := map[string]interface{}{}
-			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &app)
+			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &app)
 			if nil != err {
 				return fmt.Errorf("get blueking business by %+v error: %s", condition, err.Error())
 			}
@@ -390,13 +400,13 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKInstParentStr] = ipt.parentID
 			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
-			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &set)
+			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &set)
 			if nil != err && mgo.ErrNotFound != err {
 				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
 				node.mark = actionCreate
-				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
+				nid, err := ipt.db.GetIncID(common.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
 				}
@@ -420,13 +430,13 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKInstParentStr] = ipt.parentID
 			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
-			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &module)
+			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &module)
 			if nil != err && mgo.ErrNotFound != err {
 				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
 				node.mark = actionCreate
-				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
+				nid, err := ipt.db.GetIncID(common.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
 				}
@@ -445,32 +455,32 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), common.BKInstParentStr})
 			condition[common.BKObjIDField] = node.ObjID
 			inst := map[string]interface{}{}
-			err := ipt.db.GetOneByCondition(commondata.GetInstTableName(node.ObjID), nil, condition, &inst)
+			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &inst)
 			if nil != err && mgo.ErrNotFound != err {
 				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
 			}
 			if mgo.ErrNotFound == err {
 				node.mark = actionCreate
-				nid, err := ipt.db.GetIncID(commondata.GetInstTableName(node.ObjID))
+				nid, err := ipt.db.GetIncID(common.GetInstTableName(node.ObjID))
 				if nil != err {
 					return fmt.Errorf("GetIncID error: %s", err.Error())
 				}
-				node.Data[instdata.GetIDNameByType(node.ObjID)] = nid
+				node.Data[common.GetInstIDField(node.ObjID)] = nid
 				ipt.parentID = nid
 			} else {
 				node.mark = actionUpdate
-				instID, err := getInt64(inst[instdata.GetIDNameByType(node.ObjID)])
+				instID, err := getInt64(inst[common.GetInstIDField(node.ObjID)])
 				if nil != err {
 					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
 				}
-				node.Data[instdata.GetIDNameByType(node.ObjID)] = instID
+				node.Data[common.GetInstIDField(node.ObjID)] = instID
 				ipt.parentID = instID
 			}
 		}
 
 		// fetch datas that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
-			childtablename := commondata.GetInstTableName(node.getChildObjID())
+			childtablename := common.GetInstTableName(node.getChildObjID())
 			instID, _ := node.getInstID()
 			childCondition := map[string]interface{}{
 				common.BKInstParentStr: instID,
@@ -529,20 +539,20 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 }
 
 // getModelAttributes returns the model attributes
-func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttributes map[string][]metadata.ObjectAttDes, modelKeys map[string][]string, err error) {
+func getModelAttributes(db storage.DI, opt *option, objIDs []string) (modelAttributes map[string][]metadata.Attribute, modelKeys map[string][]string, err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
 			"$in": objIDs,
 		},
 	}
 
-	attributes := []metadata.ObjectAttDes{}
+	attributes := []metadata.Attribute{}
 	err = db.GetMutilByCondition("cc_ObjAttDes", nil, condition, &attributes, "", 0, 0)
 	if nil != err {
 		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}
 
-	modelAttributes = map[string][]metadata.ObjectAttDes{}
+	modelAttributes = map[string][]metadata.Attribute{}
 	modelKeys = map[string][]string{}
 	for _, att := range attributes {
 		if att.IsRequired {

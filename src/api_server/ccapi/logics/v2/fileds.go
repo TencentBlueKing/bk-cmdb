@@ -13,29 +13,29 @@
 package logics
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 
-	"github.com/bitly/go-simplejson"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // getObjFieldIDs get the values of properyID and properyName
-func GetObjFieldIDs(objID, url string, header http.Header) (common.KvMap, error) {
-	conds := common.KvMap{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
-	result, err := httpRequest(url, conds, header)
+func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (common.KvMap, error) {
+	conds := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: user, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
+	result, err := lgc.CoreAPI.TopoServer().Object().SelectObjectAttWithParams(context.Background(), header, conds)
 	if nil != err {
 		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return nil, err
 	}
-	blog.Info("get %s fields  url:%s", objID, url)
-	blog.Info("get %s fields return:%s", objID, result)
-	js, _ := simplejson.NewJson([]byte(result))
-	hostFields, _ := js.Map()
-	fields, _ := hostFields["data"].([]interface{})
+
+	blog.Info("get %s fields return:%v", objID, result)
+	fields, _ := result.Data.([]interface{})
 	ret := common.KvMap{}
 
 	for _, field := range fields {
@@ -55,20 +55,20 @@ func GetObjFieldIDs(objID, url string, header http.Header) (common.KvMap, error)
 }
 
 // AutoInputV3Field fields required to automatically populate the current object v3
-func AutoInputV3Field(params common.KvMap, objId, url string, header http.Header) (common.KvMap, error) {
-	appFields, err := GetObjFieldIDs(objId, url+"/topo/v1/objectattr/search", header)
+func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, header http.Header) (mapstr.MapStr, error) {
+	appFields, err := lgc.GetObjFieldIDs(objId, user, header)
 	if nil != err {
-		blog.Error("CreateApp error:%s", err.Error())
-		//		converter.RespFailV2(common.CC_Err_Comm_APP_Create_FAIL, common.CC_Err_Comm_APP_Create_FAIL_STR, resp)
 
+		blog.Error("CreateApp error:%s", err.Error())
 		return nil, errors.New("CC_Err_Comm_APP_Create_FAIL_STR")
 	}
 	for fieldId, item := range appFields {
 		mapItem, _ := item.(common.KvMap)
 		_, ok := params[fieldId]
+
 		if !ok {
 			strType, _ := mapItem["type"].(string)
-			if common.FieldTypeLongChar == strType || common.FieldTypeSingleChar == strType {
+			if util.IsStrProperty(strType) {
 				params[fieldId] = ""
 			} else {
 				params[fieldId] = nil

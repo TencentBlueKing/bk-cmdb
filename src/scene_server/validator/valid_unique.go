@@ -15,177 +15,126 @@ package validator
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/util"
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	"github.com/tidwall/gjson"
+	"configcenter/src/common/metadata"
 )
 
 // validCreateUnique  valid create unique
-func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, error) {
-	isInner := false
-	objID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		objID = common.BKINnerObjIDObject
+func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
+	if 0 >= len(valid.isOnly) {
+		blog.V(3).Infof("is only array is zero for %s", valid.objID)
+		return nil
 	}
 
-	if 0 == len(valid.IsOnlyArr) {
-		blog.Debug("is only array is zero %+v", valid.IsOnlyArr)
-		return true, nil
-	}
 	searchCond := make(map[string]interface{})
-
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
 
+	// retrive isonly value
 	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
+		if valid.isOnly[key] {
 			searchCond[key] = val
 		}
 	}
 
-	if !isInner {
+	if common.GetObjByType(valid.objID) == common.BKINnerObjIDObject {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
 	if 0 == len(searchCond) {
-		return true, nil
+		return nil
 	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Info("get insts by cond: %s", string(info))
-	url := fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, objID)
-	if !strings.HasPrefix(url, "http://") {
-		url = fmt.Sprintf("http://%s", url)
-	}
-	blog.Info("get insts by url : %s", url)
-	rst, err := httpCli.POST(url, valid.forward.Header, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
-	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, err
-	}
-	count := gjson.Get(string(rst), "data.count").Int()
 
-	if 0 != count {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	if nil != err {
+		return err
 	}
-	return true, nil
+	if !result.Result {
+		return valid.errif.Error(result.Code)
+	}
+
+	if 0 < result.Data.Count {
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, isonly: %#v, objID %s", searchCond, valid.isOnly, valid.objID)
+		return valid.errif.Error(common.CCErrCommDuplicateItem)
+	}
+
+	return nil
 }
 
 // validUpdateUnique valid update unique
-func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
-	isInner := false
-	urlID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		urlID = common.BKINnerObjIDObject
+func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID int64) error {
+	if 0 >= len(valid.isOnly) {
+		return nil
 	}
 
-	if 0 == len(valid.IsOnlyArr) {
-		return true, nil
-	}
-
-	mapData := valid.getInstDataById(objID, instID)
+	objID := valid.objID
 	searchCond := make(map[string]interface{})
+	mapData, err := valid.getInstDataByID(instID)
+	if nil != err {
+		return err
+	}
 
+	// retrive isonly value
 	for key, val := range mapData {
-		if util.InArray(key, valid.IsOnlyArr) {
+		if valid.isOnly[key] {
 			searchCond[key] = val
 		}
 	}
 	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
+		if valid.isOnly[key] {
 			searchCond[key] = val
 		}
 	}
-	objIDName := util.GetObjIDByType(objID)
-	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 
+	objIDName := common.GetInstIDField(objID)
+	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
-
-	if !isInner {
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
+		objID = common.BKINnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
-	if 0 == len(searchCond) {
-		return true, nil
-	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Infof("get insts by cond: %s, instID %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), valid.forward.Header, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
+
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
 	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, valid.ccError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return err
 	}
-	count := gjson.Get(string(rst), "data.count").Int()
-	if 0 != count {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
+	if !result.Result {
+		return valid.errif.Error(result.Code)
 	}
-	return true, nil
+
+	if 0 < result.Data.Count {
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v count %d", searchCond, mapData, valid.isOnly, valid.objID, instID, result.Data.Count)
+		return valid.errif.Error(common.CCErrCommDuplicateItem)
+	}
+	return nil
 }
 
-// getInstDataById get inst data by id
-func (valid *ValidMap) getInstDataById(objID string, instID int) map[string]interface{} {
-	isInner := false
-	urlID := valid.objID
-
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		urlID = common.BKINnerObjIDObject
-	}
-
-	if 0 == len(valid.IsOnlyArr) {
-		return nil
-	}
+// getInstDataByID get inst data by id
+func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, error) {
+	objID := valid.objID
 	searchCond := make(map[string]interface{})
 
-	if !isInner {
-		searchCond[common.BKObjIDField] = objID
-		searchCond[common.BKInstIDField] = instID
-	} else {
-		objIDName := util.GetObjIDByType(objID)
-		searchCond[objIDName] = instID
-
+	searchCond[common.GetInstIDField(objID)] = instID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
+		objID = common.BKINnerObjIDObject
+		searchCond[common.BKObjIDField] = valid.objID
 	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Infof("get insts by cond: %s instID: %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), valid.forward.Header, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
+
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
 	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return nil
+		return nil, err
 	}
-	data := make(map[string]interface{})
-	result := gjson.Get(string(rst), "data.info.0").Map()
-	for key, val := range result {
-		data[key] = val.Raw
+	if !result.Result {
+		return nil, valid.errif.Error(result.Code)
+	}
+	if len(result.Data.Info) == 0 {
+		return nil, nil
 	}
 
-	return data
+	if len(result.Data.Info[0]) > 0 {
+		return result.Data.Info[0], nil
+	}
 
+	return nil, valid.errif.Error(common.CCErrCommNotFound)
 }

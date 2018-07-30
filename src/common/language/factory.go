@@ -12,6 +12,9 @@
 
 package language
 
+// EmptyLanguageSetting empty language setting
+var EmptyLanguageSetting = map[string]LanguageMap{}
+
 // New create new Language instance,
 // dir is directory of language description resource
 func New(dir string) (CCLanguageIf, error) {

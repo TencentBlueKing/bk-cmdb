@@ -13,80 +13,79 @@
 package favorite
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
-func(f *favorites) AddHostFavourite(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/favorites/%s", user)
+func (f *favorites) AddHostFavourite(ctx context.Context, user string, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
+	subPath := fmt.Sprintf("/hosts/favorites/%s", user)
 
-        err = f.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = f.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(f *favorites) UpdateHostFavouriteByID(ctx context.Context, user string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
+func (f *favorites) UpdateHostFavouriteByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
 
-        err = f.client.Put().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = f.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(f *favorites) DeleteHostFavouriteByID(ctx context.Context, user string, id string,h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
+func (f *favorites) DeleteHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
 
-        err = f.client.Delete().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = f.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(f *favorites) GetHostFavourites(ctx context.Context, user string, h util.Headers, dat commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/favorites/search/%s", user)
+func (f *favorites) GetHostFavourites(ctx context.Context, user string, h http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
+	subPath := fmt.Sprintf("/hosts/favorites/search/%s", user)
 
-        err = f.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = f.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(f *favorites) GetHostFavouriteByID(ctx context.Context, user string, id string,h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/favorites/search/%s/%s", user, id)
+func (f *favorites) GetHostFavouriteByID(ctx context.Context, user string, id string, h http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error) {
+	resp = new(metadata.GetHostFavoriteWithIDResult)
+	subPath := fmt.Sprintf("/hosts/favorites/search/%s/%s", user, id)
 
-        err = f.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = f.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

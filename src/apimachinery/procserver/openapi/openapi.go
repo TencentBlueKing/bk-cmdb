@@ -13,36 +13,37 @@
 package openapi
 
 import (
-    "context"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "fmt"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
-func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/openapi/GetProcessPortByApplicationID/%s", appID)
+func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat []map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/openapi/GetProcessPortByApplicationID/%s", appID)
 
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func (p *openapi) GetProcessPortByIP(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/openapi/GetProcessPortByIP"
+func (p *openapi) GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/openapi/GetProcessPortByIP"
 
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

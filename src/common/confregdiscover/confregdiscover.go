@@ -25,17 +25,17 @@ type DiscoverEvent struct { //
 
 // ConfRegDiscover is config register and discover
 type ConfRegDiscover struct {
-	confrdServer ConfRegDiscvServer
+	confRD ConfRegDiscvIf
 }
 
 // NewConfRegDiscover used to create a object of ConfRegDiscover
 // session timeout default 60 second
 func NewConfRegDiscover(serv string) *ConfRegDiscover {
 	confRD := &ConfRegDiscover{
-		confrdServer: nil,
+        confRD: nil,
 	}
 
-	confRD.confrdServer = ConfRegDiscvServer(NewZkRegDiscover(serv, time.Second*60))
+	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(serv, time.Second*60))
 
 	return confRD
 }
@@ -43,35 +43,40 @@ func NewConfRegDiscover(serv string) *ConfRegDiscover {
 // NewConfRegDiscoverWithTimeOut used to create a object
 func NewConfRegDiscoverWithTimeOut(serv string, timeOut time.Duration) *ConfRegDiscover {
 	confRD := &ConfRegDiscover{
-		confrdServer: nil,
+        confRD: nil,
 	}
 
-	confRD.confrdServer = ConfRegDiscvServer(NewZkRegDiscover(serv, timeOut))
+	confRD.confRD = ConfRegDiscvIf(NewZkRegDiscover(serv, timeOut))
 
 	return confRD
 }
 
 // Ping to ping server
 func (crd *ConfRegDiscover) Ping() error {
-	return crd.confrdServer.Ping()
+	return crd.confRD.Ping()
 }
 
 //Start the register and discover service
 func (crd *ConfRegDiscover) Start() error {
-	return crd.confrdServer.Start()
+	return crd.confRD.Start()
 }
 
 //Stop the register and discover service
 func (crd *ConfRegDiscover) Stop() error {
-	return crd.confrdServer.Stop()
+	return crd.confRD.Stop()
 }
 
-//Write the data
+//Write the configure data
 func (crd *ConfRegDiscover) Write(key string, data []byte) error {
-	return crd.confrdServer.Write(key, data)
+	return crd.confRD.Write(key, data)
+}
+
+// Read the configure data
+func (crd *ConfRegDiscover) Read(path string) (string, error) {
+    return crd.confRD.Read(path)
 }
 
 //DiscoverConfig discover the config wether is changed
 func (crd *ConfRegDiscover) DiscoverConfig(key string) (<-chan *DiscoverEvent, error) {
-	return crd.confrdServer.Discover(key)
+	return crd.confRD.Discover(key)
 }

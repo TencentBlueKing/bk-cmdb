@@ -13,6 +13,15 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -29,14 +38,6 @@ import (
 	"configcenter/src/web_server/application/middleware"
 	"configcenter/src/web_server/application/rdiscover"
 	webCommon "configcenter/src/web_server/common"
-	"encoding/json"
-	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
 )
 
 //CCAPIServer define data struct of bcs ccapi server
@@ -307,7 +308,7 @@ func (ccWeb *CCWebServer) Start() error {
 }
 
 func (ccWeb *CCWebServer) RegisterActions(actions []*webserver.Action) {
-	fmt.Println(actions)
+	//fmt.Println(actions)
 	for _, action := range actions {
 		switch action.Verb {
 		case "GET":

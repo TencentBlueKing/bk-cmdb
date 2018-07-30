@@ -13,27 +13,28 @@
 package adminserver
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/apimachinery/util"
 )
 
 type AdminServerClientInterface interface {
-    ClearDatabase(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error)
-    Set(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error)
-    Migrate(ctx context.Context, distribution string, h util.Headers) (resp *api.BKAPIRsp, err error)
+	ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+	Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
+	Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *metadata.Response, err error)
 }
 
 func NewAdminServerClientInterface(c *util.Capability, version string) AdminServerClientInterface {
-    base := fmt.Sprintf("/migrate/%s", version)
-    return &adminServer{
-        client: rest.NewRESTClient(c, base),
-    }
+	base := fmt.Sprintf("/migrate/%s", version)
+	return &adminServer{
+		client: rest.NewRESTClient(c, base),
+	}
 }
 
 type adminServer struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }
