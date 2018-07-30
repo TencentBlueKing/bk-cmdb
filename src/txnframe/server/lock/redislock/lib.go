@@ -245,9 +245,14 @@ func (rl *RedisLock) noticTypeErrUnLockCollection(n *notice) {
 
 func (rl *RedisLock) noticTypeErrLockCollection(n *notice) {
 	for {
-		ret := rl.storage.Get(n.key)
-		if nil == ret {
+		val, err := rl.storage.Get(n.key).Result()
+		if nil == err {
 			meta := new(types.Lock)
+			err := json.Unmarshal([]byte(val), meta)
+			if nil != err {
+				blog.Errorf("redis key %s content %s not json", n.key, val)
+				break
+			}
 			if meta.TxnID == n.tid {
 				err := rl.storage.Del(n.key).Err()
 				if nil != err && redis.Nil != err {
@@ -258,8 +263,7 @@ func (rl *RedisLock) noticTypeErrLockCollection(n *notice) {
 			} else {
 				break
 			}
-		}
-		if redis.Nil == ret.Err() {
+		} else if redis.Nil == err {
 			break
 		}
 		time.Sleep(time.Millisecond * 500)

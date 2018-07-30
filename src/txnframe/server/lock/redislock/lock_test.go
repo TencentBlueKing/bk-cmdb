@@ -13,6 +13,7 @@
 package redislock
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -478,7 +479,7 @@ func TestPrivateCompensationNotice(t *testing.T) {
 	}
 
 	lock2 := &types.Lock{
-		TxnID:    "1",
+		TxnID:    "2",
 		LockName: "test",
 		Timeout:  time.Second,
 	}
@@ -488,8 +489,9 @@ func TestPrivateCompensationNotice(t *testing.T) {
 
 	// hte analog lock alread exists, but the relationship does not exist
 	setKey := fmt.Sprintf(lockPreFmtStr, ss.prefix, lock1.LockName)
-	s.Set(setKey, "{}", 0)
-	locked, err := ss.PreLock(lock1)
+	str, _ := json.Marshal(lock1)
+	s.Set(setKey, string(str), 0)
+	locked, err := ss.PreLock(lock2)
 	if nil != err {
 		t.Errorf("lock test lock1 error:%s", err.Error())
 		return
@@ -498,7 +500,17 @@ func TestPrivateCompensationNotice(t *testing.T) {
 		t.Errorf("lock must be false, not true")
 		return
 	}
-
+	ss.notice(setKey, lock1.TxnID, lock1.LockName, noticTypeErrLockCollection)
+	time.Sleep(time.Second * 2)
+	ok, err := s.Exists(setKey).Result()
+	if nil != err {
+		t.Error(err.Error())
+		return
+	}
+	if ok {
+		t.Error("notice error")
+		return
+	}
 }
 
 func getRedisInstance() *redis.Client {
