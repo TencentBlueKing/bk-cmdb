@@ -42,7 +42,7 @@ type PropertyGroupObjectAtt struct {
 
 // Group group metadata definition
 type Group struct {
-	ID         int64  `field:"id" json:"id" bson:"id"`
+	ID         int64  `field:"id,ignoretomap" json:"id" bson:"id"`
 	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
 	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
 	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`

@@ -625,7 +625,16 @@ func (o *object) GetAttributes() ([]Attribute, error) {
 			clientSet: o.clientSet,
 		}
 
+		// reset the group name
+		grp, err := attr.GetGroup()
+		if nil != err {
+			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s", err.Error())
+			return nil, err
+		}
+		attr.SetGroup(grp)
+
 		rstItems = append(rstItems, attr)
+
 	}
 
 	return rstItems, nil
