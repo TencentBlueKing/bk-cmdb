@@ -89,12 +89,14 @@ func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupID) {
 		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
+			blog.V(4).Infof("property group field [%s] invalid: %s data:[%+v]", metadata.GroupFieldGroupID, err.Error(), data)
 			return err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupName) {
 		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
+			blog.V(4).Infof("property group field [%s] invalid: %s data:[%+v]", metadata.GroupFieldGroupName, err.Error(), data)
 			return err
 		}
 	}
@@ -103,7 +105,7 @@ func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
 }
 
 func (g *group) Create() error {
-
+	blog.V(4).Infof("create property group %#v ", &g.grp)
 	if err := g.IsValid(false, g.grp.ToMapStr()); nil != err {
 		return err
 	}
@@ -136,7 +138,7 @@ func (g *group) Create() error {
 }
 
 func (g *group) Update(data frtypes.MapStr) error {
-
+	blog.V(4).Infof("update property group %#v ", &g.grp)
 	if err := g.IsValid(true, data); nil != err {
 		return err
 	}
@@ -198,9 +200,9 @@ func (g *group) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
-	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
 	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
+	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
 	grps, err = g.search(cond)
 	if nil != err {
 		return false, err
@@ -293,6 +295,9 @@ func (g *group) CreateAttribute() Attribute {
 }
 
 func (g *group) SetID(groupID string) {
+	if "" == groupID {
+		groupID = common.PropertyGroupDefaultID
+	}
 	g.grp.GroupID = groupID
 }
 
@@ -301,6 +306,9 @@ func (g *group) GetID() string {
 }
 
 func (g *group) SetName(groupName string) {
+	if "" == groupName {
+		groupName = common.PropertyGroupDefaultName
+	}
 	g.grp.GroupName = groupName
 }
 
