@@ -57,14 +57,11 @@ const (
 	// BKDefaultOwnerID the default owner value
 	BKDefaultOwnerID = "0"
 
-	// BKSupereOwnerID the super owner value
+	// BKSuperOwnerID the super owner value
 	BKSuperOwnerID = "supperowner"
 
 	// BKDefaultSupplierID the default owner id
 	BKDefaultSupplierID = 0
-
-	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "supperowner"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
