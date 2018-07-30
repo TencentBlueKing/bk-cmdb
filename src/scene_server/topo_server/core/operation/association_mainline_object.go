@@ -120,6 +120,24 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 
+	// check the level
+	bizObj, err := a.obj.FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
+		return nil, err
+	}
+
+	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
+		return nil, err
+	}
+
+	if len(items) >= params.MaxTopoLevel {
+		blog.Errorf("[operation-asst] the mainline topo leve is %d, the max limit is %d", len(items), params.MaxTopoLevel)
+		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	}
+
 	// check and fetch the association object's classification
 	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
 	if nil != err {
