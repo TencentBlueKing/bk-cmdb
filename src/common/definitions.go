@@ -725,8 +725,3 @@ const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
 )
-
-const (
-	PropertyGroupDefaultID   = "default"
-	PropertyGroupDefaultName = "基础信息"
-)
