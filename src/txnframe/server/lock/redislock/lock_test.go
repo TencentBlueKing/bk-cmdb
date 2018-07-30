@@ -471,7 +471,7 @@ func TestUnLockAll(t *testing.T) {
 
 }
 
-func TestPrivateCompensationNotice(t *testing.T) {
+func TestPrivateCompensationNoticeLockErr(t *testing.T) {
 	lock1 := &types.Lock{
 		TxnID:    "1",
 		LockName: "test",
@@ -487,9 +487,13 @@ func TestPrivateCompensationNotice(t *testing.T) {
 	s := getRedisInstance()
 	ss := NewLock(s, "cc")
 
-	// hte analog lock alread exists, but the relationship does not exist
+	// lock alread exists, but the relationship does not exist
 	setKey := fmt.Sprintf(lockPreFmtStr, ss.prefix, lock1.LockName)
-	str, _ := json.Marshal(lock1)
+	str, err := json.Marshal(lock1)
+	if nil != err {
+		t.Errorf("json marshal error, error:%s", err.Error())
+		return
+	}
 	s.Set(setKey, string(str), 0)
 	locked, err := ss.PreLock(lock2)
 	if nil != err {
@@ -511,6 +515,214 @@ func TestPrivateCompensationNotice(t *testing.T) {
 		t.Error("notice error")
 		return
 	}
+}
+
+func TestPrivateCompensationNoticeSuccess(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+
+	lock := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+
+	// test compensation delete redis emtpy hash key
+	setKey := fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
+	locked, err := ss.PreLock(lock)
+	if nil != err {
+		t.Error(err.Error())
+		return
+	}
+	if false == locked {
+		t.Error("lock resource error")
+		return
+	}
+	err = ss.PreUnlock(lock)
+	if nil != err {
+		t.Errorf("unlock error, error%s", err.Error())
+		return
+	}
+	err = testLockRelationKey(s, setKey, lock)
+	if nil != err {
+		t.Errorf("testLockRelationKey, error%s", err.Error())
+		return
+	}
+}
+
+func TestPrivateCompensationRelationNotDel(t *testing.T) {
+
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+
+	lock := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+	}
+	// test compensation,  lock key is delete bu relation key not delete
+	setKey := fmt.Sprintf(lockPreCollectionFmtStr, ss.prefix, lock.TxnID)
+	ok, err := s.HSet(setKey, lock.LockName, "{}").Result()
+	if nil != err {
+		t.Errorf("set hash key %s field %s error, error:%s", setKey, lock.LockName, err.Error())
+		return
+	}
+	if false == ok {
+		t.Errorf("set hash key %s field %s error, ", setKey, lock.LockName)
+		return
+	}
+	err = s.HDel(setKey, lock.LockName).Err()
+	if nil != err {
+		t.Errorf("delete hash key %s field %s error, ", setKey, lock.LockName)
+		return
+	}
+	ss.notice(setKey, lock.TxnID, lock.LockName, noticTypeErrUnLockCollection)
+	err = testLockRelationKey(s, setKey, lock)
+	if nil != err {
+		t.Errorf("testLockRelationKey, error%s", err.Error())
+		return
+	}
+
+}
+
+func TestPrivateCompensationTimeTrigger(t *testing.T) {
+	s := getRedisInstance()
+	ss := NewLock(s, "cc")
+
+	lock := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+		SubTxnID: "1",
+	}
+
+	lock1 := &types.Lock{
+		TxnID:    "1",
+		LockName: "test",
+		Timeout:  time.Second,
+		SubTxnID: "2",
+	}
+
+	str, err := json.Marshal(lock)
+	if nil != err {
+		t.Errorf("json marshal error, error:%s", err.Error())
+		return
+	}
+
+	str1, err := json.Marshal(lock1)
+	if nil != err {
+		t.Errorf("json marshal error, error:%s", err.Error())
+		return
+	}
+
+	setKey := fmt.Sprintf(lockFmtStr, ss.prefix, lock.LockName)
+
+	// test lock error, lock key create success, but relation create failure
+	err = s.Set(setKey, str, 0).Err()
+	if nil != err {
+		t.Errorf("set key %s  value %s error, error:%s", setKey, str, err.Error())
+		return
+	}
+	err = ss.noticeTimedTrigger()
+	if nil != err {
+		t.Errorf("noticeTimedTrigger error, error:%s", err.Error())
+		return
+	}
+	ok, err := s.Exists(setKey).Result()
+	if nil != err {
+		t.Errorf("exist key %s  value %s error, error:%s", setKey, str, err.Error())
+		return
+	}
+	if ok {
+		t.Errorf("key %s exist, must be not exist", setKey)
+		return
+
+	}
+
+	// test lock relation error, but relation info and lock key  SubTxnID not equal
+	err = s.Set(setKey, str, 0).Err()
+	if nil != err {
+		t.Errorf("set key %s  value %s error, error:%s", setKey, str, err.Error())
+		return
+	}
+	setRelKey := fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
+	err = s.HSet(setRelKey, lock.LockName, str1).Err()
+	if nil != err {
+		t.Errorf("set key %s  value %s error, error:%s", setRelKey, str1, err.Error())
+		return
+	}
+
+	err = ss.noticeTimedTrigger()
+	if nil != err {
+		t.Errorf("noticeTimedTrigger error, error:%s", err.Error())
+		return
+	}
+	ok, err = s.HExists(setRelKey, lock.LockName).Result()
+	if nil != err {
+		t.Errorf("exist key %s  field %s error, error:%s", setRelKey, lock.LockName, err.Error())
+		return
+	}
+	if ok {
+		t.Errorf("key %s field %sexist, must be not exist", setRelKey, lock.LockName)
+		return
+
+	}
+
+	lock1.TxnID = "2"
+	str1, err = json.Marshal(lock1)
+	if nil != err {
+		t.Errorf("json marshal error, error:%s", err.Error())
+		return
+	}
+	// test lock relation error, but relation info and lock key  TxnID not equal
+	err = s.Set(setKey, str, 0).Err()
+	if nil != err {
+		t.Errorf("set key %s  value %s error, error:%s", setKey, str, err.Error())
+		return
+	}
+	setRelKey = fmt.Sprintf(lockCollectionFmtStr, ss.prefix, lock.TxnID)
+	err = s.HSet(setRelKey, lock.LockName, str1).Err()
+	if nil != err {
+		t.Errorf("set key %s  value %s error, error:%s", setRelKey, str1, err.Error())
+		return
+	}
+
+	err = ss.noticeTimedTrigger()
+	if nil != err {
+		t.Errorf("noticeTimedTrigger error, error:%s", err.Error())
+		return
+	}
+	ok, err = s.HExists(setRelKey, lock.LockName).Result()
+	if nil != err {
+		t.Errorf("exist key %s  field %s error, error:%s", setRelKey, lock.LockName, err.Error())
+		return
+	}
+	if ok {
+		t.Errorf("key %s field %sexist, must be not exist", setRelKey, lock.LockName)
+		return
+
+	}
+
+}
+
+func testLockRelationKey(s *redis.Client, setKey string, lock *types.Lock) error {
+	len, err := s.HLen(setKey).Result()
+	if nil != err {
+		return fmt.Errorf("hlen key %s error, error:%s", setKey, err.Error())
+
+	}
+	if 0 != len {
+		return fmt.Errorf("hlen key %s must be 0, not %d", setKey, len)
+	}
+	time.Sleep(2)
+	ok, err := s.Exists(setKey).Result()
+	if nil != err {
+		return fmt.Errorf("hlen key %s error, error:%s", setKey, err.Error())
+	}
+	if ok == true {
+		return fmt.Errorf("key %s exist, must be not exist", setKey)
+	}
+	return nil
 }
 
 func getRedisInstance() *redis.Client {
