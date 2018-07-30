@@ -492,7 +492,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 				tmp.To.ClassificationID = cls.GetID()
 				tmp.To.Position = asstObj.GetPosition()
 				tmp.To.ObjName = asstObj.GetName()
-				ok, err := o.isFrom(params, obj.GetID(), asstObj.GetID())
+				ok, err := o.isFrom(params, asstObj.GetID(), obj.GetID())
 				if nil != err {
 					return nil, err
 				}
