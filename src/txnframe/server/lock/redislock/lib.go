@@ -159,13 +159,13 @@ func (rl *RedisLock) compensation() {
 }
 
 func (rl *RedisLock) noticeTimedTrigger() error {
-	prefix := fmt.Sprintf(lockPreFmtStr, rl.prefix, "*")
-	relationPrefix := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, "*")
+	prefix := fmt.Sprintf(lockPreFmtStr, rl.prefix, "")
+	relationPrefix := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, "")
 	rl.compensationLock(prefix, relationPrefix)
 	rl.compensationRelation(relationPrefix, true)
 
-	prefix = fmt.Sprintf(lockFmtStr, rl.prefix, "*")
-	relationPrefix = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "*")
+	prefix = fmt.Sprintf(lockFmtStr, rl.prefix, "")
+	relationPrefix = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, "")
 	rl.compensationLock(prefix, relationPrefix)
 	rl.compensationRelation(relationPrefix, false)
 
@@ -177,7 +177,7 @@ func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
 	var err error
 	var cursor uint64
 
-	keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
+	keys, cursor, err = rl.storage.Scan(cursor, fmt.Sprintf("%s%s", prefix, "*"), redisScanKeyCount).Result()
 	if nil != err && redis.Nil != err {
 		blog.Errorf("compensationLock redis scan error %s", err.Error())
 	}
@@ -191,7 +191,7 @@ func (rl *RedisLock) compensationLock(prefix, relationPrefix string) {
 		if false == isExist {
 			continue
 		}
-		_, isExist, err = getRedisLockInfoByKey(rl.storage, fmt.Sprintf("%s%s", relationPrefix, lockInfo.LockName))
+		_, isExist, err = getRedisRelationInfoBy(rl.storage, fmt.Sprintf("%s%s", relationPrefix, lockInfo.TxnID), lockInfo.LockName)
 		if nil != err {
 			blog.Errorf("compensationLock %s", err.Error())
 			continue
@@ -208,7 +208,7 @@ func (rl *RedisLock) compensationRelation(prefix string, isPre bool) {
 	var err error
 	var cursor uint64
 
-	keys, cursor, err = rl.storage.Scan(cursor, prefix, redisScanKeyCount).Result()
+	keys, cursor, err = rl.storage.Scan(cursor, fmt.Sprintf("%s%s", prefix, "*"), redisScanKeyCount).Result()
 	if nil != err && redis.Nil != err {
 		blog.Errorf("compensationRelation redis scan error %s", err.Error())
 	}
@@ -282,7 +282,7 @@ func (rl *RedisLock) compensationRelationHashFields(key string, isPre bool) erro
 	var err error
 	var cursor uint64
 
-	fields, cursor, err = rl.storage.HScan(key, cursor, "", redisScanKeyCount).Result() //Scan(cursor, prefix, redisScanKeyCount).Result()
+	fields, cursor, err = rl.storage.HScan(key, cursor, "*", redisScanKeyCount).Result() //Scan(cursor, prefix, redisScanKeyCount).Result()
 	if nil != err && redis.Nil != err {
 		return fmt.Errorf("compensationRelation redis scan error %s", err.Error())
 
