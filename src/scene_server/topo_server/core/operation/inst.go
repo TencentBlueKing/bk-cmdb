@@ -476,6 +476,9 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 		case string:
 			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
 			for _, asstID := range tmpIDS {
+				if 0 == len(strings.TrimSpace(asstID)) {
+					continue
+				}
 
 				id, err := strconv.ParseInt(asstID, 10, 64)
 				if nil != err {
