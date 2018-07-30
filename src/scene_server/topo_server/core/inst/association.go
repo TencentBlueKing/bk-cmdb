@@ -392,7 +392,9 @@ func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, 
 		case string:
 			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
 			for _, asstID := range tmpIDS {
-
+				if 0 == len(strings.TrimSpace(asstID)) {
+					continue
+				}
 				id, err := strconv.ParseInt(asstID, 10, 64)
 				if nil != err {
 					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.ObjectAttID, asstID, err.Error())
