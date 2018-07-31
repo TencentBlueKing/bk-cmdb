@@ -81,7 +81,7 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 	logContent := phpapi.logic.NewHostLog(phpapi.header, util.GetActionOnwerIDByHTTPHeader(phpapi.header))
 	logContent.WithPrevious(strHostID, nil)
 	res, err := phpapi.logic.Engine.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, phpapi.header, param)
-	if nil == err {
+	if nil != err {
 		return "", err
 	}
 	if false == res.Result {
@@ -232,14 +232,12 @@ func (phpapi *PHPAPI) handleHostAssocation(instID int64, input map[string]interf
 		blog.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
-
 	for _, asst := range result.Data {
 		if _, ok := input[asst.ObjectAttID]; ok {
 			opt := hutil.NewOperation().WithInstID(instID).WithObjID(common.BKInnerObjIDHost)
 			if "" != asst.ObjectAttID {
-				opt.WithAssoObjID(asst.ObjectAttID)
+				opt.WithAssoObjID(asst.AsstObjID)
 			}
-
 			result, err := phpapi.logic.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, phpapi.header, opt.Data())
 			if err != nil || (err == nil && !result.Result) {
 				blog.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
