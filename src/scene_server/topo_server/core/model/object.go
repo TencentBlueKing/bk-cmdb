@@ -437,19 +437,32 @@ func (o *object) IsExists() (bool, error) {
 func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID); nil != err {
-			return err
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
+		}
+
+		if err = o.FieldValid.ValidID(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName); nil != err {
-			return err
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
+		}
+		if err = o.FieldValid.ValidName(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjCls) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
+		if _, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
 			return err
 		}
 	}
