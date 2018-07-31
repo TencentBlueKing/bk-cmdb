@@ -426,6 +426,7 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldObjectID)
+	data.Remove(metadata.AttributeFieldID)
 
 	if err := a.IsValid(true, data); nil != err {
 		return err
