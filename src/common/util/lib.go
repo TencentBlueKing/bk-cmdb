@@ -53,7 +53,6 @@ func GetActionUser(req *restful.Request) string {
 // GetActionOnwerID returns owner_uin form hender
 func GetActionOnwerID(req *restful.Request) string {
 	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
-	blog.Infof("request ownerID : %s", ownerID)
 	return ownerID
 }
 
