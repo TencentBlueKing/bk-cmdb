@@ -496,6 +496,8 @@ func (o *object) Create() error {
 func (o *object) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
 	if err := o.IsValid(true, data); nil != err {
 		return err
