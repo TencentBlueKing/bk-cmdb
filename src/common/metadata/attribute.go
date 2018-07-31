@@ -51,7 +51,7 @@ type Attribute struct {
 	PropertyID        string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
 	PropertyName      string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
 	PropertyGroup     string      `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group"`
-	PropertyGroupName string      `field:"bk_property_group_name,ignoretomap" json:"-" bson:"-"`
+	PropertyGroupName string      `field:"bk_property_group_name,ignoretomap" json:"bk_property_group_name" bson:"-"`
 	PropertyIndex     int64       `field:"bk_property_index" json:"bk_property_index" bson:"bk_property_index"`
 	Unit              string      `field:"unit" json:"unit" bson:"unit"`
 	Placeholder       string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
