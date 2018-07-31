@@ -179,7 +179,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 
 	// execute update action
 	updateCond := frtypes.MapStr{}
-	updateCond.Set("data", cli.datas)
+	updateCond.Set("data", data)
 	updateCond.Set("condition", cond.ToMapStr())
 	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, updateCond)
 	if nil != err {
@@ -254,12 +254,18 @@ func (cli *inst) IsExists() (bool, error) {
 
 	return 0 != rsp.Data.Count, nil
 }
-func (cli *inst) Save() error {
+func (cli *inst) Save(data frtypes.MapStr) error {
 
+	if nil != data {
+		cli.SetValues(data)
+	}
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
-		return cli.Update(cli.datas)
+		if nil == data {
+			return cli.Update(cli.datas)
+		}
+		return cli.Update(data)
 	}
 
 	return cli.Create()

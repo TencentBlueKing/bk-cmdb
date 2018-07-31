@@ -13,6 +13,9 @@
 package model
 
 import (
+	"regexp"
+	"unicode/utf8"
+
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -23,15 +26,59 @@ type FieldValid struct {
 }
 
 // Valid valid the field
-func (f *FieldValid) Valid(params types.ContextParams, data mapstr.MapStr, fieldID string) error {
+func (f *FieldValid) Valid(params types.ContextParams, data mapstr.MapStr, fieldID string) (string, error) {
 
 	val, err := data.String(fieldID)
 	if nil != err {
-		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, fieldID)
+		return val, params.Err.New(common.CCErrCommParamsIsInvalid, fieldID+" "+err.Error())
 	}
 	if 0 == len(val) {
-		return params.Err.Errorf(common.CCErrCommParamsNeedSet, fieldID)
+		return val, params.Err.Errorf(common.CCErrCommParamsNeedSet, fieldID)
 	}
 
+	return val, nil
+}
+
+// ValidID check the property ID
+func (f *FieldValid) ValidID(params types.ContextParams, value string) error {
+
+	match, err := regexp.MatchString(`[a-z\d_]+`, value)
+	if nil != err {
+		return err
+	}
+
+	if !match {
+		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
+	}
+
+	return nil
+}
+
+// ValidName check the name
+func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
+	if 20 < utf8.RuneCountInString(value) {
+		return params.Err.Errorf(common.CCErrCommOverLimit, value)
+	}
+	return nil
+}
+
+// ValidNameWithRegex valid by regex
+func (f *FieldValid) ValidNameWithRegex(params types.ContextParams, value string) error {
+
+	if err := f.ValidName(params, value); nil != err {
+		return err
+	}
+
+	/*
+			match, err := regexp.MatchString(`^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[()+-《》_,，；;“”‘’。."\' \\/]){1,20}$`, value)
+			if nil != err {
+				fmt.Println("dd:", err.Error(), value)
+				return err
+			}
+
+		if !match {
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
+		}
+	*/
 	return nil
 }
