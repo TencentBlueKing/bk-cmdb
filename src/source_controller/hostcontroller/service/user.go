@@ -146,6 +146,8 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		}
 	}
 
+	data.UpdateTime = time.Now().UTC()
+	data.ModifyUser = util.GetUser(req.Request.Header)
 	data.AppID = appID
 	data.OwnerID = ownerID
 	err = s.Instance.UpdateByCondition(UserQueryCollection, data, params)
