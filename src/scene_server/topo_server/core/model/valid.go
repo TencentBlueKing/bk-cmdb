@@ -61,3 +61,24 @@ func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
 	}
 	return nil
 }
+
+// ValidNameWithRegex valid by regex
+func (f *FieldValid) ValidNameWithRegex(params types.ContextParams, value string) error {
+
+	if err := f.ValidName(params, value); nil != err {
+		return err
+	}
+
+	/*
+			match, err := regexp.MatchString(`^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[()+-《》_,，；;“”‘’。."\' \\/]){1,20}$`, value)
+			if nil != err {
+				fmt.Println("dd:", err.Error(), value)
+				return err
+			}
+
+		if !match {
+			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
+		}
+	*/
+	return nil
+}

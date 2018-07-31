@@ -270,15 +270,25 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 
 	return rsp.Data, nil
 }
-func (g *group) Save() error {
+func (g *group) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := g.grp.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := g.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return g.Create()
 	}
-	data := metadata.SetValueToMapStrByTags(g.grp)
-	return g.Update(data)
+
+	if nil != data {
+		return g.Update(data)
+	}
+
+	return g.Update(g.grp.ToMapStr())
 }
 
 func (g *group) CreateAttribute() Attribute {
