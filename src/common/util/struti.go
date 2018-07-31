@@ -77,8 +77,7 @@ func Str2Time(timeStr string) time.Time {
 	if nil != err {
 		return fTime
 	}
-	fTime = time.Unix(fTime.Unix()-8*3600, 0)
-	return fTime
+	return fTime.UTC()
 
 }
 
