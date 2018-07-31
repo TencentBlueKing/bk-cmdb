@@ -55,7 +55,7 @@
 ### 4. 源码下载 && 编译
 
 * [源码下载 & 编译](source_compile.md)
-* [可执行文件（linux）](http://bkopen-10032816.file.myqcloud.com/cmdb3/cmdb-3.0.6.tar.gz)，md5[e1ce350eeb7947054e7ab95e7e3470e6]
+* [可执行文件（linux）](http://bkopen-10032816.file.myqcloud.com/cmdb/cmdb.tar.gz)，md5[f8d313081ffee78043aa5d862c0d4c49]
 
 ### 5. 配置数据库
 
