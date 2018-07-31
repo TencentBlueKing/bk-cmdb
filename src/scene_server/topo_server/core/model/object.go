@@ -580,13 +580,21 @@ func (o *object) ToMapStr() (frtypes.MapStr, error) {
 	return rst, nil
 }
 
-func (o *object) Save() error {
+func (o *object) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := o.obj.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := o.IsExists(); nil != err {
 		return err
 	} else if exists {
-		data := meta.SetValueToMapStrByTags(o.obj)
-		return o.Update(data)
+		if nil != data {
+			return o.Update(data)
+		}
+		return o.Update(o.obj.ToMapStr())
 	}
 
 	return o.Create()

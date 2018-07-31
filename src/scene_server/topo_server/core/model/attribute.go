@@ -382,7 +382,7 @@ func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
 		if nil != err {
 			return err
 		}
-		if err = a.FieldValid.ValidName(a.params, val); nil != err {
+		if err = a.FieldValid.ValidNameWithRegex(a.params, val); nil != err {
 			return err
 		}
 	}
@@ -523,17 +523,20 @@ func (a *attribute) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (a *attribute) Save() error {
+func (a *attribute) Save(data frtypes.MapStr) error {
 
-	//fmt.Println("attr:", a.attr)
+	if nil != data {
+		if _, err := a.attr.Parse(data); nil != err {
+			return err
+		}
+	}
+
 	if exists, err := a.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return a.Create()
 	}
 
-	data := metadata.SetValueToMapStrByTags(a.attr)
-	//fmt.Println("data:", data)
 	return a.Update(data)
 }
 
