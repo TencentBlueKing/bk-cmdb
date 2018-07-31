@@ -67,7 +67,7 @@
                         </bk-daterangepicker>
                     </span>
                     <span v-else-if="property.bkPropertyType === 'enum'">
-                        <bk-select :selected.sync="property.value" class="userapi-enum fl">
+                        <bk-select :selected.sync="property.value" :filterable="true" class="userapi-enum fl">
                             <bk-select-option v-for="option in getEnumOptions(property)"
                                 :key="option.id"
                                 :value="option.id"
