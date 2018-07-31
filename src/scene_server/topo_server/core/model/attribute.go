@@ -362,13 +362,27 @@ func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
 	}
 
 	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
-		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+		if _, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyID) {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyID)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidID(a.params, val); nil != err {
 			return err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyName) {
-		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName); nil != err {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidName(a.params, val); nil != err {
 			return err
 		}
 	}
