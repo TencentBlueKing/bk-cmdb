@@ -14,7 +14,6 @@ package inst
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -272,7 +271,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 	for _, parentObj := range parentObjs {
 
 		rstObj := &ObjectWithInsts{Object: parentObj}
-		fmt.Println("inst:", currInstID, parentObj.GetID(), cli.target.GetID())
+		//fmt.Println("inst:", currInstID, parentObj.GetID(), cli.target.GetID())
 		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
