@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -85,369 +84,76 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 	c.obj = obj
 }
 
-func (c *commonInst) getAsstObjectPrimaryFields(obj model.Object) ([]model.Attribute, map[FieldName]asstObjectAttribute, error) {
-
-	fields, err := obj.GetAttributes()
-	if nil != err {
-		blog.Errorf("[operation-inst] failed to get the object(%s)'s fields, error info is %s", obj.GetID(), err.Error())
-		return nil, nil, err
-	}
-
-	asstPrimaryFields := make(map[FieldName]asstObjectAttribute, 0)
-	for _, fieldValue := range fields {
-
-		if !fieldValue.IsAssociationType() {
-			continue
-		}
-
-		asstObjects, err := obj.GetParentObjectByFieldID(fieldValue.GetID())
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to get the object(%s)'s objects, error info is %s", obj.GetID(), err.Error())
-			return nil, nil, err
-		}
-
-		for _, asstObj := range asstObjects {
-
-			asstFields, err := asstObj.GetAttributes()
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to get the object(%s)'s fields, error info is %s", obj.GetID(), err.Error())
-				return nil, nil, err
-			}
-
-			asstPrimaryField := asstObjectAttribute{
-				attrs: make([]model.Attribute, 0),
-			}
-			asstPrimaryField.obj = asstObj
-			for _, field := range asstFields {
-				if field.GetIsOnly() {
-					asstPrimaryField.attrs = append(asstPrimaryField.attrs, field)
-				}
-			}
-
-			asstPrimaryFields[FieldName(fieldValue.GetID())] = asstPrimaryField
-
-		}
-
-	}
-	return fields, asstPrimaryFields, nil
-}
-
-func (c *commonInst) constructAssociationInstSearchCondition(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, batch *InstBatchInfo) (map[AssociationObjectID]frtypes.MapStr, map[RowIndex]error, error) {
-
-	results := make(map[AssociationObjectID]frtypes.MapStr)
-	errs := make(map[RowIndex]error, 0)
-	for rowIdx, dataVal := range *batch.BatchInfo {
-
-		batchData, err := frtypes.NewFromInterface(dataVal)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to parse the data(%#v), error info is %s", dataVal, err.Error())
-			return nil, nil, err
-		}
-
-		batchData.ForEach(func(key string, val interface{}) {
-
-			for _, fieldValue := range fields {
-
-				if fieldValue.GetID() != key {
-					continue
-				}
-
-				if !fieldValue.IsAssociationType() {
-					continue
-				}
-
-				asstFields, exists := asstPrimaryFields[FieldName(fieldValue.GetID())]
-				if !exists {
-					blog.Errorf("[operation-inst] not found the primary field(%s) in the asst fields (%#v)", fieldValue.GetID(), asstPrimaryFields)
-					errs[RowIndex(rowIdx)] = params.Err.New(common.CCErrTopoInstCreateFailed, params.Lang.Languagef("import_asst_property_str_not_found", key))
-					return
-				}
-
-				valStr, ok := val.(string)
-				if !ok {
-					errs[RowIndex(rowIdx)] = params.Err.New(common.CCErrTopoInstCreateFailed, params.Lang.Languagef("import_asst_property_str_not_found", key))
-					return
-				}
-
-				if common.ExcelDelAsstObjectRelation == strings.TrimSpace(valStr) {
-					continue
-				}
-
-				valStrItems := strings.Split(valStr, common.ExcelAsstPrimaryKeyRowChar)
-				asstConds := frtypes.New()
-
-				for _, valStrItem := range valStrItems {
-
-					if 0 == len(valStrItem) {
-						continue
-					}
-
-					primaryKeys := strings.Split(valStrItem, common.ExcelAsstPrimaryKeySplitChar)
-
-					if len(primaryKeys) != len(asstFields.attrs) {
-						errs[RowIndex(rowIdx)] = params.Err.New(common.CCErrTopoInstCreateFailed, params.Lang.Languagef("import_asst_property_str_primary_count_len", key))
-						continue
-					}
-
-					if asstFields.obj.IsCommon() {
-						asstConds.Set(common.BKObjIDField, asstFields.obj.GetID())
-					}
-
-					for _, inputVal := range primaryKeys {
-
-						for _, attr := range asstFields.attrs {
-
-							if !attr.GetIsOnly() {
-								continue
-							}
-							//fmt.Println("asst val:", valStr, primaryKeys, "key:", key, "asst fields:", attr.GetID())
-							var err error
-							asstConds[attr.GetID()], err = ConvByPropertytype(attr, inputVal)
-							if nil != err {
-								errs[RowIndex(rowIdx)] = params.Err.New(common.CCErrTopoInstCreateFailed, params.Lang.Languagef("import_asst_property_str_primary_count_len", key))
-								continue
-							}
-							//fmt.Println("asst val:", valStr, primaryKeys, "key:", key, "asst fields:", attr.GetID(), "conds:", conds)
-						}
-
-					} // end foreach primaryKeys
-
-				} // end foreach valStrItems
-
-				if _, exists := results[AssociationObjectID(asstFields.obj.GetID())]; exists {
-					results[AssociationObjectID(asstFields.obj.GetID())].Merge(asstConds)
-					continue
-				}
-
-				results[AssociationObjectID(asstFields.obj.GetID())] = asstConds
-
-			} // end for fields
-
-		}) // end for dataVal
-
-	}
-
-	return results, errs, nil
-}
-
-func (c *commonInst) searchAssociationInstByConditions(params types.ContextParams, fields []model.Attribute, asstPrimaryFields map[FieldName]asstObjectAttribute, conds map[AssociationObjectID]frtypes.MapStr) (map[AssociationObjectID]map[InputKey]InstID, error) {
-
-	results := make(map[AssociationObjectID]map[InputKey]InstID)
-	for asstObjID, asstCond := range conds {
-
-		var target *asstObjectAttribute
-		for _, obj := range asstPrimaryFields {
-			if obj.obj.GetID() != string(asstObjID) {
-				continue
-			}
-			target = &obj
-			break
-		} // end foreach asst primary fields
-
-		if nil == target {
-			continue
-		}
-
-		query := &metatype.QueryInput{}
-		query.Condition = asstCond
-		query.Limit = common.BKNoLimit
-		_, insts, err := c.FindInst(params, target.obj, query, false)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to find the object(%s)'s insts, error info is %s", target.obj.GetID(), err.Error())
-			return nil, err
-		}
-		//fmt.Println("asst inst:", len(insts), target.obj.GetID(), "cond:", asstCond)
-		for _, asstInst := range insts {
-			inputKeys := []string{}
-			instsMapStr := asstInst.GetValues()
-			for _, attr := range target.attrs {
-				attrVal, exists := instsMapStr.Get(attr.GetID())
-				if !exists {
-					return nil, params.Err.New(common.CCErrTopoInstCreateFailed, params.Lang.Languagef("import_str_asst_str_query_data_format_error", target.obj.GetID(), attr.GetID()))
-				}
-				inputKeys = append(inputKeys, fmt.Sprintf("%v", attrVal))
-			} // end foreach target.attrs
-
-			if _, ok := results[AssociationObjectID(target.obj.GetID())]; !ok {
-				results[AssociationObjectID(target.obj.GetID())] = make(map[InputKey]InstID)
-			}
-
-			instID, err := asstInst.GetInstID()
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to get the inst (%#v) id", instsMapStr)
-				return nil, params.Err.New(common.CCErrTopoInstCreateFailed, err.Error())
-			}
-
-			results[AssociationObjectID(target.obj.GetID())][InputKey(strings.Join(inputKeys, common.ExcelAsstPrimaryKeySplitChar))] = InstID(instID)
-
-		} // end foreach insts
-
-	}
-
-	return results, nil
-}
-
-func (c *commonInst) importExcelData(params types.ContextParams, obj model.Object, batch *InstBatchInfo) (map[AssociationObjectID]map[InputKey]InstID, map[RowIndex]error, error) {
-
-	fields, asstPrimaryFields, err := c.getAsstObjectPrimaryFields(obj)
-	if nil != err {
-		blog.Errorf("[operation-inst] get asst object primary fields, error info is %s", err.Error())
-		return nil, nil, err
-	}
-	fmt.Println("asst:", asstPrimaryFields)
-	searchAsstInstConds, errs, err := c.constructAssociationInstSearchCondition(params, fields, asstPrimaryFields, batch)
-	if nil != err {
-		blog.Errorf("[operation-inst] construct association inst, error info is %s", err.Error())
-		return nil, errs, err
-	}
-	if 0 != len(errs) {
-		return nil, errs, nil
-	}
-	fmt.Println("search asst cond:", searchAsstInstConds)
-	insts, err := c.searchAssociationInstByConditions(params, fields, asstPrimaryFields, searchAsstInstConds)
-	if nil != err {
-		blog.Errorf("[operation-inst] search association inst, error info is %s", err.Error())
-		return nil, nil, err
-	}
-
-	return insts, nil, nil
-
-}
-
-func (c *commonInst) dealBatchImportInsts(params types.ContextParams, rowErrs map[RowIndex]error, obj model.Object, importAsstInsts map[AssociationObjectID]map[InputKey]InstID, batch frtypes.MapStr) error {
-
-	asstObjs, err := obj.GetParentObject()
-	if nil != err {
-		blog.Errorf("[operation-inst] faild to find the association object, error info is %s", err.Error())
-		return nil
-	}
-
-	for inputObjID, asstKeyIDS := range importAsstInsts {
-		fmt.Println("asstkeys:", asstKeyIDS)
-		isNotFound := true
-		for _, asstObj := range asstObjs {
-
-			if asstObj.GetID() != string(inputObjID) {
-				continue
-			}
-			isNotFound = false
-			objAttr, err := obj.GetAttributes()
-			if nil != err {
-				blog.Errorf("[operation-inst] not found the association attributes, error info is %s", err.Error())
-				return err
-			}
-
-			for _, objAttr := range objAttr {
-
-				if !objAttr.IsAssociationType() {
-					continue
-				}
-
-				var strIDS []string
-				strInst, err := batch.String(objAttr.GetID())
-				if nil != err {
-					blog.Errorf("[operation-inst] the asst key(%s) is invalid, error info is %s", objAttr.GetID(), err.Error())
-					return params.Err.Errorf(common.CCErrCommParamsInvalid, objAttr.GetID())
-				}
-
-				if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strInst) {
-					batch.Set(objAttr.GetID(), "")
-					continue
-				}
-
-				strAsstInstKeys := strings.Split(strInst, common.ExcelAsstPrimaryKeyRowChar)
-
-				for _, asstKey := range strAsstInstKeys {
-					asstKey = strings.TrimSpace(asstKey)
-					if 0 == len(asstKey) {
-						continue
-					}
-					id, ok := asstKeyIDS[InputKey(asstKey)]
-					if !ok {
-						return params.Err.Errorf(common.CCErrCommParamsInvalid, asstKey)
-					}
-					strIDS = append(strIDS, fmt.Sprintf("%d", id))
-				}
-				fmt.Println("strids:", strIDS)
-				batch.Set(objAttr.GetID(), strings.Join(strIDS, common.InstAsstIDSplit))
-
-			}
-
-		} // end for eacho asstobjs
-
-		if isNotFound {
-			blog.Errorf("[operation-inst] not found the association object(%s)", inputObjID)
-			return params.Err.Errorf(common.CCErrCommParamsIsInvalid, "not found the association object("+inputObjID+")")
-		}
-	}
-
-	return nil
-}
-
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
-	var err error
-	// create association
-	var importInsts map[AssociationObjectID]map[InputKey]InstID
-	var rowsErrors map[RowIndex]error
+
+	var rowErr map[int64]error
 	results := &BatchResult{}
-	if common.InputTypeExcel == batchInfo.InputType && nil != batchInfo.BatchInfo {
-		importInsts, rowsErrors, err = c.importExcelData(params, obj, batchInfo)
-		if nil != err {
-			return nil, err
-		}
-
-		for errIdx, err := range rowsErrors {
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
-		}
-
-		for colIdx, colInput := range *batchInfo.BatchInfo {
-			delete(colInput, "import_from")
-			err, ok := rowsErrors[RowIndex(colIdx)]
-			if ok {
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-
-			err = c.dealBatchImportInsts(params, rowsErrors, obj, importInsts, colInput)
-			if nil != err {
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-			fmt.Println("col:", colInput)
-			item := c.instFactory.CreateInst(params, obj)
-
-			item.SetValues(colInput)
-
-			if item.GetValues().Exists(obj.GetInstIDFieldName()) {
-				// check update
-				targetInstID, err := item.GetInstID()
-				if nil != err {
-					results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-					continue
-				}
-				if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-					results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-					continue
-				}
-
-			} else {
-				// check create
-				if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-					results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-					continue
-				}
-			}
-
-			// set data
-			err = item.Save(colInput)
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), colInput, err.Error())
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
-			}
-			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-		} // end foreach batchinfo
+	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
+		return results, nil
 	}
+
+	assObjectInt := NewAsstObjectInst(params.Header, params.Engin, params.SupplierAccount, nil)
+	assObjectInt.SetMapFields(obj.GetID())
+	err := assObjectInt.GetObjAsstObjectPrimaryKey()
+	if nil != err {
+		blog.Error("failed to read the object att, error is %s ", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommSearchPropertyFailed, err.Error())
+		//return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error())
+	}
+	rowErr, err = assObjectInt.InitInstFromData(*batchInfo.BatchInfo)
+	if nil != err {
+		blog.Error("failed to read the object att, error is %s ", err.Error())
+		return nil, params.Err.Error(common.CCErrTopoInstSelectFailed)
+		//return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
+	}
+
+	for errIdx, err := range rowErr {
+		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
+	}
+
+	for colIdx, colInput := range *batchInfo.BatchInfo {
+		delete(colInput, "import_from")
+
+		if err := assObjectInt.SetObjAsstPropertyVal(colInput); nil != err {
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		}
+
+		//fmt.Println("input:", colInput)
+
+		item := c.instFactory.CreateInst(params, obj)
+		item.SetValues(colInput)
+
+		if item.GetValues().Exists(obj.GetInstIDFieldName()) {
+			// check update
+			targetInstID, err := item.GetInstID()
+			if nil != err {
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+
+		} else {
+			// check create
+			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+				continue
+			}
+		}
+
+		// set data
+		err = item.Save(colInput)
+		if nil != err {
+			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), error info is %s", obj.GetID(), colInput, err.Error())
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		}
+		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+	} // end foreach batchinfo
+
 	return results, nil
 }
 
