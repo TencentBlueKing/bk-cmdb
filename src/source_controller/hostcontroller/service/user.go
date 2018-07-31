@@ -79,6 +79,8 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 		CreateTime: time.Now().UTC(),
 		CreateUser: addQuery.CreateUser,
 		OwnerID:    ownerID,
+		ModifyUser: addQuery.CreateUser,
+		UpdateTime: time.Now().UTC(),
 	}
 
 	_, err = s.Instance.Insert(UserQueryCollection, userQuery)
