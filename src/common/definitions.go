@@ -95,6 +95,9 @@ const (
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
 
+	// BKInnerObjIDConfigTemp the inner object
+	BKInnerObjIDConfigTemp = "config_template"
+
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
