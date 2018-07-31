@@ -155,6 +155,7 @@ func (cli *classification) Create() error {
 func (cli *classification) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.ClassFieldClassificationID)
+	data.Remove(metadata.ClassificationFieldID)
 
 	if err := cli.IsValid(true, data); nil != err {
 		return err
