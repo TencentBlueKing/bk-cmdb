@@ -191,8 +191,8 @@ type UserConfigMeta struct {
 	ID         string      `json:"id,omitempty" bson:"id,omitempty"`
 	CreateTime time.Time   `json:"create_time,omitempty" bson:"create_time,omitempty"`
 	CreateUser string      `json:"create_user,omitempty" bson:"create_user,omitempty"`
-	ModifyUser string      `json:"modify_user,omitempty" bson:"modify_user,omitempty"`
-	UpdateTime interface{} `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	ModifyUser string      `json:"modify_user,omitempty" bson:"modify_user"`
+	UpdateTime interface{} `json:"last_time,omitempty" bson:"last_time"`
 	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
