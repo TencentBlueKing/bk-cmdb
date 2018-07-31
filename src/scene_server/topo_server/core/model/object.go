@@ -45,7 +45,7 @@ type Object interface {
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
-	GetParentObjectByFieldID(fieldID string) ([]Object, error)
+	GetChildObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
@@ -248,13 +248,13 @@ func (o *object) searchObjects(isNeedChild bool, cond condition.Condition) ([]Ob
 
 	return objItems, nil
 }
-func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
+func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
 
-	return o.searchObjects(false, cond)
+	return o.searchObjects(true, cond)
 }
 func (o *object) GetParentObject() ([]Object, error) {
 
@@ -437,19 +437,32 @@ func (o *object) IsExists() (bool, error) {
 func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID); nil != err {
-			return err
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
+		}
+
+		if err = o.FieldValid.ValidID(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName); nil != err {
-			return err
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
+		}
+		if err = o.FieldValid.ValidName(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjCls) {
-		if err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
+		if _, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
 			return err
 		}
 	}
@@ -496,6 +509,8 @@ func (o *object) Create() error {
 func (o *object) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
 	if err := o.IsValid(true, data); nil != err {
 		return err
@@ -565,13 +580,21 @@ func (o *object) ToMapStr() (frtypes.MapStr, error) {
 	return rst, nil
 }
 
-func (o *object) Save() error {
+func (o *object) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := o.obj.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := o.IsExists(); nil != err {
 		return err
 	} else if exists {
-		data := meta.SetValueToMapStrByTags(o.obj)
-		return o.Update(data)
+		if nil != data {
+			return o.Update(data)
+		}
+		return o.Update(o.obj.ToMapStr())
 	}
 
 	return o.Create()
@@ -625,7 +648,16 @@ func (o *object) GetAttributes() ([]Attribute, error) {
 			clientSet: o.clientSet,
 		}
 
+		// reset the group name
+		grp, err := attr.GetGroup()
+		if nil != err {
+			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s", err.Error())
+			return nil, err
+		}
+		attr.SetGroup(grp)
+
 		rstItems = append(rstItems, attr)
+
 	}
 
 	return rstItems, nil

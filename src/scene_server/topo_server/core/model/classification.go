@@ -111,12 +111,12 @@ func (cli *classification) GetObjects() ([]Object, error) {
 func (cli *classification) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
 			return err
 		}
 	}
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
 			return err
 		}
 	}
@@ -155,6 +155,7 @@ func (cli *classification) Create() error {
 func (cli *classification) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.ClassFieldClassificationID)
+	data.Remove(metadata.ClassificationFieldID)
 
 	if err := cli.IsValid(true, data); nil != err {
 		return err
@@ -245,12 +246,22 @@ func (cli *classification) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (cli *classification) Save() error {
+func (cli *classification) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := cli.cls.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return cli.Create()
+	}
+
+	if nil != data {
+		return cli.Update(data)
 	}
 
 	return cli.Update(cli.cls.ToMapStr())

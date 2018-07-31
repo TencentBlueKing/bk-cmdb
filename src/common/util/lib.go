@@ -44,7 +44,7 @@ func GetActionLanguage(req *restful.Request) string {
 	return language
 }
 
-// GetActionLanguage returns user form hender
+// GetActionUser returns user form hender
 func GetActionUser(req *restful.Request) string {
 	user := req.HeaderParameter(common.BKHTTPHeaderUser)
 	return user
