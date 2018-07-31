@@ -45,7 +45,7 @@ type Object interface {
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
-	GetParentObjectByFieldID(fieldID string) ([]Object, error)
+	GetChildObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
@@ -248,13 +248,13 @@ func (o *object) searchObjects(isNeedChild bool, cond condition.Condition) ([]Ob
 
 	return objItems, nil
 }
-func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
+func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
 
-	return o.searchObjects(false, cond)
+	return o.searchObjects(true, cond)
 }
 func (o *object) GetParentObject() ([]Object, error) {
 
