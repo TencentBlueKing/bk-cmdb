@@ -246,12 +246,22 @@ func (cli *classification) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (cli *classification) Save() error {
+func (cli *classification) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := cli.cls.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return cli.Create()
+	}
+
+	if nil != data {
+		return cli.Update(data)
 	}
 
 	return cli.Update(cli.cls.ToMapStr())

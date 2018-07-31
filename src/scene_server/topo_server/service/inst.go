@@ -164,13 +164,20 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 	}
 
 	// construct the query inst condition
-	queryCond := &metadata.QueryInput{}
+	queryCond := &paraparse.SearchParams{}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
+	page := metadata.ParsePage(queryCond.Page)
+	query := &metadata.QueryInput{}
+	query.Condition = queryCond.Condition
+	query.Fields = strings.Join(queryCond.Fields, ",")
+	query.Limit = page.Limit
+	query.Sort = page.Sort
+	query.Start = page.Start
 
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, false)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -196,14 +203,21 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 	}
 
 	// construct the query inst condition
-	queryCond := &metadata.QueryInput{}
 
+	queryCond := &paraparse.SearchParams{}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
+	page := metadata.ParsePage(queryCond.Page)
+	query := &metadata.QueryInput{}
+	query.Condition = queryCond.Condition
+	query.Fields = strings.Join(queryCond.Fields, ",")
+	query.Limit = page.Limit
+	query.Sort = page.Sort
+	query.Start = page.Start
 
-	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, true)
+	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, query, true)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -331,19 +345,13 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 		return nil, err
 	}
 
-	/*unused
-	inputCond := &gparam.SearchParams{}
-	if err := data.MarshalJSONInto(&inputCond); nil != err{
-		return nil, err
-	}
-	*/
 	query := &metadata.QueryInput{}
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
-	query.Condition = cond
+	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
 	_, instItems, err := s.core.InstOperation().FindInstChildTopo(params, obj, instID, query)

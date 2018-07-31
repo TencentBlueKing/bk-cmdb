@@ -148,7 +148,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				newGrp.SetID(xid.New().String())
 				newGrp.SetSupplierAccount(params.SupplierAccount)
 				newGrp.SetObjectID(objID)
-				err := newGrp.Save()
+				err := newGrp.Save(nil)
 				if nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
 					if failed, ok := subResult["insert_failed"]; ok {
@@ -207,22 +207,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 				//fmt.Println("targetattr:", targetAttr.ToMapStr())
 				newAttr := o.modelFactory.CreateAttribute(params)
-				if _, err := newAttr.Parse(targetAttr.ToMapStr()); nil != err {
-					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
-					if failed, ok := subResult["insert_failed"]; ok {
-						failedArr := failed.([]string)
-						failedArr = append(failedArr, errStr)
-						subResult["insert_failed"] = failedArr
-					} else {
-						subResult["insert_failed"] = []string{
-							errStr,
-						}
-					}
-					result[objID] = subResult
-					continue
-				}
-
-				if err = newAttr.Save(); nil != err {
+				if err = newAttr.Save(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["insert_failed"]; ok {
 						failedArr := failed.([]string)
@@ -358,7 +343,7 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	grp.SetIndex(-1)
 	grp.SetName("Default")
 	grp.SetID("default")
-	if err = grp.Save(); nil != err {
+	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
 	}
 
