@@ -97,8 +97,22 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		if err := s.core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
 		}
-		fallthrough
+		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
+		_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
+		if nil != err {
+			return nil, err
+		}
+		if len(bizs) <= 0 {
+			return nil, params.Err.Error(common.CCErrCommNotFound)
+		}
+		name, err := bizs[0].GetInstName()
+		if nil != err {
+			return nil, params.Err.Error(common.CCErrCommNotFound)
+		}
+		name = name + common.BKDataRecoverSuffix
+		name = name[:common.FieldTypeSingleLenChar]
+		data.Set(common.BKAppNameField, name)
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	default:
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
