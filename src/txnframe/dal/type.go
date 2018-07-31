@@ -12,6 +12,10 @@
 
 package dal
 
+const (
+	DBTypeMongo = "mongodb"
+)
+
 // mongodb collection names
 const (
 	ApplicationBaseCollection    = "cc_ApplicationBase"
