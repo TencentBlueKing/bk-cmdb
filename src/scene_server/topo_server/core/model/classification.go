@@ -111,12 +111,12 @@ func (cli *classification) GetObjects() ([]Object, error) {
 func (cli *classification) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
 			return err
 		}
 	}
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
 			return err
 		}
 	}

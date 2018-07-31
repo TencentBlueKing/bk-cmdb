@@ -88,13 +88,13 @@ func (g *group) GetObjectID() string {
 func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupID) {
-		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
 			return err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupName) {
-		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
 			return err
 		}
 	}
