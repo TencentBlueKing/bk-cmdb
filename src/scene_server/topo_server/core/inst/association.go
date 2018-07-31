@@ -271,6 +271,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 	for _, parentObj := range parentObjs {
 
 		rstObj := &ObjectWithInsts{Object: parentObj}
+		//fmt.Println("inst:", currInstID, parentObj.GetID(), cli.target.GetID())
 		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
@@ -280,14 +281,14 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 		parentInstIDS := []int64{}
 		for _, item := range asstItems {
 
-			parentInstID, err := item.Int64(common.BKAsstInstIDField)
+			parentInstID, err := item.Int64(common.BKInstIDField)
 			if nil != err {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return result, err
 			}
 			parentInstIDS = append(parentInstIDS, parentInstID)
 		}
-
+		//fmt.Println("parent:", parentInstIDS)
 		innerCond := condition.CreateCondition()
 
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
@@ -327,7 +328,6 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 	result := make([]Inst, 0)
 
 	for _, parentObj := range parentObjs {
-
 		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
@@ -337,7 +337,7 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 		parentInstIDS := []int64{}
 		for _, item := range asstItems {
 
-			parentInstID, err := item.Int64(common.BKAsstInstIDField)
+			parentInstID, err := item.Int64(common.BKInstIDField)
 			if nil != err {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return nil, err
@@ -424,7 +424,7 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		blog.Errorf("[inst-inst] failed to get the object(%s)'s child, error info is %s", cli.target.GetID(), err.Error())
 		return result, err
 	}
-
+	//fmt.Println("objs:", cli.target.GetID(), childObjs)
 	currInstID, err := cli.GetInstID()
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())
