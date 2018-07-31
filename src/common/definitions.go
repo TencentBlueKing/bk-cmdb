@@ -718,4 +718,7 @@ const (
 	DataStatusEnable   DataStatusFlag = "enable"
 )
 
-const BKDataStatusField = "bk_data_status"
+const (
+	BKDataStatusField   = "bk_data_status"
+	BKDataRecoverSuffix = "(recover)"
+)
