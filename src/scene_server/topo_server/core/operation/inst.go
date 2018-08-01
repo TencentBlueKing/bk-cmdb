@@ -152,6 +152,10 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			continue
 		}
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+		if err := c.setInstAsst(params, obj, item); nil != err {
+			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+			return nil, err
+		}
 	} // end foreach batchinfo
 
 	return results, nil
