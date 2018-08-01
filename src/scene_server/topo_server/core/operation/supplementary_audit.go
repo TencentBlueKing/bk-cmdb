@@ -49,17 +49,44 @@ type auditLog struct {
 }
 
 func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action auditoplog.AuditOpType) {
-	if nil == currData {
+
+	var targetData *WrapperResult
+	isPreItem := false
+	if nil != currData {
+		targetData = currData
+	} else if nil != preData {
+		isPreItem = true
+		targetData = preData
+	} else {
 		blog.Errorf("[audit] the curr data is empty")
 		return
 	}
 
-	for idx, currItem := range currData.datas {
+	for _, targetItem := range targetData.datas {
 
-		var preDataTmp interface{}
-		if nil != preData {
-			if idx < len(preData.datas) {
-				preDataTmp = preData.datas[idx].GetValues()
+		id, err := targetItem.GetInstID()
+		if nil != err {
+			blog.Errorf("[audit]failed to get the inst id, error info is %s", err.Error())
+			return
+		}
+
+		var preDataTmp, currDataTmp interface{}
+		if !isPreItem {
+			currDataTmp = targetItem.GetValues()
+		} else {
+			preDataTmp = targetItem.GetValues()
+		}
+
+		if nil != preData && !isPreItem {
+			for _, preItem := range preData.datas {
+				preID, err := preItem.GetInstID()
+				if nil != err {
+					blog.Errorf("[audit]failed to get the inst id, error info is %s", err.Error())
+					continue
+				}
+				if id == preID {
+					preDataTmp = preItem.GetValues()
+				}
 			}
 		}
 
@@ -72,12 +99,6 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		case auditoplog.AuditOpTypeModify:
 			desc = "update " + a.obj.GetObjectType()
 
-		}
-
-		id, err := currItem.GetInstID()
-		if nil != err {
-			blog.Errorf("[audit]failed to get the inst id, error info is %s", err.Error())
-			return
 		}
 
 		headers := []Header{}
@@ -95,22 +116,23 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 
 		data := common.KvMap{
 			common.BKContentField: Content{
-				CurData: currItem.GetValues(),
+				CurData: currDataTmp,
 				PreData: preDataTmp,
 				Headers: headers,
 			},
 			common.BKOpDescField:   desc,
-			common.BKOpTypeField:   auditoplog.AuditOpTypeAdd,
+			common.BKOpTypeField:   action,
 			common.BKOpTargetField: a.obj.GetID(),
 			"inst_id":              id,
 		}
 
-		bizID, err := currItem.GetValues().String(common.BKAppIDField)
+		bizID, err := targetItem.GetValues().String(common.BKAppIDField)
 		if nil != err {
-			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", currItem.GetValues(), err.Error())
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
 			bizID = "0"
 		}
-		//fmt.Println("the data:", data, "obj:", a.obj.GetID())
+		//fmt.Println("the data pre:", preDataTmp)
+		//fmt.Println("the data curr:", currDataTmp)
 		switch a.obj.GetObjectType() {
 		default:
 
