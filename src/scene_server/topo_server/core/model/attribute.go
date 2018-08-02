@@ -362,13 +362,27 @@ func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
 	}
 
 	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
-		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+		if _, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyID) {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyID)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidID(a.params, val); nil != err {
 			return err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyName) {
-		if err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName); nil != err {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidNameWithRegex(a.params, val); nil != err {
 			return err
 		}
 	}
@@ -426,6 +440,7 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldObjectID)
+	data.Remove(metadata.AttributeFieldID)
 
 	if err := a.IsValid(true, data); nil != err {
 		return err
@@ -508,17 +523,20 @@ func (a *attribute) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (a *attribute) Save() error {
+func (a *attribute) Save(data frtypes.MapStr) error {
 
-	//fmt.Println("attr:", a.attr)
+	if nil != data {
+		if _, err := a.attr.Parse(data); nil != err {
+			return err
+		}
+	}
+
 	if exists, err := a.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return a.Create()
 	}
 
-	data := metadata.SetValueToMapStrByTags(a.attr)
-	//fmt.Println("data:", data)
 	return a.Update(data)
 }
 
@@ -557,10 +575,32 @@ func (a *attribute) GetName() string {
 
 func (a *attribute) SetGroup(grp Group) {
 	a.attr.PropertyGroup = grp.GetID()
+	a.attr.PropertyGroupName = grp.GetName()
 }
 
 func (a *attribute) GetGroup() (Group, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
+	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
+
+	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.GetObjectID(), a.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())
+		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.GetObjectID(), cond.ToMapStr(), rsp.ErrMsg)
+		return nil, a.params.Err.Error(rsp.Code)
+	}
+
+	if 0 == len(rsp.Data) {
+		return CreateGroup(a.params, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+	}
+
+	return CreateGroup(a.params, a.clientSet, rsp.Data)[0], nil // should be one group
 }
 
 func (a *attribute) SetGroupIndex(attGroupIndex int64) {

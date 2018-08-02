@@ -111,7 +111,9 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 			return nil, params.Err.Error(common.CCErrCommNotFound)
 		}
 		name = name + common.BKDataRecoverSuffix
-		name = name[:common.FieldTypeSingleLenChar]
+		if len(name) >= common.FieldTypeSingleLenChar {
+			name = name[:common.FieldTypeSingleLenChar]
+		}
 		data.Set(common.BKAppNameField, name)
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	default:
