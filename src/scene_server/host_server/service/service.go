@@ -42,7 +42,7 @@ func (s *Service) WebService() *restful.WebService {
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	//restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.DELETE("/host/batch").To(s.DeleteHostBatch))
+	ws.Route(ws.DELETE("/hosts/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	ws.Route(ws.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	ws.Route(ws.POST("/hosts/add").To(s.AddHost))
