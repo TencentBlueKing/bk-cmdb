@@ -91,6 +91,7 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 
 	dataRows := []*metadata.ObjectDes{
 		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDConfigTemp, ObjectName: "配置文件模板", IsPre: true, ObjIcon: "icon-cc-process", Position: `{"bk_host_manage":{"x":-550,"y":-750}}`},
+		&metadata.ObjectDes{ObjCls: "bk_host_manage", ObjectID: common.BKInnerObjIDTempVersion, ObjectName: "模板版本", IsPre: true, ObjIcon: "icon-cc-process", Position: `{"bk_host_manage":{"x":-600,"y":-850}}`},
 	}
 	t := time.Now()
 	for _, r := range dataRows {
@@ -149,8 +150,21 @@ func ConfigTemplateRow() []*metadata.Attribute {
 
 }
 
-// ConfigTemplateRow config template structure
+// TempVersionRow temp version structure
 func TempVersionRow() []*metadata.Attribute {
-	dataRows := []*metadata.Attribute{}
+	objID := common.BKInnerObjIDTempVersion
+	statusOption := []validator.EnumVal{{ID: "draft", Name: "草稿", Type: "text", IsDefault: true}, {ID: "online", Name: "上线", Type: "text"}, {ID: "history", Name: "历史", Type: "text"}}
+
+	dataRows := []*metadata.Attribute{
+		//base info
+		&metadata.Attribute{ObjectID: objID, PropertyID: "template_id", PropertyName: "模板ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&metadata.Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "description", PropertyName: "描述", IsRequired: false, IsOnly: true, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "operator", PropertyName: "操作人", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "create_time", PropertyName: "创建时间", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "content", PropertyName: "内容", IsRequired: true, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "status", PropertyName: "状态", IsAPI: true, IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: statusOption},
+	}
+	return dataRows
 	return dataRows
 }

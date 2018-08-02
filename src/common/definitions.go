@@ -98,6 +98,9 @@ const (
 	// BKInnerObjIDConfigTemp the inner object
 	BKInnerObjIDConfigTemp = "config_template"
 
+	// BKInnerObjIDTempVerion the inner object
+	BKInnerObjIDTempVersion = "template_version"
+
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
