@@ -51,7 +51,7 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
 	ws.Route(ws.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
 
-	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcIDField + "}").To(ps.GetProcessDetailByID))
+	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
@@ -59,10 +59,11 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
 	ws.Route(ws.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
 
-	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
+	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateConfigTemp))
+	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateConfigTemp))
+	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteConfigTemp))
+	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.QueryConfigTemp))
+
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)

@@ -65,7 +65,7 @@ func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *rest
 		query[common.BKModuleNameField] = moduleName
 		query = util.SetModOwner(query, ownerID)
 		blog.Debug("query;%v", query)
-		fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
+		fields := []string{common.BKProcessIDField, common.BKAppIDField, common.BKModuleNameField}
 		var result []interface{}
 		err = proc.CC.InstCli.GetMutilByCondition("cc_Proc2Module", fields, query, &result, common.BKHostIDField, 0, 100000)
 		if err != nil {
@@ -79,7 +79,7 @@ func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *rest
 				blog.Error("assign error item is not bson.M,item:%v", item)
 				continue
 			}
-			processID, err := util.GetIntByInterface(itemMap[common.BKProcIDField])
+			processID, err := util.GetIntByInterface(itemMap[common.BKProcessIDField])
 			if nil != err {
 				blog.Error("GetIntByInterface err:%v", err)
 				continue
@@ -87,11 +87,11 @@ func (cli *procAction) GetProcessesByModuleName(req *restful.Request, resp *rest
 			processIdArr = append(processIdArr, processID)
 		}
 		procQuery := make(map[string]interface{})
-		procQuery[common.BKProcIDField] = map[string]interface{}{
+		procQuery[common.BKProcessIDField] = map[string]interface{}{
 			"$in": processIdArr,
 		}
 		var resultProc []interface{}
-		err = proc.CC.InstCli.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
+		err = proc.CC.InstCli.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcessIDField, 0, 100000)
 		blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)
 		if err != nil {
 			blog.Error("fail to get proc %v", err)

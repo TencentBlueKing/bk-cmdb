@@ -69,7 +69,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	//save change log
-	instID, err := ret.Data.Int64(common.BKProcIDField)
+	instID, err := ret.Data.Int64(common.BKProcessIDField)
 	if nil == err {
 
 		curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
@@ -82,7 +82,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 
 	// return success
 	result := make(map[string]interface{})
-	result[common.BKProcIDField] = instID
+	result[common.BKProcessIDField] = instID
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
@@ -99,7 +99,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	procIDStr := req.PathParameter(common.BKProcIDField)
+	procIDStr := req.PathParameter(common.BKProcessIDField)
 	procID, err := strconv.Atoi(procIDStr)
 	if err != nil {
 		blog.Errorf("convert procid from string to int failed!, err: %s", err.Error())
@@ -132,7 +132,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	condition := make(map[string]interface{})
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
-	condition[common.BKProcIDField] = procID
+	condition[common.BKProcessIDField] = procID
 	input["condition"] = condition
 	input["data"] = procData
 	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, input)
@@ -245,7 +245,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	condition := make(map[string]interface{})
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
-	condition[common.BKProcIDField] = map[string]interface{}{
+	condition[common.BKProcessIDField] = map[string]interface{}{
 		common.BKDBIN: iProcIDArr,
 	}
 
@@ -308,7 +308,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	procIDStr := req.PathParameter(common.BKProcIDField)
+	procIDStr := req.PathParameter(common.BKProcessIDField)
 	procID, err := strconv.Atoi(procIDStr)
 	if err != nil {
 		blog.Errorf("convert procid from string to int failed!, err: %s", err.Error())
@@ -324,7 +324,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 
 	conditon := make(map[string]interface{})
 	conditon[common.BKAppIDField] = appID
-	conditon[common.BKProcIDField] = procID
+	conditon[common.BKProcessIDField] = procID
 	conditon[common.BKOwnerIDField] = ownerID
 	ret, err := ps.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, conditon)
 	if err != nil || (err == nil && !ret.Result) {
@@ -411,7 +411,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		}
 
 		// update condition
-		condition[common.BKProcIDField] = map[string]interface{}{
+		condition[common.BKProcessIDField] = map[string]interface{}{
 			"$in": procIdArr,
 		}
 		delete(condition, common.BKModuleNameField)
@@ -466,7 +466,7 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 
 func (ps *ProcServer) getProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
 	condition := map[string]interface{}{
-		common.BKProcIDField: procID,
+		common.BKProcessIDField: procID,
 	}
 
 	reqParam := new(meta.QueryInput)

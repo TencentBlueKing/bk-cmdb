@@ -293,7 +293,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 	procCond := make(map[string]interface{})
 	procCond[common.BKOwnerIDField] = ownerId
 	procCond[common.BKAppIDField] = appId
-	procCond[common.BKProcIDField] = procId
+	procCond[common.BKProcessIDField] = procId
 	procParam := new(meta.QueryInput)
 	procParam.Condition = procCond
 	procRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, procParam)
@@ -304,7 +304,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 	// create procInstance
 	procInstModels := make([]*meta.ProcInstanceModel, 0)
 	for _, procInfo := range procRet.Data.Info {
-		searchProcId, ok := procInfo[common.BKProcIDField].(string)
+		searchProcId, ok := procInfo[common.BKProcessIDField].(string)
 		if !ok {
 			blog.Warnf("fail to convert procid into string. value: %+v", procInfo)
 			continue
@@ -359,7 +359,7 @@ func (ps *ProcServer) createProcInstanceModel(appId, procId, moduleName, ownerId
 func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
-	condition[common.BKProcIDField] = procId
+	condition[common.BKProcessIDField] = procId
 	condition[common.BKModuleNameField] = moduleName
 
 	ret, err := ps.CoreAPI.ProcController().DeleteProcInstanceModel(context.Background(), forward, condition)

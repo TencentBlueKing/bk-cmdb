@@ -246,14 +246,11 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
-	// BKProcIDField the proc id field
-	BKProcIDField = "bk_process_id"
+	// BKProcessIDField the proc id field
+	BKProcessIDField = "bk_process_id"
 
-	// BKConfTempId is the config template id field
-	BKConfTempIdField = "bk_conftemp_id"
-
-	// BKProcNameField the proc name field
-	BKProcNameField = "bk_process_name"
+	// BKProcessNameField the proc name field
+	BKProcessNameField = "bk_process_name"
 
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
@@ -348,10 +345,10 @@ const (
 	BKProtocol = "protocol"
 
 	// BKProcessIDField the process id field
-	BKProcessIDField = "bk_process_id"
+	//	BKProcessIDField = "bk_process_id"
 
 	// BKProcessNameField the process name field
-	BKProcessNameField = "bk_process_name"
+	//	BKProcessNameField = "bk_process_name"
 
 	// BKFuncIDField the func id field
 	BKFuncIDField = "bk_func_id"
