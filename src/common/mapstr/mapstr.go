@@ -46,6 +46,10 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
+	case string:
+		result := New()
+		err := json.Unmarshal([]byte(tmp), &result)
+		return result, err
 	case *map[string]interface{}:
 		return MapStr(*tmp), nil
 	case map[string]string:
