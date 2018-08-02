@@ -156,6 +156,11 @@ const (
 	EventTypeResourcePoolModule = "resource"
 )
 
+// Event object type
+const (
+	EventObjTypeProcModule = "processmodule"
+)
+
 // ConfirmMode define
 type ConfirmMode string
 

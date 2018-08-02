@@ -54,7 +54,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	if len(originals) > 0 {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 		for _, i := range originals {
-			if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionDelete, nil, i); err != nil {
+			if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionDelete, nil, i); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
 			}
 		}
@@ -85,7 +85,7 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 			return
 		}
 		//  record events
-		if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionCreate, i, nil); err != nil {
+		if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionCreate, i, nil); err != nil {
 			blog.Errorf("create event error: %v", err)
 		}
 	}
