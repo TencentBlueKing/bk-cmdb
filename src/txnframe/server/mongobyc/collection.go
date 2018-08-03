@@ -1,0 +1,277 @@
+package mongobyc
+
+// #include <stdlib.h>
+// #include "mongo.h"
+import "C"
+
+import (
+	"context"
+	"fmt"
+	"unsafe"
+
+	"configcenter/src/common/mapstr"
+)
+
+// CollectionInterface collection operation methods
+type CollectionInterface interface {
+	Name() string
+	Count(ctx context.Context, filter interface{}) (int64, error)
+	DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error)
+	DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error)
+	Drop(ctx context.Context) error
+	Find(ctx context.Context, filter interface{}, output interface{}) error
+	FindOne(ctx context.Context, filter interface{}, output interface{}) error
+	InsertMany(ctx context.Context, document []interface{}) error
+	InsertOne(ctx context.Context, document interface{}) error
+	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
+}
+
+func newCollection(client *C.mongoc_client_t, dbName, collectionName string) CollectionInterface {
+	coll := &collection{
+		dbName:      dbName,
+		name:        collectionName,
+		innerClient: client,
+	}
+
+	innerDBName := C.CString(dbName)
+	innerCollectionName := C.CString(collectionName)
+	coll.innerCollection = C.mongoc_client_get_collection(client, innerDBName, innerCollectionName)
+
+	C.free(unsafe.Pointer(innerDBName))
+	C.free(unsafe.Pointer(innerCollectionName))
+
+	return coll
+}
+
+type collection struct {
+	name            string
+	dbName          string
+	innerClient     *C.mongoc_client_t
+	innerCollection *C.mongoc_collection_t
+}
+
+func (c *collection) Name() string {
+	return c.name
+}
+func (c *collection) Count(ctx context.Context, filter interface{}) (int64, error) {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return 0, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	count := C.mongoc_collection_count_documents(c.innerCollection, bsonFilter, nil, nil, &reply, &bsonErr)
+	if 0 > count {
+		return 0, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	return int64(count), nil
+}
+func (c *collection) DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error) {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_delete_many(c.innerCollection, bsonFilter, nil, &reply, &bsonErr)
+	if !ok {
+		return nil, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	return nil, nil
+}
+
+func (c *collection) DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error) {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_delete_one(c.innerCollection, bsonFilter, nil, &reply, &bsonErr)
+	if !ok {
+		return nil, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	return nil, nil
+}
+func (c *collection) Drop(ctx context.Context) error {
+
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_drop(c.innerCollection, &bsonErr)
+	if !ok {
+		return TransformError(bsonErr)
+	}
+	return nil
+}
+
+func (c *collection) Find(ctx context.Context, filter interface{}, output interface{}) error {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return err
+	}
+	defer C.bson_destroy(bsonFilter)
+	datas := []mapstr.MapStr{}
+	cursor := C.mongoc_collection_find_with_opts(c.innerCollection, bsonFilter, nil, nil)
+	for {
+		var doc *C.bson_t
+		if !C.mongoc_cursor_next(cursor, &doc) {
+			break
+		}
+		docResult, err := mapstr.NewFromInterface(TransformBsonIntoGoString(doc))
+		if nil != err {
+			C.bson_destroy(doc)
+			return err
+		}
+
+		datas = append(datas, docResult)
+		C.bson_destroy(doc)
+	}
+
+	TransformMapStrIntoResult(datas, output)
+
+	return nil
+}
+
+func (c *collection) FindOne(ctx context.Context, filter interface{}, output interface{}) error {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	cursor := C.mongoc_collection_find_with_opts(c.innerCollection, bsonFilter, nil, nil)
+	for {
+		var doc *C.bson_t
+		if !C.mongoc_cursor_next(cursor, &doc) {
+			break
+		}
+		defer C.bson_destroy(doc)
+		docResult, err := mapstr.NewFromInterface(TransformBsonIntoGoString(doc))
+		if nil != err {
+			return err
+		}
+
+		return docResult.MarshalJSONInto(output) // only return one document
+	}
+
+	return nil
+}
+
+func (c *collection) InsertMany(ctx context.Context, document []interface{}) error {
+
+	bsonDatas := make([]*C.bson_t, len(document))
+	for idx, doc := range document {
+		bsonData, err := TransformDocument(doc)
+		if nil != err {
+			return err
+		}
+		defer C.bson_destroy(bsonData)
+		bsonDatas[idx] = bsonData
+	}
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_insert_many(c.innerCollection, (**C.bson_t)(unsafe.Pointer(&bsonDatas[0])), C.ulong(len(document)), nil, &reply, &bsonErr)
+	if !ok {
+		return TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	return nil
+}
+func (c *collection) InsertOne(ctx context.Context, document interface{}) error {
+
+	bsonData, err := TransformDocument(document)
+	if nil != err {
+		return err
+	}
+	defer C.bson_destroy(bsonData)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_insert_one(c.innerCollection, bsonData, nil, &reply, &bsonErr)
+	if !ok {
+		return TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	return nil
+}
+func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error) {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	bsonUpdate, err := TransformDocument(update)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonUpdate)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_update_many(c.innerCollection, bsonFilter, bsonUpdate, nil, &reply, &bsonErr)
+	if !ok {
+		return nil, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	fmt.Println("update result:", result)
+
+	return nil, nil
+}
+func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error) {
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	bsonUpdate, err := TransformDocument(update)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonUpdate)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_update_one(c.innerCollection, bsonFilter, bsonUpdate, nil, &reply, &bsonErr)
+	if !ok {
+		return nil, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	fmt.Println("update result:", result)
+	return nil, nil
+}
