@@ -26,7 +26,7 @@ type ProcInstanceModel struct {
 	ProcID        uint64 `json: "bk_process_id" bson:"bk_process_id"`
 	FuncID        uint64 `json: "bk_func_id" bson:"bk_func_id"`
 	InstanceID    uint64 `json: "bk_instance_id" bson:"bk_instance_id"`
-	HostId        uint64 `json: "bk_host_id" bson:"bk_host_id"`
+	HostID        uint64 `json: "bk_host_id" bson:"bk_host_id"`
 }
 
 type ProcessOperate struct {
@@ -55,8 +55,8 @@ type GseProcRespone struct {
 
 type GseHost struct {
 	Ip           string `json:"ip,omitempty"`
-	BkCloudId    int    `json:"bk_cloud_id,omitempty"`
-	BkSupplierId int    `json:"bk_supplier_ed,omitempty"`
+	BkCloudId    int64  `json:"bk_cloud_id,omitempty"`
+	BkSupplierId int64  `json:"bk_supplier_ed,omitempty"`
 }
 
 type GseProcMeta struct {
@@ -124,4 +124,13 @@ type GseProcWarnReportPolicy struct {
 type GseProcConfigmap struct {
 	Path string `json:"path,omitempty"`
 	Md5  string `json:"md5,omitempty"`
+}
+
+// InlineProcInfo process info convert gse proc info
+type InlineProcInfo struct {
+	Meta    GseProcMeta
+	Spec    GseProcSpec
+	ProcNum int64
+	AppID   int64 // use gse proc namespace
+	FunID   int64
 }
