@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
@@ -112,7 +113,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{

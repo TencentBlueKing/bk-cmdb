@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	commontypes "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/txn_server/types"
 )
@@ -45,7 +44,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	now := commontypes.Now()
+	now := metadata.Now()
 	sub.Operator = util.GetUser(req.Request.Header)
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
@@ -187,7 +186,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
 	}
-	now := commontypes.Now()
+	now := metadata.Now()
 	sub.LastTime = &now
 	sub.OwnerID = ownerID
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)

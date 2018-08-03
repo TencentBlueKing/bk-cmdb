@@ -2,7 +2,6 @@ package metric
 
 import (
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/types"
 	"errors"
 	"net/http"
 )
