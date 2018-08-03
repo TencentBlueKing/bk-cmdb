@@ -128,6 +128,9 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
+	// BKDBOR the db operator
+	BKDBAND = "$and"
+
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
@@ -151,6 +154,10 @@ const (
 
 	// BKDBGTE the db opeartor
 	BKDBGTE = "$gte"
+
+	// BKDBExists the db opeartor
+	BKDBExists = "$exists"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
