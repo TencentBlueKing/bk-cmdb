@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"configcenter/src/txnframe/dal/mongoc"
+	"configcenter/src/txnframe/server/mongoc"
 )
 
 type keyval struct {
