@@ -42,6 +42,7 @@ func main() {
 	}
 
 	if err := app.Run(context.Background(), op); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		blog.Fatal(err)
 	}
 }
