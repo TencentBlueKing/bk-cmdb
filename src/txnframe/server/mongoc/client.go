@@ -12,10 +12,6 @@
 
 package mongoc
 
-// #cgo CFLAGS: -I/usr/local/include/libbson-1.0
-// #cgo CFLAGS: -I/usr/local/include/libmongoc-1.0
-// #cgo LDFLAGS: -lmongoc-1.0
-// #cgo LDFLAGS: -lbson-1.0
 // #include <stdlib.h>
 // #include "mongo.h"
 import "C"
