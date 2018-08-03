@@ -17,23 +17,34 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/server/lock/types"
 )
 
 // RedisLock  redis lock private data
 type RedisLock struct {
-	storage    *redis.Client
-	prefix     string
-	noticeChan chan *notice
+	storage        *redis.Client
+	prefix         string
+	noticeChan     chan *notice
+	errRetryCnt    int
+	triggerTime    int // compensation trigger time unit sencod
+	lockCompare    CompareFunc
+	preLcokCompare CompareFunc
 }
 
 // NewLock create lock
-func NewLock(client *redis.Client, prefix string) *RedisLock {
-	return &RedisLock{
-		storage:    client,
-		prefix:     prefix,
-		noticeChan: make(chan *notice, noticeMaxCount),
+func NewLock(client *redis.Client, prefix string, retry, compensationTime int, lockCompare, preLcokCompare CompareFunc) *RedisLock {
+	rl := &RedisLock{
+		storage:        client,
+		prefix:         prefix,
+		noticeChan:     make(chan *notice, noticeMaxCount),
+		errRetryCnt:    retry,
+		triggerTime:    compensationTime,
+		lockCompare:    lockCompare,
+		preLcokCompare: preLcokCompare,
 	}
+	go rl.compensation()
+	return rl
 }
 
 // PreLock  lock resources, exclusive mode
@@ -41,10 +52,10 @@ func (rl *RedisLock) PreLock(meta *types.Lock) (locked bool, err error) {
 	if nil == meta {
 		return false, fmt.Errorf("params not allowed null")
 	}
-	lockKey := fmt.Sprintf(lockPreFmtStr, rl.prefix, meta.LockName)
-	lockCollKey := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, meta.TxnID)
+	lockKey := getFmtRedisKey(rl.prefix, meta.LockName, true, false)
+	lockRelationKey := getFmtRedisKey(rl.prefix, meta.TxnID, true, true)
 
-	locked, _, err = rl.lock(lockKey, lockCollKey, meta, lockCompare)
+	locked, _, err = rl.lock(lockKey, lockRelationKey, meta, rl.preLcokCompare)
 
 	return locked, err
 }
@@ -54,10 +65,10 @@ func (rl *RedisLock) PreUnlock(meta *types.Lock) error {
 	if nil == meta {
 		return fmt.Errorf("params not allowed null")
 	}
-	lockKey := fmt.Sprintf(lockPreFmtStr, rl.prefix, meta.LockName)
-	lockCollKey := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, meta.TxnID)
+	lockKey := getFmtRedisKey(rl.prefix, meta.LockName, true, false)
+	lockRelationKey := getFmtRedisKey(rl.prefix, meta.TxnID, true, true)
 
-	return rl.unlock(lockKey, lockCollKey, meta, lockCompare)
+	return rl.unlock(lockKey, lockRelationKey, meta, rl.preLcokCompare)
 }
 
 // Lock  lock resources
@@ -65,10 +76,10 @@ func (rl *RedisLock) Lock(meta *types.Lock) (*types.LockResult, error) {
 	if nil == meta {
 		return nil, fmt.Errorf("params not allowed null")
 	}
-	lockKey := fmt.Sprintf(lockFmtStr, rl.prefix, meta.LockName)
-	lockCollKey := fmt.Sprintf(lockCollectionFmtStr, rl.prefix, meta.TxnID)
+	lockKey := getFmtRedisKey(rl.prefix, meta.LockName, false, false)
+	lockRelationKey := getFmtRedisKey(rl.prefix, meta.TxnID, false, true)
 
-	locked, subTxnID, err := rl.lock(lockKey, lockCollKey, meta, lockCompare)
+	locked, subTxnID, err := rl.lock(lockKey, lockRelationKey, meta, rl.lockCompare)
 	if nil != err {
 		return nil, err
 	}
@@ -85,21 +96,20 @@ func (rl *RedisLock) Unlock(meta *types.Lock) error {
 	if nil == meta {
 		return fmt.Errorf("params not allowed null")
 	}
-	lockKey := fmt.Sprintf(lockFmtStr, rl.prefix, meta.LockName)
-	lockCollKey := fmt.Sprintf(lockCollectionFmtStr, rl.prefix, meta.TxnID)
-	rl.notice(lockCollKey, meta.TxnID, meta.LockName, noticeTypeUnlockSuccess)
-	return rl.unlock(lockKey, lockCollKey, meta, lockCompare)
+	lockKey := getFmtRedisKey(rl.prefix, meta.LockName, false, false)
+	lockRelationKey := getFmtRedisKey(rl.prefix, meta.TxnID, false, true)
+	return rl.unlock(lockKey, lockRelationKey, meta, rl.lockCompare)
 }
 
 // Unlock  unlock resources
 func (rl *RedisLock) UnlockAll(id string) error {
-	lockCollKey := fmt.Sprintf(lockPreCollectionFmtStr, rl.prefix, id)
-	err := rl.unlockall(lockCollKey, rl.PreUnlock)
+	lockRelationKey := getFmtRedisKey(rl.prefix, id, true, true)
+	err := rl.unlockall(lockRelationKey, rl.PreUnlock)
 	if nil != err {
 		return err
 	}
-	lockCollKey = fmt.Sprintf(lockCollectionFmtStr, rl.prefix, id)
-	err = rl.unlockall(lockCollKey, rl.Unlock)
+	lockRelationKey = getFmtRedisKey(rl.prefix, id, false, true)
+	err = rl.unlockall(lockRelationKey, rl.Unlock)
 	if nil != err {
 		return err
 	}
@@ -107,8 +117,8 @@ func (rl *RedisLock) UnlockAll(id string) error {
 	return nil
 }
 
-func (rl *RedisLock) unlockall(lockCollKey string, unlock func(meta *types.Lock) error) error {
-	keys, err := rl.storage.HGetAll(lockCollKey).Result()
+func (rl *RedisLock) unlockall(lockRelationKey string, unlock func(meta *types.Lock) error) error {
+	keys, err := rl.storage.HGetAll(lockRelationKey).Result()
 	if nil != err {
 		if redis.Nil != err {
 			return err
@@ -127,6 +137,9 @@ func (rl *RedisLock) unlockall(lockCollKey string, unlock func(meta *types.Lock)
 			}
 		}
 	}
-	rl.storage.Del(lockCollKey)
+	err = rl.storage.Del(lockRelationKey).Err()
+	if nil != err {
+		blog.Errorf("unlockall redis delete key %s error, error:%s", lockRelationKey, err.Error())
+	}
 	return nil
 }
