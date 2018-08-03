@@ -79,6 +79,8 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 		CreateTime: time.Now().UTC(),
 		CreateUser: addQuery.CreateUser,
 		OwnerID:    ownerID,
+		ModifyUser: addQuery.CreateUser,
+		UpdateTime: time.Now().UTC(),
 	}
 
 	_, err = s.Instance.Insert(UserQueryCollection, userQuery)
@@ -144,7 +146,10 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		}
 	}
 
+	data.UpdateTime = time.Now().UTC()
+	data.ModifyUser = util.GetUser(req.Request.Header)
 	data.AppID = appID
+	data.OwnerID = ownerID
 	err = s.Instance.UpdateByCondition(UserQueryCollection, data, params)
 	if nil != err {
 		blog.Error("update user api fail, error information is %s, params:%v", err.Error(), params)

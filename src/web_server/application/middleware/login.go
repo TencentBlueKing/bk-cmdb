@@ -104,13 +104,13 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 // IsAuthed check user is authed
 func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
+		blog.Info("skip login")
 		session := sessions.Default(c)
 
 		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
 		if "" == cookieLanuage || nil != err {
 			c.SetCookie(common.BKHTTPCookieLanugageKey, defaultlanguage, 0, "/", "", false, false)
 			session.Set("language", defaultlanguage)
-
 		} else if cookieLanuage != session.Get("lanugage") {
 			session.Set("language", cookieLanuage)
 		}

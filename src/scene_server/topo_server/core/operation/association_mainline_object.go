@@ -120,6 +120,24 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 
+	// check the level
+	bizObj, err := a.obj.FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
+		return nil, err
+	}
+
+	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
+		return nil, err
+	}
+
+	if len(items) >= params.MaxTopoLevel {
+		blog.Errorf("[operation-asst] the mainline topo leve is %d, the max limit is %d", len(items), params.MaxTopoLevel)
+		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
+	}
+
 	// check and fetch the association object's classification
 	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
 	if nil != err {
@@ -160,7 +178,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	currentObj.SetIcon(data.ObjectIcon)
 	currentObj.SetClassification(objCls)
 
-	if err = currentObj.Save(); nil != err {
+	if err = currentObj.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
 		return nil, err
 	}
@@ -172,7 +190,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	attr.SetName(common.BKChildStr)
 	attr.SetOption(nil)
 
-	if err = attr.Save(); nil != err {
+	if err = attr.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
 		return nil, err
 	}
@@ -186,7 +204,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
 	defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
 
-	if err = defaultInstNameAttr.Save(); nil != err {
+	if err = defaultInstNameAttr.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), currentObj.GetDefaultInstPropertyName(), err.Error())
 		return nil, err
 	}
@@ -200,7 +218,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	defaultInstParentAttr.SetID(common.BKInstParentStr)
 	defaultInstParentAttr.SetName(common.BKInstParentStr)
 
-	if err = defaultInstParentAttr.Save(); nil != err {
+	if err = defaultInstParentAttr.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKInstParentStr, err.Error())
 		return nil, err
 	}
