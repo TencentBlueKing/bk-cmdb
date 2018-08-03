@@ -50,7 +50,7 @@ func (cli *association) Delete() error {
 func (cli *association) Update(data frtypes.MapStr) error {
 	return nil
 }
-func (cli *association) Save() error {
+func (cli *association) Save(data frtypes.MapStr) error {
 	return nil
 }
 

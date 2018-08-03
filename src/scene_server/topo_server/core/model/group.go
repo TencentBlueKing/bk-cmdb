@@ -88,13 +88,13 @@ func (g *group) GetObjectID() string {
 func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupID) {
-		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
 			return err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupName) {
-		if err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
 			return err
 		}
 	}
@@ -186,6 +186,7 @@ func (g *group) IsExists() (bool, error) {
 	// check id
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
 	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
 	grps, err := g.search(cond)
 	if nil != err {
@@ -198,6 +199,7 @@ func (g *group) IsExists() (bool, error) {
 	// check name
 	cond = condition.CreateCondition()
 	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
 	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
 	grps, err = g.search(cond)
 	if nil != err {
@@ -268,15 +270,25 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 
 	return rsp.Data, nil
 }
-func (g *group) Save() error {
+func (g *group) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := g.grp.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := g.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return g.Create()
 	}
-	data := metadata.SetValueToMapStrByTags(g.grp)
-	return g.Update(data)
+
+	if nil != data {
+		return g.Update(data)
+	}
+
+	return g.Update(g.grp.ToMapStr())
 }
 
 func (g *group) CreateAttribute() Attribute {

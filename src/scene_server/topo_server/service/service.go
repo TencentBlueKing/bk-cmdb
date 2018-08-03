@@ -187,6 +187,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 				data, dataErr := act.HandlerFunc(types.ContextParams{
 					Err:             defErr,
 					Lang:            defLang,
+					MaxTopoLevel:    s.cfg.BusinessTopoLevelMax,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
 					User:            user,
@@ -197,7 +198,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 					mData)
 
 				if nil != dataErr {
-					blog.Errorf("%s", dataErr.Error())
 					switch e := dataErr.(type) {
 					default:
 						s.sendResponse(resp, common.CCSystemBusy, dataErr.Error())

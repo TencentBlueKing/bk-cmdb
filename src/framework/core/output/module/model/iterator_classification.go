@@ -28,14 +28,14 @@ type classificationIterator struct {
 	bufIdx int
 }
 
-func newClassificationIterator(cond common.Condition) (ClassificationIterator, error) {
+func newClassificationIterator(supplierAccount string, cond common.Condition) (ClassificationIterator, error) {
 
 	clsIterator := &classificationIterator{
 		cond:   cond,
 		buffer: make([]types.MapStr, 0),
 	}
 
-	items, err := client.GetClient().CCV3().Classification().SearchClassifications(cond)
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Classification().SearchClassifications(cond)
 	if nil != err {
 		//fmt.Println("err:", err.Error(), items)
 		return nil, err
@@ -44,7 +44,7 @@ func newClassificationIterator(cond common.Condition) (ClassificationIterator, e
 	clsIterator.buffer = items
 	clsIterator.bufIdx = 0
 	if 0 == len(clsIterator.buffer) {
-		return nil, nil
+		return nil, io.EOF
 	}
 
 	return clsIterator, nil

@@ -13,13 +13,13 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -89,7 +89,32 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 	}
 	data = frtypes.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
-	case common.DataStatusDisabled, common.DataStatusEnable:
+	case common.DataStatusDisabled:
+		innerCond := condition.CreateCondition()
+		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
+		if err := s.core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
+			return nil, err
+		}
+		data.Set(common.BKDataStatusField, pathParams("flag"))
+	case common.DataStatusEnable:
+		_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
+		if nil != err {
+			return nil, err
+		}
+		if len(bizs) <= 0 {
+			return nil, params.Err.Error(common.CCErrCommNotFound)
+		}
+		name, err := bizs[0].GetInstName()
+		if nil != err {
+			return nil, params.Err.Error(common.CCErrCommNotFound)
+		}
+		name = name + common.BKDataRecoverSuffix
+		if len(name) >= common.FieldTypeSingleLenChar {
+			name = name[:common.FieldTypeSingleLenChar]
+		}
+		data.Set(common.BKAppNameField, name)
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	default:
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
@@ -107,36 +132,33 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	innerCond := condition.CreateCondition()
-	conditionData, err := data.MapStr("condition")
-	if nil != err {
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
-	}
-	if err = innerCond.Parse(conditionData); nil != err {
-		blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+	searchCond := &gparams.SearchParams{}
+	if err := data.MarshalJSONInto(&searchCond); nil != err {
+		blog.Errorf("failed to parse the params, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
-	if !conditionData.Exists(common.BKDataStatusField) {
+
+	innerCond := condition.CreateCondition()
+	switch searchCond.Native {
+	case 1: // native mode
+		if err := innerCond.Parse(searchCond.Condition); nil != err {
+			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+	default:
+		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition)); nil != err {
+			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		}
+	}
+
+	if _, ok := searchCond.Condition[common.BKDataStatusField]; !ok {
 		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 	}
 	innerCond.Field(common.BKDefaultField).Eq(0)
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
-	fields, exists := data.Get("fields")
-	fieldInput := []string{}
-	if exists {
-		fieldsVal, ok := fields.([]interface{})
-		if !ok {
-			blog.Errorf("the input fields is not string array")
-			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, "the fields is not a array")
-		}
-		for _, val := range fieldsVal {
-			fieldInput = append(fieldInput, fmt.Sprintf("%v", val))
-		}
-
-	}
-
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, fieldInput, innerCond)
+	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
