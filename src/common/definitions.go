@@ -252,6 +252,12 @@ const (
 	// BKProcessNameField the proc name field
 	BKProcessNameField = "bk_process_name"
 
+	// BKTemlateIDField the process template id field
+	BKTemlateIDField = "template_id"
+
+	// BKVesionIDField the version id field
+	BKVesionIDField = "version_id"
+
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
 

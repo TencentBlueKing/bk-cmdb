@@ -47,13 +47,15 @@ const (
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
-	BKTableNameBaseHost    = "cc_HostBase"
-	BKTableNameBaseModule  = "cc_ModuleBase"
-	BKTableNameBaseInst    = "cc_ObjectBase"
-	BKTableNameBasePlat    = "cc_PlatBase"
-	BKTableNameBaseSet     = "cc_SetBase"
-	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameBaseApp         = "cc_ApplicationBase"
+	BKTableNameBaseHost        = "cc_HostBase"
+	BKTableNameBaseModule      = "cc_ModuleBase"
+	BKTableNameBaseInst        = "cc_ObjectBase"
+	BKTableNameBasePlat        = "cc_PlatBase"
+	BKTableNameBaseSet         = "cc_SetBase"
+	BKTableNameBaseProcess     = "cc_Process"
+	BKTableNameBaseTemplate    = "cc_ProcTemplate"
+	BKTableNameBaseTempVersion = "cc_ProcTempVersion"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
@@ -116,6 +118,10 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
+	case BKInnerObjIDConfigTemp:
+		return BKTableNameBaseTemplate
+	case BKInnerObjIDTempVersion:
+		return BKTableNameBaseTemplate
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	case BKTableNameInstAsst:

@@ -7,5 +7,9 @@
     "1108006": "The query process failed",
     "1108007": "Delete process failed",
     "1108008": "The creation process failed",
+	"1108013": "create config template failed",
+	"1108014": "delete config template failed",
+	"1108015": "update config template failed",
+	"1108016": "search config template failed",
     "": ""
 }

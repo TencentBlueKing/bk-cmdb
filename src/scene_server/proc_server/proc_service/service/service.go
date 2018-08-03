@@ -23,10 +23,12 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/proc_server/logics"
 )
 
 type ProcServer struct {
 	*backbone.Engine
+	*logics.Logics
 }
 
 func (ps *ProcServer) WebService() http.Handler {
@@ -53,19 +55,20 @@ func (ps *ProcServer) WebService() http.Handler {
 
 	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
-	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
-
 	ws.Route(ws.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
 	ws.Route(ws.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
 
-	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.QueryConfigTemp))
+	//template config
+	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
+	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
+	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
+	//	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
+
+	//v2
+	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
+	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
-
 	container.Add(ws)
 
 	return container

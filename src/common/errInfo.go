@@ -368,6 +368,10 @@ const (
 	CCErrProcGetByApplicationIDFail  = 1108010
 	CCErrProcGetByIP                 = 1108011
 	CCErrProcOperateFaile            = 1108012
+	CCErrProcCreateTemplateFail      = 1108013
+	CCErrProcDeleteTemplateFail      = 1108014
+	CCErrProcUpdateTemplateFail      = 1108015
+	CCErrProcSearchTemplateFail      = 1108016
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

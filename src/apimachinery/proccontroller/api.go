@@ -16,7 +16,7 @@ import (
 	"context"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (p *procctrl) CreateProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -61,104 +61,103 @@ func (p *procctrl) DeleteProc2Module(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (p *procctrl) CreateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/conftemp"
+//func (p *procctrl) CreateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+//    resp = new(metadata.Response)
+//    subPath := "/conftemp"
 
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
-}
+//    err = p.client.Post().
+//        WithContext(ctx).
+//        Body(dat).
+//        SubResource(subPath).
+//        WithHeaders(h).
+//        Do().
+//        Into(resp)
+//    return
+//}
 
-func (p *procctrl) UpdateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/conftemp"
+//func (p *procctrl) UpdateConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+//    resp = new(metadata.Response)
+//    subPath := "/conftemp"
 
-    err = p.client.Put().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
-}
+//    err = p.client.Put().
+//        WithContext(ctx).
+//        Body(dat).
+//        SubResource(subPath).
+//        WithHeaders(h).
+//        Do().
+//        Into(resp)
+//    return
+//}
 
-func (p *procctrl) DeleteConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/conftemp"
+//func (p *procctrl) DeleteConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+//    resp = new(metadata.Response)
+//    subPath := "/conftemp"
 
-    err = p.client.Delete().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
-}
+//    err = p.client.Delete().
+//        WithContext(ctx).
+//        Body(dat).
+//        SubResource(subPath).
+//        WithHeaders(h).
+//        Do().
+//        Into(resp)
+//    return
+//}
 
-func (p *procctrl) QueryConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/conftemp/search"
+//func (p *procctrl) QueryConfTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+//    resp = new(metadata.Response)
+//    subPath := "/conftemp/search"
 
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    return
-}
+//    err = p.client.Post().
+//        WithContext(ctx).
+//        Body(dat).
+//        SubResource(subPath).
+//        WithHeaders(h).
+//        Do().
+//        Into(resp)
+//    return
+//}
 
 func (p *procctrl) CreateProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/instance/model"
-    
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    
-    return
+	resp = new(metadata.Response)
+	subPath := "/instance/model"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
 }
 
 func (p *procctrl) DeleteProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-    resp = new(metadata.Response)
-    subPath := "/instance/model"
+	resp = new(metadata.Response)
+	subPath := "/instance/model"
 
-    err = p.client.Delete().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
+	err = p.client.Delete().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
 
-    return
+	return
 }
 
 func (p *procctrl) GetProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcInstModelResult, err error) {
-    resp = new(metadata.ProcInstModelResult)
-    subPath := "/instance/model/search"
-    
-    err = p.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h).
-        Do().
-        Into(resp)
-    
-    return 
-}
+	resp = new(metadata.ProcInstModelResult)
+	subPath := "/instance/model/search"
 
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}

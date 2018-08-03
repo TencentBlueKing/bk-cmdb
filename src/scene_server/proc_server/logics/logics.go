@@ -10,27 +10,12 @@
  * limitations under the License.
  */
 
-package v3v1v1beta1
+package logics
 
 import (
-	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/common/backbone"
 )
 
-func init() {
-	upgrader.RegistUpgrader("v3.1.1-beta.1", upgrade)
-}
-
-func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
-	err = createTable(db, conf)
-	if err != nil {
-		return err
-	}
-
-	err = addPresetObjects(db, conf)
-	if err != nil {
-		return err
-	}
-
-	return
+type Logics struct {
+	*backbone.Engine
 }

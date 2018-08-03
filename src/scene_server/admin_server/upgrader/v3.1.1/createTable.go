@@ -13,24 +13,32 @@
 package v3v1v1beta1
 
 import (
+	"gopkg.in/mgo.v2"
+
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
 
-func init() {
-	upgrader.RegistUpgrader("v3.1.1-beta.1", upgrade)
+func createTable(db storage.DI, conf *upgrader.Config) (err error) {
+	for tablename, indexs := range tables {
+		exists, err := db.HasTable(tablename)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+				return err
+			}
+		}
+		for index := range indexs {
+			if err = db.Index(tablename, &indexs[index]); err != nil && !mgo.IsDup(err) {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
-	err = createTable(db, conf)
-	if err != nil {
-		return err
-	}
-
-	err = addPresetObjects(db, conf)
-	if err != nil {
-		return err
-	}
-
-	return
-}
+var tables = map[string][]storage.Index{
+	"cc_ProcTemplate":    []storage.Index{},
+	"cc_ProcTempVersion": []storage.Index{}}
