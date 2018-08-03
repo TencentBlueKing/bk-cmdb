@@ -49,6 +49,13 @@ func main() {
 		return
 	}
 
-	fmt.Printf("find result:%#v\n", findResults)
+	fmt.Printf("find result:%#v\n", findResults[0])
+
+	cnt, err := mongo.Collection("uri_test").Count(context.Background(), `{"key":"uri"}`)
+	if nil != err {
+		fmt.Println("failed to count:", err.Error())
+		return
+	}
+	fmt.Println("cnt:", cnt)
 
 }
