@@ -54,7 +54,7 @@ func TestInsertMany(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"key":"uri"}`, `{"key":"uri2"}`})
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
