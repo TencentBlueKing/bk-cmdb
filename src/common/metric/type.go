@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"errors"
 	"net/http"
@@ -75,7 +76,7 @@ type HealthInfo struct {
 	Module     string `json:"module"`
 	Address    string `json:"address"`
 	HealthMeta `json:",inline"`
-	AtTime     types.Time `json:"at_time"`
+	AtTime     metadata.Time `json:"at_time"`
 }
 
 type Action struct {

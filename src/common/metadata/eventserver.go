@@ -17,8 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
-
-	"configcenter/src/common/types"
 )
 
 type RspSubscriptionCreate struct {
@@ -64,7 +62,7 @@ type Subscription struct {
 	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
 	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
-	LastTime         *types.Time `bson:"last_time" json:"last_time"`
+	LastTime         *Time       `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
 
@@ -99,12 +97,12 @@ type EventInst struct {
 	ID          int64       `json:"event_id,omitempty"`
 	EventType   string      `json:"event_type"`
 	Action      string      `json:"action"`
-	ActionTime  types.Time  `json:"action_time"`
+	ActionTime  Time        `json:"action_time"`
 	ObjType     string      `json:"obj_type"`
 	Data        []EventData `json:"data"`
 	OwnerID     string      `json:"bk_supplier_account"`
 	RequestID   string      `json:"request_id"`
-	RequestTime types.Time  `json:"request_time"`
+	RequestTime Time        `json:"request_time"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {
