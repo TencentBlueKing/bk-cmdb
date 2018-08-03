@@ -12,22 +12,28 @@
 package redislock
 
 import (
+	"encoding/json"
+	"fmt"
+
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/server/lock/types"
 )
 
 const (
-	lockPreCollectionFmtStr = "%s:lock:table:id:%s"
-	lockPreFmtStr           = "%s:lock:table:%s"
+	lockPreRelationFmtStr = "%s:lock:pre:id:%s"
+	lockPreFmtStr         = "%s:lock:pre:name:%s"
 
-	lockCollectionFmtStr = "%s:lock:id:%s"
-	lockFmtStr           = "%s:lock:%s"
+	lockRelationFmtStr = "%s:lock:detail:id:%s"
+	lockFmtStr         = "%s:lock:detail:name:%s"
 
 	noticeMaxCount = 500
 
 	redisScanKeyCount = 256
 )
 
-type compareFunc func(val, redisVal *types.Lock) (bool, error)
+type CompareFunc func(val, redisVal *types.Lock) (bool, error)
 
 type noticType int
 
@@ -46,9 +52,53 @@ type notice struct {
 	noticType noticType
 }
 
-func lockCompare(val, redisMeta *types.Lock) (bool, error) {
+func LockCompare(val, redisMeta *types.Lock) (bool, error) {
 	if redisMeta.TxnID == val.TxnID {
 		return true, nil
 	}
 	return false, nil
+}
+
+func getRedisRelationInfoBy(storage *redis.Client, key, field string) (*types.Lock, bool, error) {
+	return getLockInfoByKey(storage.HGet(key, field).Result())
+}
+
+func getRedisLockInfoByKey(storage *redis.Client, key string) (*types.Lock, bool, error) {
+	return getLockInfoByKey(storage.Get(key).Result())
+}
+
+func getLockInfoByKey(str string, err error) (*types.Lock, bool, error) {
+	if nil == err {
+		lockInfo := new(types.Lock)
+		err := json.Unmarshal([]byte(str), lockInfo)
+		if nil != err {
+			err := fmt.Errorf("json unmarshal error, reply:%s, error:%s", str, err.Error())
+			blog.Error(err.Error())
+			return nil, false, err
+		} else {
+			return lockInfo, true, nil
+		}
+	} else if redis.Nil == err {
+		return nil, false, nil
+	}
+
+	return nil, false, err
+}
+
+func getFmtRedisKey(prefix, name string, isPre, isRelation bool) string {
+	if isPre {
+		if isRelation {
+			return fmt.Sprintf(lockPreRelationFmtStr, prefix, name)
+		} else {
+			return fmt.Sprintf(lockPreFmtStr, prefix, name)
+		}
+	} else {
+		if isRelation {
+			return fmt.Sprintf(lockRelationFmtStr, prefix, name)
+		} else {
+			return fmt.Sprintf(lockFmtStr, prefix, name)
+		}
+	}
+
+	return ""
 }
