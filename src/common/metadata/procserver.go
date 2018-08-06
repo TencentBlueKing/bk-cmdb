@@ -12,21 +12,21 @@
 package metadata
 
 type ProcModuleConfig struct {
-	ApplicationID int    `json:"bk_biz_id"`
+	ApplicationID int64  `json:"bk_biz_id"`
 	ModuleName    string `json:"bk_module_name"`
-	ProcessID     int    `json:"bk_process_id"`
+	ProcessID     int64  `json:"bk_process_id"`
 }
 
 type ProcInstanceModel struct {
-	ApplicationID uint64 `json: "bk_biz_id" bson:"bk_biz_id"`
-	SetID         uint64 `json: "bk_set_id" bson:"bk_set_id,omitempty"`
-	SetName       string `json: "bk_set_name" bson:"bk_set_name"`
-	ModuleID      uint64 `json: "bk_module_id" bson:"bk_module_id,omitempty"`
-	ModuleName    string `json: "bk_module_name" bson:"bk_module_name"`
-	ProcID        uint64 `json: "bk_process_id" bson:"bk_process_id"`
-	FuncID        uint64 `json: "bk_func_id" bson:"bk_func_id"`
-	InstanceID    uint64 `json: "bk_instance_id" bson:"bk_instance_id"`
-	HostID        uint64 `json: "bk_host_id" bson:"bk_host_id"`
+	ApplicationID  int64  `json: "bk_biz_id" bson:"bk_biz_id"`
+	SetID          int64  `json: "bk_set_id" bson:"bk_set_id,omitempty"`
+	ModuleID       int64  `json: "bk_module_id" bson:"bk_module_id,omitempty"`
+	ProcID         int64  `json: "bk_process_id" bson:"bk_process_id"`
+	FuncID         int64  `json: "bk_func_id" bson:"bk_func_id"`
+	ProcInstanceID uint64 `json: "bk_instance_id" bson:"bk_instance_id"`
+	HostID         int64  `json: "bk_host_id" bson:"bk_host_id"`
+	HostInstanID   uint64 `json: "host_instan_id" bson:"host_instan_id"`
+	HostProcID     uint64 `json: "host_proc_id" bson:"host_proc_id"`
 }
 
 type ProcessOperate struct {
@@ -45,7 +45,10 @@ type ProcModuleResult struct {
 
 type ProcInstModelResult struct {
 	BaseResp `json:",inline"`
-	Data     []ProcInstanceModel `json:"data"`
+	Data     struct {
+		Count int                 `json:"count"`
+		Info  []ProcInstanceModel `json:"info"`
+	} `json:"data"`
 }
 
 type GseProcRespone struct {

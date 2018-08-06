@@ -158,7 +158,8 @@ const (
 
 // Event object type
 const (
-	EventObjTypeProcModule = "processmodule"
+	EventObjTypeProcModule     = "processmodule"
+	EventObjTypeModuleTransfer = "moduletransfer"
 )
 
 // ConfirmMode define
