@@ -11,3 +11,51 @@
  */
 
 package mongobyc
+
+// #include "mongo.h"
+import "C"
+
+// Session mongodb session operation methods
+type Session interface {
+	Start() error
+	Close() error
+	CreateTransaction() Transaction
+	CollectionWithSession(collName string) CollectionInterface
+}
+
+type session struct {
+	mongocli     *client
+	innerSession *C.mongoc_client_session_t
+	sessionOpts  *C.mongoc_session_opt_t
+	txnOpts      *C.mongoc_transaction_opt_t
+}
+
+func (s *session) Start() error {
+
+	var err C.bson_error_t
+	s.innerSession = C.mongoc_client_start_session(s.mongocli.innerClient, s.sessionOpts, &err)
+	if nil == s.innerSession {
+		return TransformError(err)
+	}
+	return nil
+}
+
+func (s *session) Close() error {
+	if nil != s.innerSession {
+		C.mongoc_client_session_destroy(s.innerSession)
+		s.innerSession = nil
+	}
+	return nil
+}
+
+func (s *session) CreateTransaction() Transaction {
+
+	return &transaction{
+		txnOpts:       s.txnOpts,
+		clientSession: s,
+	}
+}
+
+func (s *session) CollectionWithSession(collName string) CollectionInterface {
+	return newCollectionWithSession(s.mongocli, collName, s.innerSession)
+}
