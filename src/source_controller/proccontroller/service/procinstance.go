@@ -13,6 +13,7 @@ package service
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin/json"
@@ -48,22 +49,32 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	reqParam := make(map[string]interface{})
+	reqParam := new(meta.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
 		blog.Errorf("get process instance model failed, decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	blog.Infof("will get process instance model. condition: %v", reqParam)
-	var result []interface{}
-	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstanceModel, []string{}, reqParam, &result, "", 0, 0); err != nil {
+	cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstanceModel, reqParam.Condition)
+	if err != nil {
 		blog.Errorf("get process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
 		return
 	}
-
-	resp.WriteEntity(meta.NewSuccessResp(result))
+	blog.Infof("will get process instance model. condition: %v", reqParam)
+	data := make([]meta.ProcInstanceModel, 0)
+	err = ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstanceModel, strings.Split(reqParam.Fields, ","), reqParam.Condition, &data, reqParam.Sort, reqParam.Start, reqParam.Limit)
+	if err != nil {
+		blog.Errorf("get process instance model failed. err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
+		return
+	}
+	ret := meta.ProcInstModelResult{
+		BaseResp: meta.SuccessBaseResp,
+	}
+	ret.Data.Info = data
+	ret.Data.Count = cnt
+	resp.WriteEntity(ret)
 }
 
 func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *restful.Response) {
