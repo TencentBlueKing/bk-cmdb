@@ -34,7 +34,7 @@ func TestInsertOne(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -54,7 +54,7 @@ func TestInsertMany(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertMany(context.Background(), []interface{}{`{"key":"uri"}`, `{"key":"uri2"}`})
+	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"key":"uri"}`, `{"key":"uri2"}`})
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -73,13 +73,13 @@ func TestUpdateOne(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
 	}
 
-	_, err = mongo.CollectionWithoutSession("uri_test").UpdateOne(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"urid"}}`)
+	_, err = mongo.Collection("uri_test").UpdateOne(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"urid"}}`)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
@@ -98,13 +98,13 @@ func TestUpdateMany(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
 	}
 
-	_, err = mongo.CollectionWithoutSession("uri_test").UpdateMany(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"uridmany"}}`)
+	_, err = mongo.Collection("uri_test").UpdateMany(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"uridmany"}}`)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
@@ -123,13 +123,13 @@ func TestDeleteOne(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
 	}
 
-	_, err = mongo.CollectionWithoutSession("uri_test").DeleteOne(context.Background(), `{"key":{"$eq":"urid"}}`)
+	_, err = mongo.Collection("uri_test").DeleteOne(context.Background(), `{"key":{"$eq":"urid"}}`)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
@@ -148,7 +148,7 @@ func TestDeleteMany(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	_, err := mongo.CollectionWithoutSession("uri_test").DeleteMany(context.Background(), `{"key":{"$eq":"urid"}}`)
+	_, err := mongo.Collection("uri_test").DeleteMany(context.Background(), `{"key":{"$eq":"urid"}}`)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
@@ -167,7 +167,7 @@ func TestDeleteCollection(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	if err := mongo.CollectionWithoutSession("uri_test").Drop(context.Background()); nil != err {
+	if err := mongo.Collection("uri_test").Drop(context.Background()); nil != err {
 		fmt.Println("failed to drop collection:", err.Error())
 		return
 	}
@@ -184,13 +184,13 @@ func TestCount(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.CollectionWithoutSession("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
 	}
 
-	cnt, err := mongo.CollectionWithoutSession("uri_test").Count(context.Background(), `{"key":"uri"}`)
+	cnt, err := mongo.Collection("uri_test").Count(context.Background(), `{"key":"uri"}`)
 	if nil != err {
 		fmt.Println("failed to count:", err.Error())
 		return

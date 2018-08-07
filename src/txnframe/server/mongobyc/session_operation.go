@@ -21,15 +21,15 @@ import (
 	"unsafe"
 )
 
-// TransactionOperation transaction operation methods
-type TransactionOperation interface {
-	WithReadConcernLevel(level string) TransactionOperation
-	WithWriteConcernMajority(timeout time.Duration) TransactionOperation
-	CreateSession() Session
+// SessionOperation session operation methods
+type SessionOperation interface {
+	WithReadConcernLevel(level string) SessionOperation
+	WithWriteConcernMajority(timeout time.Duration) SessionOperation
+	Create() Session
 }
 
-func newTransactionOperation(mongocli *client) TransactionOperation {
-	return &transactionOperation{
+func newSessionOperation(mongocli *client) SessionOperation {
+	return &sessionOperation{
 		txnOpts:      C.mongoc_transaction_opts_new(),
 		readConcern:  C.mongoc_read_concern_new(),
 		writeConcern: C.mongoc_write_concern_new(),
@@ -38,8 +38,7 @@ func newTransactionOperation(mongocli *client) TransactionOperation {
 	}
 }
 
-// TransactionOperation transaction operation methods
-type transactionOperation struct {
+type sessionOperation struct {
 	txnOpts      *C.mongoc_transaction_opt_t
 	readConcern  *C.mongoc_read_concern_t
 	writeConcern *C.mongoc_write_concern_t
@@ -49,7 +48,7 @@ type transactionOperation struct {
 }
 
 // WithReadConcernLevel set read concern level
-func (t *transactionOperation) WithReadConcernLevel(level string) TransactionOperation {
+func (t *sessionOperation) WithReadConcernLevel(level string) SessionOperation {
 	cstrLevel := C.CString(level)
 	defer C.free(unsafe.Pointer(cstrLevel))
 	if !C.mongoc_read_concern_set_level(t.readConcern, cstrLevel) {
@@ -61,7 +60,7 @@ func (t *transactionOperation) WithReadConcernLevel(level string) TransactionOpe
 }
 
 // WithWriteConcernMajority set write concern majority
-func (t *transactionOperation) WithWriteConcernMajority(timeout time.Duration) TransactionOperation {
+func (t *sessionOperation) WithWriteConcernMajority(timeout time.Duration) SessionOperation {
 
 	millSeconds := timeout.Nanoseconds() / 1e6
 
@@ -71,8 +70,8 @@ func (t *transactionOperation) WithWriteConcernMajority(timeout time.Duration) T
 	return t
 }
 
-// CreateSession create a new transaction instance
-func (t *transactionOperation) CreateSession() Session {
+// Create create a new transaction instance
+func (t *sessionOperation) Create() Session {
 
 	// reset the default transaction options
 	C.mongoc_session_opts_set_default_transaction_opts(t.sessionOpts, t.txnOpts)

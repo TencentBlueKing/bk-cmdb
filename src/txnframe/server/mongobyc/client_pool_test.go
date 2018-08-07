@@ -18,19 +18,45 @@ import (
 	"testing"
 )
 
-func TestTransaction(t *testing.T) {
+func TestPoolInsertOne(t *testing.T) {
 
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClientPool("mongodb://test.mongoc:27017", "db_name_uri")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
 	}
 	defer mongo.Close()
 
-	cliSession := mongo.SessionOperation().Create()
+	poolCli := mongo.Pop()
+	defer mongo.Push(poolCli)
+
+	err := poolCli.Collection("uri_test_pool").InsertOne(context.Background(), `{"key":"uri"}`)
+	if nil != err {
+		fmt.Println("failed to insert:", err)
+		return
+	}
+
+}
+
+func TestPoolTransaction(t *testing.T) {
+
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClientPool("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	poolCli := mongo.Pop()
+	defer mongo.Push(poolCli)
+
+	cliSession := poolCli.SessionOperation().Create()
 	if err := cliSession.Open(); nil != err {
 		t.Errorf("failed to  start session: %s", err.Error())
 		return
@@ -43,8 +69,8 @@ func TestTransaction(t *testing.T) {
 		return
 	}
 
-	txnCol := txn.Collection("txn_uri")
-	txnCol2 := txn.Collection("txn_uri2")
+	txnCol := txn.Collection("txn_uri_pool")
+	txnCol2 := txn.Collection("txn_uri_pool2")
 
 	if err := txnCol.InsertOne(context.Background(), `{"txn":"txn_uri_vald3"}`); nil != err {
 		t.Errorf("err:%s", err.Error())
