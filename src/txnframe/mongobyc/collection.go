@@ -323,7 +323,7 @@ func (c *collection) InsertMany(ctx context.Context, document []interface{}) err
 
 	var bsonErr C.bson_error_t
 	var reply C.bson_t
-	ok := C.mongoc_collection_insert_many(c.innerCollection, (**C.bson_t)(unsafe.Pointer(&bsonDatas[0])), C.ulong(len(document)), operationOpts, &reply, &bsonErr)
+	ok := C.mongoc_collection_insert_many(c.innerCollection, (**C.bson_t)(unsafe.Pointer(&bsonDatas[0])), C.size_t(len(document)), operationOpts, &reply, &bsonErr)
 	if !ok {
 		return TransformError(bsonErr)
 	}

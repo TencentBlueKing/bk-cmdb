@@ -64,7 +64,7 @@ func (t *sessionOperation) WithWriteConcernMajority(timeout time.Duration) Sessi
 
 	millSeconds := timeout.Nanoseconds() / 1e6
 
-	C.mongoc_write_concern_set_wmajority(t.writeConcern, C.int(millSeconds))
+	C.mongoc_write_concern_set_wmajority(t.writeConcern, C.int32_t(millSeconds))
 	C.mongoc_transaction_opts_set_write_concern(t.txnOpts, t.writeConcern)
 
 	return t
