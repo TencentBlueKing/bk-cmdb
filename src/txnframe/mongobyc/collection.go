@@ -22,17 +22,20 @@ import (
 	"unsafe"
 
 	"configcenter/src/common/mapstr"
+	"configcenter/src/txnframe/mongobyc/findopt"
 )
 
 // CollectionInterface collection operation methods
 type CollectionInterface interface {
 	Name() string
+	Drop(ctx context.Context) error
+	CreateIndex(index Index) error
 	Count(ctx context.Context, filter interface{}) (int64, error)
 	DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error)
 	DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error)
-	Drop(ctx context.Context) error
-	Find(ctx context.Context, filter interface{}, output interface{}) error
-	FindOne(ctx context.Context, filter interface{}, output interface{}) error
+	Find(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error
+	FindOne(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error
+	FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.Opts, output interface{}) error
 	InsertMany(ctx context.Context, document []interface{}) error
 	InsertOne(ctx context.Context, document interface{}) error
 	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
@@ -41,13 +44,14 @@ type CollectionInterface interface {
 
 func newCollectionWithoutSession(innerClient *client, collectionName string) CollectionInterface {
 	coll := &collection{
-		dbName:      innerClient.dbName,
-		name:        collectionName,
-		innerClient: innerClient.innerClient,
+		name:      collectionName,
+		mongocCli: innerClient,
 	}
 
 	innerDBName := C.CString(innerClient.dbName)
 	innerCollectionName := C.CString(collectionName)
+	defer C.free(unsafe.Pointer(innerDBName))
+	defer C.free(unsafe.Pointer(innerCollectionName))
 
 	var bsonErr C.bson_error_t
 	coll.innerCollection = C.mongoc_database_create_collection(innerClient.db, innerCollectionName, nil, &bsonErr)
@@ -58,9 +62,6 @@ func newCollectionWithoutSession(innerClient *client, collectionName string) Col
 		}
 		coll.innerCollection = C.mongoc_client_get_collection(innerClient.innerClient, innerDBName, innerCollectionName)
 	}
-
-	C.free(unsafe.Pointer(innerDBName))
-	C.free(unsafe.Pointer(innerCollectionName))
 
 	return coll
 }
@@ -68,14 +69,16 @@ func newCollectionWithoutSession(innerClient *client, collectionName string) Col
 func newCollectionWithSession(innerClient *client, collectionName string, clientSession *C.mongoc_client_session_t) CollectionInterface {
 
 	coll := &collection{
-		dbName:        innerClient.dbName,
 		name:          collectionName,
-		innerClient:   innerClient.innerClient,
+		mongocCli:     innerClient,
 		clientSession: clientSession,
 	}
 
 	innerDBName := C.CString(innerClient.dbName)
 	innerCollectionName := C.CString(collectionName)
+
+	defer C.free(unsafe.Pointer(innerDBName))
+	defer C.free(unsafe.Pointer(innerCollectionName))
 
 	var bsonErr C.bson_error_t
 	coll.innerCollection = C.mongoc_database_create_collection(innerClient.db, innerCollectionName, nil, &bsonErr)
@@ -87,16 +90,12 @@ func newCollectionWithSession(innerClient *client, collectionName string, client
 		coll.innerCollection = C.mongoc_client_get_collection(innerClient.innerClient, innerDBName, innerCollectionName)
 	}
 
-	C.free(unsafe.Pointer(innerDBName))
-	C.free(unsafe.Pointer(innerCollectionName))
-
 	return coll
 }
 
 type collection struct {
 	name            string
-	dbName          string
-	innerClient     *C.mongoc_client_t
+	mongocCli       *client
 	innerCollection *C.mongoc_collection_t
 	clientSession   *C.mongoc_client_session_t
 	err             error
@@ -104,6 +103,40 @@ type collection struct {
 
 func (c *collection) Name() string {
 	return c.name
+}
+func (c *collection) Drop(ctx context.Context) error {
+
+	if nil != c.err {
+		return c.err
+	}
+
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_drop(c.innerCollection, &bsonErr)
+	if !ok {
+		return TransformError(bsonErr)
+	}
+	return nil
+}
+
+func (c *collection) CreateIndex(index Index) error {
+
+	data, err := TransformDocument(index)
+	if nil != err {
+		return err
+	}
+	defer C.bson_destroy(data)
+
+	indexName := C.CString(index.Name)
+	collName := C.CString(c.name)
+	defer C.free(unsafe.Pointer(indexName))
+	defer C.free(unsafe.Pointer(collName))
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	if !C.create_collection_index(c.mongocCli.db, collName, data, &reply, &bsonErr) {
+		return TransformError(bsonErr)
+	}
+	C.bson_destroy(&reply)
+	return nil
 }
 
 func (c *collection) getOperationOpts() (*C.bson_t, error) {
@@ -208,21 +241,8 @@ func (c *collection) DeleteOne(ctx context.Context, filter interface{}) (*Delete
 
 	return nil, nil
 }
-func (c *collection) Drop(ctx context.Context) error {
 
-	if nil != c.err {
-		return c.err
-	}
-
-	var bsonErr C.bson_error_t
-	ok := C.mongoc_collection_drop(c.innerCollection, &bsonErr)
-	if !ok {
-		return TransformError(bsonErr)
-	}
-	return nil
-}
-
-func (c *collection) Find(ctx context.Context, filter interface{}, output interface{}) error {
+func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error {
 
 	if nil != c.err {
 		return c.err
@@ -237,9 +257,53 @@ func (c *collection) Find(ctx context.Context, filter interface{}, output interf
 	if nil != err {
 		return err
 	}
-	defer C.bson_destroy(operationOpts)
 
+	defer C.bson_destroy(operationOpts)
 	defer C.bson_destroy(bsonFilter)
+
+	if nil != opts {
+
+		opts = TransformFindOpts(opts)
+
+		if nil == operationOpts {
+			operationOpts = C.bson_new()
+		}
+
+		limit := C.CString("limit")
+		sort := C.CString("sort")
+		skip := C.CString("skip")
+		fields := C.CString("projection")
+
+		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		var bsonSort, bsonFields *C.bson_t
+		bsonFields, err := TransformDocument(opts.Fields)
+		if nil != err {
+			return err
+		}
+
+		if opts.Descending {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, -1))
+		} else {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, 1))
+		}
+		if nil != err {
+			return err
+		}
+
+		C.bson_append_document(operationOpts, sort, -1, bsonSort)
+		C.bson_append_document(operationOpts, fields, -1, bsonFields)
+
+		C.free(unsafe.Pointer(limit))
+		C.free(unsafe.Pointer(sort))
+		C.free(unsafe.Pointer(skip))
+		C.free(unsafe.Pointer(fields))
+		C.bson_destroy(bsonSort)
+
+	}
+
+	//fmt.Println("opts:", TransformBsonIntoGoString(operationOpts))
+
 	datas := []mapstr.MapStr{}
 	cursor := C.mongoc_collection_find_with_opts(c.innerCollection, bsonFilter, operationOpts, nil)
 	for {
@@ -262,7 +326,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, output interf
 	return nil
 }
 
-func (c *collection) FindOne(ctx context.Context, filter interface{}, output interface{}) error {
+func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error {
 
 	if nil != c.err {
 		return c.err
@@ -281,6 +345,47 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, output int
 	}
 	defer C.bson_destroy(operationOpts)
 
+	if nil != opts {
+
+		opts = TransformFindOpts(opts)
+
+		if nil == operationOpts {
+			operationOpts = C.bson_new()
+		}
+
+		limit := C.CString("limit")
+		sort := C.CString("sort")
+		skip := C.CString("skip")
+		fields := C.CString("projection")
+
+		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		var bsonSort, bsonFields *C.bson_t
+		bsonFields, err := TransformDocument(opts.Fields)
+		if nil != err {
+			return err
+		}
+
+		if opts.Descending {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, -1))
+		} else {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, 1))
+		}
+		if nil != err {
+			return err
+		}
+
+		C.bson_append_document(operationOpts, sort, -1, bsonSort)
+		C.bson_append_document(operationOpts, fields, -1, bsonFields)
+
+		C.free(unsafe.Pointer(limit))
+		C.free(unsafe.Pointer(sort))
+		C.free(unsafe.Pointer(skip))
+		C.free(unsafe.Pointer(fields))
+		C.bson_destroy(bsonSort)
+
+	}
+
 	cursor := C.mongoc_collection_find_with_opts(c.innerCollection, bsonFilter, operationOpts, nil)
 	for {
 		var doc *C.bson_t
@@ -298,7 +403,9 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, output int
 
 	return nil
 }
-
+func (c *collection) FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.Opts, output interface{}) error {
+	return nil
+}
 func (c *collection) InsertMany(ctx context.Context, document []interface{}) error {
 
 	if nil != c.err {
