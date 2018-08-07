@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	commontypes "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/txn_server/types"
 )

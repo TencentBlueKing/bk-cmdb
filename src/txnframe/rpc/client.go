@@ -13,59 +13,261 @@
 package rpc
 
 import (
-	"fmt"
-	"net/rpc"
+	"bufio"
+	"configcenter/src/common/blog"
+	"errors"
+	"io"
+	"net"
+	"net/http"
+	"time"
 )
 
-// Client rpc client methods
-type Client interface {
-	Call(serviceMethod string, args interface{}, reply interface{}) error
-	Close() error
+var (
+	opRetries     = 4
+	opReadTimeout = 15 * time.Second // client read
+	opPingTimeout = 20 * time.Second
+)
+
+const commanLimit = 40
+
+//Client replica client
+type Client struct {
+	end       chan struct{}
+	requests  chan *Message
+	send      chan *Message
+	responses chan *Message
+	seq       uint32
+	messages  map[uint32]*Message
+	wire      Wire
+	peerAddr  string
+	err       error
 }
 
-// NewClient create a new client instance
-func NewClient(cfg Config) Client {
-	return &client{
-		conf: cfg,
+//NewClient replica client
+func NewClient(conn net.Conn) *Client {
+	c := &Client{
+		wire:      NewBinaryWire(conn),
+		peerAddr:  conn.RemoteAddr().String(),
+		end:       make(chan struct{}, 1024),
+		requests:  make(chan *Message, 1024),
+		send:      make(chan *Message, 1024),
+		responses: make(chan *Message, 1024),
+		messages:  map[uint32]*Message{},
+	}
+	blog.Infof("connected to %s", c.TargetID())
+	go c.loop()
+	go c.write()
+	go c.read()
+	return c
+}
+
+// DialHTTPPath connects to an HTTP RPC server
+// at the specified network address and path.
+func DialHTTPPath(network, address, path string) (*Client, error) {
+	var err error
+	conn, err := net.Dial(network, address)
+	if err != nil {
+		return nil, err
+	}
+	io.WriteString(conn, "CONNECT "+path+" HTTP/1.0\n\n")
+
+	// Require successful HTTP response
+	// before switching to RPC protocol.
+	resp, err := http.ReadResponse(bufio.NewReader(conn), &http.Request{Method: "CONNECT"})
+	if err == nil && resp.Status == connected {
+		return NewClient(conn), nil
+	}
+	if err == nil {
+		err = errors.New("unexpected HTTP response: " + resp.Status)
+	}
+	conn.Close()
+	return nil, &net.OpError{
+		Op:   "dial-http",
+		Net:  network + " " + address,
+		Addr: nil,
+		Err:  err,
 	}
 }
 
-type client struct {
-	rpcClient *rpc.Client
-	conf      Config
+//TargetID operation target ID
+func (c *Client) TargetID() string {
+	return c.peerAddr
 }
 
-func (c *client) Open() error {
-	cli, err := rpc.Dial("tcp", fmt.Sprintf("%s:%d", c.conf.IPAddr, c.conf.Port))
-	if nil != err {
+//Call replica client
+func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
+	cmdlength := len(cmd)
+	if len(cmd) > commanLimit {
+		return ErrCommandOverLength
+	}
+
+	ncmd := command{}
+	copy(ncmd[:], []byte(cmd)[:cmdlength])
+
+	msg, err := c.operation(TypeRequest, command(ncmd), input)
+	if err != nil {
 		return err
 	}
-	c.rpcClient = cli
-	return nil
+	return msg.Decode(result)
 }
 
-func (c *client) Call(serviceMethod string, args interface{}, reply interface{}) error {
+//SetError replica client transport error
+func (c *Client) SetError(err error) {
+	c.responses <- &Message{
+		transportErr: err,
+	}
+}
 
-	if nil == c.rpcClient {
-		if err := c.Open(); nil != err {
-			return err
+//Ping replica client
+func (c *Client) Ping() error {
+	_, err := c.operation(TypePing, command{}, nil)
+	return err
+}
+
+func (c *Client) operation(op uint32, cmd command, data interface{}) (Decoder, error) {
+	retry := 0
+	for {
+		msg := Message{
+			complete: make(chan struct{}, 1),
+			typz:     op,
+			Codec:    CodexJSON,
+			cmd:      cmd,
+			Data:     nil,
+		}
+
+		if op == TypeRequest {
+			msg.Encode(data)
+			msg.Size = uint32(len(msg.Data))
+		}
+
+		timeout := func(op uint32) <-chan time.Time {
+			switch op {
+			case TypeRequest:
+				return time.After(opReadTimeout)
+			}
+			return time.After(opPingTimeout)
+		}(msg.typz)
+
+		c.requests <- &msg
+
+		select {
+		case <-msg.complete:
+			if msg.typz == TypeError {
+				return nil, errors.New(string(msg.Data))
+			}
+			return &msg, nil
+		case <-timeout:
+			switch msg.typz {
+			case TypeRequest:
+				blog.Errorf("request timeout on replcia %s, seq= %d", c.TargetID(), msg.seq)
+			case TypePing:
+				blog.Errorf("Ping timeout on replica %s, seq= %d", c.TargetID(), msg.seq)
+			}
+			if retry < opRetries {
+				retry++
+				blog.Errorf("Retry %d on replica, seq= %d", retry, msg.seq)
+			} else {
+				err := ErrRWTimeout
+				if msg.typz == TypePing {
+					err = ErrPingTimeout
+				}
+				c.SetError(err)
+				// TODO print journal
+				return nil, err
+			}
 		}
 	}
-
-	err := c.rpcClient.Call(serviceMethod, args, reply)
-	if nil != err {
-		c.rpcClient.Close()
-		c.rpcClient = nil
-		return err
-	}
-
-	return nil
 }
 
-func (c *client) Close() error {
-	if nil != c.rpcClient {
-		return c.rpcClient.Close()
+//Close replica client
+func (c *Client) Close() {
+	c.wire.Close()
+	c.end <- struct{}{}
+}
+
+func (c *Client) loop() {
+	defer close(c.send)
+
+	for {
+		select {
+		case <-c.end:
+			return
+		case req := <-c.requests:
+			c.handleRequest(req)
+		case resp := <-c.responses:
+			c.handleResponse(resp)
+		}
+	}
+}
+
+func (c *Client) nextSeq() uint32 {
+	c.seq++
+	return c.seq
+}
+
+func (c *Client) replyError(req *Message) {
+	delete(c.messages, req.seq)
+	req.typz = TypeError
+	req.Data = []byte(c.err.Error())
+	req.complete <- struct{}{}
+}
+
+func (c *Client) handleRequest(req *Message) {
+	// TODO req.ID = journal.InsertPendingOp(time.Now(), c.TargetID(), journal.OpPing, 0)
+	if c.err != nil {
+		c.replyError(req)
+		return
 	}
 
-	return nil
+	req.magicVersion = MagicVersion
+	req.seq = c.nextSeq()
+	c.messages[req.seq] = req
+	c.send <- req
+}
+
+func (c *Client) handleResponse(resp *Message) {
+	if resp.transportErr != nil {
+		c.err = resp.transportErr
+		// Terminate all in flight
+		for _, msg := range c.messages {
+			c.replyError(msg)
+		}
+		return
+	}
+
+	if req, ok := c.messages[resp.seq]; ok {
+		if c.err != nil {
+			c.replyError(req)
+			return
+		}
+
+		delete(c.messages, resp.seq)
+		req.typz = resp.typz
+		req.Data = resp.Data
+		req.complete <- struct{}{}
+	}
+}
+
+func (c *Client) write() {
+	for msg := range c.send {
+		if err := c.wire.Write(msg); err != nil {
+			c.responses <- &Message{
+				transportErr: err,
+			}
+		}
+	}
+}
+
+func (c *Client) read() {
+	for {
+		msg, err := c.wire.Read()
+		if err != nil {
+			blog.Errorf("Error reading from wire: %v", err)
+			c.responses <- &Message{
+				transportErr: err,
+			}
+			break
+		}
+		c.responses <- msg
+	}
 }
