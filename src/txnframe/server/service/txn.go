@@ -36,6 +36,7 @@ func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
 	txrpc.rpcsrv = rpcsrv
 
 	rpcsrv.Handle("StartTransaction", txrpc.StartTransaction)
+	rpcsrv.Handle("DBOperation", txrpc.DBOperation)
 	return txrpc
 }
 
@@ -52,9 +53,23 @@ func (t *TXRPC) StartTransaction(input *rpc.Message) (interface{}, error) {
 	// return txn, t.CCErr.CreateDefaultCCErrorIf("zh").Error(common.CCErrCommJSONUnmarshalFailed)
 }
 
-func (*TXRPC) HandleDB(input interface{}, output string) error {
-	blog.V(3).Infof("HandleDB %#v", input)
-	return nil
+func (*TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
+	blog.V(3).Infof("DBOperation %#v", input)
+
+	reply := new(types.OPREPLY)
+
+	header := types.MsgHeader{}
+	input.Decode(&header)
+	switch header.OPCode {
+	case types.OPStartTransaction:
+		return reply, nil
+	case types.OPCommit:
+		return reply, nil
+	case types.OPAbort:
+		return reply, nil
+	}
+
+	return nil, nil
 }
 func (*TXRPC) Watch(input interface{}, output string) error {
 	blog.V(3).Infof("Watch %#v", input)

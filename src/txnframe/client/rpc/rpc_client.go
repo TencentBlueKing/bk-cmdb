@@ -14,17 +14,33 @@ package rpc
 
 import (
 	"configcenter/src/txnframe/client"
+	"configcenter/src/txnframe/rpc"
 	"configcenter/src/txnframe/types"
 	"context"
-	"net/rpc"
+	"errors"
 )
 
 type RPCClient struct {
-	*rpc.Client
+	RequestID string // 请求ID,可选项
+	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	rpc       *rpc.Client
 }
 
 var _ client.DALClient = new(RPCClient)
 var _ client.TxDALClient = new(RPCTxClient)
+
+func (c *RPCClient) New() *RPCClient {
+	return c.clone()
+}
+
+func (c *RPCClient) clone() *RPCClient {
+	nc := RPCClient{
+		RequestID: c.RequestID,
+		Processor: c.Processor,
+		Client:    c.Client,
+	}
+	return &nc
+}
 
 // Find 查询多个并反序列化到 Result
 func (c *RPCClient) Find(ctx context.Context, result interface{}, filter types.Filter) error {
@@ -72,8 +88,13 @@ func (c *RPCClient) StartTransaction(ctx context.Context) (client.TxDALClient, e
 }
 
 // JoinTransaction 加入事务, controller 加入某个事务
-func (c *RPCClient) JoinTransaction(client.JoinOption) client.TxDALClient {
-	return new(RPCTxClient)
+func (c *RPCClient) JoinTransaction(opt client.JoinOption) client.TxDALClient {
+	nc := new(RPCTxClient)
+	nc.TxnID = opt.TxnID
+	nc.RequestID = opt.RequestID
+	nc.Processor = opt.Processor
+	nc.RPCClient = c
+	return nc
 }
 
 // Ping 健康检查
@@ -82,19 +103,54 @@ func (c *RPCClient) Ping() error {
 }
 
 type RPCTxClient struct {
+	TxnID  string // 事务ID,uuid
+	Status types.TxStatus
 	RPCClient
+}
+
+func (c *RPCTxClient) clone() *RPCTxClient {
+	nc := RPCTxClient{
+		TxnID:     c.TxnID,
+		RPCClient: c.RPCClient,
+	}
+	return &nc
 }
 
 // Commit 提交事务
 func (c *RPCTxClient) Commit() error {
+	msg := types.OPCOMMIT{}
+	msg.OPCode = types.OPCommit
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call("Commit", &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
 	return nil
 
 }
 
 // Abort 取消事务
 func (c *RPCTxClient) Abort() error {
-	return nil
+	msg := types.OPABORT{}
+	msg.OPCode = types.OPAbort
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
 
+	reply := types.OPREPLY{}
+	err := c.rpc.Call("Abort", &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
