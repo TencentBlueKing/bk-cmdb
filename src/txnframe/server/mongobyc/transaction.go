@@ -20,6 +20,7 @@ type Transaction interface {
 	Start() error
 	Abort() error
 	Commit() error
+	Collection(collName string) CollectionInterface
 }
 
 func newSessionTransaction(clientSession *session) Transaction {
@@ -59,4 +60,8 @@ func (t *transaction) Commit() error {
 	}
 
 	return nil
+}
+
+func (t *transaction) Collection(collName string) CollectionInterface {
+	return newCollectionWithSession(t.clientSession.mongocli, collName, t.clientSession.innerSession)
 }

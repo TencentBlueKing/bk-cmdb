@@ -12,7 +12,6 @@
 
 package mongobyc
 
-// #include <stdlib.h>
 // #include "mongo.h"
 import "C"
 import (
@@ -32,15 +31,19 @@ func CleanupMongoc() {
 
 // Client client for mongo
 type Client interface {
-	Open() error
-	Close() error
 	Ping() error
-	TransactionOperation() TransactionOperation
-	CollectionWithoutSession(collName string) CollectionInterface
+	SessionOperation() SessionOperation
+	Collection(collName string) CollectionInterface
+}
+
+// CommonClient single client instance
+type CommonClient interface {
+	OpenCloser
+	Client
 }
 
 // NewClient create a mongoc client instance
-func NewClient(uri, database string) Client {
+func NewClient(uri, database string) CommonClient {
 	return &client{
 		uri:    uri,
 		dbName: database,
@@ -54,8 +57,8 @@ type client struct {
 	innerClient *C.mongoc_client_t
 }
 
-func (c *client) TransactionOperation() TransactionOperation {
-	return newTransactionOperation(c)
+func (c *client) SessionOperation() SessionOperation {
+	return newSessionOperation(c)
 }
 
 func (c *client) Open() error {
@@ -89,10 +92,14 @@ func (c *client) Close() error {
 	if nil != c.innerClient {
 		C.mongoc_client_destroy(c.innerClient)
 	}
+
+	if nil != c.db {
+		C.mongoc_database_destroy(c.db)
+	}
 	return nil
 }
 
-func (c *client) CollectionWithoutSession(collName string) CollectionInterface {
+func (c *client) Collection(collName string) CollectionInterface {
 	return newCollectionWithoutSession(c, collName)
 }
 

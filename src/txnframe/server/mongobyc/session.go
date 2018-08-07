@@ -17,10 +17,8 @@ import "C"
 
 // Session mongodb session operation methods
 type Session interface {
-	Start() error
-	Close() error
+	OpenCloser
 	CreateTransaction() Transaction
-	CollectionWithSession(collName string) CollectionInterface
 }
 
 type session struct {
@@ -30,7 +28,7 @@ type session struct {
 	txnOpts      *C.mongoc_transaction_opt_t
 }
 
-func (s *session) Start() error {
+func (s *session) Open() error {
 
 	var err C.bson_error_t
 	s.innerSession = C.mongoc_client_start_session(s.mongocli.innerClient, s.sessionOpts, &err)
@@ -54,8 +52,4 @@ func (s *session) CreateTransaction() Transaction {
 		txnOpts:       s.txnOpts,
 		clientSession: s,
 	}
-}
-
-func (s *session) CollectionWithSession(collName string) CollectionInterface {
-	return newCollectionWithSession(s.mongocli, collName, s.innerSession)
 }
