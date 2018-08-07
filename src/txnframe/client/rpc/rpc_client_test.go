@@ -10,16 +10,27 @@
  * limitations under the License.
  */
 
-package lock
+package rpc_test
 
 import (
-	"configcenter/src/txnframe/client/types"
+	"configcenter/src/common/blog"
+	"configcenter/src/txnframe/rpc"
+	"configcenter/src/txnframe/types"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-type LockInterface interface {
-	PreLock(meta *types.PreLockMeta) (locked bool, err error)
-	PreUnlock(meta *types.PreUnlockMeta) error
+func TestRPCClient(t *testing.T) {
 
-	Lock(meta *types.LockMeta) (result *types.LockResult, err error)
-	Unlock(meta *types.UnlockMeta) error
+	cli, err := rpc.DialHTTPPath("tcp", "127.0.0.1:50010", "/txn/v3/rpc")
+	require.NoError(t, err)
+
+	txnID := types.Tansaction{}
+	err = cli.Call("StartTransaction", &txnID, &txnID)
+
+	blog.Infof("err:[%#v]", err)
+	require.NoError(t, err)
+
+	blog.Infof("txnID:[%#v]", txnID)
+
 }

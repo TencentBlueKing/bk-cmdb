@@ -22,8 +22,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/txcframe/server/app"
-	"configcenter/src/txcframe/server/app/options"
+	"configcenter/src/txnframe/server/app"
+	"configcenter/src/txnframe/server/app/options"
 
 	"github.com/spf13/pflag"
 )
