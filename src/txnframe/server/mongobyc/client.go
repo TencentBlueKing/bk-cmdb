@@ -1,18 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package mongobyc
 
-// #include <stdlib.h>
 // #include "mongo.h"
 import "C"
 import (
@@ -32,14 +31,19 @@ func CleanupMongoc() {
 
 // Client client for mongo
 type Client interface {
-	Open() error
-	Close() error
 	Ping() error
+	SessionOperation() SessionOperation
 	Collection(collName string) CollectionInterface
 }
 
+// CommonClient single client instance
+type CommonClient interface {
+	OpenCloser
+	Client
+}
+
 // NewClient create a mongoc client instance
-func NewClient(uri, database string) Client {
+func NewClient(uri, database string) CommonClient {
 	return &client{
 		uri:    uri,
 		dbName: database,
@@ -51,6 +55,10 @@ type client struct {
 	dbName      string
 	db          *C.mongoc_database_t
 	innerClient *C.mongoc_client_t
+}
+
+func (c *client) SessionOperation() SessionOperation {
+	return newSessionOperation(c)
 }
 
 func (c *client) Open() error {
@@ -84,11 +92,15 @@ func (c *client) Close() error {
 	if nil != c.innerClient {
 		C.mongoc_client_destroy(c.innerClient)
 	}
+
+	if nil != c.db {
+		C.mongoc_database_destroy(c.db)
+	}
 	return nil
 }
 
 func (c *client) Collection(collName string) CollectionInterface {
-	return newCollection(c.innerClient, c.dbName, collName)
+	return newCollectionWithoutSession(c, collName)
 }
 
 func (c *client) Ping() error {
