@@ -12,9 +12,48 @@
  
 
 #include "mongo.h"
-
+int64_t bcon_int64(int64_t val)
+{
+  return BCON_INT64(val);
+}
 bson_t* create_bcon_new_int32(const char *cmd, int32_t val)
 {
+
    return BCON_NEW(cmd, BCON_INT32(val));
 }
 
+bool create_collection_index(mongoc_database_t *db, const char* collectionName, bson_t *index, bson_t *reply, bson_error_t *err)
+{
+    /* db command format:
+
+      {
+        createIndexes: <collection>,
+        indexes: [
+            {
+                key: {
+                    <key-value_pair>,
+                    <key-value_pair>,
+                    ...
+                },
+                name: <index_name>,
+                <option1>,
+                <option2>,
+                ...
+            },
+            { ... },
+            { ... }
+        ],
+        writeConcern: { <write concern> }
+    }
+    */
+   bson_t* createIndexes = BCON_NEW ("createIndexes",
+                              BCON_UTF8(collectionName),
+                              "indexes",
+                              "[",
+                              BCON_DOCUMENT(index),
+                              "]");
+
+   bool ok = mongoc_database_write_command_with_opts(db, createIndexes, NULL /* opts */, reply, err);
+   bson_destroy(createIndexes);
+   return ok;
+}

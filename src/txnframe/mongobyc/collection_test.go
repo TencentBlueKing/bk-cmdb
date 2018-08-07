@@ -16,6 +16,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"configcenter/src/common/mapstr"
+	"configcenter/src/txnframe/mongobyc/findopt"
 )
 
 type keyval struct {
@@ -197,4 +200,110 @@ func TestCount(t *testing.T) {
 	}
 	fmt.Println("cnt:", cnt)
 
+}
+
+func TestIndex(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"keyIndex":"uri"}`)
+	if nil != err {
+		fmt.Println("failed to insert:", err)
+		return
+	}
+
+	err = mongo.Collection("uri_test").CreateIndex(Index{
+		Keys: mapstr.MapStr{
+			"keyIndex": 1,
+		},
+		Unique: true,
+		Name:   "key_index",
+	})
+
+	if nil != err {
+		fmt.Println("failed to create index:", err)
+		return
+	}
+
+}
+
+func TestCreateEmptyCollection(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	err := mongo.CreateEmptyCollection("uri_empty")
+	if nil != err {
+		fmt.Println("failed to insert:", err)
+		return
+	}
+
+}
+
+func TestHasCollection(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	ok, err := mongo.HasCollection("uri_empty")
+	if nil != err {
+		fmt.Println("failed to check:", err)
+		return
+	}
+	if ok {
+		fmt.Println("exists")
+	}
+
+}
+
+func TestFindCollection(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"key":"uri"}`, `{"key_index":"uri2"}`})
+	if nil != err {
+		fmt.Println("failed to find insert:", err)
+		return
+	}
+
+	results := []map[string]interface{}{}
+
+	err = mongo.Collection("uri_test").Find(context.Background(), `{"key":"uri"}`, &findopt.Opts{
+		Fields: mapstr.MapStr{
+			"key": 1,
+			"_id": 0,
+		},
+	}, &results)
+	if nil != err {
+		fmt.Println("failed to find:", err)
+		return
+	}
+
+	fmt.Println("result:", results)
 }
