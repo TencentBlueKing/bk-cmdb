@@ -34,6 +34,9 @@
             :list="table.list"
             :wrapperMinusHeight="240">
             <template slot="operation" slot-scope="{ item }" style="text-align: center;font-size: 0">
+                <span @click="skipToUser(item)">{{$t('Permission["跳转配置"]')}}</span>
+                <span @click.stop="editRole(item)">{{$t('Permission["编辑"]')}}</span>
+                <span @click.stop="confirmDeleteRole(item)">{{$t('Permission["删除"]')}}</span>
                 <i class="icon-cc-skip" @click="skipToUser(item)"></i>
                 <i class="icon-cc-edit" @click.stop="editRole(item)"></i>
                 <i class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
@@ -237,6 +240,9 @@
         }
     }
     .role-table{
+        .operation-btn {
+
+        }
         .icon-cc-skip,
         .icon-cc-edit,
         .icon-cc-del{
