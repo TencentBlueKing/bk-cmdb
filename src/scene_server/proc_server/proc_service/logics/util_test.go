@@ -1,6 +1,8 @@
 package logics
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"configcenter/src/common"
@@ -118,6 +120,8 @@ func TestCondtion(t *testing.T) {
 			t.Errorf("test not parse return error, need %v not %v", item.output_notParse, notParse)
 			continue
 		}
+		a, _ := json.Marshal(cond)
+		fmt.Println(string(a))
 		for key, val := range item.output_condtion {
 			mapData, ok := cond.(common.KvMap)
 			if !ok {
