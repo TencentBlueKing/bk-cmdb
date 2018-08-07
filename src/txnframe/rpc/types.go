@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 // Errors define
@@ -49,8 +50,17 @@ const (
 
 type command [40]byte
 
+func NewCommand(cmd string) (command, error) {
+	ncmd := command{}
+	cmdlength := len(cmd)
+	if len(cmd) > commanLimit {
+		return ncmd, ErrCommandOverLength
+	}
+	copy(ncmd[:], []byte(cmd)[:cmdlength])
+	return ncmd, nil
+}
 func (c command) String() string {
-	return string(c[:])
+	return strings.TrimSpace(string(c[:]))
 }
 
 type Message struct {
@@ -70,7 +80,7 @@ type Message struct {
 
 func (msg *Message) Decode(value interface{}) error {
 	if msg.Codec == CodexJSON {
-		json.Unmarshal(msg.Data, value)
+		return json.Unmarshal(msg.Data, value)
 	}
 	return ErrUnsupportedCodec
 }

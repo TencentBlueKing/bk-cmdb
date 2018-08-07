@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/rpc"
@@ -49,7 +48,8 @@ func (t *TXRPC) StartTransaction(input *rpc.Message) (interface{}, error) {
 
 	blog.V(3).Infof("t: %#v", t)
 	blog.V(3).Infof("t.CCErr: %#v", t.CCErr)
-	return txn, t.CCErr.CreateDefaultCCErrorIf("zh").Error(common.CCErrCommJSONUnmarshalFailed)
+	return txn, nil
+	// return txn, t.CCErr.CreateDefaultCCErrorIf("zh").Error(common.CCErrCommJSONUnmarshalFailed)
 }
 
 func (*TXRPC) HandleDB(input interface{}, output string) error {
