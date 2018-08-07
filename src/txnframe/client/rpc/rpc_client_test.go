@@ -29,8 +29,6 @@ func TestRPCClient(t *testing.T) {
 	err = cli.Call("StartTransaction", &txnID, &txnID)
 
 	blog.Infof("err:[%#v]", err)
-	require.NoError(t, err)
-
 	blog.Infof("txnID:[%#v]", txnID)
-
+	require.NoError(t, err)
 }

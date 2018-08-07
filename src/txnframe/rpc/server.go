@@ -55,10 +55,18 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) Handle(name string, f HandlerFunc) {
-	s.handlers[name] = f
+	cmd, err := NewCommand(name)
+	if err != nil {
+		blog.Fatalf("command %s invalid: %s", name, err.Error())
+	}
+	s.handlers[cmd.String()] = f
 }
 func (s *Server) HandleStream(name string, f HandlerStreamFunc) {
-	s.streamHandlers[name] = f
+	cmd, err := NewCommand(name)
+	if err != nil {
+		blog.Fatalf("command %s invalid: %s", name, err.Error())
+	}
+	s.streamHandlers[cmd.String()] = f
 }
 
 type ServerSession struct {
@@ -102,12 +110,18 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 
 	switch msg.typz {
 	case TypeRequest:
-		blog.Infof("calling %s", msg.cmd.String())
-		if handlerFunc, ok := s.srv.handlers[msg.cmd.String()]; ok {
+		call := msg.cmd.String()
+		blog.Infof("calling [%s] len= %d", call, len(call))
+		if handlerFunc, ok := s.srv.handlers[call]; ok {
 			go s.handle(handlerFunc, msg)
-		} else if handlerFunc, ok := s.srv.streamHandlers[msg.cmd.String()]; ok {
+		} else if handlerFunc, ok := s.srv.streamHandlers[call]; ok {
 			go s.handleStream(handlerFunc, msg)
 		} else {
+			cmds := []string{}
+			for cmd := range s.srv.handlers {
+				cmds = append(cmds, cmd)
+			}
+			blog.Infof("command [%s] not found, existing command are: %#v", call, s.srv.handlers)
 			s.pushResponse(0, msg, ErrCommandNotFount)
 		}
 
