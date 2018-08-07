@@ -41,4 +41,5 @@ func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 
 var tables = map[string][]storage.Index{
 	"cc_ProcTemplate":    []storage.Index{},
-	"cc_ProcTempVersion": []storage.Index{}}
+	"cc_ProcTempVersion": []storage.Index{},
+	"cc_Proc2Template":   []storage.Index{}}

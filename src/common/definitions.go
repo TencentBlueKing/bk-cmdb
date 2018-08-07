@@ -256,7 +256,13 @@ const (
 	BKTemlateIDField = "template_id"
 
 	// BKVesionIDField the version id field
-	BKVesionIDField = "version_id"
+	BKVersionIDField = "version_id"
+
+	// BKTemplateNameField the template name field
+	BKTemplateNameField = "template_name"
+
+	// BKFileNameField the file name field
+	BKFileNameField = "file_name"
 
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
@@ -730,4 +736,12 @@ const (
 const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
+)
+
+const TemplateStatusField = "Status"
+
+const (
+	TemplateStatusDraft   = "draft"
+	TemplateStatusOnline  = "online"
+	TemplateStatusHistory = "history"
 )

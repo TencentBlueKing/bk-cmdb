@@ -354,6 +354,9 @@ const (
 	CCErrProcCreateInstanceModel = 1107008
 	CCErrProcGetInstanceModel    = 1107009
 	CCErrProcDeleteInstanceModel = 1107010
+	CCErrProcDeleteProc2Template = 1107011
+	CCErrProcCreateProc2Template = 1107012
+	CCErrProcSelectProc2Template = 1107013
 
 	// procserver 1108XXX
 	CCErrProcSearchDetailFaile       = 1108001

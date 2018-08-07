@@ -62,7 +62,13 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
 	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
 	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
-	//	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
+	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
+	ws.Route(ws.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.SearchTemplateVersion))
+	ws.Route(ws.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateTemplateVersion))
+	ws.Route(ws.PUT("/template/vesrion/{bk_supplier_account}/{bk_biz_id}/{template_id}/{version_id}").To(ps.UpdateTemplateVersion))
+	ws.Route(ws.GET("/proc/template/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
+	//	ws.Route(ws.PUT("/proc/template/{bk_supplier_account}/{bk_biz_id}/{proc_id}/{template_id}").To(ps.BindTemplate2Proc))
+	//	ws.Route(ws.DELETE("/proc/template/{bk_supplier_account}/{bk_biz_id}/{proc_id}/{template_id}").To(ps.DeleteTemplate2Proc))
 
 	//v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))

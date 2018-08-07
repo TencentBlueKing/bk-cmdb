@@ -53,7 +53,7 @@ func GetInstIDField(objType string) string {
 	case BKInnerObjIDConfigTemp:
 		return BKTemlateIDField
 	case BKInnerObjIDTempVersion:
-		return BKVesionIDField
+		return BKVersionIDField
 	case BKInnerObjIDPlat:
 		return BKCloudIDField
 	case BKTableNameInstAsst:

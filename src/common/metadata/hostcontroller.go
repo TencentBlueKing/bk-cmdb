@@ -202,3 +202,9 @@ type AddConfigQuery struct {
 	Name       string `json:"name,omitempty"`
 	CreateUser string `json:"create_user,omitempty"`
 }
+
+type TemplateVersion struct {
+	Content     string `json:"content"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
+}

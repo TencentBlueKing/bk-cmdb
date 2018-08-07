@@ -17,8 +17,8 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
-	// BKTableNameProcConf the table name of the process config
-	BKTableNameProcConf = "cc_ProcConf"
+	// BKTableNameProcTempalte the table name of the process template config
+	BKTableNameProcTemplate = "cc_Proc2Template"
 
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
@@ -73,7 +73,7 @@ const (
 // AllTables alltables
 var AllTables = []string{
 	BKTableNameProcModule,
-	BKTableNameProcConf,
+	BKTableNameProcTemplate,
 	BKTableNameProcInstanceModel,
 	BKTableNamePrivilege,
 	BKTableNameUserGroup,
