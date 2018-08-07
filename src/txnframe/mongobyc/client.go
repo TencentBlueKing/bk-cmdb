@@ -15,6 +15,7 @@ package mongobyc
 // #include "mongo.h"
 import "C"
 import (
+	"context"
 	"fmt"
 	"unsafe"
 )
@@ -32,8 +33,11 @@ func CleanupMongoc() {
 // Client client for mongo
 type Client interface {
 	Ping() error
-	SessionOperation() SessionOperation
+	HasCollection(collName string) (bool, error)
+	DropCollection(collName string) error
+	CreateEmptyCollection(collName string) error
 	Collection(collName string) CollectionInterface
+	SessionOperation() SessionOperation
 }
 
 // CommonClient single client instance
@@ -96,6 +100,35 @@ func (c *client) Close() error {
 	if nil != c.db {
 		C.mongoc_database_destroy(c.db)
 	}
+	return nil
+}
+
+func (c *client) HasCollection(collName string) (bool, error) {
+
+	var err C.bson_error_t
+	innerCollName := C.CString(collName)
+	defer C.free(unsafe.Pointer(innerCollName))
+	if C.mongoc_database_has_collection(c.db, innerCollName, &err) {
+		return true, nil
+	}
+	if 0 != err.code {
+		return false, TransformError(err)
+	}
+	return false, nil
+}
+func (c *client) DropCollection(collName string) error {
+	return c.Collection(collName).Drop(context.Background())
+}
+func (c *client) CreateEmptyCollection(collName string) error {
+
+	innerCollName := C.CString(collName)
+	defer C.free(unsafe.Pointer(innerCollName))
+	var bsonErr C.bson_error_t
+	innerCollection := C.mongoc_database_create_collection(c.db, innerCollName, nil, &bsonErr)
+	if nil == innerCollection {
+		return TransformError(bsonErr)
+	}
+	C.mongoc_collection_destroy(innerCollection)
 	return nil
 }
 

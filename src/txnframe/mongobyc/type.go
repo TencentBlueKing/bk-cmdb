@@ -12,8 +12,20 @@
 
 package mongobyc
 
+import (
+	"configcenter/src/common/mapstr"
+)
+
 // OpenCloser open and close methods
 type OpenCloser interface {
 	Open() error
 	Close() error
+}
+
+// Index the collection index definition
+type Index struct {
+	Keys       mapstr.MapStr `json:"key"`
+	Name       string        `json:"name"`
+	Unique     bool          `json:"unique"`
+	Backgroupd bool          `json:"background"`
 }
