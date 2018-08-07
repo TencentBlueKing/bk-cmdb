@@ -26,6 +26,8 @@ const (
 	OPDelete
 	OPFind
 	OPStartTransaction = 666
+	OPCommit           = 667
+	OPAbort            = 668
 )
 
 type OPINSERT struct {
@@ -56,9 +58,22 @@ type OPFIND struct {
 	Sort           string   // sort string
 }
 
+type OPSTARTTTRANSATION struct {
+	MsgHeader
+}
+
+type OPCOMMIT struct {
+	MsgHeader
+}
+type OPABORT struct {
+	MsgHeader
+}
+
 type ReplyHeader struct {
 	MsgHeader
-	OK bool
+	OK      bool
+	Code    bool
+	Message string
 }
 
 type OPREPLY struct {
