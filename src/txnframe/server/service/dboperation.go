@@ -11,3 +11,24 @@
  */
 
 package service
+
+import (
+	"configcenter/src/txnframe/mongobyc"
+	"configcenter/src/txnframe/types"
+	"context"
+)
+
+type DBExecuter struct {
+	ctx context.Context
+
+	header types.MsgHeader
+	rawmsg interface{}
+
+	executor mongobyc.CollectionInterface
+}
+
+func (e DBExecuter) insert() {
+	msg := e.rawmsg.(types.OPINSERT)
+
+	e.executor.InsertMany(e.ctx, msg.DOCS)
+}

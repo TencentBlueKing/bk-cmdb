@@ -218,8 +218,8 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 
 // Count 统计数量(非事务)
 func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, error) {
-	msg := types.OPDELETE{}
-	msg.OPCode = types.OPDelete
+	msg := types.OPCOUNT{}
+	msg.OPCode = types.OPCount
 	msg.RequestID = c.RequestID
 	// msg.TxnID = c.TxnID // because Count was not supported for transaction in mongo
 	msg.CollectionName = c.collection
@@ -241,7 +241,7 @@ func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, er
 // NextSequence 获取新序列号(非事务)
 func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	msg := types.OPFINDANDMODIFY{}
-	msg.OPCode = types.OPUpdate
+	msg.OPCode = types.OPFindAndModify
 	msg.RequestID = c.RequestID
 	msg.CollectionName = sequenceName
 	if err := msg.DOC.Encode(types.Document{
