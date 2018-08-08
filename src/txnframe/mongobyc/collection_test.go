@@ -82,11 +82,13 @@ func TestUpdateOne(t *testing.T) {
 		return
 	}
 
-	_, err = mongo.Collection("uri_test").UpdateOne(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"urid"}}`, nil)
+	rst, err := mongo.Collection("uri_test").UpdateOne(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$set":{"key":"urid"}}`, nil)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
 	}
+
+	t.Logf("rst:%#v", rst)
 
 }
 
@@ -128,11 +130,13 @@ func TestUpdateMany(t *testing.T) {
 		return
 	}
 
-	_, err = mongo.Collection("uri_test_rename").UpdateMany(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$rename":{"key":"uridmany"}}`, nil)
+	rst, err := mongo.Collection("uri_test_rename").UpdateMany(context.Background(), `{"key":{"$eq":"uri"}}`, `{"$rename":{"key":"uridmany"}}`, nil)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
 	}
+
+	t.Logf("rst:%#v", rst)
 
 }
 
@@ -153,11 +157,13 @@ func TestDeleteOne(t *testing.T) {
 		return
 	}
 
-	_, err = mongo.Collection("uri_test").DeleteOne(context.Background(), `{"key":{"$eq":"urid"}}`, nil)
+	rst, err := mongo.Collection("uri_test").DeleteOne(context.Background(), `{"key":{"$eq":"urid"}}`, nil)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
 	}
+
+	t.Logf("rst:%#v", rst)
 
 }
 
@@ -172,11 +178,13 @@ func TestDeleteMany(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	_, err := mongo.Collection("uri_test").DeleteMany(context.Background(), `{"key":{"$eq":"urid"}}`, nil)
+	rst, err := mongo.Collection("uri_test").DeleteMany(context.Background(), `{"key":{"$eq":"urid"}}`, nil)
 	if nil != err {
 		fmt.Println("failed to update:", err.Error())
 		return
 	}
+
+	t.Logf("rst:%#v", rst)
 
 }
 

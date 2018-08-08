@@ -12,23 +12,10 @@
 
 package mongobyc
 
-// InsertOneResult  is a result of an InsertOne operation
-type InsertOneResult struct {
-	Count int64
-	// the identifier that was inserted
-	InsertedID interface{}
-}
-
-// InsertManyResult is a result of an InsertMany operation
-type InsertManyResult struct {
-	// Maps the indexes of inserted documents to their _id fields
-	InsertedIDS []interface{}
-}
-
 // DeleteResult is a result of an DeleteOne operat
 type DeleteResult struct {
 	// The number of documents that were deleted.
-	DeletedCount int64
+	DeletedCount uint64 `json:"deletedCount"`
 }
 
 // UpdateResult is a result of an update operation.

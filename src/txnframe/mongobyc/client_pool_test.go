@@ -56,7 +56,7 @@ func TestPoolTransaction(t *testing.T) {
 	poolCli := mongo.Pop()
 	defer mongo.Push(poolCli)
 
-	cliSession := poolCli.SessionOperation().Create()
+	cliSession := poolCli.Session().Create()
 	if err := cliSession.Open(); nil != err {
 		t.Errorf("failed to  start session: %s", err.Error())
 		return
