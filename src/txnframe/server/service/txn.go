@@ -15,16 +15,21 @@ package service
 import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/rpc"
+	"configcenter/src/txnframe/server/manager"
 	"configcenter/src/txnframe/types"
+	"context"
 	"fmt"
 	"github.com/rs/xid"
 )
 
 type TXRPC struct {
 	*backbone.Engine
-
+	ctx    context.Context
 	rpcsrv *rpc.Server
+	man    manager.TxnManager
+	db     mongobyc.Client
 }
 
 func (t *TXRPC) SetEngine(engine *backbone.Engine) {
@@ -53,36 +58,48 @@ func (t *TXRPC) StartTransaction(input *rpc.Message) (interface{}, error) {
 	// return txn, t.CCErr.CreateDefaultCCErrorIf("zh").Error(common.CCErrCommJSONUnmarshalFailed)
 }
 
-func (*TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
+func (t *TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
 	blog.V(3).Infof("DBOperation %#v", input)
 
 	reply := new(types.OPREPLY)
 
 	header := types.MsgHeader{}
-	input.Decode(&header)
-	switch header.OPCode {
-	case types.OPStartTransaction:
-		return reply, nil
-	case types.OPCommit:
-		return reply, nil
-	case types.OPAbort:
-		return reply, nil
-	case types.OPInsert:
-		return reply, nil
-	case types.OPUpdate:
-		return reply, nil
-	case types.OPDelete:
-		return reply, nil
-	case types.OPFind:
-		return reply, nil
-	case types.OPFindAndModify:
-		return reply, nil
-	case types.OPCount:
+	err := input.Decode(&header)
+	if nil != err {
+		reply.Message = err.Error()
 		return reply, nil
 	}
 
-	return nil, nil
+	var transaction mongobyc.Transaction
+	if header.TxnID != "" {
+		session := t.man.Get(header.TxnID)
+		if nil == session {
+			reply.Message = "session not found"
+			return reply, nil
+		}
+		transaction = session.Txn()
+	}
+
+	switch header.OPCode {
+	case types.OPStartTransaction:
+		transaction = t.db.Session().Create().CreateTransaction()
+		return reply, nil
+	case types.OPCommit:
+		return reply, transaction.Commit()
+	case types.OPAbort:
+		return reply, transaction.Commit()
+	case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
+		var collectionFunc = t.db.Collection
+		if header.TxnID != "" {
+			collectionFunc = transaction.Collection
+		}
+		return ExecuteCollection(t.ctx, collectionFunc, header.OPCode, input)
+	default:
+		reply.Message = "unknow operation"
+		return reply, nil
+	}
 }
+
 func (*TXRPC) Watch(input interface{}, output string) error {
 	blog.V(3).Infof("Watch %#v", input)
 	return nil
