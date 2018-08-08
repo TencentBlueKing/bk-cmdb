@@ -34,12 +34,9 @@
             :list="table.list"
             :wrapperMinusHeight="240">
             <template slot="operation" slot-scope="{ item }" style="text-align: center;font-size: 0">
-                <span @click="skipToUser(item)">{{$t('Permission["跳转配置"]')}}</span>
-                <span @click.stop="editRole(item)">{{$t('Permission["编辑"]')}}</span>
-                <span @click.stop="confirmDeleteRole(item)">{{$t('Permission["删除"]')}}</span>
-                <i class="icon-cc-skip" @click="skipToUser(item)"></i>
-                <i class="icon-cc-edit" @click.stop="editRole(item)"></i>
-                <i class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
+                <span class="color-info" @click="skipToUser(item)">{{$t('Permission["跳转配置"]')}}</span>
+                <span class="color-info" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
+                <span class="color-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
             </template>        
         </v-role-table>
         <v-role-form 
@@ -240,21 +237,15 @@
         }
     }
     .role-table{
-        .operation-btn {
-
-        }
-        .icon-cc-skip,
-        .icon-cc-edit,
-        .icon-cc-del{
-            font-size: 12px;
-            margin: 0 10px;
-            &.single{
-                margin-right: 44px;
+        .color-info {
+            margin-right: 10px;
+            &:hover {
+                color: #498fe0;
             }
         }
-        .icon-cc-skip{
-            &:hover{
-                color: #498fe0;
+        .color-danger {
+            &:hover {
+                color: #ef4c4c;
             }
         }
     }
