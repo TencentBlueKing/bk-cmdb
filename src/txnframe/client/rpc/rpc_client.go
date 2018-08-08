@@ -23,6 +23,7 @@ import (
 type RPCClient struct {
 	RequestID string // 请求ID,可选项
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	TxnID     string // 事务ID,uuid
 	rpc       *rpc.Client
 }
 
@@ -37,63 +38,150 @@ func (c *RPCClient) clone() *RPCClient {
 	nc := RPCClient{
 		RequestID: c.RequestID,
 		Processor: c.Processor,
-		Client:    c.Client,
+		TxnID:     c.TxnID,
+		rpc:       c.rpc,
 	}
 	return &nc
 }
 
+func (c *RPCClient) Collection(collection string) client.Collection {
+	col := Collection{}
+	col.RequestID = c.RequestID
+	col.Processor = c.Processor
+	col.TxnID = c.TxnID
+	col.rpc = c.rpc
+
+	return &col
+}
+
+type Collection struct {
+	RequestID  string // 请求ID,可选项
+	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	TxnID      string // 事务ID,uuid
+	collection string // 集合名
+	rpc        *rpc.Client
+}
+
 // Find 查询多个并反序列化到 Result
-func (c *RPCClient) Find(ctx context.Context, result interface{}, filter types.Filter) error {
-	return nil
+func (c *Collection) Find(ctx context.Context, filter types.Filter, result interface{}) error {
+	msg := types.OPFIND{}
+	msg.OPCode = types.OPFind
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+	msg.CollectionName = c.collection
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
+	return reply.Docs.Decode(result)
 }
 
 // FindOne 查询单个并反序列化到 Result
-func (c *RPCClient) FindOne(ctx context.Context, result interface{}, filter types.Filter) error {
-	return nil
+func (c *Collection) FindOne(ctx context.Context, filter types.Filter, result interface{}) error {
+	msg := types.OPFIND{}
+	msg.OPCode = types.OPFind
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+	msg.CollectionName = c.collection
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
+
+	if len(reply.Docs[0]) <= 0 {
+		return client.ErrDocumentNotFount
+	}
+
+	return reply.Docs[0].Decode(result)
 }
 
 // Insert 插入单个，如果tag有id, 则回设
-func (c *RPCClient) Insert(ctx context.Context, doc types.Document) error {
+func (c *Collection) Insert(ctx context.Context, doc interface{}) error {
+	msg := types.OPINSERT{}
+	msg.OPCode = types.OPInsert
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+	msg.CollectionName = c.collection
+
+	// msg.DOCS = []types.Document{doc}
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
+
 	return nil
 }
 
 // InsertMulti 插入多个, 如果tag有id, 则回设
-func (c *RPCClient) InsertMulti(ctx context.Context, docs []types.Document) error {
+func (c *Collection) InsertMulti(ctx context.Context, docs []interface{}) error {
 	return nil
 }
 
 // Update 更新数据
-func (c *RPCClient) Update(ctx context.Context, doc types.Document, filter types.Filter) error {
+func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interface{}) error {
 	return nil
 }
 
 // Delete 删除数据
-func (c *RPCClient) Delete(ctx context.Context, filter types.Filter) error {
+func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	return nil
 }
 
 // Count 统计数量(非事务)
-func (c *RPCClient) Count(ctx context.Context, filter types.Filter) (uint64, error) {
+func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, error) {
 	return 0, nil
 }
 
 // NextSequence 获取新序列号(非事务)
-func (c *RPCClient) NextSequence(ctx context.Context, sequenceName string) (int64, error) {
+func (c *RPCClient) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	return 0, nil
 }
 
 // StartTransaction 开启新事务
-func (c *RPCClient) StartTransaction(ctx context.Context) (client.TxDALClient, error) {
-	return new(RPCTxClient), nil
+func (c *RPCClient) StartTransaction(ctx context.Context, opt client.JoinOption) (client.TxDALClient, error) {
+	msg := types.OPSTARTTTRANSATION{}
+	msg.OPCode = types.OPStartTransaction
+	msg.RequestID = c.RequestID
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return nil, err
+	}
+	if !reply.OK {
+		return nil, errors.New(reply.Message)
+	}
+
+	nc := new(RPCTxClient)
+	nc.RPCClient = c.clone()
+	nc.TxnID = reply.TxnID
+	nc.Processor = reply.Processor
+	nc.RequestID = opt.RequestID
+	return nc, nil
 }
 
 // JoinTransaction 加入事务, controller 加入某个事务
 func (c *RPCClient) JoinTransaction(opt client.JoinOption) client.TxDALClient {
 	nc := new(RPCTxClient)
+	nc.RPCClient = c.clone()
 	nc.TxnID = opt.TxnID
 	nc.RequestID = opt.RequestID
 	nc.Processor = opt.Processor
-	nc.RPCClient = c
 	return nc
 }
 
@@ -103,16 +191,16 @@ func (c *RPCClient) Ping() error {
 }
 
 type RPCTxClient struct {
-	TxnID  string // 事务ID,uuid
-	Status types.TxStatus
-	RPCClient
+	*RPCClient
 }
 
 func (c *RPCTxClient) clone() *RPCTxClient {
-	nc := RPCTxClient{
-		TxnID:     c.TxnID,
-		RPCClient: c.RPCClient,
-	}
+	nc := RPCTxClient{}
+	nc.RPCClient = c.RPCClient.clone()
+	nc.RequestID = c.RequestID
+	nc.Processor = c.Processor
+	nc.TxnID = c.TxnID
+	nc.rpc = c.rpc
 	return &nc
 }
 
@@ -124,7 +212,7 @@ func (c *RPCTxClient) Commit() error {
 	msg.TxnID = c.TxnID
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call("Commit", &msg, &reply)
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -143,7 +231,7 @@ func (c *RPCTxClient) Abort() error {
 	msg.TxnID = c.TxnID
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call("Abort", &msg, &reply)
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}

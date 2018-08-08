@@ -71,13 +71,14 @@ type OPABORT struct {
 
 type ReplyHeader struct {
 	MsgHeader
-	OK      bool
-	Code    bool
-	Message string
+	Processor string
+	OK        bool
+	Code      bool
+	Message   string
 }
 
 type OPREPLY struct {
-	ReplyHeader               // 标准报文头
-	CollectionName string     // "dbname.collectionname"
-	Docs           []Document // 文档查询结果
+	ReplyHeader              // 标准报文头
+	CollectionName string    // "dbname.collectionname"
+	Docs           Documents // 文档查询结果
 }
