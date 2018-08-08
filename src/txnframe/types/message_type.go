@@ -18,7 +18,7 @@ type MsgHeader struct {
 	OPCode    OPCode
 }
 
-type OPCode int
+type OPCode uint32
 
 const (
 	OPInsert OPCode = iota + 1
@@ -54,8 +54,8 @@ type OPFIND struct {
 	CollectionName string   // "dbname.collectionname"
 	Projection     Document // ""
 	Selector       Document // 文档查询条件
-	Start          int      // start index
-	Limit          int      // limit index
+	Start          uint64   // start index
+	Limit          uint64   // limit index
 	Sort           string   // sort string
 }
 

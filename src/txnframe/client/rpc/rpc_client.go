@@ -93,11 +93,11 @@ func (f *Find) Sort(sort string) client.Find {
 	f.msg.Sort = sort
 	return f
 }
-func (f *Find) Start(start int) client.Find {
+func (f *Find) Start(start uint64) client.Find {
 	f.msg.Start = start
 	return f
 }
-func (f *Find) Limit(limit int) client.Find {
+func (f *Find) Limit(limit uint64) client.Find {
 	f.msg.Limit = limit
 	return f
 }
