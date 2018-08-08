@@ -329,7 +329,7 @@
                 })
             },
             showProcessAttribute (item) {
-                this.slider.title.text = this.$t("ProcessManagement['编辑进程']")
+                this.slider.title.text = `${this.$t("ProcessManagement['编辑进程']")}`
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'update'
                 this.slider.tab.attribute.isMultipleUpdate = false
@@ -347,6 +347,7 @@
                             values[column['bk_property_id']] = column['bk_property_value']
                         })
                         this.slider.tab.attribute.formValues = values
+                        this.slider.title.text = `${this.$t("ProcessManagement['编辑进程']")} ${this.slider.tab.attribute.formValues['bk_process_name']}`
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }

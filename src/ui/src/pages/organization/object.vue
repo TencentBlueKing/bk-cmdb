@@ -736,7 +736,8 @@
                     this.slider.title.text = `${this.$t("Common['创建']")} ${this.objName}`
                 } else {
                     this.slider.title.icon = 'icon-cc-edit'
-                    this.slider.title.text = `${this.$t("Common['编辑']")} ${this.objName}`
+                    let name = this.objId === 'biz' ? this.attr.formValues['bk_biz_name'] : this.attr.formValues['bk_inst_name']
+                    this.slider.title.text = `${this.$t("Common['编辑']")} ${this.objName} ${name}`
                 }
                 this.slider.isShow = true
             },
