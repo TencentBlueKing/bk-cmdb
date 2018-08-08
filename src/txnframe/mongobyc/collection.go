@@ -22,7 +22,11 @@ import (
 	"unsafe"
 
 	"configcenter/src/common/mapstr"
+	"configcenter/src/txnframe/mongobyc/deleteopt"
 	"configcenter/src/txnframe/mongobyc/findopt"
+	"configcenter/src/txnframe/mongobyc/insertopt"
+	"configcenter/src/txnframe/mongobyc/replaceopt"
+	"configcenter/src/txnframe/mongobyc/updateopt"
 )
 
 // CollectionInterface collection operation methods
@@ -31,15 +35,21 @@ type CollectionInterface interface {
 	Drop(ctx context.Context) error
 	CreateIndex(index Index) error
 	Count(ctx context.Context, filter interface{}) (int64, error)
-	DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error)
-	DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error)
+
+	DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error)
+	DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*DeleteResult, error)
+
 	Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error
 	FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error
 	FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error
-	InsertMany(ctx context.Context, document []interface{}) error
-	InsertOne(ctx context.Context, document interface{}) error
-	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
+
+	InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error
+	InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error
+
+	UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*UpdateResult, error)
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*UpdateResult, error)
+
+	ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*ReplaceOneResult, error)
 }
 
 func newCollectionWithoutSession(innerClient *client, collectionName string) CollectionInterface {
@@ -48,13 +58,13 @@ func newCollectionWithoutSession(innerClient *client, collectionName string) Col
 		mongocCli: innerClient,
 	}
 
-	innerDBName := C.CString(innerClient.dbName)
+	innerDBName := C.CString(innerClient.innerDB.dbName)
 	innerCollectionName := C.CString(collectionName)
 	defer C.free(unsafe.Pointer(innerDBName))
 	defer C.free(unsafe.Pointer(innerCollectionName))
 
 	var bsonErr C.bson_error_t
-	coll.innerCollection = C.mongoc_database_create_collection(innerClient.db, innerCollectionName, nil, &bsonErr)
+	coll.innerCollection = C.mongoc_database_create_collection(innerClient.innerDB.db, innerCollectionName, nil, &bsonErr)
 	if nil == coll.innerCollection {
 		if 48 != bsonErr.code { /* code 48 is NamespaceExists, see error_codes.err in mongodb source */
 			coll.err = TransformError(bsonErr)
@@ -74,14 +84,14 @@ func newCollectionWithSession(innerClient *client, collectionName string, client
 		clientSession: clientSession,
 	}
 
-	innerDBName := C.CString(innerClient.dbName)
+	innerDBName := C.CString(innerClient.innerDB.dbName)
 	innerCollectionName := C.CString(collectionName)
 
 	defer C.free(unsafe.Pointer(innerDBName))
 	defer C.free(unsafe.Pointer(innerCollectionName))
 
 	var bsonErr C.bson_error_t
-	coll.innerCollection = C.mongoc_database_create_collection(innerClient.db, innerCollectionName, nil, &bsonErr)
+	coll.innerCollection = C.mongoc_database_create_collection(innerClient.innerDB.db, innerCollectionName, nil, &bsonErr)
 	if nil == coll.innerCollection {
 		if 48 != bsonErr.code { /* code 48 is NamespaceExists, see error_codes.err in mongodb source */
 			coll.err = TransformError(bsonErr)
@@ -132,7 +142,7 @@ func (c *collection) CreateIndex(index Index) error {
 	defer C.free(unsafe.Pointer(collName))
 	var reply C.bson_t
 	var bsonErr C.bson_error_t
-	if !C.create_collection_index(c.mongocCli.db, collName, data, &reply, &bsonErr) {
+	if !C.create_collection_index(c.mongocCli.innerDB.db, collName, data, &reply, &bsonErr) {
 		return TransformError(bsonErr)
 	}
 	C.bson_destroy(&reply)
@@ -184,7 +194,7 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (int64, erro
 
 	return int64(count), nil
 }
-func (c *collection) DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error) {
+func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*DeleteResult, error) {
 
 	if nil != c.err {
 		return nil, c.err
@@ -213,7 +223,7 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}) (*Delet
 	return nil, nil
 }
 
-func (c *collection) DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error) {
+func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error) {
 
 	if nil != c.err {
 		return nil, c.err
@@ -506,7 +516,7 @@ func (c *collection) FindAndModify(ctx context.Context, filter interface{}, upda
 
 	return valStr.MarshalJSONInto(output)
 }
-func (c *collection) InsertMany(ctx context.Context, document []interface{}) error {
+func (c *collection) InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error {
 
 	if nil != c.err {
 		return c.err
@@ -538,7 +548,7 @@ func (c *collection) InsertMany(ctx context.Context, document []interface{}) err
 
 	return nil
 }
-func (c *collection) InsertOne(ctx context.Context, document interface{}) error {
+func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error {
 
 	if nil != c.err {
 		return c.err
@@ -566,7 +576,8 @@ func (c *collection) InsertOne(ctx context.Context, document interface{}) error 
 
 	return nil
 }
-func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error) {
+
+func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*UpdateResult, error) {
 
 	if nil != c.err {
 		return nil, c.err
@@ -607,7 +618,7 @@ func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update 
 
 	return nil, nil
 }
-func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error) {
+func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*UpdateResult, error) {
 
 	if nil != c.err {
 		return nil, c.err
@@ -646,4 +657,46 @@ func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update i
 
 	fmt.Println("update result:", result)
 	return nil, nil
+}
+
+func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*ReplaceOneResult, error) {
+
+	if nil != c.err {
+		return nil, c.err
+	}
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonFilter)
+
+	bsonReplacement, err := TransformDocument(replacement)
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(bsonReplacement)
+
+	operationOpts, err := c.getOperationOpts()
+	if nil != err {
+		return nil, err
+	}
+	defer C.bson_destroy(operationOpts)
+
+	var bsonErr C.bson_error_t
+	var reply C.bson_t
+	ok := C.mongoc_collection_replace_one(c.innerCollection, bsonFilter, bsonReplacement, operationOpts, &reply, &bsonErr)
+	if !ok {
+		return nil, TransformError(bsonErr)
+	}
+	defer C.bson_destroy(&reply)
+
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	replaceRst := &ReplaceOneResult{}
+	err = result.MarshalJSONInto(replaceRst)
+	return replaceRst, err
 }

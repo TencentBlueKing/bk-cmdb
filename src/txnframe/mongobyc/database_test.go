@@ -13,13 +13,11 @@
 package mongobyc
 
 import (
-	"context"
 	"fmt"
 	"testing"
 )
 
-func TestTransaction(t *testing.T) {
-
+func TestCreateEmptyCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
@@ -30,33 +28,53 @@ func TestTransaction(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	cliSession := mongo.SessionOperation().Create()
-	if err := cliSession.Open(); nil != err {
-		t.Errorf("failed to  start session: %s", err.Error())
-		return
-	}
-	defer cliSession.Close()
-
-	txn := cliSession.CreateTransaction()
-	if err := txn.Start(); nil != err {
-		t.Errorf("failed to  start txn: %s", err.Error())
+	err := mongo.Database().CreateEmptyCollection("uri_empty")
+	if nil != err {
+		fmt.Println("failed to insert:", err)
 		return
 	}
 
-	txnCol := txn.Collection("txn_uri")
-	txnCol2 := txn.Collection("txn_uri2")
+}
 
-	if err := txnCol.InsertOne(context.Background(), `{"txn":"txn_uri_vald3"}`, nil); nil != err {
-		t.Errorf("err:%s", err.Error())
+func TestHasCollection(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
 		return
 	}
-	if err := txnCol2.InsertOne(context.Background(), `{"txn":"txn_uri_val3"}`, nil); nil != err {
-		t.Errorf("err:%s", err.Error())
+	defer mongo.Close()
+
+	ok, err := mongo.Database().HasCollection("uri_empty")
+	if nil != err {
+		fmt.Println("failed to check:", err)
 		return
 	}
-	if err := txn.Commit(); nil != err {
-		t.Errorf("failed to  commit coll: %s", err.Error())
+	if ok {
+		fmt.Println("exists")
+	}
+
+}
+
+func TestGetCollectionNames(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
 		return
 	}
-	t.Logf("finish")
+	defer mongo.Close()
+
+	names, err := mongo.Database().GetCollectionNames()
+	if nil != err {
+		fmt.Println("failed to check:", err)
+		return
+	}
+
+	fmt.Println("names:", names)
+
 }
