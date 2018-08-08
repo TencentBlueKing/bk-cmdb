@@ -220,7 +220,14 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *d
 	}
 	defer C.bson_destroy(&reply)
 
-	return nil, nil
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	deleteRst := &DeleteResult{}
+	err = result.MarshalJSONInto(deleteRst)
+	return deleteRst, err
 }
 
 func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error) {
@@ -249,7 +256,14 @@ func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *de
 	}
 	defer C.bson_destroy(&reply)
 
-	return nil, nil
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	deleteRst := &DeleteResult{}
+	err = result.MarshalJSONInto(deleteRst)
+	return deleteRst, err
 }
 
 func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
@@ -614,9 +628,10 @@ func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update 
 		return nil, err
 	}
 
-	fmt.Println("update result:", result)
+	updateRst := &UpdateResult{}
+	err = result.MarshalJSONInto(updateRst)
+	return updateRst, err
 
-	return nil, nil
 }
 func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*UpdateResult, error) {
 
@@ -655,8 +670,9 @@ func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update i
 		return nil, err
 	}
 
-	fmt.Println("update result:", result)
-	return nil, nil
+	updateRst := &UpdateResult{}
+	err = result.MarshalJSONInto(updateRst)
+	return updateRst, err
 }
 
 func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*ReplaceOneResult, error) {

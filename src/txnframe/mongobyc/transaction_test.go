@@ -30,7 +30,7 @@ func TestTransaction(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	cliSession := mongo.SessionOperation().Create()
+	cliSession := mongo.Session().Create()
 	if err := cliSession.Open(); nil != err {
 		t.Errorf("failed to  start session: %s", err.Error())
 		return

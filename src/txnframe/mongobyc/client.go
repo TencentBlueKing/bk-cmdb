@@ -34,7 +34,7 @@ type Client interface {
 	Ping() error
 	Database() Database
 	Collection(collName string) CollectionInterface
-	SessionOperation() SessionOperation
+	Session() SessionOperation
 }
 
 // CommonClient single client instance
@@ -59,7 +59,7 @@ type client struct {
 	innerClient *C.mongoc_client_t
 }
 
-func (c *client) SessionOperation() SessionOperation {
+func (c *client) Session() SessionOperation {
 	return newSessionOperation(c)
 }
 
