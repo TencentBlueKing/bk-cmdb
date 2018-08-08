@@ -121,7 +121,7 @@ func GetInstTableName(objID string) string {
 	case BKInnerObjIDConfigTemp:
 		return BKTableNameBaseTemplate
 	case BKInnerObjIDTempVersion:
-		return BKTableNameBaseTemplate
+		return BKTableNameBaseTempVersion
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	case BKTableNameInstAsst:

@@ -75,8 +75,8 @@ func (p *procctrl) CreateProc2Template(ctx context.Context, h http.Header, dat i
 	return
 }
 
-func (p *procctrl) SearchProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (p *procctrl) SearchProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.MapArrayResponse, err error) {
+	resp = new(metadata.MapArrayResponse)
 	subPath := "/template/search"
 
 	err = p.client.Post().

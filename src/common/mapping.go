@@ -67,7 +67,8 @@ func GetObjByType(objType string) string {
 	switch objType {
 	case BKInnerObjIDApp, BKInnerObjIDSet,
 		BKInnerObjIDModule, BKInnerObjIDProc,
-		BKInnerObjIDHost, BKInnerObjIDPlat:
+		BKInnerObjIDHost, BKInnerObjIDPlat,
+		BKInnerObjIDConfigTemp, BKInnerObjIDTempVersion:
 		return objType
 	default:
 		return BKINnerObjIDObject

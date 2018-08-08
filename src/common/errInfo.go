@@ -359,22 +359,25 @@ const (
 	CCErrProcSelectProc2Template = 1107013
 
 	// procserver 1108XXX
-	CCErrProcSearchDetailFaile       = 1108001
-	CCErrProcBindToMoudleFaile       = 1108002
-	CCErrProcUnBindToMoudleFaile     = 1108003
-	CCErrProcSelectBindToMoudleFaile = 1108004
-	CCErrProcUpdateProcessFaile      = 1108005
-	CCErrProcSearchProcessFaile      = 1108006
-	CCErrProcDeleteProcessFaile      = 1108007
-	CCErrProcCreateProcessFaile      = 1108008
-	CCErrProcFieldValidFaile         = 1108009
-	CCErrProcGetByApplicationIDFail  = 1108010
-	CCErrProcGetByIP                 = 1108011
-	CCErrProcOperateFaile            = 1108012
-	CCErrProcCreateTemplateFail      = 1108013
-	CCErrProcDeleteTemplateFail      = 1108014
-	CCErrProcUpdateTemplateFail      = 1108015
-	CCErrProcSearchTemplateFail      = 1108016
+	CCErrProcSearchDetailFaile          = 1108001
+	CCErrProcBindToMoudleFaile          = 1108002
+	CCErrProcUnBindToMoudleFaile        = 1108003
+	CCErrProcSelectBindToMoudleFaile    = 1108004
+	CCErrProcUpdateProcessFaile         = 1108005
+	CCErrProcSearchProcessFaile         = 1108006
+	CCErrProcDeleteProcessFaile         = 1108007
+	CCErrProcCreateProcessFaile         = 1108008
+	CCErrProcFieldValidFaile            = 1108009
+	CCErrProcGetByApplicationIDFail     = 1108010
+	CCErrProcGetByIP                    = 1108011
+	CCErrProcOperateFaile               = 1108012
+	CCErrProcCreateTemplateFail         = 1108013
+	CCErrProcDeleteTemplateFail         = 1108014
+	CCErrProcUpdateTemplateFail         = 1108015
+	CCErrProcSearchTemplateFail         = 1108016
+	CCErrProcBindToTemplateFailed       = 1108017
+	CCErrProcUnBindToTemplateFailed     = 1108018
+	CCErrProcSelectBindToTemplateFailed = 1108019
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

@@ -56,13 +56,8 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 	}
 	selector := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
-			common.BKDBIN: []string{"bk_switch",
-				"bk_router",
-				"bk_load_balance",
-				"bk_firewall",
-				"bk_weblogic",
-				"bk_tomcat",
-				"bk_apache",
+			common.BKDBIN: []string{"config_template",
+				"template_version",
 			},
 		},
 		common.BKPropertyIDField: "bk_name",
@@ -138,7 +133,7 @@ func ConfigTemplateRow() []*metadata.Attribute {
 	dataRows := []*metadata.Attribute{
 		//base info
 		&metadata.Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
-		&metadata.Attribute{ObjectID: objID, PropertyID: "config_template", PropertyName: "配置模板名", IsRequired: true, IsOnly: true, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		&metadata.Attribute{ObjectID: objID, PropertyID: "template_name", PropertyName: "配置模板名", IsRequired: true, IsOnly: true, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.Attribute{ObjectID: objID, PropertyID: "file_name", PropertyName: "配置文件名", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.Attribute{ObjectID: objID, PropertyID: "path", PropertyName: "配置文件路径", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&metadata.Attribute{ObjectID: objID, PropertyID: "user", PropertyName: "所属用户", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
@@ -165,6 +160,5 @@ func TempVersionRow() []*metadata.Attribute {
 		&metadata.Attribute{ObjectID: objID, PropertyID: "content", PropertyName: "内容", IsRequired: true, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
 		&metadata.Attribute{ObjectID: objID, PropertyID: "status", PropertyName: "状态", IsAPI: true, IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: statusOption},
 	}
-	return dataRows
 	return dataRows
 }

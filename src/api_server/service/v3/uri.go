@@ -164,7 +164,7 @@ func (u *V3URLPath) WithProc(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath+"/proc", procRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/template/"):
-		from, to, isHit = rootPath+"/proc", procRoot, true
+		from, to, isHit = rootPath, procRoot, true
 
 	default:
 		isHit = false

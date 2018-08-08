@@ -36,7 +36,13 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 	pHeader := req.Request.Header
 	user := util.GetUser(pHeader)
 	ownerID := req.PathParameter(common.BKOwnerIDField)
-	appID := req.PathParameter(common.BKAppIDField)
+	appIDStr := req.PathParameter(common.BKAppIDField)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("create config template failed! derr: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
 
 	input := types.MapStr{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -44,6 +50,7 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	input[common.BKAppIDField] = appID
 	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDConfigTemp, pHeader, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
@@ -57,9 +64,6 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 		return
 	}
-
-	input[common.BKAppIDField] = appID
-	input[common.BKOwnerIDField] = ownerID
 	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDConfigTemp, pHeader, input)
 	if nil != err || !ret.Result {
 		blog.Errorf("create config template failed by  input :%v, return:%v, err: %v", input, ret, err)
@@ -73,12 +77,13 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 	}
 
-	curData, err := ps.Logics.GetTemplateInstanceDetails(pHeader, ownerID, templateID)
+	curData, err := ps.GetTemplateInstanceDetails(pHeader, ownerID, templateID)
 	if nil != err {
 		blog.Errorf("create config template failed by curData:%v, err: %v, tempID:%v", curData, err, templateID)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 	}
 
+	var logContents []auditoplog.AuditLogExt
 	logContent := auditoplog.AuditLogExt{
 		ID: templateID,
 		Content: meta.Content{
@@ -87,9 +92,10 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 			Headers: tempFields,
 		},
 	}
+	logContents = append(logContents, logContent)
 
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "create template", common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
-	result, err := ps.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pHeader, logs)
+	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
 	if err != nil || !result.Result {
 		blog.Errorf("create config template failed, but [%s] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
@@ -107,7 +113,14 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 	var logContent auditoplog.AuditLogExt
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
-	appID := req.PathParameter(common.BKAppIDField)
+	appIDStr := req.PathParameter(common.BKAppIDField)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("create config template failed! derr: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
 	templateIDStr := req.PathParameter(common.BKTemlateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if nil != err {
@@ -141,15 +154,9 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	if err := logger.WithCurrent(templateID); err != nil {
-		blog.Errorf("delete config template, but get current host data failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
-		return
-	}
-
 	logContent = *logger.AuditLog(templateID)
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "delete template", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
-	result, err := ps.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pHeader, logs)
+	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
 	if err != nil || !result.Result {
 		blog.Errorf("delete config template failed, but [%s] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
@@ -167,7 +174,14 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	var logContent auditoplog.AuditLogExt
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
-	appID := req.PathParameter(common.BKAppIDField)
+	appIDStr := req.PathParameter(common.BKAppIDField)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("create config template failed! derr: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
 	templateIDStr := req.PathParameter(common.BKTemlateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 
@@ -191,7 +205,7 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	tempFields, err := ps.Logics.GetTemplateAttributes(ownerID, pHeader)
+	tempFields, err := ps.GetTemplateAttributes(ownerID, pHeader)
 	if nil != err {
 		blog.Errorf("delete config template  err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
@@ -207,9 +221,9 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	data := types.MapStr{
 		"data": input,
 		"condition": map[string]interface{}{
-			common.BKInnerObjIDConfigTemp: templateID,
-			common.BKAppIDField:           appID,
-			common.BKOwnerIDField:         ownerID,
+			common.BKTemlateIDField: templateID,
+			common.BKAppIDField:     appID,
+			common.BKOwnerIDField:   ownerID,
 		},
 	}
 	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDConfigTemp, req.Request.Header, data)
@@ -227,7 +241,7 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 
 	logContent = *logger.AuditLog(templateID)
 	logs := common.KvMap{common.BKContentField: logContent, common.BKOpDescField: "update template", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
-	result, err := ps.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pHeader, logs)
+	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
 	if nil != err || !result.Result {
 		blog.Errorf("delete config template failed, but add template[%s] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
@@ -244,6 +258,7 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 	var params meta.SearchParams
 	var input meta.QueryInput
 	var err error
+	var ok bool
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -252,7 +267,7 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 
 	input.Condition = params.Condition
 	input.Fields = strings.Join(params.Fields, ",")
-	input.Start, err = util.GetIntByInterface(params.Page["limit"])
+	input.Start, err = util.GetIntByInterface(params.Page["start"])
 	if nil != err {
 		blog.Errorf("request body query condition format error start not integer, input:%v", params.Page["start"])
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "start")})
@@ -264,7 +279,10 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "limit")})
 		return
 	}
-	input.Sort = params.Page["sort"].(string)
+	input.Sort, ok = params.Page["sort"].(string)
+	if false == ok {
+		input.Sort = ""
+	}
 
 	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDConfigTemp, req.Request.Header, &input)
 	if err != nil || (err == nil && !ret.Result) {

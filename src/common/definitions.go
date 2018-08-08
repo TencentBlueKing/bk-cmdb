@@ -738,7 +738,7 @@ const (
 	BKDataRecoverSuffix = "(recover)"
 )
 
-const TemplateStatusField = "Status"
+const TemplateStatusField = "status"
 
 const (
 	TemplateStatusDraft   = "draft"

@@ -27,7 +27,7 @@ type ProcCtrlClientInterface interface {
 	GetProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcModuleResult, err error)
 	DeleteProc2Module(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	CreateProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	SearchProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	SearchProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.MapArrayResponse, err error)
 	DeleteProc2Template(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	CreateProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcInstModelResult, err error)

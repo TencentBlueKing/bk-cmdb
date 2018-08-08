@@ -103,7 +103,7 @@ func (ps *ProctrlServer) GetProc2Template(req *restful.Request, resp *restful.Re
 	}
 
 	blog.Infof("get proc template condition: %v ", input)
-	result := make([]interface{}, 0)
+	result := make([]map[string]interface{}, 0)
 	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcTemplate, nil, input, &result, "", 0, 0); err != nil {
 		blog.Errorf("get process2template config failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
