@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/util"
 	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/types"
 	"context"
@@ -29,6 +30,5 @@ type DBExecuter struct {
 
 func (e DBExecuter) insert() {
 	msg := e.rawmsg.(types.OPINSERT)
-
-	e.executor.InsertMany(e.ctx, msg.DOCS)
+	return e.executor.InsertMany(e.ctx, util.ConverToInterfaceSlice(msg.DOCS))
 }
