@@ -26,5 +26,23 @@ type Opts struct {
 	Skip       int64
 }
 
+// One find one options
+type One struct {
+	Opts
+}
+
+// Many find many options
+type Many struct {
+	Opts
+}
+
+// FindAndModify find and modify options
+type FindAndModify struct {
+	Opts
+	Remove bool
+	Upsert bool
+	New    bool
+}
+
 // DefaultOpts default opts
 var DefaultOpts = Opts{Limit: common.BKNoLimit}

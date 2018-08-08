@@ -39,6 +39,10 @@ func TransformFindOpts(opts *findopt.Opts) *findopt.Opts {
 	if 0 == len(opts.Sort) {
 		opts.Sort = "_id"
 	}
+
+	if !opts.Fields.Exists("_id") {
+		opts.Fields.Set("_id", 0)
+	}
 	return opts
 }
 
