@@ -28,6 +28,8 @@ func NewBinaryWire(rwc io.ReadWriteCloser) *BinaryWire {
 }
 
 func (w *BinaryWire) Write(msg *Message) error {
+	// LittleEndian: x86 cpu 为小端字节序
+	// 如 0x01234567，地址范围为0x100~0x103字节,小端字节序则存储为: 0x100: 67, 0x101: 45,..
 	if err := binary.Write(w.writer, binary.LittleEndian, msg.magicVersion); err != nil {
 		return err
 	}

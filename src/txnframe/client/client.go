@@ -29,13 +29,11 @@ type DALClient interface {
 }
 
 type Collection interface {
-	Find(ctx context.Context, filter types.Filter, result interface{}) error    // 查询多个并反序列化到 Result
-	FindOne(ctx context.Context, filter types.Filter, result interface{}) error // 查询单个并反序列化到 Result
-	Insert(ctx context.Context, doc interface{}) error                          // 插入单个，如果tag有id, 则回设
-	InsertMulti(ctx context.Context, docs []interface{}) error                  // 插入多个, 如果tag有id, 则回设
-	Update(ctx context.Context, filter types.Filter, doc interface{}) error     // 更新数据
-	Delete(ctx context.Context, filter types.Filter) error                      // 删除数据
-	Count(ctx context.Context, filter types.Filter) (uint64, error)             // 统计数量(非事务)
+	Find(ctx context.Context, filter types.Filter) Find                     // 查询多个并反序列化到 Result
+	Insert(ctx context.Context, docs interface{}) error                     // 插入单个，如果tag有id, 则回设
+	Update(ctx context.Context, filter types.Filter, doc interface{}) error // 更新数据
+	Delete(ctx context.Context, filter types.Filter) error                  // 删除数据
+	Count(ctx context.Context, filter types.Filter) (uint64, error)         // 统计数量(非事务)
 }
 
 type TxDALClient interface {
@@ -49,4 +47,13 @@ type JoinOption struct {
 	TxnID     string // 事务ID,uuid
 	RequestID string // 请求ID,可选项
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+}
+
+type Find interface {
+	Fields(fields ...string) Find
+	Sort(sort string) Find
+	Start(start int) Find
+	Limit(limit int) Find
+	All(result interface{}) error
+	One(result interface{}) error
 }

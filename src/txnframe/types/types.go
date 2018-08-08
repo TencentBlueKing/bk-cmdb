@@ -13,7 +13,10 @@
 package types
 
 import (
+	"fmt"
 	"github.com/mongodb/mongo-go-driver/bson"
+	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -46,16 +49,90 @@ func (d Document) Decode(result interface{}) error {
 	return bson.Unmarshal(out, result)
 }
 
-type Documents []Document
-
-func (d Documents) Decode(result interface{}) error {
-	out, err := bson.Marshal(d)
+func (d Document) Encode(result interface{}) error {
+	out, err := bson.Marshal(result)
 	if nil != err {
 		return err
 	}
-	return bson.Unmarshal(out, result)
+	return bson.Unmarshal(out, d)
+}
+
+type Documents []Document
+
+func (d Documents) Decode(result interface{}) error {
+	resultv := reflect.ValueOf(result)
+	switch resultv.Elem().Kind() {
+	case reflect.Slice:
+		out, err := bson.Marshal(d)
+		if nil != err {
+			return err
+		}
+		return bson.Unmarshal(out, result)
+	default:
+		if len(d) <= 0 {
+			return nil
+		}
+		out, err := bson.Marshal(d[0])
+		if nil != err {
+			return err
+		}
+		return bson.Unmarshal(out, result)
+	}
+}
+
+func (d Documents) Encode(result interface{}) error {
+	resultv := reflect.ValueOf(result)
+	switch resultv.Elem().Kind() {
+	case reflect.Slice:
+		out, err := bson.Marshal(result)
+		if nil != err {
+			return err
+		}
+		return bson.Unmarshal(out, d)
+	default:
+		out, err := bson.Marshal(result)
+		if nil != err {
+			return err
+		}
+		d = make(Documents, 1)
+		return bson.Unmarshal(out, d[0])
+	}
 }
 
 const (
 	CommandDBOperation = "DBOperation"
 )
+
+type Page struct {
+	Limit uint64 `json:"limit,omitempty"`
+	Start uint64 `json:"start,omitempty"`
+	Sort  string `json:"sort,omitempty"`
+}
+
+func ParsePage(origin interface{}) *Page {
+	if origin == nil {
+		return &Page{}
+	}
+	page, ok := origin.(map[string]interface{})
+	if !ok {
+		out, err := bson.Marshal(origin)
+		if err != nil {
+			return &Page{}
+		}
+		err = bson.Unmarshal(out, &page)
+		if err != nil {
+			return &Page{}
+		}
+	}
+	result := Page{}
+	if sort, ok := page["sort"].(string); ok {
+		result.Sort = sort
+	}
+	if start, ok := page["start"]; ok {
+		result.Start, _ = strconv.ParseUint(fmt.Sprint(start), 10, 64)
+	}
+	if limit, ok := page["limit"]; ok {
+		result.Limit, _ = strconv.ParseUint(fmt.Sprint(limit), 10, 64)
+	}
+	return &result
+}
