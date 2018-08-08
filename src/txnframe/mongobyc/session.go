@@ -43,6 +43,16 @@ func (s *session) Close() error {
 		C.mongoc_client_session_destroy(s.innerSession)
 		s.innerSession = nil
 	}
+
+	if nil != s.txnOpts {
+		C.mongoc_transaction_opts_destroy(s.txnOpts)
+		s.txnOpts = nil
+	}
+
+	if nil != s.sessionOpts {
+		C.mongoc_session_opts_destroy(s.sessionOpts)
+		s.sessionOpts = nil
+	}
 	return nil
 }
 
