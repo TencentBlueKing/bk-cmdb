@@ -4,6 +4,9 @@
             <div class="content-title" id="drag">
                 <i class="icon icon-cc-shift mr5"></i>
                 {{$t('Common[\'主机转移\']')}}
+                <template v-if="hosts.length === 1">
+                    {{hosts[0].host['bk_host_innerip']}}
+                </template>
             </div>
             <div class="content-section clearfix" v-bkloading="{isLoading: $loading('transfer')}">
                 <div class="section-left fl">
