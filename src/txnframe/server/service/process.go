@@ -10,12 +10,4 @@
  * limitations under the License.
  */
 
-package client
-
-import (
-	"configcenter/src/txnframe/client/types"
-)
-
-func NewFingerprints() types.FingerprintsType {
-	return make(types.FingerprintsType, 0)
-}
+package service

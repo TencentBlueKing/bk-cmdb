@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
@@ -73,7 +74,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_MIGRATE,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{
