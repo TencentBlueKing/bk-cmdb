@@ -52,8 +52,8 @@ type JoinOption struct {
 type Find interface {
 	Fields(fields ...string) Find
 	Sort(sort string) Find
-	Start(start int) Find
-	Limit(limit int) Find
+	Start(start uint64) Find
+	Limit(limit uint64) Find
 	All(result interface{}) error
 	One(result interface{}) error
 }
