@@ -27,10 +27,10 @@ type ClientPool interface {
 }
 
 // NewClientPool create a mongoc client pool instance
-func NewClientPool(uri, database string) ClientPool {
+func NewClientPool(uri, dbName string) ClientPool {
 	pool := new(clientPool)
 	pool.client.uri = uri
-	pool.client.dbName = database
+	pool.client.innerDB.dbName = dbName
 	return pool
 }
 
@@ -71,11 +71,11 @@ func (c *clientPool) Pop() Client {
 
 	innerClient := new(client)
 	innerClient.innerClient = mongocClient
-	innerClient.dbName = c.client.dbName
+	innerClient.innerDB.dbName = c.client.innerDB.dbName
 	innerClient.uri = c.client.uri
 
-	cName := C.CString(c.client.dbName)
-	innerClient.db = C.mongoc_client_get_database(mongocClient, cName)
+	cName := C.CString(c.client.innerDB.dbName)
+	innerClient.innerDB.db = C.mongoc_client_get_database(mongocClient, cName)
 	C.free(unsafe.Pointer(cName))
 
 	return innerClient
@@ -85,8 +85,8 @@ func (c *clientPool) Push(targetClient Client) {
 
 	switch tmp := targetClient.(type) {
 	case *client:
-		if nil != tmp.db {
-			C.mongoc_database_destroy(tmp.db)
+		if nil != tmp.innerDB.db {
+			C.mongoc_database_destroy(tmp.innerDB.db)
 		}
 		C.mongoc_client_pool_push(c.pool, tmp.innerClient)
 	}

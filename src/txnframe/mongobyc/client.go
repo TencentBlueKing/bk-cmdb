@@ -15,7 +15,6 @@ package mongobyc
 // #include "mongo.h"
 import "C"
 import (
-	"context"
 	"fmt"
 	"unsafe"
 )
@@ -33,9 +32,7 @@ func CleanupMongoc() {
 // Client client for mongo
 type Client interface {
 	Ping() error
-	HasCollection(collName string) (bool, error)
-	DropCollection(collName string) error
-	CreateEmptyCollection(collName string) error
+	Database() Database
 	Collection(collName string) CollectionInterface
 	SessionOperation() SessionOperation
 }
@@ -47,17 +44,18 @@ type CommonClient interface {
 }
 
 // NewClient create a mongoc client instance
-func NewClient(uri, database string) CommonClient {
+func NewClient(uri, dbName string) CommonClient {
 	return &client{
-		uri:    uri,
-		dbName: database,
+		uri: uri,
+		innerDB: &database{
+			dbName: dbName,
+		},
 	}
 }
 
 type client struct {
 	uri         string
-	dbName      string
-	db          *C.mongoc_database_t
+	innerDB     *database
 	innerClient *C.mongoc_client_t
 }
 
@@ -82,11 +80,11 @@ func (c *client) Open() error {
 	C.mongoc_uri_destroy(uri)
 
 	// set app name
-	cName := C.CString(c.dbName)
+	cName := C.CString(c.innerDB.dbName)
 	C.mongoc_client_set_appname(c.innerClient, cName)
 
 	// get database by name
-	c.db = C.mongoc_client_get_database(c.innerClient, cName)
+	c.innerDB.db = C.mongoc_client_get_database(c.innerClient, cName)
 	C.free(unsafe.Pointer(cName))
 
 	return nil
@@ -97,39 +95,14 @@ func (c *client) Close() error {
 		C.mongoc_client_destroy(c.innerClient)
 	}
 
-	if nil != c.db {
-		C.mongoc_database_destroy(c.db)
+	if nil != c.innerDB {
+		c.innerDB.Close()
 	}
 	return nil
 }
 
-func (c *client) HasCollection(collName string) (bool, error) {
-
-	var err C.bson_error_t
-	innerCollName := C.CString(collName)
-	defer C.free(unsafe.Pointer(innerCollName))
-	if C.mongoc_database_has_collection(c.db, innerCollName, &err) {
-		return true, nil
-	}
-	if 0 != err.code {
-		return false, TransformError(err)
-	}
-	return false, nil
-}
-func (c *client) DropCollection(collName string) error {
-	return c.Collection(collName).Drop(context.Background())
-}
-func (c *client) CreateEmptyCollection(collName string) error {
-
-	innerCollName := C.CString(collName)
-	defer C.free(unsafe.Pointer(innerCollName))
-	var bsonErr C.bson_error_t
-	innerCollection := C.mongoc_database_create_collection(c.db, innerCollName, nil, &bsonErr)
-	if nil == innerCollection {
-		return TransformError(bsonErr)
-	}
-	C.mongoc_collection_destroy(innerCollection)
-	return nil
+func (c *client) Database() Database {
+	return c.innerDB
 }
 
 func (c *client) Collection(collName string) CollectionInterface {

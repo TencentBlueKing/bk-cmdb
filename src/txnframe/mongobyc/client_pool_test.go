@@ -33,7 +33,7 @@ func TestPoolInsertOne(t *testing.T) {
 	poolCli := mongo.Pop()
 	defer mongo.Push(poolCli)
 
-	err := poolCli.Collection("uri_test_pool").InsertOne(context.Background(), `{"key":"uri"}`)
+	err := poolCli.Collection("uri_test_pool").InsertOne(context.Background(), `{"key":"uri"}`, nil)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -72,11 +72,11 @@ func TestPoolTransaction(t *testing.T) {
 	txnCol := txn.Collection("txn_uri_pool")
 	txnCol2 := txn.Collection("txn_uri_pool2")
 
-	if err := txnCol.InsertOne(context.Background(), `{"txn":"txn_uri_vald3"}`); nil != err {
+	if err := txnCol.InsertOne(context.Background(), `{"txn":"txn_uri_vald3"}`, nil); nil != err {
 		t.Errorf("err:%s", err.Error())
 		return
 	}
-	if err := txnCol2.InsertOne(context.Background(), `{"txn":"txn_uri_val3"}`); nil != err {
+	if err := txnCol2.InsertOne(context.Background(), `{"txn":"txn_uri_val3"}`, nil); nil != err {
 		t.Errorf("err:%s", err.Error())
 		return
 	}
