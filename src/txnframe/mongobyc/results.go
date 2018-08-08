@@ -33,16 +33,12 @@ type DeleteResult struct {
 
 // UpdateResult is a result of an update operation.
 type UpdateResult struct {
-	// The number of documents that matched the filter.
-	MatchedCount int64
-	// The number of documents that were modified.
-	ModifiedCount int64
-	// The identifier of the inserted document if an upsert took place.
-	UpsertedID interface{}
+	MatchedCount  uint64 `json:"matchedCount"`
+	UpsertedCount uint64 `json:"upsertedCount"`
+	ModifiedCount uint64 `json:"modifiedCount"`
 }
 
-// DocumentResult represents a single document returned from an operation. If
-// the operation returned an error, the Err method of DocumentResult will
-// return that error.
-type DocumentResult struct {
+// ReplaceOneResult the  replace one function result
+type ReplaceOneResult struct {
+	UpdateResult `json:",inline"`
 }
