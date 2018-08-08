@@ -19,11 +19,16 @@ import (
 
 type TxnManager struct {
 	cache map[string]*Session
+	db    mongobyc.Client
 }
 
 type Session struct {
 	*types.Tansaction
-	db mongobyc.Session
+	mongo mongobyc.Session
+}
+
+func (s *Session) Txn() mongobyc.Transaction {
+	return s.mongo
 }
 
 func New() *TxnManager {
@@ -37,10 +42,18 @@ func (tm *TxnManager) Start() error {
 func (tm *TxnManager) Store(txn *types.Tansaction, db mongobyc.Session) {
 	tm.cache[txn.TxnID] = &Session{
 		Tansaction: txn,
-		db:         db,
+		mongo:      db,
 	}
 }
 
-func (tm *TxnManager) Get(txnID string) *Session {
+func (tm *TxnManager) GetSession(txnID string) *Session {
+	return tm.cache[txnID]
+}
+
+func (tm *TxnManager) CreateTransaction() *Session {
+	session := tm.db.Session().Create()
+	session.Open()
+	session.CreateTransaction()
+
 	return tm.cache[txnID]
 }

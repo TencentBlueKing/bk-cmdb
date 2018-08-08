@@ -33,48 +33,48 @@ const (
 )
 
 type OPINSERT struct {
-	MsgHeader                // 标准报文头
-	CollectionName string    // "dbname.collectionname"
-	DOCS           Documents // 要插入集合的文档
+	MsgHeader            // 标准报文头
+	Collection string    // "dbname.collectionname"
+	DOCS       Documents // 要插入集合的文档
 }
 
 type OPUPDATE struct {
-	MsgHeader               // 标准报文头
-	CollectionName string   // "dbname.collectionname"
-	DOC            Document // 指定要执行的更新
-	Selector       Document // 文档查询条件
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	DOC        Document // 指定要执行的更新
+	Selector   Document // 文档查询条件
 }
 
 type OPDELETE struct {
-	MsgHeader               // 标准报文头
-	CollectionName string   // "dbname.collectionname"
-	Selector       Document // 文档查询条件
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	Selector   Document // 文档查询条件
 }
 
 type OPFIND struct {
-	MsgHeader               // 标准报文头
-	CollectionName string   // "dbname.collectionname"
-	Projection     Document // ""
-	Selector       Document // 文档查询条件
-	Start          uint64   // start index
-	Limit          uint64   // limit index
-	Sort           string   // sort string
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	Projection Document // ""
+	Selector   Document // 文档查询条件
+	Start      uint64   // start index
+	Limit      uint64   // limit index
+	Sort       string   // sort string
 }
 
 type OPCOUNT struct {
-	MsgHeader               // 标准报文头
-	CollectionName string   // "dbname.collectionname"
-	Selector       Document // 文档查询条件
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	Selector   Document // 文档查询条件
 }
 
 type OPFINDANDMODIFY struct {
-	MsgHeader               // 标准报文头
-	CollectionName string   // "dbname.collectionname"
-	DOC            Document // 指定要执行的更新
-	Selector       Document // 文档查询条件
-	Upsert         bool
-	Remove         bool
-	ReturnNew      bool
+	MsgHeader           // 标准报文头
+	Collection string   // "dbname.collectionname"
+	DOC        Document // 指定要执行的更新
+	Selector   Document // 文档查询条件
+	Upsert     bool
+	Remove     bool
+	ReturnNew  bool
 }
 
 type OPSTARTTTRANSATION struct {
@@ -92,7 +92,7 @@ type ReplyHeader struct {
 	MsgHeader
 	Processor string
 	OK        bool
-	Code      bool
+	Code      int
 	Message   string
 }
 

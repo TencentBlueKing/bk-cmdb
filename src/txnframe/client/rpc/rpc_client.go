@@ -74,7 +74,7 @@ func (c *Collection) Find(ctx context.Context, filter types.Filter) client.Find 
 	msg.OPCode = types.OPFind
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
-	msg.CollectionName = c.collection
+	msg.Collection = c.collection
 	msg.Selector.Encode(filter)
 
 	return &Find{Collection: c, msg: &msg}
@@ -150,7 +150,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	msg.OPCode = types.OPInsert
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
-	msg.CollectionName = c.collection
+	msg.Collection = c.collection
 
 	if err := msg.DOCS.Encode(docs); err != nil {
 		return err
@@ -173,7 +173,7 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	msg.OPCode = types.OPUpdate
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
-	msg.CollectionName = c.collection
+	msg.Collection = c.collection
 	if err := msg.DOC.Encode(types.Document{
 		"$set": doc,
 	}); err != nil {
@@ -200,7 +200,7 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	msg.OPCode = types.OPDelete
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
-	msg.CollectionName = c.collection
+	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, er
 	msg.OPCode = types.OPCount
 	msg.RequestID = c.RequestID
 	// msg.TxnID = c.TxnID // because Count was not supported for transaction in mongo
-	msg.CollectionName = c.collection
+	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return 0, err
 	}
@@ -243,7 +243,7 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 	msg := types.OPFINDANDMODIFY{}
 	msg.OPCode = types.OPFindAndModify
 	msg.RequestID = c.RequestID
-	msg.CollectionName = sequenceName
+	msg.Collection = sequenceName
 	if err := msg.DOC.Encode(types.Document{
 		"$inc": types.Document{"SequenceID": 1},
 	}); err != nil {

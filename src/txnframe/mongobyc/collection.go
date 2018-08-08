@@ -36,7 +36,7 @@ type CollectionInterface interface {
 	CreateIndex(index Index) error
 	DropIndex(indexName string) error
 	GetIndexes() (*GetIndexResult, error)
-	Count(ctx context.Context, filter interface{}) (int64, error)
+	Count(ctx context.Context, filter interface{}) (uint64, error)
 
 	DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error)
 	DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*DeleteResult, error)
@@ -210,7 +210,7 @@ func (c *collection) getOperationOpts() (*C.bson_t, error) {
 	return nil, nil
 }
 
-func (c *collection) Count(ctx context.Context, filter interface{}) (int64, error) {
+func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, error) {
 
 	if nil != c.err {
 		return 0, c.err
@@ -236,7 +236,7 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (int64, erro
 	}
 	defer C.bson_destroy(&reply)
 
-	return int64(count), nil
+	return uint64(count), nil
 }
 func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*DeleteResult, error) {
 
