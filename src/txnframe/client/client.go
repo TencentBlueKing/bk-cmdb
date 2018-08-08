@@ -15,20 +15,27 @@ package client
 import (
 	"configcenter/src/txnframe/types"
 	"context"
+	"errors"
 )
 
+var ErrDocumentNotFount = errors.New("document not found")
+
 type DALClient interface {
-	Find(ctx context.Context, result interface{}, filter types.Filter) error    // 查询多个并反序列化到 Result
-	FindOne(ctx context.Context, result interface{}, filter types.Filter) error // 查询单个并反序列化到 Result
-	Insert(ctx context.Context, doc types.Document) error                       // 插入单个，如果tag有id, 则回设
-	InsertMulti(ctx context.Context, docs []types.Document) error               // 插入多个, 如果tag有id, 则回设
-	Update(ctx context.Context, doc types.Document, filter types.Filter) error  // 更新数据
+	Collection(collection string) Collection
+	StartTransaction(ctx context.Context, opt JoinOption) (TxDALClient, error) // 开启新事务
+	JoinTransaction(JoinOption) TxDALClient                                    // 加入事务, controller 加入某个事务
+	NextSequence(ctx context.Context, sequenceName string) (uint64, error)     // 获取新序列号(非事务)
+	Ping() error                                                               // 健康检查
+}
+
+type Collection interface {
+	Find(ctx context.Context, filter types.Filter, result interface{}) error    // 查询多个并反序列化到 Result
+	FindOne(ctx context.Context, filter types.Filter, result interface{}) error // 查询单个并反序列化到 Result
+	Insert(ctx context.Context, doc interface{}) error                          // 插入单个，如果tag有id, 则回设
+	InsertMulti(ctx context.Context, docs []interface{}) error                  // 插入多个, 如果tag有id, 则回设
+	Update(ctx context.Context, filter types.Filter, doc interface{}) error     // 更新数据
 	Delete(ctx context.Context, filter types.Filter) error                      // 删除数据
 	Count(ctx context.Context, filter types.Filter) (uint64, error)             // 统计数量(非事务)
-	NextSequence(ctx context.Context, sequenceName string) (int64, error)       // 获取新序列号(非事务)
-	StartTransaction(ctx context.Context) (TxDALClient, error)                  // 开启新事务
-	JoinTransaction(JoinOption) TxDALClient                                     // 加入事务, controller 加入某个事务
-	Ping() error                                                                // 健康检查
 }
 
 type TxDALClient interface {

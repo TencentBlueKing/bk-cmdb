@@ -13,21 +13,34 @@
 package manager
 
 import (
+	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/types"
 )
 
 type TxnManager struct {
-	cache Manage
+	cache map[string]*Session
 }
 
 type Session struct {
 	*types.Tansaction
+	db mongobyc.Session
 }
 
 func New() *TxnManager {
 	return new(TxnManager)
 }
 
-func (tm *TxnManager) StartTransaction() {
+func (tm *TxnManager) Start() error {
+	return nil
+}
 
+func (tm *TxnManager) Store(txn *types.Tansaction, db mongobyc.Session) {
+	tm.cache[txn.TxnID] = &Session{
+		Tansaction: txn,
+		db:         db,
+	}
+}
+
+func (tm *TxnManager) Get(txnID string) *Session {
+	return tm.cache[txnID]
 }

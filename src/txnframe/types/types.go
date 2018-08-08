@@ -13,6 +13,7 @@
 package types
 
 import (
+	"github.com/mongodb/mongo-go-driver/bson"
 	"time"
 )
 
@@ -35,4 +36,26 @@ const (
 	TxStatusAborted
 )
 
-type Document interface{}
+type Document map[string]interface{}
+
+func (d Document) Decode(result interface{}) error {
+	out, err := bson.Marshal(d)
+	if nil != err {
+		return err
+	}
+	return bson.Unmarshal(out, result)
+}
+
+type Documents []Document
+
+func (d Documents) Decode(result interface{}) error {
+	out, err := bson.Marshal(d)
+	if nil != err {
+		return err
+	}
+	return bson.Unmarshal(out, result)
+}
+
+const (
+	CommandDBOperation = "DBOperation"
+)
