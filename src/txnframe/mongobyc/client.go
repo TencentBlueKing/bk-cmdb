@@ -19,6 +19,8 @@ import (
 	"unsafe"
 )
 
+type collectionName string
+
 // InitMongoc init the mongc lib
 func InitMongoc() {
 	C.mongoc_init()
@@ -50,13 +52,16 @@ func NewClient(uri, dbName string) CommonClient {
 		innerDB: &database{
 			dbName: dbName,
 		},
+		collectionMaps: map[collectionName]CollectionInterface{},
 	}
 }
 
 type client struct {
-	uri         string
-	innerDB     *database
-	innerClient *C.mongoc_client_t
+	createdByPool  bool
+	uri            string
+	collectionMaps map[collectionName]CollectionInterface
+	innerDB        *database
+	innerClient    *C.mongoc_client_t
 }
 
 func (c *client) Session() SessionOperation {
@@ -91,13 +96,25 @@ func (c *client) Open() error {
 }
 
 func (c *client) Close() error {
-	if nil != c.innerClient {
+	if nil != c.innerClient && !c.createdByPool {
 		C.mongoc_client_destroy(c.innerClient)
+		c.innerClient = nil
 	}
 
 	if nil != c.innerDB {
 		c.innerDB.Close()
+		c.innerDB = nil
 	}
+
+	for _, coll := range c.collectionMaps {
+		switch target := coll.(type) {
+		case *collection:
+			if err := target.Close(); nil != err {
+				return err
+			}
+		}
+	}
+	c.collectionMaps = map[collectionName]CollectionInterface{}
 	return nil
 }
 
@@ -106,7 +123,12 @@ func (c *client) Database() Database {
 }
 
 func (c *client) Collection(collName string) CollectionInterface {
-	return newCollectionWithoutSession(c, collName)
+	target, ok := c.collectionMaps[collectionName(collName)]
+	if !ok {
+		target = newCollectionWithoutSession(c, collName)
+		c.collectionMaps[collectionName(collName)] = target
+	}
+	return target
 }
 
 func (c *client) Ping() error {
