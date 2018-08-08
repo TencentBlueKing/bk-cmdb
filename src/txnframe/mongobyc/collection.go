@@ -33,9 +33,9 @@ type CollectionInterface interface {
 	Count(ctx context.Context, filter interface{}) (int64, error)
 	DeleteMany(ctx context.Context, filter interface{}) (*DeleteResult, error)
 	DeleteOne(ctx context.Context, filter interface{}) (*DeleteResult, error)
-	Find(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error
-	FindOne(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error
-	FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.Opts, output interface{}) error
+	Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error
+	FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error
+	FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error
 	InsertMany(ctx context.Context, document []interface{}) error
 	InsertOne(ctx context.Context, document interface{}) error
 	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*UpdateResult, error)
@@ -242,7 +242,7 @@ func (c *collection) DeleteOne(ctx context.Context, filter interface{}) (*Delete
 	return nil, nil
 }
 
-func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error {
+func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
 
 	if nil != c.err {
 		return c.err
@@ -263,7 +263,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 
 	if nil != opts {
 
-		opts = TransformFindOpts(opts)
+		opts.Opts = *TransformFindOpts(&opts.Opts)
 
 		if nil == operationOpts {
 			operationOpts = C.bson_new()
@@ -326,7 +326,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 	return nil
 }
 
-func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.Opts, output interface{}) error {
+func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error {
 
 	if nil != c.err {
 		return c.err
@@ -347,7 +347,7 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 
 	if nil != opts {
 
-		opts = TransformFindOpts(opts)
+		opts.Opts = *TransformFindOpts(&opts.Opts)
 
 		if nil == operationOpts {
 			operationOpts = C.bson_new()
@@ -403,8 +403,108 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 
 	return nil
 }
-func (c *collection) FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.Opts, output interface{}) error {
-	return nil
+func (c *collection) FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error {
+
+	if nil != c.err {
+		return c.err
+	}
+
+	bsonFilter, err := TransformDocument(filter)
+	if nil != err {
+		return err
+	}
+
+	defer C.bson_destroy(bsonFilter)
+
+	bsonUpdate, err := TransformDocument(update)
+	if nil != err {
+		return err
+	}
+
+	defer C.bson_destroy(bsonUpdate)
+
+	operationOpts, err := c.getOperationOpts()
+	if nil != err {
+		return err
+	}
+	defer C.bson_destroy(operationOpts)
+
+	findModifyOpts := C.mongoc_find_and_modify_opts_new()
+	defer C.mongoc_find_and_modify_opts_destroy(findModifyOpts)
+
+	if nil != opts {
+		opts.Opts = *TransformFindOpts(&opts.Opts)
+		if nil == operationOpts {
+			operationOpts = C.bson_new()
+		}
+
+		limit := C.CString("limit")
+		//sort := C.CString("sort")
+		skip := C.CString("skip")
+		//fields := C.CString("projection")
+
+		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		var bsonSort, bsonFields *C.bson_t
+		bsonFields, err := TransformDocument(opts.Fields)
+		if nil != err {
+			return err
+		}
+
+		if opts.Descending {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, -1))
+		} else {
+			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, 1))
+		}
+		if nil != err {
+			return err
+		}
+		/*
+			C.bson_append_document(operationOpts, sort, -1, bsonSort)
+			C.bson_append_document(operationOpts, fields, -1, bsonFields)
+
+			C.free(unsafe.Pointer(limit))
+			C.free(unsafe.Pointer(sort))
+			C.free(unsafe.Pointer(skip))
+			C.free(unsafe.Pointer(fields))
+			C.bson_destroy(bsonSort)
+		*/
+		C.mongoc_find_and_modify_opts_set_sort(findModifyOpts, bsonSort)
+		C.mongoc_find_and_modify_opts_set_fields(findModifyOpts, bsonFields)
+	}
+
+	C.mongoc_find_and_modify_opts_set_update(findModifyOpts, bsonUpdate)
+	flag := C.mongoc_find_and_modify_opts_get_flags(findModifyOpts)
+	if opts.Upsert {
+		flag = flag | C.MONGOC_FIND_AND_MODIFY_UPSERT
+	}
+	if opts.Remove {
+		flag = flag | C.MONGOC_FIND_AND_MODIFY_REMOVE
+	}
+	if opts.New {
+		flag = flag | C.MONGOC_FIND_AND_MODIFY_RETURN_NEW
+	}
+	C.mongoc_find_and_modify_opts_set_flags(findModifyOpts, flag)
+
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	ok := C.mongoc_collection_find_and_modify_with_opts(c.innerCollection, bsonFilter, findModifyOpts, &reply, &bsonErr)
+	defer C.bson_destroy(&reply)
+	if !ok {
+		return TransformError(bsonErr)
+	}
+
+	docResult, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return err
+	}
+
+	valStr, err := docResult.MapStr("value")
+	if nil != err {
+		return err
+	}
+
+	return valStr.MarshalJSONInto(output)
 }
 func (c *collection) InsertMany(ctx context.Context, document []interface{}) error {
 

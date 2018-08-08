@@ -294,12 +294,45 @@ func TestFindCollection(t *testing.T) {
 
 	results := []map[string]interface{}{}
 
-	err = mongo.Collection("uri_test").Find(context.Background(), `{"key":"uri"}`, &findopt.Opts{
-		Fields: mapstr.MapStr{
-			"key": 1,
-			"_id": 0,
+	err = mongo.Collection("uri_test").Find(context.Background(), `{"key":"uri"}`, &findopt.Many{
+		Opts: findopt.Opts{
+			Fields: mapstr.MapStr{
+				"key":        1,
+				"key_modify": 1,
+			},
 		},
 	}, &results)
+	if nil != err {
+		fmt.Println("failed to find:", err)
+		return
+	}
+
+	fmt.Println("result:", results)
+}
+
+func TestFindAndModifyCollection(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	results := map[string]interface{}{}
+	err := mongo.Collection("uri_test").FindAndModify(context.Background(), `{"key":"uri"}`, `{"$set":{"key_modify":"modifyd"}}`, &findopt.FindAndModify{
+		Opts: findopt.Opts{
+			Fields: mapstr.MapStr{
+				"key":        1,
+				"key_modify": 1,
+			},
+		},
+		Upsert: true,
+		New:    true,
+	}, &results)
+
 	if nil != err {
 		fmt.Println("failed to find:", err)
 		return
