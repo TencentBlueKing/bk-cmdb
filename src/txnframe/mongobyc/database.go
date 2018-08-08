@@ -107,6 +107,7 @@ func (d *database) GetCollectionNames() ([]string, error) {
 func (d *database) Close() error {
 	if nil != d.db {
 		C.mongoc_database_destroy(d.db)
+		d.db = nil
 	}
 
 	return nil

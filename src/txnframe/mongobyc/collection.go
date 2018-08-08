@@ -298,8 +298,8 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		skip := C.CString("skip")
 		fields := C.CString("projection")
 
-		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
-		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		C.bson_append_int64(operationOpts, limit, -1, C.int64_t(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.int64_t(opts.Skip))
 		var bsonSort, bsonFields *C.bson_t
 		bsonFields, err := TransformDocument(opts.Fields)
 		if nil != err {
@@ -382,8 +382,8 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 		skip := C.CString("skip")
 		fields := C.CString("projection")
 
-		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
-		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		C.bson_append_int64(operationOpts, limit, -1, C.int64_t(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.int64_t(opts.Skip))
 		var bsonSort, bsonFields *C.bson_t
 		bsonFields, err := TransformDocument(opts.Fields)
 		if nil != err {
@@ -467,8 +467,8 @@ func (c *collection) FindAndModify(ctx context.Context, filter interface{}, upda
 		skip := C.CString("skip")
 		//fields := C.CString("projection")
 
-		C.bson_append_int64(operationOpts, limit, -1, C.longlong(opts.Limit))
-		C.bson_append_int64(operationOpts, skip, -1, C.longlong(opts.Skip))
+		C.bson_append_int64(operationOpts, limit, -1, C.int64_t(opts.Limit))
+		C.bson_append_int64(operationOpts, skip, -1, C.int64_t(opts.Skip))
 		var bsonSort, bsonFields *C.bson_t
 		bsonFields, err := TransformDocument(opts.Fields)
 		if nil != err {
@@ -715,4 +715,13 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 	replaceRst := &ReplaceOneResult{}
 	err = result.MarshalJSONInto(replaceRst)
 	return replaceRst, err
+}
+
+func (c *collection) Close() error {
+	if nil != c.innerCollection {
+		C.mongoc_collection_destroy(c.innerCollection)
+		c.innerCollection = nil
+	}
+
+	return nil
 }
