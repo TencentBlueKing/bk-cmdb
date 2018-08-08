@@ -17,9 +17,9 @@ import "C"
 
 // Transaction transaction operation methods
 type Transaction interface {
-	Start() error
-	Abort() error
-	Commit() error
+	StartTransaction() error
+	AbortTransaction() error
+	CommitTransaction() error
 	Collection(collName string) CollectionInterface
 }
 
@@ -34,7 +34,7 @@ type transaction struct {
 	clientSession *session
 }
 
-func (t *transaction) Start() error {
+func (t *transaction) StartTransaction() error {
 	var err C.bson_error_t
 	if !C.mongoc_client_session_start_transaction(t.clientSession.innerSession, t.txnOpts, &err) {
 		return TransformError(err)
@@ -42,7 +42,7 @@ func (t *transaction) Start() error {
 	return nil
 }
 
-func (t *transaction) Abort() error {
+func (t *transaction) AbortTransaction() error {
 	var err C.bson_error_t
 	if !C.mongoc_client_session_abort_transaction(t.clientSession.innerSession, &err) {
 		return TransformError(err)
@@ -50,7 +50,7 @@ func (t *transaction) Abort() error {
 	return nil
 }
 
-func (t *transaction) Commit() error {
+func (t *transaction) CommitTransaction() error {
 	var err C.bson_error_t
 	var reply C.bson_t
 	defer C.bson_destroy(&reply)

@@ -63,14 +63,13 @@ func TestPoolTransaction(t *testing.T) {
 	}
 	defer cliSession.Close()
 
-	txn := cliSession.CreateTransaction()
-	if err := txn.Start(); nil != err {
+	if err := cliSession.StartTransaction(); nil != err {
 		t.Errorf("failed to  start txn: %s", err.Error())
 		return
 	}
 
-	txnCol := txn.Collection("txn_uri_pool")
-	txnCol2 := txn.Collection("txn_uri_pool2")
+	txnCol := cliSession.Collection("txn_uri_pool")
+	txnCol2 := cliSession.Collection("txn_uri_pool2")
 
 	if err := txnCol.InsertOne(context.Background(), `{"txn":"txn_uri_vald3"}`, nil); nil != err {
 		t.Errorf("err:%s", err.Error())
@@ -80,7 +79,7 @@ func TestPoolTransaction(t *testing.T) {
 		t.Errorf("err:%s", err.Error())
 		return
 	}
-	if err := txn.Commit(); nil != err {
+	if err := cliSession.CommitTransaction(); nil != err {
 		t.Errorf("failed to  commit coll: %s", err.Error())
 		return
 	}

@@ -34,6 +34,7 @@ type CollectionInterface interface {
 	Name() string
 	Drop(ctx context.Context) error
 	CreateIndex(index Index) error
+	GetIndexes() (*GetIndexResult, error)
 	Count(ctx context.Context, filter interface{}) (int64, error)
 
 	DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error)
@@ -140,13 +141,33 @@ func (c *collection) CreateIndex(index Index) error {
 	collName := C.CString(c.name)
 	defer C.free(unsafe.Pointer(indexName))
 	defer C.free(unsafe.Pointer(collName))
-	var reply C.bson_t
 	var bsonErr C.bson_error_t
-	if !C.create_collection_index(c.mongocCli.innerDB.db, collName, data, &reply, &bsonErr) {
+	if !C.create_collection_index(c.mongocCli.innerDB.db, collName, data, nil, &bsonErr) {
 		return TransformError(bsonErr)
 	}
-	C.bson_destroy(&reply)
 	return nil
+}
+
+func (c *collection) GetIndexes() (*GetIndexResult, error) {
+
+	collName := C.CString(c.name)
+	defer C.free(unsafe.Pointer(collName))
+	var reply C.bson_t
+	var bsonErr C.bson_error_t
+	if !C.get_collection_indexes(c.mongocCli.innerDB.db, collName, &reply, &bsonErr) {
+		return nil, TransformError(bsonErr)
+	}
+	C.bson_destroy(&reply)
+
+	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
+	if nil != err {
+		return nil, err
+	}
+
+	indexRst := &GetIndexResult{}
+	err = result.MarshalJSONInto(indexRst)
+	return indexRst, err
+
 }
 
 func (c *collection) getOperationOpts() (*C.bson_t, error) {

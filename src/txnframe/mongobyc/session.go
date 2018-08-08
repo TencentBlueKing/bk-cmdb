@@ -18,10 +18,11 @@ import "C"
 // Session mongodb session operation methods
 type Session interface {
 	OpenCloser
-	CreateTransaction() Transaction
+	Transaction
 }
 
 type session struct {
+	*transaction
 	mongocli     *client
 	innerSession *C.mongoc_client_session_t
 	sessionOpts  *C.mongoc_session_opt_t
@@ -34,6 +35,10 @@ func (s *session) Open() error {
 	s.innerSession = C.mongoc_client_start_session(s.mongocli.innerClient, s.sessionOpts, &err)
 	if nil == s.innerSession {
 		return TransformError(err)
+	}
+	s.transaction = &transaction{
+		txnOpts:       s.txnOpts,
+		clientSession: s,
 	}
 	return nil
 }
@@ -54,12 +59,4 @@ func (s *session) Close() error {
 		s.sessionOpts = nil
 	}
 	return nil
-}
-
-func (s *session) CreateTransaction() Transaction {
-
-	return &transaction{
-		txnOpts:       s.txnOpts,
-		clientSession: s,
-	}
 }
