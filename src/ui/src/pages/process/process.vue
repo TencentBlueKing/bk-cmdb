@@ -271,6 +271,7 @@
                 this.slider.title.text = this.$t("ProcessManagement['新增进程']")
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'create'
+                this.slider.tab.attribute.isMultipleUpdate = false
                 this.slider.tab.attribute.type = 'create'
                 this.slider.tab.attribute.formValues = {}
                 this.slider.isShow = true
