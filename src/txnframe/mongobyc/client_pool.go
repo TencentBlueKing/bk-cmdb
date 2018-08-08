@@ -72,6 +72,7 @@ func (c *clientPool) Pop() Client {
 
 	innerClient := new(client)
 	innerClient.innerDB = new(database)
+	innerClient.collectionMaps = map[collectionName]CollectionInterface{}
 	innerClient.createdByPool = true
 	innerClient.innerClient = mongocClient
 	innerClient.innerDB.dbName = c.dbName

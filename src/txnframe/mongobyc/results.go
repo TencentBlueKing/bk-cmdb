@@ -29,3 +29,14 @@ type UpdateResult struct {
 type ReplaceOneResult struct {
 	UpdateResult `json:",inline"`
 }
+
+// CursorIndex firstbatch in index result
+type CursorIndex struct {
+	Namespace string  `json:"ns"`
+	Indexes   []Index `json:"firstBatch"`
+}
+
+// GetIndexResult get the indexex result
+type GetIndexResult struct {
+	Cursor CursorIndex `json:"cursor"`
+}

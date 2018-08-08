@@ -37,7 +37,7 @@ func TestInsertOne(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`, nil)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"urid"}`, nil)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -242,7 +242,7 @@ func TestIndex(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"keyIndex":"uri"}`, nil)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`, nil)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -250,10 +250,10 @@ func TestIndex(t *testing.T) {
 
 	err = mongo.Collection("uri_test").CreateIndex(Index{
 		Keys: mapstr.MapStr{
-			"keyIndex": 1,
+			"key": 1,
 		},
 		Unique: true,
-		Name:   "key_index",
+		Name:   "key",
 	})
 
 	if nil != err {
@@ -261,6 +261,26 @@ func TestIndex(t *testing.T) {
 		return
 	}
 
+}
+
+func TestGetIndex(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	rst, err := mongo.Collection("uri_test").GetIndexes()
+	if nil != err {
+		fmt.Println("failed to create index:", err)
+		return
+	}
+
+	t.Logf("indexes rst:%#v", rst)
 }
 
 func TestFindCollection(t *testing.T) {
