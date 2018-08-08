@@ -25,6 +25,8 @@ const (
 	OPUpdate
 	OPDelete
 	OPFind
+	OPFindAndModify
+	OPCount
 	OPStartTransaction = 666
 	OPCommit           = 667
 	OPAbort            = 668
@@ -57,6 +59,12 @@ type OPFIND struct {
 	Start          uint64   // start index
 	Limit          uint64   // limit index
 	Sort           string   // sort string
+}
+
+type OPCOUNT struct {
+	MsgHeader               // 标准报文头
+	CollectionName string   // "dbname.collectionname"
+	Selector       Document // 文档查询条件
 }
 
 type OPFINDANDMODIFY struct {

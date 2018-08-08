@@ -67,6 +67,18 @@ func (*TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
 		return reply, nil
 	case types.OPAbort:
 		return reply, nil
+	case types.OPInsert:
+		return reply, nil
+	case types.OPUpdate:
+		return reply, nil
+	case types.OPDelete:
+		return reply, nil
+	case types.OPFind:
+		return reply, nil
+	case types.OPFindAndModify:
+		return reply, nil
+	case types.OPCount:
+		return reply, nil
 	}
 
 	return nil, nil
