@@ -238,7 +238,7 @@
                 let ipData = []
                 this['ip']['text'].split(/\n|;|；|,|，/).map(ip => {
                     if (ip) {
-                        ipData.push(ip)
+                        ipData.push(ip.trim())
                     }
                 })
                 return ipData
