@@ -154,9 +154,9 @@ textarea {
 .bk-dialog-btn-confirm {
     // border: 1px solid #6b7baa;
 }
-
-.bk-dialog-body {
+.bk-dialog-style .bk-dialog-body {
     word-wrap: break-word;
+    padding: 15px 40px;
 }
 .bk-dialog-btn.bk-dialog-btn-cancel {
     &:hover {

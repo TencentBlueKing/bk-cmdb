@@ -685,6 +685,7 @@
                 } = data
                 this.$bkInfo({
                     title: this.objId === 'biz' ? this.$t("Common['确认要归档']", {name: this.objId === 'biz' ? bizName : instName}) : this.$t("Common['确认要删除']", {name: this.objId === 'biz' ? bizName : instName}),
+                    content: this.objId === 'biz' ? this.$t("Inst['归档提示']") : '',
                     confirmFn: () => {
                         this.deleteObject(data)
                     }
