@@ -15,6 +15,7 @@ package logics
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
@@ -97,6 +98,8 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 						}
 						return common.KvMap{common.BKDBIN: nums}, false, nil
 					}
+				} else if isString && 0 < len(splitRange[0]) {
+					return common.KvMap{common.BKDBLIKE: fmt.Sprintf("^%s", splitRange[0])}, true, nil
 				} else {
 					return nil, true, nil
 				}
@@ -109,4 +112,127 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 		}
 	}
 	return nil, true, nil
+}
+
+func NewRegexRole(reg string, isString bool) (*RegexRole, error) {
+	ret := &RegexRole{
+		//isString: isString,
+		rawRegex: reg,
+	}
+
+	return ret, ret.splitRegexRange()
+}
+
+func (r *RegexRole) MatchStr(str string) bool {
+	for _, mixed := range r.mixed {
+		if mixed == str {
+			return true
+		}
+	}
+	strHead, intFoot, isIntFoot := r.splitStrRightN(str, len(r.prefix))
+	if strHead != r.prefix || false == isIntFoot {
+		return false
+	}
+
+	for _, rangeItem := range r.ranges {
+		if intFoot >= rangeItem.min && intFoot <= rangeItem.max {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *RegexRole) MatchInt64(id int64) bool {
+	strID := strconv.FormatInt(id, 10)
+	for _, mixed := range r.mixed {
+		if mixed == strID {
+			return true
+		}
+	}
+	strHead, intFoot, hasFoot := r.splitIntRightN(id, len(r.prefix))
+	if strHead != r.prefix || false == hasFoot {
+		return false
+	}
+
+	for _, rangeItem := range r.ranges {
+		if intFoot >= rangeItem.min && intFoot <= rangeItem.max {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *RegexRole) splitStrRightN(str string, n int) (head string, foot int64, isIntFoot bool) {
+	strLen := len(str)
+	if strLen <= n {
+		head = str
+		return
+	}
+	head = str[0:n]
+	var err error
+	foot, err = util.GetInt64ByInterface(str[n:])
+	if nil != err {
+		foot = 0
+		isIntFoot = false
+	} else {
+		isIntFoot = true
+	}
+	return
+}
+
+func (r *RegexRole) splitIntRightN(num int64, n int) (head string, foot int64, hasFoot bool) {
+	strNum := strconv.FormatInt(num, 10)
+	if len(strNum) <= n {
+		head = strNum
+		return
+	}
+	head = strNum[0:n]
+	baseMode := int64(math.Pow10(len(strNum) - n))
+	foot = num % baseMode
+	hasFoot = true
+	return
+}
+
+func (r *RegexRole) splitRegexRange() error {
+	splitRange := strings.Split(r.rawRegex, "[")
+	if 2 != len(splitRange) {
+		return fmt.Errorf("not found regex role ")
+	}
+	secPart := strings.TrimRight(splitRange[1], "]")
+	r.prefix = splitRange[0]
+	rangeArr := strings.Split(secPart, ",")
+	for _, item := range rangeArr {
+		itemSplit := strings.Split(item, "-")
+		switch len(itemSplit) {
+		case 1:
+			r.mixed = append(r.mixed, fmt.Sprintf("%s%s", r.prefix, item))
+		case 2:
+			min, err := util.GetInt64ByInterface(itemSplit[0])
+			if nil != err {
+				return fmt.Errorf("%s not integer", itemSplit[0])
+			}
+			max, err := util.GetInt64ByInterface(itemSplit[1])
+			if nil != err {
+				return fmt.Errorf("%s not integer", itemSplit[1])
+			}
+			if min > max {
+				continue
+			}
+			r.ranges = append(r.ranges, regexRange{min: min, max: max})
+		}
+	}
+
+	return nil
+}
+
+type regexRange struct {
+	min int64
+	max int64
+}
+type RegexRole struct {
+	//isString bool
+	rawRegex string
+	prefix   string
+	mixed    []string
+	ranges   []regexRange
 }
