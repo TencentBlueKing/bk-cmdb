@@ -56,3 +56,11 @@ bool create_collection_index(mongoc_database_t *db, const char* collectionName, 
    bson_destroy(createIndexes);
    return ok;
 }
+
+bool get_collection_indexes(mongoc_database_t *db, const char* collectionName, bson_t *reply, bson_error_t *err)
+{
+   bson_t* getIndexes = BCON_NEW ("listIndexes",BCON_UTF8(collectionName));
+   bool ok = mongoc_database_read_command_with_opts(db, getIndexes, NULL, NULL /* opts */, reply, err);
+   bson_destroy(getIndexes);
+   return ok;
+}
