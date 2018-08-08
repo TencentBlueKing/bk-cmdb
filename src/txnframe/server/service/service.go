@@ -13,47 +13,45 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/source_controller/auditcontroller/logics"
-	"configcenter/src/storage"
+	"configcenter/src/txnframe/rpc"
+	"github.com/emicklei/go-restful"
+	"log"
+	"net/http"
+	"os"
 )
 
 type Service struct {
 	*backbone.Engine
-	*logics.Logics
-	Instance storage.DI
+	txnService *TXRPC
+}
+
+func (s *Service) SetEngine(engine *backbone.Engine) {
+	s.Engine = engine
+	s.txnService.SetEngine(engine)
 }
 
 func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
-		return s.CCErr
-	}
-	ws.Path("/audit/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
+	restful.SetLogger(log.New(os.Stdout, "restful", log.LstdFlags))
+	restful.TraceLogger(log.New(os.Stdout, "restful", log.LstdFlags))
+	ws := new(restful.WebService)
+	ws.Path("/txn/v3")
 
-	ws.Route(ws.POST("/host/{owner_id}/{biz_id}/{user}").To(s.AddHostLog))
-	ws.Route(ws.POST("/hosts/{owner_id}/{biz_id}/{user}").To(s.AddHostLogs))
-	ws.Route(ws.POST("/obj/{owner_id}/{biz_id}/{user}").To(s.AddObjectLog))
-	ws.Route(ws.POST("/objs/{owner_id}/{biz_id}/{user}").To(s.AddObjectLogs))
-	ws.Route(ws.POST("/proc/{owner_id}/{biz_id}/{user}").To(s.AddProcLog))
-	ws.Route(ws.POST("/procs/{owner_id}/{biz_id}/{user}").To(s.AddProcLogs))
-	ws.Route(ws.POST("/module/{owner_id}/{biz_id}/{user}").To(s.AddModuleLog))
-	ws.Route(ws.POST("/modules/{owner_id}/{biz_id}/{user}").To(s.AddModuleLogs))
-	ws.Route(ws.POST("/app/{owner_id}/{biz_id}/{user}").To(s.AddAppLog))
-	ws.Route(ws.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
-	ws.Route(ws.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
-	ws.Route(ws.POST("/search").To(s.Get))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	rpcsrv := rpc.NewServer()
+	txnService := NewTXRPC(rpcsrv)
+	s.txnService = txnService
+
+	ws.Route(ws.Method(http.MethodConnect).Path("rpc").To(func(req *restful.Request, resp *restful.Response) {
+		blog.Infof("requeting rpc")
+		rpcsrv.ServeHTTP(resp.ResponseWriter, req.Request)
+	}))
 
 	return ws
 }
@@ -69,24 +67,22 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, zkItem)
 
-	// mongodb status
-	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if err := s.Instance.Ping(); err != nil {
-		mongoItem.IsHealthy = false
-		mongoItem.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, mongoItem)
+	// // mongodb
+	// meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+
+	// // redis
+	// meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.cache.Ping().Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "audit controller is unhealthy"
+			meta.Message = "txn server is unhealthy"
 			break
 		}
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_AUDITCONTROLLER,
+		Module:     types.CC_MODULE_TXC,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}
@@ -98,5 +94,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Result:  meta.IsHealthy,
 		Message: meta.Message,
 	}
-	resp.WriteJson(answer, "application/json")
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }
