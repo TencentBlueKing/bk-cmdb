@@ -18,37 +18,58 @@ import (
 	"errors"
 )
 
-var ErrDocumentNotFount = errors.New("document not found")
+// Errors defind
+var (
+	ErrDocumentNotFount = errors.New("document not found")
+)
 
+// DALClient db operation interface
 type DALClient interface {
+	// Collection collection 操作
 	Collection(collection string) Collection
-	StartTransaction(ctx context.Context, opt JoinOption) (TxDALClient, error) // 开启新事务
-	JoinTransaction(JoinOption) TxDALClient                                    // 加入事务, controller 加入某个事务
-	NextSequence(ctx context.Context, sequenceName string) (uint64, error)     // 获取新序列号(非事务)
-	Ping() error                                                               // 健康检查
+	// StartTransaction 开启新事务
+	StartTransaction(ctx context.Context, opt JoinOption) (TxDALClient, error)
+	// JoinTransaction 加入事务, controller 加入某个事务
+	JoinTransaction(JoinOption) TxDALClient
+	// NextSequence 获取新序列号(非事务)
+	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
+	// Ping 健康检查
+	Ping() error // 健康检查
 }
 
+// Collection collection operation interface
 type Collection interface {
-	Find(ctx context.Context, filter types.Filter) Find                     // 查询多个并反序列化到 Result
-	Insert(ctx context.Context, docs interface{}) error                     // 插入单个，如果tag有id, 则回设
-	Update(ctx context.Context, filter types.Filter, doc interface{}) error // 更新数据
-	Delete(ctx context.Context, filter types.Filter) error                  // 删除数据
-	Count(ctx context.Context, filter types.Filter) (uint64, error)         // 统计数量(非事务)
+	// Find 查询多个并反序列化到 Result
+	Find(ctx context.Context, filter types.Filter) Find
+	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
+	Insert(ctx context.Context, docs interface{}) error
+	// Update 更新数据
+	Update(ctx context.Context, filter types.Filter, doc interface{}) error
+	// Delete 删除数据
+	Delete(ctx context.Context, filter types.Filter) error
+	// Count 统计数量(非事务)
+	Count(ctx context.Context, filter types.Filter) (uint64, error)
 }
 
+// TxDALClient transaction operation interface
 type TxDALClient interface {
-	Commit() error              // 提交事务
-	Abort() error               // 取消事务
-	TxnInfo() *types.Tansaction // 当前事务信息，用于事务发起者往下传递
 	DALClient
+	// Commit 提交事务
+	Commit() error
+	// Abort 取消事务
+	Abort() error
+	// TxnInfo 当前事务信息，用于事务发起者往下传递
+	TxnInfo() *types.Tansaction
 }
 
+// JoinOption defind join transaction options
 type JoinOption struct {
 	TxnID     string // 事务ID,uuid
 	RequestID string // 请求ID,可选项
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 }
 
+// Find find operation interface
 type Find interface {
 	Fields(fields ...string) Find
 	Sort(sort string) Find
