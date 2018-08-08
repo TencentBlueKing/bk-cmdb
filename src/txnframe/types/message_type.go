@@ -31,15 +31,15 @@ const (
 )
 
 type OPINSERT struct {
-	MsgHeader                 // 标准报文头
-	CollectionName string     // "dbname.collectionname"
-	DOCS           []Document // 要插入集合的文档
+	MsgHeader                // 标准报文头
+	CollectionName string    // "dbname.collectionname"
+	DOCS           Documents // 要插入集合的文档
 }
 
 type OPUPDATE struct {
 	MsgHeader               // 标准报文头
 	CollectionName string   // "dbname.collectionname"
-	Update         Document // 指定要执行的更新
+	DOC            Document // 指定要执行的更新
 	Selector       Document // 文档查询条件
 }
 
@@ -52,10 +52,21 @@ type OPDELETE struct {
 type OPFIND struct {
 	MsgHeader               // 标准报文头
 	CollectionName string   // "dbname.collectionname"
+	Projection     Document // ""
 	Selector       Document // 文档查询条件
-	Start          int64    // start index
-	Limit          int64    // limit index
+	Start          int      // start index
+	Limit          int      // limit index
 	Sort           string   // sort string
+}
+
+type OPFINDANDMODIFY struct {
+	MsgHeader               // 标准报文头
+	CollectionName string   // "dbname.collectionname"
+	DOC            Document // 指定要执行的更新
+	Selector       Document // 文档查询条件
+	Upsert         bool
+	Remove         bool
+	ReturnNew      bool
 }
 
 type OPSTARTTTRANSATION struct {
@@ -78,7 +89,7 @@ type ReplyHeader struct {
 }
 
 type OPREPLY struct {
-	ReplyHeader              // 标准报文头
-	CollectionName string    // "dbname.collectionname"
-	Docs           Documents // 文档查询结果
+	ReplyHeader           // 标准报文头
+	Count       uint64    // 文档查询结果数
+	Docs        Documents // 文档查询结果
 }

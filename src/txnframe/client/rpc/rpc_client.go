@@ -18,6 +18,8 @@ import (
 	"configcenter/src/txnframe/types"
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 )
 
 type RPCClient struct {
@@ -63,15 +65,45 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(ctx context.Context, filter types.Filter, result interface{}) error {
+func (c *Collection) Find(ctx context.Context, filter types.Filter) client.Find {
 	msg := types.OPFIND{}
 	msg.OPCode = types.OPFind
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
 	msg.CollectionName = c.collection
+	msg.Selector.Encode(filter)
 
+	return &Find{Collection: c, msg: &msg}
+}
+
+type Find struct {
+	*Collection
+	msg *types.OPFIND
+}
+
+func (f *Find) Fields(fields ...string) client.Find {
+	projection := types.Document{}
+	for _, field := range fields {
+		projection[field] = true
+	}
+	f.msg.Projection = projection
+	return f
+}
+func (f *Find) Sort(sort string) client.Find {
+	f.msg.Sort = sort
+	return f
+}
+func (f *Find) Start(start int) client.Find {
+	f.msg.Start = start
+	return f
+}
+func (f *Find) Limit(limit int) client.Find {
+	f.msg.Limit = limit
+	return f
+}
+func (f *Find) All(result interface{}) error {
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := f.rpc.Call(types.CommandDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -80,17 +112,9 @@ func (c *Collection) Find(ctx context.Context, filter types.Filter, result inter
 	}
 	return reply.Docs.Decode(result)
 }
-
-// FindOne 查询单个并反序列化到 Result
-func (c *Collection) FindOne(ctx context.Context, filter types.Filter, result interface{}) error {
-	msg := types.OPFIND{}
-	msg.OPCode = types.OPFind
-	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
-	msg.CollectionName = c.collection
-
+func (f *Find) One(result interface{}) error {
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := f.rpc.Call(types.CommandDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -101,19 +125,20 @@ func (c *Collection) FindOne(ctx context.Context, filter types.Filter, result in
 	if len(reply.Docs[0]) <= 0 {
 		return client.ErrDocumentNotFount
 	}
-
 	return reply.Docs[0].Decode(result)
 }
 
-// Insert 插入单个，如果tag有id, 则回设
-func (c *Collection) Insert(ctx context.Context, doc interface{}) error {
+// InsertMulti 插入多个, 如果tag有id, 则回设
+func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	msg := types.OPINSERT{}
 	msg.OPCode = types.OPInsert
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
 	msg.CollectionName = c.collection
 
-	// msg.DOCS = []types.Document{doc}
+	if err := msg.DOCS.Encode(docs); err != nil {
+		return err
+	}
 
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
@@ -123,33 +148,114 @@ func (c *Collection) Insert(ctx context.Context, doc interface{}) error {
 	if !reply.OK {
 		return errors.New(reply.Message)
 	}
-
-	return nil
-}
-
-// InsertMulti 插入多个, 如果tag有id, 则回设
-func (c *Collection) InsertMulti(ctx context.Context, docs []interface{}) error {
 	return nil
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interface{}) error {
+	msg := types.OPUPDATE{}
+	msg.OPCode = types.OPUpdate
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+	msg.CollectionName = c.collection
+	if err := msg.DOC.Encode(types.Document{
+		"$set": doc,
+	}); err != nil {
+		return err
+	}
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
 	return nil
 }
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
+	msg := types.OPDELETE{}
+	msg.OPCode = types.OPDelete
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+	msg.CollectionName = c.collection
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.OK {
+		return errors.New(reply.Message)
+	}
 	return nil
 }
 
 // Count 统计数量(非事务)
 func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, error) {
-	return 0, nil
+	msg := types.OPDELETE{}
+	msg.OPCode = types.OPDelete
+	msg.RequestID = c.RequestID
+	// msg.TxnID = c.TxnID // because Count was not supported for transaction in mongo
+	msg.CollectionName = c.collection
+	if err := msg.Selector.Encode(filter); err != nil {
+		return 0, err
+	}
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return 0, err
+	}
+	if !reply.OK {
+		return 0, errors.New(reply.Message)
+	}
+	return reply.Count, nil
 }
 
 // NextSequence 获取新序列号(非事务)
 func (c *RPCClient) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
-	return 0, nil
+	msg := types.OPFINDANDMODIFY{}
+	msg.OPCode = types.OPUpdate
+	msg.RequestID = c.RequestID
+	msg.CollectionName = sequenceName
+	if err := msg.DOC.Encode(types.Document{
+		"$inc": types.Document{"SequenceID": 1},
+	}); err != nil {
+		return 0, err
+	}
+	if err := msg.Selector.Encode(types.Document{
+		"_id": sequenceName,
+	}); err != nil {
+		return 0, err
+	}
+
+	msg.Upsert = true
+	msg.ReturnNew = true
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	if err != nil {
+		return 0, err
+	}
+	if !reply.OK {
+		return 0, errors.New(reply.Message)
+	}
+
+	if len(reply.Docs) <= 0 {
+		return 0, client.ErrDocumentNotFount
+	}
+
+	return strconv.ParseUint(fmt.Sprint(reply.Docs[0]["SequenceID"]), 10, 64)
 }
 
 // StartTransaction 开启新事务
